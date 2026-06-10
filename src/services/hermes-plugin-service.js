@@ -20,6 +20,32 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
     }
   }
 
+  function hashAccessKey(value) {
+    return crypto.createHash("sha256").update(String(value || ""), "utf8").digest("hex");
+  }
+
+  function timingSafeEquals(left, right) {
+    const a = Buffer.from(String(left || ""), "utf8");
+    const b = Buffer.from(String(right || ""), "utf8");
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  }
+
+  function normalizeStoredAccessKeyHash(value) {
+    return String(value || "").trim().replace(/^sha256:/i, "").toLowerCase();
+  }
+
+  function requireWorkspaceAccessKey(workspace, token) {
+    const expectedHash = normalizeStoredAccessKeyHash(workspace?.access_key_hash);
+    if (!expectedHash) {
+      throw routeError("workspace_access_key_missing", "Growth workspace access key is not configured", 403);
+    }
+    const actualHash = hashAccessKey(token);
+    if (!token || !timingSafeEquals(actualHash, expectedHash)) {
+      throw routeError("permission_denied", "Invalid workspace credential", 403);
+    }
+  }
+
   function canonicalWorkspaceId(value) {
     const raw = String(value || "").trim();
     if (!raw) {
@@ -60,12 +86,12 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
     },
 
     launchWorkspace({ authorizationToken, body }) {
-      requireRegistrationKey(authorizationToken);
       const workspaceId = canonicalWorkspaceId(body.workspace_id || body.hermes_workspace_id);
       const workspace = workspaceStore.get(workspaceId);
       if (!workspace) {
         throw routeError("workspace_not_found", "Growth workspace is not provisioned", 404);
       }
+      requireWorkspaceAccessKey(workspace, authorizationToken);
       const token = crypto.randomBytes(24).toString("base64url");
       launchTokens.set(token, {
         workspace_id: workspace.workspace_id,
