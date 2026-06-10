@@ -2,7 +2,7 @@
   const root = document.getElementById("growth-root") || document.querySelector(".growth-shell");
   const params = new URLSearchParams(window.location.search);
   let currentWorkspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
-  const pluginRoute = (params.get("pluginRoute") || params.get("route") || "").trim().toLowerCase();
+  const pluginRoute = (params.get("pluginRoute") || params.get("route") || params.get("pluginActionId") || "").trim().toLowerCase();
   const pluginItemId = (params.get("pluginItemId") || params.get("itemId") || params.get("taskCardId") || "").trim();
   const pageState = {
     auth: { isOwner: false },
@@ -259,6 +259,93 @@
     renderShell();
   }
 
+  function routeCardId(card = {}) {
+    return clean(card.taskCardId || card.id);
+  }
+
+  function allTaskCards() {
+    return [
+      ...((Array.isArray(model.overview?.board?.cards) ? model.overview.board.cards : [])),
+      ...((Array.isArray(model.overview?.programs?.taskCards) ? model.overview.programs.taskCards : [])),
+      ...((Array.isArray(model.overview?.programs?.executableTasks) ? model.overview.programs.executableTasks : [])),
+    ].filter((card, index, list) => {
+      const id = routeCardId(card);
+      return id && list.findIndex((item) => routeCardId(item) === id) === index;
+    });
+  }
+
+  function routeText(card = {}) {
+    return [
+      card.status,
+      card.nextAction,
+      card.primaryAction,
+      card.cardRole,
+      card.taskCardType,
+      card.activityType,
+      card.taskModel?.taskCardType,
+      card.taskModel?.activityType,
+      card.title,
+    ].map(clean).join(" ").toLowerCase();
+  }
+
+  function firstTaskCardForRoute(route) {
+    const cards = allTaskCards();
+    if (route === "submit_work") {
+      return cards.find((card) => /submit|published|active|ready/.test(routeText(card))) || cards[0] || null;
+    }
+    if (route === "review") {
+      return cards.find((card) => /review|reflect|feedback|revision/.test(routeText(card))) || null;
+    }
+    if (route === "stage_assessment") {
+      return cards.find((card) => /stage_assessment|challenge|assessment|测评|能力测验/.test(routeText(card))) || null;
+    }
+    return null;
+  }
+
+  async function applyInitialPluginRoute() {
+    if (!pluginRoute) return false;
+    if (pluginRoute === "settings") {
+      pageState.learningGrowthSettingsOpen = Boolean(pageState.auth.isOwner);
+      return false;
+    }
+    if (pluginRoute === "rewards") {
+      pageState.learningGrowthSettingsOpen = Boolean(pageState.auth.isOwner);
+      pageState.learningGrowthActiveTab = pageState.auth.isOwner ? "rewards" : "overview";
+      return false;
+    }
+    if (pluginRoute === "review") {
+      if (pageState.auth.isOwner) {
+        pageState.learningGrowthSettingsOpen = true;
+        pageState.learningGrowthActiveTab = "ai-analysis";
+        return false;
+      }
+      const card = firstTaskCardForRoute(pluginRoute);
+      if (card) {
+        await openCard(routeCardId(card));
+        return true;
+      }
+      return false;
+    }
+    if (pluginRoute === "submit_work" || pluginRoute === "stage_assessment") {
+      const card = firstTaskCardForRoute(pluginRoute);
+      if (card) {
+        await openCard(routeCardId(card));
+        return true;
+      }
+      return false;
+    }
+    if (pluginRoute === "card" && pluginItemId) {
+      await openCard(pluginItemId);
+      return true;
+    }
+    if (pluginRoute === "today_tasks" || pluginRoute === "cards") {
+      pageState.learningGrowthSettingsOpen = false;
+      pageState.learningGrowthActiveTab = "overview";
+      return false;
+    }
+    return false;
+  }
+
   function bindEvents() {
     root.querySelectorAll("[data-learning-growth-tab]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -344,11 +431,8 @@
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadViewTargets();
     await loadCurrentWorkspace();
-    if (pluginRoute === "settings") pageState.learningGrowthSettingsOpen = true;
-    renderShell();
-    if (pluginRoute === "card" && pluginItemId) {
-      await openCard(pluginItemId);
-    }
+    const renderedByRoute = await applyInitialPluginRoute();
+    if (!renderedByRoute) renderShell();
   }
 
   try {

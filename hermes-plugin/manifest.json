@@ -23,6 +23,50 @@
     "session_endpoint": "/api/v1/hermes/plugin/session"
   },
   "mcp_toolset": "growth",
+  "actions": [
+    {
+      "id": "today_tasks",
+      "label": "今日任务",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 10,
+      "entry": { "type": "plugin_route", "pluginRoute": "today_tasks" }
+    },
+    {
+      "id": "cards",
+      "label": "成长卡片",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 20,
+      "entry": { "type": "plugin_route", "pluginRoute": "cards" }
+    },
+    {
+      "id": "submit_work",
+      "label": "提交作业",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 30,
+      "entry": { "type": "plugin_route", "pluginRoute": "submit_work" }
+    },
+    {
+      "id": "review",
+      "label": "复盘",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 40,
+      "entry": { "type": "plugin_route", "pluginRoute": "review" }
+    },
+    {
+      "id": "stage_assessment",
+      "label": "阶段测评",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 50,
+      "entry": { "type": "plugin_route", "pluginRoute": "stage_assessment" }
+    },
+    {
+      "id": "rewards",
+      "label": "奖励/通宝",
+      "placement": ["plugin_drawer_frequent", "dock_long_press", "search"],
+      "priority": 60,
+      "entry": { "type": "plugin_route", "pluginRoute": "rewards" }
+    }
+  ],
   "workspace_registration_endpoint": "/api/v1/hermes/plugin/workspaces",
   "deployment": {
     "location_independent": true,

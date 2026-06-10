@@ -11,6 +11,21 @@ function sha256(value) {
   return crypto.createHash("sha256").update(String(value || ""), "utf8").digest("hex");
 }
 
+test("manifest declares host quick actions for the plugin Dock", () => {
+  const service = createHermesPluginService({
+    config: { registrationKey: "registration-key", launchTokenTtlMs: 60000 },
+    workspaceStore: createJsonWorkspaceStore({ filePath: path.join(fs.mkdtempSync(path.join(os.tmpdir(), "growth-plugin-test-")), "workspaces.json") })
+  });
+  const manifest = service.getManifest();
+  assert.deepEqual(manifest.actions.find((action) => action.id === "today_tasks"), {
+    id: "today_tasks",
+    label: "今日任务",
+    placement: ["plugin_drawer_frequent", "dock_long_press", "search"],
+    priority: 10,
+    entry: { type: "plugin_route", pluginRoute: "today_tasks" }
+  });
+});
+
 test("provisions canonical growth workspaces without storing raw keys", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-plugin-test-"));
   const store = createJsonWorkspaceStore({ filePath: path.join(dir, "workspaces.json") });
