@@ -443,3 +443,26 @@
   - `git diff --check`.
 - Production deployment is pending until both Growth plugin and Home AI app
   companion commits are pushed.
+
+## 2026-06-10T08:24Z - Owner-only Growth view switcher deployed
+
+- Commit pushed to `Education/main`:
+  - `c41499a` `feat: add owner growth view switching`.
+- Production deployment completed for plugin `growth`:
+  - synced to `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T075025Z-plugin-growth-manual`;
+  - restarted `com.hermesmobile.plugin.growth`.
+- Production validation passed:
+  - direct plugin `GET /api/v1/growth/view-targets` with
+    `x-hermes-plugin-actor-role=owner` returned switchable targets
+    `weixin_stephen` and `owner`;
+  - the same endpoint with `x-hermes-plugin-actor-role=workspace` returned
+    only the current workspace target;
+  - Home AI same-origin proxy
+    `/api/hermes-plugins/growth/proxy/api/v1/growth/view-targets` forwarded
+    Owner actor context and returned the same Owner switch targets.
+- Boundary:
+  - only Owner can enumerate and switch Growth learner views;
+  - no enterprise/multi-workspace role support is implemented;
+  - no broad workspace list or secret is forwarded from Home AI to plugins.
