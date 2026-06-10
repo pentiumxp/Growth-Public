@@ -98,3 +98,53 @@ h2 {
   color: var(--muted);
   text-align: center;
 }
+
+.task-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.task-button {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  padding: 12px;
+  font: inherit;
+  text-align: left;
+}
+
+.task-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.task-meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card-detail {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--panel) 84%, var(--accent));
+}
+
+.card-detail h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.card-detail p {
+  margin-top: 8px;
+}

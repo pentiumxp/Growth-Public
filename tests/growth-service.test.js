@@ -106,3 +106,66 @@ test("falls back to the plugin snapshot when Home AI facade is unavailable", asy
   assert.equal(board.cards[0].taskCardId, "card_snapshot");
   assert.equal(board.snapshot_updated_at, "2026-06-10T00:00:00.000Z");
 });
+
+test("reads card detail from the Home AI Growth facade", async () => {
+  const service = createGrowthService({
+    config: {
+      homeAiApiBaseUrl: "http://127.0.0.1:8797",
+      homeAiAccessKey: "test-home-ai-key"
+    },
+    fetch(url) {
+      assert.match(url, /\/api\/growth\/v1\/cards\/card_1/);
+      assert.match(url, /workspaceId=weixin_child/);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          ok: true,
+          facadeVersion: 1,
+          migrationStage: "host_facade",
+          dataOwner: "home-ai",
+          card: { taskCardId: "card_1", title: "Read", status: "active" }
+        })
+      });
+    }
+  });
+
+  const detail = await service.card({ workspaceId: "weixin_child", taskCardId: "card_1" });
+  assert.equal(detail.ok, true);
+  assert.equal(detail.source, "home-ai-growth-facade");
+  assert.equal(detail.card.title, "Read");
+});
+
+test("falls back to snapshot card detail when the facade is unavailable", async () => {
+  const service = createGrowthService({
+    config: {
+      homeAiApiBaseUrl: "http://127.0.0.1:8797",
+      homeAiAccessKey: "test-home-ai-key"
+    },
+    snapshotStore: {
+      get: () => ({
+        workspace_id: "weixin_child",
+        updated_at: "2026-06-10T00:00:00.000Z",
+        board: {
+          cards: [{ taskCardId: "card_snapshot", title: "Snapshot", status: "active" }]
+        }
+      })
+    },
+    fetch() {
+      return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ ok: false }) });
+    }
+  });
+
+  const detail = await service.card({ workspaceId: "weixin_child", taskCardId: "card_snapshot" });
+  assert.equal(detail.ok, true);
+  assert.equal(detail.source, "growth-plugin-snapshot");
+  assert.equal(detail.card.title, "Snapshot");
+});
+
+test("reports a bounded error for missing card detail", async () => {
+  const service = createGrowthService();
+  const detail = await service.card({ workspaceId: "weixin_child", taskCardId: "missing" });
+  assert.equal(detail.ok, false);
+  assert.equal(detail.error, "card_not_found");
+  assert.equal(detail.card, null);
+});

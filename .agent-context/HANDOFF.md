@@ -9,6 +9,23 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-10 Growth Facade Card Detail Read Path
+
+- Added a read-only plugin API route:
+  `GET /api/v1/growth/cards/:taskCardId`.
+- The route reads Home AI facade card detail when
+  `GROWTH_HOME_AI_API_BASE_URL` and `GROWTH_HOME_AI_ACCESS_KEY(_PATH)` are
+  configured.
+- If the facade is unavailable, the route falls back to the local bounded board
+  snapshot.
+- The embedded UI now renders bounded task cards from
+  `GET /api/v1/growth/board` and opens a compact detail panel through the card
+  endpoint.
+- Validation passed:
+  - `npm run check`;
+  - `npm test`;
+  - local HTTP smoke for missing card detail returned bounded 404 JSON.
+
 ## 2026-06-10 Clean Growth Plugin Workspace Created
 
 - Archived the two incorrect Home AI full-repository Growth clones:

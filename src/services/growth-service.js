@@ -72,6 +72,13 @@ function snapshotBoard(snapshot = {}) {
   };
 }
 
+function cardFromBoard(board = {}, taskCardId = "") {
+  const id = cleanString(taskCardId);
+  if (!id) return null;
+  const cards = Array.isArray(board.cards) ? board.cards : [];
+  return cards.find((card) => cleanString(card.taskCardId) === id) || null;
+}
+
 function createGrowthService(options = {}) {
   const config = options.config || {};
   const fetchImpl = options.fetch || global.fetch;
@@ -149,6 +156,51 @@ function createGrowthService(options = {}) {
         });
       }
       return projected;
+    },
+
+    async card({ workspaceId, taskCardId }) {
+      const cleanTaskCardId = cleanString(taskCardId);
+      if (!cleanTaskCardId) {
+        return {
+          ok: false,
+          error: "task_card_id_required",
+          workspace_id: workspaceId,
+          card: null
+        };
+      }
+      const upstream = await fetchHomeAi(`/api/growth/v1/cards/${encodeURIComponent(cleanTaskCardId)}`, { workspaceId });
+      if (upstream && upstream.ok !== false) {
+        return {
+          ok: true,
+          workspace_id: workspaceId,
+          card: upstream.card || null,
+          source: "home-ai-growth-facade",
+          facade: {
+            version: upstream.facadeVersion || 1,
+            migration_stage: upstream.migrationStage || "host_facade",
+            data_owner: upstream.dataOwner || "home-ai"
+          }
+        };
+      }
+
+      const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(workspaceId) : null;
+      const snapshotCard = snapshot ? cardFromBoard(snapshot.board || {}, cleanTaskCardId) : null;
+      if (snapshotCard) {
+        return {
+          ok: true,
+          workspace_id: workspaceId,
+          card: snapshotCard,
+          source: "growth-plugin-snapshot",
+          snapshot_updated_at: snapshot.updated_at || ""
+        };
+      }
+
+      return {
+        ok: false,
+        error: upstream?.error || "card_not_found",
+        workspace_id: workspaceId,
+        card: null
+      };
     }
   };
 }
