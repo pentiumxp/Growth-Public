@@ -341,3 +341,28 @@
     clear not depending on card state.
 - Production deployment for this card-route launch change is pending from the
   Home AI app workspace after commits are pushed.
+
+## 2026-06-10T06:30Z - Growth plugin card route deployed
+
+- Growth plugin commit pushed and deployed:
+  - `d169e5b` `fix: open routed growth cards`;
+  - synced to `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T062929Z-plugin-growth-growth-plugin-card-route`;
+  - `com.hermesmobile.plugin.growth` restarted and running.
+- Home AI companion commit pushed and deployed:
+  - `53f79e3` `fix: route growth task links to plugin`;
+  - production client version `20260610-growth-plugin-route-v681`.
+- Production smoke passed:
+  - Growth status for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`, `quick_check=ok`, and
+    `foreign_key_issues=0`;
+  - legacy Home AI URL
+    `view=learning&workspaceId=weixin_stephen&taskCardId=ltask_623826dec47f15e5`
+    launched the Growth plugin with `pluginRoute=card` and opened the card
+    detail for `Short writing: a careful check changed my plan`.
+- Remaining boundary:
+  - routed card launch is production-active;
+  - Home AI still owns legacy compatibility routing and remaining platform
+    workflows such as Action Inbox/Web Push and future administrator
+    Growth-coin-to-`通宝` exchange.
