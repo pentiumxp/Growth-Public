@@ -240,3 +240,35 @@
     `quick_check=ok`, and `foreign_key_check=0`.
 - Production deploy is still pending from the Home AI app workspace after both
   app and plugin commits are created.
+
+## 2026-06-10 Growth Evaluation Production Deployed
+
+- Growth plugin commit pushed:
+  - `690f8d1` `feat: process growth evaluations in plugin`.
+- Home AI app commit pushed:
+  - `f9ff704` `feat: proxy growth writes to plugin`.
+- Production deployment completed from the Home AI app workspace:
+  - Growth plugin source synced to
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - plugin deploy backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T055814Z-plugin-growth-growth-plugin-evaluation`;
+  - `com.hermesmobile.plugin.growth` LaunchDaemon was refreshed through
+    `scripts/install-growth-launchd-service.js --execute --bootstrap`.
+- Production LaunchDaemon environment now includes:
+  - `GROWTH_DATA_OWNER=plugin`;
+  - `GROWTH_EVALUATION_WORKER_ENABLED=1`;
+  - `GROWTH_EVALUATION_WORKER_INTERVAL_MS=30000`;
+  - `GROWTH_LEARNING_DB_PATH=/Users/hermes-host/HermesMobile/plugins/growth/data/growth-learning.sqlite3`.
+- Production smoke passed without writing fake learner data:
+  - Home AI status smoke ok, client version
+    `20260610-growth-plugin-shell-v680`, activeGlobal `0`;
+  - Growth status ok with `source=growth-plugin-sqlite`;
+  - Growth board for `weixin_stephen` returned 48 cards;
+  - host Growth manifest/proxy returned ok/HTTP 200;
+  - production Growth SQLite `quick_check=ok`, `foreign_key_check=0`;
+  - `weixin_stephen` counts observed: cards `48`, evaluations `24`,
+    reward settlements `5`, pending/retry/processing jobs `0`.
+- Remaining boundary:
+  - monthly administrator Growth-coin-to-`通宝` exchange/clearing workflow is
+    not implemented here;
+  - production smoke did not create a real learner submission, by design.
