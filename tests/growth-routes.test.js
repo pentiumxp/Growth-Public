@@ -133,18 +133,19 @@ test("growth event route requires registration bearer and emits bounded events",
   }
 });
 
-test("growth MCP execute route requires registration bearer", async () => {
+test("growth MCP execute route requires workspace bearer", async () => {
   const server = createServer({
     pluginService: {
       getManifest: () => ({}),
-      authorizeRegistration({ authorizationToken }) {
-        if (authorizationToken !== "registration-key") {
-          const error = new Error("Invalid registration credential");
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
           error.code = "permission_denied";
           error.statusCode = 403;
           error.expose = true;
           throw error;
         }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
       }
     },
     growthMcpExecutor: {
@@ -167,7 +168,7 @@ test("growth MCP execute route requires registration bearer", async () => {
     const accepted = await fetch(`${baseUrl}/api/v1/growth/mcp/execute`, {
       method: "POST",
       headers: {
-        authorization: "Bearer registration-key",
+        authorization: "Bearer workspace-key",
         "content-type": "application/json"
       },
       body: JSON.stringify({ name: "growth.get_status", input: { workspace_id: "growth:test" } })
@@ -176,6 +177,22 @@ test("growth MCP execute route requires registration bearer", async () => {
     const payload = JSON.parse((await accepted.json()).content[0].text);
     assert.equal(payload.name, "growth.get_status");
     assert.equal(payload.input.workspace_id, "growth:test");
+
+    const override = await fetch(`${baseUrl}/api/v1/growth/mcp/execute`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        name: "growth.get_status",
+        workspace_id: "growth:test",
+        input: { workspace_id: "growth:other" }
+      })
+    });
+    assert.equal(override.status, 200);
+    const overridePayload = JSON.parse((await override.json()).content[0].text);
+    assert.equal(overridePayload.input.workspace_id, "growth:test");
   } finally {
     await close(server);
   }

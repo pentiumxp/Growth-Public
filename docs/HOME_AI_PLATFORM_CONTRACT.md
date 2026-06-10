@@ -16,8 +16,8 @@ Home AI server into this plugin. The plugin can read the Home AI
 local snapshot store with readback metadata, normalize bounded Growth events,
 persist them through a local outbox, deliver them to the Home AI plugin
 notification endpoint when Home AI API credentials are configured, and expose a
-read-only MCP schema plus execute endpoint for bounded status, board, card
-list, and card detail projections.
+read-only MCP schema, workspace-key execute endpoint, and workspace-bound stdio
+wrapper for bounded status, board, card list, and card detail projections.
 
 Production Mac service deployment is still pending. The loopback production
 fields below reserve the standard Home AI plugin runtime contract for Growth;
@@ -55,9 +55,9 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `macos_production_base_url` | `http://127.0.0.1:4881` |
 | `launchd_label` | `com.hermesmobile.plugin.growth` |
 | `manifest_url` | `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` |
-| `mcp_command` | planned Gateway wrapper, not production-registered yet |
+| `mcp_command` | `node scripts/growth-mcp-wrapper.js --workspace <worker-workspace-root> --api-base-url http://127.0.0.1:4881 --no-workspace-override` |
 | `mcp_schema_endpoint` | `GET /api/v1/growth/mcp/schemas` read-only schemas for `growth.get_status`, `growth.get_board`, `growth.list_cards`, and `growth.get_card`. |
-| `mcp_execute_endpoint` | `POST /api/v1/growth/mcp/execute` with Growth registration bearer; executes read-only bounded tools. |
+| `mcp_execute_endpoint` | `POST /api/v1/growth/mcp/execute` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; executes read-only bounded tools. |
 | `migration_snapshot_import` | `POST /api/v1/growth/migrations/facade-snapshot` with Growth registration bearer; imports bounded Home AI facade board/card projections into plugin snapshot storage. |
 | `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
 | `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
@@ -98,6 +98,12 @@ must be extracted incrementally:
 5. submissions and async evaluation;
 6. mastery profile;
 7. MCP toolset and Reference / Memory Graph links.
+
+The current MCP wrapper is read-only and workspace-bound. It reads
+`.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips
+`workspace_id` from Gateway-facing tool schemas, rejects model-provided
+workspace overrides, and injects the bound workspace id into the plugin execute
+endpoint. Gateway profile registration in Home AI is still pending.
 
 Do not copy the full Home AI repository, deployment scripts, Gateway runtime,
 or central server composition into this plugin.

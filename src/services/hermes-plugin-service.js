@@ -62,6 +62,21 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
       return { ok: true };
     },
 
+    authorizeWorkspace({ authorizationToken, workspaceId }) {
+      const canonicalId = canonicalWorkspaceId(workspaceId);
+      const workspace = workspaceStore.get(canonicalId);
+      if (!workspace) {
+        throw routeError("workspace_not_found", "Growth workspace is not provisioned", 404);
+      }
+      requireWorkspaceAccessKey(workspace, authorizationToken);
+      return {
+        ok: true,
+        workspace_id: workspace.workspace_id,
+        hermes_workspace_id: workspace.hermes_workspace_id,
+        scopes: workspace.scopes
+      };
+    },
+
     provisionWorkspace({ authorizationToken, body }) {
       requireRegistrationKey(authorizationToken);
       const hermesWorkspaceId = String(

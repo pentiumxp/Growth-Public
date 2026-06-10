@@ -70,3 +70,26 @@
    workspace provisioning, and embedded UI harness pass.
 3. Add the Growth MCP toolset only after plugin-side data/API ownership is
    explicit.
+
+## 2026-06-10 Growth Workspace-Bound MCP Wrapper
+
+- Changed `POST /api/v1/growth/mcp/execute` from registration-key auth to
+  workspace-local `.hermes-growth/access-key.txt` bearer auth.
+- Added `pluginService.authorizeWorkspace()` so MCP execute can authorize the
+  exact provisioned `growth:<workspace>` binding.
+- Added `scripts/growth-mcp-wrapper.js`:
+  - reads `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`;
+  - requires `--no-workspace-override`;
+  - exposes local Gateway tool names `get_status`, `get_board`, `list_cards`,
+    and `get_card`;
+  - strips `workspace_id` from Gateway-facing tool schemas;
+  - rejects model-provided workspace overrides;
+  - injects the bound workspace id into plugin HTTP execute calls.
+- Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to record the wrapper command and
+  workspace-key execute boundary.
+- Validation passed:
+  - `npm run check`;
+  - `npm test`;
+  - focused route/service/wrapper tests.
+- Home AI Gateway profile/callable registration is still pending in the main
+  app workspace before production can expose `mcp_growth_*`.

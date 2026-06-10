@@ -29,11 +29,16 @@ async function handleGrowthRoute(request, response, url, services) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/mcp/execute") {
-    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
     const body = await readJson(request);
+    const input = body.input || body.arguments || {};
+    const workspaceId = body.workspace_id || body.workspaceId || input.workspace_id || input.workspaceId;
+    const authorized = services.pluginService.authorizeWorkspace({
+      authorizationToken: bearerFrom(request.headers),
+      workspaceId
+    });
     const result = await services.growthMcpExecutor.execute({
       name: body.name || body.tool_name || body.toolName,
-      input: body.input || body.arguments || {}
+      input: Object.assign({}, input, { workspace_id: authorized.workspace_id })
     });
     return sendJson(response, result.ok ? 200 : 404, result);
   }

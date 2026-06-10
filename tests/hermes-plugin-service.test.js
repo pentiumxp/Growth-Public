@@ -97,3 +97,39 @@ test("launches with the workspace access key rather than the registration key", 
   assert.match(launched.entry_url, /^\/\?embed=hermes&launch=/);
   assert.equal(launched.expires_in_ms, 60000);
 });
+
+test("authorizes workspace-scoped MCP access with workspace access key", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-plugin-test-"));
+  const store = createJsonWorkspaceStore({ filePath: path.join(dir, "workspaces.json") });
+  const service = createHermesPluginService({
+    config: {
+      registrationKey: "registration-key",
+      launchTokenTtlMs: 60000
+    },
+    workspaceStore: store
+  });
+
+  service.provisionWorkspace({
+    authorizationToken: "registration-key",
+    body: {
+      workspace_id: "family",
+      access_key_hash: sha256("workspace-access-key"),
+      display_name: "Family Growth"
+    }
+  });
+
+  assert.throws(() => {
+    service.authorizeWorkspace({
+      authorizationToken: "registration-key",
+      workspaceId: "family"
+    });
+  }, /Invalid workspace credential/);
+
+  const authorized = service.authorizeWorkspace({
+    authorizationToken: "workspace-access-key",
+    workspaceId: "family"
+  });
+  assert.equal(authorized.ok, true);
+  assert.equal(authorized.workspace_id, "growth:family");
+  assert.equal(authorized.hermes_workspace_id, "family");
+});
