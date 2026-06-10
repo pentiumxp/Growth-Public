@@ -31,20 +31,40 @@ function streamAudio(response, audio) {
   return false;
 }
 
+function requestedWorkspaceId(request, url, fallback = "growth:local-dev") {
+  return String(
+    url.searchParams.get("workspace_id")
+    || url.searchParams.get("workspaceId")
+    || request.headers["x-hermes-plugin-workspace-id"]
+    || fallback
+  );
+}
+
+function requestedActorRole(request) {
+  return String(request.headers["x-hermes-plugin-actor-role"] || "").trim().toLowerCase();
+}
+
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
-    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const workspaceId = requestedWorkspaceId(request, url);
     return sendJson(response, 200, await services.growthService.status({ workspaceId }));
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/board") {
-    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const workspaceId = requestedWorkspaceId(request, url);
     return sendJson(response, 200, await services.growthService.board({ workspaceId }));
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/view-targets") {
+    return sendJson(response, 200, services.pluginService.viewTargets({
+      actorRole: requestedActorRole(request),
+      currentWorkspaceId: requestedWorkspaceId(request, url, "")
+    }));
   }
 
   const cardMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)$/);
   if (request.method === "GET" && cardMatch) {
-    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const workspaceId = requestedWorkspaceId(request, url);
     const taskCardId = decodeURIComponent(cardMatch[1] || "");
     const result = await services.growthService.card({ workspaceId, taskCardId });
     return sendJson(response, result.ok ? 200 : 404, result);
@@ -129,7 +149,7 @@ async function handleGrowthRoute(request, response, url, services) {
 
   const audioMatch = url.pathname.match(/^\/api\/v1\/growth\/audio\/(submissions|reflections)\/([^/]+)$/);
   if (request.method === "GET" && audioMatch) {
-    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const workspaceId = requestedWorkspaceId(request, url);
     const recordType = audioMatch[1] === "submissions" ? "submission" : "reflection";
     const recordId = decodeURIComponent(audioMatch[2] || "");
     const audio = await services.growthService.audio({ workspaceId, recordType, recordId });

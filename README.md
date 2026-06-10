@@ -18,6 +18,9 @@ changes should be made in this repository, not in the Home AI host legacy
 - Embedded UI migrated from the previous Home AI Growth page and owned by this
   plugin under `public/growth-legacy-*` and
   `public/growth-homeai-legacy.css`.
+- Owner-only learner switcher in the Growth page top-right menu. It lists
+  Growth-provisioned workspaces only when embedded through Home AI with Owner
+  actor context; workspace users see only their own Growth target.
 - Growth API for status and board projection.
 - Plugin-owned Growth learning SQLite read model, with snapshot/facade fallback
   helpers retained for migration staging.

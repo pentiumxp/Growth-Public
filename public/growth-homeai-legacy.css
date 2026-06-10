@@ -11226,6 +11226,18 @@ body.task-markdown-preview-open {
   gap: 10px;
 }
 
+.learning-growth-board-summary-title {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.learning-growth-board-summary-title small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .learning-growth-settings-page {
   display: grid;
   gap: 8px;

@@ -73,6 +73,7 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `plugin_submission_write` | `POST /api/v1/growth/cards/:taskCardId/submissions` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; accepts bounded JSON text/audio evidence, resolves native task card ids or legacy `kanban_card_id`, writes plugin-owned submissions/audio BLOBs/sessions, and enqueues pending `learning_growth_evaluation_jobs` rows. |
 | `plugin_evaluation_processing` | `POST /api/v1/growth/evaluations/process` with the workspace-local bearer; claims due pending/retry jobs, writes bounded `learning_evaluations`, and marks jobs done/retry/failed. Optional dispatcher is controlled by `GROWTH_EVALUATION_WORKER_ENABLED` and `GROWTH_EVALUATION_WORKER_INTERVAL_MS`. |
 | `plugin_reflection_write` | `POST /api/v1/growth/cards/:taskCardId/reflections` with the workspace-local bearer; accepts bounded text/audio reflection evidence, resolves native task card ids or legacy `kanban_card_id`, writes `learning_task_reflections`, and stores optional reflection audio BLOBs. |
+| `plugin_view_targets` | `GET /api/v1/growth/view-targets`; returns Growth-provisioned view targets. Through the Home AI proxy, only `x-hermes-plugin-actor-role=owner` receives multiple targets. Workspace actors receive only their current workspace target and cannot enumerate other Growth users. |
 | `historical_audio_blob_backfill` | `npm run backfill:audio-blobs -- --db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --legacy-audio-root <Home-AI-data-root> --dry-run --json`; use `--write` only after dry-run shows acceptable `would_backfill`, `file_missing`, and sample evidence. |
 | `legacy_audio_roots` | `GROWTH_LEGACY_AUDIO_ROOTS`, path-delimited; optional override for old Home AI artifact roots. If omitted, the plugin derives the standard sibling Home AI `data` root from its workspace. Do not expose raw absolute file paths to clients. |
 | `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
@@ -159,6 +160,13 @@ plugin must open that card detail after loading the board. Compatibility Home AI
 links using `view=learning&taskCardId=<taskCardId>` are converted by the host
 before launch and must not require the plugin to know about the legacy host
 view.
+
+Owner cross-learner viewing is a Growth plugin UI/API responsibility. Home AI
+does not pass secrets to enable it; the same-origin proxy sends bounded actor
+headers only. The plugin uses `GET /api/v1/growth/view-targets` to build the
+right-top switcher. Only Owner actor context may list and switch among all
+Growth-provisioned workspaces. Non-Owner workspace actor context receives only
+the current Growth workspace target.
 
 The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips

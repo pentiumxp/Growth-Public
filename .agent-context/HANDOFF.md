@@ -415,3 +415,31 @@
     console errors.
 - Unauthenticated Home AI host smoke reached the Access Key screen before any
   Growth iframe was rendered, which is expected without a browser login state.
+
+## 2026-06-10T08:05Z - Owner-only Growth view switcher ready
+
+- Added Owner-only learner/workspace switching inside the Growth plugin UI:
+  - `GET /api/v1/growth/view-targets` returns all Growth-provisioned targets
+    only when `x-hermes-plugin-actor-role=owner`;
+  - workspace actor context receives only the current workspace target and
+    cannot enumerate other Growth users;
+  - board/card reads now fall back to the proxy
+    `x-hermes-plugin-workspace-id` header when no query workspace is present;
+  - the Growth board page renders a right-top menu for Owner context and
+    switches by reloading plugin-owned status/board/card projections for the
+    selected workspace.
+- Home AI host companion change:
+  - same-origin plugin proxy forwards only bounded actor headers:
+    `x-hermes-plugin-actor-role=owner|workspace` and
+    `x-hermes-plugin-actor-workspace-id`;
+  - it does not pass broad workspace lists or secrets.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 47 passing tests;
+  - `node --test tests/hermes-plugin-service.test.js tests/growth-routes.test.js tests/growth-service.test.js`;
+  - direct Playwright smoke on a temporary local store/port `4898` proved Owner
+    sees targets `weixin_stephen` and `owner`, can switch to owner, and
+    workspace actor context shows no switcher;
+  - `git diff --check`.
+- Production deployment is pending until both Growth plugin and Home AI app
+  companion commits are pushed.

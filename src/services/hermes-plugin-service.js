@@ -54,6 +54,20 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
     return raw.startsWith("growth:") ? raw : `growth:${raw}`;
   }
 
+  function hermesWorkspaceId(value) {
+    return String(value || "").trim().replace(/^growth:/, "");
+  }
+
+  function publicWorkspaceTarget(workspace, currentHermesWorkspaceId = "") {
+    const hermesId = hermesWorkspaceId(workspace?.hermes_workspace_id || workspace?.workspace_id);
+    return {
+      workspaceId: hermesId,
+      growthWorkspaceId: workspace?.workspace_id || (hermesId ? canonicalWorkspaceId(hermesId) : ""),
+      label: String(workspace?.display_name || hermesId || "Growth").trim(),
+      current: Boolean(currentHermesWorkspaceId && hermesId === currentHermesWorkspaceId)
+    };
+  }
+
   return {
     getManifest,
 
@@ -142,6 +156,31 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
         scopes: workspace.scopes,
         updated_at: workspace.updated_at
       }));
+    },
+
+    viewTargets({ actorRole = "", currentWorkspaceId = "" } = {}) {
+      const role = String(actorRole || "").trim().toLowerCase() === "owner" ? "owner" : "workspace";
+      const currentHermesWorkspaceId = hermesWorkspaceId(currentWorkspaceId);
+      const workspaces = workspaceStore.list();
+      const visible = role === "owner"
+        ? workspaces
+        : workspaces.filter((workspace) => hermesWorkspaceId(workspace.hermes_workspace_id || workspace.workspace_id) === currentHermesWorkspaceId);
+      const targets = visible
+        .map((workspace) => publicWorkspaceTarget(workspace, currentHermesWorkspaceId))
+        .filter((target) => target.workspaceId)
+        .sort((left, right) => {
+          if (left.current !== right.current) return left.current ? -1 : 1;
+          return left.label.localeCompare(right.label, "zh-Hans-CN");
+        });
+      return {
+        ok: true,
+        viewer: {
+          role,
+          canSwitch: role === "owner" && targets.length > 1
+        },
+        current_workspace_id: currentHermesWorkspaceId,
+        targets
+      };
     }
   };
 }

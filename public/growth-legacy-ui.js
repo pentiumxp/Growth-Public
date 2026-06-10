@@ -1041,6 +1041,27 @@
     </div>`;
   }
 
+  function renderGrowthViewTargetMenu(options = {}, learner = {}) {
+    if (!isOwner(options)) return "";
+    const escapeHtml = optionFn(options, "escapeHtml", defaultEscapeHtml);
+    const targets = Array.isArray(options.viewTargets) ? options.viewTargets : [];
+    const currentWorkspaceId = String(learner.workspaceId || options.workspaceId || "");
+    const visibleTargets = targets.filter((target) => String(target?.workspaceId || "").trim());
+    if (visibleTargets.length < 2) return "";
+    return `<details class="learning-growth-owner-menu" data-growth-view-target-menu>
+      <summary aria-label="切换执行者">...</summary>
+      <div class="learning-growth-owner-menu-panel">
+        ${visibleTargets.map((target) => {
+          const id = String(target.workspaceId || "");
+          const active = Boolean(target.current || id === currentWorkspaceId);
+          return `<button type="button" data-growth-view-target="${escapeHtml(id)}" ${active ? "disabled" : ""}>
+            ${escapeHtml(target.label || id)}
+          </button>`;
+        }).join("")}
+      </div>
+    </details>`;
+  }
+
   function renderLearningGrowthView(options = {}) {
     const escapeHtml = optionFn(options, "escapeHtml", defaultEscapeHtml);
     const overview = options.overview || {};
@@ -1062,6 +1083,7 @@
     const boardHtml = overview.board ? renderLearningGrowthBoard(overview.board, Object.assign({}, options, {
       workspaceId: overview.learner?.workspaceId || options.workspaceId || "",
     })) : "";
+    const targetMenu = renderGrowthViewTargetMenu(options, learner);
     const programUi = options.programUi || ProgramUi;
     const availableCoins = Number(coins.balances?.availableCoins || 0);
     const historicalCoins = Number(metrics.totalEarnedCoins
@@ -1078,6 +1100,13 @@
     }
     return `<div class="learning-growth-view learning-growth-board-page" data-learning-product="fanfan-growth" data-learning-role="${owner ? "owner" : "executor"}">
       <section class="learning-growth-board-summary" data-learning-growth-board-summary>
+        <div class="learning-growth-board-summary-head">
+          <span class="learning-growth-board-summary-title">
+            <strong>${escapeHtml(moduleInfo.title || "\u6210\u957f")}</strong>
+            <small>${escapeHtml(learnerLabel)}</small>
+          </span>
+          ${targetMenu}
+        </div>
         <div class="learning-growth-board-summary-metrics" aria-label="\u6210\u957f\u6982\u89c8">
           <span><small>\u6267\u884c\u8005</small><b>${escapeHtml(learnerLabel)}</b></span>
           <span><small>\u7d2f\u8ba1\u91d1\u5e01</small><b>${escapeHtml(coinText)}</b></span>

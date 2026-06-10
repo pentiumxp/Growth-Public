@@ -133,6 +133,89 @@ test("growth event route requires registration bearer and emits bounded events",
   }
 });
 
+test("growth view targets are owner-only and use proxy workspace headers", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace", canSwitch: input.actorRole === "owner" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: true },
+                { workspaceId: "weixin_wuping", label: "吴萍", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/view-targets`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(ownerResponse.status, 200);
+    const ownerBody = await ownerResponse.json();
+    assert.equal(ownerBody.viewer.role, "owner");
+    assert.equal(ownerBody.targets.length, 2);
+    assert.deepEqual(calls[0], { actorRole: "owner", currentWorkspaceId: "weixin_stephen" });
+
+    const memberResponse = await fetch(`${baseUrl}/api/v1/growth/view-targets`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberResponse.status, 200);
+    const memberBody = await memberResponse.json();
+    assert.equal(memberBody.viewer.role, "workspace");
+    assert.equal(memberBody.targets.length, 1);
+    assert.deepEqual(calls[1], { actorRole: "workspace", currentWorkspaceId: "weixin_stephen" });
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth read routes fall back to proxy workspace header", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({})
+    },
+    growthService: {
+      async status(input) {
+        calls.push({ type: "status", input });
+        return { ok: true, workspace_id: input.workspaceId };
+      },
+      async board(input) {
+        calls.push({ type: "board", input });
+        return { ok: true, workspace_id: input.workspaceId, cards: [], lanes: [], summary: { total: 0 } };
+      }
+    }
+  });
+  const baseUrl = await listen(server);
+  try {
+    const headers = { "x-hermes-plugin-workspace-id": "weixin_stephen" };
+    assert.equal((await fetch(`${baseUrl}/api/v1/growth/status`, { headers })).status, 200);
+    assert.equal((await fetch(`${baseUrl}/api/v1/growth/board`, { headers })).status, 200);
+    assert.deepEqual(calls, [
+      { type: "status", input: { workspaceId: "weixin_stephen" } },
+      { type: "board", input: { workspaceId: "weixin_stephen" } }
+    ]);
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth MCP execute route requires workspace bearer", async () => {
   const server = createServer({
     pluginService: {

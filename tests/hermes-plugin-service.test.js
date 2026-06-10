@@ -38,6 +38,45 @@ test("provisions canonical growth workspaces without storing raw keys", () => {
   assert.doesNotMatch(persisted, /workspace-access-key/);
 });
 
+test("lists switchable Growth targets for owner only", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-plugin-test-"));
+  const store = createJsonWorkspaceStore({ filePath: path.join(dir, "workspaces.json") });
+  const service = createHermesPluginService({
+    config: {
+      registrationKey: "registration-key",
+      launchTokenTtlMs: 60000
+    },
+    workspaceStore: store
+  });
+
+  service.provisionWorkspace({
+    authorizationToken: "registration-key",
+    body: {
+      workspace_id: "weixin_stephen",
+      access_key_hash: sha256("stephen-key"),
+      display_name: "Stephen"
+    }
+  });
+  service.provisionWorkspace({
+    authorizationToken: "registration-key",
+    body: {
+      workspace_id: "weixin_wuping",
+      access_key_hash: sha256("wuping-key"),
+      display_name: "吴萍"
+    }
+  });
+
+  const ownerTargets = service.viewTargets({ actorRole: "owner", currentWorkspaceId: "weixin_stephen" });
+  assert.equal(ownerTargets.viewer.role, "owner");
+  assert.equal(ownerTargets.viewer.canSwitch, true);
+  assert.deepEqual(ownerTargets.targets.map((target) => target.workspaceId).sort(), ["weixin_stephen", "weixin_wuping"]);
+
+  const memberTargets = service.viewTargets({ actorRole: "workspace", currentWorkspaceId: "weixin_stephen" });
+  assert.equal(memberTargets.viewer.role, "workspace");
+  assert.equal(memberTargets.viewer.canSwitch, false);
+  assert.deepEqual(memberTargets.targets.map((target) => target.workspaceId), ["weixin_stephen"]);
+});
+
 test("fails closed when registration key is missing", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-plugin-test-"));
   const store = createJsonWorkspaceStore({ filePath: path.join(dir, "workspaces.json") });

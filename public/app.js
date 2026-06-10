@@ -1,12 +1,11 @@
 (async function bootGrowthPlugin() {
   const root = document.getElementById("growth-root") || document.querySelector(".growth-shell");
   const params = new URLSearchParams(window.location.search);
-  const workspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
+  let currentWorkspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
   const pluginRoute = (params.get("pluginRoute") || params.get("route") || "").trim().toLowerCase();
   const pluginItemId = (params.get("pluginItemId") || params.get("itemId") || params.get("taskCardId") || "").trim();
-  const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
   const pageState = {
-    auth: { isOwner: true },
+    auth: { isOwner: false },
     learningGrowthActiveTab: "overview",
     learningGrowthBoardLane: "",
     learningGrowthSettingsOpen: false,
@@ -20,7 +19,7 @@
     learningGrowthTeachingCheckBusy: {},
     learningGrowthStageAssessmentActivating: {},
   };
-  const model = { status: null, board: null, overview: null, detailCache: new Map() };
+  const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
 
   function clean(value) {
     return String(value ?? "").trim();
@@ -35,7 +34,24 @@
       .replace(/'/g, "&#39;");
   }
 
-  function learnerLabel() {
+  function workspaceQuery(targetWorkspaceId = currentWorkspaceId) {
+    return targetWorkspaceId ? `?workspaceId=${encodeURIComponent(targetWorkspaceId)}` : "";
+  }
+
+  function updateWorkspaceUrl() {
+    if (!currentWorkspaceId || typeof window.history?.replaceState !== "function") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("workspaceId", currentWorkspaceId);
+    window.history.replaceState(null, "", url.toString());
+  }
+
+  function targetForWorkspace(workspaceId = currentWorkspaceId) {
+    return (model.viewTargets || []).find((target) => clean(target.workspaceId) === clean(workspaceId)) || null;
+  }
+
+  function learnerLabel(workspaceId = currentWorkspaceId) {
+    const target = targetForWorkspace(workspaceId);
+    if (target?.label) return target.label;
     if (workspaceId === "weixin_stephen") return "Stephen";
     if (workspaceId === "weixin_wuping") return "吴萍";
     return workspaceId || "执行者";
@@ -62,7 +78,7 @@
     return Object.assign({}, card, {
       id,
       taskCardId: id,
-      workspaceId: clean(card.workspaceId || workspaceId),
+      workspaceId: clean(card.workspaceId || currentWorkspaceId),
       title: clean(card.title) || id || "学习任务",
       status: clean(card.status || card.nextAction || card.primaryAction || "published"),
       nextAction: clean(card.nextAction || card.primaryAction || "submit"),
@@ -106,8 +122,8 @@
       ok: true,
       source: board.source || status.source || "growth-plugin",
       learner: {
-        id: workspaceId || "owner",
-        workspaceId: workspaceId || "owner",
+        id: currentWorkspaceId || "owner",
+        workspaceId: currentWorkspaceId || "owner",
         displayName: learnerLabel(),
       },
       module: {
@@ -169,8 +185,10 @@
     root.innerHTML = growthUi.renderLearningGrowthView({
       overview: model.overview,
       state: pageState,
-      workspaceId,
-      learnerId: workspaceId,
+      workspaceId: currentWorkspaceId,
+      learnerId: currentWorkspaceId,
+      viewTargets: model.viewTargets,
+      viewer: model.viewer,
       coins: model.overview?.coins || {},
       programUi: window.HermesLearningProgramUi,
       coinsUi: window.HermesLearningCoinsUi,
@@ -195,11 +213,12 @@
     pageState.learningGrowthSettingsOpen = false;
     pageState.learningGrowthHistoryTaskCardId = "";
     pageState.selectedLearningTaskCardId = id;
-    if (!model.detailCache.has(id)) {
-      const result = await fetchJson(`/api/v1/growth/cards/${encodeURIComponent(id)}${query}`);
-      if (result.card) model.detailCache.set(id, normalizeCard(result.card));
+    const cacheKey = `${currentWorkspaceId}:${id}`;
+    if (!model.detailCache.has(cacheKey)) {
+      const result = await fetchJson(`/api/v1/growth/cards/${encodeURIComponent(id)}${workspaceQuery()}`);
+      if (result.card) model.detailCache.set(cacheKey, normalizeCard(result.card));
     }
-    const detail = model.detailCache.get(id);
+    const detail = model.detailCache.get(cacheKey);
     if (detail) {
       const cards = model.overview?.programs?.taskCards || [];
       const index = cards.findIndex((card) => clean(card.taskCardId) === id);
@@ -239,18 +258,63 @@
         renderShell();
       });
     });
+    root.querySelectorAll("[data-growth-view-target]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const nextWorkspaceId = clean(button.dataset.growthViewTarget);
+        if (!nextWorkspaceId || nextWorkspaceId === currentWorkspaceId) return;
+        switchWorkspace(nextWorkspaceId).catch((error) => {
+          root.insertAdjacentHTML("afterbegin", `<div class="learning-error">${escapeHtml(error.message || String(error))}</div>`);
+        });
+      });
+    });
   }
 
-  async function load() {
-    root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
+  async function loadViewTargets() {
+    const result = await fetchJson(`/api/v1/growth/view-targets${workspaceQuery()}`);
+    model.viewer = result.viewer || null;
+    model.viewTargets = Array.isArray(result.targets) ? result.targets : [];
+    pageState.auth.isOwner = result.viewer?.role === "owner";
+    const current = clean(result.current_workspace_id || currentWorkspaceId);
+    const targetExists = model.viewTargets.some((target) => clean(target.workspaceId) === clean(currentWorkspaceId));
+    if (!currentWorkspaceId && current) currentWorkspaceId = current;
+    if (!targetExists && model.viewTargets[0]?.workspaceId) currentWorkspaceId = clean(model.viewTargets[0].workspaceId);
+    model.viewTargets = model.viewTargets.map((target) => Object.assign({}, target, {
+      current: clean(target.workspaceId) === clean(currentWorkspaceId),
+    }));
+    updateWorkspaceUrl();
+  }
+
+  async function loadCurrentWorkspace() {
     const [status, board] = await Promise.all([
-      fetchJson(`/api/v1/growth/status${query}`),
-      fetchJson(`/api/v1/growth/board${query}`),
+      fetchJson(`/api/v1/growth/status${workspaceQuery()}`),
+      fetchJson(`/api/v1/growth/board${workspaceQuery()}`),
     ]);
     model.status = status;
     model.board = board;
     model.overview = makeOverview(status, board);
     pageState.learningGrowthBoardLane = clean(model.overview.board.lanes[0]?.id);
+  }
+
+  async function switchWorkspace(nextWorkspaceId) {
+    currentWorkspaceId = clean(nextWorkspaceId);
+    updateWorkspaceUrl();
+    model.detailCache.clear();
+    pageState.selectedLearningTaskCardId = "";
+    pageState.learningGrowthHistoryTaskCardId = "";
+    pageState.learningGrowthSettingsTaskId = "";
+    model.viewTargets = model.viewTargets.map((target) => Object.assign({}, target, {
+      current: clean(target.workspaceId) === clean(currentWorkspaceId),
+    }));
+    root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
+    await loadCurrentWorkspace();
+    renderShell();
+  }
+
+  async function load() {
+    root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
+    await loadViewTargets();
+    await loadCurrentWorkspace();
     if (pluginRoute === "settings") pageState.learningGrowthSettingsOpen = true;
     renderShell();
     if (pluginRoute === "card" && pluginItemId) {
