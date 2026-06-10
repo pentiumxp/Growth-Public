@@ -62,6 +62,7 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `mcp_command` | `node scripts/growth-mcp-wrapper.js --workspace <worker-workspace-root> --api-base-url http://127.0.0.1:4881 --no-workspace-override` |
 | `mcp_schema_endpoint` | `GET /api/v1/growth/mcp/schemas` read-only schemas for `growth.get_status`, `growth.get_board`, `growth.list_cards`, and `growth.get_card`. |
 | `mcp_execute_endpoint` | `POST /api/v1/growth/mcp/execute` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; executes read-only bounded tools. |
+| `mcp_gateway_worker_files` | Home AI materializes `scripts/growth-mcp-wrapper.js` and `src/mcp/growth-mcp-schemas.js` into `<Home-AI-root>/gateway-worker/growth-mcp` before Gateway profile rendering. Copying only the wrapper is invalid because it imports the schema module. |
 | `migration_snapshot_import` | `POST /api/v1/growth/migrations/facade-snapshot` with Growth registration bearer; imports bounded Home AI facade board/card projections into plugin snapshot storage. |
 | `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
 | `migration_sqlite_import` | `npm run import:learning-sqlite -- --source-db <backup.sqlite3> --target-db <plugin-data>/growth-learning.sqlite3 --write --workspace-id <workspace>`; copies a verified learning-growth SQLite backup into plugin-owned storage with backup/readback metadata. |
@@ -126,7 +127,14 @@ The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips
 `workspace_id` from Gateway-facing tool schemas, rejects model-provided
 workspace overrides, and injects the bound workspace id into the plugin execute
-endpoint. Gateway profile registration in Home AI is still pending.
+endpoint. `growth.list_cards` returns summary-only card records and must not
+include task instructions or `instructionPreview`. Home AI development Gateway
+materialization has been verified for `weixin_stephen`: the workspace
+provisioning executor syncs the required worker file set, mirrors
+`.hermes-growth` into `/Users/<hm-user>/HermesWorkspace`, renders profile YAML,
+and writes `toolsets`, `mcpServers`, and `configPath` back to the Gateway
+manifest. Production Gateway callables remain pending until the Growth
+production service and first-install deploy are completed.
 
 Do not copy the full Home AI repository, deployment scripts, Gateway runtime,
 or central server composition into this plugin.

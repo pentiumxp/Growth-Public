@@ -27,7 +27,7 @@ test("executes read-only Growth MCP tools through bounded service projections", 
       board: async ({ workspaceId }) => ({
         ok: true,
         workspace_id: workspaceId,
-        cards: [{ taskCardId: "card_1", title: "Read" }],
+        cards: [{ taskCardId: "card_1", title: "Read", instructionPreview: "Do not expose in list.", status: "published" }],
         summary: { total: 1 }
       }),
       card: async ({ workspaceId, taskCardId }) => ({ ok: true, workspace_id: workspaceId, card: { taskCardId } })
@@ -38,7 +38,10 @@ test("executes read-only Growth MCP tools through bounded service projections", 
   assert.equal(JSON.parse(status.content[0].text).stage, "host_facade");
 
   const cards = await executor.execute({ name: "growth.list_cards", input: { workspace_id: "growth:test" } });
-  assert.equal(JSON.parse(cards.content[0].text).cards[0].taskCardId, "card_1");
+  const cardsPayload = JSON.parse(cards.content[0].text);
+  assert.equal(cardsPayload.cards[0].taskCardId, "card_1");
+  assert.equal(cardsPayload.cards[0].status, "published");
+  assert.equal(Object.hasOwn(cardsPayload.cards[0], "instructionPreview"), false);
 
   const card = await executor.execute({ name: "growth.get_card", input: { workspace_id: "growth:test", task_card_id: "card_1" } });
   assert.equal(JSON.parse(card.content[0].text).card.taskCardId, "card_1");

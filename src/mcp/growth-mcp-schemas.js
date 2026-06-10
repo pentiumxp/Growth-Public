@@ -70,6 +70,21 @@ function textContent(value) {
   return [{ type: "text", text: JSON.stringify(value) }];
 }
 
+function compactCardSummary(card = {}) {
+  return {
+    taskCardId: card.taskCardId || "",
+    title: card.title || "",
+    status: card.status || "",
+    domain: card.domain || "",
+    cardRole: card.cardRole || "",
+    plannedDate: card.plannedDate || "",
+    nextAction: card.nextAction || card.primaryAction || "",
+    submissionCount: Number(card.submissionCount || 0),
+    evaluationCount: Number(card.evaluationCount || 0),
+    artifactCount: Number(card.artifactCount || 0)
+  };
+}
+
 function createGrowthMcpExecutor({ growthService }) {
   return {
     async execute({ name, input = {} } = {}) {
@@ -86,7 +101,7 @@ function createGrowthMcpExecutor({ growthService }) {
           content: textContent({
             ok: board.ok !== false,
             workspace_id: board.workspace_id,
-            cards: Array.isArray(board.cards) ? board.cards : [],
+            cards: Array.isArray(board.cards) ? board.cards.map(compactCardSummary) : [],
             summary: board.summary || null,
             source: board.source || ""
           })

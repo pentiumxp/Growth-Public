@@ -36,9 +36,10 @@ async function handleGrowthRoute(request, response, url, services) {
       authorizationToken: bearerFrom(request.headers),
       workspaceId
     });
+    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
     const result = await services.growthMcpExecutor.execute({
       name: body.name || body.tool_name || body.toolName,
-      input: Object.assign({}, input, { workspace_id: authorized.workspace_id })
+      input: Object.assign({}, input, { workspace_id: serviceWorkspaceId })
     });
     return sendJson(response, result.ok ? 200 : 404, result);
   }

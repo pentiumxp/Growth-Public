@@ -134,3 +134,32 @@
   - focused route/service/wrapper tests.
 - Home AI Gateway profile/callable registration is still pending in the main
   app workspace before production can expose `mcp_growth_*`.
+
+## 2026-06-10 Growth MCP Dev Gateway Closure
+
+- Tightened plugin MCP execution:
+  - `POST /api/v1/growth/mcp/execute` maps the authorized
+    `growth:<workspace>` binding back to the Hermes workspace id before calling
+    the Growth service, so plugin-owned SQLite reads use `weixin_stephen`
+    rather than `growth:weixin_stephen`.
+  - `growth.list_cards` now returns summary-only card records:
+    `taskCardId`, `title`, `status`, `domain`, `cardRole`, `plannedDate`,
+    `nextAction`, `submissionCount`, `evaluationCount`, and `artifactCount`.
+    It must not expose `instructionPreview` or full task instructions.
+- Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to record that Home AI
+  materializes both `scripts/growth-mcp-wrapper.js` and
+  `src/mcp/growth-mcp-schemas.js` into `gateway-worker/growth-mcp`; copying
+  only the wrapper breaks runtime imports.
+- Home AI dev Gateway materialization is now proven for `weixin_stephen`:
+  - worker user: `hm-weixin-stephen`;
+  - local MCP tool names: `get_status`, `get_board`, `list_cards`, `get_card`;
+  - `list_cards` returned 48 plugin-owned SQLite cards with no
+    `instructionPreview`;
+  - Home AI dev manifest/toolset smoke passed for Growth on `lowgw1`/`lowgw2`.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-mcp-schemas.test.js tests/growth-routes.test.js tests/growth-mcp-wrapper.test.js tests/growth-learning-sqlite-store.test.js`.
+- Production Growth service/Gateway callables remain pending. Do not claim
+  `mcp_growth_*` production availability until Home AI first-install deploy,
+  launchd bootstrap, health/proxy smokes, and selected production Gateway
+  callable-schema checks pass.

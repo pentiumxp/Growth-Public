@@ -176,7 +176,7 @@ test("growth MCP execute route requires workspace bearer", async () => {
     assert.equal(accepted.status, 200);
     const payload = JSON.parse((await accepted.json()).content[0].text);
     assert.equal(payload.name, "growth.get_status");
-    assert.equal(payload.input.workspace_id, "growth:test");
+    assert.equal(payload.input.workspace_id, "test");
 
     const override = await fetch(`${baseUrl}/api/v1/growth/mcp/execute`, {
       method: "POST",
@@ -192,7 +192,7 @@ test("growth MCP execute route requires workspace bearer", async () => {
     });
     assert.equal(override.status, 200);
     const overridePayload = JSON.parse((await override.json()).content[0].text);
-    assert.equal(overridePayload.input.workspace_id, "growth:test");
+    assert.equal(overridePayload.input.workspace_id, "test");
   } finally {
     await close(server);
   }
