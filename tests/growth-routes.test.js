@@ -132,3 +132,51 @@ test("growth event route requires registration bearer and emits bounded events",
     await close(server);
   }
 });
+
+test("growth MCP execute route requires registration bearer", async () => {
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeRegistration({ authorizationToken }) {
+        if (authorizationToken !== "registration-key") {
+          const error = new Error("Invalid registration credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+      }
+    },
+    growthMcpExecutor: {
+      async execute({ name, input }) {
+        return { ok: true, content: [{ type: "text", text: JSON.stringify({ name, input }) }] };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/mcp/execute`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "growth.get_status", input: { workspace_id: "growth:test" } })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/mcp/execute`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer registration-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ name: "growth.get_status", input: { workspace_id: "growth:test" } })
+    });
+    assert.equal(accepted.status, 200);
+    const payload = JSON.parse((await accepted.json()).content[0].text);
+    assert.equal(payload.name, "growth.get_status");
+    assert.equal(payload.input.workspace_id, "growth:test");
+  } finally {
+    await close(server);
+  }
+});

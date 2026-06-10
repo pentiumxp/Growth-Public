@@ -28,6 +28,16 @@ async function handleGrowthRoute(request, response, url, services) {
     });
   }
 
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/mcp/execute") {
+    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
+    const body = await readJson(request);
+    const result = await services.growthMcpExecutor.execute({
+      name: body.name || body.tool_name || body.toolName,
+      input: body.input || body.arguments || {}
+    });
+    return sendJson(response, result.ok ? 200 : 404, result);
+  }
+
   if (request.method === "POST" && url.pathname === "/api/v1/growth/events") {
     services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
     const body = await readJson(request);

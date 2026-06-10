@@ -19,7 +19,8 @@ contract.
   checks for migration staging.
 - Bounded Growth event outbox and delivery to the Home AI plugin notification
   endpoint.
-- Read-only Growth MCP schema scaffold.
+- Read-only Growth MCP schema and execute endpoint for status, board, card
+  list, and card detail projections.
 
 ## Non-Goals
 
@@ -72,4 +73,15 @@ curl -X POST http://127.0.0.1:4881/api/v1/growth/events \
   -H "Authorization: Bearer $GROWTH_REGISTRATION_KEY" \
   -H "Content-Type: application/json" \
   --data '{"eventId":"event-1","type":"growth.card.completed","workspaceId":"growth:local-dev","taskCardId":"card-1","summary":"Card completed."}'
+```
+
+Read-only MCP schema and execution:
+
+```bash
+curl http://127.0.0.1:4881/api/v1/growth/mcp/schemas
+
+curl -X POST http://127.0.0.1:4881/api/v1/growth/mcp/execute \
+  -H "Authorization: Bearer $GROWTH_REGISTRATION_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"name":"growth.get_board","input":{"workspace_id":"growth:local-dev"}}'
 ```
