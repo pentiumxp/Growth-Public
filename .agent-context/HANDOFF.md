@@ -11,8 +11,7 @@
 
 ## 2026-06-10 Growth Legacy UI Parity Projection
 
-- Status: implemented and locally validated, not committed, not pushed, not
-  deployed to production.
+- Status: committed, pushed, deployed to Mac production, and production-smoked.
 - Changed files:
   - `public/app.js`;
   - `src/stores/growth-learning-sqlite-store.js`;
@@ -42,6 +41,23 @@
 - Home AI embedded iOS visual harness passed against the local Home AI dev
   listener and this plugin code, screenshot:
   `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260610T095815Z.png`.
+- Commit pushed:
+  - `c914cf4c79ff` (`修复成长插件旧版看板投影`).
+- Production deploy completed:
+  - target: plugin `growth`;
+  - deployed source ref: `c914cf4c79ff`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T101828Z-plugin-growth-growth-ui-parity`;
+  - launchd label: `com.hermesmobile.plugin.growth`, running after deploy.
+- Production board smoke passed for `weixin_stephen`:
+  - `source=growth-plugin-sqlite`;
+  - 9 visible cards;
+  - 21 hidden future sequence cards;
+  - lanes `ready:2`, `needs_revision:5`, `completed_recent:2`;
+  - no cancelled/retired/superseded visible cards.
+- Production Home AI embedded iOS visual harness passed with client version
+  `20260610-growth-ui-parity-v683`; screenshot:
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260610T102523Z.png`.
 - Validation passed:
   - `npm run check`;
   - `npm test`;
