@@ -11,6 +11,8 @@ function readEnv(env = process.env) {
     eventOutboxStorePath: env.GROWTH_EVENT_OUTBOX_STORE_PATH || path.join(dataDir, "growth-event-outbox.json"),
     learningDbPath: env.GROWTH_LEARNING_DB_PATH || path.join(dataDir, "growth-learning.sqlite3"),
     dataOwner: env.GROWTH_DATA_OWNER || "home-ai",
+    evaluationWorkerEnabled: ["1", "true", "yes", "on"].includes(String(env.GROWTH_EVALUATION_WORKER_ENABLED || "").trim().toLowerCase()),
+    evaluationWorkerIntervalMs: Math.max(5000, Number(env.GROWTH_EVALUATION_WORKER_INTERVAL_MS || 30000) || 30000),
     registrationKey: env.GROWTH_REGISTRATION_KEY || readSecretFile(env.GROWTH_REGISTRATION_KEY_PATH),
     homeAiApiBaseUrl: env.GROWTH_HOME_AI_API_BASE_URL || env.HOME_AI_API_BASE_URL || env.HERMES_MOBILE_API_BASE_URL || "",
     homeAiAccessKey: env.GROWTH_HOME_AI_ACCESS_KEY || env.HOME_AI_ACCESS_KEY || readSecretFile(env.GROWTH_HOME_AI_ACCESS_KEY_PATH || env.HOME_AI_ACCESS_KEY_PATH),

@@ -21,8 +21,14 @@ Home AI contract links.
   `GROWTH_REGISTRATION_KEY_PATH`.
 - Workspace binding: `.hermes-growth/config.json` and
   `.hermes-growth/access-key.txt`.
-- Current implementation is scaffold-only. It does not yet own Home AI
-  learning-growth data or MCP tools.
+- Current implementation owns plugin SQLite read projections, migrated audio
+  playback, historical audio BLOB backfill tooling, workspace-bound read-only
+  MCP tools, workspace-bearer submission/reflection evidence write endpoints,
+  async evaluation processing, per-card Growth learning coin settlement, and
+  bounded completion/mastery/review event emission.
+- Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
+  handoff, and Owner manual decision flows remain in Home AI until their own
+  migration stages are implemented and validated.
 
 ## Development Rule
 

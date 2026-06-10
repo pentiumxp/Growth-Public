@@ -20,8 +20,12 @@ read-only MCP schema, workspace-key execute endpoint, workspace-bound stdio
 wrapper for bounded status, board, card list, and card detail projections, and
 plugin-owned playback routes for migrated submission/reflection audio. It also
 has a plugin-owned SQLite migration/readback path for full learning-growth
-table copies from an explicit backup or development copy. The Mac production
-embedded plugin path now uses this SQLite read path when
+table copies from an explicit backup or development copy, plus a
+workspace-bearer submission write endpoint that persists new text/audio
+evidence and queues a pending Growth evaluation job, and a lightweight
+evaluation processor that writes bounded evaluation records, plus plugin-owned
+reflection evidence writes. The Mac production embedded plugin path now uses
+this SQLite read path when
 `GROWTH_DATA_OWNER=plugin` is set.
 
 ## Canonical Home AI Docs
@@ -66,6 +70,9 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `plugin_learning_db_path` | `GROWTH_LEARNING_DB_PATH`, default `data/growth-learning.sqlite3`. |
 | `plugin_data_owner_switch` | `GROWTH_DATA_OWNER=plugin` makes the plugin prefer plugin-owned SQLite for status, board, and card reads. Default remains `home-ai` facade first. |
 | `plugin_audio_playback` | `GET /api/v1/growth/audio/submissions/:submissionId` and `GET /api/v1/growth/audio/reflections/:reflectionId`; streams plugin-owned SQLite BLOB audio first, then bounded legacy artifact files for older records. |
+| `plugin_submission_write` | `POST /api/v1/growth/cards/:taskCardId/submissions` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; accepts bounded JSON text/audio evidence, resolves native task card ids or legacy `kanban_card_id`, writes plugin-owned submissions/audio BLOBs/sessions, and enqueues pending `learning_growth_evaluation_jobs` rows. |
+| `plugin_evaluation_processing` | `POST /api/v1/growth/evaluations/process` with the workspace-local bearer; claims due pending/retry jobs, writes bounded `learning_evaluations`, and marks jobs done/retry/failed. Optional dispatcher is controlled by `GROWTH_EVALUATION_WORKER_ENABLED` and `GROWTH_EVALUATION_WORKER_INTERVAL_MS`. |
+| `plugin_reflection_write` | `POST /api/v1/growth/cards/:taskCardId/reflections` with the workspace-local bearer; accepts bounded text/audio reflection evidence, resolves native task card ids or legacy `kanban_card_id`, writes `learning_task_reflections`, and stores optional reflection audio BLOBs. |
 | `historical_audio_blob_backfill` | `npm run backfill:audio-blobs -- --db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --legacy-audio-root <Home-AI-data-root> --dry-run --json`; use `--write` only after dry-run shows acceptable `would_backfill`, `file_missing`, and sample evidence. |
 | `legacy_audio_roots` | `GROWTH_LEGACY_AUDIO_ROOTS`, path-delimited; optional override for old Home AI artifact roots. If omitted, the plugin derives the standard sibling Home AI `data` root from its workspace. Do not expose raw absolute file paths to clients. |
 | `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
@@ -119,9 +126,19 @@ must be extracted incrementally:
 3. local snapshot store, facade snapshot import, and migration readback;
 4. plugin-owned SQLite table migration/readback for board/card projections and
    historical audio playback;
-5. card detail and teaching-card workflow write-path extraction;
-6. submissions and async evaluation;
-7. mastery profile, MCP write tools, and Reference / Memory Graph links.
+5. submission evidence write extraction with transitional Home AI proxy;
+6. async evaluation processing extraction;
+7. reflection evidence write extraction;
+8. Growth learning coin settlement and mastery profile extraction;
+9. MCP write tools and Reference / Memory Graph links.
+
+Growth learning coins are Growth-domain rewards. A completed card may settle
+Growth coins inside the plugin and mark the card complete, but it must not
+write platform `通宝` ledger entries or trigger real-time conversion.
+Growth-coin-to-`通宝` exchange is a Home AI platform currency workflow: it is
+administrator-operated, normally monthly, based on total eligible Growth coin
+balance, and must remain idempotent and auditable before any `通宝` mutation or
+Growth coin clearing occurs.
 
 The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips

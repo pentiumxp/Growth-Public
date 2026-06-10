@@ -289,6 +289,30 @@ function createGrowthService(options = {}) {
       return null;
     },
 
+    async submitEvidence({ workspaceId, taskCardId, body } = {}) {
+      if (preferPluginData && typeof learningStore?.submitEvidence === "function") {
+        return learningStore.submitEvidence(Object.assign({}, body || {}, { workspaceId, taskCardId }));
+      }
+      return {
+        ok: false,
+        error: "growth_plugin_write_not_available",
+        workspace_id: workspaceId,
+        task_card_id: taskCardId
+      };
+    },
+
+    async submitReflection({ workspaceId, taskCardId, body } = {}) {
+      if (preferPluginData && typeof learningStore?.submitReflection === "function") {
+        return learningStore.submitReflection(Object.assign({}, body || {}, { workspaceId, taskCardId }));
+      }
+      return {
+        ok: false,
+        error: "growth_plugin_reflection_write_not_available",
+        workspace_id: workspaceId,
+        task_card_id: taskCardId
+      };
+    },
+
     async importFromFacade({ workspaceId, includeCardDetails = true } = {}) {
       const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
       if (!snapshotStore || typeof snapshotStore.upsert !== "function" || typeof snapshotStore.get !== "function") {

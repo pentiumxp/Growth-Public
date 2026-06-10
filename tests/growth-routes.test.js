@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { createServer } = require("../src/app/http-server");
+const { createServer, startServer } = require("../src/app/http-server");
 
 function listen(server) {
   return new Promise((resolve) => {
@@ -224,6 +224,207 @@ test("growth audio route streams plugin-owned audio evidence", async () => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("content-type"), "audio/ogg");
     assert.equal(await response.text(), "audio-body");
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth card submission route requires workspace bearer and queues plugin evaluation", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    growthService: {
+      async submitEvidence(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          workspace_id: input.workspaceId,
+          task_card_id: input.taskCardId,
+          submission: { submissionId: "submission_1" },
+          evaluation_job: { status: "pending" }
+        };
+      }
+    },
+    growthEventService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/submissions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace_id: "growth:test", text: "done" })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/submissions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workspace_id: "growth:test", text: "done" })
+    });
+    assert.equal(accepted.status, 202);
+    const body = await accepted.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.evaluation_job.status, "pending");
+    assert.equal(calls[0].workspaceId, "test");
+    assert.equal(calls[0].taskCardId, "card_1");
+
+    const tooLarge = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/submissions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        dataBase64: "a".repeat(17 * 1024 * 1024)
+      })
+    });
+    assert.equal(tooLarge.status, 413);
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth card reflection route requires workspace bearer", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    growthService: {
+      async submitReflection(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          workspace_id: input.workspaceId,
+          task_card_id: input.taskCardId,
+          reflection: { reflectionId: "reflection_1", status: "submitted" }
+        };
+      }
+    },
+    growthEventService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/reflections`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace_id: "growth:test", text: "done" })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/reflections`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workspace_id: "growth:test", text: "done" })
+    });
+    assert.equal(accepted.status, 202);
+    assert.equal((await accepted.json()).reflection.status, "submitted");
+    assert.deepEqual(calls[0], {
+      workspaceId: "test",
+      taskCardId: "card_1",
+      body: { workspace_id: "growth:test", text: "done" }
+    });
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth evaluation process route requires workspace bearer", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    growthEvaluationService: {
+      async processEvaluationQueue(input) {
+        calls.push(input);
+        return { ok: true, processed: 1, results: [{ jobId: "job_1", ok: true, status: "completed" }] };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/evaluations/process`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace_id: "growth:test" })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/evaluations/process`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workspace_id: "growth:test", limit: 2 })
+    });
+    assert.equal(accepted.status, 200);
+    assert.equal((await accepted.json()).processed, 1);
+    assert.deepEqual(calls[0], { workspaceId: "test", limit: 2 });
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth evaluation worker processes queue when enabled", async () => {
+  let processed = 0;
+  const server = startServer({
+    port: 0,
+    evaluationWorkerEnabled: true,
+    evaluationWorkerIntervalMs: 5000
+  }, {
+    growthEvaluationService: {
+      async processEvaluationQueue() {
+        processed += 1;
+        return { ok: true, processed: 0, results: [] };
+      }
+    }
+  });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.equal(processed >= 1, true);
   } finally {
     await close(server);
   }

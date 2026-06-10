@@ -27,10 +27,18 @@ function routeError(code, message, statusCode = 400) {
   return error;
 }
 
-async function readJson(request) {
+async function readJson(request, options = {}) {
+  const maxBytes = Math.max(1, Number(options.maxBytes || 1024 * 1024) || 1024 * 1024);
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  let total = 0;
+  for await (const chunk of request) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      throw routeError("request_body_too_large", "Request body is too large", 413);
+    }
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks, total).toString("utf8").trim();
   if (!raw) return {};
   try {
     return JSON.parse(raw);

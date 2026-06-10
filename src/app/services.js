@@ -1,4 +1,5 @@
 const { createGrowthService } = require("../services/growth-service");
+const { createGrowthEvaluationService } = require("../services/growth-evaluation-service");
 const { createGrowthEventService } = require("../services/growth-event-service");
 const { createHermesPluginService } = require("../services/hermes-plugin-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
@@ -16,9 +17,15 @@ function createServices(config) {
   });
   const growthEventOutboxStore = createGrowthEventOutboxStore({ filePath: config.eventOutboxStorePath });
   const growthService = createGrowthService({ config, snapshotStore: growthSnapshotStore, learningStore: growthLearningStore });
+  const growthEventService = createGrowthEventService({ config, outboxStore: growthEventOutboxStore });
+  const growthEvaluationService = createGrowthEvaluationService({
+    learningStore: growthLearningStore,
+    eventService: growthEventService
+  });
   return {
     config,
-    growthEventService: createGrowthEventService({ config, outboxStore: growthEventOutboxStore }),
+    growthEvaluationService,
+    growthEventService,
     growthMcpExecutor: createGrowthMcpExecutor({ growthService }),
     growthService,
     pluginService: createHermesPluginService({ config, workspaceStore })

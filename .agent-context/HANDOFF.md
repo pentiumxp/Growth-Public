@@ -163,3 +163,80 @@
   `mcp_growth_*` production availability until Home AI first-install deploy,
   launchd bootstrap, health/proxy smokes, and selected production Gateway
   callable-schema checks pass.
+
+## 2026-06-10 Growth Submission Evidence Write Endpoint
+
+- Added plugin-owned submission evidence writes:
+  - `POST /api/v1/growth/cards/:taskCardId/submissions`;
+  - workspace bearer authorization via `.hermes-growth/access-key.txt`;
+  - bounded JSON body parsing;
+  - native task id or legacy `kanban_card_id` lookup;
+  - writes `learning_interaction_sessions`, `learning_task_submissions`,
+    optional `learning_task_audio_blobs`, and pending
+    `learning_growth_evaluation_jobs` rows.
+- Updated `src/stores/growth-learning-sqlite-store.js`,
+  `src/services/growth-service.js`, `src/routes/growth-routes.js`, and
+  `src/routes/http-utils.js`.
+- Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to record the new endpoint and
+  current extraction boundary.
+- Validation passed:
+  - `npm run check`;
+  - `npm test`;
+  - focused
+    `node --test tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js`;
+  - Home AI host proxy smoke through a temporary `.hermes-growth` binding
+    against a temporary copy of the production Growth SQLite DB.
+- Development smoke facts:
+  - local plugin ran on `127.0.0.1:4892` with `GROWTH_DATA_OWNER=plugin`;
+  - direct HTTP submission to legacy card id `t_6c24c957` returned 202 and
+    resolved to native task id `ltask_623826dec47f15e5`;
+  - temp DB readback showed submission/audio BLOB/pending job,
+    `quick_check=ok`, and `foreign_key_check=0`.
+- No commit, push, or production deploy has been performed for this step.
+- Remaining migration work: async evaluation processing, reflection, reward,
+  mastery, Action Inbox/Web Push handoff, Owner manual decisions, and removal
+  of the Home AI legacy fallback after production parity evidence.
+
+## 2026-06-10 Growth Evaluation, Reflection, And Coin Settlement
+
+- Added plugin-owned async evaluation processing:
+  - `POST /api/v1/growth/evaluations/process`;
+  - optional dispatcher via `GROWTH_EVALUATION_WORKER_ENABLED=1` and
+    `GROWTH_EVALUATION_WORKER_INTERVAL_MS`;
+  - due pending/retry jobs are claimed, evaluated, written to
+    `learning_evaluations`, and marked done/retry/failed.
+- Added plugin-owned reflection writes:
+  - `POST /api/v1/growth/cards/:taskCardId/reflections`;
+  - workspace bearer authorization;
+  - text/audio evidence writes to `learning_task_reflections` and optional
+    `learning_task_audio_blobs`.
+- Added per-card Growth learning coin settlement:
+  - completed evaluations write idempotent `learning_reward_settlements`;
+  - passed cards are marked `completed` and `rewardState=settled`;
+  - failed/needs-revision evaluations create blocked settlement state when
+    applicable.
+- Currency boundary:
+  - Growth learning coins are plugin-domain rewards;
+  - plugin evaluation does not write platform `通宝` ledger entries and does
+    not trigger real-time `通宝` exchange;
+  - Growth-coin-to-`通宝` exchange remains an administrator-operated Home AI
+    platform workflow, normally monthly, based on total eligible Growth coin
+    balance.
+- Bounded events:
+  - passed evaluations emit `growth.card.completed` and
+    `growth.mastery.updated` through the Growth event outbox;
+  - needs-revision evaluations emit `growth.review.required`;
+  - single-card evaluation workers must not emit real-time
+    `growth.reward.requested` for `通宝` conversion.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 41 passing tests;
+  - focused
+    `node --test tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js`;
+  - development smoke against a temporary online backup of production Growth
+    SQLite on `127.0.0.1:4897`: submission id and reflection id preserved,
+    evaluation completed with score 95, card status became `completed`, Growth
+    coin settlement wrote 100 coins, `tongbaoExchange.status=not_requested`,
+    `quick_check=ok`, and `foreign_key_check=0`.
+- Production deploy is still pending from the Home AI app workspace after both
+  app and plugin commits are created.
