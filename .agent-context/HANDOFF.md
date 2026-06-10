@@ -546,3 +546,45 @@
   - `git diff --check`.
 - Deployment status:
   - not committed, not pushed, and not deployed yet.
+
+## 2026-06-10T11:15Z - Growth task lane touch scroll deployed
+
+- Issue:
+  - production Owner/FanFan embedded Growth still felt frozen when trying to
+    scroll through multiple task cards;
+  - the prior `.growth-shell` root-scroll fix was insufficient because iOS/PWA
+    iframe root scrolling can still be unreliable around interactive cards.
+- Diagnosis:
+  - production direct and Home AI embedded Playwright checks used
+    `workspaceId=weixin_stephen`;
+  - before this fix, the root shell could scroll programmatically, but the task
+    board did not provide its own local scroll surface;
+  - after injecting the local fix before deployment, the active task lane had
+    `clientHeight=471`, `scrollHeight=1026`, and touchmove scrolled the lane
+    without opening a card detail.
+- Change:
+  - `public/growth-homeai-legacy.css` now makes the Growth board page fill the
+    iframe and makes `.learning-growth-board-lane.active` an explicit
+    `overflow-y:auto` scroll container with iOS momentum scrolling and
+    `touch-action:pan-y`;
+  - `tests/growth-embedded-layout.test.js` now enforces the lane-scroll
+    contract in addition to the root-scroll contract.
+- Commit and deployment:
+  - pushed to `Education/main`:
+    `333f304` `fix: 修复成长任务列表触摸滚动`;
+  - production deploy backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T111543Z-plugin-growth-growth-task-lane-scroll`;
+  - restarted `com.hermesmobile.plugin.growth`, launchd state `running`.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-embedded-layout.test.js`;
+  - `npm test` with 50 passing tests;
+  - Home AI deploy harness checks:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`, and
+    `node tests/production-status-smoke-harness.test.js`;
+  - production Growth CSS contains the board lane scroll rules;
+  - production Home AI embedded iframe touch smoke for `weixin_stephen`
+    reported active lane `overflow-y:auto`, `clientHeight=471`,
+    `scrollHeight=1026`, touchmove `laneScrollTop=439`, and
+    `detailOpen=false`.
