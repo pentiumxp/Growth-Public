@@ -12,8 +12,9 @@ The current Growth plugin workspace is in migration stage. The existing mature
 Growth code still lives in the Home AI built-in Growth module and must be
 extracted through an explicit service/API boundary rather than by copying the
 Home AI server into this plugin. The plugin can read the Home AI
-`/api/growth/v1/*` facade, persist local board snapshots, normalize bounded
-Growth events, and expose a read-only MCP schema scaffold.
+`/api/growth/v1/*` facade, import bounded board/card projections into its
+local snapshot store with readback metadata, normalize bounded Growth events,
+and expose a read-only MCP schema scaffold.
 
 Production Mac service deployment is still pending. The loopback production
 fields below reserve the standard Home AI plugin runtime contract for Growth;
@@ -53,6 +54,8 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `manifest_url` | `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` |
 | `mcp_command` | planned, not implemented |
 | `mcp_schema_endpoint` | `GET /api/v1/growth/mcp/schemas` read-only scaffold |
+| `migration_snapshot_import` | `POST /api/v1/growth/migrations/facade-snapshot` with Growth registration bearer; imports bounded Home AI facade board/card projections into plugin snapshot storage. |
+| `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
 | `dev_runtime_prerequisites` | Node.js 20+ and npm; no Python dependency yet. |
 | `deploy_command` | Use the Home AI Mac access runbook after production service facts are created. |
 | `credential_locations` | Workspace-local ignored `.hermes-growth` config/key files only by reference. Do not record raw keys or launch tokens here. |
@@ -84,7 +87,7 @@ must be extracted incrementally:
 
 1. stable plugin manifest and provisioning;
 2. Home AI facade-backed board projection API;
-3. local snapshot store and migration readback;
+3. local snapshot store, facade snapshot import, and migration readback;
 4. card detail and teaching-card workflow;
 5. submissions and async evaluation;
 6. mastery profile;

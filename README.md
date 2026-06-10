@@ -15,7 +15,8 @@ contract.
 - Launch endpoint placeholder.
 - Embedded UI that can read the Home AI Growth migration facade when configured.
 - Growth API for status and board projection.
-- Local Growth board snapshot store for facade-to-plugin migration staging.
+- Local Growth board snapshot store with facade snapshot import and readback
+  checks for migration staging.
 - Bounded Growth event normalization scaffold.
 - Read-only Growth MCP schema scaffold.
 
@@ -48,3 +49,16 @@ Growth board facade:
 ```bash
 curl http://127.0.0.1:4881/api/v1/growth/board
 ```
+
+Import bounded Home AI facade data into the plugin snapshot store:
+
+```bash
+GROWTH_HOME_AI_API_BASE_URL=http://127.0.0.1:8797 \
+GROWTH_HOME_AI_ACCESS_KEY_PATH=/path/to/dev/access-key \
+npm run import:facade-snapshot -- --workspace-id growth:local-dev
+```
+
+The import command writes only bounded Growth board/card projections returned
+by `/api/growth/v1/*` and prints readback metadata. It must not print raw
+Access Keys, launch tokens, learner answers, transcripts, prompts, or local
+file paths.

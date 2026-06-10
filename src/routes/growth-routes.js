@@ -1,4 +1,4 @@
-const { sendJson } = require("./http-utils");
+const { bearerFrom, readJson, sendJson } = require("./http-utils");
 const { listGrowthMcpSchemas } = require("../mcp/growth-mcp-schemas");
 
 async function handleGrowthRoute(request, response, url, services) {
@@ -26,6 +26,22 @@ async function handleGrowthRoute(request, response, url, services) {
       toolset: "growth",
       schemas: listGrowthMcpSchemas()
     });
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/migrations/facade-snapshot") {
+    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
+    const body = await readJson(request);
+    return sendJson(response, 200, await services.growthService.importFromFacade({
+      workspaceId: body.workspace_id || body.workspaceId,
+      includeCardDetails: body.include_card_details !== false && body.includeCardDetails !== false
+    }));
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/migrations/readback") {
+    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
+    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const result = services.growthService.migrationReadback({ workspaceId });
+    return sendJson(response, result.ok ? 200 : 404, result);
   }
 
   return false;

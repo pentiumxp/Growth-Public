@@ -42,6 +42,10 @@ function createGrowthSnapshotStore({ filePath }) {
       writeAll({ snapshots });
       return next;
     },
+
+    list() {
+      return (readAll().snapshots || []).slice();
+    },
   };
 }
 

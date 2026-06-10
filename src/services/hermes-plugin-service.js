@@ -57,6 +57,11 @@ function createHermesPluginService({ config, workspaceStore, clock = () => Date.
   return {
     getManifest,
 
+    authorizeRegistration({ authorizationToken }) {
+      requireRegistrationKey(authorizationToken);
+      return { ok: true };
+    },
+
     provisionWorkspace({ authorizationToken, body }) {
       requireRegistrationKey(authorizationToken);
       const hermesWorkspaceId = String(

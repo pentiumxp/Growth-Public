@@ -72,11 +72,32 @@ function snapshotBoard(snapshot = {}) {
   };
 }
 
-function cardFromBoard(board = {}, taskCardId = "") {
+function cardFromSnapshot(snapshot = {}, taskCardId = "") {
   const id = cleanString(taskCardId);
   if (!id) return null;
+  const details = snapshot.card_details && typeof snapshot.card_details === "object" ? snapshot.card_details : {};
+  if (details[id]) return details[id];
+  const board = snapshot.board || {};
   const cards = Array.isArray(board.cards) ? board.cards : [];
   return cards.find((card) => cleanString(card.taskCardId) === id) || null;
+}
+
+function normalizeCardId(card = {}) {
+  return cleanString(card.taskCardId || card.cardId || card.id);
+}
+
+function migrationSummary(snapshot = {}) {
+  const board = snapshot.board || {};
+  const cardDetails = snapshot.card_details && typeof snapshot.card_details === "object" ? snapshot.card_details : {};
+  return {
+    workspace_id: snapshot.workspace_id,
+    imported_at: snapshot.imported_at || "",
+    updated_at: snapshot.updated_at || "",
+    source: snapshot.source || "growth-plugin-snapshot",
+    card_count: Array.isArray(board.cards) ? board.cards.length : 0,
+    card_detail_count: Object.keys(cardDetails).length,
+    detail_errors: Array.isArray(snapshot.detail_errors) ? snapshot.detail_errors : []
+  };
 }
 
 function createGrowthService(options = {}) {
@@ -85,6 +106,7 @@ function createGrowthService(options = {}) {
   const snapshotStore = options.snapshotStore || null;
   const homeAiApiBaseUrl = normalizeBaseUrl(config.homeAiApiBaseUrl);
   const homeAiAccessKey = cleanString(config.homeAiAccessKey);
+  const migrationMaxCards = Number.isFinite(Number(config.migrationMaxCards)) ? Math.max(0, Number(config.migrationMaxCards)) : 50;
 
   async function fetchHomeAi(pathname, query = {}) {
     if (!homeAiApiBaseUrl || !homeAiAccessKey || typeof fetchImpl !== "function") return null;
@@ -184,7 +206,7 @@ function createGrowthService(options = {}) {
       }
 
       const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(workspaceId) : null;
-      const snapshotCard = snapshot ? cardFromBoard(snapshot.board || {}, cleanTaskCardId) : null;
+      const snapshotCard = snapshot ? cardFromSnapshot(snapshot, cleanTaskCardId) : null;
       if (snapshotCard) {
         return {
           ok: true,
@@ -200,6 +222,87 @@ function createGrowthService(options = {}) {
         error: upstream?.error || "card_not_found",
         workspace_id: workspaceId,
         card: null
+      };
+    },
+
+    async importFromFacade({ workspaceId, includeCardDetails = true } = {}) {
+      const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
+      if (!snapshotStore || typeof snapshotStore.upsert !== "function" || typeof snapshotStore.get !== "function") {
+        return {
+          ok: false,
+          error: "snapshot_store_not_configured",
+          workspace_id: cleanWorkspaceId
+        };
+      }
+      const upstream = await fetchHomeAi("/api/growth/v1/board", { workspaceId: cleanWorkspaceId });
+      if (!upstream || upstream.ok === false) {
+        return {
+          ok: false,
+          error: upstream?.error || "home_ai_facade_unavailable",
+          workspace_id: cleanWorkspaceId
+        };
+      }
+      const board = upstream.board || {};
+      const cards = Array.isArray(board.cards) ? board.cards : [];
+      const selectedCards = includeCardDetails ? cards.slice(0, migrationMaxCards) : [];
+      const cardDetails = {};
+      const detailErrors = [];
+      for (const card of selectedCards) {
+        const taskCardId = normalizeCardId(card);
+        if (!taskCardId) continue;
+        const detail = await fetchHomeAi(`/api/growth/v1/cards/${encodeURIComponent(taskCardId)}`, {
+          workspaceId: cleanWorkspaceId
+        });
+        if (detail && detail.ok !== false && detail.card) {
+          cardDetails[taskCardId] = detail.card;
+        } else {
+          detailErrors.push({
+            taskCardId,
+            error: detail?.error || "card_detail_fetch_failed"
+          });
+        }
+      }
+      const importedAt = new Date().toISOString();
+      const snapshot = snapshotStore.upsert({
+        workspace_id: cleanWorkspaceId,
+        imported_at: importedAt,
+        source: "home-ai-growth-facade",
+        board: {
+          cards,
+          lanes: Array.isArray(board.lanes) ? board.lanes : [],
+          summary: summaryForBoard(board)
+        },
+        card_details: cardDetails,
+        detail_errors: detailErrors,
+        facade: {
+          version: upstream.facadeVersion || 1,
+          migration_stage: upstream.migrationStage || "host_facade",
+          data_owner: upstream.dataOwner || "home-ai"
+        }
+      });
+      const readback = snapshotStore.get(cleanWorkspaceId);
+      return {
+        ok: true,
+        workspace_id: cleanWorkspaceId,
+        imported: migrationSummary(snapshot),
+        readback: migrationSummary(readback)
+      };
+    },
+
+    migrationReadback({ workspaceId } = {}) {
+      const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
+      const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(cleanWorkspaceId) : null;
+      if (!snapshot) {
+        return {
+          ok: false,
+          error: "snapshot_not_found",
+          workspace_id: cleanWorkspaceId
+        };
+      }
+      return {
+        ok: true,
+        workspace_id: cleanWorkspaceId,
+        snapshot: migrationSummary(snapshot)
       };
     }
   };

@@ -31,4 +31,5 @@ test("upserts and reads one workspace Growth snapshot", () => {
     }
   });
   assert.equal(store.get("weixin_child").board.cards[0].taskCardId, "card_2");
+  assert.equal(store.list().length, 1);
 });
