@@ -25,6 +25,8 @@
   - `npm run check`;
   - `npm test`;
   - local HTTP smoke for missing card detail returned bounded 404 JSON.
+  - local Playwright mobile-page smoke on `http://127.0.0.1:4881` confirmed
+    title/status/empty state rendering and no horizontal overflow.
 
 ## 2026-06-10 Clean Growth Plugin Workspace Created
 
