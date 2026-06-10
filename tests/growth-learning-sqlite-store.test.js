@@ -8,6 +8,7 @@ const {
   REQUIRED_GROWTH_TABLES,
   createGrowthLearningSqliteStore
 } = require("../src/stores/growth-learning-sqlite-store");
+const { run: runAudioBackfill } = require("../scripts/backfill-growth-audio-blobs");
 const { run: runImport } = require("../scripts/import-growth-learning-sqlite");
 
 function tmpDir() {
@@ -253,4 +254,63 @@ test("projects and streams Growth audio from BLOBs and bounded legacy files", ()
   const reflectionAudio = store.audio({ workspaceId: "weixin_child", recordType: "reflection", recordId: "reflection_1" });
   assert.equal(reflectionAudio.kind, "blob");
   assert.equal(reflectionAudio.content.toString("utf8"), "blob-audio");
+});
+
+test("backfills historical Growth audio files into SQLite BLOB storage", () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const legacyRoot = path.join(root, "home-data");
+  const legacyAudioDir = path.join(legacyRoot, "artifacts", "kanban-reading", "weixin_child", "draft_1", "card_1");
+  fs.mkdirSync(legacyAudioDir, { recursive: true });
+  fs.writeFileSync(path.join(legacyAudioDir, "999-growth-retell-card_1-2.ogg"), "audio-to-blob");
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    db.prepare("UPDATE learning_task_submissions SET raw_json = ? WHERE id = 'submission_1'").run(JSON.stringify({
+      audio: {
+        kind: "audio",
+        name: "growth-retell-card_1-2.ogg",
+        mime: "audio/webm; codecs=opus",
+        size: 13,
+        digest: "digest_to_blob",
+        url: "/api/learning/task-submissions/submission_1/audio"
+      }
+    }));
+  } finally {
+    db.close();
+  }
+
+  const dryRun = runAudioBackfill({
+    dbPath,
+    workspaceId: "weixin_child",
+    legacyAudioRoots: [legacyRoot],
+    dryRun: true
+  });
+  assert.equal(dryRun.ok, true);
+  assert.equal(dryRun.counts.would_backfill, 1);
+  assert.equal(dryRun.counts.backfilled, 0);
+
+  const wrote = runAudioBackfill({
+    dbPath,
+    workspaceId: "weixin_child",
+    legacyAudioRoots: [legacyRoot],
+    write: true
+  });
+  assert.equal(wrote.ok, true);
+  assert.equal(wrote.counts.backfilled, 1);
+
+  const store = createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots: [legacyRoot] });
+  const audio = store.audio({ workspaceId: "weixin_child", recordType: "submission", recordId: "submission_1" });
+  assert.equal(audio.kind, "blob");
+  assert.equal(audio.content.toString("utf8"), "audio-to-blob");
+
+  const clean = runAudioBackfill({
+    dbPath,
+    workspaceId: "weixin_child",
+    legacyAudioRoots: [legacyRoot],
+    dryRun: true
+  });
+  assert.equal(clean.counts.already_blobbed, 1);
+  assert.equal(clean.counts.would_backfill, 0);
 });
