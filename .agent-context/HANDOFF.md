@@ -317,3 +317,27 @@
   - Home AI platform currency exchange bridge still needs administrator UI,
     exchange rules, platform `通宝` ledger credit, and audit linkage before real
     monthly exchange can be operated.
+
+## 2026-06-10T06:27Z - Growth plugin card route launch staged
+
+- Growth embedded frontend now accepts Home AI route hints:
+  - `pluginRoute=card`;
+  - `pluginItemId=<taskCardId>`;
+  - compatibility aliases `route`, `itemId`, and `taskCardId`.
+- When launched with `pluginRoute=card&pluginItemId=<taskCardId>`, the plugin
+  loads the board and then opens the requested card detail.
+- Contract boundary clarified:
+  - Home AI converts legacy host links such as
+    `view=learning&taskCardId=<taskCardId>` before launching the plugin;
+  - the plugin only needs to honor the normalized plugin route parameters.
+- Monthly exchange boundary remains:
+  - card completion has already settled Growth coins;
+  - monthly exchange reads Growth coin balance/ledger, credits platform
+    `通宝` through Home AI administrator workflow, and then clears or deducts
+    the Growth coin balance through the plugin clear route.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 44 passing tests, including routed card launch and monthly
+    clear not depending on card state.
+- Production deployment for this card-route launch change is pending from the
+  Home AI app workspace after commits are pushed.

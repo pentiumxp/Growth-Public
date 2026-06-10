@@ -6,6 +6,8 @@
   const cardDetail = document.getElementById("card-detail");
   const params = new URLSearchParams(window.location.search);
   const workspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
+  const pluginRoute = (params.get("pluginRoute") || params.get("route") || "").trim().toLowerCase();
+  const pluginItemId = (params.get("pluginItemId") || params.get("itemId") || params.get("taskCardId") || "").trim();
   const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
 
   function text(value, fallback) {
@@ -115,6 +117,9 @@
     summary.textContent = `当前阶段：${status.stage}。任务数：${board.summary.total}。`;
     emptyState.textContent = status.message || "暂无成长任务。";
     renderCards(board.cards);
+    if (pluginRoute === "card" && pluginItemId) {
+      await openCard(pluginItemId);
+    }
   } catch (_error) {
     statusPill.textContent = "离线";
     summary.textContent = "无法连接成长插件服务。";

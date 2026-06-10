@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 const { createGrowthService } = require("../src/services/growth-service");
 
@@ -310,4 +312,11 @@ test("reports bounded import failure when facade is unavailable", async () => {
   const result = await service.importFromFacade({ workspaceId: "weixin_child" });
   assert.equal(result.ok, false);
   assert.equal(result.error, "home_ai_facade_fetch_failed");
+});
+
+test("frontend opens a routed Growth card from plugin route params", () => {
+  const appJs = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+  assert.match(appJs, /const pluginRoute = \(params\.get\("pluginRoute"\) \|\| params\.get\("route"\) \|\| ""\)\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(appJs, /const pluginItemId = \(params\.get\("pluginItemId"\) \|\| params\.get\("itemId"\) \|\| params\.get\("taskCardId"\) \|\| ""\)\.trim\(\)/);
+  assert.match(appJs, /if \(pluginRoute === "card" && pluginItemId\) \{\s*await openCard\(pluginItemId\);/);
 });

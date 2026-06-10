@@ -144,11 +144,21 @@ Monthly exchange must use the Growth coin balance/ledger, not completed-card
 state. Card completion has already settled Growth coins. This plugin exposes
 `GET /api/v1/growth/learning-coins/balance` and
 `POST /api/v1/growth/learning-coins/monthly-exchange-clear` for the
-Growth-domain side of administrator exchange. The clear route writes only an
-idempotent negative learning-coin ledger entry, does not write `通宝`, and does
-not mutate card status. Home AI remains responsible for administrator
-authorization, exchange-rate policy, platform `通宝` ledger credit, and audit
-linkage.
+Growth-domain side of administrator exchange. The administrator exchange flow
+is monthly by default: Home AI reads the eligible Growth coin balance, applies
+the exchange-rate policy, credits platform `通宝`, records audit linkage, and
+then calls the plugin clear route. The clear route writes only an idempotent
+negative learning-coin ledger entry, zeroes or reduces the exchanged Growth coin
+balance, does not write `通宝`, and does not mutate card status. Home AI remains
+responsible for administrator authorization, exchange-rate policy, platform
+`通宝` ledger credit, and audit linkage.
+
+Growth plugin launch accepts route hints from Home AI. For a card detail launch,
+the embedded URL carries `pluginRoute=card&pluginItemId=<taskCardId>`; the
+plugin must open that card detail after loading the board. Compatibility Home AI
+links using `view=learning&taskCardId=<taskCardId>` are converted by the host
+before launch and must not require the plugin to know about the legacy host
+view.
 
 The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips
