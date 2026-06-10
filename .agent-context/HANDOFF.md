@@ -523,3 +523,26 @@
   - only Owner can enumerate and switch Growth learner views;
   - no enterprise/multi-workspace role support is implemented;
   - no broad workspace list or secret is forwarded from Home AI to plugins.
+
+## 2026-06-10T10:53Z - Embedded Growth shell scroll owner ready
+
+- Issue:
+  - in Home AI embedded mode, Growth uses `body { overflow: hidden; }`;
+  - without an explicit app-root scroll container, dragging inside Growth cards
+    or lists can be swallowed by the non-scrollable body/iframe surface.
+- Change:
+  - `public/growth-homeai-legacy.css` now makes `.growth-shell` fill the iframe
+    and own vertical scrolling with `overflow-y:auto`,
+    `overscroll-behavior:contain`, `-webkit-overflow-scrolling:touch`, and
+    `touch-action:pan-y`;
+  - added `tests/growth-embedded-layout.test.js` to enforce that embedded
+    layout contract.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-embedded-layout.test.js`;
+  - Home AI local desktop iframe smoke through
+    `http://127.0.0.1:18798/api/hermes-plugins/growth/proxy/...` confirmed
+    `.growth-shell` is the hit target and scroll owner;
+  - `git diff --check`.
+- Deployment status:
+  - not committed, not pushed, and not deployed yet.
