@@ -8,10 +8,17 @@ Home AI platform contract version: `20260609-v2`.
 Growth is a planned standard Home AI embedded plugin. This file records only
 Growth-local facts and points back to the canonical Home AI platform contract.
 
-The current Growth plugin workspace is scaffold-only. The existing mature
+The current Growth plugin workspace is in migration stage. The existing mature
 Growth code still lives in the Home AI built-in Growth module and must be
 extracted through an explicit service/API boundary rather than by copying the
-Home AI server into this plugin.
+Home AI server into this plugin. The plugin can read the Home AI
+`/api/growth/v1/*` facade, persist local board snapshots, normalize bounded
+Growth events, and expose a read-only MCP schema scaffold.
+
+Production Mac service deployment is still pending. The loopback production
+fields below reserve the standard Home AI plugin runtime contract for Growth;
+the central checker marks the Growth Mac probe as deferred until the production
+service is installed.
 
 ## Canonical Home AI Docs
 
@@ -34,18 +41,19 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | Field | Value |
 | --- | --- |
 | `plugin_id` | `growth` |
+| `workspace_path_windows` | `not assigned; Mac dev workspace is canonical for Growth migration` |
 | `workspace_path_macos_dev` | `/Users/hermes-dev/HermesMobileDev/plugins/growth` |
 | `user_entrypoint_symlink` | `/Users/xuxin/Developer/HomeAIDev/growth` |
-| `production_source_path_macos` | `/Users/hermes-host/HermesMobile/plugins/growth` planned, not deployed |
+| `production_source_path_macos` | `/Users/hermes-host/HermesMobile/plugins/growth` |
 | `production_data_root_macos` | `/Users/hermes-host/HermesMobile/plugins/growth/data` planned, plus workspace-local `.hermes-growth` bindings |
-| `windows_dev_base_url` | not yet assigned |
+| `windows_dev_base_url` | `http://127.0.0.1:4881` |
 | `macos_dev_base_url` | `http://127.0.0.1:4881` |
-| `macos_production_base_url` | planned `http://127.0.0.1:4881`, not deployed |
-| `launchd_label` | planned `system/com.hermesmobile.plugin.growth`, not deployed |
+| `macos_production_base_url` | `http://127.0.0.1:4881` |
+| `launchd_label` | `com.hermesmobile.plugin.growth` |
 | `manifest_url` | `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` |
 | `mcp_command` | planned, not implemented |
-| `mcp_schema_endpoint` | planned, not implemented |
-| `dev_runtime_prerequisites` | Node.js 20+; no Python dependency yet. |
+| `mcp_schema_endpoint` | `GET /api/v1/growth/mcp/schemas` read-only scaffold |
+| `dev_runtime_prerequisites` | Node.js 20+ and npm; no Python dependency yet. |
 | `deploy_command` | Use the Home AI Mac access runbook after production service facts are created. |
 | `credential_locations` | Workspace-local ignored `.hermes-growth` config/key files only by reference. Do not record raw keys or launch tokens here. |
 | `reference_contract_status` | Not implemented. Growth may later expose bounded references to programs, cards, submissions, and mastery profile records. |
@@ -75,11 +83,12 @@ The mature built-in Growth module is the source of business behavior, but it
 must be extracted incrementally:
 
 1. stable plugin manifest and provisioning;
-2. board projection API;
-3. card detail and teaching-card workflow;
-4. submissions and async evaluation;
-5. mastery profile;
-6. MCP toolset and Reference / Memory Graph links.
+2. Home AI facade-backed board projection API;
+3. local snapshot store and migration readback;
+4. card detail and teaching-card workflow;
+5. submissions and async evaluation;
+6. mastery profile;
+7. MCP toolset and Reference / Memory Graph links.
 
 Do not copy the full Home AI repository, deployment scripts, Gateway runtime,
 or central server composition into this plugin.

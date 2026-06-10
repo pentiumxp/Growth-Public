@@ -7,7 +7,10 @@ function readEnv(env = process.env) {
     port: Number(env.GROWTH_PORT || 4881),
     dataDir,
     workspaceStorePath: env.GROWTH_WORKSPACE_STORE_PATH || path.join(dataDir, "workspaces.json"),
+    snapshotStorePath: env.GROWTH_SNAPSHOT_STORE_PATH || path.join(dataDir, "growth-snapshots.json"),
     registrationKey: env.GROWTH_REGISTRATION_KEY || readSecretFile(env.GROWTH_REGISTRATION_KEY_PATH),
+    homeAiApiBaseUrl: env.GROWTH_HOME_AI_API_BASE_URL || env.HOME_AI_API_BASE_URL || env.HERMES_MOBILE_API_BASE_URL || "",
+    homeAiAccessKey: env.GROWTH_HOME_AI_ACCESS_KEY || env.HOME_AI_ACCESS_KEY || readSecretFile(env.GROWTH_HOME_AI_ACCESS_KEY_PATH || env.HOME_AI_ACCESS_KEY_PATH),
     launchTokenTtlMs: Number(env.GROWTH_LAUNCH_TOKEN_TTL_MS || 10 * 60 * 1000)
   };
 }

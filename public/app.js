@@ -2,11 +2,14 @@
   const statusPill = document.getElementById("status-pill");
   const summary = document.getElementById("summary");
   const emptyState = document.getElementById("empty-state");
+  const params = new URLSearchParams(window.location.search);
+  const workspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
+  const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
 
   try {
     const [statusResponse, boardResponse] = await Promise.all([
-      fetch("/api/v1/growth/status", { cache: "no-store" }),
-      fetch("/api/v1/growth/board", { cache: "no-store" })
+      fetch(`/api/v1/growth/status${query}`, { cache: "no-store" }),
+      fetch(`/api/v1/growth/board${query}`, { cache: "no-store" })
     ]);
     const status = await statusResponse.json();
     const board = await boardResponse.json();

@@ -1,5 +1,14 @@
 # HANDOFF
 
+## Home AI Platform Contract Pointer
+
+- Home AI platform contract version: `20260609-v2`.
+- Local pointer: `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Canonical Home AI docs live under:
+  `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/`.
+- Do not record raw secrets, access keys, workspace keys, launch tokens, or
+  private payloads in this handoff.
+
 ## 2026-06-10 Clean Growth Plugin Workspace Created
 
 - Archived the two incorrect Home AI full-repository Growth clones:
