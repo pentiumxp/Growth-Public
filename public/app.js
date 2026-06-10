@@ -1,130 +1,266 @@
 (async function bootGrowthPlugin() {
-  const statusPill = document.getElementById("status-pill");
-  const summary = document.getElementById("summary");
-  const emptyState = document.getElementById("empty-state");
-  const taskList = document.getElementById("task-list");
-  const cardDetail = document.getElementById("card-detail");
+  const root = document.getElementById("growth-root") || document.querySelector(".growth-shell");
   const params = new URLSearchParams(window.location.search);
   const workspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
   const pluginRoute = (params.get("pluginRoute") || params.get("route") || "").trim().toLowerCase();
   const pluginItemId = (params.get("pluginItemId") || params.get("itemId") || params.get("taskCardId") || "").trim();
   const query = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : "";
+  const pageState = {
+    auth: { isOwner: true },
+    learningGrowthActiveTab: "overview",
+    learningGrowthBoardLane: "",
+    learningGrowthSettingsOpen: false,
+    learningGrowthSettingsTaskId: "",
+    learningGrowthHistoryTaskCardId: "",
+    selectedLearningTaskCardId: "",
+    learningGrowthTeachingStepByCardId: {},
+    learningGrowthTeachingDrafts: {},
+    learningGrowthExperienceSignalBusy: {},
+    learningGrowthExperienceSignalSubmitted: {},
+    learningGrowthTeachingCheckBusy: {},
+    learningGrowthStageAssessmentActivating: {},
+  };
+  const model = { status: null, board: null, overview: null, detailCache: new Map() };
 
-  function text(value, fallback) {
-    const normalized = String(value || "").trim();
-    return normalized || fallback;
+  function clean(value) {
+    return String(value ?? "").trim();
   }
 
-  function audioWithQuery(audio) {
-    const url = text(audio && audio.url, "");
-    if (!url) return "";
-    if (!workspaceId) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}workspaceId=${encodeURIComponent(workspaceId)}`;
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
-  function audioBlock(label, audio) {
-    const url = audioWithQuery(audio);
-    if (!url) return null;
-    const wrapper = document.createElement("div");
-    wrapper.className = "audio-evidence";
-    const caption = document.createElement("span");
-    caption.textContent = `${label}：${text(audio.name, "录音")}`;
-    const player = document.createElement("audio");
-    player.controls = true;
-    player.preload = "metadata";
-    player.src = url;
-    wrapper.append(caption, player);
-    return wrapper;
+  function learnerLabel() {
+    if (workspaceId === "weixin_stephen") return "Stephen";
+    if (workspaceId === "weixin_wuping") return "吴萍";
+    return workspaceId || "执行者";
   }
 
-  function setDetail(card, source) {
-    if (!card) {
-      cardDetail.hidden = true;
-      cardDetail.replaceChildren();
+  function boardMetrics(board = {}) {
+    const cards = Array.isArray(board.cards) ? board.cards : [];
+    const summary = board.summary || {};
+    const completed = Number(summary.completed ?? cards.filter((card) => /complete|completed|done/i.test(clean(card.status || card.nextAction))).length);
+    const active = Number(summary.active ?? cards.length - completed);
+    const totalEarnedCoins = cards.reduce((sum, card) => sum + (Number(card.latestRewardSettlement?.coinAmount || 0) || 0), 0);
+    return {
+      totalCards: Number(summary.total ?? cards.length) || cards.length,
+      activeTasks: Number.isFinite(active) ? active : 0,
+      completedTasks: Number.isFinite(completed) ? completed : 0,
+      totalEarnedCoins,
+      sevenDayCoins: 0,
+      thirtyDayCoins: 0,
+    };
+  }
+
+  function normalizeCard(card = {}) {
+    const id = clean(card.taskCardId || card.id);
+    return Object.assign({}, card, {
+      id,
+      taskCardId: id,
+      workspaceId: clean(card.workspaceId || workspaceId),
+      title: clean(card.title) || id || "学习任务",
+      status: clean(card.status || card.nextAction || card.primaryAction || "published"),
+      nextAction: clean(card.nextAction || card.primaryAction || "submit"),
+      nativeState: Object.assign({}, card.nativeState || {}, {
+        nextAction: clean(card.nextAction || card.primaryAction || "submit"),
+      }),
+      rewardPolicy: Object.assign({ maxCoins: Number(card.rewardCapCoins || 100) || 100 }, card.rewardPolicy || {}),
+      taskModel: Object.assign({}, card.taskModel || {}, {
+        learnerInstruction: clean(card.learnerInstruction || card.instruction || card.instructionPreview),
+        goalSummary: clean(card.goalSummary || card.instructionPreview),
+      }),
+    });
+  }
+
+  function normalizeBoard(board = {}) {
+    const cards = (Array.isArray(board.cards) ? board.cards : []).map(normalizeCard);
+    const cardIds = new Set(cards.map((card) => card.taskCardId));
+    const lanes = (Array.isArray(board.lanes) ? board.lanes : [])
+      .map((lane) => {
+        const ids = (Array.isArray(lane.cards) ? lane.cards : []).map(clean).filter((id) => cardIds.has(id));
+        return Object.assign({}, lane, {
+          id: clean(lane.id || lane.title || "active"),
+          title: clean(lane.title || lane.id || "Active"),
+          cards: ids,
+          count: Number(lane.count ?? ids.length) || ids.length,
+        });
+      })
+      .filter((lane) => lane.cards.length || lane.count);
+    return Object.assign({}, board, {
+      cards,
+      lanes,
+      summary: Object.assign({}, board.summary || {}, boardMetrics({ cards, summary: board.summary || {} })),
+    });
+  }
+
+  function makeOverview(status, board) {
+    const normalizedBoard = normalizeBoard(board);
+    const metrics = boardMetrics(normalizedBoard);
+    const taskCards = normalizedBoard.cards;
+    return {
+      ok: true,
+      source: board.source || status.source || "growth-plugin",
+      learner: {
+        id: workspaceId || "owner",
+        workspaceId: workspaceId || "owner",
+        displayName: learnerLabel(),
+      },
+      module: {
+        title: "成长",
+        status: status.stage || "plugin_sqlite",
+      },
+      metrics,
+      coins: {
+        balances: {
+          availableCoins: metrics.totalEarnedCoins,
+          earnedCoins: metrics.totalEarnedCoins,
+        },
+        growth: {
+          totalEarnedCoins: metrics.totalEarnedCoins,
+          sevenDayCoins: metrics.sevenDayCoins,
+          thirtyDayCoins: metrics.thirtyDayCoins,
+        },
+        rewards: [],
+        ledger: [],
+        redemptions: [],
+      },
+      board: normalizedBoard,
+      programs: {
+        taskCards,
+        executableTasks: taskCards,
+        rewardSettlements: taskCards
+          .map((card) => card.latestRewardSettlement)
+          .filter(Boolean),
+        interactionSessions: [],
+        launchOperations: {
+          counts: {
+            completedTasks: metrics.completedTasks,
+            pendingRewardSettlements: 0,
+            pendingParentReviews: 0,
+            pendingPlanReviews: 0,
+          },
+        },
+      },
+      launchOperations: {
+        counts: {
+          completedTasks: metrics.completedTasks,
+          pendingRewardSettlements: 0,
+          pendingParentReviews: 0,
+          pendingPlanReviews: 0,
+        },
+      },
+      platformCapabilities: [],
+      capabilities: [],
+      nextModules: [],
+    };
+  }
+
+  function renderShell() {
+    const growthUi = window.HermesLearningGrowthUi;
+    if (!growthUi || typeof growthUi.renderLearningGrowthView !== "function") {
+      root.innerHTML = `<div class="learning-coin-empty">Growth UI renderer is not available.</div>`;
       return;
     }
-    const title = document.createElement("h3");
-    title.textContent = text(card.title, "未命名任务");
-    const meta = document.createElement("p");
-    meta.textContent = `状态：${text(card.status, "未设置")}。下一步：${text(card.nextAction || card.primaryAction, "查看任务")}`;
-    const preview = document.createElement("p");
-    preview.textContent = text(card.instructionPreview, "暂无任务说明摘要。");
-    const sourceLine = document.createElement("p");
-    sourceLine.textContent = `来源：${text(source, "growth-plugin")}`;
-    const nodes = [title, meta, preview, sourceLine];
-    const submissionAudio = audioBlock("提交录音", card.latestSubmission && card.latestSubmission.audio);
-    const reflectionAudio = audioBlock("复盘录音", card.latestReflection && card.latestReflection.audio);
-    if (submissionAudio) nodes.push(submissionAudio);
-    if (reflectionAudio) nodes.push(reflectionAudio);
-    cardDetail.replaceChildren(...nodes);
-    cardDetail.hidden = false;
+    root.innerHTML = growthUi.renderLearningGrowthView({
+      overview: model.overview,
+      state: pageState,
+      workspaceId,
+      learnerId: workspaceId,
+      coins: model.overview?.coins || {},
+      programUi: window.HermesLearningProgramUi,
+      coinsUi: window.HermesLearningCoinsUi,
+      growthTaskUi: window.HermesLearningGrowthTaskUi,
+      activeGrowthBoardLane: pageState.learningGrowthBoardLane,
+      selectedGrowthTaskCardId: pageState.selectedLearningTaskCardId,
+      escapeHtml,
+    });
+    bindEvents();
+  }
+
+  async function fetchJson(path) {
+    const response = await fetch(path, { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok || result.ok === false) throw new Error(result.error || `request_failed:${response.status}`);
+    return result;
   }
 
   async function openCard(taskCardId) {
-    const response = await fetch(`/api/v1/growth/cards/${encodeURIComponent(taskCardId)}${query}`, { cache: "no-store" });
-    const result = await response.json();
-    if (!response.ok || !result.ok) {
-      setDetail({
-        title: "无法打开任务",
-        status: "异常",
-        nextAction: result.error || "请稍后重试",
-        instructionPreview: ""
-      }, "growth-plugin");
-      return;
+    const id = clean(taskCardId);
+    if (!id) return;
+    pageState.learningGrowthSettingsOpen = false;
+    pageState.learningGrowthHistoryTaskCardId = "";
+    pageState.selectedLearningTaskCardId = id;
+    if (!model.detailCache.has(id)) {
+      const result = await fetchJson(`/api/v1/growth/cards/${encodeURIComponent(id)}${query}`);
+      if (result.card) model.detailCache.set(id, normalizeCard(result.card));
     }
-    setDetail(result.card, result.source);
+    const detail = model.detailCache.get(id);
+    if (detail) {
+      const cards = model.overview?.programs?.taskCards || [];
+      const index = cards.findIndex((card) => clean(card.taskCardId) === id);
+      if (index >= 0) cards[index] = Object.assign({}, cards[index], detail);
+      else cards.unshift(detail);
+      model.overview.programs.executableTasks = cards;
+      model.overview.board.cards = model.overview.board.cards.map((card) => clean(card.taskCardId) === id ? Object.assign({}, card, detail) : card);
+    }
+    renderShell();
   }
 
-  function renderCards(cards) {
-    taskList.replaceChildren();
-    const visibleCards = Array.isArray(cards) ? cards.filter((card) => card && card.taskCardId) : [];
-    taskList.hidden = visibleCards.length === 0;
-    emptyState.hidden = visibleCards.length > 0;
-    for (const card of visibleCards) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "task-button";
-      const title = document.createElement("span");
-      title.className = "task-title";
-      title.textContent = text(card.title, "未命名任务");
-      const meta = document.createElement("span");
-      meta.className = "task-meta";
-      meta.textContent = `${text(card.status, "未设置")} · ${text(card.domain || card.activityType, "成长任务")}`;
-      button.append(title, meta);
+  function bindEvents() {
+    root.querySelectorAll("[data-learning-growth-tab]").forEach((button) => {
       button.addEventListener("click", () => {
-        openCard(card.taskCardId).catch(() => {
-          setDetail({
-            title: "无法打开任务",
-            status: "离线",
-            nextAction: "请确认 Growth 插件服务正在运行",
-            instructionPreview: ""
-          }, "growth-plugin");
+        pageState.learningGrowthActiveTab = clean(button.dataset.learningGrowthTab) || "overview";
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-board-filter]").forEach((button) => {
+      button.addEventListener("click", () => {
+        pageState.learningGrowthBoardLane = clean(button.dataset.learningGrowthBoardFilter);
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-learning-open-growth-task], [data-learning-open-settings-task]").forEach((node) => {
+      node.addEventListener("click", (event) => {
+        event.preventDefault();
+        const id = clean(node.dataset.learningOpenGrowthTask || node.dataset.learningOpenSettingsTask);
+        openCard(id).catch((error) => {
+          root.insertAdjacentHTML("afterbegin", `<div class="learning-error">${escapeHtml(error.message || String(error))}</div>`);
         });
       });
-      taskList.append(button);
+    });
+    root.querySelectorAll("[data-learning-settings-task-back]").forEach((button) => {
+      button.addEventListener("click", () => {
+        pageState.learningGrowthSettingsTaskId = "";
+        renderShell();
+      });
+    });
+  }
+
+  async function load() {
+    root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
+    const [status, board] = await Promise.all([
+      fetchJson(`/api/v1/growth/status${query}`),
+      fetchJson(`/api/v1/growth/board${query}`),
+    ]);
+    model.status = status;
+    model.board = board;
+    model.overview = makeOverview(status, board);
+    pageState.learningGrowthBoardLane = clean(model.overview.board.lanes[0]?.id);
+    if (pluginRoute === "settings") pageState.learningGrowthSettingsOpen = true;
+    renderShell();
+    if (pluginRoute === "card" && pluginItemId) {
+      await openCard(pluginItemId);
     }
   }
 
   try {
-    const [statusResponse, boardResponse] = await Promise.all([
-      fetch(`/api/v1/growth/status${query}`, { cache: "no-store" }),
-      fetch(`/api/v1/growth/board${query}`, { cache: "no-store" })
-    ]);
-    const status = await statusResponse.json();
-    const board = await boardResponse.json();
-    statusPill.textContent = status.ok ? "已连接" : "异常";
-    summary.textContent = `当前阶段：${status.stage}。任务数：${board.summary.total}。`;
-    emptyState.textContent = status.message || "暂无成长任务。";
-    renderCards(board.cards);
-    if (pluginRoute === "card" && pluginItemId) {
-      await openCard(pluginItemId);
-    }
-  } catch (_error) {
-    statusPill.textContent = "离线";
-    summary.textContent = "无法连接成长插件服务。";
-    emptyState.textContent = "请确认 Growth 插件服务正在运行。";
-    taskList.hidden = true;
-    cardDetail.hidden = true;
+    await load();
+  } catch (error) {
+    root.innerHTML = `<div class="learning-growth-view"><div class="learning-error">${escapeHtml(error.message || String(error))}</div></div>`;
   }
 })();

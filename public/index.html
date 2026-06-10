@@ -7,23 +7,15 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="growth-shell">
-      <header class="growth-header">
-        <div>
-          <p class="eyebrow">Growth Plugin</p>
-          <h1>成长</h1>
-        </div>
-        <span class="status-pill" id="status-pill">检查中</span>
-      </header>
-
-      <section class="growth-panel">
-        <h2>今日任务</h2>
-        <p id="summary">正在加载成长插件状态。</p>
-        <div class="task-list" id="task-list" hidden></div>
-        <div class="empty-state" id="empty-state">插件工作区已创建，学习数据尚未迁移。</div>
-        <div class="card-detail" id="card-detail" hidden></div>
-      </section>
+    <main class="growth-shell" id="growth-root">
+      <div class="learning-growth-view">
+        <div class="learning-coin-empty">正在加载成长数据...</div>
+      </div>
     </main>
+    <script src="/app-learning-coins-ui.js"></script>
+    <script src="/app-learning-program-ui.js"></script>
+    <script src="/app-learning-growth-task-ui.js"></script>
+    <script src="/app-learning-growth-ui.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>
