@@ -9,6 +9,14 @@
   `/Users/hermes-dev/HermesMobileDev/_archived-growth-clones/20260610T002452Z`.
 - Created a new clean Growth plugin scaffold at:
   `/Users/hermes-dev/HermesMobileDev/plugins/growth`.
+- Initialized the clean workspace as a git repository and pushed it to:
+  `git@github.com:pentiumxp/Education.git`.
+- The previous remote `Education/main` was preserved before cleanup as:
+  `archive/education-pre-growth-plugin-20260610`
+  (`8c9e898b7ff21a4318975eba2baf5f75e9b33f57`).
+- Current `Education/main` is:
+  `55110c98acc670c01b5abb9091b15dcc5f7e9ca2`
+  (`chore: scaffold growth plugin workspace`).
 - The scaffold includes:
   - embedded plugin manifest endpoint;
   - workspace registration endpoint;
