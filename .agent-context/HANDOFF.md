@@ -272,3 +272,48 @@
   - monthly administrator Growth-coin-to-`通宝` exchange/clearing workflow is
     not implemented here;
   - production smoke did not create a real learner submission, by design.
+
+## 2026-06-10 Growth Monthly Coin Clearing Deployed
+
+- Product boundary:
+  - completed cards have already produced Growth learning coin settlements;
+  - monthly Growth-to-`通宝` exchange must use Growth coin balance/ledger, not
+    completed-card state;
+  - the Growth plugin owns the Growth-domain debit/clear record, while Home AI
+    owns administrator authorization, exchange-rate policy, `通宝` ledger credit,
+    and audit linkage.
+- Growth plugin commit pushed:
+  - `9f6985a` `feat: add growth monthly coin clearing`.
+- Home AI docs commit pushed:
+  - `a118d56` `docs: clarify growth monthly coin exchange`.
+- Plugin implementation:
+  - `learning_coin_ledger_entries` is created lazily in plugin-owned SQLite;
+  - `learningCoinBalance` computes settled rewards plus ledger adjustments;
+  - `clearLearningCoinBalanceForMonthlyExchange` writes an idempotent negative
+    Growth learning-coin ledger entry when called with `write: true`;
+  - dry-run mode returns clearable balance without writing a ledger row;
+  - endpoints:
+    `GET /api/v1/growth/learning-coins/balance` and
+    `POST /api/v1/growth/learning-coins/monthly-exchange-clear`;
+  - the clear path does not write platform `通宝` and does not mutate card
+    status.
+- Production deployment:
+  - Growth plugin synced to
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - plugin deploy backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T061120Z-plugin-growth-growth-monthly-coin-clear`;
+  - `com.hermesmobile.plugin.growth` restarted and running.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 43 passing tests;
+  - production Growth status ok with `source=growth-plugin-sqlite`,
+    `quick_check=ok`, and `foreign_key_issues=0`;
+  - production non-mutating balance smoke for `weixin_stephen` returned
+    `availableCoins=314`, `settledRewardCoins=314`, `adjustmentCoins=0`;
+  - production dry-run clear returned `mode=dry_run` and `clearableCoins=314`;
+  - production `learning_coin_ledger_entries` exists with `0` rows after smoke,
+    so no real clear/debit was executed.
+- Remaining boundary:
+  - Home AI platform currency exchange bridge still needs administrator UI,
+    exchange rules, platform `通宝` ledger credit, and audit linkage before real
+    monthly exchange can be operated.
