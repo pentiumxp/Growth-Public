@@ -28,6 +28,12 @@ async function handleGrowthRoute(request, response, url, services) {
     });
   }
 
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/events") {
+    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
+    const body = await readJson(request);
+    return sendJson(response, 202, await services.growthEventService.emit(body));
+  }
+
   if (request.method === "POST" && url.pathname === "/api/v1/growth/migrations/facade-snapshot") {
     services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
     const body = await readJson(request);

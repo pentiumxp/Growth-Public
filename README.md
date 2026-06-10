@@ -17,7 +17,8 @@ contract.
 - Growth API for status and board projection.
 - Local Growth board snapshot store with facade snapshot import and readback
   checks for migration staging.
-- Bounded Growth event normalization scaffold.
+- Bounded Growth event outbox and delivery to the Home AI plugin notification
+  endpoint.
 - Read-only Growth MCP schema scaffold.
 
 ## Non-Goals
@@ -62,3 +63,13 @@ The import command writes only bounded Growth board/card projections returned
 by `/api/growth/v1/*` and prints readback metadata. It must not print raw
 Access Keys, launch tokens, learner answers, transcripts, prompts, or local
 file paths.
+
+Emit a bounded Growth event into the local outbox and, when Home AI API config
+is present, deliver it to the central plugin notification endpoint:
+
+```bash
+curl -X POST http://127.0.0.1:4881/api/v1/growth/events \
+  -H "Authorization: Bearer $GROWTH_REGISTRATION_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"eventId":"event-1","type":"growth.card.completed","workspaceId":"growth:local-dev","taskCardId":"card-1","summary":"Card completed."}'
+```

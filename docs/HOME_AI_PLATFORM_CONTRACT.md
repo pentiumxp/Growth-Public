@@ -14,7 +14,9 @@ extracted through an explicit service/API boundary rather than by copying the
 Home AI server into this plugin. The plugin can read the Home AI
 `/api/growth/v1/*` facade, import bounded board/card projections into its
 local snapshot store with readback metadata, normalize bounded Growth events,
-and expose a read-only MCP schema scaffold.
+persist them through a local outbox, deliver them to the Home AI plugin
+notification endpoint when Home AI API credentials are configured, and expose a
+read-only MCP schema scaffold.
 
 Production Mac service deployment is still pending. The loopback production
 fields below reserve the standard Home AI plugin runtime contract for Growth;
@@ -56,6 +58,8 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `mcp_schema_endpoint` | `GET /api/v1/growth/mcp/schemas` read-only scaffold |
 | `migration_snapshot_import` | `POST /api/v1/growth/migrations/facade-snapshot` with Growth registration bearer; imports bounded Home AI facade board/card projections into plugin snapshot storage. |
 | `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
+| `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
+| `event_outbox_store` | `data/growth-event-outbox.json` by default, override with `GROWTH_EVENT_OUTBOX_STORE_PATH`. |
 | `dev_runtime_prerequisites` | Node.js 20+ and npm; no Python dependency yet. |
 | `deploy_command` | Use the Home AI Mac access runbook after production service facts are created. |
 | `credential_locations` | Workspace-local ignored `.hermes-growth` config/key files only by reference. Do not record raw keys or launch tokens here. |

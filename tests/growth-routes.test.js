@@ -78,3 +78,57 @@ test("migration facade snapshot route requires registration bearer and returns r
     await close(server);
   }
 });
+
+test("growth event route requires registration bearer and emits bounded events", async () => {
+  const emitted = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeRegistration({ authorizationToken }) {
+        if (authorizationToken !== "registration-key") {
+          const error = new Error("Invalid registration credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+      }
+    },
+    growthEventService: {
+      async emit(input) {
+        emitted.push(input);
+        return { ok: true, record: { id: input.eventId || input.event_id, event: input } };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/events`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "growth.card.completed" })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/events`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer registration-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        eventId: "event_1",
+        type: "growth.card.completed",
+        workspaceId: "growth:test",
+        taskCardId: "card_1",
+        summary: "Done."
+      })
+    });
+    assert.equal(accepted.status, 202);
+    assert.equal((await accepted.json()).record.id, "event_1");
+    assert.equal(emitted[0].type, "growth.card.completed");
+  } finally {
+    await close(server);
+  }
+});
