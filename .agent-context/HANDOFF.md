@@ -393,3 +393,25 @@
 - Local Home AI dev iframe smoke on `127.0.0.1:18797` was blocked by current
   workspace grant config (`Workspace access is not allowed`) and should be
   repeated on production after deployment.
+
+## 2026-06-10T07:23Z - Plugin-owned Growth UI deployed
+
+- Commit pushed to `Education/main`:
+  - `7a26cd7` `fix: make migrated growth UI plugin-owned`.
+- Production deployment completed for plugin `growth` only:
+  - synced to `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260610T072300Z-plugin-growth-manual`;
+  - restarted `com.hermesmobile.plugin.growth`.
+- Production health passed:
+  - `GET http://127.0.0.1:4881/api/v1/growth/status?workspace_id=weixin_stephen`
+    returned `stage=plugin_sqlite`, `source=growth-plugin-sqlite`,
+    `quick_check=ok`, and `learning_task_cards=48`.
+- Production direct plugin Playwright smoke passed:
+  - `http://127.0.0.1:4881/?workspaceId=weixin_stephen`;
+  - loaded plugin-local `growth-homeai-legacy.css` and
+    `growth-legacy-*.js`;
+  - rendered the migrated board UI with 48 Stephen cards and no frontend
+    console errors.
+- Unauthenticated Home AI host smoke reached the Access Key screen before any
+  Growth iframe was rendered, which is expected without a browser login state.
