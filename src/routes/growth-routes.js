@@ -1,5 +1,32 @@
+const fs = require("node:fs");
 const { bearerFrom, readJson, sendJson } = require("./http-utils");
 const { listGrowthMcpSchemas } = require("../mcp/growth-mcp-schemas");
+
+function safeHeaderValue(value) {
+  return String(value || "").replace(/[\r\n"]/g, "_");
+}
+
+function streamAudio(response, audio) {
+  const fileName = safeHeaderValue(audio.name || "learning-audio");
+  const headers = {
+    "Content-Type": audio.mime || "application/octet-stream",
+    "Content-Disposition": `inline; filename="${fileName}"`,
+    "Cache-Control": "private, max-age=60"
+  };
+  if (audio.kind === "blob") {
+    headers["Content-Length"] = audio.content.length;
+    response.writeHead(200, headers);
+    response.end(audio.content);
+    return true;
+  }
+  if (audio.kind === "file" && audio.filePath && audio.stat) {
+    headers["Content-Length"] = audio.stat.size;
+    response.writeHead(200, headers);
+    fs.createReadStream(audio.filePath).on("error", () => response.end()).pipe(response);
+    return true;
+  }
+  return false;
+}
 
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
@@ -18,6 +45,16 @@ async function handleGrowthRoute(request, response, url, services) {
     const taskCardId = decodeURIComponent(cardMatch[1] || "");
     const result = await services.growthService.card({ workspaceId, taskCardId });
     return sendJson(response, result.ok ? 200 : 404, result);
+  }
+
+  const audioMatch = url.pathname.match(/^\/api\/v1\/growth\/audio\/(submissions|reflections)\/([^/]+)$/);
+  if (request.method === "GET" && audioMatch) {
+    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");
+    const recordType = audioMatch[1] === "submissions" ? "submission" : "reflection";
+    const recordId = decodeURIComponent(audioMatch[2] || "");
+    const audio = await services.growthService.audio({ workspaceId, recordType, recordId });
+    if (audio && streamAudio(response, audio)) return true;
+    return sendJson(response, 404, { ok: false, error: "growth_audio_not_found" });
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/mcp/schemas") {

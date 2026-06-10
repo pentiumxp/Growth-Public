@@ -16,17 +16,13 @@ Home AI server into this plugin. The plugin can read the Home AI
 local snapshot store with readback metadata, normalize bounded Growth events,
 persist them through a local outbox, deliver them to the Home AI plugin
 notification endpoint when Home AI API credentials are configured, and expose a
-read-only MCP schema, workspace-key execute endpoint, and workspace-bound stdio
-wrapper for bounded status, board, card list, and card detail projections. It
-also has a plugin-owned SQLite migration/readback path for full learning-growth
-table copies from an explicit backup or development copy. The SQLite path is
-not the default runtime source until `GROWTH_DATA_OWNER=plugin` is explicitly
-set.
-
-Production Mac service deployment is still pending. The loopback production
-fields below reserve the standard Home AI plugin runtime contract for Growth;
-the central checker marks the Growth Mac probe as deferred until the production
-service is installed.
+read-only MCP schema, workspace-key execute endpoint, workspace-bound stdio
+wrapper for bounded status, board, card list, and card detail projections, and
+plugin-owned playback routes for migrated submission/reflection audio. It also
+has a plugin-owned SQLite migration/readback path for full learning-growth
+table copies from an explicit backup or development copy. The Mac production
+embedded plugin path now uses this SQLite read path when
+`GROWTH_DATA_OWNER=plugin` is set.
 
 ## Canonical Home AI Docs
 
@@ -69,6 +65,8 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `migration_sqlite_rollback` | `npm run import:learning-sqlite -- --target-db <plugin-data>/growth-learning.sqlite3 --rollback <backup.sqlite3> --write`; restores the previous plugin-owned SQLite database from the script-created backup. |
 | `plugin_learning_db_path` | `GROWTH_LEARNING_DB_PATH`, default `data/growth-learning.sqlite3`. |
 | `plugin_data_owner_switch` | `GROWTH_DATA_OWNER=plugin` makes the plugin prefer plugin-owned SQLite for status, board, and card reads. Default remains `home-ai` facade first. |
+| `plugin_audio_playback` | `GET /api/v1/growth/audio/submissions/:submissionId` and `GET /api/v1/growth/audio/reflections/:reflectionId`; streams plugin-owned SQLite BLOB audio first, then bounded legacy artifact files for older records. |
+| `legacy_audio_roots` | `GROWTH_LEGACY_AUDIO_ROOTS`, path-delimited; optional override for old Home AI artifact roots. If omitted, the plugin derives the standard sibling Home AI `data` root from its workspace. Do not expose raw absolute file paths to clients. |
 | `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
 | `event_outbox_store` | `data/growth-event-outbox.json` by default, override with `GROWTH_EVENT_OUTBOX_STORE_PATH`. |
 | `dev_runtime_prerequisites` | Node.js 20+ and npm; no Python dependency yet. |
@@ -118,7 +116,8 @@ must be extracted incrementally:
 1. stable plugin manifest and provisioning;
 2. Home AI facade-backed board projection API;
 3. local snapshot store, facade snapshot import, and migration readback;
-4. plugin-owned SQLite table migration/readback for board/card projections;
+4. plugin-owned SQLite table migration/readback for board/card projections and
+   historical audio playback;
 5. card detail and teaching-card workflow write-path extraction;
 6. submissions and async evaluation;
 7. mastery profile, MCP write tools, and Reference / Memory Graph links.

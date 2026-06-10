@@ -197,3 +197,34 @@ test("growth MCP execute route requires workspace bearer", async () => {
     await close(server);
   }
 });
+
+test("growth audio route streams plugin-owned audio evidence", async () => {
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({})
+    },
+    growthService: {
+      async audio({ workspaceId, recordType, recordId }) {
+        assert.equal(workspaceId, "weixin_child");
+        assert.equal(recordType, "submission");
+        assert.equal(recordId, "submission_1");
+        return {
+          kind: "blob",
+          name: "submission.ogg",
+          mime: "audio/ogg",
+          content: Buffer.from("audio-body")
+        };
+      }
+    },
+    growthEventService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_child`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("content-type"), "audio/ogg");
+    assert.equal(await response.text(), "audio-body");
+  } finally {
+    await close(server);
+  }
+});

@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 
 const REQUIRED_GROWTH_TABLES = Object.freeze([
   "learning_schema_migrations",
@@ -50,6 +51,46 @@ function numberValue(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeRecordType(value) {
+  const text = cleanString(value).toLowerCase();
+  if (["submission", "submissions", "learning_task_submission"].includes(text)) return "submission";
+  if (["reflection", "reflections", "learning_task_reflection"].includes(text)) return "reflection";
+  return "";
+}
+
+function audioEvidenceFromRaw(raw = {}, fallbackDigest = "") {
+  const nested = raw.raw && typeof raw.raw === "object" ? raw.raw.audio : null;
+  const audio = raw.audio && typeof raw.audio === "object" ? raw.audio : nested;
+  if (!audio || typeof audio !== "object") {
+    return fallbackDigest ? { digest: fallbackDigest } : null;
+  }
+  return Object.assign({}, audio, fallbackDigest && !audio.digest ? { digest: fallbackDigest } : {});
+}
+
+function publicAudio(recordType, recordId, raw = {}, fallbackDigest = "") {
+  const audio = audioEvidenceFromRaw(raw, fallbackDigest);
+  if (!audio) return null;
+  const id = cleanString(recordId);
+  const type = normalizeRecordType(recordType);
+  if (!id || !type) return null;
+  const name = path.basename(cleanString(audio.name || audio.fileName || audio.filename));
+  const digest = cleanString(audio.digest || audio.audioDigest || fallbackDigest);
+  if (!name && !digest) return null;
+  return {
+    kind: "audio",
+    name: name || "learning-audio",
+    mime: cleanString(audio.mime || audio.type) || "application/octet-stream",
+    size: numberValue(audio.size),
+    durationMs: numberValue(audio.durationMs || audio.duration_ms),
+    digest,
+    url: `/api/v1/growth/audio/${type}s/${encodeURIComponent(id)}`
+  };
+}
+
 function tableExists(db, tableName) {
   return Boolean(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(tableName));
 }
@@ -76,12 +117,14 @@ function latestByTask(db, tableName, taskCardId, orderColumn) {
 
 function publicSubmission(row) {
   if (!row) return null;
+  const raw = parseJson(row.raw_json, {}) || {};
   return {
     submissionId: row.id,
     taskCardId: row.task_card_id,
     status: row.status,
     submissionKind: row.submission_kind,
     submittedAt: row.submitted_at || row.created_at,
+    audio: publicAudio("submission", row.id, raw),
     submissionCount: 1,
     totalSubmissionCount: 1
   };
@@ -105,6 +148,7 @@ function publicEvaluation(row) {
 
 function publicReflection(row) {
   if (!row) return null;
+  const raw = parseJson(row.raw_json, {}) || {};
   return {
     reflectionId: row.id,
     taskCardId: row.task_card_id,
@@ -112,7 +156,8 @@ function publicReflection(row) {
     mode: row.mode,
     score: numberValue(row.score),
     summary: cleanString(row.summary).slice(0, 700),
-    submittedAt: row.submitted_at || row.created_at
+    submittedAt: row.submitted_at || row.created_at,
+    audio: publicAudio("reflection", row.id, raw, row.audio_digest)
   };
 }
 
@@ -213,8 +258,71 @@ function lanesForCards(cards) {
     .map((lane) => Object.assign({}, lane, { count: lane.cards.length }));
 }
 
-function createGrowthLearningSqliteStore({ dbPath }) {
+function defaultLegacyAudioRoots(dbPath) {
+  const roots = [
+    path.resolve(process.cwd(), "..", "..", "data"),
+    path.resolve(path.dirname(path.resolve(dbPath || "")), "..", "..", "..", "data"),
+    path.resolve(process.cwd(), "data")
+  ];
+  return [...new Set(roots)];
+}
+
+function normalizeRoots(roots = [], dbPath = "") {
+  return [...new Set(asArray(roots).concat(defaultLegacyAudioRoots(dbPath)).map((entry) => path.resolve(entry)).filter(Boolean))];
+}
+
+function isWithinRoot(filePath, roots = []) {
+  const resolved = path.resolve(filePath);
+  return roots.some((root) => {
+    const relative = path.relative(root, resolved);
+    return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
+  });
+}
+
+function firstReadableFile(paths = []) {
+  for (const candidate of paths) {
+    try {
+      const stat = fs.statSync(candidate);
+      if (stat.isFile()) return { filePath: candidate, stat };
+    } catch (_) {
+      // Try the next bounded candidate.
+    }
+  }
+  return null;
+}
+
+function findAudioFiles(baseDir, fileName, taskCardId, roots, depth = 0) {
+  if (!baseDir || !fileName || depth > 5 || !isWithinRoot(baseDir, roots)) return [];
+  let entries = [];
+  try {
+    entries = fs.readdirSync(baseDir, { withFileTypes: true });
+  } catch (_) {
+    return [];
+  }
+  const found = [];
+  for (const entry of entries) {
+    const fullPath = path.join(baseDir, entry.name);
+    if (entry.isFile() && entry.name.endsWith(fileName) && (!taskCardId || fullPath.includes(taskCardId))) {
+      found.push(fullPath);
+    } else if (entry.isDirectory()) {
+      found.push(...findAudioFiles(fullPath, fileName, taskCardId, roots, depth + 1));
+    }
+  }
+  return found;
+}
+
+function audioMimeForPlayback(audio = {}, filePath = "") {
+  const ext = path.extname(filePath || cleanString(audio.name || audio.fileName || audio.filename)).toLowerCase();
+  if (ext === ".mp3") return "audio/mpeg";
+  if (ext === ".m4a" || ext === ".aac") return "audio/mp4";
+  if (ext === ".wav") return "audio/wav";
+  if (ext === ".ogg" || ext === ".opus" || ext === ".webm") return "audio/ogg";
+  return cleanString(audio.mime || audio.type) || "application/octet-stream";
+}
+
+function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const resolvedPath = path.resolve(dbPath || "");
+  const audioRoots = normalizeRoots(legacyAudioRoots, resolvedPath);
 
   function open(readOnly = true) {
     const { DatabaseSync } = sqlite();
@@ -290,10 +398,94 @@ function createGrowthLearningSqliteStore({ dbPath }) {
     });
   }
 
+  function taskRowForAudio(db, recordType, recordId, workspaceId) {
+    const type = normalizeRecordType(recordType);
+    const id = cleanString(recordId);
+    const cleanWorkspaceId = cleanString(workspaceId);
+    if (!type || !id) return null;
+    const tableName = type === "submission" ? "learning_task_submissions" : "learning_task_reflections";
+    if (!tableExists(db, tableName)) return null;
+    const row = cleanWorkspaceId
+      ? db.prepare(`SELECT * FROM ${tableName} WHERE id = ? AND workspace_id = ?`).get(id, cleanWorkspaceId)
+      : db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`).get(id);
+    if (!row) return null;
+    const taskCard = tableExists(db, "learning_task_cards")
+      ? db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(row.task_card_id)
+      : null;
+    return { type, row, taskCard };
+  }
+
+  function audioBlob(db, recordType, recordId) {
+    if (!tableExists(db, "learning_task_audio_blobs")) return null;
+    const type = normalizeRecordType(recordType);
+    const row = db.prepare(
+      "SELECT * FROM learning_task_audio_blobs WHERE record_type = ? AND record_id = ? ORDER BY updated_at DESC, created_at DESC LIMIT 1"
+    ).get(type, cleanString(recordId));
+    if (!row || !row.content_blob) return null;
+    const content = Buffer.isBuffer(row.content_blob) ? row.content_blob : Buffer.from(row.content_blob);
+    if (!content.length) return null;
+    return {
+      kind: "blob",
+      content,
+      mime: cleanString(row.mime) || "application/octet-stream",
+      name: path.basename(cleanString(row.name) || "learning-audio"),
+      size: content.length
+    };
+  }
+
+  function audioFileCandidates(recordType, row, taskCard, audio = {}) {
+    const fileName = path.basename(cleanString(audio.name || audio.fileName || audio.filename));
+    const candidates = [];
+    const directPath = cleanString(audio.path || audio.filePath || audio.absolutePath);
+    if (directPath && isWithinRoot(directPath, audioRoots)) candidates.push(directPath);
+    if (!fileName) return candidates;
+    const workspaceId = cleanString(row.workspace_id || taskCard?.workspace_id);
+    const taskCardId = cleanString(row.task_card_id || taskCard?.id);
+    for (const root of audioRoots) {
+      candidates.push(...findAudioFiles(path.join(root, "artifacts", "kanban-reading", workspaceId), fileName, taskCardId, audioRoots));
+    }
+    return [...new Set(candidates.filter((candidate) => isWithinRoot(candidate, audioRoots)))];
+  }
+
+  function audio({ workspaceId, recordType, recordId } = {}) {
+    return withDb((db) => {
+      const located = taskRowForAudio(db, recordType, recordId, workspaceId);
+      if (!located) return null;
+      const fallbackDigest = located.type === "reflection" ? located.row.audio_digest : "";
+      const raw = parseJson(located.row.raw_json, {}) || {};
+      const evidence = audioEvidenceFromRaw(raw, fallbackDigest);
+      const blob = audioBlob(db, located.type, located.row.id);
+      if (blob) {
+        return Object.assign({}, blob, {
+          record_type: located.type,
+          record_id: located.row.id,
+          task_card_id: located.row.task_card_id
+        });
+      }
+      if (!evidence) return null;
+      const found = firstReadableFile(audioFileCandidates(located.type, located.row, located.taskCard, evidence));
+      if (!found) return null;
+      const name = path.basename(cleanString(evidence.name || evidence.fileName || evidence.filename) || found.filePath);
+      return {
+        kind: "file",
+        record_type: located.type,
+        record_id: located.row.id,
+        task_card_id: located.row.task_card_id,
+        filePath: found.filePath,
+        stat: found.stat,
+        name,
+        mime: audioMimeForPlayback(evidence, found.filePath),
+        size: found.stat.size
+      };
+    });
+  }
+
   return {
     dbPath: resolvedPath,
+    legacyAudioRoots: audioRoots,
     board,
     card,
+    audio,
     integrity
   };
 }

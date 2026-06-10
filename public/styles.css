@@ -148,3 +148,18 @@ h2 {
 .card-detail p {
   margin-top: 8px;
 }
+
+.audio-evidence {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.audio-evidence span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.audio-evidence audio {
+  width: 100%;
+}

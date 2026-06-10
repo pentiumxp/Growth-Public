@@ -281,6 +281,14 @@ function createGrowthService(options = {}) {
       };
     },
 
+    async audio({ workspaceId, recordType, recordId } = {}) {
+      if (preferPluginData && typeof learningStore?.audio === "function") {
+        const nativeAudio = learningStore.audio({ workspaceId, recordType, recordId });
+        if (nativeAudio) return nativeAudio;
+      }
+      return null;
+    },
+
     async importFromFacade({ workspaceId, includeCardDetails = true } = {}) {
       const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
       if (!snapshotStore || typeof snapshotStore.upsert !== "function" || typeof snapshotStore.get !== "function") {

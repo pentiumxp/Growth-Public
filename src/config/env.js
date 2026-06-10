@@ -14,6 +14,10 @@ function readEnv(env = process.env) {
     registrationKey: env.GROWTH_REGISTRATION_KEY || readSecretFile(env.GROWTH_REGISTRATION_KEY_PATH),
     homeAiApiBaseUrl: env.GROWTH_HOME_AI_API_BASE_URL || env.HOME_AI_API_BASE_URL || env.HERMES_MOBILE_API_BASE_URL || "",
     homeAiAccessKey: env.GROWTH_HOME_AI_ACCESS_KEY || env.HOME_AI_ACCESS_KEY || readSecretFile(env.GROWTH_HOME_AI_ACCESS_KEY_PATH || env.HOME_AI_ACCESS_KEY_PATH),
+    legacyAudioRoots: (env.GROWTH_LEGACY_AUDIO_ROOTS || "")
+      .split(path.delimiter)
+      .map((entry) => entry.trim())
+      .filter(Boolean),
     launchTokenTtlMs: Number(env.GROWTH_LAUNCH_TOKEN_TTL_MS || 10 * 60 * 1000),
     migrationMaxCards: Number(env.GROWTH_MIGRATION_MAX_CARDS || 50)
   };

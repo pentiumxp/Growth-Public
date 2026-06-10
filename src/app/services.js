@@ -10,7 +10,10 @@ const { createJsonWorkspaceStore } = require("../stores/json-workspace-store");
 function createServices(config) {
   const workspaceStore = createJsonWorkspaceStore({ filePath: config.workspaceStorePath });
   const growthSnapshotStore = createGrowthSnapshotStore({ filePath: config.snapshotStorePath });
-  const growthLearningStore = createGrowthLearningSqliteStore({ dbPath: config.learningDbPath });
+  const growthLearningStore = createGrowthLearningSqliteStore({
+    dbPath: config.learningDbPath,
+    legacyAudioRoots: config.legacyAudioRoots
+  });
   const growthEventOutboxStore = createGrowthEventOutboxStore({ filePath: config.eventOutboxStorePath });
   const growthService = createGrowthService({ config, snapshotStore: growthSnapshotStore, learningStore: growthLearningStore });
   return {

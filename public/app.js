@@ -13,6 +13,29 @@
     return normalized || fallback;
   }
 
+  function audioWithQuery(audio) {
+    const url = text(audio && audio.url, "");
+    if (!url) return "";
+    if (!workspaceId) return url;
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}workspaceId=${encodeURIComponent(workspaceId)}`;
+  }
+
+  function audioBlock(label, audio) {
+    const url = audioWithQuery(audio);
+    if (!url) return null;
+    const wrapper = document.createElement("div");
+    wrapper.className = "audio-evidence";
+    const caption = document.createElement("span");
+    caption.textContent = `${label}：${text(audio.name, "录音")}`;
+    const player = document.createElement("audio");
+    player.controls = true;
+    player.preload = "metadata";
+    player.src = url;
+    wrapper.append(caption, player);
+    return wrapper;
+  }
+
   function setDetail(card, source) {
     if (!card) {
       cardDetail.hidden = true;
@@ -27,7 +50,12 @@
     preview.textContent = text(card.instructionPreview, "暂无任务说明摘要。");
     const sourceLine = document.createElement("p");
     sourceLine.textContent = `来源：${text(source, "growth-plugin")}`;
-    cardDetail.replaceChildren(title, meta, preview, sourceLine);
+    const nodes = [title, meta, preview, sourceLine];
+    const submissionAudio = audioBlock("提交录音", card.latestSubmission && card.latestSubmission.audio);
+    const reflectionAudio = audioBlock("复盘录音", card.latestReflection && card.latestReflection.audio);
+    if (submissionAudio) nodes.push(submissionAudio);
+    if (reflectionAudio) nodes.push(reflectionAudio);
+    cardDetail.replaceChildren(...nodes);
     cardDetail.hidden = false;
   }
 
