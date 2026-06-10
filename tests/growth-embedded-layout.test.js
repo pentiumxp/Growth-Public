@@ -12,3 +12,12 @@ test("embedded Growth shell owns vertical scrolling inside the iframe", () => {
   assert.match(css, /\.growth-shell\s*\{[\s\S]*?touch-action: pan-y;/);
   assert.match(css, /body\s*\{[\s\S]*?overflow: hidden;/);
 });
+
+test("Growth task board lane remains scrollable when iframe root scrolling is unreliable", () => {
+  assert.match(css, /\.growth-shell \.learning-growth-board-page\s*\{[\s\S]*?height: 100%;/);
+  assert.match(css, /\.growth-shell \.learning-growth-board\s*\{[\s\S]*?grid-template-rows: auto auto minmax\(0, 1fr\);/);
+  assert.match(css, /\.growth-shell \.learning-growth-board-lanes\s*\{[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.growth-shell \.learning-growth-board-lane\.active\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.growth-shell \.learning-growth-board-lane\.active\s*\{[\s\S]*?-webkit-overflow-scrolling: touch;/);
+  assert.match(css, /\.growth-shell \.learning-growth-board-card\s*\{[\s\S]*?touch-action: pan-y;/);
+});
