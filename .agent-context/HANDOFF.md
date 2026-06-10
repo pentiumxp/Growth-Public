@@ -366,3 +366,30 @@
   - Home AI still owns legacy compatibility routing and remaining platform
     workflows such as Action Inbox/Web Push and future administrator
     Growth-coin-to-`通宝` exchange.
+
+## 2026-06-10T07:25Z - Growth UI migrated as plugin-owned source
+
+- The previous Home AI Growth UI has been copied into the Growth plugin as a
+  plugin-owned migration baseline.
+- Runtime frontend files are now plugin-local:
+  - `public/growth-homeai-legacy.css`;
+  - `public/growth-legacy-coins-ui.js`;
+  - `public/growth-legacy-program-ui.js`;
+  - `public/growth-legacy-task-ui.js`;
+  - `public/growth-legacy-ui.js`;
+  - `public/app.js` adapts plugin SQLite/facade data to the legacy UI shape.
+- The Growth plugin must not import or mutate Home AI host frontend files at
+  runtime. Future Growth UI changes should happen in this plugin workspace.
+- The Home AI host remains responsible only for embedding/routing the Growth
+  plugin and for still-unmigrated platform workflows documented elsewhere.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 44 passing tests;
+  - direct plugin Playwright smoke on
+    `http://127.0.0.1:4899/?workspaceId=weixin_stephen` loaded
+    `growth-homeai-legacy.css`, `growth-legacy-*.js`, rendered the migrated
+    board UI, and showed 48 Stephen cards with no frontend console errors;
+  - `git diff --check`.
+- Local Home AI dev iframe smoke on `127.0.0.1:18797` was blocked by current
+  workspace grant config (`Workspace access is not allowed`) and should be
+  repeated on production after deployment.

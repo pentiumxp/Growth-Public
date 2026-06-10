@@ -1,5 +1,6 @@
 "use strict";
 
+// Plugin-owned migration baseline copied from the previous Home AI Growth UI.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
     module.exports = factory();

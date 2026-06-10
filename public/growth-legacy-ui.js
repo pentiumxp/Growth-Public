@@ -1,8 +1,9 @@
 "use strict";
 
+// Plugin-owned migration baseline copied from the previous Home AI Growth UI.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./app-learning-coins-ui"), require("./app-learning-program-ui"));
+    module.exports = factory(require("./growth-legacy-coins-ui"), require("./growth-legacy-program-ui"));
   } else {
     root.HermesLearningGrowthUi = factory(root.HermesLearningCoinsUi, root.HermesLearningProgramUi);
   }

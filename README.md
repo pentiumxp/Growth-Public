@@ -1,22 +1,26 @@
 # Growth Plugin
 
-This workspace is the clean Home AI Growth plugin scaffold.
+This workspace is the Home AI Growth plugin.
 
 The previous `growth` directory was a Home AI full-repository clone used for
 Growth-focused work. It has been archived and must not be treated as a
 production plugin source. The current workspace is intentionally small and will
 receive extracted Growth UI/API/domain code through the Home AI plugin
-contract.
+contract. The migrated Growth UI is now plugin-owned source; future Growth UI
+changes should be made in this repository, not in the Home AI host legacy
+`public/app-learning-*` files.
 
 ## Current Scope
 
 - Embedded plugin manifest endpoint.
 - Workspace registration endpoint with hashed access-key storage only.
 - Launch endpoint placeholder.
-- Embedded UI that can read the Home AI Growth migration facade when configured.
+- Embedded UI migrated from the previous Home AI Growth page and owned by this
+  plugin under `public/growth-legacy-*` and
+  `public/growth-homeai-legacy.css`.
 - Growth API for status and board projection.
-- Local Growth board snapshot store with facade snapshot import and readback
-  checks for migration staging.
+- Plugin-owned Growth learning SQLite read model, with snapshot/facade fallback
+  helpers retained for migration staging.
 - Bounded Growth event outbox and delivery to the Home AI plugin notification
   endpoint.
 - Read-only Growth MCP schema and execute endpoint for status, board, card
@@ -24,9 +28,12 @@ contract.
 
 ## Non-Goals
 
-- It does not yet own the Home AI learning-growth SQLite data.
+- It does not yet own all Home AI Growth write workflows: submission creation,
+  transcription, async evaluation, reflection, reward settlement, mastery
+  updates, Action Inbox/Web Push, and Owner manual decisions remain host-owned
+  until each path has plugin-side tests and cutover evidence.
 - It does not yet expose a production Gateway MCP toolset.
-- It does not yet replace the built-in Home AI Growth page.
+- It must not import or mutate Home AI host frontend source at runtime.
 
 ## Local Development
 
