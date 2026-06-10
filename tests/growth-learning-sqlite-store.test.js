@@ -181,6 +181,39 @@ function createSourceDb(dbPath, suffix = "") {
   }
 }
 
+function insertTaskCard(db, input = {}) {
+  const id = input.id || "card_extra";
+  const raw = Object.assign({
+    instructionPreview: input.instructionPreview || "Practice task",
+    sequenceGroupId: input.sequenceGroupId || "",
+    sequenceMode: input.sequenceMode || "",
+    sequenceIndex: input.sequenceIndex || 0
+  }, input.raw || {});
+  db.prepare(`
+    INSERT INTO learning_task_cards(
+      id, program_id, draft_id, learner_id, workspace_id, kanban_card_id, title, domain,
+      task_card_type, status, planned_date, planned_minutes, skill_ids_json,
+      template_id, interaction_state_machine_json, source_basis_refs_json,
+      curriculum_refs_json, privacy_level, card_role, capability_cluster_id,
+      raw_json, created_at, updated_at
+    ) VALUES (?, 'program_1', 'draft_1', 'weixin_child', 'weixin_child', ?, ?, 'english',
+      ?, ?, ?, 15, '[]',
+      'template_1', '[]', '[]', '[]', 'member_self', ?,
+      'english.reading', ?, ?, ?)
+  `).run(
+    id,
+    input.kanbanCardId || `kanban_${id}`,
+    input.title || id,
+    input.taskCardType || "practice",
+    input.status || "active",
+    input.plannedDate || "2026-06-10",
+    input.cardRole || "practice",
+    JSON.stringify(raw),
+    input.createdAt || "2026-06-10T00:00:00.000Z",
+    input.updatedAt || input.createdAt || "2026-06-10T00:00:00.000Z"
+  );
+}
+
 test("reads Growth plugin-owned SQLite board and card projections", () => {
   const root = tmpDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");
@@ -201,6 +234,54 @@ test("reads Growth plugin-owned SQLite board and card projections", () => {
   const card = store.card({ workspaceId: "weixin_child", taskCardId: "card_1" });
   assert.equal(card.ok, true);
   assert.equal(card.card.title, "Read one");
+});
+
+test("projects board lanes with legacy Growth UI semantics", () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const db = new DatabaseSync(dbPath);
+  try {
+    insertTaskCard(db, {
+      id: "card_cancelled",
+      title: "Retired card",
+      status: "cancelled",
+      plannedDate: "2026-06-10"
+    });
+    insertTaskCard(db, {
+      id: "card_seq_1",
+      title: "Evergreen English 1",
+      status: "published",
+      plannedDate: "2026-06-09",
+      sequenceGroupId: "evergreen:english",
+      sequenceMode: "evergreen_jit",
+      sequenceIndex: 1,
+      createdAt: "2026-06-09T00:00:00.000Z"
+    });
+    insertTaskCard(db, {
+      id: "card_seq_2",
+      title: "Evergreen English 2",
+      status: "published",
+      plannedDate: "2026-06-11",
+      sequenceGroupId: "evergreen:english",
+      sequenceMode: "evergreen_jit",
+      sequenceIndex: 2,
+      createdAt: "2026-06-11T00:00:00.000Z"
+    });
+  } finally {
+    db.close();
+  }
+
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const board = store.board({ workspaceId: "weixin_child" });
+  const ids = board.cards.map((card) => card.taskCardId);
+  assert.deepEqual(ids.sort(), ["card_1", "card_seq_1"].sort());
+  assert.equal(board.summary.totalCardCount, 3);
+  assert.equal(board.summary.hiddenFutureCardCount, 1);
+  assert.equal(board.lanes.find((lane) => lane.id === "waiting_ai").count, 1);
+  assert.equal(board.lanes.find((lane) => lane.id === "ready").count, 1);
+  assert.equal(board.cards.find((card) => card.taskCardId === "card_seq_1").sequenceVisibility, "current");
+  assert.match(board.cards.find((card) => card.taskCardId === "card_seq_1").title, /第1张卡$/);
 });
 
 test("imports, backs up, and rolls back Growth learning SQLite", () => {

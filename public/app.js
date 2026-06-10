@@ -25,6 +25,35 @@
     return String(value ?? "").trim();
   }
 
+  function normalizeTheme(value) {
+    const text = clean(value).toLowerCase();
+    return ["light", "dark", "system"].includes(text) ? text : "system";
+  }
+
+  function normalizeFontSize(value) {
+    const text = clean(value).toLowerCase();
+    if (text === "default") return "standard";
+    return ["small", "standard", "large", "xlarge", "xxlarge"].includes(text) ? text : "standard";
+  }
+
+  function applyAppearance(input = {}) {
+    const source = input && typeof input === "object" ? input : {};
+    const theme = normalizeTheme(source.theme || source.pluginTheme || source.appearanceTheme || params.get("pluginTheme") || params.get("appearanceTheme") || params.get("theme"));
+    const fontSize = normalizeFontSize(source.fontSize || source.pluginFontSize || source.appearanceFontSize || params.get("pluginFontSize") || params.get("appearanceFontSize") || params.get("fontSize"));
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.fontSize = fontSize;
+  }
+
+  applyAppearance();
+
+  window.addEventListener("message", (event) => {
+    const data = event?.data && typeof event.data === "object" ? event.data : null;
+    if (!data || data.version !== 1) return;
+    if (data.type === "hermes.plugin.appearance" || data.type === "hermes.plugin.viewport") {
+      applyAppearance(data.appearance || data);
+    }
+  });
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")

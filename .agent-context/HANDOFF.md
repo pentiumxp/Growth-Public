@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-10 Growth Legacy UI Parity Projection
+
+- Status: implemented and locally validated, not committed, not pushed, not
+  deployed to production.
+- Changed files:
+  - `public/app.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `tests/growth-learning-sqlite-store.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- `public/app.js` now maps Home AI launch/query and viewport appearance
+  metadata onto the iframe root before rendering legacy Growth UI. Accepted
+  inputs include `pluginTheme`/`theme` and `pluginFontSize`/`fontSize`; Home AI
+  `default` maps to the legacy CSS `standard` font-size token.
+- The plugin-owned SQLite board projection now matches the mature Home AI
+  Growth board semantics more closely:
+  - cancelled, retired, and superseded cards are hidden;
+  - sequence groups show completed cards plus the first current uncompleted
+    card, and later cards are reported as hidden future cards;
+  - lanes use `ready`, `waiting_ai`, `needs_revision`, `reflection_required`,
+    `locked_until`, and `completed_recent` rather than generic
+    `active/waiting/completed`;
+  - cards include legacy action/reward/sequence metadata needed by the copied
+    Home AI Growth UI.
+- Real-data smoke used a temporary copy of production Growth SQLite at
+  `/tmp/homeai-growth-ui-parity/growth-learning.sqlite3` and did not write
+  production data. `weixin_stephen` projected as 9 visible cards, 21 hidden
+  future sequence cards, lanes `ready:2`, `needs_revision:5`,
+  `completed_recent:2`, and no cancelled/retired/superseded visible cards.
+- Local page smoke on `127.0.0.1:4898`/`4899` verified dark/large appearance,
+  old Growth lane text `当前 / 待修订 / 最近完成`, and no horizontal overflow.
+- Home AI embedded iOS visual harness passed against the local Home AI dev
+  listener and this plugin code, screenshot:
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260610T095815Z.png`.
+- Validation passed:
+  - `npm run check`;
+  - `npm test`;
+  - `node --test tests/growth-learning-sqlite-store.test.js`;
+  - Home AI app-side static/plugin/visual/platform checks recorded in the app
+    workspace handoff;
+  - `git diff --check`.
+
 ## 2026-06-10 Growth Plugin SQLite Migration Readback
 
 - Added plugin-owned Growth learning SQLite migration/readback support.

@@ -161,6 +161,22 @@ links using `view=learning&taskCardId=<taskCardId>` are converted by the host
 before launch and must not require the plugin to know about the legacy host
 view.
 
+Growth plugin launch and viewport broadcasts also carry bounded Home AI
+appearance metadata. The plugin maps `pluginTheme`/`theme` and
+`pluginFontSize`/`fontSize` onto `document.documentElement.dataset.theme` and
+`dataset.fontSize` before rendering the legacy Growth UI, and updates those
+values when `hermes.plugin.viewport` or `hermes.plugin.appearance` messages
+arrive. Home AI `pluginFontSize=default` maps to the legacy Growth CSS
+`standard` size token.
+
+The plugin-owned SQLite board projection must preserve the mature built-in
+Growth UI semantics: cancelled, retired, and superseded cards are hidden;
+sequence groups show completed cards plus the first current uncompleted card
+while later cards are marked as hidden future; and lanes use the Growth
+workflow buckets (`ready`, `waiting_ai`, `needs_revision`,
+`reflection_required`, `locked_until`, `completed_recent`) instead of generic
+active/waiting/completed grouping.
+
 Owner cross-learner viewing is a Growth plugin UI/API responsibility. Home AI
 does not pass secrets to enable it; the same-origin proxy sends bounded actor
 headers only. The plugin uses `GET /api/v1/growth/view-targets` to build the
