@@ -101,6 +101,32 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-coins/balance") {
+    const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
+    const authorized = services.pluginService.authorizeWorkspace({
+      authorizationToken: bearerFrom(request.headers),
+      workspaceId
+    });
+    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const result = await services.growthService.learningCoinBalance({ workspaceId: serviceWorkspaceId });
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/learning-coins/monthly-exchange-clear") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const workspaceId = String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
+    const authorized = services.pluginService.authorizeWorkspace({
+      authorizationToken: bearerFrom(request.headers),
+      workspaceId
+    });
+    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const result = await services.growthService.clearLearningCoinBalanceForMonthlyExchange({
+      workspaceId: serviceWorkspaceId,
+      body
+    });
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   const audioMatch = url.pathname.match(/^\/api\/v1\/growth\/audio\/(submissions|reflections)\/([^/]+)$/);
   if (request.method === "GET" && audioMatch) {
     const workspaceId = String(url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "growth:local-dev");

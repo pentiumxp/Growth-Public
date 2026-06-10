@@ -140,6 +140,16 @@ administrator-operated, normally monthly, based on total eligible Growth coin
 balance, and must remain idempotent and auditable before any `通宝` mutation or
 Growth coin clearing occurs.
 
+Monthly exchange must use the Growth coin balance/ledger, not completed-card
+state. Card completion has already settled Growth coins. This plugin exposes
+`GET /api/v1/growth/learning-coins/balance` and
+`POST /api/v1/growth/learning-coins/monthly-exchange-clear` for the
+Growth-domain side of administrator exchange. The clear route writes only an
+idempotent negative learning-coin ledger entry, does not write `通宝`, and does
+not mutate card status. Home AI remains responsible for administrator
+authorization, exchange-rate policy, platform `通宝` ledger credit, and audit
+linkage.
+
 The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips
 `workspace_id` from Gateway-facing tool schemas, rejects model-provided

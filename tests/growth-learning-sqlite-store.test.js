@@ -482,6 +482,91 @@ test("emits completion and mastery events without real-time Tongbao exchange req
   assert.equal(processed.results[0].status, "completed");
 });
 
+test("clears monthly Growth coin balance without depending on card state", async () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const submitted = store.submitEvidence({
+    workspaceId: "weixin_child",
+    taskCardId: "kanban_1",
+    submissionId: "submission_monthly_exchange",
+    text: [
+      "First, I completed the task with enough concrete evidence and details.",
+      "Then I explained because I checked what changed and how I improved.",
+      "Finally, I wrote the next check that I will do before the next task."
+    ].join("\n"),
+    submittedAt: "2026-06-10T00:04:00.000Z"
+  });
+  assert.equal(submitted.ok, true);
+
+  const service = createGrowthEvaluationService({
+    learningStore: store,
+    now: () => new Date("2026-06-10T00:05:00.000Z")
+  });
+  const processed = await service.processEvaluationQueue({ workspaceId: "weixin_child" });
+  assert.equal(processed.processed, 1);
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    db.prepare("UPDATE learning_task_cards SET status = 'active' WHERE id = 'card_1'").run();
+  } finally {
+    db.close();
+  }
+
+  const balance = store.learningCoinBalance({ workspaceId: "weixin_child" });
+  assert.equal(balance.ok, true);
+  assert.equal(balance.available_coins, 100);
+
+  const preview = store.clearLearningCoinBalanceForMonthlyExchange({
+    workspaceId: "weixin_child",
+    period: "2026-06",
+    sourceId: "platform-exchange-2026-06",
+    idempotencyKey: "exchange:weixin_child:2026-06",
+    write: false
+  });
+  assert.equal(preview.ok, true);
+  assert.equal(preview.mode, "dry_run");
+  assert.equal(preview.clearable_coins, 100);
+  assert.equal(store.learningCoinBalance({ workspaceId: "weixin_child" }).available_coins, 100);
+
+  const cleared = store.clearLearningCoinBalanceForMonthlyExchange({
+    workspaceId: "weixin_child",
+    period: "2026-06",
+    sourceId: "platform-exchange-2026-06",
+    idempotencyKey: "exchange:weixin_child:2026-06",
+    write: true,
+    now: "2026-06-30T23:59:00.000Z"
+  });
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.cleared_coins, 100);
+  assert.equal(cleared.balance_after.available_coins, 0);
+  assert.equal(cleared.ledger_entry.amountDelta, -100);
+
+  const duplicate = store.clearLearningCoinBalanceForMonthlyExchange({
+    workspaceId: "weixin_child",
+    period: "2026-06",
+    sourceId: "platform-exchange-2026-06",
+    idempotencyKey: "exchange:weixin_child:2026-06",
+    write: true
+  });
+  assert.equal(duplicate.ok, true);
+  assert.equal(duplicate.duplicate, true);
+  assert.equal(duplicate.cleared_coins, 100);
+  assert.equal(duplicate.balance_after.available_coins, 0);
+
+  const ledgerDb = new DatabaseSync(dbPath, { readOnly: true });
+  try {
+    const rows = ledgerDb.prepare("SELECT * FROM learning_coin_ledger_entries WHERE workspace_id = ?").all("weixin_child");
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].amount_delta, -100);
+    assert.equal(rows[0].entry_type, "monthly_exchange_clear");
+    assert.equal(JSON.parse(rows[0].metadata_json).policy, "admin_monthly_exchange_only");
+  } finally {
+    ledgerDb.close();
+  }
+});
+
 test("writes Growth reflections and audio BLOBs by legacy kanban id", () => {
   const root = tmpDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");

@@ -313,6 +313,28 @@ function createGrowthService(options = {}) {
       };
     },
 
+    async learningCoinBalance({ workspaceId } = {}) {
+      if (preferPluginData && typeof learningStore?.learningCoinBalance === "function") {
+        return learningStore.learningCoinBalance({ workspaceId });
+      }
+      return {
+        ok: false,
+        error: "growth_learning_coin_balance_unavailable",
+        workspace_id: workspaceId
+      };
+    },
+
+    async clearLearningCoinBalanceForMonthlyExchange({ workspaceId, body } = {}) {
+      if (preferPluginData && typeof learningStore?.clearLearningCoinBalanceForMonthlyExchange === "function") {
+        return learningStore.clearLearningCoinBalanceForMonthlyExchange(Object.assign({}, body || {}, { workspaceId }));
+      }
+      return {
+        ok: false,
+        error: "growth_learning_coin_clear_unavailable",
+        workspace_id: workspaceId
+      };
+    },
+
     async importFromFacade({ workspaceId, includeCardDetails = true } = {}) {
       const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
       if (!snapshotStore || typeof snapshotStore.upsert !== "function" || typeof snapshotStore.get !== "function") {

@@ -438,6 +438,10 @@ function stableRewardSettlementId(evaluationId) {
   return `lrwd_${sha256Hex(cleanString(evaluationId)).slice(0, 18)}`;
 }
 
+function stableLearningCoinLedgerEntryId(idempotencyKey) {
+  return `lcoin_${sha256Hex(cleanString(idempotencyKey)).slice(0, 18)}`;
+}
+
 function tableColumns(db, tableName) {
   if (!tableExists(db, tableName)) return [];
   return db.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
@@ -464,6 +468,57 @@ function upsertDynamic(db, tableName, values = {}, conflictColumn = "id") {
     : `INSERT OR IGNORE INTO ${tableName}(${columns.join(", ")}) VALUES (${placeholders})`;
   db.prepare(sql).run(...columns.map((column) => values[column]));
   return values;
+}
+
+function ensureLearningCoinLedgerTable(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS learning_coin_ledger_entries (
+      id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      learner_id TEXT NOT NULL DEFAULT '',
+      amount_delta INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'learning_coin',
+      entry_type TEXT NOT NULL,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      reason TEXT NOT NULL DEFAULT '',
+      period TEXT NOT NULL DEFAULT '',
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_learning_coin_ledger_idempotency
+      ON learning_coin_ledger_entries(workspace_id, idempotency_key);
+    CREATE INDEX IF NOT EXISTS idx_learning_coin_ledger_workspace
+      ON learning_coin_ledger_entries(workspace_id, created_at);
+  `);
+}
+
+function learningCoinBalanceFromDb(db, input = {}) {
+  const workspaceId = cleanString(input.workspaceId);
+  if (!workspaceId) return { ok: false, error: "workspace_id_required" };
+  const settledRewardCoins = tableExists(db, "learning_reward_settlements")
+    ? Number(db.prepare(`
+        SELECT COALESCE(SUM(coin_amount), 0) AS amount
+        FROM learning_reward_settlements
+        WHERE workspace_id = ? AND status = 'settled'
+      `).get(workspaceId)?.amount || 0)
+    : 0;
+  ensureLearningCoinLedgerTable(db);
+  const adjustmentCoins = Number(db.prepare(`
+      SELECT COALESCE(SUM(amount_delta), 0) AS amount
+      FROM learning_coin_ledger_entries
+      WHERE workspace_id = ?
+    `).get(workspaceId)?.amount || 0);
+  return {
+    ok: true,
+    workspace_id: workspaceId,
+    currency: "learning_coin",
+    settled_reward_coins: settledRewardCoins,
+    adjustment_coins: adjustmentCoins,
+    available_coins: Math.max(0, settledRewardCoins + adjustmentCoins),
+    source: "growth-plugin-sqlite"
+  };
 }
 
 function existingAudioBlob(db, recordType, recordId) {
@@ -1258,6 +1313,141 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     }
   }
 
+  function learningCoinBalance(input = {}) {
+    const db = open(false);
+    try {
+      return learningCoinBalanceFromDb(db, input);
+    } catch (err) {
+      return { ok: false, error: err.message || String(err) };
+    } finally {
+      db.close();
+    }
+  }
+
+  function clearLearningCoinBalanceForMonthlyExchange(input = {}) {
+    const db = open(false);
+    try {
+      const workspaceId = cleanString(input.workspaceId);
+      const idempotencyKey = cleanString(input.idempotencyKey);
+      const write = Boolean(input.write);
+      if (!workspaceId) return { ok: false, error: "workspace_id_required" };
+      if (write && !idempotencyKey) return { ok: false, error: "idempotency_key_required" };
+      ensureLearningCoinLedgerTable(db);
+      if (idempotencyKey) {
+        const existing = db.prepare(`
+          SELECT * FROM learning_coin_ledger_entries
+          WHERE workspace_id = ? AND idempotency_key = ?
+          LIMIT 1
+        `).get(workspaceId, idempotencyKey);
+        if (existing) {
+          return {
+            ok: true,
+            duplicate: true,
+            mode: "write",
+            workspace_id: workspaceId,
+            currency: "learning_coin",
+            cleared_coins: Math.abs(Math.min(0, Number(existing.amount_delta || 0))),
+            ledger_entry: {
+              id: existing.id,
+              amountDelta: Number(existing.amount_delta || 0),
+              entryType: existing.entry_type,
+              sourceType: existing.source_type,
+              sourceId: existing.source_id,
+              idempotencyKey: existing.idempotency_key,
+              period: existing.period,
+              createdAt: existing.created_at
+            },
+            balance_after: learningCoinBalanceFromDb(db, { workspaceId }),
+            source: "growth-plugin-sqlite"
+          };
+        }
+      }
+
+      const before = learningCoinBalanceFromDb(db, { workspaceId });
+      if (!before.ok) return before;
+      const amount = Math.max(0, Math.round(Number(input.amount || before.available_coins || 0)));
+      if (amount > before.available_coins) {
+        return {
+          ok: false,
+          error: "learning_coin_balance_insufficient",
+          workspace_id: workspaceId,
+          requested_coins: amount,
+          balance: before
+        };
+      }
+      const period = cleanString(input.period);
+      const sourceId = cleanString(input.sourceId || input.exchangeId || idempotencyKey) || `monthly:${period || "unspecified"}`;
+      const now = cleanString(input.createdAt || input.now) || new Date().toISOString();
+      const ledgerEntry = {
+        id: stableLearningCoinLedgerEntryId(idempotencyKey || `${workspaceId}:${sourceId}:${amount}:${now}`),
+        workspace_id: workspaceId,
+        learner_id: cleanString(input.learnerId || workspaceId),
+        amount_delta: -amount,
+        currency: "learning_coin",
+        entry_type: "monthly_exchange_clear",
+        source_type: "growth-plugin-monthly-exchange",
+        source_id: sourceId,
+        idempotency_key: idempotencyKey,
+        reason: cleanString(input.reason || "monthly_growth_coin_exchange_clear").slice(0, 180),
+        period,
+        metadata_json: JSON.stringify({
+          source: "growth-plugin",
+          policy: "admin_monthly_exchange_only",
+          tongbaoExchange: {
+            status: "platform_exchange_required",
+            sourceId
+          },
+          balanceBefore: before.available_coins,
+          clearedCoins: amount
+        }),
+        created_at: now
+      };
+      if (!write) {
+        return {
+          ok: true,
+          mode: "dry_run",
+          workspace_id: workspaceId,
+          currency: "learning_coin",
+          clearable_coins: amount,
+          balance_before: before,
+          source: "growth-plugin-sqlite"
+        };
+      }
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        insertDynamic(db, "learning_coin_ledger_entries", ledgerEntry);
+        db.exec("COMMIT");
+      } catch (err) {
+        db.exec("ROLLBACK");
+        throw err;
+      }
+      return {
+        ok: true,
+        mode: "write",
+        workspace_id: workspaceId,
+        currency: "learning_coin",
+        cleared_coins: amount,
+        ledger_entry: {
+          id: ledgerEntry.id,
+          amountDelta: ledgerEntry.amount_delta,
+          entryType: ledgerEntry.entry_type,
+          sourceType: ledgerEntry.source_type,
+          sourceId: ledgerEntry.source_id,
+          idempotencyKey: ledgerEntry.idempotency_key,
+          period: ledgerEntry.period,
+          createdAt: ledgerEntry.created_at
+        },
+        balance_before: before,
+        balance_after: learningCoinBalanceFromDb(db, { workspaceId }),
+        source: "growth-plugin-sqlite"
+      };
+    } catch (err) {
+      return { ok: false, error: err.message || String(err) };
+    } finally {
+      db.close();
+    }
+  }
+
   function evaluateBackfillRecord(db, recordType, row) {
     const type = normalizeRecordType(recordType);
     const existing = existingAudioBlob(db, type, row.id);
@@ -1416,9 +1606,11 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     audio,
     backfillAudioBlobs,
     claimEvaluationJob,
+    clearLearningCoinBalanceForMonthlyExchange,
     completeEvaluationJob,
     evaluationJobContext,
     failEvaluationJob,
+    learningCoinBalance,
     listEvaluationJobs,
     recordEvaluation,
     settleEvaluationReward,

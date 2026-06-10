@@ -408,6 +408,78 @@ test("growth evaluation process route requires workspace bearer", async () => {
   }
 });
 
+test("growth learning coin monthly clear route requires workspace bearer", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    growthService: {
+      async learningCoinBalance(input) {
+        calls.push({ type: "balance", input });
+        return { ok: true, workspace_id: input.workspaceId, available_coins: 100, currency: "learning_coin" };
+      },
+      async clearLearningCoinBalanceForMonthlyExchange(input) {
+        calls.push({ type: "clear", input });
+        return { ok: true, workspace_id: input.workspaceId, cleared_coins: 100, currency: "learning_coin" };
+      }
+    },
+    growthEventService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/learning-coins/balance?workspaceId=growth:test`);
+    assert.equal(denied.status, 403);
+
+    const balance = await fetch(`${baseUrl}/api/v1/growth/learning-coins/balance?workspaceId=growth:test`, {
+      headers: { authorization: "Bearer workspace-key" }
+    });
+    assert.equal(balance.status, 200);
+    assert.equal((await balance.json()).available_coins, 100);
+    assert.deepEqual(calls[0], { type: "balance", input: { workspaceId: "test" } });
+
+    const cleared = await fetch(`${baseUrl}/api/v1/growth/learning-coins/monthly-exchange-clear`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        period: "2026-06",
+        idempotencyKey: "exchange:test:2026-06",
+        write: true
+      })
+    });
+    assert.equal(cleared.status, 200);
+    assert.equal((await cleared.json()).cleared_coins, 100);
+    assert.deepEqual(calls[1], {
+      type: "clear",
+      input: {
+        workspaceId: "test",
+        body: {
+          workspace_id: "growth:test",
+          period: "2026-06",
+          idempotencyKey: "exchange:test:2026-06",
+          write: true
+        }
+      }
+    });
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth evaluation worker processes queue when enabled", async () => {
   let processed = 0;
   const server = startServer({
