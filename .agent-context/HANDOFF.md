@@ -38,6 +38,17 @@
   - `npm run check`;
   - `node --test tests/growth-learning-sqlite-store.test.js tests/growth-service.test.js`;
   - `npm test`.
+- Development data verification:
+  - Home AI created an online SQLite backup copy of Mac production
+    `learning-growth.sqlite3` into ignored dev tmp storage;
+  - `npm run import:learning-sqlite -- --dry-run --json` passed against that
+    source backup;
+  - `npm run import:learning-sqlite -- --write --json` imported it into ignored
+    plugin dev data;
+  - source and target `quick_check` passed, required Growth tables were present,
+    and `weixin_stephen` readback returned 48 cards;
+  - local plugin service smoke on port `4882` with `GROWTH_DATA_OWNER=plugin`
+    returned `growth-plugin-sqlite` for status, board, and card detail.
 
 ## 2026-06-10 Growth Facade Card Detail Read Path
 
