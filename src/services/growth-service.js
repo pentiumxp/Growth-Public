@@ -41,6 +41,20 @@ function fallbackStatus(reason = "") {
   };
 }
 
+function sqliteStatus(readback = {}) {
+  return {
+    ok: true,
+    plugin_id: "growth",
+    stage: "plugin_sqlite",
+    data_ownership: "plugin",
+    plugin_data_ownership: "migrated_sqlite",
+    mcp_toolset: "read_only",
+    source: "growth-plugin-sqlite",
+    message: "Growth plugin is reading migrated plugin-owned SQLite data.",
+    migration: readback
+  };
+}
+
 function fallbackBoard({ workspaceId, reason = "" } = {}) {
   return {
     ok: true,
@@ -104,9 +118,11 @@ function createGrowthService(options = {}) {
   const config = options.config || {};
   const fetchImpl = options.fetch || global.fetch;
   const snapshotStore = options.snapshotStore || null;
+  const learningStore = options.learningStore || null;
   const homeAiApiBaseUrl = normalizeBaseUrl(config.homeAiApiBaseUrl);
   const homeAiAccessKey = cleanString(config.homeAiAccessKey);
   const migrationMaxCards = Number.isFinite(Number(config.migrationMaxCards)) ? Math.max(0, Number(config.migrationMaxCards)) : 50;
+  const preferPluginData = cleanString(config.dataOwner).toLowerCase() === "plugin";
 
   async function fetchHomeAi(pathname, query = {}) {
     if (!homeAiApiBaseUrl || !homeAiAccessKey || typeof fetchImpl !== "function") return null;
@@ -129,6 +145,14 @@ function createGrowthService(options = {}) {
 
   return {
     async status({ workspaceId } = {}) {
+      if (preferPluginData && typeof learningStore?.integrity === "function") {
+        try {
+          const readback = learningStore.integrity({ workspaceId });
+          if (readback.ok) return sqliteStatus(readback);
+        } catch (_) {
+          // Fall through to the facade/scaffold status path.
+        }
+      }
       const upstream = await fetchHomeAi("/api/growth/v1/status", { workspaceId });
       if (!upstream || upstream.ok === false) return fallbackStatus(upstream?.error || "");
       return {
@@ -146,8 +170,24 @@ function createGrowthService(options = {}) {
     },
 
     async board({ workspaceId }) {
+      if (preferPluginData && typeof learningStore?.board === "function") {
+        try {
+          const nativeBoard = learningStore.board({ workspaceId });
+          if (nativeBoard) return nativeBoard;
+        } catch (_) {
+          // Fall through to the facade/snapshot path.
+        }
+      }
       const upstream = await fetchHomeAi("/api/growth/v1/board", { workspaceId });
       if (!upstream || upstream.ok === false) {
+        if (typeof learningStore?.board === "function") {
+          try {
+            const nativeBoard = learningStore.board({ workspaceId });
+            if (nativeBoard) return nativeBoard;
+          } catch (_) {
+            // Fall through to the snapshot/scaffold path.
+          }
+        }
         const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(workspaceId) : null;
         if (snapshot) return snapshotBoard(snapshot);
         return fallbackBoard({ workspaceId, reason: upstream?.error || "" });
@@ -190,6 +230,14 @@ function createGrowthService(options = {}) {
           card: null
         };
       }
+      if (preferPluginData && typeof learningStore?.card === "function") {
+        try {
+          const nativeDetail = learningStore.card({ workspaceId, taskCardId: cleanTaskCardId });
+          if (nativeDetail) return nativeDetail;
+        } catch (_) {
+          // Fall through to the facade/snapshot path.
+        }
+      }
       const upstream = await fetchHomeAi(`/api/growth/v1/cards/${encodeURIComponent(cleanTaskCardId)}`, { workspaceId });
       if (upstream && upstream.ok !== false) {
         return {
@@ -205,6 +253,14 @@ function createGrowthService(options = {}) {
         };
       }
 
+      if (typeof learningStore?.card === "function") {
+        try {
+          const nativeDetail = learningStore.card({ workspaceId, taskCardId: cleanTaskCardId });
+          if (nativeDetail) return nativeDetail;
+        } catch (_) {
+          // Fall through to the snapshot path.
+        }
+      }
       const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(workspaceId) : null;
       const snapshotCard = snapshot ? cardFromSnapshot(snapshot, cleanTaskCardId) : null;
       if (snapshotCard) {
@@ -291,6 +347,21 @@ function createGrowthService(options = {}) {
 
     migrationReadback({ workspaceId } = {}) {
       const cleanWorkspaceId = cleanString(workspaceId) || "growth:local-dev";
+      if (typeof learningStore?.integrity === "function") {
+        try {
+          const nativeReadback = learningStore.integrity({ workspaceId: cleanWorkspaceId });
+          if (nativeReadback.ok) {
+            return {
+              ok: true,
+              workspace_id: cleanWorkspaceId,
+              source: "growth-plugin-sqlite",
+              sqlite: nativeReadback
+            };
+          }
+        } catch (_) {
+          // Fall through to snapshot readback for pre-SQLite staging.
+        }
+      }
       const snapshot = typeof snapshotStore?.get === "function" ? snapshotStore.get(cleanWorkspaceId) : null;
       if (!snapshot) {
         return {

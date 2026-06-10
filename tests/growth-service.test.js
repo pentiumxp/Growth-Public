@@ -107,6 +107,50 @@ test("falls back to the plugin snapshot when Home AI facade is unavailable", asy
   assert.equal(board.snapshot_updated_at, "2026-06-10T00:00:00.000Z");
 });
 
+test("prefers plugin-owned SQLite store when data owner is plugin", async () => {
+  const service = createGrowthService({
+    config: {
+      dataOwner: "plugin",
+      homeAiApiBaseUrl: "http://127.0.0.1:8797",
+      homeAiAccessKey: "test-home-ai-key"
+    },
+    learningStore: {
+      integrity: () => ({
+        ok: true,
+        quick_check: "ok",
+        missing_tables: [],
+        counts: { learning_task_cards: 1 }
+      }),
+      board: () => ({
+        ok: true,
+        workspace_id: "weixin_child",
+        cards: [{ taskCardId: "card_native", title: "Native", status: "active" }],
+        lanes: [{ id: "active", cards: ["card_native"], count: 1 }],
+        summary: { total: 1, active: 1, waiting_review: 0, completed: 0 },
+        source: "growth-plugin-sqlite",
+        data_ownership: "plugin"
+      }),
+      card: () => ({
+        ok: true,
+        workspace_id: "weixin_child",
+        card: { taskCardId: "card_native", title: "Native", status: "active" },
+        source: "growth-plugin-sqlite",
+        data_ownership: "plugin"
+      })
+    },
+    fetch() {
+      throw new Error("facade should not be called in plugin data-owner mode");
+    }
+  });
+
+  const status = await service.status({ workspaceId: "weixin_child" });
+  const board = await service.board({ workspaceId: "weixin_child" });
+  const card = await service.card({ workspaceId: "weixin_child", taskCardId: "card_native" });
+  assert.equal(status.source, "growth-plugin-sqlite");
+  assert.equal(board.source, "growth-plugin-sqlite");
+  assert.equal(card.source, "growth-plugin-sqlite");
+});
+
 test("reads card detail from the Home AI Growth facade", async () => {
   const service = createGrowthService({
     config: {

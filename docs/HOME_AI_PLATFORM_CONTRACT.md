@@ -17,7 +17,11 @@ local snapshot store with readback metadata, normalize bounded Growth events,
 persist them through a local outbox, deliver them to the Home AI plugin
 notification endpoint when Home AI API credentials are configured, and expose a
 read-only MCP schema, workspace-key execute endpoint, and workspace-bound stdio
-wrapper for bounded status, board, card list, and card detail projections.
+wrapper for bounded status, board, card list, and card detail projections. It
+also has a plugin-owned SQLite migration/readback path for full learning-growth
+table copies from an explicit backup or development copy. The SQLite path is
+not the default runtime source until `GROWTH_DATA_OWNER=plugin` is explicitly
+set.
 
 Production Mac service deployment is still pending. The loopback production
 fields below reserve the standard Home AI plugin runtime contract for Growth;
@@ -60,6 +64,10 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `mcp_execute_endpoint` | `POST /api/v1/growth/mcp/execute` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; executes read-only bounded tools. |
 | `migration_snapshot_import` | `POST /api/v1/growth/migrations/facade-snapshot` with Growth registration bearer; imports bounded Home AI facade board/card projections into plugin snapshot storage. |
 | `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
+| `migration_sqlite_import` | `npm run import:learning-sqlite -- --source-db <backup.sqlite3> --target-db <plugin-data>/growth-learning.sqlite3 --write --workspace-id <workspace>`; copies a verified learning-growth SQLite backup into plugin-owned storage with backup/readback metadata. |
+| `migration_sqlite_rollback` | `npm run import:learning-sqlite -- --target-db <plugin-data>/growth-learning.sqlite3 --rollback <backup.sqlite3> --write`; restores the previous plugin-owned SQLite database from the script-created backup. |
+| `plugin_learning_db_path` | `GROWTH_LEARNING_DB_PATH`, default `data/growth-learning.sqlite3`. |
+| `plugin_data_owner_switch` | `GROWTH_DATA_OWNER=plugin` makes the plugin prefer plugin-owned SQLite for status, board, and card reads. Default remains `home-ai` facade first. |
 | `event_endpoint` | `POST /api/v1/growth/events` with Growth registration bearer; queues a bounded Growth event and posts it to Home AI `POST /api/hermes-plugins/growth/notifications` when delivery is configured. |
 | `event_outbox_store` | `data/growth-event-outbox.json` by default, override with `GROWTH_EVENT_OUTBOX_STORE_PATH`. |
 | `dev_runtime_prerequisites` | Node.js 20+ and npm; no Python dependency yet. |
@@ -82,6 +90,21 @@ npm run check
 npm test
 ```
 
+For SQLite migration staging, run a dry-run first:
+
+```bash
+npm run import:learning-sqlite -- \
+  --source-db <verified-learning-growth-backup.sqlite3> \
+  --target-db data/growth-learning.sqlite3 \
+  --workspace-id <workspace-id> \
+  --dry-run \
+  --json
+```
+
+Only use `--write` after the source `quick_check`, required table list, and
+bounded target readback are clean. The script output is limited to table counts,
+integrity/readback metadata, backup path, and board/card counts.
+
 After Home AI host registration is added, also run the central platform
 contract checker and the relevant iOS visual harness scenario from the Home AI
 main workspace.
@@ -94,10 +117,10 @@ must be extracted incrementally:
 1. stable plugin manifest and provisioning;
 2. Home AI facade-backed board projection API;
 3. local snapshot store, facade snapshot import, and migration readback;
-4. card detail and teaching-card workflow;
-5. submissions and async evaluation;
-6. mastery profile;
-7. MCP toolset and Reference / Memory Graph links.
+4. plugin-owned SQLite table migration/readback for board/card projections;
+5. card detail and teaching-card workflow write-path extraction;
+6. submissions and async evaluation;
+7. mastery profile, MCP write tools, and Reference / Memory Graph links.
 
 The current MCP wrapper is read-only and workspace-bound. It reads
 `.hermes-growth/config.json` and `.hermes-growth/access-key.txt`, strips

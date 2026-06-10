@@ -9,6 +9,36 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-10 Growth Plugin SQLite Migration Readback
+
+- Added plugin-owned Growth learning SQLite migration/readback support.
+- New files:
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `scripts/import-growth-learning-sqlite.js`;
+  - `tests/growth-learning-sqlite-store.test.js`.
+- New runtime/config fields:
+  - `GROWTH_LEARNING_DB_PATH`, default `data/growth-learning.sqlite3`;
+  - `GROWTH_DATA_OWNER=plugin` makes status, board, and card reads prefer the
+    migrated plugin-owned SQLite store. Default remains Home AI facade first.
+- New migration commands:
+  - `npm run import:learning-sqlite -- --source-db <verified-backup.sqlite3>
+    --target-db data/growth-learning.sqlite3 --workspace-id <workspace-id>
+    --dry-run --json`;
+  - use `--write` only after source integrity and readback are clean;
+  - rollback uses `--rollback <script-created-backup.sqlite3> --write`.
+- The migration script validates required learning-growth tables, source
+  `PRAGMA quick_check`, foreign-key checks, creates a backup of any existing
+  target, copies the source into plugin-owned storage, and returns bounded
+  table counts/readback metadata only.
+- Current boundary: SQLite read migration is implemented for status/board/card
+  projections. Submission, async evaluation, reflection, reward settlement, and
+  other write paths remain in Home AI until separate workflow migration tests
+  and cutover evidence exist.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-learning-sqlite-store.test.js tests/growth-service.test.js`;
+  - `npm test`.
+
 ## 2026-06-10 Growth Facade Card Detail Read Path
 
 - Added a read-only plugin API route:
