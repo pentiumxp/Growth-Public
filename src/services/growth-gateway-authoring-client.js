@@ -12,6 +12,10 @@ function isObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function timeoutPromise(promise, timeoutMs, error = "gateway_timeout") {
   const ms = Math.max(1, Number(timeoutMs || 0) || 1);
   let timer = null;
@@ -23,12 +27,28 @@ function timeoutPromise(promise, timeoutMs, error = "gateway_timeout") {
   });
 }
 
+function textFromContentPart(part) {
+  if (typeof part === "string") return part;
+  if (Array.isArray(part)) return textFromContentParts(part);
+  if (!isObject(part)) return "";
+  for (const key of ["text", "output_text", "content", "delta"]) {
+    const value = part[key];
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) {
+      const text = textFromContentParts(value);
+      if (text) return text;
+    }
+    if (isObject(value)) {
+      const text = textFromGatewayJson(value);
+      if (text) return text;
+    }
+  }
+  if (Array.isArray(part.message?.content)) return textFromContentParts(part.message.content);
+  return "";
+}
+
 function textFromContentParts(parts = []) {
-  return parts.map((part) => {
-    if (typeof part === "string") return part;
-    if (!isObject(part)) return "";
-    return cleanString(part.text || part.content || part.delta);
-  }).join("");
+  return asArray(parts).map(textFromContentPart).join("");
 }
 
 function textFromGatewayJson(payload) {
@@ -66,6 +86,80 @@ function textFromGatewayJson(payload) {
     if (text) return text;
   }
   return "";
+}
+
+function endpointLooksLikeResponses(endpoint = "") {
+  const value = cleanString(endpoint).toLowerCase();
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return /\/v1\/responses\/?$/.test(parsed.pathname) || /\/responses\/?$/.test(parsed.pathname);
+  } catch {
+    return /\/v1\/responses(?:\?|$|\/)/.test(value) || /\/responses(?:\?|$|\/)/.test(value);
+  }
+}
+
+function normalizeProtocol(value = "", endpoint = "") {
+  const protocol = cleanString(value).toLowerCase().replaceAll("_", "-");
+  if (["responses", "openai-responses", "gateway-responses", "v1-responses"].includes(protocol)) return "responses";
+  if (["generic", "growth-generic", "hermes-growth-authoring"].includes(protocol)) return "generic";
+  return endpointLooksLikeResponses(endpoint) ? "responses" : "generic";
+}
+
+function prettyJson(value) {
+  try {
+    return JSON.stringify(value || {}, null, 2);
+  } catch {
+    return "{}";
+  }
+}
+
+function gatewayResponsesPrompt(kind, input = {}) {
+  const repair = kind === "growth.card_authoring.repair";
+  const request = repair ? input.request || {} : input;
+  const invalidOutput = repair ? cleanString(input.invalidOutput).slice(0, 12000) : "";
+  const errors = repair ? asArray(input.errors).slice(0, 20) : [];
+  const task = repair
+    ? "Repair the invalid draft into a valid Growth learning-card authoring draft."
+    : "Author one Growth learning-card draft from the structured request.";
+  const role = cleanString(request.cardRole || request.learningGraphPlan?.cardRole || request.learningGraphPlan?.cardSequence?.[0]?.cardRole || "practice");
+  const schemaVersion = cleanString(request.cardSchemaVersion || "growth.card.authoring.v1");
+  return [
+    "You are the Home AI Growth card authoring service.",
+    task,
+    "",
+    "Return exactly one JSON object. Do not include markdown fences, prose, comments, citations, or tool calls.",
+    `The JSON object must use schemaVersion \"${schemaVersion}\" and cardRole \"${role}\".`,
+    "Required top-level fields: cardRole, title, targetNodeIds, expectedTimeMinutes, difficultyBasis, supportLevel, teachingFlow, evidenceToRecord.",
+    "For ordinary teaching/practice/integration cards, teachingFlow must include: learningTarget, prerequisites, microLesson, workedExample, guidedPractice, quickCheck.",
+    "Use only graph node ids present in the supplied learningGraphPlan. Focused teaching or practice cards must use exactly one targetNodeId.",
+    "Keep learner-facing text concise, age-appropriate, low-pressure, and suitable for a 10-15 minute daily English card.",
+    "Do not include answer keys, hidden answers, raw prompts, raw model output, full transcripts, full source documents, secrets, tokens, cookies, or private payloads.",
+    "",
+    "Structured request:",
+    prettyJson(request),
+    repair ? "" : "",
+    repair ? "Invalid draft output to repair:" : "",
+    repair ? invalidOutput : "",
+    repair ? "Validation errors:" : "",
+    repair ? prettyJson(errors) : ""
+  ].filter((line) => line !== "").join("\n");
+}
+
+function gatewayResponsesBody(payload = {}, options = {}) {
+  const body = {
+    input: gatewayResponsesPrompt(payload.kind, payload.input || {}),
+    stream: options.stream === true,
+    metadata: {
+      source: "growth-card-authoring-service",
+      kind: cleanString(payload.kind)
+    }
+  };
+  const model = cleanString(options.model);
+  if (model) body.model = model;
+  const maxOutputTokens = Number(options.maxOutputTokens || 0);
+  if (Number.isFinite(maxOutputTokens) && maxOutputTokens > 0) body.max_output_tokens = Math.floor(maxOutputTokens);
+  return body;
 }
 
 function textFromSseData(data = "") {
@@ -126,11 +220,16 @@ async function normalizeTransportResult(result) {
   if (typeof result.status === "number" && result.status >= 400) {
     return unavailable("gateway_http_error", { status: result.status });
   }
+  if (typeof result.text === "function") {
+    const text = await responseText(result);
+    const normalized = normalizeGatewayText(text, result.mode);
+    return normalized.text ? Object.assign({ ok: true }, normalized) : unavailable("gateway_empty_output", normalized);
+  }
   if (isObject(result) && (result.sse || result.stream)) {
     const normalized = normalizeGatewayText(result.sse || result.stream || result.body || "", "stream");
     return normalized.text ? Object.assign({ ok: true }, normalized) : unavailable("gateway_empty_output", normalized);
   }
-  if (isObject(result) && result.json !== undefined) {
+  if (isObject(result) && result.json !== undefined && typeof result.json !== "function") {
     const text = textFromGatewayJson(result.json);
     return text ? { ok: true, mode: "json", text, raw: JSON.stringify(result.json) } : unavailable("gateway_empty_output");
   }
@@ -149,6 +248,7 @@ function createGrowthGatewayAuthoringClient(options = {}) {
   const endpoint = cleanString(options.endpoint || options.gatewayUrl);
   const accessToken = cleanString(options.accessToken || options.gatewayAccessToken);
   const timeoutMs = Math.max(1, Number(options.timeoutMs || 60000) || 60000);
+  const protocol = normalizeProtocol(options.protocol, endpoint);
 
   async function invokeGateway(kind, input = {}) {
     const payload = { kind, input };
@@ -165,10 +265,13 @@ function createGrowthGatewayAuthoringClient(options = {}) {
     if (typeof fetchImpl !== "function") return unavailable("gateway_fetch_unavailable");
     const headers = Object.assign({ "content-type": "application/json" }, options.headers || {});
     if (accessToken) headers.authorization = `Bearer ${accessToken}`;
+    const body = protocol === "responses"
+      ? gatewayResponsesBody(payload, options)
+      : payload;
     return fetchImpl(endpoint, {
       method: "POST",
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
   }
 
@@ -187,6 +290,8 @@ function createGrowthGatewayAuthoringClient(options = {}) {
 }
 
 module.exports = {
+  gatewayResponsesBody,
+  gatewayResponsesPrompt,
   createGrowthGatewayAuthoringClient,
   textFromGatewayJson,
   textFromSseBody

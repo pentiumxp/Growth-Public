@@ -3,6 +3,7 @@
 const {
   asArray,
   cleanString,
+  insertDynamic,
   nowIsoValue,
   tableColumns,
   tableExists,
@@ -45,6 +46,18 @@ function stableGeneratedCardId(input = {}) {
 
 function stableDraftId(taskCardId) {
   return `ldraft_${sha256Hex(cleanString(taskCardId)).slice(0, 18)}`;
+}
+
+function stableProgramId(input = {}) {
+  const draft = input.draft || {};
+  const request = input.request || {};
+  const plan = input.learningGraphPlan || request.learningGraphPlan || {};
+  const explicit = cleanString(plan.programId || request.programId || draft.programId);
+  if (explicit) return explicit;
+  const workspaceId = cleanString(plan.workspaceId || request.workspaceId || request.learnerSummary?.workspaceId);
+  const learnerId = cleanString(plan.learnerId || request.learnerId || request.learnerSummary?.learnerId || workspaceId);
+  const domain = domainFromRequest(request);
+  return `lprogram_growth_authoring_${sha256Hex(`${workspaceId}:${learnerId}:${domain}`).slice(0, 14)}`;
 }
 
 function stableBindingId(taskCardId, learningGraphPlanId) {
@@ -169,7 +182,7 @@ function cardValues(input = {}) {
   const rewardCap = defaultRewardCap(role);
   return {
     id: taskCardId,
-    program_id: cleanString(learningGraphPlan.programId || request.programId || draft.programId),
+    program_id: stableProgramId(input),
     draft_id: stableDraftId(taskCardId),
     learner_id: cleanString(learningGraphPlan.learnerId || request.learnerSummary?.learnerId || request.learnerId),
     workspace_id: cleanString(learningGraphPlan.workspaceId || request.learnerSummary?.workspaceId || request.workspaceId),
@@ -195,9 +208,17 @@ function cardValues(input = {}) {
     expected_duration_minutes_max: Math.max(minutes, minutes + 5),
     stage_assessment_cycle_id: cleanString(draft.stageAssessmentCycleId || draft.stage_assessment_cycle_id),
     activation_state: role === "stage_assessment" ? cleanString(draft.activationState || "active") : cleanString(draft.activationState),
+    activation_reason: cleanString(draft.activationReason || draft.activation_reason),
+    activation_source: cleanString(draft.activationSource || draft.activation_source || "growth_card_authoring"),
+    cooldown_until: cleanString(draft.cooldownUntil || draft.cooldown_until),
     reward_cap_coins: rewardCap,
     configured_reward_coins: rewardCap,
     default_reward_coins: rewardCap,
+    completion_policy_json: jsonText(raw.completionPolicy),
+    mastery_evidence_weight: role === "stage_assessment" ? 1 : 0.2,
+    reliability_json: jsonText({ source: "growth-card-authoring", confidence: "model_validated" }),
+    teaching_flow_json: raw.teachingFlow ? jsonText(raw.teachingFlow) : null,
+    experience_summary_json: jsonText(raw.experienceSummary),
     raw_json: jsonText(raw),
     created_at: createdAt,
     updated_at: updatedAt
@@ -230,6 +251,114 @@ function requirePlanRow(db, learningGraphPlanId) {
   const row = db.prepare("SELECT learning_graph_plan_id FROM learning_graph_plans WHERE learning_graph_plan_id = ?").get(cleanString(learningGraphPlanId));
   if (!row) return unavailable("learning_graph_plan_not_found", { learningGraphPlanId: cleanString(learningGraphPlanId) });
   return { ok: true };
+}
+
+function rowExists(db, tableName, idColumn, id) {
+  if (!tableExists(db, tableName)) return false;
+  if (!tableColumns(db, tableName).includes(idColumn)) return false;
+  return Boolean(db.prepare(`SELECT ${idColumn} FROM ${tableName} WHERE ${idColumn} = ? LIMIT 1`).get(cleanString(id)));
+}
+
+function weekEndFromStart(date = "") {
+  const start = cleanString(date).slice(0, 10);
+  const parsed = Date.parse(`${start}T00:00:00.000Z`);
+  if (!start || !Number.isFinite(parsed)) return start;
+  return new Date(parsed + 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function sourceBasisRefs(input = {}, taskValues = {}) {
+  const draft = input.draft || {};
+  const plan = input.learningGraphPlan || input.request?.learningGraphPlan || {};
+  return uniqueStrings([
+    `growth_card_authoring:${cleanString(taskValues.id)}`,
+    cleanString(plan.learningGraphPlanId) ? `learning_graph_plan:${cleanString(plan.learningGraphPlanId)}` : "",
+    ...uniqueStrings(draft.targetNodeIds || firstPlanCard(plan).targetNodeIds).map((nodeId) => `learning_graph_node:${nodeId}`)
+  ]);
+}
+
+function ensureProgramRow(db, input = {}, taskValues = {}, timestamp = "") {
+  if (!tableExists(db, "learning_programs")) return;
+  if (!cleanString(taskValues.program_id) || rowExists(db, "learning_programs", "id", taskValues.program_id)) return;
+  const request = input.request || {};
+  const draft = input.draft || {};
+  const refs = sourceBasisRefs(input, taskValues);
+  insertDynamic(db, "learning_programs", {
+    id: cleanString(taskValues.program_id),
+    learner_id: cleanString(taskValues.learner_id),
+    workspace_id: cleanString(taskValues.workspace_id),
+    title: cleanString(draft.programTitle || request.programTitle || "Growth generated learning cards"),
+    domain: cleanString(taskValues.domain || domainFromRequest(request)),
+    focus_areas_json: jsonText(uniqueStrings(draft.targetNodeIds || input.learningGraphPlan?.targetNodeIds || [input.learningGraphPlan?.targetNodeId])),
+    goal_summary: cleanString(draft.goalSummary || request.goalSummary || "Summary-only Growth card authoring program.").slice(0, 700),
+    start_date: cleanString(taskValues.planned_date),
+    end_date: cleanString(taskValues.planned_date),
+    days_per_week: 1,
+    minutes_per_day: expectedMinutes(draft),
+    intensity: "daily",
+    status: "active",
+    source_basis_refs_json: jsonText(refs),
+    curriculum_refs_json: jsonText(curriculumRefs(request)),
+    constraints_json: jsonText({
+      summaryOnly: true,
+      generatedBy: "growth-card-authoring-service",
+      gatewayOnly: true
+    }),
+    review_policy_json: jsonText({
+      ownerVisible: true,
+      parentReviewRequired: false,
+      summaryOnly: true
+    }),
+    raw_json: jsonText({
+      source: "growth-card-authoring",
+      programId: cleanString(taskValues.program_id),
+      workspaceId: cleanString(taskValues.workspace_id),
+      learnerId: cleanString(taskValues.learner_id),
+      sourceBasisRefs: refs
+    }),
+    created_at: timestamp,
+    updated_at: timestamp,
+    archived_at: ""
+  });
+}
+
+function ensureDraftRow(db, input = {}, taskValues = {}, timestamp = "") {
+  if (!tableExists(db, "learning_plan_drafts")) return;
+  if (!cleanString(taskValues.draft_id) || rowExists(db, "learning_plan_drafts", "id", taskValues.draft_id)) return;
+  const draft = input.draft || {};
+  const day = cleanString(taskValues.planned_date || timestamp).slice(0, 10);
+  const refs = sourceBasisRefs(input, taskValues);
+  insertDynamic(db, "learning_plan_drafts", {
+    id: cleanString(taskValues.draft_id),
+    program_id: cleanString(taskValues.program_id),
+    learner_id: cleanString(taskValues.learner_id),
+    workspace_id: cleanString(taskValues.workspace_id),
+    status: "published",
+    week_start: day,
+    week_end: weekEndFromStart(day),
+    daily_plans_json: jsonText([{
+      date: day,
+      plannedMinutes: Number(taskValues.planned_minutes || expectedMinutes(draft)),
+      tasks: [{
+        taskCardId: cleanString(taskValues.id),
+        title: cleanString(taskValues.title),
+        cardRole: cleanString(taskValues.card_role),
+        targetNodeIds: uniqueStrings(draft.targetNodeIds),
+        sourceBasisRefs: refs
+      }]
+    }]),
+    task_count: 1,
+    reliability_json: jsonText({ source: "growth-card-authoring", confidence: "model_validated" }),
+    raw_json: jsonText({
+      source: "growth-card-authoring",
+      draftId: cleanString(taskValues.draft_id),
+      taskCardId: cleanString(taskValues.id),
+      programId: cleanString(taskValues.program_id),
+      sourceBasisRefs: refs
+    }),
+    created_at: timestamp,
+    updated_at: timestamp,
+    published_at: timestamp
+  });
 }
 
 function insertBinding(db, values = {}, timestamp = "") {
@@ -284,6 +413,8 @@ function createLearningCardAuthoringPublisherRepository({ open, now } = {}) {
       const timestamp = clock().toISOString();
       db.exec("BEGIN IMMEDIATE");
       try {
+        ensureProgramRow(db, input, taskValues, timestamp);
+        ensureDraftRow(db, input, taskValues, timestamp);
         upsertDynamic(db, "learning_task_cards", taskValues, "id");
         insertBinding(db, binding, timestamp);
         db.exec("COMMIT");

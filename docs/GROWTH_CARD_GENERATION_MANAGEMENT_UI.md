@@ -75,7 +75,8 @@ not cause writes to fall back into the Owner's own learner data.
 9. Growth calls `POST /api/v1/growth/cards/generate`.
 10. Gateway output is converted to an authoring draft.
 11. Validation passes or returns a visible authoring error.
-12. A validated card is transactionally published to Growth SQLite.
+12. A validated card is transactionally published to Growth SQLite, including
+    the native program/draft parent rows required by the card table.
 13. Owner sees the generated card preview and can open the card on the learner
     board.
 
@@ -294,7 +295,29 @@ The generated card must include a valid `teachingFlow`:
 | Empty output | Show validation failure; do not publish. |
 | Invalid JSON after repair | Show validation failure; do not publish. |
 | Schema or privacy failure | Show Owner review required; do not publish. |
-| DB transaction failure | Show publish failure; no half-card should exist. |
+| DB transaction failure | Show publish failure; no generated program, draft, graph binding, or half-card should exist. |
+
+## Production Wiring
+
+The Owner UI calls only Growth plugin routes. It must not call Gateway from the
+browser.
+
+Production generation requires:
+
+- a configured Gateway authoring endpoint:
+  `GROWTH_GATEWAY_AUTHORING_ENDPOINT`;
+- the official Gateway Responses protocol, either explicit through
+  `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or inferred from a
+  `/v1/responses` endpoint;
+- `GROWTH_GATEWAY_AUTHORING_MODEL` when the selected Gateway worker requires an
+  explicit model;
+- the Gateway token through `GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH` or the
+  platform secret boundary.
+
+The Home AI same-origin plugin proxy is the expected UI path. It checks Hermes
+workspace access first, then attaches the server-side Growth workspace bearer
+to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
+`Authorization: Bearer <workspace-local .hermes-growth/access-key.txt>`.
 
 ## Implementation Slices
 
@@ -342,6 +365,9 @@ Add focused tests before broad regression runs:
 | UI submit | calls Growth endpoint, not Gateway directly |
 | UI success | published result shows card preview and open-card action |
 | UI failures | timeout, invalid JSON, privacy failure, and DB publish failure display bounded messages |
+| Gateway wire protocol | official `/v1/responses` request body and nested output text parsing |
+| SQLite publish | FK-backed publish creates missing program/draft parent rows and rolls back them with the card on failure |
+| Proxy write auth | Home AI same-origin proxy attaches server-side Growth bearer for writes |
 | Boundary guard | frontend has no vendor model endpoint and no raw prompt field |
 
 Recommended command group after implementation:

@@ -133,8 +133,8 @@ The authoring service is responsible for:
 - calling Gateway through the Growth Gateway authoring client;
 - parsing and repairing model output when allowed;
 - validating the authoring draft;
-- writing accepted cards and graph bindings to Growth SQLite in one
-  transaction.
+- writing accepted cards, required parent program/draft rows, graph bindings,
+  and audit metadata to Growth SQLite in one transaction.
 
 Home AI may provide the platform Gateway access/config boundary, but Growth
 must not import or call Home AI old Growth route/server internals. The plugin
@@ -143,6 +143,21 @@ provider-specific configuration, account, rate limit, audit, and stream
 handling stays behind Gateway.
 
 Gateway is the only model boundary for Growth card authoring.
+
+The runtime authoring client supports two Gateway wire protocols:
+
+- `generic`, the fake Gateway harness protocol that accepts
+  `{ kind, input }`;
+- `responses`, the official Gateway `/v1/responses` protocol. This mode is
+  selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or inferred when
+  `GROWTH_GATEWAY_AUTHORING_ENDPOINT` ends in `/v1/responses`.
+
+Production should configure `GROWTH_GATEWAY_AUTHORING_ENDPOINT` to a Gateway
+Responses endpoint, set `GROWTH_GATEWAY_AUTHORING_MODEL` when the selected
+worker requires an explicit model, and provide the Gateway access token through
+`GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH` or the platform-managed secret
+boundary. The model prompt is assembled inside Growth from summary-only
+structured input; the browser never calls Gateway directly.
 
 ## Structured Authoring Input
 
@@ -175,7 +190,8 @@ The required flow is:
 5. validate card-role policy;
 6. validate graph plan and graph binding consistency;
 7. run privacy and bounded-content scans;
-8. transactionally write the card, graph binding, and audit metadata to Growth
+8. transactionally write the parent program/draft rows required by the native
+   SQLite schema, the card, graph binding, and audit metadata to Growth
    SQLite;
 9. return a bounded published-card result.
 
@@ -187,7 +203,8 @@ Failure behavior must be visible and recoverable:
 - timeout is a bounded retryable failure when policy allows retry;
 - validation failure can become retry, deterministic repair card, or Owner
   review;
-- database transaction failure must roll back the draft and leave no half-card.
+- database transaction failure must roll back the generated parent rows, draft,
+  graph binding, and card together, leaving no half-card.
 
 ## Graph And History Generation Runtime
 
@@ -208,12 +225,18 @@ The service-owned runtime path is:
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
 4. `learning-card-authoring-service` calls Gateway and validates the draft;
-5. `card-authoring-publisher` writes `learning_task_cards` and
-   `learning_card_graph_bindings` in one SQLite transaction.
+5. `card-authoring-publisher` writes the minimum FK parent rows in
+   `learning_programs` and `learning_plan_drafts`, then writes
+   `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
+   transaction.
 
 The protected runtime endpoint is `POST /api/v1/growth/cards/generate`. It is
 workspace-bearer scoped, normalizes snake_case and camelCase graph inputs, and
 delegates generation to the service layer. The route must stay HTTP glue.
+When the embedded UI is served through the Home AI same-origin plugin proxy,
+the host validates the Hermes workspace access and attaches the server-side
+`.hermes-growth/access-key.txt` bearer to proxied write requests. Direct calls
+to the plugin port still need the workspace bearer explicitly.
 
 The current implementation supports generating a formal Growth card from the
 imported knowledge graph and historical Growth SQLite summaries when a Gateway
@@ -239,7 +262,10 @@ Minimum fake Gateway harness scenarios for implementation:
 - repair pass failure;
 - privacy scan failure;
 - graph binding validation failure;
-- database transaction failure.
+- database transaction failure;
+- FK-backed SQLite publish where `learning_programs` and
+  `learning_plan_drafts` parent rows are missing and must be created in the
+  same transaction.
 
 ## Graph-Guided Planning
 

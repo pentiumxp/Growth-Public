@@ -38,7 +38,7 @@ Growth should stay a service-first embedded plugin:
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
 | Gateway authoring client | `src/services/growth-gateway-authoring-client.js` | Gateway-only model boundary for card authoring. It supports SSE and JSON Gateway responses and does not call model vendors directly. |
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
-| Card authoring SQLite publisher | `src/stores/growth-learning-sqlite/card-authoring-publisher.js` | Transactional publisher for validated authoring drafts. It upserts `learning_task_cards`, writes `learning_card_graph_bindings`, and rolls back on partial failure. |
+| Card authoring SQLite publisher | `src/stores/growth-learning-sqlite/card-authoring-publisher.js` | Transactional publisher for validated authoring drafts. It creates missing FK parent rows in `learning_programs` and `learning_plan_drafts`, upserts `learning_task_cards`, writes `learning_card_graph_bindings`, and rolls back on partial failure. |
 | Historical authoring summary | `src/stores/growth-learning-sqlite/history-summary.js` | Summary-only historical context reader for generated cards. It exposes card/evaluation/mastery/experience aggregates without raw learner submissions or transcripts. |
 | Knowledge Graph import | `src/services/learning-graph-import-service.js`, `src/stores/growth-learning-sqlite/graph-schema.js`, `src/stores/growth-learning-sqlite/graph-repository.js`, `scripts/import-learning-graph-pack.js` | Source-pack parser and native SQLite graph importer for recovered Growth Knowledge Graph seeds. Dry-run is the default; write mode is explicit and imports bounded graph metadata only. |
 | Knowledge Graph planning | `src/services/learning-graph-plan-service.js`, `src/services/learning-card-graph-binding-service.js` | Validated plan creation and card binding over native graph nodes. It feeds the protected graph-plus-history generation route and can still be used directly for manual plan/binding workflows. |
@@ -117,17 +117,26 @@ The first core-module split is behavior-preserving:
   `learning-card-authoring-validation-service`, with `history-summary` and
   `card-authoring-publisher` repositories underneath. The protected runtime
   route is `POST /api/v1/growth/cards/generate`; it is workspace-bearer scoped
-  and delegates to services. The publisher writes the generated task card and
-  graph binding in one SQLite transaction. Generated daily cards use the
+  and delegates to services. The publisher writes any missing native
+  program/draft parent rows, the generated task card, and graph binding in one
+  SQLite transaction. Generated daily cards use the
   `daily_score_once` completion policy: one submission evaluation, one
   optional reflection, completion after the first evaluation, and
   score-proportional rewards without a pass-line gate.
+  `growth-gateway-authoring-client` can speak the fake harness `{ kind,
+  input }` protocol and the official Gateway `/v1/responses` protocol. The
+  latter is selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or by a
+  `/v1/responses` endpoint, and it keeps model prompting inside Growth while
+  provider credentials remain behind Gateway.
 - Owner card generation management is exposed through the embedded plugin UI.
   The Owner `生成` tab reads
   `GET /api/v1/growth/card-generation/context`, keeps learner targets separate
   from the Owner actor, and posts generation requests to
   `POST /api/v1/growth/cards/generate`. The frontend never calls Gateway or
-  model vendors directly.
+  model vendors directly. Through the Home AI same-origin plugin proxy, write
+  requests receive the server-side `.hermes-growth/access-key.txt` bearer after
+  Hermes workspace access is checked; direct plugin-port writes still require
+  the bearer explicitly.
 - `growth-appearance.js`, `growth-api-client.js`, `growth-view-model.js`, and
   `growth-route-controller.js` keep host integration, API calls, UI
   normalization, and route/action resolution outside the boot script.

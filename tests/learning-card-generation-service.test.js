@@ -80,7 +80,46 @@ function graphPack() {
 
 function createLearningTables(db) {
   db.exec(`
-    CREATE TABLE learning_programs (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL DEFAULT '');
+    CREATE TABLE learning_programs (
+      id TEXT PRIMARY KEY,
+      learner_id TEXT NOT NULL,
+      workspace_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      focus_areas_json TEXT NOT NULL,
+      goal_summary TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      days_per_week INTEGER NOT NULL,
+      minutes_per_day INTEGER NOT NULL,
+      intensity TEXT NOT NULL,
+      status TEXT NOT NULL,
+      source_basis_refs_json TEXT NOT NULL,
+      curriculum_refs_json TEXT NOT NULL,
+      constraints_json TEXT NOT NULL,
+      review_policy_json TEXT NOT NULL,
+      raw_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      archived_at TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE learning_plan_drafts (
+      id TEXT PRIMARY KEY,
+      program_id TEXT NOT NULL,
+      learner_id TEXT NOT NULL,
+      workspace_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      week_start TEXT NOT NULL,
+      week_end TEXT NOT NULL,
+      daily_plans_json TEXT NOT NULL,
+      task_count INTEGER NOT NULL,
+      reliability_json TEXT,
+      raw_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      published_at TEXT NOT NULL DEFAULT '',
+      FOREIGN KEY(program_id) REFERENCES learning_programs(id) ON DELETE CASCADE
+    );
     CREATE TABLE learning_task_cards (
       id TEXT PRIMARY KEY,
       program_id TEXT NOT NULL,
@@ -100,18 +139,28 @@ function createLearningTables(db) {
       source_basis_refs_json TEXT NOT NULL,
       curriculum_refs_json TEXT NOT NULL,
       privacy_level TEXT NOT NULL,
+      reliability_json TEXT,
       card_role TEXT NOT NULL DEFAULT '',
+      completion_policy_json TEXT NOT NULL DEFAULT '{}',
+      mastery_evidence_weight REAL NOT NULL DEFAULT 1,
       capability_cluster_id TEXT NOT NULL DEFAULT '',
       expected_duration_minutes_min INTEGER NOT NULL DEFAULT 10,
       expected_duration_minutes_max INTEGER NOT NULL DEFAULT 15,
       stage_assessment_cycle_id TEXT NOT NULL DEFAULT '',
       activation_state TEXT NOT NULL DEFAULT '',
+      activation_reason TEXT NOT NULL DEFAULT '',
+      activation_source TEXT NOT NULL DEFAULT '',
+      cooldown_until TEXT NOT NULL DEFAULT '',
       reward_cap_coins INTEGER NOT NULL DEFAULT 100,
       configured_reward_coins INTEGER NOT NULL DEFAULT 100,
       default_reward_coins INTEGER NOT NULL DEFAULT 100,
+      teaching_flow_json TEXT,
+      experience_summary_json TEXT,
       raw_json TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(program_id) REFERENCES learning_programs(id) ON DELETE CASCADE,
+      FOREIGN KEY(draft_id) REFERENCES learning_plan_drafts(id) ON DELETE CASCADE
     );
     CREATE TABLE learning_task_submissions (
       id TEXT PRIMARY KEY,
@@ -184,7 +233,31 @@ function createLearningTables(db) {
 }
 
 function seedHistory(db) {
-  db.prepare("INSERT INTO learning_programs(id, workspace_id) VALUES ('program_1', 'weixin_child')").run();
+  db.prepare(`
+    INSERT INTO learning_programs(
+      id, learner_id, workspace_id, title, domain, focus_areas_json, goal_summary,
+      start_date, end_date, days_per_week, minutes_per_day, intensity, status,
+      source_basis_refs_json, curriculum_refs_json, constraints_json,
+      review_policy_json, raw_json, created_at, updated_at
+    ) VALUES (
+      'program_1', 'weixin_child', 'weixin_child', 'Ratio program', 'math',
+      '["kg_ratio_intro"]', 'Practice ratio comparison.', '2026-06-10',
+      '2026-06-17', 5, 12, 'normal', 'active', '[]', '[]', '{}', '{}',
+      '{}', '2026-06-10T00:00:00.000Z', '2026-06-10T00:00:00.000Z'
+    )
+  `).run();
+  db.prepare(`
+    INSERT INTO learning_plan_drafts(
+      id, program_id, learner_id, workspace_id, status, week_start, week_end,
+      daily_plans_json, task_count, reliability_json, raw_json, created_at,
+      updated_at, published_at
+    ) VALUES (
+      'draft_1', 'program_1', 'weixin_child', 'weixin_child', 'published',
+      '2026-06-10', '2026-06-17', '[]', 1, '{}', '{}',
+      '2026-06-10T00:00:00.000Z', '2026-06-10T00:00:00.000Z',
+      '2026-06-10T00:00:00.000Z'
+    )
+  `).run();
   db.prepare(`
     INSERT INTO learning_task_cards(
       id, program_id, draft_id, learner_id, workspace_id, kanban_card_id, title, domain,
@@ -333,6 +406,12 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
     assert.equal(raw.completionPolicy.evaluationAttempts, 1);
     assert.equal(raw.completionPolicy.reflectionAttempts, 1);
     assert.equal(raw.completionPolicy.passScoreRequired, false);
+    assert.equal(JSON.parse(card.completion_policy_json).mode, "daily_score_once");
+    assert.equal(JSON.parse(card.teaching_flow_json).learningTarget, "Compare two quantities using a ratio.");
+    assert.equal(JSON.parse(card.experience_summary_json).learnerSummary.completedRecentCardCount, 1);
+    const draft = db.prepare("SELECT * FROM learning_plan_drafts WHERE id = ?").get(card.draft_id);
+    assert.equal(draft.program_id, "program_1");
+    assert.equal(draft.task_count, 1);
     const binding = db.prepare("SELECT * FROM learning_card_graph_bindings WHERE task_card_id = ?").get(result.published.taskCardId);
     assert.equal(binding.learning_graph_plan_id, result.learningGraphPlan.learningGraphPlanId);
     assert.deepEqual(JSON.parse(binding.node_ids_json), ["kg_ratio_intro"]);
@@ -343,6 +422,36 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
   const projected = store.card({ workspaceId: "weixin_child", taskCardId: result.published.taskCardId });
   assert.equal(projected.ok, true);
   assert.equal(projected.card.teachingFlow.learningTarget, "Compare two quantities using a ratio.");
+});
+
+test("card generation creates missing program and draft parent rows for FK-backed SQLite", async () => {
+  const { dbPath, generationService } = setup();
+
+  const result = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    programId: "program_generated_fk",
+    targetNodeId: "kg_ratio_intro",
+    cardRole: "teaching",
+    generationKey: "ratio-intro-practice-new-program"
+  });
+
+  assert.equal(result.ok, true);
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
+    assert.equal(card.program_id, "program_generated_fk");
+    const program = db.prepare("SELECT * FROM learning_programs WHERE id = ?").get("program_generated_fk");
+    assert.equal(program.workspace_id, "weixin_child");
+    assert.equal(program.status, "active");
+    const draft = db.prepare("SELECT * FROM learning_plan_drafts WHERE id = ?").get(card.draft_id);
+    assert.equal(draft.program_id, "program_generated_fk");
+    assert.equal(draft.status, "published");
+    assert.equal(db.prepare("PRAGMA foreign_key_check").all().length, 0);
+  } finally {
+    db.close();
+  }
 });
 
 test("card generation fails closed before Gateway when graph planning fails", async () => {

@@ -1,7 +1,11 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
+const {
+  createGrowthGatewayAuthoringClient,
+  gatewayResponsesBody,
+  textFromGatewayJson
+} = require("../src/services/growth-gateway-authoring-client");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 
@@ -149,6 +153,102 @@ test("card authoring service handles valid ordinary JSON Gateway drafts", async 
   assert.equal(result.ok, true);
   assert.equal(result.gatewayMode, "json");
   assert.equal(result.draft.title, "JSON generated ratio card");
+});
+
+test("Gateway authoring client can call an official Responses endpoint", async () => {
+  const calls = [];
+  const client = createGrowthGatewayAuthoringClient({
+    endpoint: "http://127.0.0.1:18751/v1/responses",
+    accessToken: "gateway-secret",
+    model: "gpt-5.5",
+    fetchImpl(url, options = {}) {
+      calls.push({ url, options });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        text: () => Promise.resolve(JSON.stringify({
+          output: [{
+            type: "message",
+            content: [{
+              type: "output_text",
+              text: JSON.stringify(validDraft({ title: "Responses generated ratio card" }))
+            }]
+          }]
+        }))
+      });
+    }
+  });
+
+  const result = await client.generateCardDraft({
+    learningGraphPlan: graphPlan(),
+    cardRole: "teaching",
+    cardSchemaVersion: "growth.card.authoring.v1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.mode, "json");
+  assert.equal(JSON.parse(result.text).title, "Responses generated ratio card");
+  assert.equal(calls[0].url, "http://127.0.0.1:18751/v1/responses");
+  assert.equal(calls[0].options.headers.authorization, "Bearer gateway-secret");
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.model, "gpt-5.5");
+  assert.equal(body.stream, false);
+  assert.equal(body.metadata.kind, "growth.card_authoring.generate");
+  assert.match(body.input, /Return exactly one JSON object/);
+  assert.match(body.input, /lgp_test_ratio_intro/);
+});
+
+test("Gateway authoring client reads text from fetch Response objects before json helpers", async () => {
+  const gatewayPayload = {
+    output_text: JSON.stringify(validDraft({ title: "Fetch Response generated ratio card" }))
+  };
+  const client = createGrowthGatewayAuthoringClient({
+    endpoint: "http://127.0.0.1:18751/v1/responses",
+    accessToken: "gateway-secret",
+    protocol: "responses",
+    fetchImpl() {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { get: () => "application/json" },
+        json: () => Promise.resolve(gatewayPayload),
+        text: () => Promise.resolve(JSON.stringify(gatewayPayload))
+      });
+    }
+  });
+
+  const result = await client.generateCardDraft({
+    learningGraphPlan: graphPlan(),
+    cardRole: "teaching",
+    cardSchemaVersion: "growth.card.authoring.v1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.mode, "json");
+  assert.equal(JSON.parse(result.text).title, "Fetch Response generated ratio card");
+});
+
+test("Gateway Responses prompt and parser support repair and nested output text", () => {
+  const body = gatewayResponsesBody({
+    kind: "growth.card_authoring.repair",
+    input: {
+      request: { learningGraphPlan: graphPlan(), cardRole: "teaching" },
+      invalidOutput: "{ invalid json",
+      errors: [{ code: "authoring_draft_invalid_json" }]
+    }
+  }, { model: "gpt-5.5", stream: true });
+
+  assert.equal(body.model, "gpt-5.5");
+  assert.equal(body.stream, true);
+  assert.match(body.input, /Repair the invalid draft/);
+  assert.match(body.input, /authoring_draft_invalid_json/);
+  assert.equal(textFromGatewayJson({
+    output: [{
+      type: "message",
+      content: [{ type: "output_text", text: "nested text" }]
+    }]
+  }), "nested text");
 });
 
 test("card authoring service reports empty Gateway output without publishing", async () => {

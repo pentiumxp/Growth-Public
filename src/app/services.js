@@ -34,6 +34,9 @@ function createServices(config) {
   const growthGatewayAuthoringClient = createGrowthGatewayAuthoringClient({
     endpoint: config.gatewayAuthoringEndpoint,
     accessToken: config.gatewayAuthoringAccessToken,
+    protocol: config.gatewayAuthoringProtocol,
+    model: config.gatewayAuthoringModel,
+    stream: config.gatewayAuthoringStream,
     timeoutMs: config.gatewayAuthoringTimeoutMs
   });
   const learningCardAuthoringService = createLearningCardAuthoringService({

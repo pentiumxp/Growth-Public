@@ -18,6 +18,9 @@ function readEnv(env = process.env) {
     homeAiAccessKey: env.GROWTH_HOME_AI_ACCESS_KEY || env.HOME_AI_ACCESS_KEY || readSecretFile(env.GROWTH_HOME_AI_ACCESS_KEY_PATH || env.HOME_AI_ACCESS_KEY_PATH),
     gatewayAuthoringEndpoint: env.GROWTH_GATEWAY_AUTHORING_ENDPOINT || env.HERMES_GATEWAY_AUTHORING_ENDPOINT || env.HOME_AI_GATEWAY_AUTHORING_ENDPOINT || "",
     gatewayAuthoringAccessToken: env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN || env.HERMES_GATEWAY_ACCESS_TOKEN || readSecretFile(env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH || env.HERMES_GATEWAY_ACCESS_TOKEN_PATH),
+    gatewayAuthoringProtocol: env.GROWTH_GATEWAY_AUTHORING_PROTOCOL || env.HERMES_GATEWAY_AUTHORING_PROTOCOL || "",
+    gatewayAuthoringModel: env.GROWTH_GATEWAY_AUTHORING_MODEL || env.LEARNING_GROWTH_JIT_MODEL || env.HERMES_GATEWAY_AUTHORING_MODEL || "",
+    gatewayAuthoringStream: ["1", "true", "yes", "on"].includes(String(env.GROWTH_GATEWAY_AUTHORING_STREAM || "").trim().toLowerCase()),
     gatewayAuthoringTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_AUTHORING_TIMEOUT_MS || 60000) || 60000),
     legacyAudioRoots: (env.GROWTH_LEGACY_AUDIO_ROOTS || "")
       .split(path.delimiter)
