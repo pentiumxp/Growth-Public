@@ -316,14 +316,15 @@ test("reports bounded import failure when facade is unavailable", async () => {
 
 test("frontend opens a routed Growth card from plugin route params", () => {
   const appJs = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+  const routeControllerJs = fs.readFileSync(path.join(__dirname, "..", "public", "growth-route-controller.js"), "utf8");
   assert.match(appJs, /params\.get\("pluginActionId"\)/);
   assert.match(appJs, /const pluginItemId = \(params\.get\("pluginItemId"\) \|\| params\.get\("itemId"\) \|\| params\.get\("taskCardId"\) \|\| ""\)\.trim\(\)/);
-  assert.match(appJs, /async function applyInitialPluginRoute\(\)/);
-  assert.match(appJs, /pluginRoute === "card" && pluginItemId/);
-  assert.match(appJs, /await openCard\(pluginItemId\)/);
+  assert.match(routeControllerJs, /async function applyInitialPluginRoute\(\)/);
+  assert.match(routeControllerJs, /pluginRoute === "card" && pluginItemId/);
+  assert.match(routeControllerJs, /await openCard\(pluginItemId\)/);
   for (const route of ["today_tasks", "cards", "submit_work", "review", "stage_assessment", "rewards"]) {
-    assert.match(appJs, new RegExp(`pluginRoute === "${route}"`));
+    assert.match(routeControllerJs, new RegExp(`pluginRoute === "${route}"`));
   }
-  assert.match(appJs, /firstTaskCardForRoute\(pluginRoute\)/);
-  assert.match(appJs, /learningGrowthActiveTab = pageState\.auth\.isOwner \? "rewards" : "overview"/);
+  assert.match(routeControllerJs, /firstTaskCardForRoute\(pluginRoute\)/);
+  assert.match(routeControllerJs, /learningGrowthActiveTab = pageState\.auth\.isOwner \? "rewards" : "overview"/);
 });

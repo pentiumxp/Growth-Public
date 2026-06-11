@@ -563,6 +563,184 @@ test("growth learning coin monthly clear route requires workspace bearer", async
   }
 });
 
+test("growth graph plan route requires workspace bearer and normalizes graph input", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    learningGraphPlanService: {
+      async createPlan(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          learningGraphPlanId: input.learningGraphPlanId,
+          workspaceId: input.workspaceId,
+          targetNodeId: input.targetNodeId,
+          cardSequence: [{ cardRole: input.cardRole, targetNodeIds: input.targetNodeIds }]
+        };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/graph/plans`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learning_graph_plan_id: "lgp_1",
+        target_node_id: "node_1",
+        card_role: "stage_assessment"
+      })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/graph/plans`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learner_id: "learner_1",
+        learning_graph_plan_id: "lgp_1",
+        program_id: "program_1",
+        target_node_id: "node_1",
+        target_node_ids: ["node_1", "node_2"],
+        card_role: "stage_assessment",
+        assessment_coverage_node_ids: ["node_1", "node_2"],
+        difficulty_band: "bridge"
+      })
+    });
+    assert.equal(accepted.status, 201);
+    const body = await accepted.json();
+    assert.equal(body.learningGraphPlanId, "lgp_1");
+    assert.deepEqual(calls[0], {
+      learningGraphPlanId: "lgp_1",
+      learnerId: "learner_1",
+      workspaceId: "test",
+      programId: "program_1",
+      targetNodeId: "node_1",
+      targetNodeIds: ["node_1", "node_2"],
+      cardRole: "stage_assessment",
+      assessmentCoverageNodeIds: ["node_1", "node_2"],
+      difficultyBand: "bridge"
+    });
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth card graph-binding route requires workspace bearer and binds URL card id", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    learningCardGraphBindingService: {
+      async bindCard(input) {
+        calls.push(input);
+        return {
+          ok: input.learningGraphPlanId !== "missing",
+          error: input.learningGraphPlanId === "missing" ? "missing_learning_graph_plan" : undefined,
+          bindingId: input.bindingId,
+          taskCardId: input.taskCardId,
+          learningGraphPlanId: input.learningGraphPlanId
+        };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/cards/card_url/graph-binding`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learning_graph_plan_id: "lgp_1",
+        node_ids: ["node_1"],
+        card_role: "practice"
+      })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/cards/card_url/graph-binding`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        binding_id: "lcgb_1",
+        task_card_id: "card_body_should_not_win",
+        learning_graph_plan_id: "lgp_1",
+        node_ids: ["node_1"],
+        card_role: "practice",
+        assessment_coverage: ["node_1"],
+        repair_metadata: { source: "route-test" }
+      })
+    });
+    assert.equal(accepted.status, 201);
+    assert.equal((await accepted.json()).taskCardId, "card_url");
+    assert.deepEqual(calls[0], {
+      bindingId: "lcgb_1",
+      taskCardId: "card_url",
+      workspaceId: "test",
+      learningGraphPlanId: "lgp_1",
+      nodeIds: ["node_1"],
+      cardRole: "practice",
+      assessmentCoverage: ["node_1"],
+      repairMetadata: { source: "route-test" }
+    });
+
+    const failed = await fetch(`${baseUrl}/api/v1/growth/cards/card_url/graph-binding`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        binding_id: "lcgb_missing",
+        learning_graph_plan_id: "missing",
+        node_ids: ["node_1"],
+        card_role: "practice"
+      })
+    });
+    assert.equal(failed.status, 400);
+    assert.equal((await failed.json()).error, "missing_learning_graph_plan");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth evaluation worker processes queue when enabled", async () => {
   let processed = 0;
   const server = startServer({

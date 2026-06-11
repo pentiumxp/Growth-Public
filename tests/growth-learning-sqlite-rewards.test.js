@@ -1,0 +1,172 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const test = require("node:test");
+
+const { createRewardRepository } = require("../src/stores/growth-learning-sqlite/rewards");
+
+function withRewardDb(callback) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-reward-repo-"));
+  const dbPath = path.join(dir, "rewards.sqlite3");
+  const { DatabaseSync } = require("node:sqlite");
+  const setup = new DatabaseSync(dbPath);
+  try {
+    setup.exec(`
+      CREATE TABLE learning_task_cards (
+        id TEXT PRIMARY KEY,
+        learner_id TEXT,
+        workspace_id TEXT,
+        program_id TEXT,
+        status TEXT,
+        reward_cap_coins INTEGER,
+        configured_reward_coins INTEGER,
+        default_reward_coins INTEGER,
+        raw_json TEXT,
+        updated_at TEXT
+      );
+      CREATE TABLE learning_reward_settlements (
+        id TEXT PRIMARY KEY,
+        learner_id TEXT,
+        workspace_id TEXT,
+        program_id TEXT,
+        task_card_id TEXT,
+        session_id TEXT,
+        evaluation_id TEXT,
+        status TEXT,
+        coin_amount INTEGER,
+        reason TEXT,
+        source_type TEXT,
+        source_id TEXT,
+        idempotency_key TEXT,
+        review_request_id TEXT,
+        ledger_entry_json TEXT,
+        raw_json TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        settled_at TEXT
+      );
+      INSERT INTO learning_task_cards(
+        id, learner_id, workspace_id, program_id, status, reward_cap_coins,
+        configured_reward_coins, default_reward_coins, raw_json, updated_at
+      ) VALUES (
+        'card_1', 'learner_1', 'weixin_child', 'program_1', 'active', 125,
+        100, 100, '{}', '2026-06-11T00:00:00.000Z'
+      );
+    `);
+  } finally {
+    setup.close();
+  }
+
+  const repository = createRewardRepository({
+    open(readOnly = true) {
+      return new DatabaseSync(dbPath, { open: true, readOnly });
+    }
+  });
+
+  try {
+    return callback({ dbPath, repository, DatabaseSync });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("reward repository settles passed evaluations and completes task cards", () => {
+  withRewardDb(({ dbPath, repository, DatabaseSync }) => {
+    const result = repository.settleEvaluationReward({
+      evaluation: {
+        evaluationId: "eval_1",
+        status: "passed",
+        score: 96,
+        passed: true
+      },
+      taskCard: {
+        id: "card_1",
+        learner_id: "learner_1",
+        workspace_id: "weixin_child",
+        program_id: "program_1",
+        reward_cap_coins: 125,
+        raw_json: "{}"
+      },
+      submission: {
+        id: "sub_1",
+        session_id: "session_1"
+      },
+      settledAt: "2026-06-11T01:00:00.000Z"
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.settlement.status, "settled");
+    assert.equal(result.settlement.coinAmount, 125);
+
+    const duplicate = repository.settleEvaluationReward({
+      evaluation: { evaluationId: "eval_1", passed: true }
+    });
+    assert.equal(duplicate.ok, true);
+    assert.equal(duplicate.duplicate, true);
+
+    const db = new DatabaseSync(dbPath);
+    try {
+      const card = db.prepare("SELECT status, raw_json FROM learning_task_cards WHERE id = 'card_1'").get();
+      assert.equal(card.status, "completed");
+      assert.equal(JSON.parse(card.raw_json).rewardState, "settled");
+      assert.equal(db.prepare("SELECT COUNT(*) AS count FROM learning_reward_settlements").get().count, 1);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+test("reward repository reports and clears learning coin balance idempotently", () => {
+  withRewardDb(({ repository }) => {
+    repository.settleEvaluationReward({
+      evaluation: {
+        evaluationId: "eval_1",
+        status: "passed",
+        score: 96,
+        passed: true
+      },
+      taskCard: {
+        id: "card_1",
+        learner_id: "learner_1",
+        workspace_id: "weixin_child",
+        program_id: "program_1",
+        reward_cap_coins: 125,
+        raw_json: "{}"
+      },
+      submission: { id: "sub_1", session_id: "session_1" }
+    });
+
+    const before = repository.learningCoinBalance({ workspaceId: "weixin_child" });
+    assert.equal(before.ok, true);
+    assert.equal(before.available_coins, 125);
+
+    const dryRun = repository.clearLearningCoinBalanceForMonthlyExchange({
+      workspaceId: "weixin_child",
+      amount: 50,
+      write: false
+    });
+    assert.equal(dryRun.mode, "dry_run");
+    assert.equal(dryRun.clearable_coins, 50);
+
+    const write = repository.clearLearningCoinBalanceForMonthlyExchange({
+      workspaceId: "weixin_child",
+      amount: 50,
+      idempotencyKey: "monthly-2026-06",
+      period: "2026-06",
+      write: true
+    });
+    assert.equal(write.ok, true);
+    assert.equal(write.cleared_coins, 50);
+    assert.equal(write.balance_after.available_coins, 75);
+
+    const duplicate = repository.clearLearningCoinBalanceForMonthlyExchange({
+      workspaceId: "weixin_child",
+      idempotencyKey: "monthly-2026-06",
+      write: true
+    });
+    assert.equal(duplicate.ok, true);
+    assert.equal(duplicate.duplicate, true);
+    assert.equal(duplicate.balance_after.available_coins, 75);
+  });
+});

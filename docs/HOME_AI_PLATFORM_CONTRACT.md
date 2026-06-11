@@ -46,6 +46,10 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 
 ## Plugin-Local Facts
 
+Growth-local service/module boundaries are recorded in
+`docs/GROWTH_PLUGIN_ARCHITECTURE.md`. That document is plugin-local only; it
+does not redefine the Home AI platform contracts below.
+
 | Field | Value |
 | --- | --- |
 | `plugin_id` | `growth` |
@@ -67,12 +71,15 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 | `migration_snapshot_readback` | `GET /api/v1/growth/migrations/readback?workspace_id=<id>` with Growth registration bearer; returns bounded snapshot metadata only. |
 | `migration_sqlite_import` | `npm run import:learning-sqlite -- --source-db <backup.sqlite3> --target-db <plugin-data>/growth-learning.sqlite3 --write --workspace-id <workspace>`; copies a verified learning-growth SQLite backup into plugin-owned storage with backup/readback metadata. |
 | `migration_sqlite_rollback` | `npm run import:learning-sqlite -- --target-db <plugin-data>/growth-learning.sqlite3 --rollback <backup.sqlite3> --write`; restores the previous plugin-owned SQLite database from the script-created backup. |
+| `regenerable_card_retirement` | `node scripts/retire-growth-cards.js --target-db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --dry-run --json`; use `--write` only after dry-run review. Retires old board projection, old KG pilot, and old evergreen cards that can be regenerated, preserving learner history rows. |
 | `plugin_learning_db_path` | `GROWTH_LEARNING_DB_PATH`, default `data/growth-learning.sqlite3`. |
 | `plugin_data_owner_switch` | `GROWTH_DATA_OWNER=plugin` makes the plugin prefer plugin-owned SQLite for status, board, and card reads. Default remains `home-ai` facade first. |
 | `plugin_audio_playback` | `GET /api/v1/growth/audio/submissions/:submissionId` and `GET /api/v1/growth/audio/reflections/:reflectionId`; streams plugin-owned SQLite BLOB audio first, then bounded legacy artifact files for older records. |
 | `plugin_submission_write` | `POST /api/v1/growth/cards/:taskCardId/submissions` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; accepts bounded JSON text/audio evidence, resolves native task card ids or legacy `kanban_card_id`, writes plugin-owned submissions/audio BLOBs/sessions, and enqueues pending `learning_growth_evaluation_jobs` rows. |
 | `plugin_evaluation_processing` | `POST /api/v1/growth/evaluations/process` with the workspace-local bearer; claims due pending/retry jobs, writes bounded `learning_evaluations`, and marks jobs done/retry/failed. Optional dispatcher is controlled by `GROWTH_EVALUATION_WORKER_ENABLED` and `GROWTH_EVALUATION_WORKER_INTERVAL_MS`. |
 | `plugin_reflection_write` | `POST /api/v1/growth/cards/:taskCardId/reflections` with the workspace-local bearer; accepts bounded text/audio reflection evidence, resolves native task card ids or legacy `kanban_card_id`, writes `learning_task_reflections`, and stores optional reflection audio BLOBs. |
+| `plugin_graph_plan_write` | `POST /api/v1/growth/graph/plans` with the workspace-local bearer; creates bounded `learning_graph_plans` over imported native graph nodes. This does not enable graph-required production card generation. |
+| `plugin_card_graph_binding_write` | `POST /api/v1/growth/cards/:taskCardId/graph-binding` with the workspace-local bearer; binds a task card to an existing graph plan and node coverage using the URL card id as authoritative. This does not mutate existing card-generation behavior. |
 | `plugin_view_targets` | `GET /api/v1/growth/view-targets`; returns Growth-provisioned view targets. Through the Home AI proxy, only `x-hermes-plugin-actor-role=owner` receives multiple targets. Workspace actors receive only their current workspace target and cannot enumerate other Growth users. |
 | `historical_audio_blob_backfill` | `npm run backfill:audio-blobs -- --db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --legacy-audio-root <Home-AI-data-root> --dry-run --json`; use `--write` only after dry-run shows acceptable `would_backfill`, `file_missing`, and sample evidence. |
 | `legacy_audio_roots` | `GROWTH_LEGACY_AUDIO_ROOTS`, path-delimited; optional override for old Home AI artifact roots. If omitted, the plugin derives the standard sibling Home AI `data` root from its workspace. Do not expose raw absolute file paths to clients. |
@@ -98,6 +105,96 @@ Run:
 npm run check
 npm test
 ```
+
+For core SQLite helper and identifier refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-core.test.js
+```
+
+For SQLite read-projection refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-projection.test.js tests/growth-learning-sqlite-store.test.js
+```
+
+For SQLite audio playback or backfill refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-audio.test.js tests/growth-learning-sqlite-store.test.js
+```
+
+For SQLite evidence write refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js
+```
+
+For SQLite evaluation queue refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js
+```
+
+For SQLite reward or learning-coin ledger refactors, also run:
+
+```bash
+node --test tests/growth-learning-sqlite-rewards.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js
+```
+
+For regenerable card retirement or old board projection cleanup, also run:
+
+```bash
+node --test tests/growth-card-retirement-service.test.js tests/growth-learning-sqlite-store.test.js
+node scripts/retire-growth-cards.js \
+  --target-db <plugin-data>/growth-learning.sqlite3 \
+  --workspace-id <workspace-id> \
+  --dry-run \
+  --json
+```
+
+For Growth service orchestration, facade client, or snapshot projection
+refactors, also run:
+
+```bash
+node --test tests/growth-service-models.test.js tests/growth-service-providers.test.js tests/growth-service.test.js tests/growth-routes.test.js
+```
+
+For Growth service write provider or command-boundary refactors, also run:
+
+```bash
+node --test tests/growth-service-write-providers.test.js tests/growth-service.test.js tests/growth-routes.test.js
+```
+
+For embedded frontend adapter or plugin-route launch refactors, also run:
+
+```bash
+node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js
+```
+
+For architecture boundary refactors, also run:
+
+```bash
+node --test tests/growth-architecture-boundary.test.js
+```
+
+For Growth Knowledge Graph source-pack recovery, dry-run import, or native
+graph repository changes, also run:
+
+```bash
+node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js
+node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js
+node scripts/import-learning-graph-pack.js \
+  --source /Users/hermes-dev/HermesMobileDev/recovered/windows-agent/20260611/Agent/workspace/uk-hk-curriculum-foundation/knowledge-graph/fanfan-uk-hk-igcse-a-level-graph-v1.json \
+  --expected-sha256 b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36 \
+  --dry-run \
+  --json
+```
+
+Before importing to production, first run the same script with `--write` against
+a throwaway SQLite target and verify readback counts. Production write mode
+must use the plugin data database, create a timestamped backup, and must not
+copy source PDF/HTML bodies or raw private content into runtime tables.
 
 For SQLite migration staging, run a dry-run first:
 

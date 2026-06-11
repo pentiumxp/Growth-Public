@@ -2,12 +2,530 @@
 
 ## Home AI Platform Contract Pointer
 
-- Home AI platform contract version: `20260609-v2`.
+- Home AI platform contract version: `20260611-v3`.
 - Local pointer: `docs/HOME_AI_PLATFORM_CONTRACT.md`.
 - Canonical Home AI docs live under:
   `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/`.
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
+
+## 2026-06-11 Growth Knowledge Graph Native Import Harness
+
+- The recovered Fan Fan UK/HK IGCSE/A-Level graph source pack remains a Mac
+  staging artifact and has not been copied into the Growth runtime or deployed:
+  `/Users/hermes-dev/HermesMobileDev/recovered/windows-agent/20260611/Agent/workspace/uk-hk-curriculum-foundation/knowledge-graph/fanfan-uk-hk-igcse-a-level-graph-v1.json`.
+- Added a native import harness:
+  - `src/services/learning-graph-import-service.js`;
+  - `src/stores/growth-learning-sqlite/graph-schema.js`;
+  - `src/stores/growth-learning-sqlite/graph-repository.js`;
+  - `scripts/import-learning-graph-pack.js`;
+  - `tests/learning-graph-import-service.test.js`;
+  - `tests/learning-graph-repository.test.js`.
+- Dry-run mode remains the default and does not mutate Growth SQLite. Write
+  mode requires `--write --target-db`, checkpoints/truncates the target WAL,
+  creates a timestamped SQLite backup when the target exists, and imports only
+  bounded native graph metadata into `learning_graph_*` tables.
+- Validation checks include supported schema version, `summary_only` privacy,
+  required domain pack/node/edge fields, duplicate node/edge ids, missing edge
+  endpoints, prerequisite cycles, unsafe raw-content key names, and absolute or
+  UNC source-document paths.
+- Recovered graph dry-run and throwaway SQLite write validation passed:
+  - sha256:
+    `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+  - schemaVersion: `hermes.learningGraphSeed.v0.1`;
+  - importId: `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1`;
+  - sourceDocuments: 15;
+  - domainPacks: 1;
+  - nodes: 294;
+  - edges: 329;
+  - prerequisite edges: 34;
+  - graph plans: 0;
+  - card graph bindings: 0;
+  - duplicate node ids, duplicate edge ids, missing edge endpoints,
+    prerequisite cycles, rejected records, unsafe raw-content keys, and
+    absolute source-document paths were all 0.
+- The dry-run reports 12 `cross_domain_prerequisites_require_review` warnings.
+  These are mostly Lower Secondary English/Science to IGCSE ESL/Biology/
+  Chemistry/Physics bridge edges. They are acceptable as warnings in this
+  phase, but native repository import should model or approve the bridge policy
+  before graph-required card generation is enabled.
+- Focused validation passed:
+  - `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js`;
+  - `node scripts/import-learning-graph-pack.js --source /Users/hermes-dev/HermesMobileDev/recovered/windows-agent/20260611/Agent/workspace/uk-hk-curriculum-foundation/knowledge-graph/fanfan-uk-hk-igcse-a-level-graph-v1.json --expected-sha256 b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36 --dry-run --json`.
+- Full validation passed after adding native graph import write mode:
+  - `npm run check`;
+  - `npm test` with 93 passing tests.
+- The import tools were deployed to Mac production with the central deploy
+  script:
+  - target: `plugin:growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T103900Z-plugin-growth-growth-knowledge-graph-import-tools`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - manifest health passed.
+- A readable temporary source copy was prepared for the production permission
+  boundary:
+  `/tmp/homeai-growth-kg-import/fanfan-uk-hk-igcse-a-level-graph-v1.json`.
+  Its sha256 matches
+  `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`.
+- Production data import completed by running the production-path command as
+  `hermes-host` through the same bounded sudo password-file mechanism used by
+  the central Mac deploy script. The password was not printed.
+- Production import backup:
+  `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-graph-import-20260611T104021Z.sqlite3`.
+- Production import readback:
+  - `learning_graph_imports`: 1;
+  - `learning_graph_domain_packs`: 1;
+  - `learning_graph_nodes`: 294;
+  - `learning_graph_edges`: 329;
+  - `learning_graph_plans`: 0;
+  - `learning_card_graph_bindings`: 0;
+  - import prerequisite edges: 34;
+  - missing graph tables: none;
+  - source sha256 matched
+    `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+  - duplicate ids, missing edge endpoints, prerequisite cycles, rejected
+    records, unsafe raw-content keys, and absolute source-document paths were
+    all 0.
+- SQLite `PRAGMA quick_check` returned `ok` after import.
+- Growth production service smoke still passed after import:
+  - direct manifest returned `id=growth`;
+  - status and board for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`;
+  - board returned 9 visible cards.
+- Exact production write command used:
+
+```bash
+/Users/hermes-host/HermesMobile/runtime/node-current/bin/node \
+  /Users/hermes-host/HermesMobile/plugins/growth/scripts/import-learning-graph-pack.js \
+  --source /tmp/homeai-growth-kg-import/fanfan-uk-hk-igcse-a-level-graph-v1.json \
+  --target-db /Users/hermes-host/HermesMobile/plugins/growth/data/growth-learning.sqlite3 \
+  --expected-sha256 b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36 \
+  --write \
+  --json
+```
+
+- Exact readback command:
+
+```bash
+/Users/hermes-host/HermesMobile/runtime/node-current/bin/node \
+  /Users/hermes-host/HermesMobile/plugins/growth/scripts/import-learning-graph-pack.js \
+  --target-db /Users/hermes-host/HermesMobile/plugins/growth/data/growth-learning.sqlite3 \
+  --readback \
+  --import-id kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1 \
+  --json
+```
+
+## 2026-06-11 Growth Knowledge Graph Plan And Binding Services
+
+- Added native graph planning and card-binding services on top of the imported
+  `learning_graph_*` tables:
+  - `src/services/learning-graph-plan-service.js`;
+  - `src/services/learning-card-graph-binding-service.js`;
+  - repository lookup and persistence helpers in
+    `src/stores/growth-learning-sqlite/graph-repository.js`;
+  - `tests/learning-graph-plan-binding-service.test.js`.
+- Current service behavior:
+  - creates `learningGraphPlan` records from native graph nodes;
+  - resolves direct prerequisite nodes from `learning_graph_edges` where
+    `edge_type='prerequisite'`;
+  - rejects missing target nodes and missing prerequisite nodes;
+  - focused `teaching` and `practice` plans require one target node;
+  - `stage_assessment` plans require explicit assessment coverage node ids;
+  - card bindings require an existing plan and valid binding nodes;
+  - formal-card validation can fail closed with
+    `learning_graph_plan_required` when graph-required mode is requested.
+- Production card generation is not yet changed. Existing compatibility cards,
+  board projection, submissions, evaluation jobs, reward settlement, and
+  learning flow remain unchanged.
+- Focused validation passed:
+  - `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js tests/learning-graph-plan-binding-service.test.js`
+    with 13 passing tests.
+- Full validation passed:
+  - `npm run check`;
+  - `npm test` with 98 passing tests.
+- Deployed code to Mac production through the central Home AI deploy script:
+  - target: `plugin:growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T104612Z-plugin-growth-growth-knowledge-graph-plan-binding-services`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - manifest health passed.
+- Production post-deploy smoke passed:
+  - graph import readback still reports 1 import, 1 domain pack, 294 nodes,
+    329 edges, 0 graph plans, and 0 card graph bindings;
+  - direct manifest returned `id=growth`;
+  - status and board for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`;
+  - board returned 9 visible cards;
+  - `learning-graph-plan-service.js`,
+    `learning-card-graph-binding-service.js`, and
+    `tests/learning-graph-plan-binding-service.test.js` exist in the
+    production plugin path.
+
+## 2026-06-11 Growth Knowledge Graph Runtime API Boundary
+
+- Wired native graph planning services into the Growth service graph:
+  - `growthLearningStore.learningGraphRepository` is now exposed by the
+    plugin-owned SQLite store facade;
+  - `src/app/services.js` constructs
+    `learningGraphPlanService` and `learningCardGraphBindingService`;
+  - `src/routes/growth-routes.js` exposes protected runtime routes.
+- Added protected workspace-bearer routes:
+  - `POST /api/v1/growth/graph/plans`;
+  - `POST /api/v1/growth/cards/:taskCardId/graph-binding`.
+- Route behavior:
+  - requires the workspace-local `.hermes-growth/access-key.txt` bearer and a
+    writable `workspace_id`;
+  - normalizes snake_case and camelCase graph payload fields;
+  - converts authorized `growth:<workspace>` ids into the service workspace id;
+  - uses the URL `:taskCardId` for card graph binding, not any body override;
+  - returns `201` on successful plan/binding writes and `400` for bounded graph
+    service validation failures.
+- Added route harness coverage in `tests/growth-routes.test.js` for graph plan
+  writes, card graph-binding writes, authorization failures, field
+  normalization, URL card-id precedence, and service rejection mapping.
+- Focused validation passed:
+  - `node --test tests/growth-routes.test.js`;
+  - `node --test tests/learning-graph-plan-binding-service.test.js`.
+- Full local validation passed:
+  - `npm run check`;
+  - `npm test` with 100 passing tests;
+  - `git diff --check`.
+- AI Ops intake classified the task as H3 and the required app-side checks
+  passed:
+  - `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`.
+- Deployed code to Mac production through the central Home AI deploy script:
+  - target: `plugin:growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T110648Z-plugin-growth-growth-knowledge-graph-runtime-api`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - manifest health passed.
+- Production post-deploy smoke passed:
+  - direct manifest returned `id=growth`;
+  - status and board for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`;
+  - board returned 9 visible cards;
+  - graph import readback still reports 1 import, 1 domain pack, 294 nodes,
+    329 edges, 0 graph plans, 0 card graph bindings, 34 prerequisite edges,
+    and matching source sha256
+    `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+  - unauthenticated graph plan and graph-binding POST requests for
+    `weixin_stephen` returned `403 permission_denied`.
+- Boundary remains unchanged:
+  - production card generation is not graph-required yet;
+  - existing compatibility cards, board projection, submissions, evaluations,
+    reflection writes, and Growth learning-coin settlement remain unchanged;
+  - do not production-smoke these routes with write payloads unless the caller
+    intends to create durable `learning_graph_plans` or
+    `learning_card_graph_bindings` rows.
+
+## 2026-06-11 Growth Regenerable Card Retirement
+
+- Product decision: old original-board compatibility cards, old Knowledge
+  Graph pilot projection cards, and old evergreen cards are regenerable runtime
+  rows. They should not drive the future Growth architecture. This supersedes
+  the earlier historical notes above that said compatibility cards were left
+  unchanged.
+- Added the dry-run-first retirement harness:
+  - `src/services/growth-card-retirement-service.js`;
+  - `src/stores/growth-learning-sqlite/card-retirement.js`;
+  - `scripts/retire-growth-cards.js`;
+  - `tests/growth-card-retirement-service.test.js`.
+- The harness is workspace-scoped and never hard-deletes rows. Write mode marks
+  candidate `learning_task_cards` as `retired`, writes a bounded
+  `raw_json.growthRetirement` audit marker, updates activation metadata when
+  the columns exist, and cancels only open `pending`/`retry`/`processing`
+  evaluation jobs for the retired cards.
+- Learner history is intentionally preserved: submissions, evaluations,
+  reflections, audio blobs, artifacts, rewards, and Growth learning-coin
+  settlement rows remain addressable.
+- Default candidate policy:
+  - includes old board projection, old Knowledge Graph seed projection, and
+    old evergreen/regenerable projection cards;
+  - includes completed cards because they can also be regenerated;
+  - excludes already hidden `cancelled`/`canceled`/`retired`/`superseded`
+    cards;
+  - excludes native graph-bound cards by default when
+    `learning_card_graph_bindings` or `raw_json.learningGraphPlanId` exists.
+- Documentation updated:
+  - `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed before deployment:
+  - `node --test tests/growth-card-retirement-service.test.js`;
+  - `node --test tests/growth-card-retirement-service.test.js tests/growth-learning-sqlite-store.test.js`;
+  - `npm run check`;
+  - `npm test` with 102 passing tests;
+  - `git diff --check`;
+  - Home AI app-side `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app-side `git diff --check`.
+- AI Ops evidence:
+  - intake class: H3;
+  - ledger record:
+    `evidence-e3401b9e-4b8c-42b7-bdd3-3dc01e00d11a`.
+- Production dry-run before writing, for workspace `weixin_stephen`:
+  - candidateCount: 30;
+  - visible board cards before retirement: 9;
+  - total board cards before retirement: 30;
+  - hidden future cards before retirement: 21;
+  - byReason:
+    `legacy_evergreen_regenerable_projection=7`,
+    `legacy_kanban_projection=11`,
+    `legacy_knowledge_graph_seed_projection=12`;
+  - byStatus: `published=28`, `completed=2`;
+  - graphBoundCount: 0;
+  - related rows observed for candidates:
+    `submissions=18`, `evaluations=16`, `reflections=5`,
+    `artifacts=29`, `audioBlobs=10`, `evaluationJobs=6`, `rewards=2`.
+- Deployed code to Mac production through the central Home AI deploy script:
+  - target: `plugin:growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T120233Z-plugin-growth-growth-regenerable-card-retirement`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - manifest health passed.
+- Production retirement write completed by running the production-path harness
+  as `hermes-host`. The sudo password was not printed or recorded.
+- Production data backup before retirement:
+  `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260611T120318Z.sqlite3`.
+- Production write result:
+  - `quick_check=ok`;
+  - retired cards: 30;
+  - remaining candidates after write: 0;
+  - open evaluation jobs cancelled: 0;
+  - board after retirement for `weixin_stephen`: `card_count=0`,
+    `total_card_count=0`, `hidden_future_card_count=0`.
+- Production post-write smoke passed:
+  - direct manifest returned `id=growth`;
+  - status for `weixin_stephen` returned `ok=true` and
+    `source=growth-plugin-sqlite`;
+  - board for `weixin_stephen` returned `ok=true`,
+    `source=growth-plugin-sqlite`, and no visible/hidden board cards;
+  - direct card detail for a retired card still returned HTTP 200 with
+    `card.status=retired`, proving history/detail rows remain addressable;
+  - dry-run after write returned `candidateCount=0`;
+  - graph import readback still reports 1 import, 1 domain pack, 294 nodes,
+    329 edges, 0 graph plans, 0 card graph bindings, 34 prerequisite edges,
+    and matching source sha256
+    `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+  - workspace SQL readback reported `cancelled=18`, `retired=30`,
+    `retiredWithMarker=30`, `open_jobs=0`, and preserved related rows:
+    `submissions=18`, `evaluations=24`, `reflections=5`,
+    `audio_blobs=10`, `rewards=5`.
+- Current boundary:
+  - the old board is intentionally empty for `weixin_stephen`;
+  - new production cards should be generated from the native Growth/KG service
+    path, not from the retired compatibility projection rows;
+  - native graph-required card generation is still not enabled by this step;
+  - no platform `通宝` exchange or monthly clearing behavior changed.
+
+## 2026-06-11 Growth Core Module Refactor Started
+
+- Goal: make the Growth plugin core clearer, more modular, and easier to
+  extend while preserving current runtime behavior.
+- Scope is plugin-internal only. Platform `通宝` exchange, Home AI host
+  workflows, production deployment, and Gateway callable changes are out of
+  scope for this step.
+- Added Growth-local architecture documentation:
+  `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to point to the Growth-local
+  architecture document and declare the new focused core helper harness.
+- Split foundational SQLite store helpers out of the large store facade:
+  - `src/stores/growth-learning-sqlite/core.js` owns shared SQLite/table,
+    dynamic insert/upsert, bounded parsing, primitive normalization, and
+    required table list helpers.
+  - `src/stores/growth-learning-sqlite/identifiers.js` owns stable Growth ids
+    and hashes for submissions, reflections, evaluation jobs, sessions,
+    rewards, ledger entries, and audio blobs.
+  - `src/stores/growth-learning-sqlite/audio-metadata.js` owns bounded audio
+    evidence metadata and public audio DTO projection.
+  - `src/stores/growth-learning-sqlite/audio.js` owns plugin-owned audio
+    playback, SQLite BLOB priority reads, bounded legacy audio file lookup, and
+    historical audio BLOB backfill.
+  - `src/stores/growth-learning-sqlite/projection.js` owns board/card public
+    DTO shaping, Growth lane grouping, sequence visibility, summaries, and
+    bounded submission/evaluation/reflection/reward projections.
+  - `src/stores/growth-learning-sqlite/evidence-writes.js` owns
+    submission/reflection evidence write transactions, interaction session
+    creation, evidence audio BLOB insertion, legacy kanban card id resolution,
+    and pending evaluation job enqueueing.
+  - `src/stores/growth-learning-sqlite/evaluation-jobs.js` owns evaluation job
+    listing, claiming, completion, retry/failure state, evaluation context
+    reads, bounded job projection, and evaluation record writes.
+  - `src/stores/growth-learning-sqlite/rewards.js` owns evaluation reward
+    settlement, task completion side effects, Growth learning-coin balance, and
+    monthly clear ledger writes. Platform `通宝` exchange remains out of scope.
+  - `src/stores/growth-learning-sqlite-store.js` remains the public store
+    facade and is now mostly composition plus board/card read entrypoints.
+  - `src/services/growth-service-models.js` owns pure bounded service
+    projections for status, board, snapshot card fallback, and migration
+    summaries.
+  - `src/services/home-ai-growth-facade-client.js` owns Home AI Growth facade
+    base URL normalization, workspace query building, and access-key header
+    dispatch.
+- Added focused harness:
+  `tests/growth-learning-sqlite-core.test.js`.
+  `tests/growth-learning-sqlite-audio.test.js`.
+  `tests/growth-learning-sqlite-projection.test.js`.
+  `tests/growth-learning-sqlite-evidence-writes.test.js`.
+  `tests/growth-learning-sqlite-evaluation-jobs.test.js`.
+  `tests/growth-learning-sqlite-rewards.test.js`.
+  `tests/growth-service-models.test.js`.
+- Validation passed:
+  - Home AI AI Ops intake classified the work as H3 and required architecture
+    docs/test-map checks;
+  - `npm run check`;
+  - `node --test tests/growth-learning-sqlite-core.test.js`;
+  - `node --test tests/growth-learning-sqlite-core.test.js tests/growth-learning-sqlite-projection.test.js tests/growth-learning-sqlite-store.test.js`;
+  - `node --test tests/growth-learning-sqlite-audio.test.js tests/growth-learning-sqlite-store.test.js`;
+  - `node --test tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js`;
+  - `node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js`;
+  - `node --test tests/growth-learning-sqlite-rewards.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js`;
+  - `node --test tests/growth-service-models.test.js tests/growth-service.test.js`;
+  - `npm test` with 68 passing tests;
+  - Home AI app-side
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`.
+- Generated local `.codegraph/` test byproduct was removed and is not part of
+  the change.
+- Next refactor targets:
+  1. split `growth-service.js` fallback policy into explicit provider
+     strategies if service branching grows again;
+  2. split
+     `public/app.js` route/view-model adapters.
+
+## 2026-06-11 Growth Architecture Optimization Continued
+
+- Continued the architecture optimization plan requested after the core SQLite
+  split. Scope remains Growth-plugin internal; platform `通宝` exchange stays
+  outside this refactor.
+- Service providerization:
+  - added `src/services/growth-read-orchestrator.js` for explicit status,
+    board, card, and migration readback fallback order;
+  - added `src/services/growth-providers/sqlite-provider.js`;
+  - added `src/services/growth-providers/home-ai-facade-provider.js`;
+  - added `src/services/growth-providers/snapshot-provider.js`;
+  - reduced `src/services/growth-service.js` to service composition and write
+    delegation.
+- Frontend adapter split:
+  - added `public/growth-appearance.js` for host appearance/viewport mapping;
+  - added `public/growth-api-client.js` for workspace query, URL state, and
+    bounded fetch errors;
+  - added `public/growth-view-model.js` for board/card/overview projection;
+  - added `public/growth-route-controller.js` for manifest route/action launch
+    handling;
+  - `public/app.js` is now a boot/wiring script.
+- Architecture guard:
+  - added `tests/growth-architecture-boundary.test.js` to prevent routes from
+    importing stores directly, prevent `growth-service.js` from owning Home AI
+    URL/header construction, keep the SQLite store facade out of file-system
+    scanning, and keep frontend boot code from reabsorbing route/view-model
+    logic.
+- Added focused harness:
+  - `tests/growth-service-providers.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Updated docs:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `package.json` check script now covers the new service and frontend helper
+    files.
+- Validation passed:
+  - `node --test tests/growth-service-providers.test.js tests/growth-service-models.test.js tests/growth-service.test.js tests/growth-routes.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-service.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-service-providers.test.js tests/growth-frontend-adapter.test.js`;
+  - `npm run check`;
+  - `npm test` with 79 passing tests;
+  - Home AI app-side
+    `node --check scripts/deploy-macos-production.js`;
+  - Home AI app-side `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app-side `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app-side `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`;
+  - local dev service smoke on `127.0.0.1:4893` for Growth manifest, status,
+    board, index helper script links, and helper asset reads.
+- Production deploy completed through the central Home AI deploy script:
+  - command shape:
+    `npm run --silent deploy:macos -- --plugin growth --json --reason growth-architecture-optimization --allow-dirty --execute`;
+  - target: `plugin:growth`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T024933Z-plugin-growth-growth-architecture-optimization`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - deploy health URL passed:
+    `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`.
+- Production smoke passed:
+  - direct plugin manifest returned `id=growth`;
+  - direct plugin status and board for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`;
+  - production served `growth-appearance.js`, `growth-api-client.js`,
+    `growth-view-model.js`, `growth-route-controller.js`, and `app.js`;
+  - Home AI same-origin proxy
+    `/api/hermes-plugins/growth/proxy/?embed=hermes&workspaceId=weixin_stephen`
+    returned HTML containing `growth-root` and `growth-route-controller.js`.
+
+## 2026-06-11 Growth Write Provider Boundary Continued
+
+- Continued the plugin-internal architecture optimization after the read
+  provider and frontend adapter split.
+- Write providerization:
+  - added `src/services/growth-write-orchestrator.js` for explicit
+    plugin-owned command policy and bounded unavailable errors;
+  - added `src/services/growth-providers/sqlite-write-provider.js` for SQLite
+    submission, reflection, and Growth learning-coin command delegation;
+  - kept `src/services/growth-providers/sqlite-provider.js` read-focused by
+    removing direct write command exports;
+  - reduced `src/services/growth-service.js` further so write methods are
+    service-surface aliases to the write orchestrator.
+- Architecture guard expanded:
+  - `tests/growth-architecture-boundary.test.js` now checks read/write SQLite
+    provider separation and keeps write error literals out of the composition
+    service.
+- Added focused harness:
+  - `tests/growth-service-write-providers.test.js`.
+- Updated docs:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `package.json` check script now covers the new write orchestrator and
+    SQLite write provider.
+- Focused validation passed:
+  - `node --test tests/growth-service-write-providers.test.js tests/growth-service-providers.test.js tests/growth-architecture-boundary.test.js tests/growth-service.test.js tests/growth-routes.test.js`
+    with 33 passing tests.
+- Full local validation passed:
+  - `npm run check`;
+  - `npm test` with 85 passing tests;
+  - Home AI app-side
+    `node scripts/plugin-workspace-platform-contract-check.js --json`;
+  - Home AI app-side `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI app-side `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app-side `node --check scripts/deploy-macos-production.js`;
+  - Home AI app-side `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app-side `node tests/production-status-smoke-harness.test.js`;
+  - `git diff --check`;
+  - local dev service smoke on `127.0.0.1:4894` for Growth manifest, status,
+    board, index helper script links, and helper asset reads.
+- Production deploy completed through the central Home AI deploy script:
+  - command shape:
+    `npm run --silent deploy:macos -- --plugin growth --json --reason growth-write-provider-boundary --allow-dirty --execute`;
+  - target: `plugin:growth`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260611T030117Z-plugin-growth-growth-write-provider-boundary`;
+  - restart label: `com.hermesmobile.plugin.growth`;
+  - deploy health URL passed:
+    `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`.
+- Production smoke passed:
+  - direct plugin manifest returned `id=growth`;
+  - direct plugin status and board for `weixin_stephen` returned
+    `source=growth-plugin-sqlite`;
+  - board returned 9 visible cards;
+  - production contains `src/services/growth-write-orchestrator.js`,
+    `src/services/growth-providers/sqlite-write-provider.js`, and
+    `tests/growth-service-write-providers.test.js`;
+  - production served the embedded frontend helper assets;
+  - unauthenticated Home AI same-origin proxy access returned 403 as expected.
+    Authenticated proxy HTML smoke was not run because the current shell could
+    not non-interactively read the production owner web key; no secret was
+    printed or copied.
 
 ## 2026-06-10 Growth Legacy UI Parity Projection
 

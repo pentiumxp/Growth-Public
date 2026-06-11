@@ -44,6 +44,50 @@ function requestedActorRole(request) {
   return String(request.headers["x-hermes-plugin-actor-role"] || "").trim().toLowerCase();
 }
 
+function requestedWritableWorkspaceId(body, url) {
+  return String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
+}
+
+function serviceWorkspaceIdFromAuthorization(authorized) {
+  return authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+}
+
+function authorizeWritableWorkspace(request, url, body, services) {
+  const workspaceId = requestedWritableWorkspaceId(body, url);
+  const authorized = services.pluginService.authorizeWorkspace({
+    authorizationToken: bearerFrom(request.headers),
+    workspaceId
+  });
+  return serviceWorkspaceIdFromAuthorization(authorized);
+}
+
+function normalizeGraphPlanInput(body, workspaceId) {
+  return {
+    learningGraphPlanId: body.learningGraphPlanId || body.learning_graph_plan_id,
+    learnerId: body.learnerId || body.learner_id,
+    workspaceId,
+    programId: body.programId || body.program_id,
+    targetNodeId: body.targetNodeId || body.target_node_id,
+    targetNodeIds: body.targetNodeIds || body.target_node_ids,
+    cardRole: body.cardRole || body.card_role,
+    assessmentCoverageNodeIds: body.assessmentCoverageNodeIds || body.assessment_coverage_node_ids || body.assessmentCoverage || body.assessment_coverage,
+    difficultyBand: body.difficultyBand || body.difficulty_band
+  };
+}
+
+function normalizeCardGraphBindingInput(body, workspaceId, taskCardId) {
+  return {
+    bindingId: body.bindingId || body.binding_id,
+    taskCardId,
+    workspaceId,
+    learningGraphPlanId: body.learningGraphPlanId || body.learning_graph_plan_id,
+    nodeIds: body.nodeIds || body.node_ids,
+    cardRole: body.cardRole || body.card_role,
+    assessmentCoverage: body.assessmentCoverage || body.assessment_coverage,
+    repairMetadata: body.repairMetadata || body.repair_metadata
+  };
+}
+
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
     const workspaceId = requestedWorkspaceId(request, url);
@@ -73,12 +117,7 @@ async function handleGrowthRoute(request, response, url, services) {
   const submissionMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)\/submissions$/);
   if (request.method === "POST" && submissionMatch) {
     const body = await readJson(request, { maxBytes: SUBMISSION_JSON_LIMIT_BYTES });
-    const workspaceId = String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
-    const authorized = services.pluginService.authorizeWorkspace({
-      authorizationToken: bearerFrom(request.headers),
-      workspaceId
-    });
-    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const taskCardId = decodeURIComponent(submissionMatch[1] || "");
     const result = await services.growthService.submitEvidence({
       workspaceId: serviceWorkspaceId,
@@ -91,12 +130,7 @@ async function handleGrowthRoute(request, response, url, services) {
   const reflectionMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)\/reflections$/);
   if (request.method === "POST" && reflectionMatch) {
     const body = await readJson(request, { maxBytes: SUBMISSION_JSON_LIMIT_BYTES });
-    const workspaceId = String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
-    const authorized = services.pluginService.authorizeWorkspace({
-      authorizationToken: bearerFrom(request.headers),
-      workspaceId
-    });
-    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const taskCardId = decodeURIComponent(reflectionMatch[1] || "");
     const result = await services.growthService.submitReflection({
       workspaceId: serviceWorkspaceId,
@@ -108,12 +142,7 @@ async function handleGrowthRoute(request, response, url, services) {
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/evaluations/process") {
     const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
-    const workspaceId = String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
-    const authorized = services.pluginService.authorizeWorkspace({
-      authorizationToken: bearerFrom(request.headers),
-      workspaceId
-    });
-    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const result = await services.growthEvaluationService.processEvaluationQueue({
       workspaceId: serviceWorkspaceId,
       limit: body.limit
@@ -127,24 +156,37 @@ async function handleGrowthRoute(request, response, url, services) {
       authorizationToken: bearerFrom(request.headers),
       workspaceId
     });
-    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const serviceWorkspaceId = serviceWorkspaceIdFromAuthorization(authorized);
     const result = await services.growthService.learningCoinBalance({ workspaceId: serviceWorkspaceId });
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/learning-coins/monthly-exchange-clear") {
     const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
-    const workspaceId = String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
-    const authorized = services.pluginService.authorizeWorkspace({
-      authorizationToken: bearerFrom(request.headers),
-      workspaceId
-    });
-    const serviceWorkspaceId = authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const result = await services.growthService.clearLearningCoinBalanceForMonthlyExchange({
       workspaceId: serviceWorkspaceId,
       body
     });
     return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/graph/plans") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const result = await services.learningGraphPlanService.createPlan(normalizeGraphPlanInput(body, serviceWorkspaceId));
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  const graphBindingMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)\/graph-binding$/);
+  if (request.method === "POST" && graphBindingMatch) {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const taskCardId = decodeURIComponent(graphBindingMatch[1] || "");
+    const result = await services.learningCardGraphBindingService.bindCard(
+      normalizeCardGraphBindingInput(body, serviceWorkspaceId, taskCardId)
+    );
+    return sendJson(response, result.ok ? 201 : 400, result);
   }
 
   const audioMatch = url.pathname.match(/^\/api\/v1\/growth\/audio\/(submissions|reflections)\/([^/]+)$/);
