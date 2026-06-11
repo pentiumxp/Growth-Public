@@ -13587,14 +13587,143 @@ body.task-markdown-preview-open {
 }
 
 .learning-card-generation-actions button.primary {
-  border-color: rgba(31, 111, 98, 0.34);
-  background: var(--ui-accent-active);
-  color: #fff;
+  border-color: rgba(24, 97, 106, 0.46);
+  background: #2f7781;
+  color: #f8ffff;
 }
 
 .learning-card-generation-actions button.disabled,
 .learning-card-generation-actions button:disabled {
   opacity: 0.54;
+}
+
+.learning-card-generation-progress {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(12px + var(--growth-host-bottom-safe-area, var(--host-bottom-safe-area, 0px)));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 40;
+  max-width: 720px;
+  display: grid;
+  gap: 10px;
+  margin: 0 auto;
+  padding: 12px;
+  border: 1px solid var(--ui-hairline-strong);
+  border-radius: 8px;
+  background: rgba(255, 255, 252, 0.98);
+  box-shadow: 0 18px 44px rgba(31, 43, 51, 0.18);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.learning-card-generation-progress-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.learning-card-generation-progress-head span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.learning-card-generation-progress-head strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 880;
+  line-height: 1.15;
+}
+
+.learning-card-generation-progress-head small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 740;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.learning-card-generation-progress-head em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(47, 119, 129, 0.14);
+  color: #245c64;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 860;
+  white-space: nowrap;
+}
+
+.learning-card-generation-progress-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-card-generation-progress-steps span {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 2px 6px;
+  padding: 8px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-card-surface);
+  opacity: 0.72;
+}
+
+.learning-card-generation-progress-steps span[data-progress-state="active"] {
+  border-color: rgba(47, 119, 129, 0.46);
+  background: rgba(47, 119, 129, 0.12);
+  opacity: 1;
+}
+
+.learning-card-generation-progress-steps span[data-progress-state="done"] {
+  opacity: 0.92;
+}
+
+.learning-card-generation-progress-steps em {
+  grid-row: span 2;
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(47, 119, 129, 0.14);
+  color: #245c64;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.learning-card-generation-progress-steps span[data-progress-state="active"] em,
+.learning-card-generation-progress-steps span[data-progress-state="done"] em {
+  background: #2f7781;
+  color: #f8ffff;
+}
+
+.learning-card-generation-progress-steps strong,
+.learning-card-generation-progress-steps small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-progress-steps strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 860;
+}
+
+.learning-card-generation-progress-steps small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .learning-card-generation-preview-card {
@@ -13674,6 +13803,102 @@ body.task-markdown-preview-open {
   background: var(--ui-success-ink);
 }
 
+:root[data-theme="dark"] .learning-card-generation-structured,
+:root[data-theme="dark"] .learning-card-generation-preview-card,
+:root[data-theme="dark"] .learning-card-generation-progress {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(22, 26, 29, 0.98);
+  color: var(--ink);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme="dark"] .learning-card-generation-target.active,
+:root[data-theme="dark"] .learning-card-generation-recipe.active {
+  border-color: rgba(184, 211, 216, 0.38);
+  background: rgba(184, 211, 216, 0.16);
+}
+
+:root[data-theme="dark"] .learning-card-generation-target em,
+:root[data-theme="dark"] .learning-card-generation-readiness-row em,
+:root[data-theme="dark"] .learning-card-generation-field-list em,
+:root[data-theme="dark"] .learning-card-generation-preview-head em,
+:root[data-theme="dark"] .learning-card-generation-preview-meta b,
+:root[data-theme="dark"] .learning-card-generation-flow span em,
+:root[data-theme="dark"] .learning-card-generation-progress-head em,
+:root[data-theme="dark"] .learning-card-generation-progress-steps em {
+  border: 1px solid rgba(184, 211, 216, 0.22);
+  background: rgba(184, 211, 216, 0.16);
+  color: #f8ffff;
+}
+
+:root[data-theme="dark"] .learning-card-generation-readiness-row[data-ready="false"] em {
+  border-color: rgba(240, 211, 145, 0.30);
+  background: rgba(198, 160, 95, 0.20);
+  color: #f0d391;
+}
+
+:root[data-theme="dark"] .learning-card-generation-actions button.primary,
+:root[data-theme="dark"] .learning-card-generation-progress-steps span[data-progress-state="active"] em,
+:root[data-theme="dark"] .learning-card-generation-progress-steps span[data-progress-state="done"] em {
+  border-color: rgba(184, 211, 216, 0.36);
+  background: #2f7781;
+  color: #f8ffff;
+}
+
+:root[data-theme="dark"] .learning-card-generation-progress-steps span[data-progress-state="active"] {
+  border-color: rgba(184, 211, 216, 0.40);
+  background: rgba(184, 211, 216, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .learning-card-generation-structured,
+  :root[data-theme="system"] .learning-card-generation-preview-card,
+  :root[data-theme="system"] .learning-card-generation-progress {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(22, 26, 29, 0.98);
+    color: var(--ink);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  }
+
+  :root[data-theme="system"] .learning-card-generation-target.active,
+  :root[data-theme="system"] .learning-card-generation-recipe.active {
+    border-color: rgba(184, 211, 216, 0.38);
+    background: rgba(184, 211, 216, 0.16);
+  }
+
+  :root[data-theme="system"] .learning-card-generation-target em,
+  :root[data-theme="system"] .learning-card-generation-readiness-row em,
+  :root[data-theme="system"] .learning-card-generation-field-list em,
+  :root[data-theme="system"] .learning-card-generation-preview-head em,
+  :root[data-theme="system"] .learning-card-generation-preview-meta b,
+  :root[data-theme="system"] .learning-card-generation-flow span em,
+  :root[data-theme="system"] .learning-card-generation-progress-head em,
+  :root[data-theme="system"] .learning-card-generation-progress-steps em {
+    border: 1px solid rgba(184, 211, 216, 0.22);
+    background: rgba(184, 211, 216, 0.16);
+    color: #f8ffff;
+  }
+
+  :root[data-theme="system"] .learning-card-generation-readiness-row[data-ready="false"] em {
+    border-color: rgba(240, 211, 145, 0.30);
+    background: rgba(198, 160, 95, 0.20);
+    color: #f0d391;
+  }
+
+  :root[data-theme="system"] .learning-card-generation-actions button.primary,
+  :root[data-theme="system"] .learning-card-generation-progress-steps span[data-progress-state="active"] em,
+  :root[data-theme="system"] .learning-card-generation-progress-steps span[data-progress-state="done"] em {
+    border-color: rgba(184, 211, 216, 0.36);
+    background: #2f7781;
+    color: #f8ffff;
+  }
+
+  :root[data-theme="system"] .learning-card-generation-progress-steps span[data-progress-state="active"] {
+    border-color: rgba(184, 211, 216, 0.40);
+    background: rgba(184, 211, 216, 0.14);
+  }
+}
+
 @media (max-width: 980px) {
   .learning-card-generation-layout,
   .learning-card-generation-recipes {
@@ -13696,6 +13921,15 @@ body.task-markdown-preview-open {
 
   .learning-card-generation-actions button {
     flex: 1 1 auto;
+  }
+
+  .learning-card-generation-progress {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .learning-card-generation-progress-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

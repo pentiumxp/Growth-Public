@@ -35,3 +35,12 @@ test("Owner settings and generation tabs remain scrollable on mobile iframes", (
   assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?touch-action: pan-y;/);
   assert.match(css, /\.learning-card-generation-manager\s*\{[\s\S]*?touch-action: pan-y;/);
 });
+
+test("Owner card generation progress and dark mode contrast are covered", () => {
+  assert.match(css, /\.learning-card-generation-progress\s*\{[\s\S]*?position: fixed;/);
+  assert.match(css, /\.learning-card-generation-progress-steps\s*\{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-structured/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-actions button\.primary/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-progress/);
+  assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-card-generation-progress/);
+});

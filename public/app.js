@@ -22,10 +22,13 @@
       status: "idle",
       context: null,
       generatedResult: null,
-      error: ""
+      error: "",
+      progressStep: "",
+      progressMessage: ""
     },
   };
   const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
+  let cardGenerationProgressTimers = [];
 
   function clean(value) {
     return String(value ?? "").trim();
@@ -91,6 +94,31 @@
       escapeHtml,
     });
     bindEvents();
+  }
+
+  function clearCardGenerationProgressTimers() {
+    cardGenerationProgressTimers.forEach((timerId) => window.clearTimeout(timerId));
+    cardGenerationProgressTimers = [];
+  }
+
+  function setCardGenerationProgress(progressStep, progressMessage) {
+    if (pageState.cardGeneration.status !== "generating") return;
+    pageState.cardGeneration.progressStep = progressStep;
+    pageState.cardGeneration.progressMessage = progressMessage;
+    renderShell();
+  }
+
+  function scheduleCardGenerationProgress() {
+    clearCardGenerationProgressTimers();
+    [
+      [700, "gateway", "正在调用 Gateway 生成 authoring draft。"],
+      [3200, "validation", "正在校验 teachingFlow、图谱绑定和隐私边界。"],
+      [7600, "publish", "正在等待发布结果，成功后会写入 Growth SQLite。"]
+    ].forEach(([delayMs, progressStep, progressMessage]) => {
+      cardGenerationProgressTimers.push(window.setTimeout(() => {
+        setCardGenerationProgress(progressStep, progressMessage);
+      }, delayMs));
+    });
   }
 
   async function openCard(taskCardId) {
@@ -239,13 +267,18 @@
 
   async function loadCardGenerationContext() {
     if (!pageState.auth.isOwner) return;
+    clearCardGenerationProgressTimers();
     pageState.cardGeneration.status = "loading_context";
     pageState.cardGeneration.error = "";
+    pageState.cardGeneration.progressStep = "";
+    pageState.cardGeneration.progressMessage = "";
     renderShell();
     const context = await api.fetchCardGenerationContext(currentWorkspaceId);
     pageState.cardGeneration.context = context;
     pageState.cardGeneration.status = "ready";
     pageState.cardGeneration.error = "";
+    pageState.cardGeneration.progressStep = "";
+    pageState.cardGeneration.progressMessage = "";
     renderShell();
   }
 
@@ -258,17 +291,38 @@
     const payload = ui.createDailyEnglishGeneratePayload({ context, workspaceId: currentWorkspaceId });
     pageState.cardGeneration.status = "generating";
     pageState.cardGeneration.error = "";
+    pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.progressStep = "prepare";
+    pageState.cardGeneration.progressMessage = "正在整理学习图谱、历史摘要和生成策略。";
     renderShell();
-    const result = await api.generateGrowthCard(payload, currentWorkspaceId);
-    pageState.cardGeneration.status = "published";
-    pageState.cardGeneration.generatedResult = result;
-    pageState.cardGeneration.error = "";
-    model.detailCache.clear();
-    await loadCurrentWorkspace();
-    renderShell();
+    scheduleCardGenerationProgress();
+    try {
+      const result = await api.generateGrowthCard(payload, currentWorkspaceId);
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "published";
+      pageState.cardGeneration.generatedResult = result;
+      pageState.cardGeneration.error = "";
+      pageState.cardGeneration.progressStep = "done";
+      pageState.cardGeneration.progressMessage = "卡片已发布。";
+      model.detailCache.clear();
+      try {
+        await loadCurrentWorkspace();
+      } catch (refreshError) {
+        pageState.cardGeneration.error = `卡片已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
+      }
+      renderShell();
+    } catch (error) {
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "failed";
+      pageState.cardGeneration.error = error.message || String(error);
+      pageState.cardGeneration.progressStep = "failed";
+      pageState.cardGeneration.progressMessage = "生成失败。";
+      renderShell();
+    }
   }
 
   async function switchWorkspace(nextWorkspaceId) {
+    clearCardGenerationProgressTimers();
     currentWorkspaceId = clean(nextWorkspaceId);
     api.updateWorkspaceUrl();
     model.detailCache.clear();
@@ -282,7 +336,9 @@
       status: "idle",
       context: null,
       generatedResult: null,
-      error: ""
+      error: "",
+      progressStep: "",
+      progressMessage: ""
     };
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadCurrentWorkspace();

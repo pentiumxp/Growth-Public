@@ -72,12 +72,17 @@ not cause writes to fall back into the Owner's own learner data.
    - card role, difficulty, and evidence requirements;
    - `daily_score_once` completion policy.
 8. Owner presses `生成卡片`.
-9. Growth calls `POST /api/v1/growth/cards/generate`.
-10. Gateway output is converted to an authoring draft.
-11. Validation passes or returns a visible authoring error.
-12. A validated card is transactionally published to Growth SQLite, including
+9. Growth immediately renders a visible progress box with four bounded stages:
+   `prepare`, `gateway`, `validation`, and `publish`. The progress box is
+   shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
+   and must remain visible on mobile embedded viewports without relying on the
+   user scrolling back to the generate button.
+10. Growth calls `POST /api/v1/growth/cards/generate`.
+11. Gateway output is converted to an authoring draft.
+12. Validation passes or returns a visible authoring error.
+13. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
-13. Owner sees the generated card preview and can open the card on the learner
+14. Owner sees the generated card preview and can open the card on the learner
     board.
 
 ## UI Placement
@@ -157,7 +162,8 @@ npm run ios:pwa:visual -- \
 | Difficulty | segmented control | default comes from recipe and history summary; Owner can choose one bounded value later. |
 | Evidence requirements | read-only chips | shows what the generated card must collect. |
 | Structured input preview | collapsed detail | summary-only JSON families, not raw source payloads. |
-| Generate | primary button | enabled only when readiness passes. |
+| Generate | primary button | enabled only when readiness passes; after click it becomes disabled and a progress box must appear immediately. |
+| Progress box | fixed status panel | shows `prepare`, `gateway`, `validation`, and `publish` stages; no raw model output or private payload is displayed. |
 | Open card | secondary button | opens the generated task card in the existing card renderer. |
 | Regenerate | secondary/destructive caution | disabled in V1 unless the previous draft failed before publish. |
 
@@ -175,6 +181,8 @@ cardGeneration: {
   context: null,
   readiness: null,
   generatedCard: null,
+  progressStep: "prepare" | "gateway" | "validation" | "publish" | "done" | "failed",
+  progressMessage: "",
   error: null
 }
 ```

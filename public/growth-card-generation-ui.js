@@ -144,6 +144,42 @@
     return `<div class="learning-error" data-card-generation-error>${escapeHtml(error)}</div>`;
   }
 
+  function progressStepRows(activeStep = "prepare", escapeHtml = defaultEscapeHtml) {
+    const steps = [
+      ["prepare", "准备输入", "学习图谱、掌握度、近期信号"],
+      ["gateway", "调用 Gateway", "等待模型返回 authoring draft"],
+      ["validation", "校验草稿", "teachingFlow、图谱绑定、隐私扫描"],
+      ["publish", "发布卡片", "事务写入 Growth SQLite"]
+    ];
+    const activeIndex = Math.max(0, steps.findIndex(([id]) => id === clean(activeStep)));
+    return steps.map(([id, label, detail], index) => {
+      const state = index < activeIndex ? "done" : index === activeIndex ? "active" : "pending";
+      return `<span data-progress-step="${escapeHtml(id)}" data-progress-state="${state}">
+        <em>${index + 1}</em>
+        <strong>${escapeHtml(label)}</strong>
+        <small>${escapeHtml(detail)}</small>
+      </span>`;
+    }).join("");
+  }
+
+  function progressPanel(state = {}, escapeHtml = defaultEscapeHtml) {
+    if (state.status !== "generating") return "";
+    const step = clean(state.progressStep || "prepare") || "prepare";
+    const message = clean(state.progressMessage || "正在生成卡片，请稍等。");
+    return `<section class="learning-card-generation-progress" data-card-generation-progress role="status" aria-live="polite">
+      <div class="learning-card-generation-progress-head">
+        <span>
+          <strong>正在生成卡片</strong>
+          <small>${escapeHtml(message)}</small>
+        </span>
+        <em>${escapeHtml(statusText(state.status))}</em>
+      </div>
+      <div class="learning-card-generation-progress-steps">
+        ${progressStepRows(step, escapeHtml)}
+      </div>
+    </section>`;
+  }
+
   function createDailyEnglishGeneratePayload({ context = {}, workspaceId = "" } = {}) {
     const plan = context.suggestedPlan || {};
     return {
@@ -182,7 +218,7 @@
     const loading = state.status === "loading_context";
     const generating = state.status === "generating";
     const canGenerate = Boolean(readiness.ready && plan.targetNodeId && !generating);
-    return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}">
+    return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}" aria-busy="${generating ? "true" : "false"}">
       <section class="learning-coin-panel learning-card-generation-intro">
         <div class="learning-section-heading">
           <h3>卡片生成</h3>
@@ -193,6 +229,7 @@
         </div>
         ${errorPanel(state, escapeHtml)}
       </section>
+      ${progressPanel(state, escapeHtml)}
 
       <div class="learning-card-generation-layout">
         <section class="learning-coin-panel learning-card-generation-side">
@@ -225,7 +262,7 @@
           <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
           <div class="learning-card-generation-actions">
             <button type="button" data-card-generation-refresh>刷新状态</button>
-            <button type="button" class="primary" data-card-generation-submit ${canGenerate ? "" : "disabled"}" ${canGenerate ? "" : "disabled"}>${generating ? "生成中..." : "生成卡片"}</button>
+            <button type="button" class="primary" data-card-generation-submit ${canGenerate ? "" : "disabled"}" ${canGenerate ? "" : "disabled"}>${generating ? "正在生成" : "生成卡片"}</button>
           </div>
         </section>
 

@@ -219,6 +219,51 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(payload.completion_policy.mode, "daily_score_once");
 });
 
+test("Growth card generation UI renders visible progress while generating", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_fanfan", learnerId: "fanfan", enabled: true },
+    selectedRecipeId: "daily_english_v1",
+    recipes: [{ id: "daily_english_v1", label: "日常英语卡" }],
+    readiness: {
+      ready: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_english_main_idea",
+      targetNodeIds: ["kg_english_main_idea"],
+      title: "Find the main idea",
+      domain: "english",
+      evidenceRequirements: ["short_answer"]
+    }
+  };
+
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "generating",
+        context,
+        progressStep: "validation",
+        progressMessage: "正在校验 teachingFlow、图谱绑定和隐私边界。"
+      }
+    },
+    viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
+    workspaceId: "weixin_fanfan"
+  });
+
+  assert.match(html, /aria-busy="true"/);
+  assert.match(html, /data-card-generation-progress/);
+  assert.match(html, /role="status"/);
+  assert.match(html, /正在生成卡片/);
+  assert.match(html, /data-progress-step="validation" data-progress-state="active"/);
+  assert.match(html, /正在校验 teachingFlow、图谱绑定和隐私边界。/);
+  assert.match(html, />正在生成<\/button>/);
+});
+
 test("Growth view-model adapter normalizes cards, lanes, and overview metrics", () => {
   const windowRef = loadPublicScript("growth-view-model.js");
   const viewModel = windowRef.HermesGrowthViewModel.createGrowthViewModel({
