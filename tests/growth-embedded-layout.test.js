@@ -21,3 +21,15 @@ test("Growth task board lane remains scrollable when iframe root scrolling is un
   assert.match(css, /\.growth-shell \.learning-growth-board-lane\.active\s*\{[\s\S]*?-webkit-overflow-scrolling: touch;/);
   assert.match(css, /\.growth-shell \.learning-growth-board-card\s*\{[\s\S]*?touch-action: pan-y;/);
 });
+
+test("Owner settings and generation tabs remain scrollable on mobile iframes", () => {
+  assert.match(css, /\.growth-shell \.learning-growth-settings-page\s*\{[\s\S]*?height: 100%;/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-page\s*\{[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\);/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-page\s*\{[\s\S]*?overflow: hidden;/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-tabs\s*\{[\s\S]*?height: 100%;/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tabs\s*\{[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\);/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?-webkit-overflow-scrolling: touch;/);
+  assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?touch-action: pan-y;/);
+  assert.match(css, /\.learning-card-generation-manager\s*\{[\s\S]*?touch-action: pan-y;/);
+});

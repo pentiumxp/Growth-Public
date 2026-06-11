@@ -118,6 +118,16 @@ Mobile layout:
 - Generated card preview appears directly below the action area.
 - Generation history is collapsed after the current result.
 
+Mobile scroll contract:
+
+- The Owner management page is embedded inside a Home AI iframe, so scrolling
+  must not depend only on iframe root scrolling.
+- The settings shell must use a fixed-height internal grid and the active tab
+  panel must own vertical scrolling with `overflow-y: auto`,
+  `-webkit-overflow-scrolling: touch`, and `touch-action: pan-y`.
+- The `生成` tab inherits that active-panel scroll surface so the lower
+  controls, including `生成卡片`, remain reachable on mobile viewports.
+
 ## V1 Controls
 
 | Control | Type | V1 behavior |

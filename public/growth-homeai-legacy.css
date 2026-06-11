@@ -11262,6 +11262,13 @@ body.task-markdown-preview-open {
   padding-top: 0;
 }
 
+.growth-shell .learning-growth-settings-page {
+  min-height: 100%;
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
 .learning-growth-board-summary span {
   color: var(--muted);
   font-size: 12px;
@@ -12766,6 +12773,20 @@ body.task-markdown-preview-open {
   gap: 8px;
 }
 
+.growth-shell .learning-growth-settings-tabs {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.growth-shell .learning-growth-settings-tabs .learning-growth-tabs {
+  min-height: 0;
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  overflow: hidden;
+}
+
 .learning-growth-settings-tabs .learning-growth-tab-list button {
   flex: 0 0 auto;
   min-width: 68px;
@@ -12797,6 +12818,17 @@ body.task-markdown-preview-open {
 .learning-growth-tab-panel.active {
   display: grid;
   gap: 14px;
+}
+
+.growth-shell .learning-growth-settings-tabs .learning-growth-tab-panel.active {
+  min-height: 0;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  touch-action: pan-y;
 }
 
 .learning-settings-overview,
@@ -13299,6 +13331,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-manager {
   display: grid;
   gap: 12px;
+  min-height: 0;
+  touch-action: pan-y;
 }
 
 .learning-growth-owner-actions {
