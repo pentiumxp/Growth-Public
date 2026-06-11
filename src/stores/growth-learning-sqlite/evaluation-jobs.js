@@ -191,7 +191,7 @@ function createEvaluationJobRepository({ open }) {
         program_id: cleanString(submission.program_id || taskCard.program_id),
         learner_id: cleanString(submission.learner_id || taskCard.learner_id || input.workspaceId),
         workspace_id: cleanString(submission.workspace_id || taskCard.workspace_id || input.workspaceId),
-        status: cleanString(evaluation.status || "needs_revision"),
+        status: cleanString(evaluation.status || "completed"),
         score: Number(evaluation.score || 0),
         passed: evaluation.passed ? 1 : 0,
         confidence: Number(evaluation.confidence || 0),

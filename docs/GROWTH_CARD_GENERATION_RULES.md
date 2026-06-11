@@ -1,0 +1,395 @@
+# Growth Card Generation Rules
+
+Last updated: 2026-06-11.
+
+This document consolidates the current Growth card-generation rules from the
+migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
+plugin-local starting point for future card authoring work.
+
+## Sources
+
+- `docs/home-ai-growth/MODULES/growth-learning.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-teaching-card-flow.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-teaching-card-implementation.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-requirements.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-design.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-implementation.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/learning-mastery-profile.md`
+- `docs/home-ai-growth/FANFAN_LEARNING_EVERGREEN_CARD_IMPLEMENTATION.zh-CN.md`
+
+## Durable Product Rule
+
+Ordinary Growth cards teach and practice before they test. Formal measurement
+belongs to `stage_assessment` cards.
+
+Daily ordinary cards are low-pressure learning cards. They should preserve the
+existing Growth card UI shape, but they must not behave like pass/fail exams.
+The daily-card completion policy is `daily_score_once`:
+
+- the learner submits once;
+- Growth runs one AI/deterministic evaluation only;
+- the evaluation returns a score, strengths, and next-practice suggestions;
+- the card completes after that one evaluation, regardless of whether the
+  score is high or low;
+- learning coins are calculated from the score and card reward cap;
+- reflection, when offered, can be submitted once only;
+- reflection is recorded as learning evidence and must not reopen grading,
+  require a second reflection, or block completion;
+- the UI contract stays compatible with the existing card renderer:
+  `teachingFlow`, `latestSubmission`, `latestEvaluation`,
+  `latestReflection`, `rewardPolicy`, `rewardState`, `laneId`,
+  `nextAction`, and `primaryAction` remain the public fields.
+
+The old assessment-first loop is reserved only for future explicit formal
+assessment policy work and must not be used by daily cards:
+
+1. learner submits;
+2. AI evaluates;
+3. learner revises and resubmits when needed;
+4. AI evaluates again;
+5. spoken reflection may be required;
+6. completion and reward settlement happen only after all gates pass.
+
+That flow should not be applied to ordinary daily cards.
+
+## Card Roles
+
+| Role | Purpose | Completion policy | Evidence weight | Default reward | Duration |
+| --- | --- | --- | --- | ---: | --- |
+| `teaching` | Teach one focused concept or skill. | `teaching_check` | low | 100 coins | 10-15 minutes |
+| `practice` | Reinforce recently taught material. | `practice_feedback` | medium | 100 coins | 10-15 minutes |
+| `integration_practice` | Combine related recently taught concepts. | `practice_feedback` | medium | 100 coins | 10-15 minutes |
+| `stage_assessment` | Formal independent mastery check. | `formal_assessment` | high | 300 coins | 25-30 minutes |
+
+Backend reward policy may override these defaults, but the defaults are part of
+the V1 product rule.
+
+## Teaching And Practice Content
+
+Model-authored ordinary cards must provide a structured `teachingFlow`:
+
+- `learningTarget`;
+- `prerequisites`;
+- `microLesson`;
+- `workedExample`;
+- `guidedPractice`;
+- `quickCheck`;
+- `tooHardFallback`;
+- `evidenceToRecord`;
+- `difficultyBasis`;
+- `supportLevel`.
+
+Validation rules:
+
+- teaching cards must include a lesson, worked example, guided practice, and
+  quick check;
+- quick checks must be answerable from the lesson and example;
+- ordinary cards must not use formal assessment gates or exam wording;
+- ordinary cards should normally fit within 10-15 minutes;
+- if prerequisites are missing or uncertain, generate a teaching or repair
+  card instead of a stage assessment;
+- public projections must not expose hidden answer keys, raw prompts, raw model
+  responses, full source content, full learner answers, or full transcripts.
+
+Generated daily cards must include this completion policy in their published
+card metadata:
+
+```json
+{
+  "completionPolicy": {
+    "mode": "daily_score_once",
+    "evaluationAttempts": 1,
+    "reflectionAttempts": 1,
+    "completionAfter": "first_evaluation",
+    "rewardMode": "score_proportional",
+    "passScoreRequired": false
+  }
+}
+```
+
+For this policy, `needs_revision`, `draft_feedback`, and
+`reflection_required` are not valid post-evaluation states. Feedback can name
+focus areas, but the primary next step is review or next practice, not
+resubmission.
+
+When `requireModel=true`, missing `teachingFlow` is invalid production output.
+The system should fail closed, regenerate once with explicit validation
+errors, fall back to a deterministic repair card, or require Owner review. It
+must not silently publish a local split of old instruction text as if it were a
+model-authored lesson.
+
+## Authoring Ownership And Gateway Boundary
+
+The Growth plugin owns card authoring. New card generation must be implemented
+inside this plugin, for example through these service boundaries:
+
+- `learning-card-authoring-service`;
+- `growth-gateway-authoring-client`;
+- `learning-card-authoring-validation-service`.
+
+The authoring service is responsible for:
+
+- assembling structured inputs;
+- calling Gateway through the Growth Gateway authoring client;
+- parsing and repairing model output when allowed;
+- validating the authoring draft;
+- writing accepted cards and graph bindings to Growth SQLite in one
+  transaction.
+
+Home AI may provide the platform Gateway access/config boundary, but Growth
+must not import or call Home AI old Growth route/server internals. The plugin
+must not call model vendors directly. OpenAI, Claude, DeepSeek, or any other
+provider-specific configuration, account, rate limit, audit, and stream
+handling stays behind Gateway.
+
+Gateway is the only model boundary for Growth card authoring.
+
+## Structured Authoring Input
+
+Authoring requests must be structured and summary-only. Required input families
+are:
+
+- `learningGraphPlan`;
+- learner and mastery summary;
+- recent experience signals;
+- requested `cardRole`, difficulty band, and evidence requirements;
+- versioned card schema;
+- safe source summaries when needed.
+
+Do not include raw long conversations, full homework bodies, full transcripts,
+hidden answer keys, raw prompts, raw model responses, secrets, cookies, access
+keys, push endpoints, or full private source content in card-authoring inputs.
+
+## Draft, Validation, And Publish Flow
+
+Gateway output must become an authoring draft first. It must not be written
+directly as a published card.
+
+The required flow is:
+
+1. collect Gateway output from SSE or JSON;
+2. parse strict JSON;
+3. run at most the configured repair pass when parsing or schema validation
+   allows repair;
+4. validate the `teachingFlow` contract;
+5. validate card-role policy;
+6. validate graph plan and graph binding consistency;
+7. run privacy and bounded-content scans;
+8. transactionally write the card, graph binding, and audit metadata to Growth
+   SQLite;
+9. return a bounded published-card result.
+
+Failure behavior must be visible and recoverable:
+
+- empty output is a bounded authoring failure;
+- invalid JSON after repair is a bounded authoring failure;
+- missing required schema fields after repair is a bounded authoring failure;
+- timeout is a bounded retryable failure when policy allows retry;
+- validation failure can become retry, deterministic repair card, or Owner
+  review;
+- database transaction failure must roll back the draft and leave no half-card.
+
+## Graph And History Generation Runtime
+
+The runnable generation path starts in `learning-card-generation-service`. It
+creates or accepts a validated `learningGraphPlan`, reads knowledge-graph node
+summaries, reads learner history through the `history-summary` SQLite
+repository, and calls `learning-card-authoring-service` with one structured
+summary-only request.
+
+The service-owned runtime path is:
+
+1. `learning-graph-plan-service` validates the target node, prerequisite path,
+   card role, and assessment coverage;
+2. `history-summary` reads bounded historical data from Growth SQLite:
+   recent card status, evaluation summaries, mastery states, experience
+   signals, and aggregate counts;
+3. `learning-card-generation-service` combines graph source summaries and
+   historical summaries without copying raw submissions, transcripts, prompts,
+   answer keys, or model output into the Gateway request;
+4. `learning-card-authoring-service` calls Gateway and validates the draft;
+5. `card-authoring-publisher` writes `learning_task_cards` and
+   `learning_card_graph_bindings` in one SQLite transaction.
+
+The protected runtime endpoint is `POST /api/v1/growth/cards/generate`. It is
+workspace-bearer scoped, normalizes snake_case and camelCase graph inputs, and
+delegates generation to the service layer. The route must stay HTTP glue.
+
+The current implementation supports generating a formal Growth card from the
+imported knowledge graph and historical Growth SQLite summaries when a Gateway
+authoring endpoint is configured. It does not direct-call model vendors and it
+does not ask Home AI old Growth routes to author cards.
+
+## Gateway Response Modes
+
+Gateway SSE is the preferred model path for authoring, but ordinary JSON
+responses must be handled with the same aggregation and validation policy. A
+valid non-stream JSON response must not become `invalid_json` simply because
+the authoring client only collected SSE deltas.
+
+Minimum fake Gateway harness scenarios for implementation:
+
+- valid streaming response;
+- valid JSON response;
+- empty output;
+- invalid JSON;
+- model timeout;
+- missing required card-schema fields;
+- repair pass success;
+- repair pass failure;
+- privacy scan failure;
+- graph binding validation failure;
+- database transaction failure.
+
+## Graph-Guided Planning
+
+New formal model-generated Growth cards should be generated from a validated
+`learningGraphPlan` or a validated temporary graph node. The model must not
+publish a formal card directly from a free-form topic prompt.
+
+The plan declares:
+
+- target graph node;
+- prerequisite nodes;
+- path nodes;
+- card role sequence;
+- evidence requirements;
+- assessment coverage when applicable;
+- source basis and privacy class.
+
+Every new formal card should persist a graph binding:
+
+- `learningGraphPlanId`;
+- `cardRole`;
+- `targetNodeIds`;
+- `prerequisiteNodeIds`;
+- `assessmentCoverageNodeIds`;
+- `evidenceRequired`;
+- `difficultyBand`.
+
+Role-specific graph coverage:
+
+- `teaching`: one focused target node unless the plan explicitly creates a
+  bridge node;
+- `practice`: one target node or a small adjacent set;
+- `integration_practice`: two or more related nodes with an explicit
+  integration reason;
+- `stage_assessment`: one or more coverage nodes and an assessment objective.
+
+Temporary graph nodes are allowed before a complete seed pack exists, but they
+must still declare outcomes, prerequisites, evidence, domain, and summary-only
+source basis.
+
+## Experience Signals And Next-Card Strategy
+
+Learner experience signals guide generation and scheduling. They are not
+formal mastery failures by themselves.
+
+Supported signal families:
+
+- `too_easy`;
+- `right_level`;
+- `too_hard`;
+- `not_learned`;
+- `confusing`;
+- `interesting`;
+- `challenge_ready`;
+- `completed`;
+- legacy strategy context such as `repair`, `stabilize`, `transfer`,
+  `stretch`, `integrate`, `review`, and `reflect`.
+
+Rules:
+
+- `too_hard`, `not_learned`, or `confusing` should queue prerequisite repair,
+  easier teaching, or a different explanation lens;
+- repeated friction should lower pressure before adding more assessments;
+- missed days should not stack into backlog debt;
+- `too_easy` can increase difficulty or assessment readiness;
+- `right_level` reinforces the current difficulty band;
+- `interest` can influence topic or format but must not override prerequisite
+  gaps.
+
+## Stage Assessment Activation
+
+Stage assessments are evergreen formal cards. They can stay dormant until an
+activation condition is met.
+
+Activation paths:
+
+- system eligibility from recent teaching/practice evidence;
+- elapsed time or stale mastery evidence;
+- Owner manual activation;
+- executor challenge activation when cooldown and safety policy allow it;
+- diagnostic repair when repeated `too_advanced` or prerequisite-gap signals
+  indicate a formal check is useful.
+
+Initial heuristic thresholds from the migrated design:
+
+- at least 4 recent ordinary cards in the capability cluster;
+- at least 5 days since the last completed formal assessment for the same
+  cluster;
+- no high-pressure signal in the recent window unless the activation reason is
+  diagnostic repair;
+- Owner manual activation records `owner_manual`;
+- executor challenge activation records `executor_challenge` and keeps full
+  stage-assessment reward/completion policy.
+
+Dormant assessments should not appear as daily homework debt.
+
+## Evergreen And Sequence Behavior
+
+Evergreen sequences use `sequenceMode: "evergreen_jit"` and a stable
+`sequenceGroupId`.
+
+Sequence projection behavior:
+
+- completed cards remain visible as completed history;
+- the first uncompleted card in a sequence is current;
+- later uncompleted cards are hidden future cards;
+- future target shells should not keep pre-generated `teachingFlow`;
+- only the current card should be JIT-authored at publish/activation time.
+
+The FanFan IGCSE bridge pilot used this shape:
+
+- 12 ordinary teaching/practice targets;
+- first card current and JIT-authored through the publish path;
+- future 11 cards as locked target shells;
+- completion of the current card prepares the next target;
+- after the 12th seed card, the evergreen policy allows a generated follow-up
+  card.
+
+Legacy original-board cards, old Knowledge Graph pilot cards, and old
+evergreen cards are now regenerable runtime rows. They can be retired from the
+board and regenerated from native Growth/KG planning instead of being preserved
+as durable card assets.
+
+## Privacy
+
+Growth card generation, graph planning, mastery, runbooks, handoffs, logs, and
+public projections must stay summary-only. Do not store or expose:
+
+- raw learner answers except inside the specific authenticated evidence flow;
+- full transcripts;
+- hidden answer keys;
+- raw prompts;
+- raw model responses;
+- full private source content;
+- secrets, keys, cookies, tokens, or push endpoints.
+
+## Current Plugin Boundary
+
+The Growth plugin currently has native KG import, graph plan, card binding,
+graph-plus-history generation, Gateway authoring, validation, and SQLite
+publishing:
+
+- `src/services/learning-card-generation-service.js`;
+- `src/services/learning-card-authoring-service.js`;
+- `src/services/growth-gateway-authoring-client.js`;
+- `src/services/learning-card-authoring-validation-service.js`;
+- `src/stores/growth-learning-sqlite/history-summary.js`;
+- `src/stores/growth-learning-sqlite/card-authoring-publisher.js`.
+
+New plugin-owned generated cards use the protected
+`POST /api/v1/growth/cards/generate` route or the same service directly. The
+remaining architecture work is target selection, stage-assessment activation,
+Owner review/retry policy, and production Gateway configuration validation.

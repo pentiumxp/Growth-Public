@@ -9,6 +9,7 @@ const {
   todayKey
 } = require("./growth-learning-sqlite/core");
 const { createAudioRepository } = require("./growth-learning-sqlite/audio");
+const { createLearningCardAuthoringPublisherRepository } = require("./growth-learning-sqlite/card-authoring-publisher");
 const { createCardRetirementRepository } = require("./growth-learning-sqlite/card-retirement");
 const {
   createEvidenceWriter,
@@ -16,6 +17,7 @@ const {
 } = require("./growth-learning-sqlite/evidence-writes");
 const { createEvaluationJobRepository } = require("./growth-learning-sqlite/evaluation-jobs");
 const { createLearningGraphRepository } = require("./growth-learning-sqlite/graph-repository");
+const { createLearningHistorySummaryRepository } = require("./growth-learning-sqlite/history-summary");
 const { createRewardRepository } = require("./growth-learning-sqlite/rewards");
 const {
   lanesForCards,
@@ -44,6 +46,8 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const evidenceWriter = createEvidenceWriter({ open });
   const evaluationJobs = createEvaluationJobRepository({ open });
   const learningGraphRepository = createLearningGraphRepository({ open });
+  const learningHistorySummaryRepository = createLearningHistorySummaryRepository({ open });
+  const learningCardAuthoringPublisherRepository = createLearningCardAuthoringPublisherRepository({ open });
   const audioRepository = createAudioRepository({ open, resolvedPath, legacyAudioRoots });
   const cardRetirementRepository = createCardRetirementRepository({ open });
   const rewardRepository = createRewardRepository({ open });
@@ -117,7 +121,9 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   return {
     dbPath: resolvedPath,
     cardRetirementRepository,
+    learningCardAuthoringPublisherRepository,
     learningGraphRepository,
+    learningHistorySummaryRepository,
     legacyAudioRoots: audioRepository.legacyAudioRoots,
     board,
     card,

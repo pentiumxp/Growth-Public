@@ -116,14 +116,13 @@ function createRewardRepository({ open }) {
       if (existing) return { ok: true, duplicate: true, settlement: publicRewardSettlement(existing) };
 
       const now = cleanString(input.settledAt || input.now) || new Date().toISOString();
-      const passed = Boolean(evaluation.passed);
-      const coinAmount = passed
-        ? Math.max(0, Math.round(numberValue(taskCard.reward_cap_coins || taskCard.configured_reward_coins || taskCard.default_reward_coins || 100)))
-        : 0;
+      const score = Math.max(0, Math.min(100, numberValue(evaluation.score)));
+      const rewardCapCoins = Math.max(0, Math.round(numberValue(taskCard.reward_cap_coins || taskCard.configured_reward_coins || taskCard.default_reward_coins || 100)));
+      const coinAmount = Math.max(0, Math.round((rewardCapCoins * score) / 100));
       const settlementId = stableRewardSettlementId(evaluationId);
       const idempotencyKey = `growth-plugin:evaluation:${evaluationId}:learning-coin`;
-      const status = passed ? "settled" : "blocked";
-      const reason = passed ? "growth_coin_settled_after_passed_evaluation" : "revision_required_before_growth_coin_reward";
+      const status = "settled";
+      const reason = "growth_coin_settled_by_daily_score";
       const raw = {
         source: "growth-plugin",
         currency: "learning_coin",
@@ -132,18 +131,18 @@ function createRewardRepository({ open }) {
           policy: "admin_monthly_exchange_only"
         },
         evaluationStatus: cleanString(evaluation.status),
-        score: numberValue(evaluation.score),
-        passed
+        score,
+        rewardCapCoins,
+        passed: Boolean(evaluation.passed),
+        completionPolicy: "daily_score_once"
       };
-      const ledgerEntry = passed
-        ? {
-          currency: "learning_coin",
-          amountDelta: coinAmount,
-          sourceType: "growth-plugin-evaluation",
-          sourceId: evaluationId,
-          idempotencyKey
-        }
-        : null;
+      const ledgerEntry = {
+        currency: "learning_coin",
+        amountDelta: coinAmount,
+        sourceType: "growth-plugin-evaluation",
+        sourceId: evaluationId,
+        idempotencyKey
+      };
       const values = {
         id: settlementId,
         learner_id: cleanString(taskCard.learner_id || submission.learner_id || input.workspaceId),
@@ -163,14 +162,12 @@ function createRewardRepository({ open }) {
         raw_json: JSON.stringify(raw),
         created_at: now,
         updated_at: now,
-        settled_at: passed ? now : ""
+        settled_at: now
       };
       db.exec("BEGIN IMMEDIATE");
       try {
         upsertDynamic(db, "learning_reward_settlements", values);
-        if (passed) {
-          markTaskCardCompleted(db, taskCard, { taskCardId: values.task_card_id, completedAt: now });
-        }
+        markTaskCardCompleted(db, taskCard, { taskCardId: values.task_card_id, completedAt: now });
         db.exec("COMMIT");
       } catch (err) {
         db.exec("ROLLBACK");

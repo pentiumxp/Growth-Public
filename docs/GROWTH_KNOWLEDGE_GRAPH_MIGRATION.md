@@ -7,12 +7,13 @@ Knowledge Graph contract. It records the current migration boundary and prevents
 the plugin runtime from treating the existing pilot card projection as a native
 knowledge graph implementation.
 
-The canonical source documents currently live in the Home AI app repository:
+The Growth-specific source documents now live in this plugin workspace:
 
-- `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/growth-knowledge-graph-requirements.md`
-- `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/growth-knowledge-graph-architecture.md`
-- `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/growth-knowledge-graph-design.md`
-- `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/growth-knowledge-graph-implementation.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-requirements.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-architecture.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-design.md`
+- `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-implementation.md`
+- `docs/GROWTH_CARD_GENERATION_RULES.md`
 
 Those documents define Growth Knowledge Graph as a graph-guided card planning
 layer. It constrains what formal learning cards can be generated, which
@@ -45,12 +46,13 @@ can create fresh cards. Historical learner evidence, evaluation, audio, and
 reward rows should remain auditable; card cleanup should retire rows from the
 board instead of hard-deleting them.
 
-Native graph planning is not yet enforced for card generation. The plugin now
-has protected runtime endpoints for creating `learning_graph_plans` and
-`learning_card_graph_bindings`, but these records are still a planning/binding
-layer. Existing production card generation, board projection, submission,
-evaluation, reward, and reflection flows remain compatibility-safe and do not
-require graph bindings.
+Native graph planning is now wired into the new Growth-owned card generation
+path. The protected `POST /api/v1/growth/cards/generate` route creates or
+accepts a `learningGraphPlan`, summarizes historical Growth SQLite data, calls
+Gateway through the Growth authoring boundary, and transactionally writes a
+generated `learning_task_cards` row plus `learning_card_graph_bindings`.
+Existing compatibility card projections can still render safely, but new
+model-generated Growth cards should use the graph-plus-history generator.
 
 ## Known Pilot Projection
 
@@ -154,9 +156,12 @@ Implemented plugin-side modules:
 - `src/services/learning-graph-import-service.js`
 - `tests/learning-graph-repository.test.js`
 
-Still planned before graph-required card generation:
+Future optional extraction:
 
-- `src/services/learning-graph-node-service.js`
+- `src/services/learning-graph-node-service.js` may be added when graph node
+  search, target selection, or Owner review needs a dedicated service. The
+  current generator reads bounded node summaries through the native graph
+  repository.
 
 Implemented after the native import:
 
@@ -325,9 +330,9 @@ Current implementation notes:
   native graph tables;
 - plans and card bindings are stored in `learning_graph_plans` and
   `learning_card_graph_bindings`;
-- formal-card validation can fail closed with
-  `learning_graph_plan_required`, but this validation is not yet wired into
-  production card authoring.
+- generated cards are published through
+  `src/stores/growth-learning-sqlite/card-authoring-publisher.js`, which
+  upserts the card and writes the graph binding in one SQLite transaction.
 
 Runtime API boundary added after the service layer:
 
@@ -341,10 +346,16 @@ Runtime API boundary added after the service layer:
   - binds the URL card id, not a caller-provided body override;
   - normalizes node ids, card role, assessment coverage, and repair metadata
     into `learningCardGraphBindingService.bindCard`.
+- `POST /api/v1/growth/cards/generate`
+  - requires the workspace-local bearer and a writable `workspace_id`;
+  - creates or accepts a graph plan;
+  - reads `history-summary` context from Growth SQLite;
+  - calls Gateway only through the Growth authoring client;
+  - writes the generated task card and graph binding transactionally.
 
 The runtime API harness is `tests/growth-routes.test.js`; it verifies bearer
 authorization, workspace id normalization, URL card-id precedence, and 400
-mapping for graph service rejections.
+mapping for graph/generation service rejections.
 
 ### Phase 5: Card Generation Integration
 
@@ -361,8 +372,10 @@ Integration rules:
 - difficulty feedback updates planning evidence and must not become a formal
   mastery failure by itself.
 
-Status: not yet implemented. Existing card generation and production card
-workflow remain unchanged.
+Status: implemented for the new plugin-owned generation path. Production use
+requires a configured Gateway authoring endpoint/access boundary. Future work
+still needs broader target selection, stage-assessment activation, and Owner
+review/retry policy before automatic large-scale card generation is enabled.
 
 ### Phase 5a: Regenerable Card Retirement Harness
 

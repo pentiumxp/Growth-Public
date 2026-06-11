@@ -189,6 +189,43 @@ test("evidence writer resolves legacy kanban ids and queues evaluation jobs", ()
   });
 });
 
+test("evidence writer enforces one submission for daily score cards", () => {
+  withEvidenceDb(({ dbPath, writer, DatabaseSync }) => {
+    const db = new DatabaseSync(dbPath);
+    try {
+      db.prepare("UPDATE learning_task_cards SET raw_json = ? WHERE id = 'ltask_1'")
+        .run(JSON.stringify({ completionPolicy: { mode: "daily_score_once", evaluationAttempts: 1 } }));
+    } finally {
+      db.close();
+    }
+
+    const first = writer.submitEvidence({
+      workspaceId: "weixin_child",
+      taskCardId: "ltask_1",
+      text: "This is the one daily-card answer.",
+      submittedAt: "2026-06-11T01:00:00.000Z"
+    });
+    assert.equal(first.ok, true);
+
+    const second = writer.submitEvidence({
+      workspaceId: "weixin_child",
+      taskCardId: "ltask_1",
+      text: "This second answer should not create another grading loop.",
+      submittedAt: "2026-06-11T01:10:00.000Z"
+    });
+    assert.equal(second.ok, false);
+    assert.equal(second.error, "daily_card_submission_already_recorded");
+
+    const verify = new DatabaseSync(dbPath);
+    try {
+      assert.equal(verify.prepare("SELECT COUNT(*) AS count FROM learning_task_submissions").get().count, 1);
+      assert.equal(verify.prepare("SELECT COUNT(*) AS count FROM learning_growth_evaluation_jobs").get().count, 1);
+    } finally {
+      verify.close();
+    }
+  });
+});
+
 test("evidence writer stores reflection evidence without creating evaluation jobs", () => {
   withEvidenceDb(({ dbPath, writer, DatabaseSync }) => {
     const result = writer.submitReflection({
@@ -208,6 +245,42 @@ test("evidence writer stores reflection evidence without creating evaluation job
       assert.equal(db.prepare("SELECT COUNT(*) AS count FROM learning_growth_evaluation_jobs").get().count, 0);
     } finally {
       db.close();
+    }
+  });
+});
+
+test("evidence writer enforces one reflection for daily score cards", () => {
+  withEvidenceDb(({ dbPath, writer, DatabaseSync }) => {
+    const db = new DatabaseSync(dbPath);
+    try {
+      db.prepare("UPDATE learning_task_cards SET raw_json = ? WHERE id = 'ltask_1'")
+        .run(JSON.stringify({ completionPolicy: { mode: "daily_score_once", reflectionAttempts: 1 } }));
+    } finally {
+      db.close();
+    }
+
+    const first = writer.submitReflection({
+      workspaceId: "weixin_child",
+      taskCardId: "ltask_1",
+      transcript: "I noticed one thing to check next time.",
+      submittedAt: "2026-06-11T02:00:00.000Z"
+    });
+    assert.equal(first.ok, true);
+
+    const second = writer.submitReflection({
+      workspaceId: "weixin_child",
+      taskCardId: "ltask_1",
+      transcript: "A second reflection should not reopen the card.",
+      submittedAt: "2026-06-11T02:10:00.000Z"
+    });
+    assert.equal(second.ok, false);
+    assert.equal(second.error, "daily_card_reflection_already_recorded");
+
+    const verify = new DatabaseSync(dbPath);
+    try {
+      assert.equal(verify.prepare("SELECT COUNT(*) AS count FROM learning_task_reflections").get().count, 1);
+    } finally {
+      verify.close();
     }
   });
 });

@@ -50,6 +50,11 @@ Growth-local service/module boundaries are recorded in
 `docs/GROWTH_PLUGIN_ARCHITECTURE.md`. That document is plugin-local only; it
 does not redefine the Home AI platform contracts below.
 
+Growth-specific product, architecture, implementation, and runbook documents
+are indexed in `docs/GROWTH_DOCS_INDEX.md`. Imported Home AI Growth documents
+live under `docs/home-ai-growth/` and should be treated as the plugin-local
+working copies for future Growth work.
+
 | Field | Value |
 | --- | --- |
 | `plugin_id` | `growth` |
@@ -78,8 +83,10 @@ does not redefine the Home AI platform contracts below.
 | `plugin_submission_write` | `POST /api/v1/growth/cards/:taskCardId/submissions` with the workspace-local `.hermes-growth/access-key.txt` bearer and `workspace_id`; accepts bounded JSON text/audio evidence, resolves native task card ids or legacy `kanban_card_id`, writes plugin-owned submissions/audio BLOBs/sessions, and enqueues pending `learning_growth_evaluation_jobs` rows. |
 | `plugin_evaluation_processing` | `POST /api/v1/growth/evaluations/process` with the workspace-local bearer; claims due pending/retry jobs, writes bounded `learning_evaluations`, and marks jobs done/retry/failed. Optional dispatcher is controlled by `GROWTH_EVALUATION_WORKER_ENABLED` and `GROWTH_EVALUATION_WORKER_INTERVAL_MS`. |
 | `plugin_reflection_write` | `POST /api/v1/growth/cards/:taskCardId/reflections` with the workspace-local bearer; accepts bounded text/audio reflection evidence, resolves native task card ids or legacy `kanban_card_id`, writes `learning_task_reflections`, and stores optional reflection audio BLOBs. |
-| `plugin_graph_plan_write` | `POST /api/v1/growth/graph/plans` with the workspace-local bearer; creates bounded `learning_graph_plans` over imported native graph nodes. This does not enable graph-required production card generation. |
-| `plugin_card_graph_binding_write` | `POST /api/v1/growth/cards/:taskCardId/graph-binding` with the workspace-local bearer; binds a task card to an existing graph plan and node coverage using the URL card id as authoritative. This does not mutate existing card-generation behavior. |
+| `plugin_graph_plan_write` | `POST /api/v1/growth/graph/plans` with the workspace-local bearer; creates bounded `learning_graph_plans` over imported native graph nodes. This route only writes plans; card publication happens through the generation route or explicit graph-binding route. |
+| `plugin_card_graph_binding_write` | `POST /api/v1/growth/cards/:taskCardId/graph-binding` with the workspace-local bearer; binds a task card to an existing graph plan and node coverage using the URL card id as authoritative. |
+| `plugin_card_generation_write` | `POST /api/v1/growth/cards/generate` with the workspace-local bearer; creates or accepts a graph plan, summarizes bounded historical Growth SQLite data, calls Gateway through the Growth authoring client, validates the draft, and writes the generated `learning_task_cards` row plus graph binding in one transaction. Generated daily cards carry `daily_score_once`: one evaluation, one optional reflection, completion after the first evaluation, and score-proportional learning-coin settlement without a pass-line gate. |
+| `card_authoring_model_boundary` | Growth card generation and authoring are plugin-owned and Gateway-only. The service slice exists in `learning-card-generation-service`, `learning-card-authoring-service`, `growth-gateway-authoring-client`, and `learning-card-authoring-validation-service`, with `history-summary` and `card-authoring-publisher` SQLite repositories underneath. Growth may use Home AI Gateway access/config but must not import Home AI old Growth server logic or call model vendors directly. |
 | `plugin_view_targets` | `GET /api/v1/growth/view-targets`; returns Growth-provisioned view targets. Through the Home AI proxy, only `x-hermes-plugin-actor-role=owner` receives multiple targets. Workspace actors receive only their current workspace target and cannot enumerate other Growth users. |
 | `historical_audio_blob_backfill` | `npm run backfill:audio-blobs -- --db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --legacy-audio-root <Home-AI-data-root> --dry-run --json`; use `--write` only after dry-run shows acceptable `would_backfill`, `file_missing`, and sample evidence. |
 | `legacy_audio_roots` | `GROWTH_LEGACY_AUDIO_ROOTS`, path-delimited; optional override for old Home AI artifact roots. If omitted, the plugin derives the standard sibling Home AI `data` root from its workspace. Do not expose raw absolute file paths to clients. |
@@ -96,6 +103,7 @@ does not redefine the Home AI platform contracts below.
 | `ios_live_debug_available` | `yes`; use Home AI `npm run ios:pwa:debug` after the plugin is registered in the host. |
 | `ios_visual_harness_command` | `cd /Users/hermes-dev/HermesMobileDev/app && npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/` |
 | `plugin_manifest_actions_status` | `declared`; Growth exposes manifest `actions` for host Dock `常用`, long-press menus, and search. |
+| `growth_docs_locality` | `node scripts/check-growth-docs-locality.js`; Growth-specific docs must exist in this plugin workspace, while broad platform contracts remain centralized in the Home AI app workspace. |
 
 ## Required Local Validation
 
@@ -176,6 +184,21 @@ For architecture boundary refactors, also run:
 
 ```bash
 node --test tests/growth-architecture-boundary.test.js
+```
+
+For Growth-specific documentation movement or card-generation rule changes,
+also run:
+
+```bash
+node scripts/check-growth-docs-locality.js
+node --test tests/growth-docs-locality.test.js
+```
+
+For Growth card-authoring model boundary changes, also run:
+
+```bash
+node scripts/check-growth-card-authoring-boundary.js
+node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/growth-routes.test.js
 ```
 
 For Growth Knowledge Graph source-pack recovery, dry-run import, or native

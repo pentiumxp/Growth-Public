@@ -9,6 +9,194 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-11 Growth Documentation Locality
+
+- Product direction: all Growth-specific documentation belongs in the Growth
+  plugin workspace. The Home AI app workspace remains canonical only for broad
+  platform contracts and runbooks.
+- Added plugin-local Growth documentation index:
+  `docs/GROWTH_DOCS_INDEX.md`.
+- Added consolidated card generation rule summary:
+  `docs/GROWTH_CARD_GENERATION_RULES.md`.
+- Migrated 17 Growth-specific Home AI docs into `docs/home-ai-growth/`:
+  - FanFan learning system and evergreen card design/implementation notes;
+  - Growth learning module doc;
+  - Growth KG requirements, architecture, design, and implementation notes;
+  - teaching-card flow and implementation notes;
+  - pluginization plan;
+  - workflow contract harness;
+  - mastery profile;
+  - async evaluation queue;
+  - Growth stuck/waiting-AI and submit-disabled runbooks.
+- Added locality harness:
+  - `scripts/check-growth-docs-locality.js`;
+  - `tests/growth-docs-locality.test.js`.
+- Updated local pointers:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `README.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md`;
+  - `package.json` check script.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run check`;
+  - `npm test` with 103 passing tests;
+  - `git diff --check`.
+- Current boundary:
+  - Growth-specific docs should be updated under this plugin workspace first;
+  - historical migrated docs may still mention Home AI `adapters/*` or
+    `server-routes/*` paths as provenance, but those are not plugin runtime
+    ownership boundaries;
+  - broad Home AI platform contracts, deployment runbooks, AI Ops docs,
+    Gateway runtime docs, Action Inbox, Web Push, and reference-memory docs
+    remain centralized in the Home AI app workspace.
+
+## 2026-06-11 Growth Card Authoring Gateway Boundary
+
+- Product/architecture decision: Growth owns card authoring. New card
+  generation should be implemented inside the Growth plugin, not by calling
+  Home AI old Growth route/server internals.
+- Gateway is the only model boundary for card authoring. Growth may depend on
+  Home AI provided Gateway access/config, but must not direct-call OpenAI,
+  Claude, DeepSeek, or other model vendors.
+- Documented service split:
+  - `learning-card-generation-service`;
+  - `learning-card-authoring-service`;
+  - `growth-gateway-authoring-client`;
+  - `learning-card-authoring-validation-service`.
+- Implemented the first service slice:
+  - `src/services/learning-card-authoring-service.js` assembles summary-only
+    authoring input, calls Gateway, applies validation/repair policy, and
+    delegates accepted drafts to an injected publisher;
+  - `src/services/growth-gateway-authoring-client.js` aggregates Gateway SSE
+    and ordinary JSON responses into model text without direct vendor calls;
+  - `src/services/learning-card-authoring-validation-service.js` validates
+    JSON drafts, `teachingFlow`, role policy, graph plan consistency, stage
+    assessment coverage, and privacy/bounded-content rules.
+- Updated docs:
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Added boundary harness:
+  - `scripts/check-growth-card-authoring-boundary.js`;
+  - `tests/growth-card-authoring-boundary.test.js`.
+- Added fake Gateway service harness:
+  - `tests/learning-card-authoring-service.test.js`.
+- Harness coverage:
+  - required docs mention Gateway-only card authoring, structured summary-only
+    inputs, authoring draft flow, `teachingFlow` validation, role policy,
+    graph binding validation, privacy scan, SSE and JSON Gateway modes, and
+    fake Gateway scenarios;
+  - source scan rejects direct provider API keys, provider SDK imports, and
+    direct provider endpoints in `src/` and `scripts/`.
+- Fake Gateway scenarios cover valid stream, valid JSON, empty output, invalid
+  JSON with repair success, repair failure, missing schema fields, privacy scan
+  failure, timeout, graph policy mismatch, and publisher transaction failure.
+- Current boundary: card generation is exposed through the workspace-bearer
+  `POST /api/v1/growth/cards/generate` route and writes accepted drafts to
+  Growth SQLite through the plugin-owned publisher. Production use still
+  requires a configured Gateway authoring endpoint/access boundary.
+- Validation passed:
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js`;
+  - `npm run check`;
+  - `npm test` with 121 passing tests;
+  - `git diff --check`.
+
+## 2026-06-11 Growth Graph And History Card Generation
+
+- Implemented graph-plus-history generation orchestration:
+  - `src/services/learning-card-generation-service.js` creates or accepts a
+    validated graph plan, reads bounded historical summaries, adds graph node
+    source summaries, calls authoring, and returns the published card result;
+  - `src/stores/growth-learning-sqlite/history-summary.js` summarizes recent
+    cards, evaluations, mastery states, experience signals, and aggregate
+    counts without exposing raw learner submissions or transcripts;
+  - `src/stores/growth-learning-sqlite/card-authoring-publisher.js` upserts
+    `learning_task_cards` and writes `learning_card_graph_bindings` in one
+    SQLite transaction, rolling back on graph-binding failure.
+- Wired runtime composition:
+  - `src/app/services.js` creates Gateway authoring client, validation,
+    authoring, generation, history, and publisher dependencies;
+  - `src/config/env.js` reads Gateway authoring endpoint/token path settings;
+  - `src/routes/growth-routes.js` exposes
+    `POST /api/v1/growth/cards/generate` behind workspace-bearer
+    authorization.
+- Updated docs and boundary harness:
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `README.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `scripts/check-growth-card-authoring-boundary.js`.
+- New focused harness:
+  - `tests/learning-card-generation-service.test.js` covers graph plan
+    creation, historical summary injection, raw submission exclusion from
+    Gateway input, transactional card+binding publish, plan failure before
+    Gateway, and rollback on binding failure;
+  - `tests/growth-routes.test.js` covers the protected generation route.
+- Validation passed:
+  - `node --test tests/learning-card-generation-service.test.js`;
+  - `node --test tests/growth-routes.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-card-authoring-boundary.test.js tests/growth-docs-locality.test.js`;
+  - `npm run check`;
+  - `npm test` with 121 passing tests;
+  - `git diff --check`.
+
+## 2026-06-11 Daily Card One-Pass Scoring Policy
+
+- Product rule: daily ordinary Growth cards should keep the existing card UI
+  shape but must not behave like pass/fail exams. The policy is documented in
+  `docs/GROWTH_CARD_GENERATION_RULES.md` as `daily_score_once`.
+- Daily generated cards now publish this completion policy in card `raw_json`:
+  - one submission evaluation;
+  - one optional reflection;
+  - completion after the first evaluation;
+  - score-proportional learning-coin settlement;
+  - no pass-line gate.
+- Implemented runtime enforcement:
+  - `src/stores/growth-learning-sqlite/card-authoring-publisher.js` writes
+    `completionPolicy.mode=daily_score_once` for generated cards;
+  - `src/stores/growth-learning-sqlite/evidence-writes.js` rejects a second
+    submission or second reflection for daily-score cards;
+  - `src/services/growth-evaluation-service.js` no longer emits
+    `needs_revision` for the deterministic daily evaluator. It records one
+    score, feedback, and next-practice suggestions;
+  - `src/stores/growth-learning-sqlite/rewards.js` settles learning coins by
+    `score / 100 * reward_cap_coins` and completes the card regardless of a
+    pass/fail threshold;
+  - `src/stores/growth-learning-sqlite/history-summary.js` treats
+    `status=completed` as completion evidence even when no pass-line concept
+    is used.
+- UI boundary: public DTO fields remain compatible with the existing renderer
+  (`latestSubmission`, `latestEvaluation`, `latestReflection`, `rewardPolicy`,
+  `rewardState`, `laneId`, `nextAction`, `primaryAction`, and
+  `teachingFlow`). The backend should avoid producing `needs_revision` or
+  `reflection_required` for daily-score cards.
+- Verified production history remains available for Stephen/Stefan under
+  `weixin_stephen` by read-only SQLite aggregation:
+  - cards: 48;
+  - submissions: 18;
+  - evaluations: 24;
+  - reflections: 5;
+  - audio BLOBs: 10;
+  - reward settlements: 5;
+  - mastery states: 22;
+  - experience signals: 2;
+  - native graph nodes: 294;
+  - native graph edges: 329.
+- Focused validation passed:
+  - `node --test tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-rewards.test.js tests/growth-learning-sqlite-store.test.js tests/learning-card-generation-service.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`.
+- Full validation passed:
+  - `npm run check`;
+  - `npm test` with 121 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`.
+
 ## 2026-06-11 Growth Knowledge Graph Native Import Harness
 
 - The recovered Fan Fan UK/HK IGCSE/A-Level graph source pack remains a Mac
@@ -134,9 +322,10 @@
   - card bindings require an existing plan and valid binding nodes;
   - formal-card validation can fail closed with
     `learning_graph_plan_required` when graph-required mode is requested.
-- Production card generation is not yet changed. Existing compatibility cards,
-  board projection, submissions, evaluation jobs, reward settlement, and
-  learning flow remain unchanged.
+- This section was superseded by the later graph-plus-history generation work:
+  new plugin-owned generation now uses graph plans, bounded historical
+  summaries, Gateway authoring, and transactional card+binding publishing.
+  Existing compatibility cards can still render safely.
 - Focused validation passed:
   - `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js tests/learning-graph-plan-binding-service.test.js`
     with 13 passing tests.
@@ -211,8 +400,9 @@
     `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
   - unauthenticated graph plan and graph-binding POST requests for
     `weixin_stephen` returned `403 permission_denied`.
-- Boundary remains unchanged:
-  - production card generation is not graph-required yet;
+- Boundary at that point, now superseded by the graph-plus-history generation
+  section above:
+  - production card generation was not graph-required yet at that stage;
   - existing compatibility cards, board projection, submissions, evaluations,
     reflection writes, and Growth learning-coin settlement remain unchanged;
   - do not production-smoke these routes with write payloads unless the caller
@@ -315,7 +505,8 @@
   - the old board is intentionally empty for `weixin_stephen`;
   - new production cards should be generated from the native Growth/KG service
     path, not from the retired compatibility projection rows;
-  - native graph-required card generation is still not enabled by this step;
+  - this retirement step did not enable native graph-required card generation,
+    but the later graph-plus-history generation service now provides that path;
   - no platform `通宝` exchange or monthly clearing behavior changed.
 
 ## 2026-06-11 Growth Core Module Refactor Started

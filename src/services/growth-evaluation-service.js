@@ -40,38 +40,35 @@ function deterministicEvaluate(input = {}) {
   const hasReflection = /\b(because|so|then|next|improve|change|fix|learn|finally)\b/i.test(text) || /因为|所以|下次|改进|修正|学习/.test(text);
   const hasStructure = lineCount >= 2;
   const score = clampScore(45 + Math.min(25, wordCount) + (hasReflection ? 15 : 0) + (hasStructure ? 10 : 0));
-  const passed = score >= 80 && enoughDetail;
-  const revisionRequirements = [];
-  if (!enoughDetail) revisionRequirements.push("Add more concrete evidence before final completion.");
-  if (!hasStructure) revisionRequirements.push("Split the answer into at least two clear parts.");
-  if (!hasReflection) revisionRequirements.push("Add one sentence about what changed, why, or what to do next.");
-  if (!revisionRequirements.length && !passed) revisionRequirements.push("Make the answer more specific before completion.");
+  const focusAreas = [];
+  if (!enoughDetail) focusAreas.push("Add more concrete evidence next time.");
+  if (!hasStructure) focusAreas.push("Use two clear parts next time.");
+  if (!hasReflection) focusAreas.push("Add one sentence about what changed, why, or what to do next time.");
+  if (!focusAreas.length) focusAreas.push("Keep the same clear evidence habit in the next task.");
   return {
     evaluationId: `lgeval_${sha256Hex(`${input.submissionId}:${text}`).slice(0, 18)}`,
-    status: passed ? "completed" : "needs_revision",
+    status: "completed",
     score,
     maxScore: 100,
-    passed,
+    passed: true,
     confidence: 0.76,
-    summary: passed
-      ? `Submission evaluated for "${title || "Growth task"}" and passed with sufficient detail.`
-      : `Submission evaluated for "${title || "Growth task"}" and needs revision before completion.`,
-    revisionRequirements,
-    remainingWeaknesses: passed ? [] : revisionRequirements.slice(0, 4),
+    summary: `Submission evaluated once for "${title || "Growth task"}". Score ${score}.`,
+    revisionRequirements: [],
+    remainingWeaknesses: focusAreas.slice(0, 4),
     feedbackSections: {
       strengths: [
         wordCount ? "A learner submission was recorded." : "",
         instruction ? "The task instruction was available for alignment." : ""
       ].filter(Boolean),
-      focusAreas: revisionRequirements,
-      reflectionPrompts: ["What changed in your answer, and what will you check next time?"],
-      nextPractice: passed ? "Use the same repair habit in the next task." : "Revise and resubmit with more concrete evidence."
+      focusAreas,
+      reflectionPrompts: ["Optional: what changed in your answer, and what will you check next time?"],
+      nextPractice: "Use this score as feedback for the next daily card. No resubmission is required."
     },
     evidenceRefs: ["growth-plugin-deterministic-evaluator:v1"],
     reward: {
-      eligible: passed,
+      eligible: true,
       currency: "growth_coin",
-      reason: passed ? "growth_coin_reward_eligible" : "revision_required_before_reward"
+      reason: "daily_score_once_reward_eligible"
     }
   };
 }
@@ -211,14 +208,15 @@ async function emitEvaluationEvents(input = {}) {
     return { ok: false, available: false, emitted: 0, error: "growth_event_service_unavailable" };
   }
   const evaluation = input.evaluation || {};
-  const passed = Boolean(evaluation.passed);
+  const status = cleanString(evaluation.status).toLowerCase();
+  const completed = Boolean(evaluation.passed) || ["completed", "complete", "scored"].includes(status);
   const common = {
     workspaceId: input.workspaceId,
     taskCardId: input.taskCardId,
     source: "growth-plugin-evaluation",
     occurredAt: input.occurredAt
   };
-  const events = passed ? ["growth.card.completed", "growth.mastery.updated"] : ["growth.review.required"];
+  const events = completed ? ["growth.card.completed", "growth.mastery.updated"] : ["growth.review.required"];
   const results = [];
   for (const type of events) {
     const result = await eventService.emit(Object.assign({}, common, {

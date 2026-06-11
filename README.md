@@ -24,18 +24,38 @@ changes should be made in this repository, not in the Home AI host legacy
 - Growth API for status and board projection.
 - Plugin-owned Growth learning SQLite read model, with snapshot/facade fallback
   helpers retained for migration staging.
+- Workspace-bearer submission/reflection writes, async evaluation processing,
+  Growth learning-coin settlement, and plugin-owned audio playback.
+- Native Growth knowledge-graph import, graph planning, graph binding, and
+  Gateway-backed card generation from graph plus historical SQLite summaries.
+- Daily generated cards use one evaluation, one optional reflection, and
+  score-proportional learning-coin settlement without a pass/fail gate.
 - Bounded Growth event outbox and delivery to the Home AI plugin notification
   endpoint.
 - Read-only Growth MCP schema and execute endpoint for status, board, card
   list, and card detail projections.
 
+## Documentation
+
+Growth-specific documents are owned by this plugin workspace. Start with:
+
+- `docs/GROWTH_DOCS_INDEX.md`
+- `docs/GROWTH_CARD_GENERATION_RULES.md`
+- `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+- `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md`
+- `docs/HOME_AI_PLATFORM_CONTRACT.md`
+
+Migrated Home AI Growth documents live under `docs/home-ai-growth/` as the
+plugin-local working copies. Broad Home AI platform contracts remain in the
+Home AI app workspace and are referenced by pointer only.
+
 ## Non-Goals
 
-- It does not yet own all Home AI Growth write workflows: submission creation,
-  transcription, async evaluation, reflection, reward settlement, mastery
-  updates, Action Inbox/Web Push, and Owner manual decisions remain host-owned
-  until each path has plugin-side tests and cutover evidence.
-- It does not yet expose a production Gateway MCP toolset.
+- Platform `通宝` exchange, Action Inbox/Web Push, and Owner manual decision
+  workflows remain outside this plugin until each path has a dedicated
+  plugin-side contract and cutover evidence.
+- Growth card generation must use the Gateway boundary. This plugin must not
+  direct-call OpenAI, Claude, DeepSeek, or other model vendors.
 - It must not import or mutate Home AI host frontend source at runtime.
 
 ## Local Development

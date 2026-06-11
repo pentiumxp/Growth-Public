@@ -16,6 +16,9 @@ function readEnv(env = process.env) {
     registrationKey: env.GROWTH_REGISTRATION_KEY || readSecretFile(env.GROWTH_REGISTRATION_KEY_PATH),
     homeAiApiBaseUrl: env.GROWTH_HOME_AI_API_BASE_URL || env.HOME_AI_API_BASE_URL || env.HERMES_MOBILE_API_BASE_URL || "",
     homeAiAccessKey: env.GROWTH_HOME_AI_ACCESS_KEY || env.HOME_AI_ACCESS_KEY || readSecretFile(env.GROWTH_HOME_AI_ACCESS_KEY_PATH || env.HOME_AI_ACCESS_KEY_PATH),
+    gatewayAuthoringEndpoint: env.GROWTH_GATEWAY_AUTHORING_ENDPOINT || env.HERMES_GATEWAY_AUTHORING_ENDPOINT || env.HOME_AI_GATEWAY_AUTHORING_ENDPOINT || "",
+    gatewayAuthoringAccessToken: env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN || env.HERMES_GATEWAY_ACCESS_TOKEN || readSecretFile(env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH || env.HERMES_GATEWAY_ACCESS_TOKEN_PATH),
+    gatewayAuthoringTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_AUTHORING_TIMEOUT_MS || 60000) || 60000),
     legacyAudioRoots: (env.GROWTH_LEGACY_AUDIO_ROOTS || "")
       .split(path.delimiter)
       .map((entry) => entry.trim())

@@ -741,6 +741,105 @@ test("growth card graph-binding route requires workspace bearer and binds URL ca
   }
 });
 
+test("growth card generation route requires workspace bearer and normalizes graph plus authoring input", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    learningCardGenerationService: {
+      async generateCard(input) {
+        calls.push(input);
+        return {
+          ok: input.targetNodeId !== "missing",
+          error: input.targetNodeId === "missing" ? "missing_target_node" : undefined,
+          published: { taskCardId: "generated_1" }
+        };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        target_node_id: "node_1",
+        card_role: "teaching"
+      })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learner_id: "learner_1",
+        program_id: "program_1",
+        target_node_id: "node_1",
+        card_role: "teaching",
+        difficulty_band: "foundation",
+        evidence_requirements: ["explain_ratio"],
+        card_schema_version: "growth.card.authoring.v1",
+        generation_key: "route-generation"
+      })
+    });
+    assert.equal(accepted.status, 201);
+    assert.equal((await accepted.json()).published.taskCardId, "generated_1");
+    assert.deepEqual(calls[0], {
+      learningGraphPlanId: undefined,
+      learningGraphPlan: undefined,
+      learnerId: "learner_1",
+      workspaceId: "test",
+      programId: "program_1",
+      targetNodeId: "node_1",
+      targetNodeIds: undefined,
+      cardRole: "teaching",
+      difficultyBand: "foundation",
+      assessmentCoverageNodeIds: undefined,
+      evidenceRequirements: ["explain_ratio"],
+      sourceSummaries: undefined,
+      cardSchemaVersion: "growth.card.authoring.v1",
+      generationKey: "route-generation",
+      taskCardId: undefined
+    });
+
+    const failed = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        target_node_id: "missing",
+        card_role: "teaching"
+      })
+    });
+    assert.equal(failed.status, 400);
+    assert.equal((await failed.json()).error, "missing_target_node");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth evaluation worker processes queue when enabled", async () => {
   let processed = 0;
   const server = startServer({

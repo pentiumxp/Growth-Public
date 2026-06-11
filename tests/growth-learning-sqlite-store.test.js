@@ -520,7 +520,8 @@ test("processes pending Growth evaluation jobs into plugin-owned evaluations", a
   try {
     const settlement = db.prepare("SELECT * FROM learning_reward_settlements WHERE task_card_id = ?").get("card_1");
     assert.equal(settlement.status, "settled");
-    assert.equal(settlement.coin_amount, 100);
+    assert.equal(settlement.coin_amount, 95);
+    assert.equal(settlement.reason, "growth_coin_settled_by_daily_score");
     assert.equal(JSON.parse(settlement.raw_json).tongbaoExchange.policy, "admin_monthly_exchange_only");
   } finally {
     db.close();
@@ -597,7 +598,7 @@ test("clears monthly Growth coin balance without depending on card state", async
 
   const balance = store.learningCoinBalance({ workspaceId: "weixin_child" });
   assert.equal(balance.ok, true);
-  assert.equal(balance.available_coins, 100);
+  assert.equal(balance.available_coins, 95);
 
   const preview = store.clearLearningCoinBalanceForMonthlyExchange({
     workspaceId: "weixin_child",
@@ -608,8 +609,8 @@ test("clears monthly Growth coin balance without depending on card state", async
   });
   assert.equal(preview.ok, true);
   assert.equal(preview.mode, "dry_run");
-  assert.equal(preview.clearable_coins, 100);
-  assert.equal(store.learningCoinBalance({ workspaceId: "weixin_child" }).available_coins, 100);
+  assert.equal(preview.clearable_coins, 95);
+  assert.equal(store.learningCoinBalance({ workspaceId: "weixin_child" }).available_coins, 95);
 
   const cleared = store.clearLearningCoinBalanceForMonthlyExchange({
     workspaceId: "weixin_child",
@@ -620,9 +621,9 @@ test("clears monthly Growth coin balance without depending on card state", async
     now: "2026-06-30T23:59:00.000Z"
   });
   assert.equal(cleared.ok, true);
-  assert.equal(cleared.cleared_coins, 100);
+  assert.equal(cleared.cleared_coins, 95);
   assert.equal(cleared.balance_after.available_coins, 0);
-  assert.equal(cleared.ledger_entry.amountDelta, -100);
+  assert.equal(cleared.ledger_entry.amountDelta, -95);
 
   const duplicate = store.clearLearningCoinBalanceForMonthlyExchange({
     workspaceId: "weixin_child",
@@ -633,14 +634,14 @@ test("clears monthly Growth coin balance without depending on card state", async
   });
   assert.equal(duplicate.ok, true);
   assert.equal(duplicate.duplicate, true);
-  assert.equal(duplicate.cleared_coins, 100);
+  assert.equal(duplicate.cleared_coins, 95);
   assert.equal(duplicate.balance_after.available_coins, 0);
 
   const ledgerDb = new DatabaseSync(dbPath, { readOnly: true });
   try {
     const rows = ledgerDb.prepare("SELECT * FROM learning_coin_ledger_entries WHERE workspace_id = ?").all("weixin_child");
     assert.equal(rows.length, 1);
-    assert.equal(rows[0].amount_delta, -100);
+    assert.equal(rows[0].amount_delta, -95);
     assert.equal(rows[0].entry_type, "monthly_exchange_clear");
     assert.equal(JSON.parse(rows[0].metadata_json).policy, "admin_monthly_exchange_only");
   } finally {

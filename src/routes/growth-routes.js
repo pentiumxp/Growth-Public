@@ -88,6 +88,26 @@ function normalizeCardGraphBindingInput(body, workspaceId, taskCardId) {
   };
 }
 
+function normalizeCardGenerationInput(body, workspaceId) {
+  return {
+    learningGraphPlanId: body.learningGraphPlanId || body.learning_graph_plan_id,
+    learningGraphPlan: body.learningGraphPlan || body.learning_graph_plan,
+    learnerId: body.learnerId || body.learner_id,
+    workspaceId,
+    programId: body.programId || body.program_id,
+    targetNodeId: body.targetNodeId || body.target_node_id,
+    targetNodeIds: body.targetNodeIds || body.target_node_ids,
+    cardRole: body.cardRole || body.card_role,
+    difficultyBand: body.difficultyBand || body.difficulty_band,
+    assessmentCoverageNodeIds: body.assessmentCoverageNodeIds || body.assessment_coverage_node_ids || body.assessmentCoverage || body.assessment_coverage,
+    evidenceRequirements: body.evidenceRequirements || body.evidence_requirements,
+    sourceSummaries: body.sourceSummaries || body.source_summaries,
+    cardSchemaVersion: body.cardSchemaVersion || body.card_schema_version,
+    generationKey: body.generationKey || body.generation_key,
+    taskCardId: body.taskCardId || body.task_card_id
+  };
+}
+
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
     const workspaceId = requestedWorkspaceId(request, url);
@@ -175,6 +195,15 @@ async function handleGrowthRoute(request, response, url, services) {
     const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
     const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const result = await services.learningGraphPlanService.createPlan(normalizeGraphPlanInput(body, serviceWorkspaceId));
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/cards/generate") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const result = await services.learningCardGenerationService.generateCard(
+      normalizeCardGenerationInput(body, serviceWorkspaceId)
+    );
     return sendJson(response, result.ok ? 201 : 400, result);
   }
 

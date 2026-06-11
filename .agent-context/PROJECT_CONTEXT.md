@@ -13,6 +13,11 @@ module and have been archived outside this workspace.
 Read `docs/HOME_AI_PLATFORM_CONTRACT.md` first for local facts and canonical
 Home AI contract links.
 
+Growth-specific documents are owned by this plugin workspace. Use
+`docs/GROWTH_DOCS_INDEX.md` as the local index for Growth product,
+architecture, card-generation, implementation, and runbook documents. Broad
+Home AI platform contracts remain in the Home AI app workspace by pointer.
+
 ## Current State
 
 - Plugin id: `growth`.
@@ -25,7 +30,12 @@ Home AI contract links.
   playback, historical audio BLOB backfill tooling, workspace-bound read-only
   MCP tools, workspace-bearer submission/reflection evidence write endpoints,
   async evaluation processing, per-card Growth learning coin settlement, and
-  bounded completion/mastery/review event emission.
+  bounded completion/mastery/review event emission. It also owns native
+  knowledge-graph import/planning/binding and Gateway-backed card generation
+  from graph plans plus historical SQLite summaries. New generated daily cards
+  use `daily_score_once`: one evaluation, one optional reflection,
+  completion after the first evaluation, and score-proportional rewards
+  without a pass-line gate.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

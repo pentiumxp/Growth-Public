@@ -6,6 +6,7 @@ const {
   insertDynamic,
   nowIsoValue,
   numberValue,
+  parseJson,
   tableExists,
   todayKey
 } = require("./core");
@@ -97,6 +98,37 @@ function countSubmissionsForTask(db, taskCardId) {
   return Number(db.prepare("SELECT COUNT(*) AS count FROM learning_task_submissions WHERE task_card_id = ?").get(cleanString(taskCardId))?.count || 0);
 }
 
+function countReflectionsForTask(db, taskCardId) {
+  if (!tableExists(db, "learning_task_reflections")) return 0;
+  return Number(db.prepare("SELECT COUNT(*) AS count FROM learning_task_reflections WHERE task_card_id = ?").get(cleanString(taskCardId))?.count || 0);
+}
+
+function countEvaluationsForTask(db, taskCardId) {
+  if (!tableExists(db, "learning_evaluations")) return 0;
+  return Number(db.prepare("SELECT COUNT(*) AS count FROM learning_evaluations WHERE task_card_id = ?").get(cleanString(taskCardId))?.count || 0);
+}
+
+function countOpenEvaluationJobsForTask(db, taskCardId) {
+  if (!tableExists(db, "learning_growth_evaluation_jobs")) return 0;
+  return Number(db.prepare(`
+    SELECT COUNT(*) AS count FROM learning_growth_evaluation_jobs
+    WHERE task_card_id = ? AND status IN ('pending', 'retry', 'processing', 'done')
+  `).get(cleanString(taskCardId))?.count || 0);
+}
+
+function completionPolicy(taskCard = {}) {
+  const raw = parseJson(taskCard.raw_json, {}) || {};
+  const policy = raw.completionPolicy || raw.taskModel?.completionPolicy || {};
+  return policy && typeof policy === "object" ? policy : {};
+}
+
+function isDailyScoreOnceCard(taskCard = {}) {
+  const policy = completionPolicy(taskCard);
+  if (cleanString(policy.mode) === "daily_score_once") return true;
+  const raw = parseJson(taskCard.raw_json, {}) || {};
+  return raw.source === "growth-card-authoring" && cleanString(taskCard.card_role || raw.cardRole) !== "stage_assessment";
+}
+
 function ensureInteractionSession(db, values = {}) {
   if (!tableExists(db, "learning_interaction_sessions")) return cleanString(values.id);
   const sessionId = cleanString(values.id);
@@ -133,6 +165,21 @@ function createEvidenceWriter({ open }) {
       const taskCard = taskCardByIdOrKanbanId(db, taskCardId, workspaceId);
       if (!taskCard) return { ok: false, error: "task_card_not_found" };
       const canonicalTaskCardId = cleanString(taskCard.id);
+      if (isDailyScoreOnceCard(taskCard)) {
+        const existingSubmissions = countSubmissionsForTask(db, canonicalTaskCardId);
+        const existingEvaluations = countEvaluationsForTask(db, canonicalTaskCardId);
+        const existingJobs = countOpenEvaluationJobsForTask(db, canonicalTaskCardId);
+        if (existingSubmissions || existingEvaluations || existingJobs) {
+          return {
+            ok: false,
+            error: "daily_card_submission_already_recorded",
+            task_card_id: canonicalTaskCardId,
+            submission_count: existingSubmissions,
+            evaluation_count: existingEvaluations,
+            evaluation_job_count: existingJobs
+          };
+        }
+      }
 
       const text = cleanString(input.text || input.submission || input.comment);
       const audio = decodeAudioInput(input);
@@ -270,6 +317,17 @@ function createEvidenceWriter({ open }) {
       const taskCard = taskCardByIdOrKanbanId(db, taskCardId, workspaceId);
       if (!taskCard) return { ok: false, error: "task_card_not_found" };
       const canonicalTaskCardId = cleanString(taskCard.id);
+      if (isDailyScoreOnceCard(taskCard)) {
+        const existingReflections = countReflectionsForTask(db, canonicalTaskCardId);
+        if (existingReflections) {
+          return {
+            ok: false,
+            error: "daily_card_reflection_already_recorded",
+            task_card_id: canonicalTaskCardId,
+            reflection_count: existingReflections
+          };
+        }
+      }
       const text = cleanString(input.text || input.transcript || input.reflection || input.comment);
       const audio = decodeAudioInput(input);
       if (!text && !audio) return { ok: false, error: "reflection_evidence_required" };

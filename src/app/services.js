@@ -1,8 +1,12 @@
 const { createGrowthService } = require("../services/growth-service");
 const { createGrowthEvaluationService } = require("../services/growth-evaluation-service");
 const { createGrowthEventService } = require("../services/growth-event-service");
+const { createGrowthGatewayAuthoringClient } = require("../services/growth-gateway-authoring-client");
 const { createHermesPluginService } = require("../services/hermes-plugin-service");
+const { createLearningCardAuthoringService } = require("../services/learning-card-authoring-service");
+const { createLearningCardAuthoringValidationService } = require("../services/learning-card-authoring-validation-service");
 const { createLearningCardGraphBindingService } = require("../services/learning-card-graph-binding-service");
+const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
 const { createLearningGraphPlanService } = require("../services/learning-graph-plan-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
 const { createGrowthEventOutboxStore } = require("../stores/growth-event-outbox-store");
@@ -26,6 +30,22 @@ function createServices(config) {
   const learningCardGraphBindingService = createLearningCardGraphBindingService({
     graphRepository: growthLearningStore.learningGraphRepository
   });
+  const growthGatewayAuthoringClient = createGrowthGatewayAuthoringClient({
+    endpoint: config.gatewayAuthoringEndpoint,
+    accessToken: config.gatewayAuthoringAccessToken,
+    timeoutMs: config.gatewayAuthoringTimeoutMs
+  });
+  const learningCardAuthoringService = createLearningCardAuthoringService({
+    gatewayClient: growthGatewayAuthoringClient,
+    validationService: createLearningCardAuthoringValidationService(),
+    publisher: growthLearningStore.learningCardAuthoringPublisherRepository
+  });
+  const learningCardGenerationService = createLearningCardGenerationService({
+    graphPlanService: learningGraphPlanService,
+    graphRepository: growthLearningStore.learningGraphRepository,
+    historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    authoringService: learningCardAuthoringService
+  });
   const growthEvaluationService = createGrowthEvaluationService({
     learningStore: growthLearningStore,
     eventService: growthEventService
@@ -36,6 +56,8 @@ function createServices(config) {
     growthEventService,
     growthMcpExecutor: createGrowthMcpExecutor({ growthService }),
     growthService,
+    learningCardAuthoringService,
+    learningCardGenerationService,
     learningCardGraphBindingService,
     learningGraphPlanService,
     pluginService: createHermesPluginService({ config, workspaceStore })
