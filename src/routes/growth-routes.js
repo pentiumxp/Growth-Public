@@ -81,6 +81,23 @@ function readableTargetFromRequest(request, url, services) {
 
 function authorizeWritableWorkspace(request, url, body, services) {
   const workspaceId = requestedWritableWorkspaceId(body, url);
+  if (requestedActorRole(request) === "owner") {
+    const currentWorkspaceId = requestedWorkspaceId(request, url, "");
+    const targetWorkspaceId = String(workspaceId || "").replace(/^growth:/, "");
+    const targetsResult = services.pluginService.viewTargets({
+      actorRole: "owner",
+      currentWorkspaceId
+    });
+    const target = (targetsResult.targets || []).find((item) => String(item.workspaceId || "") === targetWorkspaceId);
+    if (!target) {
+      throw routeError("growth_target_not_visible", "Growth target is not visible to this actor", 403);
+    }
+    services.pluginService.authorizeWorkspace({
+      authorizationToken: bearerFrom(request.headers),
+      workspaceId: currentWorkspaceId
+    });
+    return String(target.workspaceId || "").replace(/^growth:/, "");
+  }
   const authorized = services.pluginService.authorizeWorkspace({
     authorizationToken: bearerFrom(request.headers),
     workspaceId

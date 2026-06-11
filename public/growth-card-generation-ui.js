@@ -54,9 +54,10 @@
   function targetRows(targets = [], currentWorkspaceId = "", escapeHtml = defaultEscapeHtml) {
     const rows = asArray(targets).filter((target) => clean(target.workspaceId));
     if (!rows.length) return `<div class="learning-coin-empty">暂无可选学习者。</div>`;
+    const activeWorkspaceId = clean(currentWorkspaceId);
     return rows.map((target) => {
       const workspaceId = clean(target.workspaceId);
-      const active = workspaceId === clean(currentWorkspaceId) || target.current;
+      const active = activeWorkspaceId ? workspaceId === activeWorkspaceId : Boolean(target.current);
       const enabled = isFanfanSampleTarget(target);
       return `<button type="button" class="learning-card-generation-target${active ? " active" : ""}${enabled ? "" : " disabled"}"
         data-card-generation-target="${escapeHtml(workspaceId)}" ${enabled ? "" : "disabled"}>
@@ -68,6 +69,24 @@
       </button>`;
     }).join("");
   }
+
+  function targetRowsWithContext({ targets = [], context = {}, currentWorkspaceId = "", escapeHtml = defaultEscapeHtml } = {}) {
+    const rows = asArray(targets).filter((target) => clean(target.workspaceId));
+    const contextTarget = context.target || {};
+    const contextWorkspaceId = clean(contextTarget.workspaceId);
+    if (contextWorkspaceId && !rows.some((target) => clean(target.workspaceId) === contextWorkspaceId)) {
+      rows.push({
+        workspaceId: contextWorkspaceId,
+        learnerId: contextTarget.learnerId,
+        displayName: contextTarget.displayName,
+        label: contextTarget.displayName || contextWorkspaceId,
+        enabled: contextTarget.enabled,
+        current: contextWorkspaceId === clean(currentWorkspaceId)
+      });
+    }
+    return targetRows(rows, currentWorkspaceId, escapeHtml);
+  }
+
 
   function recipeOptions(context = {}, escapeHtml = defaultEscapeHtml) {
     const selected = clean(context.selectedRecipeId || "daily_english_v1");
@@ -144,6 +163,18 @@
     return `<div class="learning-error" data-card-generation-error>${escapeHtml(error)}</div>`;
   }
 
+  function generationBlockedReason({ state = {}, context = {}, readiness = {}, plan = {} } = {}) {
+    if (state.status === "loading_context") return "正在加载生成上下文，请稍候。";
+    if (!context || !Object.keys(context).length) return "生成上下文还没加载完成，请先刷新状态。";
+    if (!readiness.targetEnabled || context.target?.enabled === false) return "请先在左侧选择凡凡，再生成卡片。";
+    if (!readiness.workspaceProvisioned) return "学习者 workspace 尚未开通，暂不能生成卡片。";
+    if (!readiness.learningGraphReady || !clean(plan.targetNodeId)) return "学习图谱目标尚未就绪，暂不能生成卡片。";
+    if (!readiness.historySummaryReady) return "历史摘要尚未就绪，暂不能生成卡片。";
+    if (!readiness.gatewayConfigured) return "Gateway authoring 尚未配置，暂不能生成卡片。";
+    if (readiness.blockingOpenGeneration) return "已有生成任务正在处理，请稍后再试。";
+    return "";
+  }
+
   function progressStepRows(activeStep = "prepare", escapeHtml = defaultEscapeHtml) {
     const steps = [
       ["prepare", "准备输入", "学习图谱、掌握度、近期信号"],
@@ -217,7 +248,13 @@
     const generated = state.generatedResult || {};
     const loading = state.status === "loading_context";
     const generating = state.status === "generating";
-    const canGenerate = Boolean(readiness.ready && plan.targetNodeId && !generating);
+    const blockedReason = generating ? "" : generationBlockedReason({ state, context, readiness, plan });
+    const canGenerate = Boolean(readiness.ready && plan.targetNodeId && !generating && !blockedReason);
+    const submitBlocked = Boolean(!generating && !canGenerate);
+    const submitClass = `primary${submitBlocked ? " disabled" : ""}`;
+    const submitBlockedAttrs = submitBlocked
+      ? `data-card-generation-blocked-reason="${escapeHtml(blockedReason)}" aria-disabled="true"`
+      : "";
     return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}" aria-busy="${generating ? "true" : "false"}">
       <section class="learning-coin-panel learning-card-generation-intro">
         <div class="learning-section-heading">
@@ -238,7 +275,7 @@
             <span>Owner</span>
           </div>
           <div class="learning-card-generation-target-list">
-            ${targetRows(options.viewTargets, options.workspaceId, escapeHtml)}
+            ${targetRowsWithContext({ targets: options.viewTargets, context, currentWorkspaceId: options.workspaceId, escapeHtml })}
           </div>
         </section>
 
@@ -262,7 +299,7 @@
           <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
           <div class="learning-card-generation-actions">
             <button type="button" data-card-generation-refresh>刷新状态</button>
-            <button type="button" class="primary" data-card-generation-submit ${canGenerate ? "" : "disabled"}" ${canGenerate ? "" : "disabled"}>${generating ? "正在生成" : "生成卡片"}</button>
+            <button type="button" class="${submitClass}" data-card-generation-submit ${submitBlockedAttrs} ${generating ? "disabled" : ""}>${generating ? "正在生成" : "生成卡片"}</button>
           </div>
         </section>
 

@@ -52,37 +52,49 @@ configuration and authorization boundary, but the plugin owns:
 Owner is the actor. The learner workspace is the target. Owner permissions must
 not cause writes to fall back into the Owner's own learner data.
 
+In Home AI embedded proxy mode, the iframe may keep `workspaceId=owner` in the
+URL so the host can authorize the Owner actor. Growth card generation therefore
+keeps a separate plugin-local `selectedWorkspaceId` for the learner target.
+Readiness, target-row active state, and generation payloads must use that
+selected learner target, not the iframe's Owner workspace.
+
 ## V1 Owner Flow
 
 1. Owner opens Growth plugin.
 2. Owner opens the Owner management area and selects the `生成` tab.
-3. Growth loads card generation context for the selected target learner.
-4. Owner selects the Fanfan sample learner.
-5. Owner selects the `日常英语卡` recipe.
-6. Growth shows readiness:
+3. Growth selects the Fanfan sample learner automatically when the current
+   Owner workspace is not a supported generation target.
+   If the host target list omits the sample target, V1 may fall back to the
+   provisioned Fanfan workspace id `weixin_stephen` and then render the target
+   returned by the Growth context endpoint.
+4. Growth loads card generation context for the selected target learner.
+5. Owner can switch back to the Fanfan sample learner if a future navigation
+   state lands on another target.
+6. Owner selects the `日常英语卡` recipe.
+7. Growth shows readiness:
    - learner workspace is provisioned;
    - learning graph is imported;
    - mastery/history summary is available;
    - Gateway authoring boundary is configured;
    - there is no blocking open generation job.
-7. Owner reviews the structured plan preview:
+8. Owner reviews the structured plan preview:
    - learning graph plan;
    - learner/mastery summary;
    - recent experience signals;
    - card role, difficulty, and evidence requirements;
    - `daily_score_once` completion policy.
-8. Owner presses `生成卡片`.
-9. Growth immediately renders a visible progress box with four bounded stages:
+9. Owner presses `生成卡片`.
+10. Growth immediately renders a visible progress box with four bounded stages:
    `prepare`, `gateway`, `validation`, and `publish`. The progress box is
    shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
    and must remain visible on mobile embedded viewports without relying on the
    user scrolling back to the generate button.
-10. Growth calls `POST /api/v1/growth/cards/generate`.
-11. Gateway output is converted to an authoring draft.
-12. Validation passes or returns a visible authoring error.
-13. A validated card is transactionally published to Growth SQLite, including
+11. Growth calls `POST /api/v1/growth/cards/generate`.
+12. Gateway output is converted to an authoring draft.
+13. Validation passes or returns a visible authoring error.
+14. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
-14. Owner sees the generated card preview and can open the card on the learner
+15. Owner sees the generated card preview and can open the card on the learner
     board.
 
 ## UI Placement
@@ -162,7 +174,7 @@ npm run ios:pwa:visual -- \
 | Difficulty | segmented control | default comes from recipe and history summary; Owner can choose one bounded value later. |
 | Evidence requirements | read-only chips | shows what the generated card must collect. |
 | Structured input preview | collapsed detail | summary-only JSON families, not raw source payloads. |
-| Generate | primary button | enabled only when readiness passes; after click it becomes disabled and a progress box must appear immediately. |
+| Generate | primary button | ready state submits generation; blocked readiness state stays clickable with `aria-disabled` and must show a visible reason instead of silently using native `disabled`; after a real submit it becomes native disabled and a progress box must appear immediately. |
 | Progress box | fixed status panel | shows `prepare`, `gateway`, `validation`, and `publish` stages; no raw model output or private payload is displayed. |
 | Open card | secondary button | opens the generated task card in the existing card renderer. |
 | Regenerate | secondary/destructive caution | disabled in V1 unless the previous draft failed before publish. |
@@ -174,7 +186,8 @@ Add a plugin-local state slice, for example:
 ```js
 cardGeneration: {
   status: "idle" | "loading_context" | "ready" | "generating" | "published" | "failed",
-  selectedTargetWorkspaceId: "",
+  selectedWorkspaceId: "", // plugin-local generation target; does not change the iframe's Owner workspace context
+  selectedTargetWorkspaceId: "", // legacy alias if a future controller split needs it
   selectedLearnerId: "",
   selectedRecipeId: "daily_english_v1",
   selectedGraphNodeId: "",
@@ -207,14 +220,28 @@ POST /api/v1/growth/cards/generate
 Recommended new read endpoint:
 
 ```http
-GET /api/v1/growth/card-generation/context?workspaceId={targetWorkspaceId}
+GET /api/v1/growth/card-generation/context?targetWorkspaceId={targetWorkspaceId}
 ```
 
 Implemented route:
 
 ```http
-GET /api/v1/growth/card-generation/context?workspaceId={targetWorkspaceId}
+GET /api/v1/growth/card-generation/context?targetWorkspaceId={targetWorkspaceId}
 ```
+
+Direct plugin-port callers may still use `workspaceId` for backward-compatible
+workspace-bearer reads. Home AI same-origin proxy callers must use
+`targetWorkspaceId` for context reads and must send the generation target only
+in the POST body as `workspace_id`; the proxied URL itself remains under the
+Owner workspace authorization context.
+
+The frontend API client must build Growth API paths from path segments instead
+of hard-coded `/api/...` string literals. The Home AI same-origin proxy rewrites
+static plugin assets and appends the actor `workspaceId`; hard-coded API
+literals inside JavaScript can therefore be rewritten into the wrong query
+shape. Growth JS and CSS URLs in `public/index.html` should carry a version
+query for card-generation releases so mobile WebViews fetch the current API
+client and UI state code.
 
 Recommended context response:
 
@@ -338,6 +365,12 @@ The generated card must include a valid `teachingFlow`:
 
 The Owner UI calls only Growth plugin routes. It must not call Gateway from the
 browser.
+
+When the plugin is embedded through the Home AI same-origin proxy, browser-side
+Growth API calls must use the plugin proxy prefix, for example
+`/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context`.
+Absolute browser calls to Home AI root `/api/v1/growth/...` are invalid in
+embedded mode because they bypass the plugin proxy dispatcher.
 
 Production generation requires:
 

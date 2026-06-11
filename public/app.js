@@ -20,6 +20,7 @@
     learningGrowthStageAssessmentActivating: {},
     cardGeneration: {
       status: "idle",
+      selectedWorkspaceId: "",
       context: null,
       generatedResult: null,
       error: "",
@@ -29,6 +30,7 @@
   };
   const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
   let cardGenerationProgressTimers = [];
+  const fanfanSampleWorkspaceIds = ["weixin_stephen", "weixin_fanfan"];
 
   function clean(value) {
     return String(value ?? "").trim();
@@ -66,6 +68,44 @@
     return workspaceId || "执行者";
   }
 
+  function isCardGenerationTarget(target = {}) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (ui && typeof ui.isFanfanSampleTarget === "function") return ui.isFanfanSampleTarget(target);
+    return false;
+  }
+
+  function preferredCardGenerationWorkspaceId() {
+    const target = (model.viewTargets || []).find(isCardGenerationTarget);
+    return clean(target?.workspaceId || fanfanSampleWorkspaceIds[0]);
+  }
+
+  function currentWorkspaceSupportsCardGeneration() {
+    const target = targetForWorkspace(currentWorkspaceId);
+    return Boolean(target && isCardGenerationTarget(target));
+  }
+
+  function cardGenerationWorkspaceId() {
+    const selectedWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId);
+    if (selectedWorkspaceId) return selectedWorkspaceId;
+    const contextWorkspaceId = clean(pageState.cardGeneration.context?.target?.workspaceId);
+    if (contextWorkspaceId) return contextWorkspaceId;
+    if (pageState.auth.isOwner && !currentWorkspaceSupportsCardGeneration()) return preferredCardGenerationWorkspaceId();
+    return clean(currentWorkspaceId);
+  }
+
+  function cardGenerationTargetForWorkspace(workspaceId = cardGenerationWorkspaceId()) {
+    return (model.viewTargets || []).find((target) => clean(target.workspaceId) === clean(workspaceId)) || null;
+  }
+
+  function selectedWorkspaceSupportsCardGeneration() {
+    const workspaceId = cardGenerationWorkspaceId();
+    const contextTarget = pageState.cardGeneration.context?.target || null;
+    const target = cardGenerationTargetForWorkspace(workspaceId)
+      || (clean(contextTarget?.workspaceId) === workspaceId ? contextTarget : null)
+      || { workspaceId };
+    return Boolean(target && isCardGenerationTarget(target));
+  }
+
   const viewModel = window.HermesGrowthViewModel.createGrowthViewModel({
     getWorkspaceId: () => currentWorkspaceId,
     learnerLabel
@@ -94,6 +134,24 @@
       escapeHtml,
     });
     bindEvents();
+  }
+
+  async function ensureCardGenerationTargetSelected() {
+    if (!pageState.auth.isOwner || currentWorkspaceSupportsCardGeneration() || selectedWorkspaceSupportsCardGeneration()) return false;
+    const preferredWorkspaceId = preferredCardGenerationWorkspaceId();
+    if (!preferredWorkspaceId || preferredWorkspaceId === currentWorkspaceId) return false;
+    pageState.cardGeneration.selectedWorkspaceId = preferredWorkspaceId;
+    return true;
+  }
+
+  async function openLearningGrowthTab(tabId) {
+    pageState.learningGrowthActiveTab = clean(tabId) || "overview";
+    if (pageState.learningGrowthActiveTab === "generation" && pageState.auth.isOwner) {
+      await ensureCardGenerationTargetSelected();
+      await loadCardGenerationContext();
+      return;
+    }
+    renderShell();
   }
 
   function clearCardGenerationProgressTimers() {
@@ -155,8 +213,11 @@
   function bindEvents() {
     root.querySelectorAll("[data-learning-growth-tab]").forEach((button) => {
       button.addEventListener("click", () => {
-        pageState.learningGrowthActiveTab = clean(button.dataset.learningGrowthTab) || "overview";
-        renderShell();
+        openLearningGrowthTab(button.dataset.learningGrowthTab).catch((error) => {
+          pageState.cardGeneration.status = "failed";
+          pageState.cardGeneration.error = error.message || String(error);
+          renderShell();
+        });
       });
     });
     root.querySelectorAll("[data-learning-growth-board-filter]").forEach((button) => {
@@ -210,8 +271,8 @@
       button.addEventListener("click", (event) => {
         event.preventDefault();
         const nextWorkspaceId = clean(button.dataset.cardGenerationTarget);
-        if (!nextWorkspaceId || nextWorkspaceId === currentWorkspaceId || button.disabled) return;
-        switchWorkspace(nextWorkspaceId).then(loadCardGenerationContext).catch((error) => {
+        if (!nextWorkspaceId || button.disabled) return;
+        loadCardGenerationContext(nextWorkspaceId).catch((error) => {
           root.insertAdjacentHTML("afterbegin", `<div class="learning-error">${escapeHtml(error.message || String(error))}</div>`);
         });
       });
@@ -229,6 +290,16 @@
     root.querySelectorAll("[data-card-generation-submit]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
+        const blockedReason = clean(button.dataset.cardGenerationBlockedReason);
+        if (blockedReason) {
+          clearCardGenerationProgressTimers();
+          pageState.cardGeneration.status = pageState.cardGeneration.context ? "ready" : "idle";
+          pageState.cardGeneration.error = blockedReason;
+          pageState.cardGeneration.progressStep = "";
+          pageState.cardGeneration.progressMessage = "";
+          renderShell();
+          return;
+        }
         if (button.disabled) return;
         generateCardFromUi().catch((error) => {
           pageState.cardGeneration.status = "failed";
@@ -265,16 +336,19 @@
     pageState.learningGrowthBoardLane = clean(model.overview.board.lanes[0]?.id);
   }
 
-  async function loadCardGenerationContext() {
+  async function loadCardGenerationContext(targetWorkspaceId = cardGenerationWorkspaceId()) {
     if (!pageState.auth.isOwner) return;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
     clearCardGenerationProgressTimers();
+    pageState.cardGeneration.selectedWorkspaceId = requestedTargetWorkspaceId;
     pageState.cardGeneration.status = "loading_context";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
     pageState.cardGeneration.progressMessage = "";
     renderShell();
-    const context = await api.fetchCardGenerationContext(currentWorkspaceId);
+    const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
     pageState.cardGeneration.context = context;
+    pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || requestedTargetWorkspaceId);
     pageState.cardGeneration.status = "ready";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
@@ -288,7 +362,8 @@
       throw new Error("card_generation_ui_unavailable");
     }
     const context = pageState.cardGeneration.context;
-    const payload = ui.createDailyEnglishGeneratePayload({ context, workspaceId: currentWorkspaceId });
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const payload = ui.createDailyEnglishGeneratePayload({ context, workspaceId: targetWorkspaceId });
     pageState.cardGeneration.status = "generating";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.generatedResult = null;
@@ -297,7 +372,7 @@
     renderShell();
     scheduleCardGenerationProgress();
     try {
-      const result = await api.generateGrowthCard(payload, currentWorkspaceId);
+      const result = await api.generateGrowthCard(payload, targetWorkspaceId);
       clearCardGenerationProgressTimers();
       pageState.cardGeneration.status = "published";
       pageState.cardGeneration.generatedResult = result;
@@ -334,6 +409,7 @@
     }));
     pageState.cardGeneration = {
       status: "idle",
+      selectedWorkspaceId: "",
       context: null,
       generatedResult: null,
       error: "",
@@ -349,8 +425,12 @@
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadViewTargets();
     await loadCurrentWorkspace();
-    if (pageState.auth.isOwner) await loadCardGenerationContext();
     const renderedByRoute = await routeController.applyInitialPluginRoute();
+    if (pageState.auth.isOwner && pageState.learningGrowthSettingsOpen && pageState.learningGrowthActiveTab === "generation") {
+      await ensureCardGenerationTargetSelected();
+      await loadCardGenerationContext();
+      return;
+    }
     if (!renderedByRoute) renderShell();
   }
 

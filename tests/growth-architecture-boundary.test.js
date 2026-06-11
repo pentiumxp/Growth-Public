@@ -55,6 +55,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /HermesGrowthApiClient/);
   assert.match(app, /HermesGrowthViewModel/);
   assert.match(app, /HermesGrowthRouteController/);
+  assert.match(app, /ensureCardGenerationTargetSelected/);
+  assert.match(app, /preferredCardGenerationWorkspaceId/);
+  assert.doesNotMatch(app, /if \(pageState\.auth\.isOwner\) await loadCardGenerationContext\(\);/);
   assert.doesNotMatch(app, /function normalizeBoard/);
   assert.doesNotMatch(app, /function applyInitialPluginRoute/);
   assert.doesNotMatch(app, /function normalizeTheme/);

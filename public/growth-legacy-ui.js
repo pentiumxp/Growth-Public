@@ -761,6 +761,7 @@
     const cardGenerationHtml = cardGenerationUi && typeof cardGenerationUi.renderOwnerCardGenerationPanel === "function"
       ? cardGenerationUi.renderOwnerCardGenerationPanel(Object.assign({}, options, {
           context: options.state?.cardGeneration?.context,
+          workspaceId: options.state?.cardGeneration?.selectedWorkspaceId || options.workspaceId,
           overview
         }))
       : "";

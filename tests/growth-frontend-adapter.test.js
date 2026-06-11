@@ -158,12 +158,42 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
-  assert.equal(calls[1].path, "/api/v1/growth/cards/generate?workspaceId=weixin_fanfan");
+  assert.equal(calls[1].path, "/api/v1/growth/cards/generate");
   assert.equal(calls[1].options.method, "POST");
   assert.deepEqual(JSON.parse(calls[1].options.body), {
     workspace_id: "weixin_fanfan",
     target_node_id: "kg_english_main_idea"
   });
+});
+
+test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
+  const windowRef = loadPublicScript("growth-api-client.js");
+  const calls = [];
+  const client = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "owner",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://homeai.local/api/hermes-plugins/growth/proxy/?embed=hermes&workspaceId=owner" },
+    fetchImpl: async (path, options = {}) => {
+      calls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true })
+      };
+    }
+  });
+
+  await client.fetchCardGenerationContext("weixin_stephen");
+  await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
+
+  assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
+  assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
+});
+
+test("Growth API client avoids proxy-rewritten API string literals", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "public", "growth-api-client.js"), "utf8");
+  assert.doesNotMatch(source, /["'`]\/api\/v1\/growth/);
+  assert.doesNotMatch(source, /["'`]\/api\/hermes-plugins\/growth\/proxy/);
 });
 
 test("Growth card generation UI renders Owner panel and structured payload", () => {
@@ -262,6 +292,122 @@ test("Growth card generation UI renders visible progress while generating", () =
   assert.match(html, /data-progress-step="validation" data-progress-state="active"/);
   assert.match(html, /正在校验 teachingFlow、图谱绑定和隐私边界。/);
   assert.match(html, />正在生成<\/button>/);
+});
+
+test("Growth card generation UI renders the context target even when host targets omit it", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_stephen", learnerId: "weixin_stephen", displayName: "凡凡", enabled: true },
+    readiness: {
+      ready: false,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: false
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_english_main_idea",
+      title: "Find the main idea",
+      domain: "english"
+    }
+  };
+
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: { cardGeneration: { status: "ready", context } },
+    viewTargets: [{ workspaceId: "owner", label: "徐欣" }],
+    workspaceId: "weixin_stephen"
+  });
+
+  assert.match(html, /凡凡/);
+  assert.match(html, /weixin_stephen · sample/);
+  assert.match(html, /learning-card-generation-target active/);
+});
+
+test("Growth card generation UI keeps Owner workspace separate from selected generation target", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_stephen", learnerId: "weixin_stephen", displayName: "凡凡", enabled: true },
+    selectedRecipeId: "daily_english_v1",
+    recipes: [{ id: "daily_english_v1", label: "日常英语卡" }],
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true,
+      blockingOpenGeneration: false
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_english_main_idea",
+      title: "Find the main idea",
+      domain: "english",
+      evidenceRequirements: ["short_answer"]
+    }
+  };
+
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: { cardGeneration: { status: "ready", context, selectedWorkspaceId: "weixin_stephen" } },
+    viewTargets: [
+      { workspaceId: "owner", label: "徐欣", current: true },
+      { workspaceId: "weixin_stephen", label: "凡凡" }
+    ],
+    workspaceId: "weixin_stephen"
+  });
+
+  const activeTargets = Array.from(html.matchAll(/<button[^>]+class="learning-card-generation-target active[^"]*"[^>]*>[\s\S]*?<\/button>/g))
+    .map((match) => match[0]);
+  assert.equal(activeTargets.length, 1);
+  assert.match(activeTargets[0], /weixin_stephen · sample/);
+  assert.doesNotMatch(activeTargets[0], /owner · 稍后开放/);
+
+  const submitTag = html.match(/<button[^>]+data-card-generation-submit[^>]*>/)?.[0] || "";
+  assert.doesNotMatch(submitTag, /data-card-generation-blocked-reason=/);
+  assert.doesNotMatch(submitTag, /aria-disabled="true"/);
+});
+
+test("Growth card generation UI gives feedback for blocked readiness instead of silent disabled", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context: {
+          target: { workspaceId: "owner", learnerId: "owner", displayName: "徐欣", enabled: false },
+          selectedRecipeId: "daily_english_v1",
+          recipes: [{ id: "daily_english_v1", label: "日常英语卡" }],
+          readiness: {
+            ready: false,
+            targetEnabled: false,
+            workspaceProvisioned: true,
+            learningGraphReady: true,
+            historySummaryReady: true,
+            gatewayConfigured: true
+          },
+          graph: { nodeCount: 294, edgeCount: 329 },
+          suggestedPlan: {
+            targetNodeId: "kg_english_main_idea",
+            title: "Find the main idea",
+            domain: "english",
+            evidenceRequirements: ["short_answer"]
+          }
+        }
+      }
+    },
+    viewTargets: [
+      { workspaceId: "owner", label: "徐欣" },
+      { workspaceId: "weixin_stephen", label: "凡凡" }
+    ],
+    workspaceId: "owner"
+  });
+
+  const submitTag = html.match(/<button[^>]+data-card-generation-submit[^>]*>/)?.[0] || "";
+  assert.match(submitTag, /data-card-generation-blocked-reason="请先在左侧选择凡凡，再生成卡片。"/);
+  assert.match(submitTag, /aria-disabled="true"/);
+  assert.doesNotMatch(submitTag, /\sdisabled(=|\s|>)/);
 });
 
 test("Growth view-model adapter normalizes cards, lanes, and overview metrics", () => {

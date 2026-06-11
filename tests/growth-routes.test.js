@@ -815,14 +815,33 @@ test("growth card generation route requires workspace bearer and normalizes grap
     pluginService: {
       getManifest: () => ({}),
       authorizeWorkspace({ authorizationToken, workspaceId }) {
-        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+        const allowed = authorizationToken === "workspace-key"
+          && (workspaceId === "growth:test" || workspaceId === "owner");
+        if (!allowed) {
           const error = new Error("Invalid workspace credential");
           error.code = "permission_denied";
           error.statusCode = 403;
           error.expose = true;
           throw error;
         }
-        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+        return {
+          ok: true,
+          workspace_id: workspaceId,
+          hermes_workspace_id: workspaceId === "owner" ? "owner" : "test"
+        };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "owner", label: "Owner", current: input.currentWorkspaceId === "owner" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
       }
     },
     learningCardGenerationService: {
@@ -888,6 +907,25 @@ test("growth card generation route requires workspace bearer and normalizes grap
       generationKey: "route-generation",
       taskCardId: undefined
     });
+
+    const ownerProxyAccepted = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        target_node_id: "node_1",
+        card_role: "practice"
+      })
+    });
+    assert.equal(ownerProxyAccepted.status, 201);
+    assert.equal(calls[1].workspaceId, "weixin_fanfan");
+    assert.equal(calls[1].learnerId, "fanfan");
 
     const failed = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
       method: "POST",

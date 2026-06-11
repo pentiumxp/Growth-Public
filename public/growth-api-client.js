@@ -3,9 +3,53 @@
     return String(value ?? "").trim();
   }
 
+  function rootPath(...segments) {
+    return ["", ...segments].join("/");
+  }
+
+  function proxyRootPath() {
+    return rootPath("api", "hermes-plugins", "growth", "proxy");
+  }
+
+  function growthApiRootPath() {
+    return rootPath("api", "v1", "growth");
+  }
+
+  function growthApiPath(...segments) {
+    return [growthApiRootPath(), ...segments].join("/");
+  }
+
   function createGrowthApiClient({ fetchImpl, getWorkspaceId, historyRef, locationRef } = {}) {
+    function proxyPrefix() {
+      try {
+        const url = new URL(locationRef?.href || "");
+        const marker = proxyRootPath();
+        const index = url.pathname.indexOf(marker);
+        if (index < 0) return "";
+        return url.pathname.slice(0, index + marker.length);
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function resolveApiPath(path) {
+      const value = String(path || "");
+      const growthApiRoot = growthApiRootPath();
+      const proxyRoot = proxyRootPath();
+      if (value.startsWith(`${proxyRoot}${growthApiRoot}/`)) return value;
+      if (!value.startsWith(`${growthApiRoot}/`)) return value;
+      const prefix = proxyPrefix();
+      return prefix ? `${prefix}${value}` : value;
+    }
+
     function workspaceQuery(targetWorkspaceId = getWorkspaceId()) {
       return targetWorkspaceId ? `?workspaceId=${encodeURIComponent(targetWorkspaceId)}` : "";
+    }
+
+    function cardGenerationContextQuery(targetWorkspaceId = getWorkspaceId()) {
+      if (!targetWorkspaceId) return "";
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      return `?${key}=${encodeURIComponent(targetWorkspaceId)}`;
     }
 
     function updateWorkspaceUrl() {
@@ -17,7 +61,7 @@
     }
 
     async function fetchJson(path, options = {}) {
-      const response = await fetchImpl(path, Object.assign({ cache: "no-store" }, options));
+      const response = await fetchImpl(resolveApiPath(path), Object.assign({ cache: "no-store" }, options));
       const result = await response.json();
       if (!response.ok || result.ok === false) {
         const error = typeof result.error === "string"
@@ -37,11 +81,11 @@
     }
 
     function fetchCardGenerationContext(targetWorkspaceId = getWorkspaceId()) {
-      return fetchJson(`/api/v1/growth/card-generation/context${workspaceQuery(targetWorkspaceId)}`);
+      return fetchJson(`${growthApiPath("card-generation", "context")}${cardGenerationContextQuery(targetWorkspaceId)}`);
     }
 
     function generateGrowthCard(payload = {}, targetWorkspaceId = getWorkspaceId()) {
-      return postJson(`/api/v1/growth/cards/generate${workspaceQuery(targetWorkspaceId)}`, Object.assign({
+      return postJson(growthApiPath("cards", "generate"), Object.assign({
         workspace_id: targetWorkspaceId
       }, payload));
     }
