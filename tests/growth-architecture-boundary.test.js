@@ -65,6 +65,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
     "growth-api-client.js",
     "growth-view-model.js",
     "growth-route-controller.js",
+    "growth-card-generation-ui.js",
     "app.js"
   ]) {
     assert.match(index, new RegExp(`/${asset}`));

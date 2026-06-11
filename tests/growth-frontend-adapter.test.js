@@ -53,6 +53,88 @@ test("Growth API client keeps workspace query and fetch errors bounded", async (
   await assert.rejects(() => client.fetchJson("/api/v1/growth/status"), /facade_down/);
 });
 
+test("Growth API client exposes card generation context and write helpers", async () => {
+  const windowRef = loadPublicScript("growth-api-client.js");
+  const calls = [];
+  const client = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "weixin_fanfan",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
+    fetchImpl: async (path, options = {}) => {
+      calls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, path })
+      };
+    }
+  });
+
+  await client.fetchCardGenerationContext("weixin_fanfan");
+  await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_fanfan");
+
+  assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
+  assert.equal(calls[1].path, "/api/v1/growth/cards/generate?workspaceId=weixin_fanfan");
+  assert.equal(calls[1].options.method, "POST");
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_id: "kg_english_main_idea"
+  });
+});
+
+test("Growth card generation UI renders Owner panel and structured payload", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_fanfan", learnerId: "fanfan", displayName: "凡凡", enabled: true },
+    selectedRecipeId: "daily_english_v1",
+    recipes: [{ id: "daily_english_v1", label: "日常英语卡", durationMinutes: { min: 10, max: 15 } }],
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true,
+      blockingOpenGeneration: false
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_english_main_idea",
+      targetNodeIds: ["kg_english_main_idea"],
+      title: "Find the main idea",
+      domain: "english",
+      cardRole: "practice",
+      difficultyBand: "foundation",
+      evidenceRequirements: ["short_answer"]
+    },
+    completionPolicy: { mode: "daily_score_once" },
+    historySummary: { learnerSummary: { recentCardCount: 6, completedRecentCardCount: 4, evaluationCount: 4, reflectionCount: 1 } }
+  };
+
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: { cardGeneration: { status: "ready", context } },
+    viewTargets: [
+      { workspaceId: "weixin_fanfan", label: "凡凡" },
+      { workspaceId: "weixin_stephen", label: "Stephen" }
+    ],
+    workspaceId: "weixin_fanfan"
+  });
+  assert.match(html, /data-card-generation-manager/);
+  assert.match(html, /日常英语卡/);
+  assert.match(html, /data-card-generation-submit/);
+  assert.match(html, /weixin_stephen · 稍后开放/);
+  assert.match(html, /daily_score_once/);
+
+  const payload = windowRef.HermesGrowthCardGenerationUi.createDailyEnglishGeneratePayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.equal(payload.workspace_id, "weixin_fanfan");
+  assert.equal(payload.target_node_id, "kg_english_main_idea");
+  assert.equal(payload.card_role, "practice");
+  assert.equal(payload.completion_policy.mode, "daily_score_once");
+});
+
 test("Growth view-model adapter normalizes cards, lanes, and overview metrics", () => {
   const windowRef = loadPublicScript("growth-view-model.js");
   const viewModel = windowRef.HermesGrowthViewModel.createGrowthViewModel({
@@ -105,6 +187,22 @@ test("Growth route controller opens card and action routes without DOM coupling"
   assert.equal(controller.firstTaskCardForRoute("submit_work").taskCardId, "card_1");
   assert.equal(await controller.applyInitialPluginRoute(), true);
   assert.deepEqual(opened, ["card_1"]);
+
+  const ownerState = {
+    auth: { isOwner: true },
+    learningGrowthSettingsOpen: false,
+    learningGrowthActiveTab: "overview"
+  };
+  const ownerController = windowRef.HermesGrowthRouteController.createGrowthRouteController({
+    pluginRoute: "generate_cards",
+    pluginItemId: "",
+    pageState: ownerState,
+    model,
+    openCard: async () => null
+  });
+  assert.equal(await ownerController.applyInitialPluginRoute(), false);
+  assert.equal(ownerState.learningGrowthSettingsOpen, true);
+  assert.equal(ownerState.learningGrowthActiveTab, "generation");
 });
 
 test("Growth index loads frontend adapters before app boot", () => {
@@ -114,6 +212,7 @@ test("Growth index loads frontend adapters before app boot", () => {
     "/growth-api-client.js",
     "/growth-view-model.js",
     "/growth-route-controller.js",
+    "/growth-card-generation-ui.js",
     "/app.js"
   ].map((asset) => html.indexOf(asset));
   assert.ok(order.every((index) => index >= 0));

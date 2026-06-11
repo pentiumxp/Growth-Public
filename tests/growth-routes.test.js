@@ -185,6 +185,74 @@ test("growth view targets are owner-only and use proxy workspace headers", async
   }
 });
 
+test("growth card generation context route is limited to visible targets", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningCardGenerationContextService: {
+      context(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          target: { workspaceId: input.workspaceId, displayName: input.displayName },
+          readiness: { ready: true }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/card-generation/context?workspaceId=growth:weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(ownerResponse.status, 200);
+    assert.equal((await ownerResponse.json()).target.workspaceId, "weixin_fanfan");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "weixin_fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      growthWorkspaceId: undefined
+    });
+
+    const memberResponse = await fetch(`${baseUrl}/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberResponse.status, 403);
+    assert.equal((await memberResponse.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth read routes fall back to proxy workspace header", async () => {
   const calls = [];
   const server = createServer({

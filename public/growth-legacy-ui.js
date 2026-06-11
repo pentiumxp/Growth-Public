@@ -403,7 +403,7 @@
     if (!visible.length) return "";
     const first = visible[0].id;
     const requestedRaw = String(options.activeTab || options.state?.learningGrowthActiveTab || "").trim();
-    const aliases = { settings: "overview", "new-task": "tasks", "reward-settlement": "rewards", "ai-summary": "ai-analysis" };
+    const aliases = { settings: "overview", "new-task": "tasks", "reward-settlement": "rewards", "ai-summary": "ai-analysis", generation: "generation", generate: "generation", "card-generation": "generation" };
     const requested = aliases[requestedRaw] || requestedRaw;
     const activeId = visible.some((tab) => tab.id === requested) ? requested : first;
     return `<section class="learning-growth-tabs" data-learning-growth-tabs>
@@ -757,6 +757,13 @@
       launchOperations: overview.launchOperations,
       learnerId: overview.learner?.id || options.learnerId,
     });
+    const cardGenerationUi = options.cardGenerationUi;
+    const cardGenerationHtml = cardGenerationUi && typeof cardGenerationUi.renderOwnerCardGenerationPanel === "function"
+      ? cardGenerationUi.renderOwnerCardGenerationPanel(Object.assign({}, options, {
+          context: options.state?.cardGeneration?.context,
+          overview
+        }))
+      : "";
     return `<section class="learning-program-section learning-program-parent-admin learning-growth-settings-tabs" data-learning-growth-module="programs" data-learning-growth-category="parent-admin" data-learning-growth-owner-management>
       ${renderLearningGrowthTabs([
         { id: "overview", label: "总览", html: renderOwnerSettingsOverview(programUi, coinsHtml, overview, options) },
@@ -764,6 +771,7 @@
         { id: "tasks", label: "任务", html: renderOwnerTaskManagement(programUi, overview, options) },
         { id: "rewards", label: "奖励", html: renderOwnerRewardDashboard(programUi, coinsHtml, overview, options) },
         { id: "ai-analysis", label: "AI分析", html: renderOwnerAiSummaryRecommendationsPanel(data, programOptions) },
+        { id: "generation", label: "生成", html: cardGenerationHtml },
       ], options)}
     </section>`;
   }
@@ -912,6 +920,7 @@
 
   function renderOwnerSettingsPage(programUi, coinsUi, overview = {}, options = {}) {
     if (!isOwner(options) || !programUi || typeof renderOwnerProgramTabs !== "function") return "";
+    const escapeHtml = optionFn(options, "escapeHtml", defaultEscapeHtml);
     const coins = options.coins || overview.coins || {};
     const learnerId = overview.learner?.id || options.learnerId;
     if (!learnerId) {
@@ -931,6 +940,10 @@
     const adminHtml = renderOwnerProgramTabs(programUi, coinsHtml, overview, options);
     if (!adminHtml) return "";
     return `<div class="learning-growth-view learning-growth-settings-page" data-learning-product="fanfan-growth" data-learning-role="owner" data-learning-growth-settings-page>
+      <section class="learning-growth-owner-settings-toolbar">
+        <button type="button" data-learning-growth-close-settings>返回看板</button>
+        <span>Owner 管理 · ${escapeHtml(overview.learner?.displayName || learnerId)}</span>
+      </section>
       ${adminHtml}
     </div>`;
   }
@@ -1084,6 +1097,10 @@
       workspaceId: overview.learner?.workspaceId || options.workspaceId || "",
     })) : "";
     const targetMenu = renderGrowthViewTargetMenu(options, learner);
+    const ownerActions = owner ? `<span class="learning-growth-owner-actions">
+      ${targetMenu}
+      <button type="button" class="learning-growth-owner-settings-button" data-learning-growth-open-settings>管理</button>
+    </span>` : targetMenu;
     const programUi = options.programUi || ProgramUi;
     const availableCoins = Number(coins.balances?.availableCoins || 0);
     const historicalCoins = Number(metrics.totalEarnedCoins
@@ -1105,7 +1122,7 @@
             <strong>${escapeHtml(moduleInfo.title || "\u6210\u957f")}</strong>
             <small>${escapeHtml(learnerLabel)}</small>
           </span>
-          ${targetMenu}
+          ${ownerActions}
         </div>
         <div class="learning-growth-board-summary-metrics" aria-label="\u6210\u957f\u6982\u89c8">
           <span><small>\u6267\u884c\u8005</small><b>${escapeHtml(learnerLabel)}</b></span>

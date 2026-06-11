@@ -1,0 +1,254 @@
+(function registerGrowthCardGenerationUi(root) {
+  function clean(value) {
+    return String(value ?? "").trim();
+  }
+
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function defaultEscapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function isFanfanSampleTarget(target = {}) {
+    const text = [
+      target.workspaceId,
+      target.growthWorkspaceId,
+      target.learnerId,
+      target.displayName,
+      target.label
+    ].map(clean).join(" ").toLowerCase();
+    return /\bfan[\s_-]*fan\b/.test(text) || text.includes("fanfan") || text.includes("凡凡");
+  }
+
+  function statusText(status = "") {
+    const value = clean(status);
+    if (value === "loading_context") return "加载中";
+    if (value === "generating") return "生成中";
+    if (value === "published") return "已发布";
+    if (value === "failed") return "失败";
+    return "待生成";
+  }
+
+  function readinessRows(context = {}, escapeHtml = defaultEscapeHtml) {
+    const readiness = context.readiness || {};
+    const graph = context.graph || {};
+    const rows = [
+      ["学习者已开通", readiness.workspaceProvisioned, context.target?.enabled ? "凡凡 sample 已启用" : "当前只开放凡凡 sample"],
+      ["学习图谱", readiness.learningGraphReady, `${Number(graph.nodeCount || 0)} 节点 / ${Number(graph.edgeCount || 0)} 关系`],
+      ["历史摘要", readiness.historySummaryReady, "只读取卡片、评价、反思和掌握度摘要"],
+      ["Gateway authoring", readiness.gatewayConfigured, "SSE / JSON 输出进入 draft 校验"]
+    ];
+    return rows.map(([label, ok, meta]) => `<div class="learning-card-generation-readiness-row" data-ready="${ok ? "true" : "false"}">
+      <span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(meta)}</small></span>
+      <em>${ok ? "通过" : "待处理"}</em>
+    </div>`).join("");
+  }
+
+  function targetRows(targets = [], currentWorkspaceId = "", escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(targets).filter((target) => clean(target.workspaceId));
+    if (!rows.length) return `<div class="learning-coin-empty">暂无可选学习者。</div>`;
+    return rows.map((target) => {
+      const workspaceId = clean(target.workspaceId);
+      const active = workspaceId === clean(currentWorkspaceId) || target.current;
+      const enabled = isFanfanSampleTarget(target);
+      return `<button type="button" class="learning-card-generation-target${active ? " active" : ""}${enabled ? "" : " disabled"}"
+        data-card-generation-target="${escapeHtml(workspaceId)}" ${enabled ? "" : "disabled"}>
+        <span>
+          <strong>${escapeHtml(target.label || workspaceId)}</strong>
+          <small>${escapeHtml(workspaceId)}${enabled ? " · sample" : " · 稍后开放"}</small>
+        </span>
+        <em>${enabled ? "可生成" : "稍后"}</em>
+      </button>`;
+    }).join("");
+  }
+
+  function recipeOptions(context = {}, escapeHtml = defaultEscapeHtml) {
+    const selected = clean(context.selectedRecipeId || "daily_english_v1");
+    return asArray(context.recipes).map((recipe) => {
+      const id = clean(recipe.id);
+      const active = id === selected;
+      const duration = recipe.durationMinutes
+        ? `${recipe.durationMinutes.min || 10}-${recipe.durationMinutes.max || 15} 分钟`
+        : "10-15 分钟";
+      return `<div class="learning-card-generation-recipe${active ? " active" : ""}" data-card-generation-recipe="${escapeHtml(id)}">
+        <strong>${escapeHtml(recipe.label || id)}</strong>
+        <small>${escapeHtml(`${duration} · 低压力`)}</small>
+      </div>`;
+    }).join("");
+  }
+
+  function historyFacts(context = {}, escapeHtml = defaultEscapeHtml) {
+    const learner = context.historySummary?.learnerSummary || {};
+    const rows = [
+      ["近期卡片", learner.recentCardCount],
+      ["已完成", learner.completedRecentCardCount],
+      ["批改", learner.evaluationCount],
+      ["反思", learner.reflectionCount]
+    ];
+    return rows.map(([label, value]) => `<span><small>${escapeHtml(label)}</small><strong>${escapeHtml(String(Number(value || 0) || 0))}</strong></span>`).join("");
+  }
+
+  function structuredPreview(context = {}, escapeHtml = defaultEscapeHtml) {
+    const plan = context.suggestedPlan || {};
+    const policy = context.completionPolicy || {};
+    const preview = {
+      learningGraphPlan: plan.targetNodeId || "",
+      learnerSummary: "summary_only",
+      recentSignals: "bounded_experience_signals",
+      cardSchema: "growth.learningCard.v1",
+      completionPolicy: policy.mode || "daily_score_once"
+    };
+    return escapeHtml(JSON.stringify(preview, null, 2));
+  }
+
+  function generatedCardPreview(result = {}, escapeHtml = defaultEscapeHtml) {
+    const draft = result.draft || {};
+    const published = result.published || {};
+    if (!draft.title && !published.taskCardId) {
+      return `<div class="learning-coin-empty">生成成功后会在这里显示卡片预览。</div>`;
+    }
+    const flow = draft.teachingFlow || {};
+    const steps = [
+      ["微课", flow.microLesson?.instruction || flow.learningTarget],
+      ["例题", flow.workedExample?.instruction],
+      ["练习", flow.guidedPractice?.instruction || flow.quickCheck?.instruction]
+    ].filter((item) => clean(item[1]));
+    return `<article class="learning-card-generation-preview-card">
+      <div class="learning-card-generation-preview-head">
+        <span>
+          <strong>${escapeHtml(draft.title || published.taskCardId || "新卡片")}</strong>
+          <small>${escapeHtml(flow.learningTarget || "日常英语练习")}</small>
+        </span>
+        <em>已发布</em>
+      </div>
+      <div class="learning-card-generation-preview-meta">
+        <b>一次批改</b><b>反思最多一次</b><b>无通过线</b>
+      </div>
+      <div class="learning-card-generation-flow">
+        ${steps.map((step, index) => `<span><em>${index + 1}</em><strong>${escapeHtml(step[0])}</strong><small>${escapeHtml(step[1])}</small></span>`).join("")}
+      </div>
+      ${published.taskCardId ? `<button type="button" class="learning-card-generation-open-card" data-learning-open-growth-task="${escapeHtml(published.taskCardId)}">打开卡片</button>` : ""}
+    </article>`;
+  }
+
+  function errorPanel(state = {}, escapeHtml = defaultEscapeHtml) {
+    const error = clean(state.error);
+    if (!error) return "";
+    return `<div class="learning-error" data-card-generation-error>${escapeHtml(error)}</div>`;
+  }
+
+  function createDailyEnglishGeneratePayload({ context = {}, workspaceId = "" } = {}) {
+    const plan = context.suggestedPlan || {};
+    return {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      recipe_id: clean(context.selectedRecipeId || "daily_english_v1"),
+      target_node_id: clean(plan.targetNodeId),
+      target_node_ids: asArray(plan.targetNodeIds),
+      card_role: clean(plan.cardRole || "practice"),
+      difficulty_band: clean(plan.difficultyBand || "foundation"),
+      evidence_requirements: asArray(plan.evidenceRequirements),
+      card_schema_version: "growth.card.authoring.v1",
+      generation_key: [
+        clean(context.selectedRecipeId || "daily_english_v1"),
+        clean(workspaceId || context.target?.workspaceId),
+        clean(plan.targetNodeId)
+      ].filter(Boolean).join(":"),
+      completion_policy: {
+        mode: "daily_score_once",
+        evaluationAttempts: 1,
+        reflectionAttempts: 1,
+        completionAfter: "first_evaluation",
+        rewardMode: "score_proportional",
+        passScoreRequired: false
+      }
+    };
+  }
+
+  function renderOwnerCardGenerationPanel(options = {}) {
+    const escapeHtml = options.escapeHtml || defaultEscapeHtml;
+    const state = options.state?.cardGeneration || {};
+    const context = state.context || options.context || {};
+    const readiness = context.readiness || {};
+    const plan = context.suggestedPlan || {};
+    const generated = state.generatedResult || {};
+    const loading = state.status === "loading_context";
+    const generating = state.status === "generating";
+    const canGenerate = Boolean(readiness.ready && plan.targetNodeId && !generating);
+    return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}">
+      <section class="learning-coin-panel learning-card-generation-intro">
+        <div class="learning-section-heading">
+          <h3>卡片生成</h3>
+          <span>${escapeHtml(statusText(state.status))}</span>
+        </div>
+        <div class="learning-card-generation-kpis">
+          ${historyFacts(context, escapeHtml)}
+        </div>
+        ${errorPanel(state, escapeHtml)}
+      </section>
+
+      <div class="learning-card-generation-layout">
+        <section class="learning-coin-panel learning-card-generation-side">
+          <div class="learning-section-heading">
+            <h3>学习者</h3>
+            <span>Owner</span>
+          </div>
+          <div class="learning-card-generation-target-list">
+            ${targetRows(options.viewTargets, options.workspaceId, escapeHtml)}
+          </div>
+        </section>
+
+        <section class="learning-coin-panel learning-card-generation-main">
+          <div class="learning-section-heading">
+            <h3>生成设置</h3>
+            <span>结构化输入</span>
+          </div>
+          ${loading ? `<div class="learning-growth-muted">正在加载生成上下文...</div>` : ""}
+          <div class="learning-card-generation-recipes">
+            ${recipeOptions(context, escapeHtml)}
+          </div>
+          <div class="learning-card-generation-readiness">
+            ${readinessRows(context, escapeHtml)}
+          </div>
+          <div class="learning-card-generation-field-list">
+            <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
+            <div><span><strong>完成规则</strong><small>提交一次，批改一次，反思最多一次，不设通过线</small></span><em>daily</em></div>
+            <div><span><strong>证据要求</strong><small>${escapeHtml(asArray(plan.evidenceRequirements).join(" · ") || "short_answer")}</small></span><em>摘要</em></div>
+          </div>
+          <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
+          <div class="learning-card-generation-actions">
+            <button type="button" data-card-generation-refresh>刷新状态</button>
+            <button type="button" class="primary" data-card-generation-submit ${canGenerate ? "" : "disabled"}" ${canGenerate ? "" : "disabled"}>${generating ? "生成中..." : "生成卡片"}</button>
+          </div>
+        </section>
+
+        <section class="learning-coin-panel learning-card-generation-preview">
+          <div class="learning-section-heading">
+            <h3>卡片预览</h3>
+            <span>${generated.published?.taskCardId ? "已发布" : "等待生成"}</span>
+          </div>
+          ${generatedCardPreview(generated, escapeHtml)}
+          <div class="learning-card-generation-audit">
+            <span>teachingFlow contract <em></em></span>
+            <span>graph binding <em></em></span>
+            <span>privacy scan <em></em></span>
+            <span>SQLite transaction <em></em></span>
+          </div>
+        </section>
+      </div>
+    </section>`;
+  }
+
+  root.HermesGrowthCardGenerationUi = {
+    createDailyEnglishGeneratePayload,
+    isFanfanSampleTarget,
+    renderOwnerCardGenerationPanel
+  };
+})(typeof window !== "undefined" ? window : globalThis);

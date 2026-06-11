@@ -22,6 +22,7 @@ they become Growth-owned.
 | `docs/GROWTH_PLUGIN_ARCHITECTURE.md` | Current plugin service/module architecture and harness map. |
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
 | `docs/GROWTH_CARD_GENERATION_RULES.md` | Consolidated card generation rules for new Growth card authoring. |
+| `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` | Owner card generation management flow, UI plan, API contract, and harness plan. |
 | `docs/home-ai-growth/` | Migrated Home AI Growth-specific docs kept in their original structure for continuity. |
 
 ## Migrated Home AI Growth Docs

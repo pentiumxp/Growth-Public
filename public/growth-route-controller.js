@@ -58,6 +58,11 @@
         pageState.learningGrowthActiveTab = pageState.auth.isOwner ? "rewards" : "overview";
         return false;
       }
+      if (pluginRoute === "generation" || pluginRoute === "generate" || pluginRoute === "card-generation" || pluginRoute === "generate_cards") {
+        pageState.learningGrowthSettingsOpen = Boolean(pageState.auth.isOwner);
+        pageState.learningGrowthActiveTab = pageState.auth.isOwner ? "generation" : "overview";
+        return false;
+      }
       if (pluginRoute === "review") {
         if (pageState.auth.isOwner) {
           pageState.learningGrowthSettingsOpen = true;

@@ -13288,6 +13288,378 @@ body.task-markdown-preview-open {
   gap: 8px;
 }
 
+.learning-card-generation-manager,
+.learning-card-generation-layout,
+.learning-card-generation-main,
+.learning-card-generation-side,
+.learning-card-generation-preview {
+  min-width: 0;
+}
+
+.learning-card-generation-manager {
+  display: grid;
+  gap: 12px;
+}
+
+.learning-growth-owner-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learning-growth-owner-settings-button,
+.learning-growth-owner-settings-toolbar button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-hairline-strong);
+  border-radius: 7px;
+  background: var(--ui-surface);
+  color: var(--ui-accent-ink);
+  font-size: 13px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.learning-growth-owner-settings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 2px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.learning-card-generation-intro {
+  display: grid;
+  gap: 10px;
+}
+
+.learning-card-generation-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.learning-card-generation-kpis span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-surface);
+}
+
+.learning-card-generation-kpis small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 740;
+}
+
+.learning-card-generation-kpis strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 860;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.learning-card-generation-side,
+.learning-card-generation-main,
+.learning-card-generation-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.learning-card-generation-target-list,
+.learning-card-generation-recipes,
+.learning-card-generation-readiness,
+.learning-card-generation-field-list,
+.learning-card-generation-flow,
+.learning-card-generation-audit {
+  display: grid;
+  gap: 8px;
+}
+
+.learning-card-generation-target,
+.learning-card-generation-recipe,
+.learning-card-generation-readiness-row,
+.learning-card-generation-field-list > div,
+.learning-card-generation-preview-card,
+.learning-card-generation-flow span,
+.learning-card-generation-audit span {
+  min-width: 0;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-surface);
+}
+
+.learning-card-generation-target {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.learning-card-generation-target.active,
+.learning-card-generation-recipe.active {
+  border-color: rgba(79, 135, 144, 0.34);
+  background: var(--ui-accent-soft);
+}
+
+.learning-card-generation-target.disabled {
+  opacity: 0.58;
+}
+
+.learning-card-generation-target span,
+.learning-card-generation-readiness-row span,
+.learning-card-generation-field-list span,
+.learning-card-generation-preview-head span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.learning-card-generation-target strong,
+.learning-card-generation-recipe strong,
+.learning-card-generation-readiness-row strong,
+.learning-card-generation-field-list strong,
+.learning-card-generation-preview-head strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-target small,
+.learning-card-generation-recipe small,
+.learning-card-generation-readiness-row small,
+.learning-card-generation-field-list small,
+.learning-card-generation-preview-head small,
+.learning-card-generation-flow small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-target em,
+.learning-card-generation-readiness-row em,
+.learning-card-generation-field-list em,
+.learning-card-generation-preview-head em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(236, 249, 245, 0.84);
+  color: var(--ui-accent-ink);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.learning-card-generation-recipes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.learning-card-generation-recipe {
+  min-height: 64px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 10px 11px;
+}
+
+.learning-card-generation-readiness-row,
+.learning-card-generation-field-list > div,
+.learning-card-generation-preview-head,
+.learning-card-generation-audit span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.learning-card-generation-readiness-row,
+.learning-card-generation-field-list > div {
+  min-height: 52px;
+  padding: 9px 11px;
+}
+
+.learning-card-generation-readiness-row[data-ready="false"] em {
+  background: var(--ui-warning-surface);
+  color: var(--ui-warning-ink);
+}
+
+.learning-card-generation-structured {
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed rgba(79, 135, 144, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.48);
+  color: var(--ink);
+  font-family: "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.learning-card-generation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.learning-card-generation-actions button,
+.learning-card-generation-open-card {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-hairline-strong);
+  border-radius: 7px;
+  background: var(--ui-surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.learning-card-generation-actions button.primary {
+  border-color: rgba(31, 111, 98, 0.34);
+  background: var(--ui-accent-active);
+  color: #fff;
+}
+
+.learning-card-generation-actions button.disabled,
+.learning-card-generation-actions button:disabled {
+  opacity: 0.54;
+}
+
+.learning-card-generation-preview-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 252, 0.88);
+}
+
+.learning-card-generation-preview-head {
+  min-width: 0;
+}
+
+.learning-card-generation-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.learning-card-generation-preview-meta b {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(236, 249, 245, 0.84);
+  color: var(--ui-accent-ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.learning-card-generation-flow span {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 6px 8px;
+  padding: 9px 10px;
+}
+
+.learning-card-generation-flow span em {
+  grid-row: span 2;
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ui-accent-fill);
+  color: var(--ui-accent-ink);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.learning-card-generation-flow strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-open-card {
+  justify-self: end;
+}
+
+.learning-card-generation-audit span {
+  min-height: 34px;
+  padding: 7px 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.learning-card-generation-audit em {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ui-success-ink);
+}
+
+@media (max-width: 980px) {
+  .learning-card-generation-layout,
+  .learning-card-generation-recipes {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-card-generation-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .learning-card-generation-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-card-generation-actions {
+    justify-content: stretch;
+  }
+
+  .learning-card-generation-actions button {
+    flex: 1 1 auto;
+  }
+}
+
 .learning-foundation-owner-grid,
 .learning-foundation-grid {
   display: grid;

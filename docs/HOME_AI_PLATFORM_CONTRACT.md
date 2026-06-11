@@ -86,6 +86,7 @@ working copies for future Growth work.
 | `plugin_graph_plan_write` | `POST /api/v1/growth/graph/plans` with the workspace-local bearer; creates bounded `learning_graph_plans` over imported native graph nodes. This route only writes plans; card publication happens through the generation route or explicit graph-binding route. |
 | `plugin_card_graph_binding_write` | `POST /api/v1/growth/cards/:taskCardId/graph-binding` with the workspace-local bearer; binds a task card to an existing graph plan and node coverage using the URL card id as authoritative. |
 | `plugin_card_generation_write` | `POST /api/v1/growth/cards/generate` with the workspace-local bearer; creates or accepts a graph plan, summarizes bounded historical Growth SQLite data, calls Gateway through the Growth authoring client, validates the draft, and writes the generated `learning_task_cards` row plus graph binding in one transaction. Generated daily cards carry `daily_score_once`: one evaluation, one optional reflection, completion after the first evaluation, and score-proportional learning-coin settlement without a pass-line gate. |
+| `plugin_card_generation_context_read` | `GET /api/v1/growth/card-generation/context`; Owner UI read context for Growth-owned card generation. It is constrained by Growth view-target visibility, returns Fanfan sample eligibility, daily English recipe metadata, graph readiness, suggested graph target, bounded history counts, and Gateway configured state, and does not expose raw learner submissions, transcripts, prompts, answer keys, or raw model output. |
 | `card_authoring_model_boundary` | Growth card generation and authoring are plugin-owned and Gateway-only. The service slice exists in `learning-card-generation-service`, `learning-card-authoring-service`, `growth-gateway-authoring-client`, and `learning-card-authoring-validation-service`, with `history-summary` and `card-authoring-publisher` SQLite repositories underneath. Growth may use Home AI Gateway access/config but must not import Home AI old Growth server logic or call model vendors directly. |
 | `plugin_view_targets` | `GET /api/v1/growth/view-targets`; returns Growth-provisioned view targets. Through the Home AI proxy, only `x-hermes-plugin-actor-role=owner` receives multiple targets. Workspace actors receive only their current workspace target and cannot enumerate other Growth users. |
 | `historical_audio_blob_backfill` | `npm run backfill:audio-blobs -- --db <plugin-data>/growth-learning.sqlite3 --workspace-id <workspace> --legacy-audio-root <Home-AI-data-root> --dry-run --json`; use `--write` only after dry-run shows acceptable `would_backfill`, `file_missing`, and sample evidence. |
@@ -198,7 +199,7 @@ For Growth card-authoring model boundary changes, also run:
 
 ```bash
 node scripts/check-growth-card-authoring-boundary.js
-node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/growth-routes.test.js
+node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js
 ```
 
 For Growth Knowledge Graph source-pack recovery, dry-run import, or native

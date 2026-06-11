@@ -34,6 +34,7 @@ Growth should stay a service-first embedded plugin:
 | Growth service models | `src/services/growth-service-models.js` | Pure bounded status, board, snapshot, card, and migration summary projections used by the orchestration service. |
 | Home AI facade client | `src/services/home-ai-growth-facade-client.js` | Bounded Home AI Growth facade HTTP client with base URL normalization and workspace query/header handling. |
 | Card generation service | `src/services/learning-card-generation-service.js` | Graph-plus-history card generation orchestration. It creates a graph plan, reads historical summaries, adds graph source summaries, calls authoring, and returns the published card result. |
+| Card generation context service | `src/services/learning-card-generation-context-service.js` | Owner UI read-context service for card generation readiness. It returns Fanfan sample eligibility, daily English recipe metadata, graph readiness, suggested graph target, bounded history counts, Gateway configured state, and the `daily_score_once` policy without exposing raw learner content. |
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
 | Gateway authoring client | `src/services/growth-gateway-authoring-client.js` | Gateway-only model boundary for card authoring. It supports SSE and JSON Gateway responses and does not call model vendors directly. |
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
@@ -109,6 +110,7 @@ The first core-module split is behavior-preserving:
   Gateway access/config boundary, but card authoring must not import or call
   Home AI old Growth route/server internals and must not call model vendors
   directly. The graph-plus-history generation slice is implemented in
+  `learning-card-generation-context-service`,
   `learning-card-generation-service`,
   `learning-card-authoring-service`,
   `growth-gateway-authoring-client`, and
@@ -120,6 +122,12 @@ The first core-module split is behavior-preserving:
   `daily_score_once` completion policy: one submission evaluation, one
   optional reflection, completion after the first evaluation, and
   score-proportional rewards without a pass-line gate.
+- Owner card generation management is exposed through the embedded plugin UI.
+  The Owner `生成` tab reads
+  `GET /api/v1/growth/card-generation/context`, keeps learner targets separate
+  from the Owner actor, and posts generation requests to
+  `POST /api/v1/growth/cards/generate`. The frontend never calls Gateway or
+  model vendors directly.
 - `growth-appearance.js`, `growth-api-client.js`, `growth-view-model.js`, and
   `growth-route-controller.js` keep host integration, API calls, UI
   normalization, and route/action resolution outside the boot script.
@@ -159,8 +167,8 @@ be feature-driven:
 | Growth service write providers and command policy | `node --test tests/growth-service-write-providers.test.js tests/growth-service.test.js tests/growth-routes.test.js` |
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
-| Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/growth-routes.test.js` |
-| Embedded frontend adapters | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
+| Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
+| Embedded frontend adapters and card generation UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |
 | Growth service facade/snapshot/provider selection | `node --test tests/growth-service.test.js` |

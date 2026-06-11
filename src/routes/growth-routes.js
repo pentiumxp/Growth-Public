@@ -1,5 +1,5 @@
 const fs = require("node:fs");
-const { bearerFrom, readJson, sendJson } = require("./http-utils");
+const { bearerFrom, readJson, routeError, sendJson } = require("./http-utils");
 const { listGrowthMcpSchemas } = require("../mcp/growth-mcp-schemas");
 
 const DEFAULT_JSON_LIMIT_BYTES = 1024 * 1024;
@@ -50,6 +50,33 @@ function requestedWritableWorkspaceId(body, url) {
 
 function serviceWorkspaceIdFromAuthorization(authorized) {
   return authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
+}
+
+function readableTargetFromRequest(request, url, services) {
+  const currentWorkspaceId = String(
+    request.headers["x-hermes-plugin-workspace-id"]
+    || url.searchParams.get("currentWorkspaceId")
+    || url.searchParams.get("current_workspace_id")
+    || url.searchParams.get("workspaceId")
+    || url.searchParams.get("workspace_id")
+    || ""
+  );
+  const targetWorkspaceId = String(
+    url.searchParams.get("targetWorkspaceId")
+    || url.searchParams.get("target_workspace_id")
+    || url.searchParams.get("workspaceId")
+    || url.searchParams.get("workspace_id")
+    || currentWorkspaceId
+  ).replace(/^growth:/, "");
+  const targetsResult = services.pluginService.viewTargets({
+    actorRole: requestedActorRole(request),
+    currentWorkspaceId
+  });
+  const target = (targetsResult.targets || []).find((item) => String(item.workspaceId || "") === targetWorkspaceId);
+  if (!target) {
+    throw routeError("growth_target_not_visible", "Growth target is not visible to this actor", 403);
+  }
+  return target;
 }
 
 function authorizeWritableWorkspace(request, url, body, services) {
@@ -124,6 +151,18 @@ async function handleGrowthRoute(request, response, url, services) {
       actorRole: requestedActorRole(request),
       currentWorkspaceId: requestedWorkspaceId(request, url, "")
     }));
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/card-generation/context") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningCardGenerationContextService.context({
+      workspaceId: target.workspaceId,
+      learnerId: target.workspaceId,
+      displayName: target.label,
+      label: target.label,
+      growthWorkspaceId: target.growthWorkspaceId
+    });
+    return sendJson(response, result.ok ? 200 : 400, result);
   }
 
   const cardMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)$/);

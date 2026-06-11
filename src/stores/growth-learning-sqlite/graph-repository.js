@@ -182,6 +182,10 @@ function createLearningGraphRepository({ open } = {}) {
     return withDb(true, (db) => nodesByIdsFromDb(db, { nodeIds }));
   }
 
+  function suggestNodes({ domain = "", subject = "", limit = 10 } = {}) {
+    return withDb(true, (db) => suggestNodesFromDb(db, { domain, subject, limit }));
+  }
+
   function prerequisiteNodeIds({ targetNodeId } = {}) {
     return withDb(true, (db) => prerequisiteNodeIdsFromDb(db, { targetNodeId }));
   }
@@ -281,7 +285,8 @@ function createLearningGraphRepository({ open } = {}) {
     prerequisiteNodeIds,
     readback,
     saveCardBinding,
-    savePlan
+    savePlan,
+    suggestNodes
   };
 }
 
@@ -331,6 +336,48 @@ function prerequisiteNodeIdsFromDb(db, { targetNodeId } = {}) {
     WHERE edge_type = 'prerequisite' AND to_node_id = ?
     ORDER BY from_node_id
   `).all(id).map((row) => cleanString(row.from_node_id)).filter(Boolean);
+}
+
+function suggestNodesFromDb(db, { domain = "", subject = "", limit = 10 } = {}) {
+  if (!tableExists(db, "learning_graph_nodes")) return [];
+  const cleanDomain = cleanString(domain).toLowerCase();
+  const cleanSubject = cleanString(subject).toLowerCase();
+  const max = Math.max(1, Math.min(50, Number(limit || 10) || 10));
+  if (!cleanDomain && !cleanSubject) {
+    return db.prepare(`
+      SELECT * FROM learning_graph_nodes
+      ORDER BY
+        CASE WHEN privacy_class = 'summary_only' THEN 0 ELSE 1 END,
+        node_id
+      LIMIT ?
+    `).all(max).map(publicNode);
+  }
+  return db.prepare(`
+    SELECT * FROM learning_graph_nodes
+    WHERE lower(domain) = ?
+      OR lower(subject) = ?
+      OR lower(subject) = ?
+      OR lower(title) LIKE ?
+    ORDER BY
+      CASE
+        WHEN lower(domain) = ? THEN 0
+        WHEN lower(subject) = ? THEN 1
+        WHEN lower(subject) = ? THEN 2
+        ELSE 3
+      END,
+      CASE WHEN privacy_class = 'summary_only' THEN 0 ELSE 1 END,
+      node_id
+    LIMIT ?
+  `).all(
+    cleanDomain,
+    cleanDomain,
+    cleanSubject,
+    `%${cleanDomain || cleanSubject}%`,
+    cleanDomain,
+    cleanDomain,
+    cleanSubject,
+    max
+  ).map(publicNode);
 }
 
 function planFromDb(db, { learningGraphPlanId } = {}) {

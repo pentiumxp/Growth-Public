@@ -6,6 +6,7 @@ const { createHermesPluginService } = require("../services/hermes-plugin-service
 const { createLearningCardAuthoringService } = require("../services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../services/learning-card-authoring-validation-service");
 const { createLearningCardGraphBindingService } = require("../services/learning-card-graph-binding-service");
+const { createLearningCardGenerationContextService } = require("../services/learning-card-generation-context-service");
 const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
 const { createLearningGraphPlanService } = require("../services/learning-graph-plan-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
@@ -46,6 +47,11 @@ function createServices(config) {
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
     authoringService: learningCardAuthoringService
   });
+  const learningCardGenerationContextService = createLearningCardGenerationContextService({
+    graphRepository: growthLearningStore.learningGraphRepository,
+    historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint)
+  });
   const growthEvaluationService = createGrowthEvaluationService({
     learningStore: growthLearningStore,
     eventService: growthEventService
@@ -57,6 +63,7 @@ function createServices(config) {
     growthMcpExecutor: createGrowthMcpExecutor({ growthService }),
     growthService,
     learningCardAuthoringService,
+    learningCardGenerationContextService,
     learningCardGenerationService,
     learningCardGraphBindingService,
     learningGraphPlanService,
