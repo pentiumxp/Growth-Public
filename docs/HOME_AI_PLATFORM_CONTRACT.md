@@ -97,7 +97,8 @@ working copies for future Growth work.
 | `deploy_command` | Use the Home AI Mac access runbook after production service facts are created. |
 | `credential_locations` | Workspace-local ignored `.hermes-growth` config/key files only by reference. Do not record raw keys or launch tokens here. |
 | `reference_contract_status` | Not implemented. Growth may later expose bounded references to programs, cards, submissions, and mastery profile records. |
-| `mobile_visual_harness_status` | Not implemented. Embedded shell and keyboard/safe-area validation must use the Home AI iOS visual harness before production integration. |
+| `mobile_visual_harness_status` | Uses the central Home AI visual toolchain for embedded shell validation. Growth iframe roots consume `hermes.plugin.viewport` for host iframe sizing, and mobile layout changes must run the Growth frontend adapter/layout harness plus the Home AI `embedded-plugin-shell` iOS visual harness before production publish. |
+| `visual_toolchain_contract` | `20260610-visual-toolchain-shared-lane`; use Home AI central Appium/live-debug/visual harness scripts, not plugin-local copies. |
 | `ai_ops_control_plane_command` | `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "<task>" --json` |
 | `ai_ops_required_flow` | `intake -> required-checks -> lane allocate if visual -> evidence append -> production smoke -> handoff` |
 | `ai_ops_evidence_ledger` | `$HOME/.homeai-qa/growth-evidence-ledger.jsonl` |

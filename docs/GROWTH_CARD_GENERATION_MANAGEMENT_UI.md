@@ -122,11 +122,30 @@ Mobile scroll contract:
 
 - The Owner management page is embedded inside a Home AI iframe, so scrolling
   must not depend only on iframe root scrolling.
+- Growth must consume the Home AI `hermes.plugin.viewport` message in
+  `embed=hermes` mode and apply the host iframe height to
+  `--app-height` / `--app-viewport-height` before relying on internal scroll
+  panels. The iframe height is the root sizing source; raw `100vh` /
+  `100dvh` is not sufficient inside the embedded shell.
 - The settings shell must use a fixed-height internal grid and the active tab
   panel must own vertical scrolling with `overflow-y: auto`,
   `-webkit-overflow-scrolling: touch`, and `touch-action: pan-y`.
 - The `生成` tab inherits that active-panel scroll surface so the lower
   controls, including `生成卡片`, remain reachable on mobile viewports.
+- Release validation for mobile layout must include the central Home AI visual
+  toolchain:
+
+```bash
+cd /Users/hermes-dev/HermesMobileDev/app
+npm run ios:pwa:visual -- \
+  --scenario embedded-plugin-shell \
+  --plugin-id growth \
+  --debug-url http://127.0.0.1:19073/
+```
+
+  If the visual toolchain fails at the Appium, WDA, WebView attach, or live
+  debug server layer, classify and recover that layer per the central platform
+  contract before treating the result as UI evidence.
 
 ## V1 Controls
 

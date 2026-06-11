@@ -33,6 +33,90 @@ test("Growth appearance adapter normalizes host theme and font-size payloads", (
   assert.equal(documentRef.documentElement.dataset.fontSize, "xxlarge");
 });
 
+test("Growth appearance adapter applies Home AI plugin viewport metrics", () => {
+  const windowRef = loadPublicScript("growth-appearance.js");
+  const styles = new Map();
+  const classes = new Map();
+  const documentRef = {
+    documentElement: {
+      dataset: {},
+      style: { setProperty: (name, value) => styles.set(name, value) },
+      classList: { toggle: (name, value) => classes.set(name, Boolean(value)) }
+    }
+  };
+  const appearance = windowRef.HermesGrowthAppearance.createGrowthAppearance({
+    params: new URLSearchParams(),
+    documentRef
+  });
+
+  assert.equal(appearance.applyViewport({
+    type: "hermes.plugin.viewport",
+    version: 1,
+    pluginId: "growth",
+    reason: "test",
+    viewport: { width: 390, height: 612, offsetTop: 4, layoutHeight: 640 },
+    iframe: { width: 390, height: 512 },
+    keyboard: { visible: false, bottomInset: 0 },
+    footer: { hostBottomSafeArea: 18 }
+  }), true);
+
+  assert.equal(styles.get("--app-height"), "512px");
+  assert.equal(styles.get("--app-viewport-height"), "512px");
+  assert.equal(styles.get("--host-bottom-safe-area"), "18px");
+  assert.equal(styles.get("--growth-host-bottom-safe-area"), "18px");
+  assert.equal(styles.get("--growth-keyboard-bottom"), "0px");
+  assert.equal(classes.get("keyboard-open"), false);
+  assert.equal(classes.get("growth-keyboard-open"), false);
+
+  appearance.applyViewport({
+    type: "hermes.plugin.viewport",
+    version: 1,
+    pluginId: "growth",
+    viewport: { width: 390, height: 318, layoutHeight: 640 },
+    iframe: { width: 390, height: 512 },
+    keyboard: { visible: true, bottomInset: 322 },
+    footer: { safeAreaBottom: 0 }
+  });
+
+  assert.equal(styles.get("--app-height"), "318px");
+  assert.equal(styles.get("--growth-keyboard-bottom"), "322px");
+  assert.equal(classes.get("keyboard-open"), true);
+});
+
+test("Growth appearance adapter exposes the host viewport handler expected by visual harnesses", () => {
+  const windowRef = loadPublicScript("growth-appearance.js");
+  const listeners = [];
+  windowRef.addEventListener = (eventName, handler) => listeners.push({ eventName, handler });
+  const styles = new Map();
+  const documentRef = {
+    documentElement: {
+      dataset: {},
+      style: { setProperty: (name, value) => styles.set(name, value) },
+      classList: { toggle: () => null }
+    }
+  };
+  const appearance = windowRef.HermesGrowthAppearance.createGrowthAppearance({
+    params: new URLSearchParams(),
+    documentRef
+  });
+
+  appearance.bindAppearanceMessages(windowRef);
+  assert.equal(typeof windowRef.handleHermesPluginViewportMessage, "function");
+  assert.equal(typeof windowRef.__hermesGrowthVisualHarness.hostViewport, "function");
+  assert.equal(listeners[0].eventName, "message");
+
+  assert.equal(windowRef.handleHermesPluginViewportMessage({
+    type: "hermes.plugin.viewport",
+    version: 1,
+    pluginId: "growth",
+    iframe: { height: 444 },
+    viewport: { height: 500 },
+    keyboard: { visible: false }
+  }), true);
+  assert.equal(styles.get("--app-height"), "444px");
+  assert.equal(windowRef.__hermesGrowthVisualHarness.hostViewport().iframe.height, 444);
+});
+
 test("Growth API client keeps workspace query and fetch errors bounded", async () => {
   const windowRef = loadPublicScript("growth-api-client.js");
   const historyCalls = [];

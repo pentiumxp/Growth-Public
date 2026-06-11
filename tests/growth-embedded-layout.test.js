@@ -6,7 +6,9 @@ const test = require("node:test");
 const css = fs.readFileSync(path.join(__dirname, "..", "public", "growth-homeai-legacy.css"), "utf8");
 
 test("embedded Growth shell owns vertical scrolling inside the iframe", () => {
-  assert.match(css, /\.growth-shell\s*\{[\s\S]*?height: 100%;/);
+  assert.match(css, /html,\s*body\s*\{[\s\S]*?height: var\(--app-height, var\(--app-viewport-height, 100%\)\);/);
+  assert.match(css, /\.growth-shell\s*\{[\s\S]*?height: var\(--app-height, var\(--app-viewport-height, 100%\)\);/);
+  assert.match(css, /\.growth-shell\s*\{[\s\S]*?max-height: var\(--app-height, var\(--app-viewport-height, none\)\);/);
   assert.match(css, /\.growth-shell\s*\{[\s\S]*?overflow-y: auto;/);
   assert.match(css, /\.growth-shell\s*\{[\s\S]*?-webkit-overflow-scrolling: touch;/);
   assert.match(css, /\.growth-shell\s*\{[\s\S]*?touch-action: pan-y;/);
