@@ -11,6 +11,29 @@
 
 ## 2026-06-12 Growth Generated Card Interaction UI
 
+- Deployment status:
+  - committed code/docs as `07217804cb39` (`Add Growth card interaction flow`);
+  - pushed `main` to `origin` (`pentiumxp/Growth.git`) and `public`
+    (`pentiumxp/Growth-Public.git`);
+  - deployed from
+    `/Users/hermes-dev/HermesMobileDev/plugins/growth` to
+    `/Users/hermes-host/HermesMobile/plugins/growth` using the central Home AI
+    `deploy-macos-production.js` plugin path;
+  - production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260612T035549Z-plugin-growth-growth-card-interaction`;
+  - restarted launchd label `com.hermesmobile.plugin.growth`;
+  - deploy health validation passed for
+    `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`;
+  - direct production smokes passed for `/`, the
+    `growth-card-interaction-controller.js` static asset, manifest projection,
+    Growth status for `weixin_stephen`, and board projection for
+    `weixin_stephen`;
+  - unauthenticated Home AI same-origin proxy smoke returned expected `403`;
+  - authenticated proxy smoke was not completed because local `sudo -n` access
+    to read the production Owner web-key secret was blocked by
+    `sudo: a password is required`; no secret value was read or printed;
+  - AI Ops evidence ledger record:
+    `evidence-f9b82964-b126-4a38-9591-f5e77991b1e0`.
 - Implemented plugin-local learner interaction for generated daily Growth
   cards:
   - one answer submission from the card detail quick-check step;
