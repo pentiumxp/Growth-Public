@@ -55,6 +55,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /HermesGrowthApiClient/);
   assert.match(app, /HermesGrowthViewModel/);
   assert.match(app, /HermesGrowthRouteController/);
+  assert.match(app, /HermesGrowthCardInteractionController/);
   assert.match(app, /ensureCardGenerationTargetSelected/);
   assert.match(app, /preferredCardGenerationWorkspaceId/);
   assert.doesNotMatch(app, /if \(pageState\.auth\.isOwner\) await loadCardGenerationContext\(\);/);
@@ -69,6 +70,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
     "growth-view-model.js",
     "growth-route-controller.js",
     "growth-card-generation-ui.js",
+    "growth-card-interaction-controller.js",
     "app.js"
   ]) {
     assert.match(index, new RegExp(`/${asset}`));

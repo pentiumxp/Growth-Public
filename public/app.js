@@ -17,6 +17,12 @@
     learningGrowthExperienceSignalBusy: {},
     learningGrowthExperienceSignalSubmitted: {},
     learningGrowthTeachingCheckBusy: {},
+    learningGrowthSubmissionBusy: {},
+    learningGrowthReflectionBusy: {},
+    learningGrowthEvaluationBusy: {},
+    learningGrowthInteractionMessages: {},
+    learningGrowthReflectionDrafts: {},
+    learningGrowthRecordings: {},
     learningGrowthStageAssessmentActivating: {},
     cardGeneration: {
       status: "idle",
@@ -55,6 +61,24 @@
     historyRef: window.history,
     locationRef: window.location
   });
+
+  function taskCardById(taskCardId) {
+    const id = clean(taskCardId);
+    if (!id) return null;
+    const cards = []
+      .concat(model.overview?.programs?.taskCards || [])
+      .concat(model.overview?.programs?.executableTasks || [])
+      .concat(model.overview?.board?.cards || []);
+    return cards.find((card) => clean(card?.taskCardId || card?.id) === id) || null;
+  }
+
+  function workspaceIdForTaskCard(taskCardId, explicitWorkspaceId = "") {
+    return clean(explicitWorkspaceId)
+      || clean(taskCardById(taskCardId)?.workspaceId)
+      || clean(pageState.cardGeneration.selectedWorkspaceId)
+      || clean(pageState.cardGeneration.context?.target?.workspaceId)
+      || clean(currentWorkspaceId);
+  }
 
   function targetForWorkspace(workspaceId = currentWorkspaceId) {
     return (model.viewTargets || []).find((target) => clean(target.workspaceId) === clean(workspaceId)) || null;
@@ -131,6 +155,7 @@
       growthTaskUi: window.HermesLearningGrowthTaskUi,
       activeGrowthBoardLane: pageState.learningGrowthBoardLane,
       selectedGrowthTaskCardId: pageState.selectedLearningTaskCardId,
+      resolveGrowthAudioUrl: (url, workspaceId) => api.resolveGrowthApiPath(url, workspaceId || currentWorkspaceId),
       escapeHtml,
     });
     bindEvents();
@@ -179,19 +204,20 @@
     });
   }
 
-  async function openCard(taskCardId) {
+  async function openCard(taskCardId, workspaceId = "") {
     const id = clean(taskCardId);
     if (!id) return;
+    const targetWorkspaceId = workspaceIdForTaskCard(id, workspaceId);
     pageState.learningGrowthSettingsOpen = false;
     pageState.learningGrowthHistoryTaskCardId = "";
     pageState.selectedLearningTaskCardId = id;
-    const cacheKey = `${currentWorkspaceId}:${id}`;
+    const cacheKey = `${targetWorkspaceId}:${id}`;
     if (!model.detailCache.has(cacheKey)) {
-      const result = await api.fetchJson(`/api/v1/growth/cards/${encodeURIComponent(id)}${api.workspaceQuery()}`);
+      const result = await api.fetchGrowthCard(id, targetWorkspaceId);
       if (result.card) model.detailCache.set(cacheKey, viewModel.normalizeCard(result.card));
     }
     const detail = model.detailCache.get(cacheKey);
-    if (detail) {
+    if (detail && model.overview?.programs && model.overview?.board) {
       const cards = model.overview?.programs?.taskCards || [];
       const index = cards.findIndex((card) => clean(card.taskCardId) === id);
       if (index >= 0) cards[index] = Object.assign({}, cards[index], detail);
@@ -202,12 +228,30 @@
     renderShell();
   }
 
+  async function refreshCard(taskCardId, workspaceId = "") {
+    const id = clean(taskCardId);
+    if (!id) return;
+    const targetWorkspaceId = workspaceIdForTaskCard(id, workspaceId);
+    model.detailCache.delete(`${targetWorkspaceId}:${id}`);
+    await openCard(id, targetWorkspaceId);
+  }
+
   const routeController = window.HermesGrowthRouteController.createGrowthRouteController({
     pluginRoute,
     pluginItemId,
     pageState,
     model,
     openCard
+  });
+
+  const cardInteractionController = window.HermesGrowthCardInteractionController.createGrowthCardInteractionController({
+    api,
+    pageState,
+    model,
+    viewModel,
+    renderShell,
+    refreshCard,
+    getCurrentWorkspaceId: () => currentWorkspaceId
   });
 
   function bindEvents() {
@@ -230,8 +274,78 @@
       node.addEventListener("click", (event) => {
         event.preventDefault();
         const id = clean(node.dataset.learningOpenGrowthTask || node.dataset.learningOpenSettingsTask);
-        openCard(id).catch((error) => {
+        openCard(id, node.dataset.workspaceId).catch((error) => {
           root.insertAdjacentHTML("afterbegin", `<div class="learning-error">${escapeHtml(error.message || String(error))}</div>`);
+        });
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-teaching-step]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const cardId = clean(button.dataset.learningGrowthTeachingStep);
+        if (!cardId) return;
+        pageState.learningGrowthTeachingStepByCardId[cardId] = clean(button.dataset.step) || "lesson";
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-teaching-draft]").forEach((field) => {
+      field.addEventListener("input", () => {
+        const cardId = clean(field.dataset.learningGrowthTeachingDraft);
+        const key = clean(field.dataset.field);
+        if (!cardId || !key) return;
+        pageState.learningGrowthTeachingDrafts[cardId] = Object.assign({}, pageState.learningGrowthTeachingDrafts[cardId] || {}, {
+          [key]: field.value
+        });
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-reflection-text]").forEach((field) => {
+      field.addEventListener("input", () => {
+        const cardId = clean(field.dataset.learningGrowthReflectionText);
+        if (!cardId) return;
+        pageState.learningGrowthReflectionDrafts[cardId] = Object.assign({}, pageState.learningGrowthReflectionDrafts[cardId] || {}, {
+          text: field.value
+        });
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-record-toggle]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        cardInteractionController.toggleRecording(button.dataset.learningGrowthRecordToggle, button.dataset.recordKind || "submission");
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-record-clear]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        cardInteractionController.clearRecording(button.dataset.learningGrowthRecordClear, button.dataset.recordKind || "submission");
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-submission-form]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        cardInteractionController.submitEvidence(form).catch((error) => {
+          cardInteractionController.setMessage(form.dataset.learningGrowthSubmissionForm, "submission", error.message || String(error));
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-evaluation-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const cardId = clean(button.dataset.learningGrowthEvaluationRefresh);
+        cardInteractionController.refreshEvaluation(cardId)
+          .catch((error) => {
+            cardInteractionController.setMessage(cardId, "evaluation", error.message || String(error));
+            renderShell();
+          });
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-reflection-form]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        cardInteractionController.submitReflection(form).catch((error) => {
+          cardInteractionController.setMessage(form.dataset.learningGrowthReflectionForm, "reflection", error.message || String(error));
+          renderShell();
         });
       });
     });
@@ -398,6 +512,7 @@
 
   async function switchWorkspace(nextWorkspaceId) {
     clearCardGenerationProgressTimers();
+    cardInteractionController.clearAllRecordings();
     currentWorkspaceId = clean(nextWorkspaceId);
     api.updateWorkspaceUrl();
     model.detailCache.clear();

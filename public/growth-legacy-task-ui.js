@@ -325,21 +325,159 @@
     </section>`;
   }
 
+  function interactionKey(cardId, kind) {
+    return `${String(cardId || "")}:${String(kind || "")}`;
+  }
+
+  function asArray(value) {
+    return Array.isArray(value) ? value.filter((item) => String(item || "").trim()).slice(0, 6) : [];
+  }
+
+  function resolveAudioUrl(audio = {}, options = {}) {
+    const url = String(audio?.url || "").trim();
+    if (!url) return "";
+    if (typeof options.resolveGrowthAudioUrl === "function") return options.resolveGrowthAudioUrl(url, options.workspaceId);
+    return url;
+  }
+
+  function renderAudioEvidence(audio = {}, label = "录音", options = {}) {
+    const url = resolveAudioUrl(audio, options);
+    if (!url) return "";
+    const duration = Number(audio.durationMs || 0);
+    const suffix = Number.isFinite(duration) && duration > 0 ? ` · ${Math.round(duration / 1000)} 秒` : "";
+    return `<div class="learning-growth-submission-audio"><strong>${escapeHtmlLocal(label + suffix)}</strong><audio controls preload="metadata" src="${escapeHtmlLocal(url)}"></audio></div>`;
+  }
+
+  function renderRecorderControls(task = {}, kind = "submission", options = {}) {
+    const cardId = String(task.taskCardId || task.id || "");
+    const state = options.state || {};
+    const recording = state.learningGrowthRecordings?.[interactionKey(cardId, kind)] || {};
+    const status = String(recording.status || "").trim();
+    const busy = status === "requesting" || status === "recording" || status === "stopping";
+    const ready = status === "ready" && recording.url;
+    const unsupported = status === "unsupported";
+    const label = kind === "reflection" ? "反思录音" : "作答录音";
+    const elapsed = Number(recording.elapsedMs || 0);
+    const statusText = recording.message
+      || (status === "recording" ? `录音中 ${Math.max(1, Math.round(elapsed / 1000))} 秒`
+        : status === "requesting" ? "正在请求麦克风"
+          : status === "stopping" ? "正在保存录音"
+            : ready ? "录音已准备"
+              : unsupported ? "当前浏览器不支持录音"
+                : "可选：录一段音频作为证据");
+    const buttonText = status === "recording" ? "停止录音" : ready ? "重新录音" : "开始录音";
+    return `<div class="todo-reading-recorder learning-growth-card-recorder" data-learning-growth-recorder="${escapeHtmlLocal(cardId)}" data-record-kind="${escapeHtmlLocal(kind)}">
+      <div class="todo-reading-recorder-actions">
+        <button type="button" data-learning-growth-record-toggle="${escapeHtmlLocal(cardId)}" data-record-kind="${escapeHtmlLocal(kind)}" ${unsupported || busy && status !== "recording" ? "disabled" : ""}>${escapeHtmlLocal(buttonText)}</button>
+        ${ready ? `<button type="button" data-learning-growth-record-clear="${escapeHtmlLocal(cardId)}" data-record-kind="${escapeHtmlLocal(kind)}">清除</button>` : ""}
+      </div>
+      <span class="learning-native-growth-submission-state" data-learning-growth-record-status>${escapeHtmlLocal(label)}：${escapeHtmlLocal(statusText)}</span>
+      ${ready ? `<audio controls preload="metadata" src="${escapeHtmlLocal(recording.url)}"></audio>` : ""}
+    </div>`;
+  }
+
+  function renderSubmissionStatus(task = {}, options = {}) {
+    const submission = task.latestSubmission || null;
+    if (!submission) return "";
+    const submittedAt = submission.submittedAt ? ` · ${escapeHtmlLocal(submission.submittedAt)}` : "";
+    const counts = [];
+    const chars = Number(submission.textCharCount || submission.charCount || 0);
+    const words = Number(submission.wordCount || 0);
+    if (Number.isFinite(words) && words > 0) counts.push(`${words} 词`);
+    if (Number.isFinite(chars) && chars > 0) counts.push(`${chars} 字符`);
+    const countText = counts.length ? ` · ${counts.join(" / ")}` : "";
+    return `<div class="todo-learning-growth-status" data-learning-growth-submission-status>
+      <strong>作答已提交${submittedAt}${escapeHtmlLocal(countText)}</strong>
+      <p>这张日常卡只批改一次。批改完成后按实际分数记录学习证据，不要求反复改到某个分数。</p>
+      ${renderAudioEvidence(submission.audio, "作答录音", options)}
+    </div>`;
+  }
+
+  function renderFeedbackList(title, items) {
+    const list = asArray(items);
+    if (!list.length) return "";
+    return `<div class="todo-learning-growth-feedback-list"><strong>${escapeHtmlLocal(title)}</strong><ul>${list.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul></div>`;
+  }
+
+  function renderEvaluationPanel(task = {}, options = {}) {
+    const cardId = String(task.taskCardId || task.id || "");
+    const submission = task.latestSubmission || null;
+    const evaluation = task.latestEvaluation || null;
+    const state = options.state || {};
+    const busy = Boolean(state.learningGrowthEvaluationBusy?.[cardId]);
+    const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "evaluation")] || "";
+    if (!submission && !evaluation) return "";
+    if (!evaluation) {
+      return `<div class="todo-learning-growth-evaluation" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
+        <div class="todo-learning-growth-evaluation-head"><strong>等待批改</strong><span class="todo-learning-growth-score-pill">一次批改</span></div>
+        <p>${escapeHtmlLocal(message || "作答已保存，系统会处理一次批改。也可以手动刷新批改状态。")}</p>
+        <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新批改"}</button></div>
+      </div>`;
+    }
+    const feedback = evaluation.feedbackSections && typeof evaluation.feedbackSections === "object" ? evaluation.feedbackSections : {};
+    const weaknesses = asArray(evaluation.remainingWeaknesses).length ? evaluation.remainingWeaknesses : feedback.remainingWeaknesses;
+    return `<div class="todo-learning-growth-evaluation" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
+      <div class="todo-learning-growth-evaluation-head"><strong>批改已完成</strong><span class="todo-learning-growth-score-pill">${escapeHtmlLocal(deterministicScoreText(evaluation))}</span></div>
+      <p>${escapeHtmlLocal(evaluation.summary || "本次作答已经记录为学习证据。")}</p>
+      ${renderFeedbackList("做得好的地方", feedback.strengths || evaluation.strengths)}
+      ${renderFeedbackList("还可以练的点", weaknesses)}
+      ${renderFeedbackList("下一次练习", feedback.nextPractice || evaluation.revisionRequirements)}
+      ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
+    </div>`;
+  }
+
+  function renderReflectionPanel(task = {}, options = {}) {
+    const cardId = String(task.taskCardId || task.id || "");
+    const evaluation = task.latestEvaluation || null;
+    if (!evaluation) return "";
+    const reflection = task.latestReflection || null;
+    if (reflection) {
+      const submittedAt = reflection.submittedAt ? ` · ${escapeHtmlLocal(reflection.submittedAt)}` : "";
+      return `<div class="todo-learning-growth-reflection-status" data-learning-growth-reflection-status>
+        <strong>反思已提交${submittedAt}</strong>
+        <p>${escapeHtmlLocal(reflection.summary || "反思已经作为学习证据保存，不会触发第二次批改。")}</p>
+        ${renderAudioEvidence(reflection.audio, "反思录音", options)}
+      </div>`;
+    }
+    const state = options.state || {};
+    const draft = state.learningGrowthReflectionDrafts?.[cardId] || {};
+    const busy = Boolean(state.learningGrowthReflectionBusy?.[cardId]);
+    const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "reflection")] || "";
+    return `<form class="todo-learning-growth-reflection learning-native-growth-submission-form" data-learning-growth-reflection-form="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(options.workspaceId || task.workspaceId || "")}">
+      <strong>可选反思一次</strong>
+      <p>可以用一句话或一段录音说清楚：哪里做得好、哪里下次继续练。反思不影响本卡分数。</p>
+      <textarea class="input learning-native-growth-submission-input" rows="3" maxlength="2000" data-learning-growth-reflection-text="${escapeHtmlLocal(cardId)}" placeholder="写下反思，或者只提交录音。">${escapeHtmlLocal(draft.text || "")}</textarea>
+      ${renderRecorderControls(task, "reflection", options)}
+      ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
+      <div class="learning-growth-teaching-actions"><button type="submit" ${busy ? "disabled" : ""}>${busy ? "提交中" : "提交反思"}</button></div>
+    </form>`;
+  }
+
   function renderTeachingQuickCheckSection(task, flow, draft = {}, options = {}) {
     const cardId = String(task.taskCardId || task.id || "");
-    const busy = Boolean(options.busy);
+    const state = options.state || {};
+    const busy = Boolean(options.busy || state.learningGrowthSubmissionBusy?.[cardId] || state.learningGrowthTeachingCheckBusy?.[cardId]);
     const completed = String(task.status || "").trim().toLowerCase() === "completed";
-    return `<form class="learning-growth-teaching-check-form" data-learning-growth-teaching-check-form="${escapeHtmlLocal(cardId)}">
-      <section class="learning-growth-teaching-section" data-learning-growth-teaching-section="quick_check">
+    const hasSubmission = Boolean(task.latestSubmission);
+    const validation = draft.quickCheckText ? validateSubmissionText(draft.quickCheckText, { minWords: 1, minChars: 1 }) : null;
+    const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "submission")] || "";
+    return `<section class="learning-growth-teaching-section" data-learning-growth-teaching-section="quick_check">
+      <form class="learning-growth-teaching-check-form learning-native-growth-submission-form" data-learning-growth-teaching-check-form="${escapeHtmlLocal(cardId)}" data-learning-growth-submission-form="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(options.workspaceId || task.workspaceId || "")}">
         <h4>最后确认一下</h4>
         <p>${escapeHtmlLocal(flow.quickCheck.instruction)}</p>
         ${flow.quickCheck.completionCriteria.length ? `<ul>${flow.quickCheck.completionCriteria.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul>` : ""}
-        <textarea class="input learning-growth-teaching-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="quickCheckText" placeholder="写一句你确认掌握的内容，或者写下哪里还卡住。">${escapeHtmlLocal(draft.quickCheckText || "")}</textarea>
+        ${hasSubmission ? "" : `<textarea class="input learning-growth-teaching-input learning-native-growth-submission-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="quickCheckText" placeholder="写一句你确认掌握的内容，或者写下哪里还卡住。">${escapeHtmlLocal(draft.quickCheckText || "")}</textarea>`}
+        ${hasSubmission ? "" : renderRecorderControls(task, "submission", options)}
+        ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
+        ${validation ? `<p class="todo-learning-growth-submit-requirement ${validation.ok ? "is-ready" : "is-short"}">${escapeHtmlLocal(submissionRequirementLabel(validation.guard, validation.stats))}</p>` : ""}
         <div class="learning-growth-teaching-actions">
-          <button type="submit" ${busy || completed ? "disabled" : ""}>${completed ? "已完成" : (busy ? "提交中" : "完成本卡")}</button>
+          <button type="submit" ${busy || completed || hasSubmission ? "disabled" : ""}>${hasSubmission || completed ? "已提交" : (busy ? "提交中" : "提交作答")}</button>
         </div>
-      </section>
-    </form>`;
+      </form>
+      ${renderSubmissionStatus(task, options)}
+      ${renderEvaluationPanel(task, options)}
+      ${renderReflectionPanel(task, options)}
+    </section>`;
   }
 
   function renderTeachingFeedbackSection(task = {}, state = {}) {
@@ -398,7 +536,7 @@
       ${renderTeachingStepper(cardId, step)}
       ${step === "lesson" ? renderTeachingLessonSection(flow) : ""}
       ${step === "guided_practice" ? renderTeachingGuidedPracticeSection(task, flow, draft) : ""}
-      ${step === "quick_check" ? renderTeachingGuidedPracticeSection(task, flow, draft) + renderTeachingQuickCheckSection(task, flow, draft, { busy }) : ""}
+      ${step === "quick_check" ? renderTeachingGuidedPracticeSection(task, flow, draft) + renderTeachingQuickCheckSection(task, flow, draft, { busy, state, workspaceId: options.workspaceId || task.workspaceId || "", resolveGrowthAudioUrl: options.resolveGrowthAudioUrl }) : ""}
       ${renderTeachingFeedbackSection(task, state)}
     </section>`;
   }

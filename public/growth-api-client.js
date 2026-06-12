@@ -46,6 +46,19 @@
       return targetWorkspaceId ? `?workspaceId=${encodeURIComponent(targetWorkspaceId)}` : "";
     }
 
+    function appendWorkspaceQuery(path, targetWorkspaceId = getWorkspaceId()) {
+      const value = String(path || "");
+      const workspaceId = clean(targetWorkspaceId);
+      if (!workspaceId) return value;
+      if (/[?&](?:workspaceId|workspace_id|targetWorkspaceId|target_workspace_id)=/.test(value)) return value;
+      const separator = value.includes("?") ? "&" : "?";
+      return `${value}${separator}workspaceId=${encodeURIComponent(workspaceId)}`;
+    }
+
+    function resolveGrowthApiPath(path, targetWorkspaceId = getWorkspaceId()) {
+      return appendWorkspaceQuery(resolveApiPath(path), targetWorkspaceId);
+    }
+
     function cardGenerationContextQuery(targetWorkspaceId = getWorkspaceId()) {
       if (!targetWorkspaceId) return "";
       const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
@@ -84,17 +97,52 @@
       return fetchJson(`${growthApiPath("card-generation", "context")}${cardGenerationContextQuery(targetWorkspaceId)}`);
     }
 
+    function fetchGrowthCard(taskCardId, targetWorkspaceId = getWorkspaceId()) {
+      const cardId = clean(taskCardId);
+      if (!cardId) throw new Error("missing_task_card_id");
+      return fetchJson(`${growthApiPath("cards", encodeURIComponent(cardId))}${workspaceQuery(targetWorkspaceId)}`);
+    }
+
     function generateGrowthCard(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("cards", "generate"), Object.assign({
         workspace_id: targetWorkspaceId
       }, payload));
     }
 
+    function submitGrowthCardEvidence(taskCardId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const cardId = clean(taskCardId);
+      if (!cardId) throw new Error("missing_task_card_id");
+      return postJson(growthApiPath("cards", encodeURIComponent(cardId), "submissions"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function submitGrowthCardReflection(taskCardId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const cardId = clean(taskCardId);
+      if (!cardId) throw new Error("missing_task_card_id");
+      return postJson(growthApiPath("cards", encodeURIComponent(cardId), "reflections"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function processGrowthEvaluations(targetWorkspaceId = getWorkspaceId(), limit = 5) {
+      return postJson(growthApiPath("evaluations", "process"), {
+        workspace_id: targetWorkspaceId,
+        limit
+      });
+    }
+
     return {
+      appendWorkspaceQuery,
       fetchCardGenerationContext,
+      fetchGrowthCard,
       fetchJson,
       generateGrowthCard,
       postJson,
+      processGrowthEvaluations,
+      resolveGrowthApiPath,
+      submitGrowthCardEvidence,
+      submitGrowthCardReflection,
       updateWorkspaceUrl,
       workspaceQuery
     };

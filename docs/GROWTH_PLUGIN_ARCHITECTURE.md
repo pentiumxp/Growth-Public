@@ -1,6 +1,6 @@
 # Growth Plugin Architecture
 
-Last updated: 2026-06-11.
+Last updated: 2026-06-12.
 
 This document records Growth-local architecture boundaries. Platform rules stay
 in the canonical Home AI contract docs referenced by
@@ -56,6 +56,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
 | Embedded UI boot | `public/app.js` | Boot/wiring layer for the embedded Growth app. |
 | Embedded UI adapters | `public/growth-appearance.js`, `public/growth-api-client.js`, `public/growth-view-model.js`, `public/growth-route-controller.js` | Host appearance mapping, API client/query handling, board/card view-model normalization, and manifest route/action handling. |
+| Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction surface for one submission, visible evaluation refresh, optional one-time reflection, and text/audio evidence routed through plugin APIs. The controller owns ephemeral evidence/recording flow state while service/store rules remain backend-owned. |
 | Migrated UI baseline | `public/growth-legacy-*.js`, `public/growth-homeai-legacy.css` | Plugin-owned copy of the migrated Growth UI baseline. Future Growth UI changes happen here, not in Home AI host files. |
 
 ## Current Refactor Boundary
@@ -140,6 +141,16 @@ The first core-module split is behavior-preserving:
 - `growth-appearance.js`, `growth-api-client.js`, `growth-view-model.js`, and
   `growth-route-controller.js` keep host integration, API calls, UI
   normalization, and route/action resolution outside the boot script.
+- Generated card interaction is now plugin-local: `growth-legacy-task-ui.js`
+  renders submission, audio recorder, evaluation, and reflection panels;
+  `growth-card-interaction-controller.js` owns browser recording state,
+  submission/reflection event flow, visible error messages, and evaluation
+  refresh calls; `growth-api-client.js` exposes card
+  fetch/submission/evaluation/reflection helpers plus embedded-proxy audio URL
+  resolution; `app.js` wires page state and route calls only.
+  One-submission/one-reflection, evaluation, and reward completion rules still
+  live in `evidence-writes.js`, `growth-evaluation-service.js`, and
+  `rewards.js`.
 - `growth-learning-sqlite-store.js` remains the public facade while deeper
   modules are extracted.
 
@@ -177,7 +188,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
-| Embedded frontend adapters and card generation UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
+| Embedded frontend adapters, card generation UI, and learner card interaction UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |
 | Growth service facade/snapshot/provider selection | `node --test tests/growth-service.test.js` |

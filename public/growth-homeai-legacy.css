@@ -11032,6 +11032,14 @@ body.task-markdown-preview-open {
   background: var(--ui-accent-soft);
 }
 
+.todo-learning-growth-reflection-status {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(144, 166, 170, 0.22);
+  border-radius: 12px;
+}
+
 .todo-learning-growth-reflection {
   display: grid;
   gap: 10px;
@@ -11042,6 +11050,12 @@ body.task-markdown-preview-open {
 
 .todo-learning-growth-reflection audio {
   width: 100%;
+}
+
+.learning-growth-card-recorder audio,
+.learning-growth-submission-audio audio {
+  width: 100%;
+  max-height: 44px;
 }
 
 .todo-learning-growth-evaluation {
@@ -11133,6 +11147,11 @@ body.task-markdown-preview-open {
 
 .todo-learning-growth-feedback-list ul {
   margin: 0;
+}
+
+.learning-growth-teaching-check-form {
+  display: grid;
+  gap: 10px;
 }
 
 .todo-detail-chip-row {
@@ -15191,6 +15210,29 @@ body.task-markdown-preview-open {
   background: var(--ui-success-surface);
 }
 
+:root[data-theme="dark"] .todo-learning-growth-status,
+:root[data-theme="dark"] .todo-learning-growth-evaluation,
+:root[data-theme="dark"] .todo-learning-growth-reflection,
+:root[data-theme="dark"] .todo-learning-growth-reflection-status,
+:root[data-theme="dark"] .todo-learning-growth-outcome,
+:root[data-theme="dark"] .todo-learning-growth-report-history,
+:root[data-theme="dark"] .todo-learning-growth-feedback-list,
+:root[data-theme="dark"] .todo-reading-recorder,
+:root[data-theme="dark"] .learning-growth-submission-audio {
+  color: var(--ink);
+  background: var(--ui-card-surface);
+  border-color: var(--ui-hairline);
+}
+
+:root[data-theme="dark"] .todo-learning-growth-status strong,
+:root[data-theme="dark"] .todo-learning-growth-evaluation-head strong,
+:root[data-theme="dark"] .todo-learning-growth-reflection strong,
+:root[data-theme="dark"] .todo-learning-growth-reflection-status strong,
+:root[data-theme="dark"] .todo-learning-growth-feedback-list strong,
+:root[data-theme="dark"] .learning-growth-submission-audio strong {
+  color: var(--ink);
+}
+
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] .learning-growth-tab-list,
   :root[data-theme="system"] .learning-growth-settings-tabs .learning-growth-tab-list,
@@ -15331,6 +15373,29 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-ledger-amount.negative {
     color: var(--ink);
     background: var(--ui-success-surface);
+  }
+
+  :root[data-theme="system"] .todo-learning-growth-status,
+  :root[data-theme="system"] .todo-learning-growth-evaluation,
+  :root[data-theme="system"] .todo-learning-growth-reflection,
+  :root[data-theme="system"] .todo-learning-growth-reflection-status,
+  :root[data-theme="system"] .todo-learning-growth-outcome,
+  :root[data-theme="system"] .todo-learning-growth-report-history,
+  :root[data-theme="system"] .todo-learning-growth-feedback-list,
+  :root[data-theme="system"] .todo-reading-recorder,
+  :root[data-theme="system"] .learning-growth-submission-audio {
+    color: var(--ink);
+    background: var(--ui-card-surface);
+    border-color: var(--ui-hairline);
+  }
+
+  :root[data-theme="system"] .todo-learning-growth-status strong,
+  :root[data-theme="system"] .todo-learning-growth-evaluation-head strong,
+  :root[data-theme="system"] .todo-learning-growth-reflection strong,
+  :root[data-theme="system"] .todo-learning-growth-reflection-status strong,
+  :root[data-theme="system"] .todo-learning-growth-feedback-list strong,
+  :root[data-theme="system"] .learning-growth-submission-audio strong {
+    color: var(--ink);
   }
 }
 

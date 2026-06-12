@@ -9,6 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-12 Growth Generated Card Interaction UI
+
+- Implemented plugin-local learner interaction for generated daily Growth
+  cards:
+  - one answer submission from the card detail quick-check step;
+  - optional browser recording for answer evidence;
+  - visible saved-submission, waiting-evaluation, evaluation-result, and
+    error states;
+  - manual `刷新批改` action backed by
+    `POST /api/v1/growth/evaluations/process`;
+  - one optional reflection with text/audio evidence;
+  - submitted reflection playback/status without reopening the form.
+- Added frontend API helpers in `public/growth-api-client.js`:
+  `fetchGrowthCard`, `submitGrowthCardEvidence`,
+  `processGrowthEvaluations`, `submitGrowthCardReflection`, and embedded
+  proxy audio URL resolution.
+- Added modular frontend controller:
+  `public/growth-card-interaction-controller.js`. `public/app.js` now wires
+  the controller instead of owning recording encoding or evidence submission
+  workflow logic.
+- Updated generated card renderer:
+  `public/growth-legacy-task-ui.js` now renders the submission form, recorder
+  controls, submission status, one-shot evaluation panel, optional reflection
+  form, and reflection status/audio playback.
+- Updated styling in `public/growth-homeai-legacy.css` for the new evidence,
+  evaluation, reflection, recorder, and dark-mode surfaces.
+- Updated static version in `public/index.html` to
+  `20260612-card-interaction-v1`.
+- Updated docs:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Updated harness:
+  - `tests/growth-frontend-adapter.test.js` covers API helper paths, embedded
+    proxy audio URL resolution, pre-submission generated-card UI, one-shot
+    evaluation UI, and submitted-reflection UI;
+  - `tests/growth-architecture-boundary.test.js` now requires the interaction
+    controller module and index load order;
+  - `package.json` includes `public/growth-card-interaction-controller.js` in
+    `npm run check`.
+- Validation passed:
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-rewards.test.js tests/growth-routes.test.js`;
+  - `npm run check`;
+  - `npm test` with 145 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`.
+- Browser evidence:
+  - started a local plugin instance on `http://127.0.0.1:4893`;
+  - Playwright rendered a dark-mode generated-card mock at mobile width,
+    verified score text `确定分数 72/100`, disabled submitted state, reflection
+    recorder controls, and internal scroll reachability for `提交反思`.
+- Central visual harness status:
+  - attempted the Home AI central command
+    `npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/`;
+  - result was `{"ok":false,"error":"fetch failed"}` because the
+    `19073` live-debug server was not running;
+  - do not count this as a passing central iOS visual result before any
+    production publish.
+
 ## 2026-06-11 Growth Documentation Locality
 
 - Product direction: all Growth-specific documentation belongs in the Growth

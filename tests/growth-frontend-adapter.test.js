@@ -156,6 +156,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
 
   await client.fetchCardGenerationContext("weixin_fanfan");
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_fanfan");
+  await client.fetchGrowthCard("ltask_daily_1", "weixin_fanfan");
+  await client.submitGrowthCardEvidence("ltask_daily_1", {
+    text: "I found the main idea.",
+    audio: { dataBase64: "YXVkaW8=", name: "answer.webm", mime: "audio/webm" }
+  }, "weixin_fanfan");
+  await client.submitGrowthCardReflection("ltask_daily_1", { text: "Next time I will add evidence." }, "weixin_fanfan");
+  await client.processGrowthEvaluations("weixin_fanfan", 3);
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/cards/generate");
@@ -164,6 +171,16 @@ test("Growth API client exposes card generation context and write helpers", asyn
     workspace_id: "weixin_fanfan",
     target_node_id: "kg_english_main_idea"
   });
+  assert.equal(calls[2].path, "/api/v1/growth/cards/ltask_daily_1?workspaceId=weixin_fanfan");
+  assert.equal(calls[3].path, "/api/v1/growth/cards/ltask_daily_1/submissions");
+  assert.deepEqual(JSON.parse(calls[3].options.body), {
+    workspace_id: "weixin_fanfan",
+    text: "I found the main idea.",
+    audio: { dataBase64: "YXVkaW8=", name: "answer.webm", mime: "audio/webm" }
+  });
+  assert.equal(calls[4].path, "/api/v1/growth/cards/ltask_daily_1/reflections");
+  assert.equal(calls[5].path, "/api/v1/growth/evaluations/process");
+  assert.deepEqual(JSON.parse(calls[5].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -185,9 +202,11 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
 
   await client.fetchCardGenerationContext("weixin_stephen");
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
+  const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
   assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
+  assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
 test("Growth API client avoids proxy-rewritten API string literals", () => {
@@ -247,6 +266,128 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(payload.target_node_id, "kg_english_main_idea");
   assert.equal(payload.card_role, "practice");
   assert.equal(payload.completion_policy.mode, "daily_score_once");
+});
+
+test("Growth teaching card UI renders submit and recording controls for a generated daily card", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "published",
+    cardRole: "practice",
+    expectedDurationMinutes: { min: 10, max: 15 },
+    rewardPolicy: { maxCoins: 100 },
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Underline the sentence that explains the whole paragraph.", hints: ["Look at repeated ideas"] },
+      quickCheck: { instruction: "Write the main idea in one sentence.", completionCriteria: ["Use your own words"] }
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthTeachingStepByCardId: { ltask_daily_1: "quick_check" },
+      learningGrowthTeachingDrafts: {
+        ltask_daily_1: { guidedPracticeText: "The repeated idea is water saving.", quickCheckText: "The paragraph is about saving water." }
+      },
+      learningGrowthRecordings: {
+        "ltask_daily_1:submission": { status: "ready", url: "blob:submission", durationMs: 4200 }
+      }
+    },
+    resolveGrowthAudioUrl: (url, workspaceId) => `proxy:${workspaceId}:${url}`
+  });
+
+  assert.match(html, /data-learning-growth-submission-form="ltask_daily_1"/);
+  assert.match(html, /data-learning-growth-record-toggle="ltask_daily_1"/);
+  assert.match(html, /data-record-kind="submission"/);
+  assert.match(html, /blob:submission/);
+  assert.match(html, />提交作答<\/button>/);
+  assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
+});
+
+test("Growth teaching card UI renders one-shot evaluation and optional reflection after submission", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "completed",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    },
+    latestSubmission: {
+      submissionId: "submission_1",
+      submittedAt: "2026-06-12T10:00:00.000Z",
+      textCharCount: 42,
+      wordCount: 8,
+      audio: { url: "/api/v1/growth/audio/submissions/submission_1", name: "answer.webm", mime: "audio/webm" }
+    },
+    latestEvaluation: {
+      evaluationId: "eval_1",
+      status: "completed",
+      score: 72,
+      maxScore: 100,
+      summary: "The main idea is clear enough for today.",
+      feedbackSections: {
+        strengths: ["Clear topic sentence"],
+        remainingWeaknesses: ["Add one detail next time"],
+        nextPractice: ["Use because to explain evidence"]
+      }
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthTeachingStepByCardId: { ltask_daily_1: "quick_check" }
+    },
+    resolveGrowthAudioUrl: (url, workspaceId) => `proxy:${workspaceId}:${url}`
+  });
+
+  assert.match(html, /作答已提交/);
+  assert.match(html, /这张日常卡只批改一次/);
+  assert.match(html, /批改已完成/);
+  assert.match(html, /确定分数 72\/100/);
+  assert.match(html, /可选反思一次/);
+  assert.match(html, /data-learning-growth-reflection-form="ltask_daily_1"/);
+  assert.match(html, /data-record-kind="reflection"/);
+  assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/submissions\/submission_1/);
+  assert.doesNotMatch(html, />提交作答<\/button>/);
+});
+
+test("Growth teaching card UI renders submitted reflection audio without reopening reflection", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "completed",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    },
+    latestSubmission: { submissionId: "submission_1", submittedAt: "2026-06-12T10:00:00.000Z" },
+    latestEvaluation: { evaluationId: "eval_1", status: "completed", score: 88, maxScore: 100, summary: "Good." },
+    latestReflection: {
+      reflectionId: "reflection_1",
+      submittedAt: "2026-06-12T10:05:00.000Z",
+      summary: "I should explain my evidence.",
+      audio: { url: "/api/v1/growth/audio/reflections/reflection_1", name: "reflection.webm", mime: "audio/webm" }
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthTeachingStepByCardId: { ltask_daily_1: "quick_check" }
+    },
+    resolveGrowthAudioUrl: (url, workspaceId) => `proxy:${workspaceId}:${url}`
+  });
+
+  assert.match(html, /反思已提交/);
+  assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/reflections\/reflection_1/);
+  assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 
 test("Growth card generation UI renders visible progress while generating", () => {
@@ -488,6 +629,7 @@ test("Growth index loads frontend adapters before app boot", () => {
     "/growth-view-model.js",
     "/growth-route-controller.js",
     "/growth-card-generation-ui.js",
+    "/growth-card-interaction-controller.js",
     "/app.js"
   ].map((asset) => html.indexOf(asset));
   assert.ok(order.every((index) => index >= 0));

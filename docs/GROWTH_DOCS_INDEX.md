@@ -1,6 +1,6 @@
 # Growth Documentation Index
 
-Last updated: 2026-06-11.
+Last updated: 2026-06-12.
 
 ## Rule
 
@@ -23,6 +23,7 @@ they become Growth-owned.
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
 | `docs/GROWTH_CARD_GENERATION_RULES.md` | Consolidated card generation rules for new Growth card authoring. |
 | `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` | Owner card generation management flow, UI plan, API contract, and harness plan. |
+| `docs/GROWTH_CARD_INTERACTION_FLOW.md` | Learner-facing generated card submission, one-shot evaluation, optional reflection, audio evidence, and harness contract. |
 | `docs/home-ai-growth/` | Migrated Home AI Growth-specific docs kept in their original structure for continuity. |
 
 ## Migrated Home AI Growth Docs

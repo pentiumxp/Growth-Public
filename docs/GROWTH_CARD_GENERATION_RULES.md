@@ -1,6 +1,6 @@
 # Growth Card Generation Rules
 
-Last updated: 2026-06-11.
+Last updated: 2026-06-12.
 
 This document consolidates the current Growth card-generation rules from the
 migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
@@ -51,6 +51,29 @@ assessment policy work and must not be used by daily cards:
 6. completion and reward settlement happen only after all gates pass.
 
 That flow should not be applied to ordinary daily cards.
+
+## Learner Runtime Flow
+
+Generated daily cards must be actionable from the Growth plugin UI without
+Codex or manual database operations:
+
+1. The learner opens the generated card in the existing Growth card detail.
+2. The learner reads the lesson, uses the guided practice area, then submits
+   one final answer from the quick-check step.
+3. The final answer can include text, audio, or both. Audio is optional and is
+   stored only through plugin-owned evidence/audio routes.
+4. After submission, the UI shows a saved-evidence state and either waits for
+   the worker or offers a visible `刷新批改` action that calls the plugin
+   evaluation processor.
+5. The first completed evaluation is the card result. The UI shows the score,
+   summary, strengths, weak points, and next-practice suggestions, but it must
+   not ask the child to retry until a pass score is reached.
+6. The learner may submit one optional reflection with text, audio, or both.
+   Reflection is evidence only. It must not reopen grading, change the score,
+   block completion, or require another reflection.
+
+The plugin frontend must show visible errors for submission, evaluation refresh,
+and reflection failures. A button press must not fail silently.
 
 ## Card Roles
 

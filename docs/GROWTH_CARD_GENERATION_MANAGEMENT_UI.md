@@ -1,14 +1,15 @@
 # Growth Card Generation Management UI
 
-Last updated: 2026-06-11.
+Last updated: 2026-06-12.
 
 This document defines the Growth-owned Owner UI for generating learning cards
 inside the Growth plugin.
 
 V1 implementation status: the Owner `生成` tab, context route, frontend API
-helpers, daily English payload builder, and focused harness are implemented in
-the plugin workspace. Production use still requires a configured Gateway
-authoring endpoint/access boundary.
+helpers, daily English payload builder, generated-card learner submission /
+evaluation / optional-reflection UI, and focused harness are implemented in the
+plugin workspace. Production card generation still requires a configured
+Gateway authoring endpoint/access boundary.
 
 ## Objective
 
@@ -96,6 +97,10 @@ selected learner target, not the iframe's Owner workspace.
     the native program/draft parent rows required by the card table.
 15. Owner sees the generated card preview and can open the card on the learner
     board.
+16. The learner can submit the generated card from the plugin card detail,
+    optionally attach a recording, see one-shot evaluation feedback, and submit
+    one optional reflection without Codex involvement. The detailed learner
+    flow is defined in `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 
 ## UI Placement
 
