@@ -50,7 +50,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite identifiers | `src/stores/growth-learning-sqlite/identifiers.js` | Stable Growth record ids and hashes for submissions, reflections, evaluation jobs, sessions, rewards, ledger entries, and audio blobs. |
 | SQLite audio metadata | `src/stores/growth-learning-sqlite/audio-metadata.js` | Bounded audio evidence parsing and public audio DTO projection shared by card projections and playback/backfill logic. |
 | SQLite audio repository | `src/stores/growth-learning-sqlite/audio.js` | Plugin-owned audio playback, SQLite BLOB priority reads, bounded legacy file lookup, and historical audio BLOB backfill. |
-| SQLite projections | `src/stores/growth-learning-sqlite/projection.js` | Board/card public DTO shaping, lane grouping, sequence visibility, summaries, and bounded submission/evaluation/reflection/reward projections. |
+| SQLite projections | `src/stores/growth-learning-sqlite/projection.js` | Board/card public DTO shaping, lane grouping, sequence visibility, summaries, bounded submission/evaluation/reflection/reward projections, and `daily_score_once` completion projection. |
 | SQLite evidence writes | `src/stores/growth-learning-sqlite/evidence-writes.js` | Submission/reflection evidence writes, interaction session creation, evidence audio BLOB insertion, legacy kanban card id resolution, pending evaluation job enqueueing, and `daily_score_once` one-submission/one-reflection enforcement. |
 | SQLite evaluation jobs | `src/stores/growth-learning-sqlite/evaluation-jobs.js` | Evaluation job listing, claiming, completion, retry/failure state, evaluation context reads, and evaluation record writes. |
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
@@ -72,7 +72,10 @@ The first core-module split is behavior-preserving:
 - `audio.js` owns plugin-owned audio playback and legacy audio BLOB backfill
   while keeping file-system lookup out of the store facade.
 - `projection.js` owns read-side board/card DTO shaping and Growth lane
-  semantics.
+  semantics. For generated daily cards, any terminal `daily_score_once`
+  evaluation projects to completed/review state regardless of pass line or
+  legacy revision wording; formal assessment cards keep the older
+  revision/reflection lanes.
 - `evidence-writes.js` owns plugin-owned learner evidence write transactions
   and keeps submission/reflection write behavior out of the store facade.
 - `evaluation-jobs.js` owns plugin-owned evaluation queue state and evaluation
@@ -142,7 +145,10 @@ The first core-module split is behavior-preserving:
   `growth-route-controller.js` keep host integration, API calls, UI
   normalization, and route/action resolution outside the boot script.
 - Generated card interaction is now plugin-local: `growth-legacy-task-ui.js`
-  renders submission, audio recorder, evaluation, and reflection panels;
+  renders the old-style vertical card-detail workflow for generated daily
+  cards: status rail, score policy, learning target, lesson, guided practice,
+  submission, audio recorder, evaluation, optional reflection, and completion
+  feedback;
   `growth-card-interaction-controller.js` owns browser recording state,
   submission/reflection event flow, visible error messages, and evaluation
   refresh calls; `growth-api-client.js` exposes card

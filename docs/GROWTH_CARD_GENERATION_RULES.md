@@ -58,22 +58,33 @@ Generated daily cards must be actionable from the Growth plugin UI without
 Codex or manual database operations:
 
 1. The learner opens the generated card in the existing Growth card detail.
-2. The learner reads the lesson, uses the guided practice area, then submits
-   one final answer from the quick-check step.
-3. The final answer can include text, audio, or both. Audio is optional and is
+2. The learner sees a single vertical workflow page, not a stepper-only page:
+   status rail, score policy, learning target, lesson, worked example, guided
+   practice, submission, evaluation, optional reflection, and completion
+   feedback are all in the same scrollable card detail.
+3. The learner reads the lesson, uses the guided practice area, then submits
+   one final answer from the submission section.
+4. The final answer can include text, audio, or both. Audio is optional and is
    stored only through plugin-owned evidence/audio routes.
-4. After submission, the UI shows a saved-evidence state and either waits for
+5. After submission, the UI shows a saved-evidence state and either waits for
    the worker or offers a visible `刷新批改` action that calls the plugin
    evaluation processor.
-5. The first completed evaluation is the card result. The UI shows the score,
+6. The first completed evaluation is the card result. The UI shows the score,
    summary, strengths, weak points, and next-practice suggestions, but it must
    not ask the child to retry until a pass score is reached.
-6. The learner may submit one optional reflection with text, audio, or both.
+7. The learner may submit one optional reflection with text, audio, or both.
    Reflection is evidence only. It must not reopen grading, change the score,
    block completion, or require another reflection.
 
 The plugin frontend must show visible errors for submission, evaluation refresh,
 and reflection failures. A button press must not fail silently.
+
+Difficulty feedback is a runtime signal, not a grading gate. The generated-card
+UI may display already-recorded `too_easy`, `right_level`, or `too_hard`
+signals, but it must not expose active difficulty-signal buttons unless the
+Growth plugin has a plugin-owned write route, validation service, and store
+coverage for that signal. Without that closed loop, the UI must render a
+read-only status instead of a clickable control.
 
 ## Card Roles
 
@@ -134,6 +145,14 @@ For this policy, `needs_revision`, `draft_feedback`, and
 `reflection_required` are not valid post-evaluation states. Feedback can name
 focus areas, but the primary next step is review or next practice, not
 resubmission.
+
+Public board/detail projection must enforce the same low-pressure rule. Once a
+`daily_score_once` card has a terminal evaluation record, the projected lane is
+`completed_recent`, `nextAction` is `complete`, and the primary action is
+review, even when the score is low or a legacy evaluator status says
+`needs_revision`, `draft_feedback`, or `reflection_required`. Formal
+`stage_assessment` cards are the exception and keep revision/reflection lanes
+until their separate assessment policy is implemented.
 
 When `requireModel=true`, missing `teachingFlow` is invalid production output.
 The system should fail closed, regenerate once with explicit validation
@@ -357,6 +376,8 @@ Rules:
 - `right_level` reinforces the current difficulty band;
 - `interest` can influence topic or format but must not override prerequisite
   gaps.
+- new learner-facing signal controls must be implemented inside Growth as a
+  complete write path before they become clickable in the embedded UI.
 
 ## Stage Assessment Activation
 

@@ -1,14 +1,128 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const { DatabaseSync } = require("node:sqlite");
 
 const {
   lanesForCards,
+  publicCardFromRow,
   publicEvaluation,
   publicReflection,
   publicRewardSettlement,
   publicSubmission,
   summaryForCards
 } = require("../src/stores/growth-learning-sqlite/projection");
+
+function withProjectionDb(callback) {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(`
+      CREATE TABLE learning_task_cards (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT,
+        program_id TEXT,
+        draft_id TEXT,
+        learner_id TEXT,
+        kanban_card_id TEXT,
+        title TEXT,
+        domain TEXT,
+        task_card_type TEXT,
+        status TEXT,
+        planned_date TEXT,
+        planned_minutes INTEGER,
+        card_role TEXT,
+        capability_cluster_id TEXT,
+        reward_cap_coins INTEGER,
+        configured_reward_coins INTEGER,
+        default_reward_coins INTEGER,
+        completion_policy_json TEXT,
+        raw_json TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      );
+      CREATE TABLE learning_task_submissions (
+        id TEXT PRIMARY KEY,
+        task_card_id TEXT,
+        status TEXT,
+        submission_kind TEXT,
+        submitted_at TEXT,
+        created_at TEXT,
+        raw_json TEXT
+      );
+      CREATE TABLE learning_evaluations (
+        id TEXT PRIMARY KEY,
+        task_card_id TEXT,
+        status TEXT,
+        score REAL,
+        passed INTEGER,
+        confidence REAL,
+        summary TEXT,
+        raw_json TEXT,
+        created_at TEXT
+      );
+      CREATE TABLE learning_task_reflections (
+        id TEXT PRIMARY KEY,
+        task_card_id TEXT,
+        status TEXT,
+        mode TEXT,
+        score REAL,
+        summary TEXT,
+        audio_digest TEXT,
+        submitted_at TEXT,
+        created_at TEXT,
+        raw_json TEXT
+      );
+    `);
+    return callback(db);
+  } finally {
+    db.close();
+  }
+}
+
+function insertProjectionCard(db, input = {}) {
+  const policy = input.completionPolicy || {};
+  db.prepare(`
+    INSERT INTO learning_task_cards(
+      id, workspace_id, program_id, draft_id, learner_id, kanban_card_id,
+      title, domain, task_card_type, status, planned_date, planned_minutes,
+      card_role, capability_cluster_id, reward_cap_coins, configured_reward_coins,
+      default_reward_coins, completion_policy_json, raw_json, created_at, updated_at
+    ) VALUES (?, 'weixin_child', 'program_1', 'draft_1', 'learner_1', '',
+      ?, 'english', 'practice', ?, '2026-06-12', 15,
+      ?, 'english.reading', 100, 100, 100, ?, ?, '2026-06-12T00:00:00.000Z',
+      '2026-06-12T00:00:00.000Z')
+  `).run(
+    input.id,
+    input.title || input.id,
+    input.status || "active",
+    input.cardRole || "practice",
+    JSON.stringify(policy),
+    JSON.stringify(Object.assign({
+      instructionPreview: "Daily practice",
+      completionPolicy: policy
+    }, input.raw || {}))
+  );
+  db.prepare(`
+    INSERT INTO learning_task_submissions(
+      id, task_card_id, status, submission_kind, submitted_at, created_at, raw_json
+    ) VALUES (?, ?, 'submitted', 'text', '2026-06-12T00:01:00.000Z',
+      '2026-06-12T00:01:00.000Z', '{}')
+  `).run(`submission_${input.id}`, input.id);
+  if (input.evaluationStatus) {
+    db.prepare(`
+      INSERT INTO learning_evaluations(
+        id, task_card_id, status, score, passed, confidence, summary, raw_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, 0.8, ?, '{}', '2026-06-12T00:02:00.000Z')
+    `).run(
+      `evaluation_${input.id}`,
+      input.id,
+      input.evaluationStatus,
+      Number(input.score ?? 42),
+      input.passed ? 1 : 0,
+      input.summary || "Score recorded once."
+    );
+  }
+  return db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(input.id);
+}
 
 test("Growth projection helpers produce bounded public records", () => {
   assert.deepEqual(publicSubmission({
@@ -96,4 +210,59 @@ test("Growth projection summary and lanes preserve visible workflow buckets", ()
     ["reflection_required", []],
     ["completed_recent", ["card_completed"]]
   ]);
+});
+
+test("daily score once cards complete after the first terminal evaluation regardless of pass line", () => {
+  withProjectionDb((db) => {
+    const row = insertProjectionCard(db, {
+      id: "card_daily_low_score",
+      title: "Daily English card",
+      completionPolicy: {
+        mode: "daily_score_once",
+        evaluationAttempts: 1,
+        reflectionAttempts: 1,
+        passScoreRequired: false
+      },
+      evaluationStatus: "needs_revision",
+      score: 42,
+      passed: false
+    });
+
+    const card = publicCardFromRow(db, row, {
+      today: "2026-06-12",
+      nowIso: "2026-06-12T00:03:00.000Z"
+    });
+
+    assert.equal(card.latestEvaluation.status, "needs_revision");
+    assert.equal(card.latestEvaluation.passed, false);
+    assert.equal(card.laneId, "completed_recent");
+    assert.equal(card.nextAction, "complete");
+    assert.equal(card.primaryAction, "review");
+    assert.equal(card.actions.canSubmit, false);
+    assert.equal(card.actions.canReflect, false);
+  });
+});
+
+test("non-daily score cards preserve legacy revision lanes", () => {
+  withProjectionDb((db) => {
+    const row = insertProjectionCard(db, {
+      id: "card_formal_revision",
+      title: "Formal writing check",
+      cardRole: "stage_assessment",
+      raw: { completionPolicy: { mode: "formal_assessment" } },
+      evaluationStatus: "needs_revision",
+      score: 42,
+      passed: false
+    });
+
+    const card = publicCardFromRow(db, row, {
+      today: "2026-06-12",
+      nowIso: "2026-06-12T00:03:00.000Z"
+    });
+
+    assert.equal(card.laneId, "needs_revision");
+    assert.equal(card.nextAction, "revise");
+    assert.equal(card.primaryAction, "revise");
+    assert.equal(card.actions.canSubmit, true);
+  });
 });

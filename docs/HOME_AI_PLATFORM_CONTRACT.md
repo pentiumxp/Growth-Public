@@ -299,7 +299,11 @@ sequence groups show completed cards plus the first current uncompleted card
 while later cards are marked as hidden future; and lanes use the Growth
 workflow buckets (`ready`, `waiting_ai`, `needs_revision`,
 `reflection_required`, `locked_until`, `completed_recent`) instead of generic
-active/waiting/completed grouping.
+active/waiting/completed grouping. Generated daily cards with
+`daily_score_once` are projected as `completed_recent` after the first terminal
+evaluation record even if the score is low or an old evaluator status says
+`needs_revision`, `draft_feedback`, or `reflection_required`; formal assessment
+cards keep those gated lanes.
 
 Owner cross-learner viewing is a Growth plugin UI/API responsibility. Home AI
 does not pass secrets to enable it; the same-origin proxy sends bounded actor

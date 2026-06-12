@@ -39,14 +39,27 @@ passed", or "reflection required" for daily cards.
 
 ## UI Flow
 
-The card detail keeps the existing teaching/practice shape:
+The generated daily card detail uses the old Growth card-detail pattern: one
+vertical, scrollable workflow page. It should not hide the lower workflow behind
+a stepper-only UI. The page renders these sections in order:
 
-1. `讲解`: short lesson and worked example.
-2. `跟做`: learner draft area.
-3. `检查`: final answer submission, optional recording, feedback, and optional
-   reflection.
+1. status rail: `学习 -> 作答 -> 批改 -> 反思（可选）`;
+2. score policy: one submission, one evaluation, score-proportional reward, no
+   pass-line gate;
+3. `学习目标` and prerequisites;
+4. `讲解`: short lesson and worked example;
+5. `跟做`: learner draft area;
+6. `提交作答`: final answer text, optional recording, and visible submit state;
+7. saved submission / waiting evaluation / evaluation result;
+8. optional one-time reflection after the first evaluation;
+9. completion feedback and low-pressure difficulty signal status after
+   completion.
 
-On the `检查` step:
+The old three-step teaching state may remain in page state for compatibility,
+but generated daily cards render all sections together so mobile users can
+scroll through the same flow shape as the previous Growth reading cards.
+
+Within the `提交作答` section:
 
 - before submission, show text input, optional audio recorder, and `提交作答`;
 - after submission, replace the active submit state with a saved-evidence
@@ -60,8 +73,15 @@ On the `检查` step:
 - after reflection, show saved reflection status and audio playback, and do
   not reopen the reflection form.
 
-Every submit or refresh failure must be shown in the card detail. A failed
-write must not silently leave the button with no visible result.
+Every submit, refresh, recording, or reflection failure must be shown in the
+card detail. A failed write must not silently leave the button with no visible
+result.
+
+The daily-card completion footer may display already-recorded difficulty
+signals, but it must not render active difficulty-signal buttons until the Growth
+plugin owns the matching persistence route and service. Until that service
+exists, the UI shows a read-only status note instead of a dead clickable
+control.
 
 ## API Boundary
 
@@ -123,7 +143,8 @@ controller.
 
 The controller owns ephemeral page state for:
 
-- selected teaching step;
+- legacy selected teaching step state kept for compatibility with older
+  projections;
 - local answer/reflection drafts;
 - button busy state;
 - visible interaction messages;
@@ -137,6 +158,11 @@ Business rules remain in plugin services/stores:
   `src/services/growth-evaluation-service.js`;
 - score-proportional completion/reward settlement:
   `src/stores/growth-learning-sqlite/rewards.js`.
+- public board/detail projection:
+  `src/stores/growth-learning-sqlite/projection.js` maps a terminal
+  `daily_score_once` evaluation to completed/review state regardless of pass
+  line or legacy `needs_revision`/`draft_feedback` wording. Formal
+  `stage_assessment` cards keep the legacy revision/reflection lanes.
 
 ## Harness
 
@@ -145,14 +171,23 @@ Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
 - API helper paths for card fetch, submission, reflection, evaluation process,
   and embedded-proxy audio URL resolution;
 - generated card detail before submission;
+- submitted card waiting for evaluation with visible `刷新批改`;
 - generated card detail after one-shot evaluation and optional reflection;
+- read-only difficulty-signal status without an inactive clickable control;
 - submitted reflection audio playback without reopening reflection.
+
+Backend projection coverage lives in
+`tests/growth-learning-sqlite-projection.test.js` and asserts that
+`daily_score_once` cards complete after the first terminal evaluation even when
+the score is low or a legacy revision status is present, while non-daily cards
+still preserve the old revision lane.
 
 Run focused validation:
 
 ```bash
 node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js
 node --test tests/growth-architecture-boundary.test.js
+node --test tests/growth-learning-sqlite-projection.test.js
 ```
 
 Run the full Growth gate before production publish:

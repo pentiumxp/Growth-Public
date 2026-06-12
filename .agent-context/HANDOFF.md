@@ -9,6 +9,117 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-12 Growth Generated Card Full Flow UI
+
+- Current workspace state: uncommitted dev changes in the Growth plugin
+  workspace; not deployed yet.
+- Product/UI fix:
+  - generated daily card detail now renders one old-style vertical workflow
+    page instead of a stepper-only detail;
+  - visible order is status rail, score policy, learning target,
+    prerequisites, lesson/worked example, guided practice, submission,
+    saved-submission/waiting-evaluation/evaluation result, optional one-time
+    reflection, and completion feedback;
+  - the page keeps `daily_score_once`: one answer submission, one evaluation,
+    optional one reflection, score-proportional reward, no pass-line gate, no
+    retry-until-pass loop;
+  - before submission, the rail shows learning/submission as in progress
+    instead of marking learning complete merely because the card opened;
+  - after submission, the active `提交作答` button is removed and saved
+    evidence plus `等待批改` / `刷新批改` or the final evaluation is shown;
+  - completion feedback no longer exposes active difficulty-signal buttons
+    because Growth does not yet own the matching write route. It renders
+    read-only difficulty chips and a status note instead.
+- Projection fix:
+  - plugin-owned SQLite board/detail projection now maps terminal
+    `daily_score_once` evaluations to `completed_recent` / review even when
+    the score is low or a legacy evaluator status says `needs_revision`,
+    `draft_feedback`, or `reflection_required`;
+  - formal `stage_assessment` cards still keep the legacy gated
+    revision/reflection lanes.
+- Changed files:
+  - `src/stores/growth-learning-sqlite/projection.js`;
+  - `public/growth-legacy-task-ui.js`;
+  - `public/growth-homeai-legacy.css`;
+  - `public/index.html`;
+  - `tests/growth-learning-sqlite-projection.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node --test tests/growth-learning-sqlite-projection.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-learning-sqlite-projection.test.js tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-rewards.test.js tests/growth-routes.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run check`;
+  - `npm test` with 149 passing tests;
+  - `git diff --check`;
+  - CodeGraph status reports the Growth index available: 95 files, 943 nodes,
+    3074 edges.
+- Local visual evidence:
+  - in-app Browser was unavailable (`iab` missing), so local visual validation
+    used Home AI app Playwright from
+    `/Users/hermes-dev/HermesMobileDev/app/node_modules/playwright`;
+  - mobile dark mock render at 390x844 verified flow rail, submission status,
+    evaluation panel, reflection form after scroll, no submitted-state
+    `提交作答` button, scrollable bottom content, and completion feedback
+    with `activeExperienceButtons=0`, `readonlyMode=readonly`,
+    `readonlyDisplay=flex`, and chip radius `999px`;
+  - screenshots:
+    `/tmp/growth-card-flow-v3-mobile-dark-top.png` and
+    `/tmp/growth-card-flow-v3b-mobile-dark-bottom.png`.
+  - 2026-06-12 rerun after the projection fix rendered a 390x844 dark mock
+    with Home AI Playwright. It verified `.growth-shell` scrolls to the bottom
+    (`scrollHeight=2765`, bottom `scrollTop=1921`), `提交反思` is visible,
+    active difficulty buttons are absent, read-only difficulty mode is present,
+    and panel text contrast is about `15.25`;
+  - latest screenshots:
+    `/tmp/growth-card-flow-v4-mobile-dark-top.png` and
+    `/tmp/growth-card-flow-v4-mobile-dark-bottom.png`.
+- Central visual harness status:
+  - Home AI AI Ops intake/required-checks were run from
+    `/Users/hermes-dev/HermesMobileDev/app`; the classifier returned H3 and did
+    not require a visual lane, but Growth's plugin-local contract still treats
+    central embedded visual evidence as required before production publish;
+  - started Appium through
+    `$HOME/.homeai-qa/scripts/macos-ios-appium-start.sh`;
+  - started and later stopped Home AI live-debug server
+    `npm run ios:pwa:debug` on `http://127.0.0.1:19073/`;
+  - after cleanup, `19073` and `4723` were not listening;
+  - `npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/ --theme dark --timeout-ms 70000 --json`
+    first failed because no `--app-url` was provided and the simulator stayed
+    on a previous `127.0.0.1` page; screenshot artifact:
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260612T095308Z.png`;
+  - reran with
+    `--app-url 'https://wardrobe-xuxin.synology.me:8555/?source=pwa'`; Home AI
+    loaded with `authenticated:false`, `app.className="app hidden"`, and no
+    Growth shell/frame; screenshot artifact:
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260612T095455Z.png`;
+  - both central visual runs are not pass evidence and should not be used for
+    release acceptance until an authenticated Home AI host can render the Growth
+    plugin shell/frame.
+  - 2026-06-12 rerun with the same central command also failed because Home AI
+    loaded unauthenticated (`authenticated:false`, `app.className="app hidden"`)
+    and no Growth shell/frame existed. Screenshot artifact:
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260612T101822Z.png`.
+  - after the rerun, the local live-debug server and Appium listener were
+    stopped; `19073` and `4723` were not listening.
+- AI Ops evidence ledger:
+  - local test pass:
+    `evidence-b195e9bb-721c-4649-aa57-2bd79fa980d2`;
+  - central visual blocked:
+    `evidence-a14ef3e2-147e-49c3-99c4-fa0d8db039e8`.
+  - latest local test pass:
+    `evidence-2a0e08b4-aae1-4af3-942d-04f76876805c`;
+  - latest local visual pass:
+    `evidence-6eac2333-2f40-411f-8eec-b8e892c51ba6`;
+  - latest central visual blocked:
+    `evidence-5b02b83e-501f-4379-920c-e516c2791ac1`.
+
 ## 2026-06-12 Growth Generated Card Interaction UI
 
 - Deployment status:

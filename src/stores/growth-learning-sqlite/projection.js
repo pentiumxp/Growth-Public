@@ -243,10 +243,30 @@ function taskLockedUntil(task = {}, nowIso = "") {
   return unlockMs && unlockMs > nowMs ? unlockAt : "";
 }
 
+function completionPolicyForTask(task = {}) {
+  const policy = task.completionPolicy || task.completion_policy || task.taskModel?.completionPolicy || {};
+  return policy && typeof policy === "object" ? policy : {};
+}
+
+function isDailyScoreOnceTask(task = {}) {
+  const policy = completionPolicyForTask(task);
+  if (cleanString(policy.mode).toLowerCase() === "daily_score_once") return true;
+  const source = cleanString(task.source || task.authoringAudit?.source || task.authoring_audit?.source).toLowerCase();
+  const role = cleanString(task.cardRole || task.card_role || task.learningGrowthCardRole).toLowerCase();
+  return source === "growth-card-authoring" && role !== "stage_assessment";
+}
+
+function dailyScoreOnceEvaluationCompletes(latest = {}) {
+  if (!latest.evaluation) return false;
+  const status = cleanString(latest.evaluation.status).toLowerCase();
+  return !["", "pending", "queued", "processing", "retry", "failed", "error"].includes(status);
+}
+
 function taskStatus(task = {}, latest = {}, context = {}) {
   const status = cleanString(task.status || task.executionStatus).toLowerCase();
   if (["completed", "done", "closed", "archived"].includes(status)) return "complete";
   if (taskLockedUntil(task, context.nowIso)) return "locked_until";
+  if (isDailyScoreOnceTask(task) && dailyScoreOnceEvaluationCompletes(latest)) return "complete";
   const reflectionStatus = cleanString(latest.reflection?.status);
   if (reflectionStatus === "accepted") return "complete";
   const evaluationStatus = cleanString(latest.evaluation?.status);
@@ -466,6 +486,7 @@ function publicCardFromRow(db, row, context = {}, index = 0) {
     plannedDate: row.planned_date,
     plannedMinutes: row.planned_minutes,
     cardRole: row.card_role || raw.cardRole || "",
+    completionPolicy: raw.completionPolicy || parseJson(row.completion_policy_json, {}) || {},
     capabilityClusterId: row.capability_cluster_id || raw.capabilityClusterId || "",
     rewardCapCoins: rewardPolicy.maxCoins,
     createdAt: row.created_at,

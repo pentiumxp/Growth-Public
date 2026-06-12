@@ -250,6 +250,11 @@
     const guided = flow.guidedPractice && typeof flow.guidedPractice === "object" ? flow.guidedPractice : {};
     const quick = flow.quickCheck && typeof flow.quickCheck === "object" ? flow.quickCheck : {};
     const workedSteps = Array.isArray(workedExample.steps) ? workedExample.steps : [];
+    const learningTarget = String(flow.learningTarget || lesson.learningTarget || task.learningTarget || model.learningTarget || "").trim();
+    const prerequisites = asArray(flow.prerequisites || task.prerequisites || model.prerequisites).slice(0, 5);
+    const microLessonText = typeof flow.microLesson === "string"
+      ? flow.microLesson
+      : String(microLesson.explanation || microLesson.summary || microLesson.text || "").trim();
     const examples = Array.isArray(lesson.examples) && lesson.examples.length
       ? lesson.examples
       : workedSteps.length
@@ -259,9 +264,11 @@
       ? quick.completionCriteria
       : (Array.isArray(task.acceptance) ? task.acceptance : (Array.isArray(model.acceptance) ? model.acceptance : []));
     return {
+      learningTarget,
+      prerequisites,
       lesson: {
         title: lesson.title || task.title || "学习重点",
-        explanation: lesson.explanation || task.learnerInstruction || task.instruction || model.learnerInstruction || task.summary || "先看讲解，再做一个很小的检查。",
+        explanation: lesson.explanation || microLessonText || task.learnerInstruction || task.instruction || model.learnerInstruction || task.summary || "先看讲解，再做一个很小的检查。",
         whyItMatters: flow.whyItMatters || flow.why || "",
         keyPoints: Array.isArray(microLesson.keyPoints) ? microLesson.keyPoints.slice(0, 5) : [],
         examples: examples.slice(0, 4),
@@ -278,6 +285,10 @@
         instruction: quick.instruction || quick.prompt || "用 1-3 句话说明你刚才学会了什么，或者写一个最小答案。",
         completionCriteria: criteria.slice(0, 5),
       },
+      tooHardFallback: String(flow.tooHardFallback || task.tooHardFallback || "").trim(),
+      evidenceToRecord: asArray(flow.evidenceToRecord || task.evidenceToRecord).slice(0, 4),
+      difficultyBasis: String(flow.difficultyBasis || task.difficultyBasis || "").trim(),
+      supportLevel: String(flow.supportLevel || task.supportLevel || "").trim(),
     };
   }
 
@@ -303,7 +314,10 @@
 
   function renderTeachingLessonSection(flow) {
     return `<section class="learning-growth-teaching-section" data-learning-growth-teaching-section="lesson">
-      <h4>${escapeHtmlLocal(flow.lesson.title)}</h4>
+      <h4>学习目标</h4>
+      <p>${escapeHtmlLocal(flow.learningTarget || flow.lesson.title)}</p>
+      ${flow.prerequisites.length ? `<div class="learning-growth-teaching-hints" data-learning-growth-prerequisites>${flow.prerequisites.map((item) => `<span>${escapeHtmlLocal(item)}</span>`).join("")}</div>` : ""}
+      <h4>讲解</h4>
       ${flow.lesson.whyItMatters ? `<p class="learning-growth-teaching-why">${escapeHtmlLocal(flow.lesson.whyItMatters)}</p>` : ""}
       <p>${escapeHtmlLocal(flow.lesson.explanation)}</p>
       ${flow.lesson.keyPoints.length ? `<ul>${flow.lesson.keyPoints.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul>` : ""}
@@ -315,13 +329,89 @@
     </section>`;
   }
 
-  function renderTeachingGuidedPracticeSection(task, flow, draft = {}) {
+  function renderTeachingGuidedPracticeSection(task, flow, draft = {}, options = {}) {
     const cardId = String(task.taskCardId || task.id || "");
+    const hasSubmission = Boolean(task.latestSubmission);
+    const readonly = hasSubmission ? " readonly" : "";
     return `<section class="learning-growth-teaching-section" data-learning-growth-teaching-section="guided_practice">
       <h4>跟着做一小步</h4>
       <p>${escapeHtmlLocal(flow.guidedPractice.instruction)}</p>
       ${flow.guidedPractice.hints.length ? `<div class="learning-growth-teaching-hints">${flow.guidedPractice.hints.map((item) => `<span>${escapeHtmlLocal(item)}</span>`).join("")}</div>` : ""}
-      <textarea class="input learning-growth-teaching-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="guidedPracticeText" placeholder="写下跟做过程，简短也可以。">${escapeHtmlLocal(draft.guidedPracticeText || "")}</textarea>
+      <textarea class="input learning-growth-teaching-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="guidedPracticeText" placeholder="写下跟做过程，简短也可以。"${readonly}>${escapeHtmlLocal(draft.guidedPracticeText || "")}</textarea>
+      ${hasSubmission ? `<p class="learning-native-growth-submission-state">跟做记录已随作答保存，提交后本卡不再要求重做。</p>` : ""}
+    </section>`;
+  }
+
+  function dailyRewardCap(task = {}) {
+    return Number(task.rewardPolicy?.maxCoins || task.configuredRewardCoins || task.defaultRewardCoins || task.rewardCapCoins || 100) || 100;
+  }
+
+  function dailyRewardEarned(task = {}) {
+    const settlement = task.latestRewardSettlement || task.rewardSettlement || null;
+    const settled = Number(settlement?.coinAmount || settlement?.coins || task.learningGrowthRewardCoins || 0);
+    return Number.isFinite(settled) && settled > 0 ? settled : 0;
+  }
+
+  function generatedCardStatusLabel(task = {}) {
+    if (task.latestReflection) return "反思已记录";
+    if (task.latestEvaluation) return "批改已完成";
+    if (task.latestSubmission) return "等待批改";
+    return "待作答";
+  }
+
+  function renderDailyFlowRail(task = {}) {
+    const hasSubmission = Boolean(task.latestSubmission);
+    const hasEvaluation = Boolean(task.latestEvaluation);
+    const hasReflection = Boolean(task.latestReflection);
+    const steps = [
+      {
+        key: "learn",
+        label: "学习",
+        state: hasSubmission ? "done" : "current",
+        status: hasSubmission ? "已完成" : "学习中",
+      },
+      {
+        key: "submit",
+        label: "作答",
+        state: hasSubmission ? "done" : "current",
+        status: hasSubmission ? "已提交" : "待提交",
+      },
+      {
+        key: "evaluate",
+        label: "批改",
+        state: hasEvaluation ? "done" : hasSubmission ? "current" : "pending",
+        status: hasEvaluation ? "已完成" : hasSubmission ? "处理中" : "待提交后",
+      },
+      {
+        key: "reflect",
+        label: "反思（可选）",
+        state: hasReflection ? "done" : hasEvaluation ? "current" : "pending",
+        status: hasReflection ? "已记录" : hasEvaluation ? "可选" : "待批改后",
+      },
+    ];
+    return `<div class="learning-growth-daily-flow" data-learning-growth-daily-flow>
+      ${steps.map((step) => `<span class="is-${escapeHtmlLocal(step.state)}" data-learning-growth-flow-step="${escapeHtmlLocal(step.key)}"><b>${escapeHtmlLocal(step.label)}</b><small>${escapeHtmlLocal(step.status)}</small></span>`).join("")}
+    </div>`;
+  }
+
+  function renderDailyScorePolicyPanel(task = {}, flow = {}) {
+    const cap = dailyRewardCap(task);
+    const earned = dailyRewardEarned(task);
+    const score = task.latestEvaluation ? deterministicScoreText(task.latestEvaluation) : "";
+    const support = [flow.supportLevel, flow.difficultyBasis].filter(Boolean).join(" · ");
+    return `<section class="learning-growth-answer-reward learning-growth-daily-score-policy" data-learning-growth-daily-score-policy>
+      <div class="learning-growth-answer-reward-head">
+        <h4>学习流程</h4>
+        <strong>${escapeHtmlLocal(generatedCardStatusLabel(task))}</strong>
+      </div>
+      <div class="learning-growth-answer-reward-grid">
+        <span><b>1 次</b><small>提交作答</small></span>
+        <span><b>1 次</b><small>系统批改</small></span>
+        <span><b>${escapeHtmlLocal(score || "待评分")}</b><small>按实际成绩记录</small></span>
+        <span><b>${escapeHtmlLocal(earned ? String(earned) : String(cap))}</b><small>${escapeHtmlLocal(earned ? "已结算金币" : "金币上限")}</small></span>
+      </div>
+      <p>这张日常卡提交一次、批改一次，并按一次批改结果打分；反思只保存学习证据，不触发第二次批改，也不要求达到固定通过线。</p>
+      ${support ? `<p class="learning-growth-daily-support">${escapeHtmlLocal(support)}</p>` : ""}
     </section>`;
   }
 
@@ -461,18 +551,18 @@
     const hasSubmission = Boolean(task.latestSubmission);
     const validation = draft.quickCheckText ? validateSubmissionText(draft.quickCheckText, { minWords: 1, minChars: 1 }) : null;
     const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "submission")] || "";
-    return `<section class="learning-growth-teaching-section" data-learning-growth-teaching-section="quick_check">
+    return `<section class="learning-growth-teaching-section learning-growth-daily-submit-panel" data-learning-growth-teaching-section="quick_check">
       <form class="learning-growth-teaching-check-form learning-native-growth-submission-form" data-learning-growth-teaching-check-form="${escapeHtmlLocal(cardId)}" data-learning-growth-submission-form="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(options.workspaceId || task.workspaceId || "")}">
-        <h4>最后确认一下</h4>
+        <h4>提交作答</h4>
         <p>${escapeHtmlLocal(flow.quickCheck.instruction)}</p>
         ${flow.quickCheck.completionCriteria.length ? `<ul>${flow.quickCheck.completionCriteria.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul>` : ""}
         ${hasSubmission ? "" : `<textarea class="input learning-growth-teaching-input learning-native-growth-submission-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="quickCheckText" placeholder="写一句你确认掌握的内容，或者写下哪里还卡住。">${escapeHtmlLocal(draft.quickCheckText || "")}</textarea>`}
         ${hasSubmission ? "" : renderRecorderControls(task, "submission", options)}
         ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
         ${validation ? `<p class="todo-learning-growth-submit-requirement ${validation.ok ? "is-ready" : "is-short"}">${escapeHtmlLocal(submissionRequirementLabel(validation.guard, validation.stats))}</p>` : ""}
-        <div class="learning-growth-teaching-actions">
+        ${hasSubmission || completed ? "" : `<div class="learning-growth-teaching-actions">
           <button type="submit" ${busy || completed || hasSubmission ? "disabled" : ""}>${hasSubmission || completed ? "已提交" : (busy ? "提交中" : "提交作答")}</button>
-        </div>
+        </div>`}
       </form>
       ${renderSubmissionStatus(task, options)}
       ${renderEvaluationPanel(task, options)}
@@ -482,13 +572,14 @@
 
   function renderTeachingFeedbackSection(task = {}, state = {}) {
     const summary = task.experienceSummary || {};
-    const reward = Number(task.learningGrowthRewardCoins || task.latestRewardSettlement?.coinAmount || task.rewardPolicy?.maxCoins || 0) || 0;
+    const earned = dailyRewardEarned(task);
+    const cap = dailyRewardCap(task);
     const completed = String(task.status || "").trim().toLowerCase() === "completed";
     if (!completed && !summary.latestAt && !summary.lastCompletionAt) return "";
     return `<section class="learning-growth-teaching-feedback" data-learning-growth-teaching-feedback>
       <strong>${escapeHtmlLocal(completed ? "本卡已完成" : "学习反馈已记录")}</strong>
-      <p>${escapeHtmlLocal(reward ? `奖励 ${reward} 金币；这张卡只作为低压力学习证据，不当作正式能力测验。` : "这张卡只作为低压力学习证据，不当作正式能力测验。")}</p>
-      ${completed ? `<p class="learning-growth-experience-prompt">${escapeHtmlLocal("\u5b8c\u6210\u540e\uff0c\u9009\u4e00\u4e2a\u611f\u53d7\uff0c\u5e2e\u6211\u4e0b\u6b21\u628a\u96be\u5ea6\u8c03\u5f97\u66f4\u5408\u9002\u3002")}</p>${renderExperienceSignalActions(task, state)}` : ""}
+      <p>${escapeHtmlLocal(earned ? `已按本次分数结算 ${earned} / ${cap} 金币；这张卡只作为低压力学习证据，不当作正式能力测验。` : `最高 ${cap} 金币，按本次分数比例结算；这张卡不当作正式能力测验。`)}</p>
+      ${completed ? `<p class="learning-growth-experience-prompt">${escapeHtmlLocal("完成后可以记录难度感受，用来帮助下一张卡调节难度；当前界面只显示已记录或待接入的只读状态。")}</p>${renderExperienceSignalActions(task, state)}` : ""}
     </section>`;
   }
 
@@ -499,18 +590,21 @@
     const submitted = state.learningGrowthExperienceSignalSubmitted?.[cardId] || "";
     const busy = state.learningGrowthExperienceSignalBusy?.[cardId] || "";
     const selected = String(summary.latestSignalType || submitted || "").trim();
-    const locked = Boolean(selected || busy);
     const actions = [
       ["too_easy", "太简单"],
       ["right_level", "正合适"],
       ["too_hard", "有点难"],
     ];
-    return `<div class="learning-growth-experience-actions" data-learning-growth-experience-actions="${escapeHtmlLocal(cardId)}">
+    const note = selected
+      ? "难度感受已记录到成长画像输入。"
+      : "难度感受写入还没有在插件内启用；当前先按本次批改分数完成结算。";
+    return `<div class="learning-growth-experience-actions is-readonly" data-learning-growth-experience-actions="${escapeHtmlLocal(cardId)}" data-learning-growth-experience-mode="readonly">
       ${actions.map(([type, label]) => {
         const isPending = busy === type;
         const isSelected = selected === type || isPending;
-        return `<button type="button" class="${isSelected ? "is-selected" : ""}${isPending ? " is-pending" : ""}" data-learning-growth-experience-signal="${escapeHtmlLocal(cardId)}" data-signal-type="${escapeHtmlLocal(type)}" aria-pressed="${isSelected ? "true" : "false"}" ${locked ? "disabled" : ""}>${escapeHtmlLocal(isPending ? "记录中" : label)}</button>`;
+        return `<span class="${isSelected ? "is-selected" : ""}${isPending ? " is-pending" : ""}" data-signal-type="${escapeHtmlLocal(type)}" aria-current="${isSelected ? "true" : "false"}">${escapeHtmlLocal(isPending ? "记录中" : label)}</span>`;
       }).join("")}
+      <small data-learning-growth-experience-note>${escapeHtmlLocal(note)}</small>
     </div>`;
   }
 
@@ -520,11 +614,9 @@
     const flow = teachingFlow(task);
     const state = options.state || {};
     const draft = Object.assign({}, state.learningGrowthTeachingDrafts?.[cardId] || {});
-    const step = state.learningGrowthTeachingStepByCardId?.[cardId]
-      || (String(task.status || "").trim().toLowerCase() === "completed" ? "quick_check" : "lesson");
     const busy = Boolean(state.learningGrowthTeachingCheckBusy?.[cardId]);
     const duration = task.expectedDurationMinutes || {};
-    const reward = Number(task.rewardPolicy?.maxCoins || task.configuredRewardCoins || task.defaultRewardCoins || 100) || 100;
+    const reward = dailyRewardCap(task);
     return `<section class="learning-growth-answer-card learning-growth-card-detail-shell learning-growth-teaching-card" data-learning-growth-answer-card data-learning-growth-teaching-card="${escapeHtmlLocal(cardId)}" data-learning-growth-card-role="${escapeHtmlLocal(role)}" data-learning-executable-task-id="${escapeHtmlLocal(cardId)}">
       <div class="learning-growth-card-detail-hero learning-growth-teaching-hero">
         <div class="learning-growth-teaching-head learning-growth-card-detail-head">
@@ -533,10 +625,11 @@
         </div>
         <h3>${escapeHtmlLocal(task.title || "学习卡")}</h3>
       </div>
-      ${renderTeachingStepper(cardId, step)}
-      ${step === "lesson" ? renderTeachingLessonSection(flow) : ""}
-      ${step === "guided_practice" ? renderTeachingGuidedPracticeSection(task, flow, draft) : ""}
-      ${step === "quick_check" ? renderTeachingGuidedPracticeSection(task, flow, draft) + renderTeachingQuickCheckSection(task, flow, draft, { busy, state, workspaceId: options.workspaceId || task.workspaceId || "", resolveGrowthAudioUrl: options.resolveGrowthAudioUrl }) : ""}
+      ${renderDailyFlowRail(task)}
+      ${renderDailyScorePolicyPanel(task, flow)}
+      ${renderTeachingLessonSection(flow)}
+      ${renderTeachingGuidedPracticeSection(task, flow, draft, options)}
+      ${renderTeachingQuickCheckSection(task, flow, draft, { busy, state, workspaceId: options.workspaceId || task.workspaceId || "", resolveGrowthAudioUrl: options.resolveGrowthAudioUrl })}
       ${renderTeachingFeedbackSection(task, state)}
     </section>`;
   }

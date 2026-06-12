@@ -279,9 +279,13 @@ test("Growth teaching card UI renders submit and recording controls for a genera
     expectedDurationMinutes: { min: 10, max: 15 },
     rewardPolicy: { maxCoins: 100 },
     teachingFlow: {
+      learningTarget: "Find the main idea in one paragraph.",
+      prerequisites: ["paragraph", "topic"],
       lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
       guidedPractice: { instruction: "Underline the sentence that explains the whole paragraph.", hints: ["Look at repeated ideas"] },
-      quickCheck: { instruction: "Write the main idea in one sentence.", completionCriteria: ["Use your own words"] }
+      quickCheck: { instruction: "Write the main idea in one sentence.", completionCriteria: ["Use your own words"] },
+      difficultyBasis: "recent reading summary",
+      supportLevel: "guided"
     }
   }, {
     workspaceId: "weixin_fanfan",
@@ -297,11 +301,55 @@ test("Growth teaching card UI renders submit and recording controls for a genera
     resolveGrowthAudioUrl: (url, workspaceId) => `proxy:${workspaceId}:${url}`
   });
 
+  assert.match(html, /data-learning-growth-daily-flow/);
+  assert.match(html, /data-learning-growth-flow-step="learn"/);
+  assert.match(html, /data-learning-growth-flow-step="learn"><b>学习<\/b><small>学习中<\/small>/);
+  assert.match(html, /data-learning-growth-flow-step="submit"><b>作答<\/b><small>待提交<\/small>/);
+  assert.match(html, /学习流程/);
+  assert.match(html, /提交一次/);
+  assert.match(html, /Find the main idea in one paragraph/);
+  assert.match(html, /paragraph/);
+  assert.match(html, /A main idea tells what the paragraph is mostly about/);
+  assert.match(html, /Underline the sentence/);
   assert.match(html, /data-learning-growth-submission-form="ltask_daily_1"/);
   assert.match(html, /data-learning-growth-record-toggle="ltask_daily_1"/);
   assert.match(html, /data-record-kind="submission"/);
   assert.match(html, /blob:submission/);
   assert.match(html, />提交作答<\/button>/);
+  assert.doesNotMatch(html, /role="tablist"/);
+  assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
+});
+
+test("Growth teaching card UI renders submitted waiting-evaluation state", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "submitted",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    },
+    latestSubmission: {
+      submissionId: "submission_1",
+      submittedAt: "2026-06-12T10:00:00.000Z",
+      textCharCount: 42
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthEvaluationBusy: { ltask_daily_1: false }
+    }
+  });
+
+  assert.match(html, /作答已提交/);
+  assert.match(html, /等待批改/);
+  assert.match(html, /刷新批改/);
+  assert.match(html, /data-learning-growth-flow-step="evaluate"/);
+  assert.doesNotMatch(html, />提交作答<\/button>/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 
@@ -347,12 +395,16 @@ test("Growth teaching card UI renders one-shot evaluation and optional reflectio
 
   assert.match(html, /作答已提交/);
   assert.match(html, /这张日常卡只批改一次/);
+  assert.match(html, /反思只保存学习证据/);
   assert.match(html, /批改已完成/);
   assert.match(html, /确定分数 72\/100/);
   assert.match(html, /可选反思一次/);
   assert.match(html, /data-learning-growth-reflection-form="ltask_daily_1"/);
   assert.match(html, /data-record-kind="reflection"/);
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/submissions\/submission_1/);
+  assert.match(html, /data-learning-growth-experience-mode="readonly"/);
+  assert.match(html, /难度感受写入还没有在插件内启用/);
+  assert.doesNotMatch(html, /data-learning-growth-experience-signal/);
   assert.doesNotMatch(html, />提交作答<\/button>/);
 });
 

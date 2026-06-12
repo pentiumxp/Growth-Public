@@ -12194,6 +12194,68 @@ body.task-markdown-preview-open {
   box-shadow: 0 1px 3px rgba(31, 43, 51, 0.08);
 }
 
+.learning-growth-daily-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(31, 43, 51, 0.08);
+  border-radius: 8px;
+  background: rgba(31, 43, 51, 0.035);
+}
+
+.learning-growth-daily-flow span {
+  min-width: 0;
+  min-height: 52px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid rgba(31, 43, 51, 0.07);
+  border-radius: 7px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.learning-growth-daily-flow span b,
+.learning-growth-daily-flow span small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.learning-growth-daily-flow span b {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.learning-growth-daily-flow span small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.learning-growth-daily-flow span.is-done {
+  border-color: rgba(75, 124, 93, 0.2);
+  background: rgba(75, 124, 93, 0.1);
+}
+
+.learning-growth-daily-flow span.is-current {
+  border-color: rgba(31, 111, 98, 0.28);
+  background: rgba(31, 111, 98, 0.12);
+}
+
+.learning-growth-daily-score-policy .learning-growth-answer-reward-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.learning-growth-daily-score-policy p,
+.learning-growth-daily-support {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .learning-growth-teaching-section,
 .learning-growth-teaching-feedback {
   min-width: 0;
@@ -12207,11 +12269,10 @@ body.task-markdown-preview-open {
 
 .learning-growth-card-detail-shell .learning-growth-teaching-section,
 .learning-growth-card-detail-shell .learning-growth-teaching-feedback {
-  padding: 12px 0 0;
-  border: 0;
-  border-top: 1px solid var(--ui-hairline);
-  border-radius: 0;
-  background: transparent;
+  padding: 12px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .learning-growth-card-detail-shell .learning-growth-teaching-worked-example {
@@ -12313,6 +12374,12 @@ body.task-markdown-preview-open {
   background: rgba(31, 43, 51, 0.025);
 }
 
+.learning-growth-experience-actions.is-readonly {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .learning-growth-experience-prompt {
   margin: 8px 0 6px;
   color: var(--muted);
@@ -12320,7 +12387,8 @@ body.task-markdown-preview-open {
   line-height: 1.5;
 }
 
-.learning-growth-experience-actions button {
+.learning-growth-experience-actions button,
+.learning-growth-experience-actions span {
   min-height: 34px;
   padding: 0 8px;
   border: 1px solid rgba(31, 43, 51, 0.07);
@@ -12331,19 +12399,31 @@ body.task-markdown-preview-open {
   font-weight: 800;
 }
 
+.learning-growth-experience-actions span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  text-align: center;
+}
+
 .learning-growth-experience-actions button:hover,
 .learning-growth-experience-actions button:focus-visible {
   color: var(--ui-accent-ink);
   background: rgba(255, 255, 255, 0.92);
 }
 
-.learning-growth-experience-actions button.is-selected {
+.learning-growth-experience-actions button.is-selected,
+.learning-growth-experience-actions span.is-selected {
   color: var(--ui-accent-ink);
   border-color: rgba(75, 124, 93, 0.22);
   background: rgba(75, 124, 93, 0.12);
 }
 
-.learning-growth-experience-actions button.is-pending {
+.learning-growth-experience-actions button.is-pending,
+.learning-growth-experience-actions span.is-pending {
   animation: learning-growth-feedback-pulse 920ms ease-in-out infinite;
 }
 
@@ -12351,10 +12431,29 @@ body.task-markdown-preview-open {
   cursor: default;
 }
 
+.learning-growth-experience-actions small {
+  flex: 1 0 100%;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 @keyframes learning-growth-feedback-pulse {
   0% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
   100% { transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+  .learning-growth-daily-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learning-growth-daily-score-policy .learning-growth-answer-reward-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .learning-growth-answer-instruction,
@@ -12500,10 +12599,16 @@ body.task-markdown-preview-open {
 .learning-growth-card-detail-shell .learning-growth-answer-feedback-detail,
 .learning-growth-card-detail-shell .learning-growth-answer-submission,
 .learning-growth-card-detail-shell .learning-growth-audio-evidence,
-.learning-growth-card-detail-shell .learning-growth-answer-reward,
+.learning-growth-card-detail-shell .learning-growth-answer-reward {
+  padding: 12px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
 .learning-growth-card-detail-shell .learning-native-growth-submission-form {
-  padding: 12px 0 0;
-  border-top: 1px solid var(--ui-hairline);
+  padding: 0;
+  border: 0;
   border-radius: 0;
   background: transparent;
 }
@@ -15072,6 +15177,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-growth-tab-list,
 :root[data-theme="dark"] .learning-growth-settings-tabs .learning-growth-tab-list,
 :root[data-theme="dark"] .learning-growth-teaching-stepper,
+:root[data-theme="dark"] .learning-growth-daily-flow,
 :root[data-theme="dark"] .learning-growth-experience-actions {
   border-color: var(--ui-hairline);
   background: var(--ui-control-bg);
@@ -15143,14 +15249,6 @@ body.task-markdown-preview-open {
   border-color: var(--ui-hairline);
 }
 
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-teaching-section,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-teaching-feedback,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-answer-instruction,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-answer-feedback,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-answer-feedback-detail,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-answer-submission,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-audio-evidence,
-:root[data-theme="dark"] .learning-growth-card-detail-shell .learning-growth-answer-reward,
 :root[data-theme="dark"] .learning-growth-card-detail-shell .learning-native-growth-submission-form,
 :root[data-theme="dark"] .learning-growth-card-detail-shell .learning-native-growth-question {
   background: transparent;
@@ -15159,9 +15257,11 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-growth-teaching-why,
 :root[data-theme="dark"] .learning-growth-teaching-hints span,
 :root[data-theme="dark"] .learning-growth-answer-card-meta span,
+:root[data-theme="dark"] .learning-growth-daily-flow span,
 :root[data-theme="dark"] .learning-growth-experience-actions button,
 :root[data-theme="dark"] .learning-growth-experience-actions button:hover,
 :root[data-theme="dark"] .learning-growth-experience-actions button:focus-visible,
+:root[data-theme="dark"] .learning-growth-experience-actions span,
 :root[data-theme="dark"] .learning-program-card-top > span,
 :root[data-theme="dark"] .learning-program-draft-top > span,
 :root[data-theme="dark"] .learning-program-task-item span,
@@ -15173,6 +15273,11 @@ body.task-markdown-preview-open {
   color: var(--ui-accent-ink);
   background: var(--ui-accent-soft);
   border-color: var(--ui-hairline);
+}
+
+:root[data-theme="dark"] .learning-growth-daily-flow span.is-current {
+  color: var(--ink);
+  background: var(--ui-accent-fill);
 }
 
 :root[data-theme="dark"] .learning-program-actions button,
@@ -15237,6 +15342,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-growth-tab-list,
   :root[data-theme="system"] .learning-growth-settings-tabs .learning-growth-tab-list,
   :root[data-theme="system"] .learning-growth-teaching-stepper,
+  :root[data-theme="system"] .learning-growth-daily-flow,
   :root[data-theme="system"] .learning-growth-experience-actions {
     border-color: var(--ui-hairline);
     background: var(--ui-control-bg);
@@ -15308,14 +15414,6 @@ body.task-markdown-preview-open {
     border-color: var(--ui-hairline);
   }
 
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-teaching-section,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-teaching-feedback,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-answer-instruction,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-answer-feedback,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-answer-feedback-detail,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-answer-submission,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-audio-evidence,
-  :root[data-theme="system"] .learning-growth-card-detail-shell .learning-growth-answer-reward,
   :root[data-theme="system"] .learning-growth-card-detail-shell .learning-native-growth-submission-form,
   :root[data-theme="system"] .learning-growth-card-detail-shell .learning-native-growth-question {
     background: transparent;
@@ -15324,9 +15422,11 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-growth-teaching-why,
   :root[data-theme="system"] .learning-growth-teaching-hints span,
   :root[data-theme="system"] .learning-growth-answer-card-meta span,
+  :root[data-theme="system"] .learning-growth-daily-flow span,
   :root[data-theme="system"] .learning-growth-experience-actions button,
   :root[data-theme="system"] .learning-growth-experience-actions button:hover,
   :root[data-theme="system"] .learning-growth-experience-actions button:focus-visible,
+  :root[data-theme="system"] .learning-growth-experience-actions span,
   :root[data-theme="system"] .learning-program-card-top > span,
   :root[data-theme="system"] .learning-program-draft-top > span,
   :root[data-theme="system"] .learning-program-task-item span,
@@ -15338,6 +15438,11 @@ body.task-markdown-preview-open {
     color: var(--ui-accent-ink);
     background: var(--ui-accent-soft);
     border-color: var(--ui-hairline);
+  }
+
+  :root[data-theme="system"] .learning-growth-daily-flow span.is-current {
+    color: var(--ink);
+    background: var(--ui-accent-fill);
   }
 
   :root[data-theme="system"] .learning-program-actions button,
