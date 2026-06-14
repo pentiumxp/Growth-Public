@@ -11,8 +11,18 @@
 
 ## 2026-06-14 Growth Audio Playback Hotfix
 
-- Current workspace state: audio playback hotfix implemented and validated
-  locally; pending commit/push/deploy at the time this section was written.
+- Current workspace state: audio playback hotfix implemented, committed,
+  pushed to `origin` and `public`, and deployed to Mac production.
+- Deployment:
+  - runtime hotfix commit: `beab6d6` (`Fix Growth audio playback recovery`);
+  - asset cache-bust commit: `5a73060`
+    (`Bump Growth audio playback asset version`);
+  - static asset version query: `20260614-audio-playback-v1`;
+  - deployed with
+    `npm run deploy:macos -- --plugin growth --execute` from
+    `/Users/hermes-dev/HermesMobileDev/app`;
+  - production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T030758Z-plugin-growth-manual`.
 - User-visible bug:
   - after recording audio in a generated Growth daily card, playback could
     show a browser-native error without a recoverable Growth UI state;
@@ -49,6 +59,14 @@
   - `node scripts/check-growth-docs-locality.js`;
   - `git diff --check`;
   - `npm test` with 153 passing tests.
+- Production smoke passed:
+  - `GET /` references `20260614-audio-playback-v1`;
+  - `growth-card-interaction-controller.js`, `growth-legacy-task-ui.js`, and
+    `app.js` return the new audio playback recovery hooks;
+  - `GET /api/v1/growth/status?workspaceId=weixin_stephen` returns
+    `ok:true`, `stage:plugin_sqlite`, `quick_check:ok`, and 10 audio BLOBs;
+  - missing audio route returns bounded `404 growth_audio_not_found`;
+  - existing Ogg submission audio streams with `200 Content-Type: audio/ogg`.
 - Visual evidence:
   - Codex in-app Browser was unavailable (`Browser is not available: iab`), so
     local visual validation used Home AI app Playwright from
