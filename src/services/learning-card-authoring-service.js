@@ -23,6 +23,8 @@ function structuredAuthoringInput(input = {}) {
     learnerSummary: boundedObject(input.learnerSummary),
     masterySummary: boundedObject(input.masterySummary),
     recentExperienceSignals: asArray(input.recentExperienceSignals).slice(0, 20),
+    recentTrajectory: asArray(input.recentTrajectory).slice(0, 8),
+    nextCardStrategy: boundedObject(input.nextCardStrategy),
     cardRole: cleanString(input.cardRole || plan.cardSequence?.[0]?.cardRole || "teaching"),
     difficultyBand: cleanString(input.difficultyBand || plan.cardSequence?.[0]?.difficultyBand || ""),
     evidenceRequirements: asArray(input.evidenceRequirements || plan.cardSequence?.[0]?.evidenceRequired).slice(0, 20),

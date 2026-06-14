@@ -147,7 +147,9 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
     experienceSummary: {
       learnerSummary: request.learnerSummary || {},
       masterySummary: request.masterySummary || {},
-      recentExperienceSignals: asArray(request.recentExperienceSignals).slice(0, 20)
+      recentExperienceSignals: asArray(request.recentExperienceSignals).slice(0, 20),
+      recentTrajectory: asArray(request.recentTrajectory).slice(0, 8),
+      nextCardStrategy: request.nextCardStrategy || {}
     },
     completionPolicy: {
       mode: "daily_score_once",

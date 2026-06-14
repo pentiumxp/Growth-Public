@@ -70,7 +70,8 @@ function normalizeResultHistory(history = {}) {
   return {
     learnerSummary: history.learnerSummary || {},
     masterySummary: history.masterySummary || {},
-    recentExperienceSignals: asArray(history.recentExperienceSignals).slice(0, 20)
+    recentExperienceSignals: asArray(history.recentExperienceSignals).slice(0, 20),
+    recentTrajectory: asArray(history.recentTrajectory).slice(0, 8)
   };
 }
 
@@ -78,6 +79,7 @@ function createLearningCardGenerationService(options = {}) {
   const graphPlanService = options.graphPlanService;
   const graphRepository = options.graphRepository;
   const historySummaryRepository = options.historySummaryRepository;
+  const nextCardStrategyService = options.nextCardStrategyService;
   const authoringService = options.authoringService;
 
   async function resolvePlan(input = {}) {
@@ -115,11 +117,21 @@ function createLearningCardGenerationService(options = {}) {
     const firstCard = firstPlanCard(plan);
     const graphSources = graphSourceSummaries(graphRepository, plan);
     const sourceSummaries = graphSources.concat(asArray(input.sourceSummaries || input.source_summaries)).slice(0, 12);
+    const nextCardStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
+      ? nextCardStrategyService.chooseNextCardStrategy({
+        masterySummary: history.masterySummary,
+        recentExperienceSignals: history.recentExperienceSignals,
+        recentTrajectory: history.recentTrajectory,
+        targetNodeIds: planTargetNodeIds(plan)
+      })
+      : input.nextCardStrategy || input.next_card_strategy || null;
     const authoring = await authoringService.authorCard({
       learningGraphPlan: plan,
       learnerSummary: history.learnerSummary,
       masterySummary: history.masterySummary,
       recentExperienceSignals: history.recentExperienceSignals,
+      recentTrajectory: history.recentTrajectory,
+      nextCardStrategy,
       cardRole: input.cardRole || input.card_role || firstCard.cardRole,
       difficultyBand: input.difficultyBand || input.difficulty_band || firstCard.difficultyBand,
       evidenceRequirements: input.evidenceRequirements || input.evidence_requirements || firstCard.evidenceRequired,
@@ -141,6 +153,7 @@ function createLearningCardGenerationService(options = {}) {
       source: "growth-learning-card-generation-service",
       learningGraphPlan: plan,
       historySummary: normalizeResultHistory(history),
+      nextCardStrategy,
       sourceSummaryCount: sourceSummaries.length,
       draft: authoring.draft,
       published: authoring.published,

@@ -16,6 +16,7 @@ plugin-local starting point for future card authoring work.
 - `docs/home-ai-growth/IMPLEMENTATION_NOTES/growth-knowledge-graph-implementation.md`
 - `docs/home-ai-growth/IMPLEMENTATION_NOTES/learning-mastery-profile.md`
 - `docs/home-ai-growth/FANFAN_LEARNING_EVERGREEN_CARD_IMPLEMENTATION.zh-CN.md`
+- `docs/GROWTH_AI_CARD_LOOP.md`
 
 ## Durable Product Rule
 
@@ -201,6 +202,81 @@ worker requires an explicit model, and provide the Gateway access token through
 boundary. The model prompt is assembled inside Growth from summary-only
 structured input; the browser never calls Gateway directly.
 
+## Evaluation Ownership And Gateway Boundary
+
+The Growth plugin also owns model-backed card evaluation. New grading behavior
+must be implemented inside this plugin through these service boundaries:
+
+- `learning-card-evaluation-service`;
+- `growth-gateway-evaluation-client`;
+- `growth-evaluation-service`.
+
+Gateway is the only model boundary for Growth card evaluation.
+
+`growth-evaluation-service` still owns queue claiming, record writing, reward
+settlement, profile updates, trajectory recording, and bounded event emission.
+It may call an injected evaluator, but it must not know model wire protocols.
+`learning-card-evaluation-service` owns the model-facing evaluator boundary:
+it assembles bounded authenticated evaluation input, calls
+`growth-gateway-evaluation-client`, parses the result as an evaluation draft,
+validates schema/graph/policy/privacy, and returns the bounded evaluator DTO.
+
+The runtime evaluation client supports two Gateway wire protocols:
+
+- `generic`, the fake Gateway harness protocol that accepts
+  `{ kind, input }`;
+- `responses`, the official Gateway `/v1/responses` protocol. This mode is
+  selected by `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` or inferred when
+  `GROWTH_GATEWAY_EVALUATION_ENDPOINT` ends in `/v1/responses`.
+
+Production should configure `GROWTH_GATEWAY_EVALUATION_ENDPOINT` to a Gateway
+Responses endpoint, set `GROWTH_GATEWAY_EVALUATION_MODEL` when the selected
+worker requires an explicit model, and provide the Gateway access token through
+`GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH` or the platform-managed secret
+boundary. If no evaluation endpoint is configured, Growth uses the
+deterministic local evaluator as a fallback.
+
+Evaluation Gateway input is allowed to include the current submitted answer
+only because it is inside the authenticated evaluation flow. It must still be
+bounded and structured:
+
+- task card id, submission id, learner/workspace ids;
+- `daily_score_once` policy with `passScoreRequired: false`;
+- card role, learning target, target node ids, and evidence requirements;
+- bounded learner text evidence and bounded audio metadata.
+
+It must not include unrelated historical learner content, raw prompts, raw
+model output, hidden answer keys, full transcripts, full homework/source
+bodies, secrets, cookies, access keys, push endpoints, private file paths, or
+model-provider configuration.
+
+Gateway output must become an evaluation draft first. It must not be written
+directly to `learning_evaluations`.
+
+The required flow is:
+
+1. collect Gateway output from SSE or JSON;
+2. parse strict JSON;
+3. run at most the configured repair pass when parsing or schema validation
+   allows repair;
+4. validate schema `growth.card.evaluation.v1`;
+5. validate `daily_score_once` policy: one evaluation, no retry-until-pass;
+6. validate `skillResults` against graph target nodes;
+7. run privacy and bounded-content scans;
+8. return a bounded evaluator DTO for `growth-evaluation-service`;
+9. let the existing queue service transactionally write evaluation, reward,
+   profile, trajectory, and events.
+
+Failure behavior must be visible and must not create half-written evaluation
+state:
+
+- empty output is a bounded evaluation failure;
+- invalid JSON after repair is a bounded evaluation failure;
+- missing required schema fields after repair is a bounded evaluation failure;
+- timeout is a bounded retryable failure when queue policy allows retry;
+- privacy-risk output is rejected before persistence;
+- repair pass failure does not write `learning_evaluations`.
+
 ## Structured Authoring Input
 
 Authoring requests must be structured and summary-only. Required input families
@@ -262,12 +338,14 @@ The service-owned runtime path is:
    card role, and assessment coverage;
 2. `history-summary` reads bounded historical data from Growth SQLite:
    recent card status, evaluation summaries, mastery states, experience
-   signals, and aggregate counts;
+   signals, recent trajectories, and aggregate counts;
 3. `learning-card-generation-service` combines graph source summaries and
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
-4. `learning-card-authoring-service` calls Gateway and validates the draft;
-5. `card-authoring-publisher` writes the minimum FK parent rows in
+4. `learning-next-card-strategy-service` chooses a bounded next-card strategy
+   from profile, signals, and trajectory;
+5. `learning-card-authoring-service` calls Gateway and validates the draft;
+6. `card-authoring-publisher` writes the minimum FK parent rows in
    `learning_programs` and `learning_plan_drafts`, then writes
    `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
    transaction.

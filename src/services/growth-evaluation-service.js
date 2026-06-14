@@ -76,6 +76,9 @@ function deterministicEvaluate(input = {}) {
 function createGrowthEvaluationService(options = {}) {
   const learningStore = options.learningStore;
   const eventService = options.eventService || null;
+  const profileService = options.profileService || null;
+  const nextCardStrategyService = options.nextCardStrategyService || null;
+  const trajectoryService = options.trajectoryService || null;
   const evaluator = typeof options.evaluator === "function" ? options.evaluator : deterministicEvaluate;
   const now = typeof options.now === "function" ? options.now : () => new Date();
   const workerId = cleanString(options.workerId) || `growth-plugin-evaluator-${process.pid}`;
@@ -125,6 +128,26 @@ function createGrowthEvaluationService(options = {}) {
           settledAt: now().toISOString()
         })
         : { ok: false, available: false, error: "growth_reward_settlement_unavailable" };
+      const profileUpdate = recordProfileUpdate({
+        profileService,
+        taskCard: context.taskCard,
+        submission: context.submission,
+        evaluation: recorded.evaluation,
+        workspaceId: claimed.workspaceId
+      });
+      const nextCardStrategy = chooseNextCardStrategy({
+        nextCardStrategyService,
+        profileUpdate
+      });
+      const trajectory = recordTrajectory({
+        trajectoryService,
+        taskCard: context.taskCard,
+        submission: context.submission,
+        evaluation: recorded.evaluation,
+        profileUpdate,
+        nextCardStrategy,
+        workspaceId: claimed.workspaceId
+      });
       const emittedEvents = await emitEvaluationEvents({
         eventService,
         evaluation: recorded.evaluation,
@@ -141,6 +164,9 @@ function createGrowthEvaluationService(options = {}) {
         job: completed,
         evaluation: recorded.evaluation,
         reward_settlement: rewardSettlement,
+        profile_update: profileUpdate,
+        next_card_strategy: nextCardStrategy,
+        trajectory,
         events: emittedEvents,
         workspace_id: claimed.workspaceId,
         task_card_id: claimed.taskCardId,
@@ -188,6 +214,60 @@ function createGrowthEvaluationService(options = {}) {
     processEvaluationJob,
     processEvaluationQueue
   };
+}
+
+function recordProfileUpdate(input = {}) {
+  const service = input.profileService;
+  if (!service || typeof service.recordEvaluationEvidence !== "function") {
+    return { ok: false, available: false, error: "mastery_profile_service_unavailable" };
+  }
+  try {
+    return service.recordEvaluationEvidence({
+      taskCard: input.taskCard,
+      submission: input.submission,
+      evaluation: input.evaluation,
+      workspaceId: input.workspaceId
+    });
+  } catch (err) {
+    return { ok: false, error: cleanString(err.message || err) || "mastery_profile_update_failed" };
+  }
+}
+
+function chooseNextCardStrategy(input = {}) {
+  const service = input.nextCardStrategyService;
+  if (!service || typeof service.chooseNextCardStrategy !== "function") {
+    return { ok: false, available: false, error: "next_card_strategy_service_unavailable" };
+  }
+  const profileUpdate = input.profileUpdate || {};
+  try {
+    return service.chooseNextCardStrategy({
+      masterySummary: profileUpdate.masterySummary || {},
+      recentExperienceSignals: profileUpdate.recentExperienceSignals || profileUpdate.experienceSignals || [],
+      recentTrajectory: profileUpdate.recentTrajectory || [],
+      targetNodeIds: profileUpdate.targetNodeIds || []
+    });
+  } catch (err) {
+    return { ok: false, error: cleanString(err.message || err) || "next_card_strategy_failed" };
+  }
+}
+
+function recordTrajectory(input = {}) {
+  const service = input.trajectoryService;
+  if (!service || typeof service.recordEvaluationTrajectory !== "function") {
+    return { ok: false, available: false, error: "card_trajectory_service_unavailable" };
+  }
+  try {
+    return service.recordEvaluationTrajectory({
+      taskCard: input.taskCard,
+      submission: input.submission,
+      evaluation: input.evaluation,
+      profileUpdate: input.profileUpdate,
+      nextRecommendation: input.nextCardStrategy,
+      workspaceId: input.workspaceId
+    });
+  } catch (err) {
+    return { ok: false, error: cleanString(err.message || err) || "card_trajectory_record_failed" };
+  }
 }
 
 function eventSummary(input = {}) {

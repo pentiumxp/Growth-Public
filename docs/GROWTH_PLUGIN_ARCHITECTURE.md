@@ -38,6 +38,11 @@ Growth should stay a service-first embedded plugin:
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
 | Gateway authoring client | `src/services/growth-gateway-authoring-client.js` | Gateway-only model boundary for card authoring. It supports SSE and JSON Gateway responses and does not call model vendors directly. |
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
+| Card evaluation service | `src/services/learning-card-evaluation-service.js` | Growth-owned Gateway evaluation orchestration. It assembles bounded authenticated evaluation input, parses Gateway output as an evaluation draft, validates schema/graph/privacy policy, and returns the same evaluator DTO consumed by `growth-evaluation-service`. |
+| Gateway evaluation client | `src/services/growth-gateway-evaluation-client.js` | Gateway-only model boundary for card evaluation. It supports fake harness `{ kind, input }`, official Gateway `/v1/responses`, SSE, JSON, timeout handling, and no direct model-vendor calls. |
+| Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
+| Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and next recommendation in `learning_growth_card_trajectories`. |
+| Next-card strategy service | `src/services/learning-next-card-strategy-service.js` | Deterministic strategy selector over mastery summary, experience signals, and trajectory. It chooses repair/stabilize/transfer/stretch/integrate/review before card generation. |
 | Card authoring SQLite publisher | `src/stores/growth-learning-sqlite/card-authoring-publisher.js` | Transactional publisher for validated authoring drafts. It creates missing FK parent rows in `learning_programs` and `learning_plan_drafts`, upserts `learning_task_cards`, writes `learning_card_graph_bindings`, and rolls back on partial failure. |
 | Historical authoring summary | `src/stores/growth-learning-sqlite/history-summary.js` | Summary-only historical context reader for generated cards. It exposes card/evaluation/mastery/experience aggregates without raw learner submissions or transcripts. |
 | Knowledge Graph import | `src/services/learning-graph-import-service.js`, `src/stores/growth-learning-sqlite/graph-schema.js`, `src/stores/growth-learning-sqlite/graph-repository.js`, `scripts/import-learning-graph-pack.js` | Source-pack parser and native SQLite graph importer for recovered Growth Knowledge Graph seeds. Dry-run is the default; write mode is explicit and imports bounded graph metadata only. |
@@ -132,6 +137,25 @@ The first core-module split is behavior-preserving:
   latter is selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or by a
   `/v1/responses` endpoint, and it keeps model prompting inside Growth while
   provider credentials remain behind Gateway.
+- The AI card loop is Growth-owned. `learning-mastery-profile-service`,
+  `learning-card-trajectory-service`, and `learning-next-card-strategy-service`
+  close the first service slice from evaluation evidence to profile update,
+  trajectory, and next-card strategy. Evaluation is the evidence boundary;
+  reward settlement must not directly mutate mastery state. See
+  `docs/GROWTH_AI_CARD_LOOP.md`.
+- Gateway-backed evaluation is Growth-owned. `learning-card-evaluation-service`
+  calls `growth-gateway-evaluation-client` only when
+  `GROWTH_GATEWAY_EVALUATION_ENDPOINT` is configured; otherwise
+  `growth-evaluation-service` keeps the deterministic evaluator as the local
+  fallback. Gateway is the only model boundary for Growth card evaluation.
+  The client supports the fake harness `{ kind, input }` protocol and the
+  official Gateway `/v1/responses` protocol, selected by
+  `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` or inferred from a
+  `/v1/responses` endpoint. Output is an evaluation draft until validation
+  accepts schema `growth.card.evaluation.v1`, daily-card policy,
+  `skillResults` graph bindings, and privacy and bounded-content scans.
+  Invalid JSON, empty output, missing fields, privacy-risk fields, timeout, or
+  repair pass failure must not write a partial `learning_evaluations` row.
 - Owner card generation management is exposed through the embedded plugin UI.
   The Owner `生成` tab reads
   `GET /api/v1/growth/card-generation/context`, keeps learner targets separate
@@ -205,6 +229,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
+| Growth AI card loop profile, trajectory, strategy, and Gateway evaluation | `node --test tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js` |
 | Embedded frontend adapters, card generation UI, and learner card interaction UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |

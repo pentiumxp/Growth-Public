@@ -47,7 +47,21 @@ function createContextService(options = {}) {
             lastActivityAt: "2026-06-10T00:00:00.000Z"
           },
           masterySummary: { masteryStates: [{ nodeId: "kg_english_main_idea" }] },
-          recentExperienceSignals: [{ signalType: "right_level" }]
+          recentExperienceSignals: [{ signalType: "right_level" }],
+          recentTrajectory: [{ strategy: "stabilize", targetNodeIds: ["kg_english_main_idea"] }]
+        };
+      }
+    },
+    nextCardStrategyService: {
+      chooseNextCardStrategy(input) {
+        assert.equal(input.masterySummary.masteryStates[0].nodeId, "kg_english_main_idea");
+        return {
+          ok: true,
+          strategy: "stabilize",
+          cardRole: "practice",
+          difficultyBand: "foundation",
+          targetNodeIds: ["kg_english_main_idea"],
+          reason: "Continue evidence-answering practice."
         };
       }
     }
@@ -71,8 +85,11 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.graph.nodeCount, 294);
   assert.equal(result.suggestedPlan.targetNodeId, "kg_english_main_idea");
   assert.equal(result.suggestedPlan.cardRole, "practice");
+  assert.equal(result.suggestedPlan.strategy, "stabilize");
+  assert.equal(result.nextCardStrategy.reason, "Continue evidence-answering practice.");
   assert.equal(result.completionPolicy.mode, "daily_score_once");
   assert.equal(result.historySummary.learnerSummary.evaluationCount, 4);
+  assert.equal(result.historySummary.recentTrajectoryCount, 1);
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);
   assert.equal(historyCalls[0].learningGraphPlan.targetNodeId, "kg_english_main_idea");
 });

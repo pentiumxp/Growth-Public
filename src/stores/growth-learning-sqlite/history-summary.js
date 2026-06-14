@@ -175,6 +175,21 @@ function safeExperienceSignal(row = {}) {
   };
 }
 
+function safeTrajectory(row = {}) {
+  const raw = rawObject(row);
+  return {
+    taskCardId: cleanString(firstValue(row, ["task_card_id"]) || raw.taskCardId),
+    sourceEvaluationId: cleanString(firstValue(row, ["source_evaluation_id"]) || raw.sourceEvaluationId),
+    strategy: cleanString(firstValue(row, ["strategy"]) || raw.strategy),
+    difficultyBand: cleanString(firstValue(row, ["difficulty_band"]) || raw.difficultyBand),
+    targetNodeIds: uniqueStrings(parseJson(row.target_node_ids_json, raw.targetNodeIds || [])),
+    performanceSummary: boundedText(firstValue(row, ["performance_summary"]) || raw.performanceSummary, 260),
+    remainingWeaknesses: asArray(parseJson(row.remaining_weaknesses_json, raw.remainingWeaknesses || [])).map((item) => boundedText(item, 120)).filter(Boolean).slice(0, 5),
+    nextRecommendation: parseJson(row.next_recommendation_json, raw.nextRecommendation || {}) || {},
+    updatedAt: cleanString(firstValue(row, ["updated_at", "created_at"]))
+  };
+}
+
 function syntheticSignalFromCard(card = {}) {
   const evaluation = card.latestEvaluation;
   if (!evaluation) return null;
@@ -239,6 +254,10 @@ function createLearningHistorySummaryRepository({ open } = {}) {
         .slice(0, 16);
       const syntheticSignals = relatedCards.map(syntheticSignalFromCard).filter(Boolean);
       const recentExperienceSignals = storedSignals.concat(syntheticSignals).slice(0, 20);
+      const recentTrajectory = recentRows(db, "learning_growth_card_trajectories", filters, input.trajectoryLimit || 12, ["updated_at", "created_at"])
+        .map(safeTrajectory)
+        .filter((trajectory) => !trajectory.targetNodeIds.length || trajectory.targetNodeIds.some((nodeId) => nodeIds.includes(nodeId)))
+        .slice(0, 8);
       const completedRecentCardCount = relatedCards.filter((card) => {
         const status = cleanString(card.status).toLowerCase();
         const evaluationStatus = cleanString(card.latestEvaluation?.status).toLowerCase();
@@ -272,6 +291,7 @@ function createLearningHistorySummaryRepository({ open } = {}) {
           recentRelatedCards: relatedCards
         },
         recentExperienceSignals,
+        recentTrajectory,
         sourceSummaries: []
       };
     });

@@ -29,6 +29,19 @@ test("Growth service orchestration delegates providers and does not own facade U
   assert.match(read(path.join("src", "services", "home-ai-growth-facade-client.js")), /new URL\(/);
 });
 
+test("Growth Gateway evaluation boundary stays service-owned", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createGrowthGatewayEvaluationClient/);
+  assert.match(services, /createLearningCardEvaluationService/);
+  assert.match(services, /gatewayEvaluationEndpoint/);
+  assert.match(services, /learningCardEvaluationService\.evaluateSubmission/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.doesNotMatch(routes, /createGrowthGatewayEvaluationClient/);
+  assert.doesNotMatch(routes, /GROWTH_GATEWAY_EVALUATION/);
+  assert.doesNotMatch(routes, /evaluateCardSubmission/);
+});
+
 test("Growth read and write provider boundaries stay separated", () => {
   const readProvider = read(path.join("src", "services", "growth-providers", "sqlite-provider.js"));
   const writeProvider = read(path.join("src", "services", "growth-providers", "sqlite-write-provider.js"));
@@ -46,6 +59,7 @@ test("Growth SQLite store facade stays a composition boundary", () => {
   assert.match(store, /createAudioRepository/);
   assert.match(store, /createEvaluationJobRepository/);
   assert.match(store, /createEvidenceWriter/);
+  assert.match(store, /createMasteryProfileRepository/);
   assert.match(store, /createRewardRepository/);
 });
 

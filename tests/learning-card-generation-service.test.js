@@ -10,6 +10,7 @@ const { createLearningCardAuthoringService } = require("../src/services/learning
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
+const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
 const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
 
 function tempDir() {
@@ -361,6 +362,7 @@ function setup(options = {}) {
     graphPlanService: planService,
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
+    nextCardStrategyService: createLearningNextCardStrategyService(),
     authoringService
   });
   return { dbPath, gatewayCalls, generationService, planService, store };
@@ -390,6 +392,7 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
   assert.equal(gatewayInput.learnerSummary.evaluationCount, 1);
   assert.equal(gatewayInput.masterySummary.masteryStates[0].summary, "Ready for a guided ratio card.");
   assert.ok(gatewayInput.recentExperienceSignals.some((signal) => signal.signalType === "right_level"));
+  assert.equal(gatewayInput.nextCardStrategy.strategy, "stabilize");
   assert.equal(gatewayInput.sourceSummaries.some((source) => source.nodeId === "kg_ratio_intro"), true);
   assert.equal(JSON.stringify(gatewayInput).includes("raw learner answer should never leave sqlite"), false);
 
@@ -402,6 +405,7 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
     assert.equal(raw.learningGraph.learningGraphPlanId, result.learningGraphPlan.learningGraphPlanId);
     assert.equal(raw.teachingFlow.learningTarget, "Compare two quantities using a ratio.");
     assert.equal(raw.experienceSummary.learnerSummary.completedRecentCardCount, 1);
+    assert.equal(raw.experienceSummary.nextCardStrategy.strategy, "stabilize");
     assert.equal(raw.completionPolicy.mode, "daily_score_once");
     assert.equal(raw.completionPolicy.evaluationAttempts, 1);
     assert.equal(raw.completionPolicy.reflectionAttempts, 1);

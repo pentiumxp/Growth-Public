@@ -22,6 +22,12 @@ function readEnv(env = process.env) {
     gatewayAuthoringModel: env.GROWTH_GATEWAY_AUTHORING_MODEL || env.LEARNING_GROWTH_JIT_MODEL || env.HERMES_GATEWAY_AUTHORING_MODEL || "",
     gatewayAuthoringStream: ["1", "true", "yes", "on"].includes(String(env.GROWTH_GATEWAY_AUTHORING_STREAM || "").trim().toLowerCase()),
     gatewayAuthoringTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_AUTHORING_TIMEOUT_MS || 60000) || 60000),
+    gatewayEvaluationEndpoint: env.GROWTH_GATEWAY_EVALUATION_ENDPOINT || env.HERMES_GATEWAY_EVALUATION_ENDPOINT || env.HOME_AI_GATEWAY_EVALUATION_ENDPOINT || "",
+    gatewayEvaluationAccessToken: env.GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN || env.HERMES_GATEWAY_ACCESS_TOKEN || readSecretFile(env.GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH || env.HERMES_GATEWAY_ACCESS_TOKEN_PATH),
+    gatewayEvaluationProtocol: env.GROWTH_GATEWAY_EVALUATION_PROTOCOL || env.HERMES_GATEWAY_EVALUATION_PROTOCOL || "",
+    gatewayEvaluationModel: env.GROWTH_GATEWAY_EVALUATION_MODEL || env.LEARNING_GROWTH_EVALUATION_MODEL || env.HERMES_GATEWAY_EVALUATION_MODEL || "",
+    gatewayEvaluationStream: ["1", "true", "yes", "on"].includes(String(env.GROWTH_GATEWAY_EVALUATION_STREAM || "").trim().toLowerCase()),
+    gatewayEvaluationTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_EVALUATION_TIMEOUT_MS || 60000) || 60000),
     legacyAudioRoots: (env.GROWTH_LEGACY_AUDIO_ROOTS || "")
       .split(path.delimiter)
       .map((entry) => entry.trim())

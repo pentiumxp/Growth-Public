@@ -8,6 +8,7 @@ const ROOT = path.resolve(__dirname, "..");
 const REQUIRED_DOCS = Object.freeze([
   "docs/GROWTH_DOCS_INDEX.md",
   "docs/GROWTH_CARD_GENERATION_RULES.md",
+  "docs/GROWTH_AI_CARD_LOOP.md",
   "docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md",
   "docs/GROWTH_PLUGIN_ARCHITECTURE.md",
   "docs/HOME_AI_PLATFORM_CONTRACT.md",
@@ -40,6 +41,7 @@ const FORBIDDEN_CURRENT_POINTERS = Object.freeze([
 const CURRENT_DOCS = Object.freeze([
   "docs/GROWTH_DOCS_INDEX.md",
   "docs/GROWTH_CARD_GENERATION_RULES.md",
+  "docs/GROWTH_AI_CARD_LOOP.md",
   "docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md",
   "docs/GROWTH_PLUGIN_ARCHITECTURE.md",
   "docs/HOME_AI_PLATFORM_CONTRACT.md"

@@ -52,6 +52,21 @@ function nodePlan(node = {}, input = {}) {
   };
 }
 
+function planWithStrategy(plan = null, strategy = null) {
+  if (!plan || !strategy?.ok) return plan;
+  const targetNodeIds = asArray(strategy.targetNodeIds).map(cleanString).filter(Boolean);
+  const targetNodeId = targetNodeIds[0] || plan.targetNodeId;
+  return Object.assign({}, plan, {
+    targetNodeId,
+    targetNodeIds: targetNodeId ? [targetNodeId] : plan.targetNodeIds,
+    cardRole: cleanString(strategy.cardRole) || plan.cardRole,
+    difficultyBand: cleanString(strategy.difficultyBand) || plan.difficultyBand,
+    supportLevel: cleanString(strategy.supportLevel),
+    strategy: cleanString(strategy.strategy),
+    strategyReason: cleanString(strategy.reason)
+  });
+}
+
 function readinessReady(readiness = {}) {
   return bool(readiness.targetEnabled)
     && bool(readiness.workspaceProvisioned)
@@ -64,6 +79,7 @@ function readinessReady(readiness = {}) {
 function createLearningCardGenerationContextService(options = {}) {
   const graphRepository = options.graphRepository;
   const historySummaryRepository = options.historySummaryRepository;
+  const nextCardStrategyService = options.nextCardStrategyService;
   const gatewayConfigured = options.gatewayConfigured || (() => false);
 
   function suggestedNode() {
@@ -149,8 +165,17 @@ function createLearningCardGenerationContextService(options = {}) {
     };
     const graph = graphReadiness();
     const node = suggestedNode();
-    const suggestedPlan = nodePlan(node, input);
-    const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, suggestedPlan);
+    const baseSuggestedPlan = nodePlan(node, input);
+    const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
+    const nextCardStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
+      ? nextCardStrategyService.chooseNextCardStrategy({
+        masterySummary: history?.masterySummary || {},
+        recentExperienceSignals: history?.recentExperienceSignals || [],
+        recentTrajectory: history?.recentTrajectory || [],
+        targetNodeIds: baseSuggestedPlan?.targetNodeIds || []
+      })
+      : { ok: false, available: false, error: "next_card_strategy_service_unavailable" };
+    const suggestedPlan = planWithStrategy(baseSuggestedPlan, nextCardStrategy);
     const learnerSummary = history?.learnerSummary || {};
     const readiness = {
       targetEnabled: target.enabled,
@@ -175,6 +200,7 @@ function createLearningCardGenerationContextService(options = {}) {
         warnings: graph.warnings
       },
       suggestedPlan,
+      nextCardStrategy,
       historySummary: {
         learnerSummary: {
           recentCardCount: Number(learnerSummary.recentCardCount || 0) || 0,
@@ -186,7 +212,8 @@ function createLearningCardGenerationContextService(options = {}) {
           lastActivityAt: cleanString(learnerSummary.lastActivityAt)
         },
         masteryStateCount: asArray(history?.masterySummary?.masteryStates).length,
-        recentExperienceSignalCount: asArray(history?.recentExperienceSignals).length
+        recentExperienceSignalCount: asArray(history?.recentExperienceSignals).length,
+        recentTrajectoryCount: asArray(history?.recentTrajectory).length
       },
       completionPolicy: {
         mode: "daily_score_once",

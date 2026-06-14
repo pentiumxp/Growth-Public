@@ -77,6 +77,16 @@ Every submit, refresh, recording, or reflection failure must be shown in the
 card detail. A failed write must not silently leave the button with no visible
 result.
 
+Evaluation processing remains backend-owned. The UI requests evaluation
+processing through `POST /api/v1/growth/evaluations/process`; it never calls
+Gateway directly. When `GROWTH_GATEWAY_EVALUATION_ENDPOINT` is configured,
+Growth uses `learning-card-evaluation-service` and
+`growth-gateway-evaluation-client` to produce one validated
+`growth.card.evaluation.v1` result. Without that endpoint, the deterministic
+local evaluator remains a fallback. Both paths keep the same
+`daily_score_once` rule: one evaluation, no retry-until-pass loop, and score as
+the outcome.
+
 The daily-card completion footer may display already-recorded difficulty
 signals, but it must not render active difficulty-signal buttons until the Growth
 plugin owns the matching persistence route and service. Until that service
@@ -189,6 +199,9 @@ Business rules remain in plugin services/stores:
   `src/stores/growth-learning-sqlite/evidence-writes.js`;
 - evaluation queue processing:
   `src/services/growth-evaluation-service.js`;
+- Gateway evaluation draft parsing and validation:
+  `src/services/learning-card-evaluation-service.js` and
+  `src/services/growth-gateway-evaluation-client.js`;
 - score-proportional completion/reward settlement:
   `src/stores/growth-learning-sqlite/rewards.js`.
 - public board/detail projection:
@@ -214,6 +227,12 @@ Backend projection coverage lives in
 `daily_score_once` cards complete after the first terminal evaluation even when
 the score is low or a legacy revision status is present, while non-daily cards
 still preserve the old revision lane.
+
+Gateway-backed evaluation coverage lives in
+`tests/learning-card-evaluation-service.test.js` and asserts valid streaming
+response, valid JSON response, official Gateway `/v1/responses`, invalid JSON,
+schema-missing output, privacy-risk output, and timeout behavior without direct
+model-vendor calls.
 
 Run focused validation:
 

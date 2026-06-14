@@ -9,6 +9,129 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Gateway Evaluation Boundary Slice
+
+- Current workspace state: implemented and locally validated; not committed,
+  pushed, or deployed at the time this section was written.
+- Scope:
+  - added `growth-gateway-evaluation-client` as the Growth-owned Gateway-only
+    model client for card evaluation;
+  - added `learning-card-evaluation-service` to assemble bounded authenticated
+    evaluation input, call Gateway, parse an evaluation draft, validate schema,
+    graph binding, daily-card policy, and privacy, then return the evaluator
+    DTO consumed by `growth-evaluation-service`;
+  - added `GROWTH_GATEWAY_EVALUATION_*` config fields in `src/config/env.js`;
+  - wired `src/app/services.js` so Gateway evaluation is injected only when
+    `GROWTH_GATEWAY_EVALUATION_ENDPOINT` is configured. Without that endpoint,
+    the existing deterministic evaluator remains the local fallback;
+  - extended the card authoring/model boundary guard so it also checks the
+    evaluation model boundary and direct-vendor-call exclusions.
+- Product boundary:
+  - generated daily cards still use `daily_score_once`: one evaluation, one
+    optional reflection, completion after the first evaluation, and
+    score-proportional reward without pass-line retry;
+  - Gateway evaluation output is not persisted directly. It is an evaluation
+    draft until validation accepts `growth.card.evaluation.v1`,
+    `skillResults` graph binding, daily-card policy, and privacy scans.
+- Harness added/updated:
+  - `tests/learning-card-evaluation-service.test.js` covers fake Gateway SSE,
+    ordinary JSON, official Responses endpoint body, repair prompt body,
+    invalid JSON, missing schema fields, privacy-risk output, timeout, and
+    evaluator throw behavior for queue retry;
+  - `tests/growth-evaluation-service.test.js` now asserts injected Gateway
+    evaluator ordering before record/reward/profile side effects;
+  - `tests/growth-architecture-boundary.test.js` asserts evaluation Gateway
+    wiring stays service-owned and route-free.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node --test tests/learning-card-evaluation-service.test.js`;
+  - `node --test tests/growth-evaluation-service.test.js tests/growth-architecture-boundary.test.js tests/growth-card-authoring-boundary.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-generation-context-service.test.js`;
+  - `node --test tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js`;
+  - `npm run check`;
+  - `npm test` with 173 passing tests;
+  - `git diff --check`;
+  - CodeGraph sync/status after edits: 107 files, 1107 nodes, 3705 edges.
+- AI Ops:
+  - intake classified the slice as H1 Gateway Runtime because the task touches
+    Gateway;
+  - required app-side checks passed from `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`, and `git diff --check`;
+  - evidence id: `evidence-9746b596-d726-4246-8ee3-1e2a47109a90`.
+- Remaining architecture work:
+  - expose Owner profile/trajectory projection in the plugin UI;
+  - add experience-signal write route before making learner difficulty buttons
+    active;
+  - implement stage-assessment activation as a separate service/harness slice;
+  - configure and smoke a real production Gateway evaluation endpoint before
+    turning the model evaluator on in production.
+
+## 2026-06-14 Growth AI Card Loop Service Slice
+
+- Current workspace state: implemented and locally validated; not committed,
+  pushed, or deployed at the time this section was written.
+- Scope:
+  - added `docs/GROWTH_AI_CARD_LOOP.md` as the plugin-owned contract for
+    learner profile -> next-card strategy -> card generation -> evaluation
+    evidence -> profile/trajectory update;
+  - added `learning-mastery-profile-service`,
+    `learning-card-trajectory-service`, and
+    `learning-next-card-strategy-service`;
+  - added `src/stores/growth-learning-sqlite/mastery-profile.js` as the
+    SQLite repository for `learning_growth_mastery_states`,
+    `learning_growth_experience_signals`, and
+    `learning_growth_card_trajectories`;
+  - wired `growth-evaluation-service` so completed evaluations attempt
+    summary-only profile update, next-card strategy, and trajectory recording
+    after evaluation/reward settlement;
+  - wired card generation context and generation requests to include
+    `nextCardStrategy` and recent trajectory summaries.
+- Product boundary:
+  - this is the first closed-loop service slice; it does not yet enable
+    fully automatic large-scale card generation or stage-assessment activation;
+  - deterministic strategy is service-owned; Gateway remains the model boundary
+    for authoring, and future production evaluation should use a Growth-owned
+    Gateway evaluation client.
+- Harness added:
+  - `tests/learning-mastery-profile-service.test.js`;
+  - `tests/learning-card-trajectory-service.test.js`;
+  - `tests/learning-next-card-strategy-service.test.js`;
+  - `tests/growth-evaluation-service.test.js`;
+  - extended generation context/generation service tests for strategy payloads.
+- Validation passed:
+  - `node --test tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check`;
+  - `npm test` with 162 passing tests;
+  - `node --test tests/growth-learning-sqlite-store.test.js tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-routes.test.js`;
+  - app AI Ops required-checks listed Gateway runtime tests because the task
+    mentions Gateway; those app-side checks also passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`;
+  - `git diff --check`;
+  - CodeGraph status after edits: 104 files, 1046 nodes, 3480 edges.
+- AI Ops evidence:
+  - `evidence-3c8635f5-00c3-4cfc-ae6a-c7fc6066ce74`.
+- Remaining architecture work:
+  - expose Owner profile/trajectory projection in the plugin UI;
+  - add experience-signal write route before making learner difficulty buttons
+    active;
+  - implement stage-assessment activation as a separate service/harness slice.
+
 ## 2026-06-14 Growth Card Detail Back Navigation Hotfix
 
 - Current workspace state: implemented, validated, committed, pushed to
