@@ -138,7 +138,12 @@ function createLearningCardGenerationService(options = {}) {
       cardSchemaVersion: input.cardSchemaVersion || input.card_schema_version || "growth.card.authoring.v1",
       sourceSummaries,
       generationKey: input.generationKey || input.generation_key,
-      taskCardId: input.taskCardId || input.task_card_id
+      taskCardId: input.taskCardId || input.task_card_id,
+      stageAssessmentCycleId: input.stageAssessmentCycleId || input.stage_assessment_cycle_id,
+      activationState: input.activationState || input.activation_state,
+      activationReason: input.activationReason || input.activation_reason,
+      activationSource: input.activationSource || input.activation_source,
+      cooldownUntil: input.cooldownUntil || input.cooldown_until
     });
     if (!authoring?.ok) {
       return unavailable(authoring?.error || "learning_card_authoring_failed", {

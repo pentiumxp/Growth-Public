@@ -82,6 +82,29 @@ function defaultRewardCap(role = "") {
   return cleanString(role).toLowerCase() === "stage_assessment" ? 300 : 100;
 }
 
+function completionPolicyForRole(role = "") {
+  if (cleanString(role).toLowerCase() === "stage_assessment") {
+    return {
+      mode: "formal_assessment",
+      evaluationAttempts: 1,
+      reflectionAttempts: 1,
+      completionAfter: "formal_reflection",
+      rewardMode: "score_proportional",
+      passScoreRequired: false,
+      uiCompatibility: "legacy_growth_card"
+    };
+  }
+  return {
+    mode: "daily_score_once",
+    evaluationAttempts: 1,
+    reflectionAttempts: 1,
+    completionAfter: "first_evaluation",
+    rewardMode: "score_proportional",
+    passScoreRequired: false,
+    uiCompatibility: "legacy_growth_card"
+  };
+}
+
 function domainFromRequest(request = {}) {
   const firstSource = asArray(request.sourceSummaries)[0] || {};
   return cleanString(firstSource.domain || firstSource.subject || "learning");
@@ -151,15 +174,14 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
       recentTrajectory: asArray(request.recentTrajectory).slice(0, 8),
       nextCardStrategy: request.nextCardStrategy || {}
     },
-    completionPolicy: {
-      mode: "daily_score_once",
-      evaluationAttempts: 1,
-      reflectionAttempts: 1,
-      completionAfter: "first_evaluation",
-      rewardMode: "score_proportional",
-      passScoreRequired: false,
-      uiCompatibility: "legacy_growth_card"
-    },
+    completionPolicy: completionPolicyForRole(role),
+    stageAssessment: role === "stage_assessment" ? {
+      cycleId: cleanString(draft.stageAssessmentCycleId || draft.stage_assessment_cycle_id || request.stageAssessmentCycleId || request.stage_assessment_cycle_id),
+      activationState: cleanString(draft.activationState || draft.activation_state || request.activationState || request.activation_state || "active"),
+      activationReason: cleanString(draft.activationReason || draft.activation_reason || request.activationReason || request.activation_reason),
+      activationSource: cleanString(draft.activationSource || draft.activation_source || request.activationSource || request.activation_source),
+      cooldownUntil: cleanString(draft.cooldownUntil || draft.cooldown_until || request.cooldownUntil || request.cooldown_until)
+    } : null,
     sourceSummaries: asArray(request.sourceSummaries).slice(0, 12),
     authoringAudit: {
       source: cleanString(audit.source || "growth-card-authoring-service"),
@@ -208,11 +230,13 @@ function cardValues(input = {}) {
     capability_cluster_id: capabilityClusterId(draft, request),
     expected_duration_minutes_min: minutes,
     expected_duration_minutes_max: Math.max(minutes, minutes + 5),
-    stage_assessment_cycle_id: cleanString(draft.stageAssessmentCycleId || draft.stage_assessment_cycle_id),
-    activation_state: role === "stage_assessment" ? cleanString(draft.activationState || "active") : cleanString(draft.activationState),
-    activation_reason: cleanString(draft.activationReason || draft.activation_reason),
-    activation_source: cleanString(draft.activationSource || draft.activation_source || "growth_card_authoring"),
-    cooldown_until: cleanString(draft.cooldownUntil || draft.cooldown_until),
+    stage_assessment_cycle_id: cleanString(draft.stageAssessmentCycleId || draft.stage_assessment_cycle_id || request.stageAssessmentCycleId || request.stage_assessment_cycle_id),
+    activation_state: role === "stage_assessment"
+      ? cleanString(draft.activationState || draft.activation_state || request.activationState || request.activation_state || "active")
+      : cleanString(draft.activationState || draft.activation_state || request.activationState || request.activation_state),
+    activation_reason: cleanString(draft.activationReason || draft.activation_reason || request.activationReason || request.activation_reason),
+    activation_source: cleanString(draft.activationSource || draft.activation_source || request.activationSource || request.activation_source || "growth_card_authoring"),
+    cooldown_until: cleanString(draft.cooldownUntil || draft.cooldown_until || request.cooldownUntil || request.cooldown_until),
     reward_cap_coins: rewardCap,
     configured_reward_coins: rewardCap,
     default_reward_coins: rewardCap,

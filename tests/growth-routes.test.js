@@ -970,7 +970,12 @@ test("growth card generation route requires workspace bearer and normalizes grap
       sourceSummaries: undefined,
       cardSchemaVersion: "growth.card.authoring.v1",
       generationKey: "route-generation",
-      taskCardId: undefined
+      taskCardId: undefined,
+      stageAssessmentCycleId: undefined,
+      activationState: undefined,
+      activationReason: undefined,
+      activationSource: undefined,
+      cooldownUntil: undefined
     });
 
     const ownerProxyAccepted = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
@@ -1006,6 +1011,184 @@ test("growth card generation route requires workspace bearer and normalizes grap
     });
     assert.equal(failed.status, 400);
     assert.equal((await failed.json()).error, "missing_target_node");
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth stage assessment routes require workspace authorization and delegate policy to service", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        const allowed = authorizationToken === "workspace-key"
+          && (workspaceId === "growth:test" || workspaceId === "owner");
+        if (!allowed) {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return {
+          ok: true,
+          workspace_id: workspaceId,
+          hermes_workspace_id: workspaceId === "owner" ? "owner" : "test"
+        };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "owner", label: "Owner", current: input.currentWorkspaceId === "owner" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningStageAssessmentService: {
+      evaluateEligibility(input) {
+        calls.push({ type: "eligibility", input });
+        return { ok: true, eligible: true, cycle: { cycleId: "cycle_1", status: "eligible" } };
+      },
+      async activateStageAssessment(input) {
+        calls.push({ type: "activate", input });
+        return { ok: true, cycle: { cycleId: "cycle_1", status: "active" }, published: { taskCardId: "stage_1" } };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/eligibility`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1"]
+      })
+    });
+    assert.equal(denied.status, 403);
+
+    const eligibility = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/eligibility`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learner_id: "test",
+        program_id: "program_1",
+        subject_id: "english",
+        capability_cluster_id: "reading",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1", "node_2"]
+      })
+    });
+    assert.equal(eligibility.status, 200);
+    assert.deepEqual(calls[0], {
+      type: "eligibility",
+      input: {
+        cycleId: undefined,
+        workspaceId: "test",
+        learnerId: "test",
+        programId: "program_1",
+        subjectId: "english",
+        capabilityClusterId: "reading",
+        targetNodeId: "node_1",
+        targetNodeIds: undefined,
+        assessmentCoverageNodeIds: ["node_1", "node_2"],
+        difficultyBand: undefined,
+        evidenceRequirements: undefined,
+        sourceSummaries: undefined,
+        generationKey: undefined,
+        taskCardId: undefined,
+        activationSource: undefined,
+        activationReason: undefined,
+        cooldownUntil: undefined,
+        sourceCardIds: undefined,
+        note: undefined
+      }
+    });
+
+    const ownerActivate = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/activate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1"],
+        activation_source: "owner_manual"
+      })
+    });
+    assert.equal(ownerActivate.status, 201);
+    assert.equal(calls[1].type, "activate");
+    assert.equal(calls[1].input.workspaceId, "weixin_fanfan");
+    assert.equal(calls[1].input.activationSource, "owner_manual");
+
+    const deniedOwnerManual = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/activate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1"],
+        activation_source: "owner_manual"
+      })
+    });
+    assert.equal(deniedOwnerManual.status, 403);
+    assert.equal((await deniedOwnerManual.json()).error.code, "growth_stage_assessment_owner_required");
+
+    const challengeOther = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/challenge`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        learner_id: "other",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1"]
+      })
+    });
+    assert.equal(challengeOther.status, 403);
+    assert.equal((await challengeOther.json()).error.code, "growth_stage_assessment_challenge_not_visible");
+
+    const challenge = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/challenge`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:test",
+        target_node_id: "node_1",
+        assessment_coverage_node_ids: ["node_1"]
+      })
+    });
+    assert.equal(challenge.status, 201);
+    assert.equal(calls[2].type, "activate");
+    assert.equal(calls[2].input.workspaceId, "test");
+    assert.equal(calls[2].input.learnerId, "test");
+    assert.equal(calls[2].input.activationSource, "executor_challenge");
   } finally {
     await close(server);
   }

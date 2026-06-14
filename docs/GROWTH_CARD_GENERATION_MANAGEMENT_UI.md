@@ -102,6 +102,21 @@ selected learner target, not the iframe's Owner workspace.
     one optional reflection without Codex involvement. The detailed learner
     flow is defined in `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 
+Formal stage-assessment generation is not part of the daily recipe flow.
+Owner/manual or learner challenge assessment creation must call the dedicated
+stage-assessment API boundary:
+
+- `POST /api/v1/growth/stage-assessments/eligibility`;
+- `POST /api/v1/growth/stage-assessments/activate`;
+- `POST /api/v1/growth/stage-assessments/challenge`.
+
+Those routes delegate to `learning-stage-assessment-service`. The generated
+formal card still uses the same authoring/publisher pipeline, but the service
+adds `stageAssessmentCycleId`, activation metadata, assessment coverage, and
+`cardRole=stage_assessment`. The Owner UI can surface these controls in a
+later tab section without reimplementing eligibility or generation policy in
+the frontend.
+
 ## UI Placement
 
 Add one Owner-only tab to the existing Owner management tabs:

@@ -16,6 +16,7 @@ const { createLearningGraphPlanService } = require("../services/learning-graph-p
 const { createLearningMasteryProfileService } = require("../services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../services/learning-next-card-strategy-service");
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
+const { createLearningStageAssessmentService } = require("../services/learning-stage-assessment-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
 const { createGrowthEventOutboxStore } = require("../stores/growth-event-outbox-store");
 const { createGrowthLearningSqliteStore } = require("../stores/growth-learning-sqlite-store");
@@ -83,6 +84,11 @@ function createServices(config) {
     nextCardStrategyService: learningNextCardStrategyService,
     authoringService: learningCardAuthoringService
   });
+  const learningStageAssessmentService = createLearningStageAssessmentService({
+    repository: growthLearningStore.stageAssessmentCycleRepository,
+    profileProjectionService: learningProfileProjectionService,
+    cardGenerationService: learningCardGenerationService
+  });
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
@@ -118,6 +124,7 @@ function createServices(config) {
     learningMasteryProfileService,
     learningNextCardStrategyService,
     learningProfileProjectionService,
+    learningStageAssessmentService,
     pluginService: createHermesPluginService({ config, workspaceStore })
   };
 }

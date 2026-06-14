@@ -29,7 +29,12 @@ function structuredAuthoringInput(input = {}) {
     difficultyBand: cleanString(input.difficultyBand || plan.cardSequence?.[0]?.difficultyBand || ""),
     evidenceRequirements: asArray(input.evidenceRequirements || plan.cardSequence?.[0]?.evidenceRequired).slice(0, 20),
     cardSchemaVersion: cleanString(input.cardSchemaVersion || "growth.card.authoring.v1"),
-    sourceSummaries: asArray(input.sourceSummaries).slice(0, 12)
+    sourceSummaries: asArray(input.sourceSummaries).slice(0, 12),
+    stageAssessmentCycleId: cleanString(input.stageAssessmentCycleId || input.stage_assessment_cycle_id),
+    activationState: cleanString(input.activationState || input.activation_state),
+    activationReason: cleanString(input.activationReason || input.activation_reason),
+    activationSource: cleanString(input.activationSource || input.activation_source),
+    cooldownUntil: cleanString(input.cooldownUntil || input.cooldown_until)
   };
 }
 

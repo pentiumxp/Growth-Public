@@ -148,7 +148,36 @@ function normalizeCardGenerationInput(body, workspaceId) {
     sourceSummaries: body.sourceSummaries || body.source_summaries,
     cardSchemaVersion: body.cardSchemaVersion || body.card_schema_version,
     generationKey: body.generationKey || body.generation_key,
-    taskCardId: body.taskCardId || body.task_card_id
+    taskCardId: body.taskCardId || body.task_card_id,
+    stageAssessmentCycleId: body.stageAssessmentCycleId || body.stage_assessment_cycle_id,
+    activationState: body.activationState || body.activation_state,
+    activationReason: body.activationReason || body.activation_reason,
+    activationSource: body.activationSource || body.activation_source,
+    cooldownUntil: body.cooldownUntil || body.cooldown_until
+  };
+}
+
+function normalizeStageAssessmentInput(body, workspaceId) {
+  return {
+    cycleId: body.cycleId || body.cycle_id || body.id,
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || workspaceId,
+    programId: body.programId || body.program_id,
+    subjectId: body.subjectId || body.subject_id,
+    capabilityClusterId: body.capabilityClusterId || body.capability_cluster_id,
+    targetNodeId: body.targetNodeId || body.target_node_id,
+    targetNodeIds: body.targetNodeIds || body.target_node_ids,
+    assessmentCoverageNodeIds: body.assessmentCoverageNodeIds || body.assessment_coverage_node_ids || body.assessmentCoverage || body.assessment_coverage,
+    difficultyBand: body.difficultyBand || body.difficulty_band,
+    evidenceRequirements: body.evidenceRequirements || body.evidence_requirements,
+    sourceSummaries: body.sourceSummaries || body.source_summaries,
+    generationKey: body.generationKey || body.generation_key,
+    taskCardId: body.taskCardId || body.task_card_id,
+    activationSource: body.activationSource || body.activation_source || body.source,
+    activationReason: body.activationReason || body.activation_reason,
+    cooldownUntil: body.cooldownUntil || body.cooldown_until,
+    sourceCardIds: body.sourceCardIds || body.source_card_ids,
+    note: body.note
   };
 }
 
@@ -273,6 +302,50 @@ async function handleGrowthRoute(request, response, url, services) {
     const result = await services.learningCardGenerationService.generateCard(
       normalizeCardGenerationInput(body, serviceWorkspaceId)
     );
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/stage-assessments/eligibility") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const result = services.learningStageAssessmentService.evaluateEligibility(
+      normalizeStageAssessmentInput(body, serviceWorkspaceId)
+    );
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/stage-assessments/activate") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const requestedSource = String(body.activationSource || body.activation_source || "").trim().toLowerCase();
+    if (requestedSource === "owner_manual" && requestedActorRole(request) !== "owner") {
+      throw routeError("growth_stage_assessment_owner_required", "Owner manual activation requires Owner role", 403);
+    }
+    if (requestedSource === "executor_challenge" && requestedActorRole(request) !== "owner") {
+      throw routeError("growth_stage_assessment_challenge_route_required", "Learner challenge activation must use the challenge route", 403);
+    }
+    const result = await services.learningStageAssessmentService.activateStageAssessment(Object.assign(
+      normalizeStageAssessmentInput(body, serviceWorkspaceId),
+      {
+        activationSource: requestedActorRole(request) === "owner"
+          ? (body.activationSource || body.activation_source || "owner_manual")
+          : (body.activationSource || body.activation_source || "system")
+      }
+    ));
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/stage-assessments/challenge") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const requestedLearnerId = String(body.learnerId || body.learner_id || serviceWorkspaceId).replace(/^growth:/, "");
+    if (requestedLearnerId && requestedLearnerId !== serviceWorkspaceId) {
+      throw routeError("growth_stage_assessment_challenge_not_visible", "Learner challenge can only target its own workspace", 403);
+    }
+    const result = await services.learningStageAssessmentService.activateStageAssessment(Object.assign(
+      normalizeStageAssessmentInput(body, serviceWorkspaceId),
+      { learnerId: serviceWorkspaceId, activationSource: "executor_challenge" }
+    ));
     return sendJson(response, result.ok ? 201 : 400, result);
   }
 

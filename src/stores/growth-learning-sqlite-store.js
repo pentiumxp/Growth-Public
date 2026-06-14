@@ -20,6 +20,7 @@ const { createLearningGraphRepository } = require("./growth-learning-sqlite/grap
 const { createLearningHistorySummaryRepository } = require("./growth-learning-sqlite/history-summary");
 const { createMasteryProfileRepository } = require("./growth-learning-sqlite/mastery-profile");
 const { createRewardRepository } = require("./growth-learning-sqlite/rewards");
+const { createStageAssessmentCycleRepository } = require("./growth-learning-sqlite/stage-assessment-cycles");
 const {
   lanesForCards,
   publicCardFromRow,
@@ -53,6 +54,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const cardRetirementRepository = createCardRetirementRepository({ open });
   const masteryProfileRepository = createMasteryProfileRepository({ open });
   const rewardRepository = createRewardRepository({ open });
+  const stageAssessmentCycleRepository = createStageAssessmentCycleRepository({ open });
 
   function integrity(filters = {}) {
     return withDb((db) => {
@@ -127,6 +129,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     learningGraphRepository,
     learningHistorySummaryRepository,
     masteryProfileRepository,
+    stageAssessmentCycleRepository,
     legacyAudioRoots: audioRepository.legacyAudioRoots,
     board,
     card,

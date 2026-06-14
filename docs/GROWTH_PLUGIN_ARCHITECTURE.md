@@ -43,10 +43,12 @@ Growth should stay a service-first embedded plugin:
 | Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
 | Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and next recommendation in `learning_growth_card_trajectories`. |
 | Experience signal service | `src/services/learning-experience-signal-service.js` | Learner feedback writer for `too_easy`, `right_level`, `too_hard`, and `not_learned` signals. It validates graph target anchors, rejects raw/private fields, writes `sourceType=learner_feedback`, and returns summary-only signal DTOs. |
+| Stage assessment service | `src/services/learning-stage-assessment-service.js` | Formal assessment eligibility and activation policy. It reads the selected learner profile projection, applies recent-practice/high-pressure/cooldown rules, records cycle state, and activates `stage_assessment` generation with cycle metadata. |
 | Next-card strategy service | `src/services/learning-next-card-strategy-service.js` | Deterministic strategy selector over mastery summary, experience signals, and trajectory. It chooses repair/stabilize/transfer/stretch/integrate/review before card generation. |
 | Learning profile projection service | `src/services/learning-profile-projection-service.js` | Owner/UI-safe read projection over mastery states, recent experience signals, recent card trajectory, and next-card strategy. It returns summary-only profile context for generation views without raw answers, transcripts, prompts, or source refs. |
 | Card authoring SQLite publisher | `src/stores/growth-learning-sqlite/card-authoring-publisher.js` | Transactional publisher for validated authoring drafts. It creates missing FK parent rows in `learning_programs` and `learning_plan_drafts`, upserts `learning_task_cards`, writes `learning_card_graph_bindings`, and rolls back on partial failure. |
 | Historical authoring summary | `src/stores/growth-learning-sqlite/history-summary.js` | Summary-only historical context reader for generated cards. It exposes card/evaluation/mastery/experience aggregates without raw learner submissions or transcripts. |
+| Stage assessment cycles | `src/stores/growth-learning-sqlite/stage-assessment-cycles.js` | SQLite repository for `learning_growth_stage_assessment_cycles`. It supports imported Home AI schema variants such as `learner_workspace_id`, writes summary-only activation state, and returns public cycle DTOs. |
 | Knowledge Graph import | `src/services/learning-graph-import-service.js`, `src/stores/growth-learning-sqlite/graph-schema.js`, `src/stores/growth-learning-sqlite/graph-repository.js`, `scripts/import-learning-graph-pack.js` | Source-pack parser and native SQLite graph importer for recovered Growth Knowledge Graph seeds. Dry-run is the default; write mode is explicit and imports bounded graph metadata only. |
 | Knowledge Graph planning | `src/services/learning-graph-plan-service.js`, `src/services/learning-card-graph-binding-service.js` | Validated plan creation and card binding over native graph nodes. It feeds the protected graph-plus-history generation route and can still be used directly for manual plan/binding workflows. |
 | Regenerable card retirement | `src/services/growth-card-retirement-service.js`, `src/stores/growth-learning-sqlite/card-retirement.js`, `scripts/retire-growth-cards.js` | Dry-run-first workspace-scoped retirement of old board projection, pilot, and evergreen cards that can be regenerated. It hides cards from the board without hard-deleting learner history. |
@@ -139,6 +141,20 @@ The first core-module split is behavior-preserving:
   latter is selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or by a
   `/v1/responses` endpoint, and it keeps model prompting inside Growth while
   provider credentials remain behind Gateway.
+- Stage assessment activation is a separate Growth-owned service boundary.
+  `learning-stage-assessment-service` reads summary-only profile projection,
+  writes `learning_growth_stage_assessment_cycles` through
+  `stage-assessment-cycles`, and calls
+  `learning-card-generation-service` only after policy accepts activation.
+  Routes remain HTTP glue:
+  `POST /api/v1/growth/stage-assessments/eligibility`,
+  `POST /api/v1/growth/stage-assessments/activate`, and
+  `POST /api/v1/growth/stage-assessments/challenge`.
+  Owner manual activation requires Owner role. Learner challenge activation is
+  limited to the executor's own workspace and respects hard cooldown. Generated
+  formal cards carry `stageAssessmentCycleId`, activation metadata,
+  `formal_assessment` completion metadata, default `300` coin reward metadata,
+  and mastery evidence weight `1`.
 - The AI card loop is Growth-owned. `learning-mastery-profile-service`,
   `learning-card-trajectory-service`, and `learning-next-card-strategy-service`
   close the first service slice from evaluation evidence to profile update,

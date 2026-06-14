@@ -483,7 +483,8 @@ activation condition is met.
 
 Activation paths:
 
-- system eligibility from recent teaching/practice evidence;
+- system eligibility from recent teaching/practice evidence through
+  `learning-stage-assessment-service`;
 - elapsed time or stale mastery evidence;
 - Owner manual activation;
 - executor challenge activation when cooldown and safety policy allow it;
@@ -502,6 +503,34 @@ Initial heuristic thresholds from the migrated design:
   stage-assessment reward/completion policy.
 
 Dormant assessments should not appear as daily homework debt.
+
+The Growth plugin owns the implementation boundary:
+
+- `stage-assessment-cycles` writes and reads
+  `learning_growth_stage_assessment_cycles`;
+- `learning-stage-assessment-service` owns eligibility, cooldown, manual
+  activation, learner challenge activation, and the handoff to card generation;
+- `POST /api/v1/growth/stage-assessments/eligibility` evaluates readiness and
+  records `dormant`, `eligible`, or `cooldown` state;
+- `POST /api/v1/growth/stage-assessments/activate` is the Owner/manual or
+  system activation boundary. `owner_manual` requires Owner role through the
+  embedded proxy headers;
+- `POST /api/v1/growth/stage-assessments/challenge` is the learner self-start
+  boundary and can only target the executor's own workspace;
+- activated formal cards are generated through
+  `learning-card-generation-service`, not by a separate model path.
+
+Activated cards must include:
+
+- `cardRole=stage_assessment`;
+- one or more `assessmentCoverageNodeIds`;
+- `stageAssessmentCycleId`;
+- `activationState=active`;
+- `activationReason` such as `owner_manual`, `challenge_requested`, or
+  `enough_recent_practice`;
+- `activationSource` such as `owner_manual`, `executor_challenge`, or `system`;
+- `formal_assessment` completion metadata;
+- default `300` coin reward metadata and mastery evidence weight `1`.
 
 ## Evergreen And Sequence Behavior
 

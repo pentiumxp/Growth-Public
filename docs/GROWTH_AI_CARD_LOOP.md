@@ -150,8 +150,44 @@ Rules:
 - completed ordinary daily cards with mixed evidence should usually select
   `stabilize`, not a formal assessment;
 - missed days or low scores do not create backlog debt;
-- stage assessment activation remains a later policy slice and requires its own
-  service/harness.
+- stage assessment activation is a separate policy slice owned by
+  `learning-stage-assessment-service`; ordinary next-card strategy can make a
+  learner ready, but it does not directly publish formal assessments.
+
+## Stage Assessment Loop
+
+Formal stage assessment cards are generated only after a Growth-owned
+activation decision. The loop is:
+
+1. `learning-profile-projection-service` returns summary-only mastery,
+   experience-signal, and trajectory context for the selected learner.
+2. `learning-stage-assessment-service` evaluates eligibility over that
+   projection and writes a cycle row through
+   `stage-assessment-cycles`.
+3. Eligible cycles remain separate from daily homework. Dormant and eligible
+   cycles must not appear as overdue ordinary cards.
+4. Activation can be system-owned, Owner manual, or learner
+   `executor_challenge`.
+5. Activation calls `learning-card-generation-service` with
+   `cardRole=stage_assessment`, `stageAssessmentCycleId`,
+   `activationState=active`, `activationReason`, `activationSource`, and
+   assessment coverage node ids.
+6. The authoring/publisher boundary writes the formal task card and graph
+   binding. Stage assessment cards use `formal_assessment` metadata, default
+   `300` Growth learning coins, and mastery evidence weight `1`.
+
+Default V1 policy:
+
+- at least 4 recent ordinary practice/teaching trajectory rows are required
+  for system eligibility;
+- a recent `too_hard`, `not_learned`, `confusing`,
+  `needs_repair`, or `prerequisite_gap` signal blocks automatic eligibility;
+- a recent `too_easy` or `challenge_ready` signal can mark a cycle ready;
+- at least 5 days must pass after the latest completed formal assessment for
+  the same capability cluster before non-Owner activation;
+- Owner manual activation records `owner_manual` and can override cooldown;
+- learner challenge activation records `executor_challenge`, is limited to the
+  learner's own workspace, and respects cooldown.
 
 ## Evaluation-To-Profile Contract
 
@@ -242,11 +278,18 @@ Focused harnesses must cover:
 - learner difficulty feedback writes through `learning-experience-signal-service`,
   rejects unanchored/private input, updates `learning_growth_experience_signals`,
   and refreshes the current card projection;
+- stage assessment eligibility writes `learning_growth_stage_assessment_cycles`
+  through `stage-assessment-cycles`;
+- Owner manual activation generates a `stage_assessment` card with
+  `stageAssessmentCycleId`, active activation metadata, `formal_assessment`
+  policy, and default `300` coin reward metadata;
+- executor challenge activation can only target the executor's own workspace
+  and does not generate during active cooldown;
 - valid streaming response and valid JSON response from Gateway evaluation;
 - invalid JSON, missing schema fields, privacy-risk output, and model timeout
   from Gateway evaluation;
 - `growth-evaluation-service` using the injected Gateway evaluator before
   writing evaluation/profile/reward state.
 
-Full production automation and stage-assessment activation are explicitly
-outside this first slice.
+Full production automation and broad visual UI controls for stage assessment
+activation remain later slices.

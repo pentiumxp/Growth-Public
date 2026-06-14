@@ -458,6 +458,68 @@ test("card generation creates missing program and draft parent rows for FK-backe
   }
 });
 
+test("stage assessment generation persists activation metadata and formal assessment policy", async () => {
+  const { dbPath, gatewayCalls, generationService } = setup({
+    gatewayResponse() {
+      return {
+        json: {
+          output_text: JSON.stringify(validDraft({
+            cardRole: "stage_assessment",
+            title: "Ratio checkpoint",
+            targetNodeIds: ["kg_ratio_intro"],
+            assessmentCoverageNodeIds: ["kg_ratio_intro"],
+            expectedTimeMinutes: 28,
+            teachingFlow: null,
+            evidenceToRecord: ["explain_ratio_comparison"]
+          }))
+        }
+      };
+    }
+  });
+
+  const result = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    programId: "program_1",
+    targetNodeId: "kg_ratio_intro",
+    assessmentCoverageNodeIds: ["kg_ratio_intro"],
+    cardRole: "stage_assessment",
+    difficultyBand: "assessment",
+    generationKey: "ratio-stage-assessment",
+    stageAssessmentCycleId: "cycle_ratio_1",
+    activationState: "active",
+    activationReason: "owner_manual",
+    activationSource: "owner_manual",
+    cooldownUntil: "2026-06-20T00:00:00.000Z"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(gatewayCalls[0].input.cardRole, "stage_assessment");
+  assert.equal(gatewayCalls[0].input.stageAssessmentCycleId, "cycle_ratio_1");
+  assert.equal(gatewayCalls[0].input.activationSource, "owner_manual");
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
+    assert.equal(card.card_role, "stage_assessment");
+    assert.equal(card.task_card_type, "assessment");
+    assert.equal(card.stage_assessment_cycle_id, "cycle_ratio_1");
+    assert.equal(card.activation_state, "active");
+    assert.equal(card.activation_reason, "owner_manual");
+    assert.equal(card.activation_source, "owner_manual");
+    assert.equal(card.cooldown_until, "2026-06-20T00:00:00.000Z");
+    assert.equal(card.default_reward_coins, 300);
+    assert.equal(card.mastery_evidence_weight, 1);
+    assert.equal(JSON.parse(card.completion_policy_json).mode, "formal_assessment");
+    const raw = JSON.parse(card.raw_json);
+    assert.equal(raw.stageAssessment.cycleId, "cycle_ratio_1");
+    assert.equal(raw.stageAssessment.activationSource, "owner_manual");
+    assert.equal(raw.completionPolicy.mode, "formal_assessment");
+  } finally {
+    db.close();
+  }
+});
+
 test("card generation fails closed before Gateway when graph planning fails", async () => {
   const { gatewayCalls, generationService } = setup();
 

@@ -9,6 +9,78 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Stage Assessment Activation Slice
+
+- Current workspace state: implemented, locally validated, ready to commit and
+  push; not deployed.
+- Scope:
+  - added `stage-assessment-cycles` as the SQLite repository for
+    `learning_growth_stage_assessment_cycles`, including imported-schema
+    compatibility for `learner_workspace_id`;
+  - added `learning-stage-assessment-service` for system eligibility, Owner
+    manual activation, learner `executor_challenge`, cooldown policy, and the
+    handoff to `learning-card-generation-service`;
+  - added `POST /api/v1/growth/stage-assessments/eligibility`,
+    `POST /api/v1/growth/stage-assessments/activate`, and
+    `POST /api/v1/growth/stage-assessments/challenge`;
+  - wired the service in `src/app/services.js` and kept route logic limited to
+    JSON parsing, workspace authorization, Owner role checks, and own-workspace
+    challenge checks;
+  - extended card generation/authoring/publisher metadata so activated
+    `stage_assessment` cards persist `stageAssessmentCycleId`, activation
+    state/reason/source, cooldown metadata, formal-assessment completion
+    metadata, default `300` coin reward metadata, and mastery evidence weight
+    `1`;
+  - updated `npm run check` to include the new service/repository files.
+- Product boundary:
+  - ordinary generated cards still use `daily_score_once`: one evaluation, one
+    optional reflection, completion after the first evaluation, and
+    score-proportional rewards without a pass-line gate;
+  - dormant/eligible stage-assessment cycles are not daily homework debt;
+  - Owner manual activation records `owner_manual` and may override cooldown;
+  - learner challenge activation records `executor_challenge`, can only target
+    the executor's own workspace, and respects cooldown;
+  - this slice adds backend/service/API readiness only. Broad Owner UI controls
+    and production visual evidence remain future work.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-stage-assessment-service.test.js`;
+  - `tests/learning-stage-assessment-cycles-repository.test.js`;
+  - `tests/learning-card-generation-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `tests/growth-card-authoring-boundary.test.js`;
+  - `tests/growth-docs-locality.test.js`;
+  - `scripts/check-growth-card-authoring-boundary.js`.
+- Validation passed:
+  - `node --test tests/learning-stage-assessment-service.test.js tests/learning-stage-assessment-cycles-repository.test.js`;
+  - `node --test tests/learning-card-generation-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/learning-stage-assessment-service.test.js tests/learning-stage-assessment-cycles-repository.test.js tests/learning-card-generation-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-card-authoring-boundary.test.js tests/growth-docs-locality.test.js`;
+  - app AI Ops required checks from `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js` and
+    `git diff --check`;
+  - `npm run check`;
+  - `npm test` with 191 passing tests;
+  - `git diff --check`;
+  - CodeGraph sync/status after edits: 115 files, 1198 nodes, 4124 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require visual lane or deployment;
+  - evidence id: `evidence-2607331a-fda6-4d43-b6d7-08b1b12f39d5`.
+- Remaining architecture work:
+  - expose stage-assessment eligibility/activation controls in the Owner UI;
+  - add a broader workflow recovery harness for listener restart/stale
+    evaluation leases before scaling generated cards beyond the initial sample;
+  - run central visual evidence and production smoke before any deployment.
+
 ## 2026-06-14 Growth Gateway Evaluation Boundary Slice
 
 - Current workspace state: implemented, locally validated, committed, and

@@ -60,6 +60,7 @@ test("Growth SQLite store facade stays a composition boundary", () => {
   assert.match(store, /createEvaluationJobRepository/);
   assert.match(store, /createEvidenceWriter/);
   assert.match(store, /createMasteryProfileRepository/);
+  assert.match(store, /createStageAssessmentCycleRepository/);
   assert.match(store, /createRewardRepository/);
 });
 
@@ -93,6 +94,25 @@ test("Growth learner experience signal writes stay service-owned", () => {
   assert.match(routes, /experience-signals/);
   assert.doesNotMatch(routes, /recordExperienceSignal/);
   assert.doesNotMatch(routes, /learning_growth_experience_signals/);
+});
+
+test("Growth stage assessment activation stays service-owned", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningStageAssessmentService/);
+  assert.match(services, /learningStageAssessmentService/);
+  assert.match(services, /stageAssessmentCycleRepository/);
+
+  const stageService = read(path.join("src", "services", "learning-stage-assessment-service.js"));
+  assert.match(stageService, /evaluateEligibility/);
+  assert.match(stageService, /activateStageAssessment/);
+  assert.match(stageService, /stage_assessment/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /stage-assessments\/eligibility/);
+  assert.match(routes, /stage-assessments\/activate/);
+  assert.match(routes, /stage-assessments\/challenge/);
+  assert.doesNotMatch(routes, /learning_growth_stage_assessment_cycles/);
+  assert.doesNotMatch(routes, /generateCard\(Object\.assign/);
 });
 
 test("Growth frontend app remains boot wiring over adapter modules", () => {
