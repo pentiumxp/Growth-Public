@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Owner Recommendation Rationale UI Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - extended `learning-card-generation-context-service` to return a bounded
+    summary-only `nextCardRecommendation` DTO from the same next-target
+    selection path used by actual card generation;
+  - the DTO exposes selection mode, recommendation mode/source, selected
+    strategy, role, difficulty, support level, target graph ids, bounded
+    reason, and count-only evidence/profile summaries;
+  - updated the Owner generation UI to render the selected next-card rationale
+    in `data-card-generation-recommendation` before generation, including
+    trajectory/profile/graph source labels and target metadata;
+  - added dark-mode and mobile-safe styling for the recommendation panel and
+    bumped Growth static asset URLs to
+    `20260614-recommendation-rationale-ui-v1`;
+  - kept raw submissions, transcripts, prompts, answer keys, raw model output,
+    source refs, private paths, and provider details out of the read context.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-frontend-adapter.test.js`.
+- Validation passed:
+  - focused Owner recommendation/UI gate:
+    `node --test tests/learning-card-generation-context-service.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`
+    with 51 passing tests;
+  - syntax checks:
+    `node --check src/services/learning-card-generation-context-service.js`
+    and `node --check public/growth-card-generation-ui.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 215 passing tests;
+  - app AI Ops H3 required check from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in both Growth plugin and Home AI app workspaces;
+  - local Playwright visual smoke for the Owner generation panel using Home AI
+    app Playwright:
+    `/tmp/growth-recommendation-visual/mobile-dark.png` and
+    `/tmp/growth-recommendation-visual/desktop-light.png`; both proved the
+    recommendation panel and submit button visible/enabled with no horizontal
+    overflow;
+  - CodeGraph status after edits: 121 files, 1259 nodes, 4444 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-a6f58435-5a24-4d1b-bdcf-f7ec4a298b89`.
+- Remaining architecture work:
+  - add a generation recipe/policy service so Owner can request "daily
+    English" without knowing graph/domain parameters;
+  - decide whether a durable recommendation queue is needed if recommendations
+    need accepted/skipped/expired/superseded lifecycle states;
+  - production deployment still requires the central Home AI visual and
+    production smoke gates.
+
 ## 2026-06-14 Growth Next-Card Recommendation Projection Slice
 
 - Current workspace state: implemented and locally validated; this handoff

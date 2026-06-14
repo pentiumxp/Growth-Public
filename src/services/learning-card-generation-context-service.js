@@ -67,6 +67,54 @@ function planWithStrategy(plan = null, strategy = null) {
   });
 }
 
+function publicEvidenceBasis(basis = {}) {
+  return {
+    taskCardId: cleanString(basis.taskCardId),
+    sourceEvaluationId: cleanString(basis.sourceEvaluationId),
+    trajectoryUpdatedAt: cleanString(basis.trajectoryUpdatedAt),
+    weakSignalCount: Number(basis.weakSignalCount || 0) || 0,
+    weakStateCount: Number(basis.weakStateCount || 0) || 0,
+    stableHighStateCount: Number(basis.stableHighStateCount || 0) || 0,
+    highSignalCount: Number(basis.highSignalCount || 0) || 0
+  };
+}
+
+function publicProfileSummary(summary = {}) {
+  return {
+    masteryStateCount: Number(summary.masteryStateCount || 0) || 0,
+    weaknessCount: Number(summary.weaknessCount || 0) || 0,
+    strengthCount: Number(summary.strengthCount || 0) || 0,
+    recentExperienceSignalCount: Number(summary.recentExperienceSignalCount || 0) || 0,
+    recentTrajectoryCount: Number(summary.recentTrajectoryCount || 0) || 0,
+    lastTrajectoryAt: cleanString(summary.lastTrajectoryAt)
+  };
+}
+
+function publicNextCardRecommendation(selection = {}, strategy = {}) {
+  const targetNodeIds = asArray(selection.targetNodeIds).map(cleanString).filter(Boolean).length
+    ? asArray(selection.targetNodeIds).map(cleanString).filter(Boolean)
+    : asArray(strategy.targetNodeIds).map(cleanString).filter(Boolean);
+  const targetNodeId = cleanString(selection.targetNodeId) || targetNodeIds[0] || "";
+  const strategyName = cleanString(strategy.strategy);
+  return {
+    ok: Boolean(targetNodeId || strategyName),
+    source: "growth-learning-card-generation-context-service",
+    selectionMode: cleanString(selection.selectionMode || (selection.targetNode ? "graph_suggestion" : "")),
+    recommendationMode: cleanString(selection.recommendationMode),
+    strategy: strategyName,
+    cardRole: cleanString(selection.cardRole || strategy.cardRole),
+    difficultyBand: cleanString(selection.difficultyBand || strategy.difficultyBand),
+    supportLevel: cleanString(selection.supportLevel || strategy.supportLevel),
+    targetNodeId,
+    targetNodeIds,
+    reason: cleanString(strategy.reason).slice(0, 320),
+    evidenceBasis: publicEvidenceBasis(strategy.evidenceBasis || {}),
+    learningProfileSummary: selection.learningProfileSummary
+      ? publicProfileSummary(selection.learningProfileSummary)
+      : null
+  };
+}
+
 function readinessReady(readiness = {}) {
   return bool(readiness.targetEnabled)
     && bool(readiness.workspaceProvisioned)
@@ -107,11 +155,7 @@ function createLearningCardGenerationContextService(options = {}) {
   const profileProjectionService = options.profileProjectionService || null;
   const gatewayConfigured = options.gatewayConfigured || (() => false);
 
-  function suggestedNode(input = {}) {
-    if (nextTargetService && typeof nextTargetService.selectNextTarget === "function") {
-      const selection = nextTargetService.selectNextTarget(input);
-      if (selection?.ok && selection.targetNode) return selection.targetNode;
-    }
+  function graphSuggestedNode(input = {}) {
     if (!graphRepository || typeof graphRepository.suggestNodes !== "function") return null;
     try {
       const english = graphRepository.suggestNodes({ domain: "english", subject: "english", limit: 1 })[0] || null;
@@ -120,6 +164,23 @@ function createLearningCardGenerationContextService(options = {}) {
     } catch (_error) {
       return null;
     }
+  }
+
+  function suggestedTarget(input = {}) {
+    if (nextTargetService && typeof nextTargetService.selectNextTarget === "function") {
+      const selection = nextTargetService.selectNextTarget(input);
+      if (selection?.ok && selection.targetNode) return selection;
+    }
+    const targetNode = graphSuggestedNode(input);
+    const targetNodeId = cleanString(targetNode?.nodeId || targetNode?.node_id);
+    return targetNodeId ? {
+      ok: true,
+      source: "growth-learning-card-generation-context-service",
+      selectionMode: "graph_suggestion",
+      targetNodeId,
+      targetNodeIds: [targetNodeId],
+      targetNode
+    } : { ok: false, selectionMode: "unavailable", targetNode: null };
   }
 
   function graphReadiness() {
@@ -213,11 +274,13 @@ function createLearningCardGenerationContextService(options = {}) {
       sample: "fanfan"
     };
     const graph = graphReadiness();
-    const node = suggestedNode({ workspaceId, learnerId, programId: input.programId, cardRole: input.cardRole, domain: "english", subject: "english" });
+    const targetSelection = suggestedTarget({ workspaceId, learnerId, programId: input.programId, cardRole: input.cardRole, domain: "english", subject: "english" });
+    const node = targetSelection.targetNode;
     const baseSuggestedPlan = nodePlan(node, input);
     const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
     const learningProfile = learningProfileForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
-    const nextCardStrategy = learningProfile?.nextCardStrategy?.ok
+    const selectedStrategy = targetSelection?.nextCardStrategy?.ok ? targetSelection.nextCardStrategy : null;
+    const computedStrategy = learningProfile?.nextCardStrategy?.ok
       ? learningProfile.nextCardStrategy
       : nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
       ? nextCardStrategyService.chooseNextCardStrategy({
@@ -227,7 +290,9 @@ function createLearningCardGenerationContextService(options = {}) {
         targetNodeIds: baseSuggestedPlan?.targetNodeIds || []
       })
       : { ok: false, available: false, error: "next_card_strategy_service_unavailable" };
+    const nextCardStrategy = selectedStrategy || computedStrategy;
     const suggestedPlan = planWithStrategy(baseSuggestedPlan, nextCardStrategy);
+    const nextCardRecommendation = publicNextCardRecommendation(targetSelection, nextCardStrategy);
     const learnerSummary = history?.learnerSummary || {};
     const readiness = {
       targetEnabled: target.enabled,
@@ -252,6 +317,7 @@ function createLearningCardGenerationContextService(options = {}) {
         warnings: graph.warnings
       },
       suggestedPlan,
+      nextCardRecommendation,
       nextCardStrategy,
       learningProfile,
       historySummary: {

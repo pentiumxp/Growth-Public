@@ -133,6 +133,49 @@
     }).join("");
   }
 
+  function recommendationSourceText(recommendation = {}) {
+    const recommendationMode = clean(recommendation.recommendationMode);
+    const selectionMode = clean(recommendation.selectionMode);
+    if (recommendationMode === "trajectory") return "评价轨迹";
+    if (recommendationMode === "profile_strategy") return "画像策略";
+    if (selectionMode === "recommendation") return "推荐";
+    if (selectionMode === "strategy") return "画像策略";
+    if (selectionMode === "graph_suggestion") return "图谱建议";
+    if (selectionMode === "explicit") return "Owner 指定";
+    return "策略";
+  }
+
+  function nextCardRecommendationPanel(context = {}, fallbackStrategy = {}, escapeHtml = defaultEscapeHtml) {
+    const recommendation = context.nextCardRecommendation || {};
+    const strategy = recommendation.ok !== false && clean(recommendation.strategy)
+      ? recommendation
+      : fallbackStrategy || {};
+    const targetNodeIds = asArray(recommendation.targetNodeIds).length
+      ? asArray(recommendation.targetNodeIds)
+      : asArray(strategy.targetNodeIds);
+    const targetLabel = clean(recommendation.targetNodeId || targetNodeIds[0] || context.suggestedPlan?.targetNodeId || "未选择");
+    const strategyLabel = clean(strategy.strategy || "stabilize");
+    const role = clean(strategy.cardRole || context.suggestedPlan?.cardRole || "practice");
+    const difficulty = clean(strategy.difficultyBand || context.suggestedPlan?.difficultyBand || "foundation");
+    const reason = clean(strategy.reason || context.suggestedPlan?.strategyReason)
+      || "根据当前图谱目标生成一张日常英语练习卡。";
+    return `<div class="learning-card-generation-recommendation" data-card-generation-recommendation data-recommendation-mode="${escapeHtml(clean(recommendation.recommendationMode || recommendation.selectionMode || ""))}">
+      <div class="learning-card-generation-recommendation-head">
+        <span>
+          <strong>下一张建议</strong>
+          <small>${escapeHtml(recommendationSourceText(recommendation))}</small>
+        </span>
+        <em>${escapeHtml(strategyLabel)}</em>
+      </div>
+      <div class="learning-card-generation-recommendation-grid">
+        <span><small>目标</small><strong>${escapeHtml(targetLabel)}</strong></span>
+        <span><small>角色</small><strong>${escapeHtml(role)}</strong></span>
+        <span><small>难度</small><strong>${escapeHtml(difficulty)}</strong></span>
+      </div>
+      <p>${escapeHtml(reason)}</p>
+    </div>`;
+  }
+
   function learningProfilePanel(context = {}, escapeHtml = defaultEscapeHtml) {
     const profile = context.learningProfile || {};
     const strategy = profile.nextCardStrategy || context.nextCardStrategy || {};
@@ -161,10 +204,7 @@
           ${profileItemRows(profile.recentTrajectory, "暂无轨迹", escapeHtml)}
         </div>
       </div>
-      <div class="learning-card-generation-profile-reason">
-        <strong>下一张建议</strong>
-        <small>${escapeHtml(clean(strategy.reason) || "根据当前图谱目标生成一张日常英语练习卡。")}</small>
-      </div>
+      ${nextCardRecommendationPanel(context, strategy, escapeHtml)}
     </section>`;
   }
 

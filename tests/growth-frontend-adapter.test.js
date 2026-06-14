@@ -425,6 +425,18 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       difficultyBand: "foundation",
       evidenceRequirements: ["short_answer"]
     },
+    nextCardRecommendation: {
+      ok: true,
+      selectionMode: "recommendation",
+      recommendationMode: "trajectory",
+      strategy: "repair",
+      cardRole: "teaching",
+      difficultyBand: "repair",
+      supportLevel: "guided",
+      targetNodeId: "kg_english_evidence_answering",
+      targetNodeIds: ["kg_english_evidence_answering"],
+      reason: "Latest trajectory asks for one evidence repair card."
+    },
     learningProfile: {
       ok: true,
       summary: {
@@ -466,13 +478,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /日常英语卡/);
   assert.match(html, /data-card-generation-submit/);
   assert.match(html, /data-card-generation-profile/);
+  assert.match(html, /data-card-generation-recommendation/);
+  assert.match(html, /data-recommendation-mode="trajectory"/);
   assert.match(html, /学习画像/);
+  assert.match(html, /评价轨迹/);
+  assert.match(html, /kg_english_evidence_answering/);
+  assert.match(html, /Latest trajectory asks for one evidence repair card/);
   assert.match(html, /data-stage-assessment-panel/);
   assert.match(html, /阶段测评/);
   assert.match(html, /data-stage-assessment-check/);
   assert.match(html, /data-stage-assessment-activate/);
   assert.match(html, /Needs exact text evidence/);
-  assert.match(html, /Use one more short evidence-answering card/);
   assert.match(html, /weixin_stephen · 稍后开放/);
   assert.match(html, /daily_score_once/);
   assert.match(html, /mastery_trajectory_projection/);
@@ -1164,7 +1180,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-owner-evaluation-status-ui-v1";
+  const staticVersion = "20260614-recommendation-rationale-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1183,4 +1199,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-evaluation-failure-ui-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-ui-v1/);
+  assert.doesNotMatch(html, /20260614-owner-evaluation-status-ui-v1/);
 });

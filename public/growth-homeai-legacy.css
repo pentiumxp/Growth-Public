@@ -13577,6 +13577,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness,
 .learning-card-generation-profile,
 .learning-card-generation-stage-assessment,
+.learning-card-generation-recommendation,
 .learning-card-generation-profile-columns,
 .learning-card-generation-field-list,
 .learning-card-generation-flow,
@@ -13591,6 +13592,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-profile,
 .learning-card-generation-profile-row,
 .learning-card-generation-profile-reason,
+.learning-card-generation-recommendation,
+.learning-card-generation-recommendation-grid span,
 .learning-card-generation-stage-assessment,
 .learning-card-generation-field-list > div,
 .learning-card-generation-preview-card,
@@ -13628,6 +13631,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row span,
 .learning-card-generation-profile-head span,
 .learning-card-generation-profile-row span,
+.learning-card-generation-recommendation-head span,
 .learning-card-generation-stage-head span,
 .learning-card-generation-field-list span,
 .learning-card-generation-preview-head span {
@@ -13641,6 +13645,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row strong,
 .learning-card-generation-profile-head strong,
 .learning-card-generation-profile-row strong,
+.learning-card-generation-recommendation-head strong,
+.learning-card-generation-recommendation-grid strong,
 .learning-card-generation-stage-head strong,
 .learning-card-generation-field-list strong,
 .learning-card-generation-preview-head strong {
@@ -13658,6 +13664,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-profile-head small,
 .learning-card-generation-profile-row small,
 .learning-card-generation-profile-reason small,
+.learning-card-generation-recommendation-head small,
+.learning-card-generation-recommendation-grid small,
 .learning-card-generation-stage-head small,
 .learning-card-generation-stage-grid small,
 .learning-card-generation-field-list small,
@@ -13675,6 +13683,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row em,
 .learning-card-generation-profile-head em,
 .learning-card-generation-profile-row em,
+.learning-card-generation-recommendation-head em,
 .learning-card-generation-stage-head em,
 .learning-card-generation-field-list em,
 .learning-card-generation-preview-head em {
@@ -13707,6 +13716,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row,
 .learning-card-generation-profile-head,
 .learning-card-generation-profile-row,
+.learning-card-generation-recommendation-head,
 .learning-card-generation-stage-head,
 .learning-card-generation-field-list > div,
 .learning-card-generation-preview-head,
@@ -13791,6 +13801,33 @@ body.task-markdown-preview-open {
   gap: 3px;
   min-height: 52px;
   padding: 9px 11px;
+}
+
+.learning-card-generation-recommendation {
+  gap: 8px;
+  padding: 9px 11px;
+}
+
+.learning-card-generation-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-card-generation-recommendation-grid span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  background: var(--ui-card-surface);
+}
+
+.learning-card-generation-recommendation p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.42;
 }
 
 .learning-card-generation-stage-assessment {
@@ -14121,6 +14158,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-readiness-row em,
 :root[data-theme="dark"] .learning-card-generation-profile-head em,
 :root[data-theme="dark"] .learning-card-generation-profile-row em,
+:root[data-theme="dark"] .learning-card-generation-recommendation-head em,
 :root[data-theme="dark"] .learning-card-generation-stage-head em,
 :root[data-theme="dark"] .learning-card-generation-field-list em,
 :root[data-theme="dark"] .learning-card-generation-preview-head em,
@@ -14175,6 +14213,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-readiness-row em,
   :root[data-theme="system"] .learning-card-generation-profile-head em,
   :root[data-theme="system"] .learning-card-generation-profile-row em,
+  :root[data-theme="system"] .learning-card-generation-recommendation-head em,
   :root[data-theme="system"] .learning-card-generation-stage-head em,
   :root[data-theme="system"] .learning-card-generation-field-list em,
   :root[data-theme="system"] .learning-card-generation-preview-head em,
@@ -14226,6 +14265,7 @@ body.task-markdown-preview-open {
 
   .learning-card-generation-profile-columns,
   .learning-card-generation-profile-metrics,
+  .learning-card-generation-recommendation-grid,
   .learning-card-generation-stage-grid {
     grid-template-columns: 1fr;
   }

@@ -86,6 +86,9 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.suggestedPlan.targetNodeId, "kg_english_main_idea");
   assert.equal(result.suggestedPlan.cardRole, "practice");
   assert.equal(result.suggestedPlan.strategy, "stabilize");
+  assert.equal(result.nextCardRecommendation.selectionMode, "graph_suggestion");
+  assert.equal(result.nextCardRecommendation.strategy, "stabilize");
+  assert.equal(result.nextCardRecommendation.targetNodeId, "kg_english_main_idea");
   assert.equal(result.nextCardStrategy.reason, "Continue evidence-answering practice.");
   assert.equal(result.completionPolicy.mode, "daily_score_once");
   assert.equal(result.historySummary.learnerSummary.evaluationCount, 4);
@@ -310,8 +313,122 @@ test("card generation context uses strategy-driven next target before static gra
   assert.equal(result.suggestedPlan.difficultyBand, "repair");
   assert.equal(result.suggestedPlan.strategy, "repair");
   assert.equal(result.suggestedPlan.title, "Use exact text evidence");
+  assert.equal(result.nextCardRecommendation.selectionMode, "strategy");
+  assert.equal(result.nextCardRecommendation.strategy, "repair");
+  assert.equal(result.nextCardRecommendation.targetNodeId, "kg_english_evidence_answering");
   assert.equal(result.nextCardStrategy.reason, "Repair weak evidence-answering first.");
   assert.equal(historyCalls[0].learningGraphPlan.targetNodeId, "kg_english_evidence_answering");
+});
+
+test("card generation context exposes recommendation-driven next-card rationale", () => {
+  const service = createLearningCardGenerationContextService({
+    gatewayConfigured: () => true,
+    graphRepository: {
+      readback() {
+        return {
+          ok: true,
+          import_id: "kg_import_fanfan",
+          version: "2026-05-27-v1",
+          import_counts: { nodes: 294, edges: 329 },
+          warnings: []
+        };
+      },
+      suggestNodes() {
+        return [{
+          nodeId: "kg_english_main_idea",
+          domain: "english",
+          subject: "english",
+          title: "Find the main idea",
+          stage: "foundation",
+          evidenceRequired: ["short_answer"]
+        }];
+      }
+    },
+    nextTargetService: {
+      selectNextTarget() {
+        return {
+          ok: true,
+          selectionMode: "recommendation",
+          recommendationMode: "trajectory",
+          targetNodeId: "kg_english_evidence_answering",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          targetNode: {
+            nodeId: "kg_english_evidence_answering",
+            domain: "english",
+            subject: "english",
+            title: "Use exact text evidence",
+            stage: "foundation",
+            evidenceRequired: ["text_evidence"]
+          },
+          cardRole: "teaching",
+          difficultyBand: "repair",
+          nextCardStrategy: {
+            ok: true,
+            strategy: "repair",
+            cardRole: "teaching",
+            difficultyBand: "repair",
+            supportLevel: "guided",
+            targetNodeIds: ["kg_english_evidence_answering"],
+            reason: "Latest evaluation trajectory asks for one evidence repair card.",
+            evidenceBasis: {
+              taskCardId: "ltask_1",
+              sourceEvaluationId: "eval_1",
+              trajectoryUpdatedAt: "2026-06-14T08:00:00.000Z"
+            }
+          },
+          learningProfileSummary: {
+            masteryStateCount: 2,
+            weaknessCount: 1,
+            recentTrajectoryCount: 1,
+            lastTrajectoryAt: "2026-06-14T08:00:00.000Z"
+          }
+        };
+      }
+    },
+    historySummaryRepository: {
+      summaryForAuthoringPlan() {
+        return {
+          ok: true,
+          learnerSummary: { recentCardCount: 4, evaluationCount: 3 },
+          masterySummary: { masteryStates: [{ nodeId: "kg_english_evidence_answering", status: "weak" }] },
+          recentExperienceSignals: [],
+          recentTrajectory: []
+        };
+      }
+    },
+    profileProjectionService: {
+      profileContext() {
+        return {
+          ok: true,
+          summary: { weaknessCount: 1 },
+          nextCardStrategy: {
+            ok: true,
+            strategy: "stretch",
+            targetNodeIds: ["kg_english_main_idea"],
+            reason: "Recomputed profile strategy must not hide the selected recommendation."
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.context({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    displayName: "凡凡"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.suggestedPlan.targetNodeId, "kg_english_evidence_answering");
+  assert.equal(result.suggestedPlan.cardRole, "teaching");
+  assert.equal(result.nextCardRecommendation.selectionMode, "recommendation");
+  assert.equal(result.nextCardRecommendation.recommendationMode, "trajectory");
+  assert.equal(result.nextCardRecommendation.strategy, "repair");
+  assert.equal(result.nextCardRecommendation.reason, "Latest evaluation trajectory asks for one evidence repair card.");
+  assert.equal(result.nextCardRecommendation.evidenceBasis.sourceEvaluationId, "eval_1");
+  assert.equal(result.nextCardRecommendation.learningProfileSummary.weaknessCount, 1);
+  assert.equal(result.nextCardStrategy.strategy, "repair");
+  assert.equal(result.nextCardStrategy.reason, "Latest evaluation trajectory asks for one evidence repair card.");
 });
 
 test("card generation context reports not ready when graph or history stores are unavailable", () => {

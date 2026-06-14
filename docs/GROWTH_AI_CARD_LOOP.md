@@ -26,8 +26,10 @@ The loop is:
     suggestions.
 
 The Owner generation surface must make the loop observable. It should show the
-selected learner's bounded profile/trajectory projection before generation so
-the Owner can see why the next card is repair, stabilize, stretch, or review.
+selected learner's bounded profile/trajectory projection and explicit
+`nextCardRecommendation` before generation so the Owner can see whether the
+next card comes from a persisted trajectory recommendation, recomputed profile
+strategy, or graph suggestion.
 
 ## Ownership
 
@@ -149,7 +151,9 @@ The projection returns:
 - current strengths and weaknesses;
 - recent experience signals;
 - recent card trajectory rows;
-- the next-card strategy and reason.
+- the next-card strategy and reason;
+- `nextCardRecommendation`, including selection mode, recommendation mode,
+  graph target, role, difficulty, and bounded reason.
 
 The projection is target-workspace scoped. When Owner is viewing another
 learner, Growth must use the selected learner workspace from
@@ -336,15 +340,15 @@ Focused harnesses must cover:
   before recomputing a profile strategy;
 - evaluation service writes profile and trajectory after evaluation/reward;
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
-- card-generation context uses strategy/profile output in its summary-only
-  preview.
+- card-generation context uses recommendation/strategy/profile output in its
+  summary-only preview.
 - card generation can create a plan from the learner profile strategy when
   Owner does not hand-pick a target node, and the published card remains bound
   to that strategy-selected graph node;
 - learning profile projection returns bounded mastery, signal, trajectory, and
   next-card strategy fields without raw answer/source-ref leakage;
 - Owner generation UI renders the selected learner's profile projection and
-  next-card reason without creating any write action.
+  explicit next-card recommendation reason without creating any write action.
 - learner difficulty feedback writes through `learning-experience-signal-service`,
   rejects unanchored/private input, updates `learning_growth_experience_signals`,
   and refreshes the current card projection;

@@ -34,7 +34,7 @@ Growth should stay a service-first embedded plugin:
 | Growth service models | `src/services/growth-service-models.js` | Pure bounded status, board, snapshot, card, and migration summary projections used by the orchestration service. |
 | Home AI facade client | `src/services/home-ai-growth-facade-client.js` | Bounded Home AI Growth facade HTTP client with base URL normalization and workspace query/header handling. |
 | Card generation service | `src/services/learning-card-generation-service.js` | Graph-plus-history card generation orchestration. It creates a graph plan, reads historical summaries, adds graph source summaries, calls authoring, and returns the published card result. |
-| Card generation context service | `src/services/learning-card-generation-context-service.js` | Owner UI read-context service for card generation readiness. It returns Fanfan sample eligibility, daily English recipe metadata, graph readiness, suggested graph target, bounded history counts, Gateway configured state, and the `daily_score_once` policy without exposing raw learner content. |
+| Card generation context service | `src/services/learning-card-generation-context-service.js` | Owner UI read-context service for card generation readiness. It returns Fanfan sample eligibility, daily English recipe metadata, graph readiness, suggested graph target, explicit next-card recommendation/rationale, bounded history counts, Gateway configured state, and the `daily_score_once` policy without exposing raw learner content. |
 | Card recommendation service | `src/services/learning-card-recommendation-service.js` | Summary-only next-card recommendation projection. It promotes the latest persisted trajectory `nextRecommendation` before falling back to recomputed profile strategy, giving the evaluation-to-profile loop a concrete input for the next generation. |
 | Card next-target service | `src/services/learning-card-next-target-service.js` | Summary-only selector for the default next graph target. It uses the selected learner profile projection and next-card strategy target nodes before falling back to graph suggestions, so generation can proceed from weak/stabilize/stretch signals when Owner does not hand-pick a node. |
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
@@ -68,7 +68,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
 | Embedded UI boot | `public/app.js` | Boot/wiring layer for the embedded Growth app. |
 | Embedded UI adapters | `public/growth-appearance.js`, `public/growth-api-client.js`, `public/growth-view-model.js`, `public/growth-route-controller.js`, `public/growth-navigation-controller.js` | Host appearance mapping, API client/query handling, board/card view-model normalization, manifest route/action handling, and plugin-owned secondary-view back/navigation state. The API client includes card generation and stage-assessment eligibility/activation helpers. |
-| Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/growth-card-generation-ui.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction and Owner generation surfaces. Learner cards support one submission, visible evaluation refresh, optional one-time reflection, and text/audio evidence routed through plugin APIs. Owner generation supports daily cards plus stage-assessment eligibility/Owner manual activation controls. Controllers own ephemeral UI state while service/store rules remain backend-owned. |
+| Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/growth-card-generation-ui.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction and Owner generation surfaces. Learner cards support one submission, visible evaluation refresh, optional one-time reflection, and text/audio evidence routed through plugin APIs. Owner generation supports daily cards, visible next-card recommendation rationale, and stage-assessment eligibility/Owner manual activation controls. Controllers own ephemeral UI state while service/store rules remain backend-owned. |
 | Migrated UI baseline | `public/growth-legacy-*.js`, `public/growth-homeai-legacy.css` | Plugin-owned copy of the migrated Growth UI baseline. Future Growth UI changes happen here, not in Home AI host files. |
 
 ## Current Refactor Boundary
@@ -154,7 +154,8 @@ The first core-module split is behavior-preserving:
   before falling back to the summary-only profile strategy. Generic graph
   suggestions are used only after those learner-specific candidates fail to
   resolve. The generation context preview and actual generation route share
-  this service so the shown suggested plan and published card do not diverge.
+  this service so the shown suggested plan, visible recommendation rationale,
+  and published card do not diverge.
 - Stage assessment activation is a separate Growth-owned service boundary.
   `learning-stage-assessment-service` reads summary-only profile projection,
   writes `learning_growth_stage_assessment_cycles` through
@@ -197,7 +198,7 @@ The first core-module split is behavior-preserving:
   `learning-profile-projection-service` through
   `learning-card-generation-context-service`. This projection includes bounded
   mastery states, strengths, weaknesses, recent experience signals, recent
-  trajectories, and the next-card strategy reason. It is read-only and must use
+  trajectories, and the explicit next-card recommendation reason. It is read-only and must use
   the selected target workspace, not the Owner workspace, when Owner is viewing
   another learner. It must not expose raw answers, transcripts, prompts, answer
   keys, raw model output, private file paths, or repository source refs.

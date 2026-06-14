@@ -278,11 +278,12 @@ literals inside JavaScript can therefore be rewritten into the wrong query
 shape. Growth JS and CSS URLs in `public/index.html` should carry a version
 query for card-generation releases so mobile WebViews fetch the current API
 client and UI state code. The current frontend cache key is
-`20260614-owner-evaluation-status-ui-v1`; the frontend adapter harness asserts that
+`20260614-recommendation-rationale-ui-v1`; the frontend adapter harness asserts that
 older `20260614-growth-navigation-v1`, `20260614-stage-assessment-ui-v1`, and
 `20260614-evaluation-failure-ui-v1`, and
 `20260614-owner-evaluation-retry-v1`, and
-`20260614-owner-evaluation-retry-ui-v1` keys are no longer present.
+`20260614-owner-evaluation-retry-ui-v1`, and
+`20260614-owner-evaluation-status-ui-v1` keys are no longer present.
 
 Recommended context response:
 
@@ -314,6 +315,15 @@ Recommended context response:
     "domain": "english",
     "difficulty": "foundation",
     "evidenceRequirements": ["short_answer", "self_reflection_optional"]
+  },
+  "nextCardRecommendation": {
+    "selectionMode": "recommendation",
+    "recommendationMode": "trajectory",
+    "strategy": "repair",
+    "cardRole": "teaching",
+    "difficultyBand": "repair",
+    "targetNodeId": "kg_english_evidence_answering",
+    "reason": "Latest evaluation trajectory asks for one evidence repair card."
   },
   "historySummary": {
     "recentCards": 6,

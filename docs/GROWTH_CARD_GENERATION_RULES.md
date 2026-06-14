@@ -358,6 +358,9 @@ The service-owned runtime path is:
 4. `learning-profile-projection-service` prepares the selected learner's
    Owner-visible profile projection: mastery states, strengths, weaknesses,
    recent experience signals, recent trajectory, and next-card strategy reason;
+   `learning-card-generation-context-service` also projects the selected
+   summary-only `nextCardRecommendation` so the Owner sees the same rationale
+   that actual generation will use;
 5. `learning-next-card-strategy-service` chooses or refreshes a bounded
    next-card strategy from profile, signals, and trajectory for the selected
    plan;
@@ -388,12 +391,13 @@ generation path. It should use weak or stabilizing evidence from the selected
 learner before generic graph suggestions. Formal `stage_assessment` generation
 still requires explicit target and assessment coverage.
 
-The Owner generation page may display `learningProfile` before generation.
-That display is a read-only target-workspace projection and must remain
-summary-only. It is allowed to show bounded weaknesses, strengths, signals,
-recent trajectory, and the next-card strategy reason; it is not allowed to show
-raw answers, transcripts, prompts, hidden answer keys, model output, private
-file paths, or internal source refs.
+The Owner generation page may display `learningProfile` and
+`nextCardRecommendation` before generation. That display is a read-only
+target-workspace projection and must remain summary-only. It is allowed to show
+bounded weaknesses, strengths, signals, recent trajectory, selection mode,
+recommendation mode, graph target, role, difficulty, and the next-card reason;
+it is not allowed to show raw answers, transcripts, prompts, hidden answer
+keys, model output, private file paths, or internal source refs.
 
 ## Gateway Response Modes
 
