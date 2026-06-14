@@ -9,6 +9,7 @@ const { createLearningCardAuthoringValidationService } = require("../services/le
 const { createLearningCardEvaluationService } = require("../services/learning-card-evaluation-service");
 const { createLearningCardGraphBindingService } = require("../services/learning-card-graph-binding-service");
 const { createLearningCardGenerationContextService } = require("../services/learning-card-generation-context-service");
+const { createLearningCardGenerationRecipePolicyService } = require("../services/learning-card-generation-recipe-policy-service");
 const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../services/learning-card-recommendation-service");
@@ -86,6 +87,7 @@ function createServices(config) {
   const learningCardRecommendationService = createLearningCardRecommendationService({
     profileProjectionService: learningProfileProjectionService
   });
+  const learningCardGenerationRecipePolicyService = createLearningCardGenerationRecipePolicyService();
   const learningCardNextTargetService = createLearningCardNextTargetService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
@@ -99,6 +101,7 @@ function createServices(config) {
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
     nextTargetService: learningCardNextTargetService,
     nextCardStrategyService: learningNextCardStrategyService,
+    recipePolicyService: learningCardGenerationRecipePolicyService,
     authoringService: learningCardAuthoringService
   });
   const learningStageAssessmentService = createLearningStageAssessmentService({
@@ -112,6 +115,7 @@ function createServices(config) {
     nextTargetService: learningCardNextTargetService,
     profileProjectionService: learningProfileProjectionService,
     nextCardStrategyService: learningNextCardStrategyService,
+    recipePolicyService: learningCardGenerationRecipePolicyService,
     gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint)
   });
   const growthEvaluationService = createGrowthEvaluationService({
@@ -134,6 +138,7 @@ function createServices(config) {
     learningCardAuthoringService,
     learningCardEvaluationService,
     learningCardGenerationContextService,
+    learningCardGenerationRecipePolicyService,
     learningCardGenerationService,
     learningCardGraphBindingService,
     learningCardNextTargetService,

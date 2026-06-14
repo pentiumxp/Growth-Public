@@ -139,6 +139,7 @@ function normalizeCardGenerationInput(body, workspaceId) {
     learnerId: body.learnerId || body.learner_id,
     workspaceId,
     programId: body.programId || body.program_id,
+    recipeId: body.recipeId || body.recipe_id,
     targetNodeId: body.targetNodeId || body.target_node_id,
     targetNodeIds: body.targetNodeIds || body.target_node_ids,
     cardRole: body.cardRole || body.card_role,

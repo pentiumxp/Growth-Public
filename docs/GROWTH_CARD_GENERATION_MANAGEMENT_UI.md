@@ -278,12 +278,13 @@ literals inside JavaScript can therefore be rewritten into the wrong query
 shape. Growth JS and CSS URLs in `public/index.html` should carry a version
 query for card-generation releases so mobile WebViews fetch the current API
 client and UI state code. The current frontend cache key is
-`20260614-recommendation-rationale-ui-v1`; the frontend adapter harness asserts that
+`20260614-recipe-policy-v1`; the frontend adapter harness asserts that
 older `20260614-growth-navigation-v1`, `20260614-stage-assessment-ui-v1`, and
 `20260614-evaluation-failure-ui-v1`, and
 `20260614-owner-evaluation-retry-v1`, and
 `20260614-owner-evaluation-retry-ui-v1`, and
-`20260614-owner-evaluation-status-ui-v1` keys are no longer present.
+`20260614-owner-evaluation-status-ui-v1`, and
+`20260614-recommendation-rationale-ui-v1` keys are no longer present.
 
 Recommended context response:
 
@@ -303,6 +304,13 @@ Recommended context response:
       "completionPolicy": "daily_score_once"
     }
   ],
+  "generationDefaults": {
+    "domain": "english",
+    "subject": "english",
+    "defaultCardRole": "practice",
+    "defaultDifficultyBand": "foundation",
+    "cardSchemaVersion": "growth.card.authoring.v1"
+  },
   "readiness": {
     "workspaceProvisioned": true,
     "learningGraphReady": true,
@@ -383,34 +391,26 @@ difficulty feedback from the Owner generation surface.
 
 ## Generate Request
 
-The UI should call the existing generation endpoint with bounded recipe and
-graph-plan inputs:
+The UI should call the existing generation endpoint with a bounded recipe
+request. The Owner UI may display the suggested graph target, role, difficulty,
+and recommendation rationale, but ordinary daily generation must not require
+the browser to submit those graph-policy fields:
 
 ```json
 {
-  "targetWorkspaceId": "weixin_fanfan",
-  "learnerId": "fanfan",
-  "recipeId": "daily_english_v1",
-  "learningGraphPlan": {
-    "targetNodeId": "node_english_daily_reading_foundation",
-    "cardRole": "practice",
-    "difficulty": "foundation",
-    "evidenceRequirements": ["short_answer", "self_reflection_optional"]
-  },
-  "completionPolicy": {
-    "mode": "daily_score_once",
-    "evaluationAttempts": 1,
-    "reflectionAttempts": 1,
-    "completionAfter": "first_evaluation",
-    "rewardMode": "score_proportional",
-    "passScoreRequired": false
-  }
+  "workspace_id": "weixin_fanfan",
+  "learner_id": "fanfan",
+  "recipe_id": "daily_english_v1",
+  "card_schema_version": "growth.card.authoring.v1"
 }
 ```
 
-If the current implementation keeps the target workspace in the query string
-or bearer-scoped launch context, the route can normalize that internally. The
-UI should still keep target and actor separate in state.
+`learning-card-generation-recipe-policy-service` normalizes the recipe,
+English domain/subject defaults, card schema version, and `daily_score_once`
+policy. `learning-card-next-target-service` then chooses the graph target from
+the selected learner's trajectory/profile before graph fallback. Stage
+assessment generation remains a separate explicit coverage flow and does not
+use this compact daily recipe payload.
 
 ## Daily English Recipe
 
@@ -525,6 +525,7 @@ Add focused tests before broad regression runs:
 
 | Boundary | Harness |
 | --- | --- |
+| Recipe policy service | normalizes compact `daily_english_v1` requests, exposes public recipe context, and leaves stage assessment outside daily defaults |
 | Context service | returns Fanfan sample, readiness, recipe, graph suggestion, bounded history summary, selected learner profile projection |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
@@ -544,6 +545,7 @@ Recommended command group after implementation:
 
 ```bash
 node --test tests/learning-card-generation-context-service.test.js \
+  tests/learning-card-generation-recipe-policy-service.test.js \
   tests/learning-profile-projection-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-frontend-adapter.test.js
@@ -556,6 +558,7 @@ Current focused harness:
 
 ```bash
 node --test tests/learning-card-generation-context-service.test.js \
+  tests/learning-card-generation-recipe-policy-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-frontend-adapter.test.js
 ```

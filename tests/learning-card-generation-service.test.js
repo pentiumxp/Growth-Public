@@ -8,6 +8,7 @@ const { DatabaseSync } = require("node:sqlite");
 const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
+const { createLearningCardGenerationRecipePolicyService } = require("../src/services/learning-card-generation-recipe-policy-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
@@ -388,6 +389,7 @@ function setup(options = {}) {
   const recommendationService = createLearningCardRecommendationService({
     profileProjectionService
   });
+  const recipePolicyService = createLearningCardGenerationRecipePolicyService();
   const nextTargetService = createLearningCardNextTargetService({
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
@@ -401,6 +403,7 @@ function setup(options = {}) {
     historySummaryRepository: store.learningHistorySummaryRepository,
     nextTargetService,
     nextCardStrategyService,
+    recipePolicyService,
     authoringService
   });
   return { dbPath, gatewayCalls, generationService, nextTargetService, planService, store };
@@ -496,7 +499,7 @@ test("card generation creates missing program and draft parent rows for FK-backe
   }
 });
 
-test("card generation can choose the next target from learner profile when Owner does not hand-pick a node", async () => {
+test("card generation can choose the next daily English target when Owner submits only a recipe", async () => {
   const { dbPath, gatewayCalls, generationService } = setup({
     gatewayResponse() {
       return {
@@ -515,15 +518,17 @@ test("card generation can choose the next target from learner profile when Owner
     workspaceId: "weixin_child",
     learnerId: "weixin_child",
     programId: "program_1",
-    cardRole: "practice",
-    generationKey: "ratio-auto-next-target"
+    recipeId: "daily_english_v1"
   });
 
   assert.equal(result.ok, true);
+  assert.equal(result.recipeId, "daily_english_v1");
   assert.equal(result.learningGraphPlan.targetNodeId, "kg_ratio_intro");
   assert.deepEqual(result.learningGraphPlan.cardSequence[0].targetNodeIds, ["kg_ratio_intro"]);
   assert.equal(result.nextCardStrategy.targetNodeIds[0], "kg_ratio_intro");
   assert.equal(gatewayCalls[0].input.learningGraphPlan.targetNodeId, "kg_ratio_intro");
+  assert.equal(gatewayCalls[0].input.cardRole, "practice");
+  assert.equal(gatewayCalls[0].input.cardSchemaVersion, "growth.card.authoring.v1");
   assert.equal(gatewayCalls[0].input.nextCardStrategy.strategy, "stabilize");
 
   const db = new DatabaseSync(dbPath);

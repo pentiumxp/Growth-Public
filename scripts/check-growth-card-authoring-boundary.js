@@ -20,6 +20,7 @@ const REQUIRED_DOC_MARKERS = Object.freeze([
   "POST /api/v1/growth/stage-assessments/activate",
   "POST /api/v1/growth/stage-assessments/challenge",
   "learning-card-generation-service",
+  "learning-card-generation-recipe-policy-service",
   "history-summary",
   "card-authoring-publisher",
   "POST /api/v1/growth/cards/generate",

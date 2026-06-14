@@ -374,30 +374,12 @@
   }
 
   function createDailyEnglishGeneratePayload({ context = {}, workspaceId = "" } = {}) {
-    const plan = context.suggestedPlan || {};
+    const generationDefaults = context.generationDefaults || {};
     return {
       workspace_id: clean(workspaceId || context.target?.workspaceId),
       learner_id: clean(context.target?.learnerId || workspaceId),
       recipe_id: clean(context.selectedRecipeId || "daily_english_v1"),
-      target_node_id: clean(plan.targetNodeId),
-      target_node_ids: asArray(plan.targetNodeIds),
-      card_role: clean(plan.cardRole || "practice"),
-      difficulty_band: clean(plan.difficultyBand || "foundation"),
-      evidence_requirements: asArray(plan.evidenceRequirements),
-      card_schema_version: "growth.card.authoring.v1",
-      generation_key: [
-        clean(context.selectedRecipeId || "daily_english_v1"),
-        clean(workspaceId || context.target?.workspaceId),
-        clean(plan.targetNodeId)
-      ].filter(Boolean).join(":"),
-      completion_policy: {
-        mode: "daily_score_once",
-        evaluationAttempts: 1,
-        reflectionAttempts: 1,
-        completionAfter: "first_evaluation",
-        rewardMode: "score_proportional",
-        passScoreRequired: false
-      }
+      card_schema_version: clean(generationDefaults.cardSchemaVersion || "growth.card.authoring.v1")
     };
   }
 

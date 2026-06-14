@@ -88,6 +88,9 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(services, /createLearningCardRecommendationService/);
   assert.match(services, /learningCardRecommendationService/);
   assert.match(services, /recommendationService: learningCardRecommendationService/);
+  assert.match(services, /createLearningCardGenerationRecipePolicyService/);
+  assert.match(services, /learningCardGenerationRecipePolicyService/);
+  assert.match(services, /recipePolicyService: learningCardGenerationRecipePolicyService/);
   assert.match(services, /createLearningCardNextTargetService/);
   assert.match(services, /learningCardNextTargetService/);
   assert.match(services, /nextTargetService: learningCardNextTargetService/);
@@ -97,9 +100,13 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.doesNotMatch(routes, /learning_growth_mastery_states/);
   assert.doesNotMatch(routes, /recommendNextCard/);
   assert.doesNotMatch(routes, /selectNextTarget/);
+  assert.doesNotMatch(routes, /daily_english_v1/);
 
   const ui = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(ui, /data-card-generation-profile/);
+  assert.match(ui, /recipe_id/);
+  assert.doesNotMatch(ui, /target_node_id: clean\(plan\.targetNodeId\)/);
+  assert.doesNotMatch(ui, /completion_policy: \{/);
   assert.doesNotMatch(ui, /rawAnswer/);
   assert.doesNotMatch(ui, /sourceRef/);
 });

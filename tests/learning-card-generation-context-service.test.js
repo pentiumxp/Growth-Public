@@ -91,6 +91,9 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.nextCardRecommendation.targetNodeId, "kg_english_main_idea");
   assert.equal(result.nextCardStrategy.reason, "Continue evidence-answering practice.");
   assert.equal(result.completionPolicy.mode, "daily_score_once");
+  assert.equal(result.selectedRecipeId, "daily_english_v1");
+  assert.equal(result.generationDefaults.domain, "english");
+  assert.equal(result.generationDefaults.cardSchemaVersion, "growth.card.authoring.v1");
   assert.equal(result.historySummary.learnerSummary.evaluationCount, 4);
   assert.equal(result.historySummary.recentTrajectoryCount, 1);
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);

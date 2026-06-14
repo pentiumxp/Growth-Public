@@ -498,9 +498,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     workspaceId: "weixin_fanfan"
   });
   assert.equal(payload.workspace_id, "weixin_fanfan");
-  assert.equal(payload.target_node_id, "kg_english_main_idea");
-  assert.equal(payload.card_role, "practice");
-  assert.equal(payload.completion_policy.mode, "daily_score_once");
+  assert.equal(payload.recipe_id, "daily_english_v1");
+  assert.equal(payload.card_schema_version, "growth.card.authoring.v1");
+  assert.equal(Object.hasOwn(payload, "target_node_id"), false);
+  assert.equal(Object.hasOwn(payload, "card_role"), false);
+  assert.equal(Object.hasOwn(payload, "difficulty_band"), false);
+  assert.equal(Object.hasOwn(payload, "completion_policy"), false);
+  assert.equal(Object.hasOwn(payload, "generation_key"), false);
 
   const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
     context,
@@ -1180,7 +1184,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-recommendation-rationale-ui-v1";
+  const staticVersion = "20260614-recipe-policy-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1200,4 +1204,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-ui-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-status-ui-v1/);
+  assert.doesNotMatch(html, /20260614-recommendation-rationale-ui-v1/);
 });

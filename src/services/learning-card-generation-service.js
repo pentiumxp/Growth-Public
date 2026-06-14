@@ -58,6 +58,9 @@ function normalizePlanInput(input = {}) {
     learnerId: input.learnerId || input.learner_id || input.workspaceId || input.workspace_id,
     workspaceId: input.workspaceId || input.workspace_id,
     programId: input.programId || input.program_id,
+    recipeId: input.recipeId || input.recipe_id,
+    domain: input.domain,
+    subject: input.subject,
     targetNodeId: input.targetNodeId || input.target_node_id,
     targetNodeIds: input.targetNodeIds || input.target_node_ids,
     cardRole: input.cardRole || input.card_role,
@@ -72,6 +75,29 @@ function hasExplicitPlanTarget(input = {}) {
     || uniqueStrings(input.targetNodeIds || input.target_node_ids).length
     || input.learningGraphPlan?.learningGraphPlanId
   );
+}
+
+function hasExplicitCardRole(input = {}) {
+  return Boolean(cleanString(input.cardRole || input.card_role));
+}
+
+function hasExplicitDifficultyBand(input = {}) {
+  return Boolean(cleanString(input.difficultyBand || input.difficulty_band));
+}
+
+function recipeDefault(policy = {}, field = "") {
+  const recipe = policy.recipe || {};
+  return cleanString(recipe[field]);
+}
+
+function applyRecipePlanFallbacks(planInput = {}, policy = {}, options = {}) {
+  if (!policy?.applies) return planInput;
+  return Object.assign({}, planInput, {
+    cardRole: cleanString(planInput.cardRole)
+      || (options.allowCardRole ? recipeDefault(policy, "defaultCardRole") : ""),
+    difficultyBand: cleanString(planInput.difficultyBand)
+      || (options.allowDifficultyBand ? recipeDefault(policy, "defaultDifficultyBand") : "")
+  });
 }
 
 function normalizeResultHistory(history = {}) {
@@ -89,30 +115,44 @@ function createLearningCardGenerationService(options = {}) {
   const historySummaryRepository = options.historySummaryRepository;
   const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
+  const recipePolicyService = options.recipePolicyService || null;
   const authoringService = options.authoringService;
 
-  function normalizePlanInputWithDefaultTarget(input = {}) {
+  function normalizeGenerationInput(input = {}) {
+    if (!recipePolicyService || typeof recipePolicyService.normalizeGenerationInput !== "function") {
+      return { ok: true, applies: false, input };
+    }
+    return recipePolicyService.normalizeGenerationInput(input);
+  }
+
+  function normalizePlanInputWithDefaultTarget(input = {}, policy = {}) {
     const planInput = normalizePlanInput(input);
     if (hasExplicitPlanTarget(input) || cleanString(planInput.cardRole).toLowerCase() === "stage_assessment") {
-      return planInput;
+      return applyRecipePlanFallbacks(planInput, policy, {
+        allowCardRole: !hasExplicitCardRole(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment",
+        allowDifficultyBand: !hasExplicitDifficultyBand(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment"
+      });
     }
     if (!nextTargetService || typeof nextTargetService.selectNextTarget !== "function") return planInput;
     const selection = nextTargetService.selectNextTarget(planInput);
     if (!selection?.ok) return planInput;
-    return Object.assign({}, planInput, {
+    return applyRecipePlanFallbacks(Object.assign({}, planInput, {
       targetNodeId: selection.targetNodeId,
       targetNodeIds: selection.targetNodeIds,
       cardRole: planInput.cardRole || selection.cardRole,
       difficultyBand: planInput.difficultyBand || selection.difficultyBand
+    }), policy, {
+      allowCardRole: !hasExplicitCardRole(input),
+      allowDifficultyBand: !hasExplicitDifficultyBand(input)
     });
   }
 
-  async function resolvePlan(input = {}) {
+  async function resolvePlan(input = {}, policy = {}) {
     if (input.learningGraphPlan?.learningGraphPlanId) return input.learningGraphPlan;
     if (!graphPlanService || typeof graphPlanService.createPlan !== "function") {
       return unavailable("learning_graph_plan_service_unavailable", { stage: "plan" });
     }
-    const plan = await graphPlanService.createPlan(normalizePlanInputWithDefaultTarget(input));
+    const plan = await graphPlanService.createPlan(normalizePlanInputWithDefaultTarget(input, policy));
     if (!plan?.ok) return unavailable(plan?.error || "learning_graph_plan_failed", { stage: "plan", planResult: plan || null });
     return plan;
   }
@@ -132,16 +172,19 @@ function createLearningCardGenerationService(options = {}) {
   }
 
   async function generateCard(input = {}) {
-    const plan = await resolvePlan(input);
+    const policy = normalizeGenerationInput(input);
+    if (!policy?.ok) return unavailable(policy?.error || "learning_card_generation_recipe_policy_failed", { stage: "recipe", recipePolicy: policy || null });
+    const normalizedInput = policy.input || input;
+    const plan = await resolvePlan(normalizedInput, policy);
     if (!plan?.ok) return plan;
-    const history = resolveHistory(input, plan);
+    const history = resolveHistory(normalizedInput, plan);
     if (!history?.ok) return history;
     if (!authoringService || typeof authoringService.authorCard !== "function") {
       return unavailable("learning_card_authoring_service_unavailable", { stage: "authoring" });
     }
     const firstCard = firstPlanCard(plan);
     const graphSources = graphSourceSummaries(graphRepository, plan);
-    const sourceSummaries = graphSources.concat(asArray(input.sourceSummaries || input.source_summaries)).slice(0, 12);
+    const sourceSummaries = graphSources.concat(asArray(normalizedInput.sourceSummaries || normalizedInput.source_summaries)).slice(0, 12);
     const nextCardStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
       ? nextCardStrategyService.chooseNextCardStrategy({
         masterySummary: history.masterySummary,
@@ -149,7 +192,7 @@ function createLearningCardGenerationService(options = {}) {
         recentTrajectory: history.recentTrajectory,
         targetNodeIds: planTargetNodeIds(plan)
       })
-      : input.nextCardStrategy || input.next_card_strategy || null;
+      : normalizedInput.nextCardStrategy || normalizedInput.next_card_strategy || null;
     const authoring = await authoringService.authorCard({
       learningGraphPlan: plan,
       learnerSummary: history.learnerSummary,
@@ -157,18 +200,18 @@ function createLearningCardGenerationService(options = {}) {
       recentExperienceSignals: history.recentExperienceSignals,
       recentTrajectory: history.recentTrajectory,
       nextCardStrategy,
-      cardRole: input.cardRole || input.card_role || firstCard.cardRole,
-      difficultyBand: input.difficultyBand || input.difficulty_band || firstCard.difficultyBand,
-      evidenceRequirements: input.evidenceRequirements || input.evidence_requirements || firstCard.evidenceRequired,
-      cardSchemaVersion: input.cardSchemaVersion || input.card_schema_version || "growth.card.authoring.v1",
+      cardRole: normalizedInput.cardRole || normalizedInput.card_role || firstCard.cardRole || recipeDefault(policy, "defaultCardRole"),
+      difficultyBand: normalizedInput.difficultyBand || normalizedInput.difficulty_band || firstCard.difficultyBand || recipeDefault(policy, "defaultDifficultyBand"),
+      evidenceRequirements: normalizedInput.evidenceRequirements || normalizedInput.evidence_requirements || firstCard.evidenceRequired || policy.recipe?.evidenceRequirements,
+      cardSchemaVersion: normalizedInput.cardSchemaVersion || normalizedInput.card_schema_version || policy.recipe?.cardSchemaVersion || "growth.card.authoring.v1",
       sourceSummaries,
-      generationKey: input.generationKey || input.generation_key,
-      taskCardId: input.taskCardId || input.task_card_id,
-      stageAssessmentCycleId: input.stageAssessmentCycleId || input.stage_assessment_cycle_id,
-      activationState: input.activationState || input.activation_state,
-      activationReason: input.activationReason || input.activation_reason,
-      activationSource: input.activationSource || input.activation_source,
-      cooldownUntil: input.cooldownUntil || input.cooldown_until
+      generationKey: normalizedInput.generationKey || normalizedInput.generation_key,
+      taskCardId: normalizedInput.taskCardId || normalizedInput.task_card_id,
+      stageAssessmentCycleId: normalizedInput.stageAssessmentCycleId || normalizedInput.stage_assessment_cycle_id,
+      activationState: normalizedInput.activationState || normalizedInput.activation_state,
+      activationReason: normalizedInput.activationReason || normalizedInput.activation_reason,
+      activationSource: normalizedInput.activationSource || normalizedInput.activation_source,
+      cooldownUntil: normalizedInput.cooldownUntil || normalizedInput.cooldown_until
     });
     if (!authoring?.ok) {
       return unavailable(authoring?.error || "learning_card_authoring_failed", {
@@ -181,6 +224,7 @@ function createLearningCardGenerationService(options = {}) {
     return {
       ok: true,
       source: "growth-learning-card-generation-service",
+      recipeId: policy.recipeId || cleanString(normalizedInput.recipeId || normalizedInput.recipe_id),
       learningGraphPlan: plan,
       historySummary: normalizeResultHistory(history),
       nextCardStrategy,

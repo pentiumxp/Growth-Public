@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createLearningCardGenerationRecipePolicyService
+} = require("./learning-card-generation-recipe-policy-service");
+
 function cleanString(value) {
   return String(value || "").trim();
 }
@@ -21,18 +25,6 @@ function isFanfanSampleTarget(target = {}) {
     target.label
   ].map(cleanString).join(" ").toLowerCase();
   return /\bfan[\s_-]*fan\b/.test(text) || text.includes("fanfan") || text.includes("凡凡");
-}
-
-function recipeDailyEnglish() {
-  return {
-    id: "daily_english_v1",
-    label: "日常英语卡",
-    cardRole: "practice",
-    completionPolicy: "daily_score_once",
-    durationMinutes: { min: 10, max: 15 },
-    evidenceRequirements: ["short_answer", "self_reflection_optional"],
-    rewardMode: "score_proportional"
-  };
 }
 
 function nodePlan(node = {}, input = {}) {
@@ -153,6 +145,7 @@ function createLearningCardGenerationContextService(options = {}) {
   const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
   const profileProjectionService = options.profileProjectionService || null;
+  const recipePolicyService = options.recipePolicyService || createLearningCardGenerationRecipePolicyService();
   const gatewayConfigured = options.gatewayConfigured || (() => false);
 
   function graphSuggestedNode(input = {}) {
@@ -274,7 +267,30 @@ function createLearningCardGenerationContextService(options = {}) {
       sample: "fanfan"
     };
     const graph = graphReadiness();
-    const targetSelection = suggestedTarget({ workspaceId, learnerId, programId: input.programId, cardRole: input.cardRole, domain: "english", subject: "english" });
+    const recipeContext = recipePolicyService && typeof recipePolicyService.context === "function"
+      ? recipePolicyService.context(input)
+      : {
+        recipes: [],
+        selectedRecipeId: "daily_english_v1",
+        completionPolicy: {
+          mode: "daily_score_once",
+          evaluationAttempts: 1,
+          reflectionAttempts: 1,
+          completionAfter: "first_evaluation",
+          rewardMode: "score_proportional",
+          passScoreRequired: false
+        },
+        generationDefaults: { domain: "english", subject: "english" }
+      };
+    const generationDefaults = recipeContext.generationDefaults || {};
+    const targetSelection = suggestedTarget({
+      workspaceId,
+      learnerId,
+      programId: input.programId,
+      cardRole: input.cardRole,
+      domain: generationDefaults.domain || "english",
+      subject: generationDefaults.subject || "english"
+    });
     const node = targetSelection.targetNode;
     const baseSuggestedPlan = nodePlan(node, input);
     const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
@@ -306,8 +322,9 @@ function createLearningCardGenerationContextService(options = {}) {
       ok: true,
       source: "growth-learning-card-generation-context-service",
       target,
-      recipes: [recipeDailyEnglish()],
-      selectedRecipeId: "daily_english_v1",
+      recipes: recipeContext.recipes || [],
+      selectedRecipeId: recipeContext.selectedRecipeId || "daily_english_v1",
+      generationDefaults,
       readiness: Object.assign({ ready: readinessReady(readiness) }, readiness),
       graph: {
         importId: graph.importId,
@@ -334,14 +351,7 @@ function createLearningCardGenerationContextService(options = {}) {
         recentExperienceSignalCount: asArray(history?.recentExperienceSignals).length,
         recentTrajectoryCount: asArray(history?.recentTrajectory).length
       },
-      completionPolicy: {
-        mode: "daily_score_once",
-        evaluationAttempts: 1,
-        reflectionAttempts: 1,
-        completionAfter: "first_evaluation",
-        rewardMode: "score_proportional",
-        passScoreRequired: false
-      }
+      completionPolicy: recipeContext.completionPolicy || {}
     };
   }
 

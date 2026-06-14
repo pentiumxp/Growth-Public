@@ -1036,6 +1036,7 @@ test("growth card generation route requires workspace bearer and normalizes grap
         workspace_id: "growth:test",
         learner_id: "learner_1",
         program_id: "program_1",
+        recipe_id: "daily_english_v1",
         target_node_id: "node_1",
         card_role: "teaching",
         difficulty_band: "foundation",
@@ -1052,6 +1053,7 @@ test("growth card generation route requires workspace bearer and normalizes grap
       learnerId: "learner_1",
       workspaceId: "test",
       programId: "program_1",
+      recipeId: "daily_english_v1",
       targetNodeId: "node_1",
       targetNodeIds: undefined,
       cardRole: "teaching",
@@ -1080,6 +1082,7 @@ test("growth card generation route requires workspace bearer and normalizes grap
       body: JSON.stringify({
         workspace_id: "weixin_fanfan",
         learner_id: "fanfan",
+        recipe_id: "daily_english_v1",
         target_node_id: "node_1",
         card_role: "practice"
       })
@@ -1087,6 +1090,7 @@ test("growth card generation route requires workspace bearer and normalizes grap
     assert.equal(ownerProxyAccepted.status, 201);
     assert.equal(calls[1].workspaceId, "weixin_fanfan");
     assert.equal(calls[1].learnerId, "fanfan");
+    assert.equal(calls[1].recipeId, "daily_english_v1");
 
     const failed = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
       method: "POST",

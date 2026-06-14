@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Card Generation Recipe Policy Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - added `learning-card-generation-recipe-policy-service` as the Service
+    First owner of generated-card recipe defaults;
+  - V1 owns `daily_english_v1`, English domain/subject defaults, card schema
+    version, public recipe context, and `daily_score_once` policy;
+  - `learning-card-generation-service` now normalizes generation requests
+    through recipe policy before graph planning, while still letting
+    recommendation/strategy target selection choose graph target, role, and
+    difficulty when Owner did not explicitly provide them;
+  - `learning-card-generation-context-service` now returns recipe-policy
+    `generationDefaults` from the same service used by generation;
+  - the Owner daily-generation payload now sends only target workspace,
+    learner id, `recipe_id`, and card schema version; graph target, role,
+    difficulty, evidence requirements, completion policy, and generation key
+    remain backend-owned for ordinary daily cards;
+  - stage-assessment generation stays outside daily recipe defaults and still
+    requires explicit coverage.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-generation-recipe-policy-service.test.js`;
+  - `tests/learning-card-generation-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/check-growth-card-authoring-boundary.js`;
+  - `package.json` syntax gate for the new service.
+- Validation passed:
+  - focused recipe/generation/UI/route gate:
+    `node --test tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-card-authoring-boundary.test.js`
+    with 76 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 219 passing tests;
+  - app AI Ops H1 Gateway required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`;
+  - app architecture map:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in both Growth plugin and Home AI app workspaces;
+  - CodeGraph status after edits: 123 files, 1284 nodes, 4522 edges.
+- AI Ops:
+  - intake classified the concrete code task as H1 Gateway Runtime because the
+    change affects generation input before Gateway authoring;
+  - deployment and visual lanes were not required by intake; no visible layout
+    changed, but the static client key was bumped to
+    `20260614-recipe-policy-v1`;
+  - evidence id: `evidence-822eac13-d8d8-4bfb-84b1-8f957cd785ee`.
+- Remaining architecture work:
+  - consider a broader recipe catalog only when another recipe is ready to be
+    enabled in the Owner UI;
+  - decide whether recipe selection should become Owner-configurable policy per
+    learner once more learners are enabled;
+  - production deployment still requires the central Home AI visual and
+    production smoke gates.
+
 ## 2026-06-14 Growth Owner Recommendation Rationale UI Slice
 
 - Current workspace state: implemented and locally validated; this handoff

@@ -13,15 +13,16 @@ The loop is:
 
 1. read the learner profile, recent trajectory, recent experience signals, and
    relevant knowledge-graph nodes;
-2. choose a bounded next-card strategy;
-3. create or accept a `learningGraphPlan`;
-4. generate and validate a card through Gateway;
-5. publish the card into Growth SQLite;
-6. accept learner evidence and process one evaluation for daily cards;
-7. record summary-only evaluation evidence;
-8. update mastery state and experience signals;
-9. record a card trajectory row;
-10. project the latest trajectory recommendation as the first candidate for
+2. resolve the requested generation recipe, such as `daily_english_v1`;
+3. choose a bounded next-card strategy and graph target;
+4. create or accept a `learningGraphPlan`;
+5. generate and validate a card through Gateway;
+6. publish the card into Growth SQLite;
+7. accept learner evidence and process one evaluation for daily cards;
+8. record summary-only evaluation evidence;
+9. update mastery state and experience signals;
+10. record a card trajectory row;
+11. project the latest trajectory recommendation as the first candidate for
     the next generation, then fall back to recomputed profile strategy and graph
     suggestions.
 
@@ -137,6 +138,13 @@ generic graph suggestion.
     resolved;
   - never reads raw learner answers, transcripts, prompts, answer keys, or raw
     model output.
+- `learning-card-generation-recipe-policy-service`
+  - owns recipe defaults before generation, starting with `daily_english_v1`;
+  - lets the Owner UI submit a compact daily recipe request instead of graph
+    target, role, difficulty, evidence, and completion-policy internals;
+  - supplies English domain/subject defaults, card schema version, and the
+    `daily_score_once` policy while leaving graph target, role, and difficulty
+    available for the recommendation/strategy selector.
 
 ## Owner Profile Projection Slice
 
@@ -338,17 +346,20 @@ Focused harnesses must cover:
 - trajectory records the reason and next recommendation;
 - recommendation projection prefers the latest trajectory next recommendation
   before recomputing a profile strategy;
+- recipe policy accepts compact `daily_english_v1` generation input while
+  keeping graph target, role, difficulty, and completion-policy internals in
+  service-owned code;
 - evaluation service writes profile and trajectory after evaluation/reward;
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
 - card-generation context uses recommendation/strategy/profile output in its
-  summary-only preview.
+  summary-only preview;
 - card generation can create a plan from the learner profile strategy when
   Owner does not hand-pick a target node, and the published card remains bound
   to that strategy-selected graph node;
 - learning profile projection returns bounded mastery, signal, trajectory, and
   next-card strategy fields without raw answer/source-ref leakage;
 - Owner generation UI renders the selected learner's profile projection and
-  explicit next-card recommendation reason without creating any write action.
+  explicit next-card recommendation reason without creating any write action;
 - learner difficulty feedback writes through `learning-experience-signal-service`,
   rejects unanchored/private input, updates `learning_growth_experience_signals`,
   and refreshes the current card projection;

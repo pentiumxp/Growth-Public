@@ -342,7 +342,13 @@ summary-only request.
 
 The service-owned runtime path is:
 
-1. If Owner or caller supplied a target, `learning-graph-plan-service` uses
+1. `learning-card-generation-recipe-policy-service` normalizes the requested
+   recipe. For V1 daily English, the browser only needs to submit
+   `recipe_id=daily_english_v1`, the target workspace, learner id, and card
+   schema version. The service supplies English domain/subject defaults and
+   the `daily_score_once` policy without forcing a graph target, role, or
+   difficulty before learner profile/trajectory selection runs;
+2. If Owner or caller supplied a target, `learning-graph-plan-service` uses
    that explicit graph target. If a daily generation request omits a target,
    `learning-card-next-target-service` first reads
    `learning-card-recommendation-service`. That service promotes the latest
@@ -350,32 +356,34 @@ The service-owned runtime path is:
    falling back to the recomputed profile strategy. The first resolvable
    recommendation/strategy target node is used, and bounded graph suggestions
    are used only when no learner-specific target exists;
-2. `learning-graph-plan-service` validates the selected target node,
+3. `learning-graph-plan-service` validates the selected target node,
    prerequisite path, card role, and assessment coverage;
-3. `history-summary` reads bounded historical data from Growth SQLite:
+4. `history-summary` reads bounded historical data from Growth SQLite:
    recent card status, evaluation summaries, mastery states, experience
    signals, recent trajectories, and aggregate counts;
-4. `learning-profile-projection-service` prepares the selected learner's
+5. `learning-profile-projection-service` prepares the selected learner's
    Owner-visible profile projection: mastery states, strengths, weaknesses,
    recent experience signals, recent trajectory, and next-card strategy reason;
    `learning-card-generation-context-service` also projects the selected
    summary-only `nextCardRecommendation` so the Owner sees the same rationale
    that actual generation will use;
-5. `learning-next-card-strategy-service` chooses or refreshes a bounded
+6. `learning-next-card-strategy-service` chooses or refreshes a bounded
    next-card strategy from profile, signals, and trajectory for the selected
    plan;
-6. `learning-card-generation-service` combines graph source summaries and
+7. `learning-card-generation-service` combines graph source summaries and
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
-7. `learning-card-authoring-service` calls Gateway and validates the draft;
-8. `card-authoring-publisher` writes the minimum FK parent rows in
+8. `learning-card-authoring-service` calls Gateway and validates the draft;
+9. `card-authoring-publisher` writes the minimum FK parent rows in
    `learning_programs` and `learning_plan_drafts`, then writes
    `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
    transaction.
 
 The protected runtime endpoint is `POST /api/v1/growth/cards/generate`. It is
 workspace-bearer scoped, normalizes snake_case and camelCase graph inputs, and
-delegates generation to the service layer. The route must stay HTTP glue.
+delegates generation to the service layer. The route must stay HTTP glue and
+must not own recipe ids, daily completion policy, graph target selection,
+role, or difficulty defaults.
 When the embedded UI is served through the Home AI same-origin plugin proxy,
 the host validates the Hermes workspace access and attaches the server-side
 `.hermes-growth/access-key.txt` bearer to proxied write requests. Direct calls
@@ -390,6 +398,11 @@ For ordinary daily cards, omitting `targetNodeId` is a supported profile-driven
 generation path. It should use weak or stabilizing evidence from the selected
 learner before generic graph suggestions. Formal `stage_assessment` generation
 still requires explicit target and assessment coverage.
+
+The Owner generation browser code should submit the compact daily recipe
+request and let the backend fill graph-policy fields. It may show the selected
+recommendation, graph target, role, and difficulty as a preview, but those
+preview fields are not required inputs for ordinary daily card creation.
 
 The Owner generation page may display `learningProfile` and
 `nextCardRecommendation` before generation. That display is a read-only
