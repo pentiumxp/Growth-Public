@@ -9,6 +9,59 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Next-Card Recommendation Projection Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - added `learning-card-recommendation-service` as the summary-only
+    recommendation projection between trajectory/profile and next-target
+    selection;
+  - the service promotes the selected learner's latest persisted trajectory
+    `nextRecommendation` before falling back to recomputed profile strategy;
+  - wired `learning-card-next-target-service` to consume the recommendation
+    first, then fall back to profile strategy, bounded history strategy, and
+    graph suggestions;
+  - wired the app composition root so context preview and actual generation use
+    the same recommendation-first target selection path;
+  - kept explicit Owner/caller `targetNodeId` authoritative and kept formal
+    `stage_assessment` generation on explicit coverage only.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-recommendation-service.test.js`;
+  - `tests/learning-card-next-target-service.test.js`;
+  - `tests/learning-card-generation-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - focused recommendation/generation gate:
+    `node --test tests/learning-card-recommendation-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-architecture-boundary.test.js`
+    with 30 passing tests;
+  - `npm run check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm test` with 214 passing tests;
+  - app AI Ops H3 required check from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in both Growth plugin and Home AI app workspaces;
+  - CodeGraph status after edits: 121 files, 1253 nodes, 4355 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-c353fd99-17c1-47ad-9e3a-1ed5554b87ff`.
+- Remaining architecture work:
+  - expose the selected next-card recommendation and rationale in the Owner
+    generation context UI instead of only applying it silently to target
+    selection;
+  - add an Owner generation recipe/policy service so "daily English" can be
+    requested without knowing graph/domain parameters;
+  - consider a durable recommendation queue only if recommendation lifecycle
+    needs states such as accepted, skipped, expired, or superseded.
+
 ## 2026-06-14 Growth Profile-Driven Next Target Slice
 
 - Current workspace state: implemented and locally validated; this handoff

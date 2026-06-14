@@ -31,6 +31,7 @@ function publicNode(node = null) {
 function createLearningCardNextTargetService(options = {}) {
   const graphRepository = options.graphRepository || null;
   const historySummaryRepository = options.historySummaryRepository || null;
+  const recommendationService = options.recommendationService || null;
   const profileProjectionService = options.profileProjectionService || null;
   const nextCardStrategyService = options.nextCardStrategyService || null;
 
@@ -70,6 +71,21 @@ function createLearningCardNextTargetService(options = {}) {
         return { strategy: profile.nextCardStrategy, learningProfile: profile };
       }
       return profile ? { strategy: null, learningProfile: profile } : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function nextRecommendation(input = {}) {
+    if (!recommendationService || typeof recommendationService.recommendNextCard !== "function") return null;
+    try {
+      const recommendation = recommendationService.recommendNextCard({
+        workspaceId: input.workspaceId,
+        learnerId: input.learnerId || input.workspaceId,
+        programId: input.programId,
+        targetNodeIds: []
+      });
+      return recommendation?.ok ? recommendation : null;
     } catch (_error) {
       return null;
     }
@@ -121,6 +137,27 @@ function createLearningCardNextTargetService(options = {}) {
     }
 
     const baseInput = Object.assign({}, input, { workspaceId, learnerId, programId });
+    const recommendation = nextRecommendation(baseInput);
+    const recommendationNodeId = firstStrategyTargetNodeId(recommendation || {});
+    const recommendationNode = nodeById(recommendationNodeId);
+    if (recommendationNode) {
+      return {
+        ok: true,
+        source: "growth-learning-card-next-target-service",
+        selectionMode: "recommendation",
+        recommendationMode: cleanString(recommendation.recommendationMode),
+        workspaceId,
+        learnerId,
+        programId,
+        targetNodeId: recommendationNode.nodeId,
+        targetNodeIds: [recommendationNode.nodeId],
+        targetNode: recommendationNode,
+        cardRole: cleanString(input.cardRole || input.card_role || recommendation.cardRole) || "practice",
+        difficultyBand: cleanString(input.difficultyBand || input.difficulty_band || recommendation.difficultyBand || recommendationNode.stage) || "foundation",
+        nextCardStrategy: recommendation,
+        learningProfileSummary: recommendation.learningProfileSummary || null
+      };
+    }
     const profileResult = profileStrategy(baseInput);
     const historyResult = profileResult?.strategy?.ok ? null : historyStrategy(baseInput);
     const strategy = profileResult?.strategy?.ok ? profileResult.strategy : historyResult?.strategy || null;

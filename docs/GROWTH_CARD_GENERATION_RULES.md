@@ -344,10 +344,12 @@ The service-owned runtime path is:
 
 1. If Owner or caller supplied a target, `learning-graph-plan-service` uses
    that explicit graph target. If a daily generation request omits a target,
-   `learning-card-next-target-service` first reads the selected learner's
-   summary-only profile projection and next-card strategy, chooses the first
-   resolvable `nextCardStrategy.targetNodeIds` node, and falls back to bounded
-   graph suggestions only when no strategy target exists;
+   `learning-card-next-target-service` first reads
+   `learning-card-recommendation-service`. That service promotes the latest
+   persisted trajectory `nextRecommendation` from the selected learner before
+   falling back to the recomputed profile strategy. The first resolvable
+   recommendation/strategy target node is used, and bounded graph suggestions
+   are used only when no learner-specific target exists;
 2. `learning-graph-plan-service` validates the selected target node,
    prerequisite path, card role, and assessment coverage;
 3. `history-summary` reads bounded historical data from Growth SQLite:

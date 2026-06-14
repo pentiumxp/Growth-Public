@@ -21,7 +21,9 @@ The loop is:
 7. record summary-only evaluation evidence;
 8. update mastery state and experience signals;
 9. record a card trajectory row;
-10. use the updated profile and trajectory for the next generation.
+10. project the latest trajectory recommendation as the first candidate for
+    the next generation, then fall back to recomputed profile strategy and graph
+    suggestions.
 
 The Owner generation surface must make the loop observable. It should show the
 selected learner's bounded profile/trajectory projection before generation so
@@ -110,6 +112,14 @@ generic graph suggestion.
   - stores target nodes, strategy, difficulty, strengths, remaining weaknesses,
     mastery changes, and next recommendation;
   - is idempotent for the same card/evaluation source.
+- `learning-card-recommendation-service`
+  - reads the selected learner's summary-only profile projection;
+  - promotes the latest persisted trajectory `nextRecommendation` into an
+    explicit next-card recommendation before recomputing strategy;
+  - falls back to `learning-next-card-strategy-service` output when no
+    trajectory recommendation is available;
+  - never returns raw learner answers, transcripts, prompts, answer keys, raw
+    model output, source refs, or private paths.
 - `learning-next-card-strategy-service`
   - reads mastery summary, recent trajectory, and experience signals;
   - chooses one bounded strategy from `repair`, `stabilize`, `transfer`,
@@ -117,9 +127,10 @@ generic graph suggestion.
   - prefers prerequisite repair for repeated weak evidence and only stretches
     when confidence and stability are high.
 - `learning-card-next-target-service`
-  - reads the selected learner profile projection or bounded history summary;
-  - uses `nextCardStrategy.targetNodeIds` to choose an existing graph node for
-    the next daily card when Owner did not hand-pick a target;
+  - reads the selected learner's explicit next-card recommendation, profile
+    projection, or bounded history summary;
+  - uses recommendation/strategy target nodes to choose an existing graph node
+    for the next daily card when Owner did not hand-pick a target;
   - falls back to bounded graph suggestions only when no strategy target can be
     resolved;
   - never reads raw learner answers, transcripts, prompts, answer keys, or raw
@@ -321,6 +332,8 @@ Focused harnesses must cover:
 - weak evidence selects `repair` or `stabilize`;
 - stable high-confidence evidence selects `stretch`;
 - trajectory records the reason and next recommendation;
+- recommendation projection prefers the latest trajectory next recommendation
+  before recomputing a profile strategy;
 - evaluation service writes profile and trajectory after evaluation/reward;
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
 - card-generation context uses strategy/profile output in its summary-only

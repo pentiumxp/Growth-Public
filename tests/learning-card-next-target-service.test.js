@@ -74,6 +74,55 @@ test("next target service chooses the profile strategy target before graph sugge
   });
 });
 
+test("next target service chooses a persisted trajectory recommendation before recomputed strategy", () => {
+  const service = createLearningCardNextTargetService({
+    graphRepository: graphRepository(),
+    recommendationService: {
+      recommendNextCard() {
+        return {
+          ok: true,
+          recommendationMode: "trajectory",
+          strategy: "repair",
+          cardRole: "teaching",
+          difficultyBand: "repair",
+          supportLevel: "guided",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          reason: "Latest trajectory asks for repair."
+        };
+      }
+    },
+    profileProjectionService: {
+      profileContext() {
+        return {
+          ok: true,
+          nextCardStrategy: {
+            ok: true,
+            strategy: "stretch",
+            cardRole: "practice",
+            difficultyBand: "stretch",
+            targetNodeIds: ["kg_english_main_idea"],
+            reason: "This recomputed strategy should be lower priority than the persisted recommendation."
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.selectNextTarget({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.selectionMode, "recommendation");
+  assert.equal(result.recommendationMode, "trajectory");
+  assert.equal(result.targetNodeId, "kg_english_evidence_answering");
+  assert.equal(result.cardRole, "teaching");
+  assert.equal(result.difficultyBand, "repair");
+  assert.equal(result.nextCardStrategy.strategy, "repair");
+});
+
 test("next target service falls back to bounded history strategy and graph suggestion", () => {
   const service = createLearningCardNextTargetService({
     graphRepository: graphRepository(),

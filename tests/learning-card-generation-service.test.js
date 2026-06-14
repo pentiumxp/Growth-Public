@@ -10,6 +10,7 @@ const { createLearningCardAuthoringService } = require("../src/services/learning
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
+const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
@@ -232,6 +233,25 @@ function createLearningTables(db) {
       created_at TEXT NOT NULL,
       raw_json TEXT NOT NULL DEFAULT '{}'
     );
+    CREATE TABLE learning_growth_card_trajectories (
+      id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL,
+      learner_id TEXT NOT NULL,
+      program_id TEXT NOT NULL,
+      task_card_id TEXT NOT NULL,
+      source_evaluation_id TEXT NOT NULL DEFAULT '',
+      strategy TEXT NOT NULL DEFAULT '',
+      difficulty_band TEXT NOT NULL DEFAULT '',
+      target_node_ids_json TEXT NOT NULL DEFAULT '[]',
+      performance_summary TEXT NOT NULL DEFAULT '',
+      confirmed_strengths_json TEXT NOT NULL DEFAULT '[]',
+      remaining_weaknesses_json TEXT NOT NULL DEFAULT '[]',
+      mastery_changes_json TEXT NOT NULL DEFAULT '[]',
+      next_recommendation_json TEXT NOT NULL DEFAULT '{}',
+      raw_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 }
 
@@ -365,9 +385,13 @@ function setup(options = {}) {
     repository: store.masteryProfileRepository,
     nextCardStrategyService
   });
+  const recommendationService = createLearningCardRecommendationService({
+    profileProjectionService
+  });
   const nextTargetService = createLearningCardNextTargetService({
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
+    recommendationService,
     profileProjectionService,
     nextCardStrategyService
   });
@@ -508,6 +532,68 @@ test("card generation can choose the next target from learner profile when Owner
     assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
   } finally {
     db.close();
+  }
+});
+
+test("card generation can choose the next target from the latest trajectory recommendation", async () => {
+  const { dbPath, gatewayCalls, generationService } = setup({
+    gatewayResponse() {
+      return {
+        json: {
+          output_text: JSON.stringify(validDraft({
+            cardRole: "teaching",
+            title: "Fraction repair card",
+            targetNodeIds: ["kg_fraction_meaning"]
+          }))
+        }
+      };
+    }
+  });
+  const db = new DatabaseSync(dbPath);
+  try {
+    db.prepare(`
+      INSERT INTO learning_growth_card_trajectories(
+        id, workspace_id, learner_id, program_id, task_card_id,
+        source_evaluation_id, strategy, difficulty_band, target_node_ids_json,
+        performance_summary, next_recommendation_json, raw_json, created_at,
+        updated_at
+      ) VALUES (
+        'traj_fraction_repair', 'weixin_child', 'weixin_child', 'program_1',
+        'card_history_1', 'eval_history_1', 'repair', 'repair',
+        '["kg_fraction_meaning"]', ?, ?, '{}',
+        '2026-06-11T08:00:00.000Z', '2026-06-11T08:00:00.000Z'
+      )
+    `).run(
+      "Ratio order is weak because prerequisite part-whole language is unstable.",
+      JSON.stringify({
+        strategy: "repair",
+        cardRole: "teaching",
+        difficultyBand: "repair",
+        supportLevel: "guided",
+        targetNodeIds: ["kg_fraction_meaning"],
+        reason: "Repair fraction meaning before another ratio card."
+      })
+    );
+  } finally {
+    db.close();
+  }
+
+  const result = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    programId: "program_1",
+    generationKey: "fraction-repair-from-trajectory"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.learningGraphPlan.targetNodeId, "kg_fraction_meaning");
+  assert.equal(gatewayCalls[0].input.learningGraphPlan.targetNodeId, "kg_fraction_meaning");
+  const readDb = new DatabaseSync(dbPath);
+  try {
+    const card = readDb.prepare("SELECT skill_ids_json FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
+    assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_fraction_meaning"]);
+  } finally {
+    readDb.close();
   }
 });
 
