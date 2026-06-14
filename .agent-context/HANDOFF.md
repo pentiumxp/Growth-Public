@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Evaluation Queue Recovery Harness Slice
+
+- Current workspace state: implemented, locally validated, committed and
+  pushed as part of the current rollout; not deployed.
+- Scope:
+  - confirmed the existing evaluation queue implementation already protects
+    active `processing` leases and allows expired `processing` leases to be
+    reclaimed by the next worker through `claimEvaluationJob`;
+  - added repository-level harness coverage so active leases are not stolen and
+    stale processing jobs are reclaimed with a new lease owner and incremented
+    attempt count;
+  - added SQLite store/service workflow harness coverage so a simulated worker
+    restart leaves the active lease untouched, then resumes the stale job after
+    `leaseUntil`, completes the card, clears lease fields, and settles Growth
+    rewards exactly once;
+  - no runtime service code was changed in this slice because the current
+    implementation already satisfied the recovery contract.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-learning-sqlite-evaluation-jobs.test.js`;
+  - `tests/growth-learning-sqlite-store.test.js`.
+- Validation passed:
+  - `node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js`
+    with 15 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 194 passing tests;
+  - app AI Ops H3 required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js` and
+    `git diff --check`;
+  - `git diff --check`;
+  - CodeGraph status after edits: 115 files, 1207 nodes, 4223 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-b8e02b3b-831c-4cbf-8337-be38b27c5822`.
+- Remaining architecture work:
+  - add explicit visible-failure/Owner-review projection for jobs that exhaust
+    retries, so learners are not left with a hidden failed evaluation state;
+  - consider a small queue wake-up/status endpoint if Owner needs to see
+    delayed retry timing in the generation or card-detail UI;
+  - production deployment still requires the central Home AI visual/prod smoke
+    gates.
+
 ## 2026-06-14 Growth Stage Assessment Owner UI Slice
 
 - Current workspace state: implemented, locally validated, committed and

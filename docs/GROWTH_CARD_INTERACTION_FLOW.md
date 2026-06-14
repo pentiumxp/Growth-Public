@@ -206,6 +206,8 @@ Business rules remain in plugin services/stores:
   `src/stores/growth-learning-sqlite/evidence-writes.js`;
 - evaluation queue processing:
   `src/services/growth-evaluation-service.js`;
+  pending/retry jobs are durable, active `processing` leases are protected, and
+  stale `processing` leases become recoverable after `leaseUntil`;
 - Gateway evaluation draft parsing and validation:
   `src/services/learning-card-evaluation-service.js` and
   `src/services/growth-gateway-evaluation-client.js`;
@@ -236,6 +238,13 @@ Backend projection coverage lives in
 the score is low or a legacy revision status is present, while non-daily cards
 still preserve the old revision lane.
 
+Queue recovery coverage lives in
+`tests/growth-learning-sqlite-evaluation-jobs.test.js` and
+`tests/growth-learning-sqlite-store.test.js`. It asserts that active
+`processing` leases are not stolen, stale leases are reclaimed after
+`leaseUntil`, a restarted worker can finish the job, and Growth reward
+settlement remains single-settlement.
+
 Gateway-backed evaluation coverage lives in
 `tests/learning-card-evaluation-service.test.js` and asserts valid streaming
 response, valid JSON response, official Gateway `/v1/responses`, invalid JSON,
@@ -248,6 +257,7 @@ Run focused validation:
 node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js
 node --test tests/growth-architecture-boundary.test.js
 node --test tests/growth-learning-sqlite-projection.test.js
+node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js
 ```
 
 Run the full Growth gate before production publish:

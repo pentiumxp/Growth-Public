@@ -167,6 +167,36 @@ test("evaluation repository claims, records, and completes jobs", () => {
   });
 });
 
+test("evaluation repository protects active leases and recovers stale processing jobs", () => {
+  withEvaluationDb(({ repository }) => {
+    const firstClaim = repository.claimEvaluationJob("job_1", {
+      now: "2026-06-11T00:10:00.000Z",
+      leaseUntil: "2026-06-11T00:20:00.000Z",
+      leaseOwner: "worker_before_restart"
+    });
+    assert.equal(firstClaim.status, "processing");
+    assert.equal(firstClaim.attemptCount, 1);
+    assert.equal(firstClaim.leaseOwner, "worker_before_restart");
+
+    const activeLeaseClaim = repository.claimEvaluationJob("job_1", {
+      now: "2026-06-11T00:15:00.000Z",
+      leaseUntil: "2026-06-11T00:25:00.000Z",
+      leaseOwner: "worker_after_restart"
+    });
+    assert.equal(activeLeaseClaim, null);
+
+    const recovered = repository.claimEvaluationJob("job_1", {
+      now: "2026-06-11T00:21:00.000Z",
+      leaseUntil: "2026-06-11T00:31:00.000Z",
+      leaseOwner: "worker_after_restart"
+    });
+    assert.equal(recovered.status, "processing");
+    assert.equal(recovered.attemptCount, 2);
+    assert.equal(recovered.leaseOwner, "worker_after_restart");
+    assert.equal(recovered.leaseUntil, "2026-06-11T00:31:00.000Z");
+  });
+});
+
 test("evaluation repository fails jobs with bounded retry metadata", () => {
   withEvaluationDb(({ repository }) => {
     const failed = repository.failEvaluationJob("job_1", {

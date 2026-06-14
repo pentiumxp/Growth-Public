@@ -557,6 +557,71 @@ test("processes pending Growth evaluation jobs into plugin-owned evaluations", a
   }
 });
 
+test("recovers stale processing Growth evaluation jobs after worker restart", async () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const submitted = store.submitEvidence({
+    workspaceId: "weixin_child",
+    taskCardId: "kanban_1",
+    submissionId: "submission_restart",
+    text: [
+      "First, I wrote a clear answer with enough supporting details for the checker.",
+      "Then I explained how I checked the order and fixed the weak sentence.",
+      "Finally, I added the next action that I will use in the next card."
+    ].join("\n"),
+    submittedAt: "2026-06-10T00:04:00.000Z"
+  });
+  assert.equal(submitted.ok, true);
+  const pendingJob = store.listEvaluationJobs({ status: "pending" })[0];
+  assert.equal(pendingJob.submissionId, "submission_restart");
+
+  const firstClaim = store.claimEvaluationJob(pendingJob.jobId, {
+    leaseOwner: "worker_before_restart",
+    leaseUntil: "2026-06-10T00:20:00.000Z",
+    now: "2026-06-10T00:05:00.000Z"
+  });
+  assert.equal(firstClaim.status, "processing");
+  assert.equal(firstClaim.attemptCount, 1);
+
+  let currentNow = "2026-06-10T00:10:00.000Z";
+  const service = createGrowthEvaluationService({
+    learningStore: store,
+    workerId: "worker_after_restart",
+    now: () => new Date(currentNow)
+  });
+  const activeLease = await service.processEvaluationQueue({ workspaceId: "weixin_child" });
+  assert.equal(activeLease.ok, true);
+  assert.equal(activeLease.processed, 0);
+  assert.equal(store.listEvaluationJobs({ status: "processing" })[0].leaseOwner, "worker_before_restart");
+
+  currentNow = "2026-06-10T00:21:00.000Z";
+  const recovered = await service.processEvaluationQueue({ workspaceId: "weixin_child" });
+  assert.equal(recovered.ok, true);
+  assert.equal(recovered.processed, 1);
+  assert.equal(recovered.results[0].ok, true);
+
+  const doneJob = store.listEvaluationJobs({ status: "done" })[0];
+  assert.equal(doneJob.submissionId, "submission_restart");
+  assert.equal(doneJob.attemptCount, 2);
+  assert.equal(doneJob.leaseOwner, "");
+  assert.equal(doneJob.leaseUntil, "");
+
+  const card = store.card({ workspaceId: "weixin_child", taskCardId: "card_1" }).card;
+  assert.equal(card.latestEvaluation.taskCardId, "card_1");
+  assert.equal(card.status, "completed");
+  assert.equal(card.rewardState, "settled");
+
+  const db = new DatabaseSync(dbPath, { readOnly: true });
+  try {
+    const settlementCount = db.prepare("SELECT COUNT(*) AS count FROM learning_reward_settlements WHERE task_card_id = ?").get("card_1").count;
+    assert.equal(settlementCount, 1);
+  } finally {
+    db.close();
+  }
+});
+
 test("emits completion and mastery events without real-time Tongbao exchange request", async () => {
   const root = tmpDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");

@@ -207,6 +207,33 @@ When an evaluation is persisted:
 For ordinary `daily_score_once` cards, a low score is feedback for the next
 card. It must not reopen grading or force a pass-line retry.
 
+## Evaluation Queue Recovery
+
+The evaluation queue must be durable across plugin listener, app-server, and
+Gateway restarts. A learner submission creates a durable
+`learning_growth_evaluation_jobs` row before any model call. Queue workers claim
+jobs with `leaseOwner` and `leaseUntil`; active leases are not stolen, but a
+`processing` job whose lease has expired is eligible for the next worker to
+claim.
+
+Recovery rules:
+
+- `pending` and due `retry` jobs are processed when `availableAt <= now`;
+- `processing` jobs are skipped while `leaseUntil > now`;
+- stale `processing` jobs become claimable after `leaseUntil <= now`;
+- the new worker increments `attemptCount`, replaces the lease owner, and
+  either completes the job or moves it to `retry`/`failed`;
+- completion clears lease fields and reward settlement stays idempotent by the
+  evaluation/source ids, so a restarted worker must not duplicate Growth coins.
+
+Harness coverage:
+
+- `tests/growth-learning-sqlite-evaluation-jobs.test.js` proves active leases
+  are protected and stale processing leases can be reclaimed;
+- `tests/growth-learning-sqlite-store.test.js` proves a stale processing job
+  survives a simulated worker restart, resumes after lease expiry, completes
+  the card, and settles rewards exactly once.
+
 ## Gateway Evaluation Contract
 
 Gateway-backed evaluation is a service boundary, not a route or store concern.
