@@ -11,7 +11,7 @@
 
 ## 2026-06-14 Growth Daily English Three-Step Interaction Slice
 
-- Status: implemented and locally validated.
+- Status: implemented, pushed, deployed, and visually validated.
 - Product rule now enforced in the generated daily-card UI:
   - stage rail is `提交 -> 批改 -> 反思`;
   - the `跟做` section is instruction-only and no longer opens a separate
@@ -39,14 +39,39 @@
     across pre-submit, waiting-evaluation, failed-evaluation, evaluated, and
     reflected states.
 - Validation passed:
-  - `node --check public/growth-card-interaction-controller.js public/growth-legacy-task-ui.js tests/growth-frontend-adapter.test.js`;
+  - `node --check public/growth-card-interaction-controller.js`;
+  - `node --check public/growth-legacy-task-ui.js`;
+  - `node --check tests/growth-frontend-adapter.test.js`;
   - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`;
   - `node scripts/check-growth-docs-locality.js`;
   - `node --test tests/growth-docs-locality.test.js`;
   - `npm run --silent check`;
   - `npm test -- --runInBand` (`227` tests);
   - `git diff --check`.
-- Not yet committed, pushed, or deployed in this slice.
+- Commit/push:
+  - Growth commit `8e8140901cf3` pushed to `origin/main` and `public/main`.
+- Production deploy:
+  - command target: `npm run --silent deploy:macos -- --plugin growth --json
+    --reason growth-daily-card-three-step-flow --execute`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T132130Z-plugin-growth-growth-daily-card-three-step-flow`;
+  - restarted `com.hermesmobile.plugin.growth`;
+  - deploy validation passed with plugin health URL and `codex_auth_*`
+    blocker count `0` (`codex-auth-profile-audit` still reported unrelated
+    non-`codex_auth_*` legacy issues, which are not blockers for this deploy).
+- Production static smoke:
+  - `GET http://127.0.0.1:4881/growth-legacy-task-ui.js` contains
+    `data-field="submissionText"` and `提交、批改、反思三步`;
+  - `GET http://127.0.0.1:4881/growth-homeai-legacy.css` contains
+    `.learning-growth-daily-flow { grid-template-columns: repeat(3, ...) }`.
+- Central iOS PWA visual harness passed:
+  - `embedded-plugin-shell --plugin-id growth`, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260614T132310Z.png`;
+  - `dark-growth-surfaces`, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260614T132239Z.png`.
+- AI Ops evidence:
+  - `evidence-a9e03af9-449d-4619-bb41-bc630973ecfe`.
 
 ## 2026-06-14 Growth Evaluation Gateway Readiness Slice
 
