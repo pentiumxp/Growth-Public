@@ -11,8 +11,16 @@
 
 ## 2026-06-14 Growth Card Detail Back Navigation Hotfix
 
-- Current workspace state: implemented and locally validated; pending
-  commit/push/deploy at the time this section was written.
+- Current workspace state: implemented, validated, committed, pushed to
+  `origin` and `public`, and deployed to Mac production.
+- Deployment:
+  - runtime commit: `92f8144` (`Fix Growth card detail back navigation`);
+  - static asset version query: `20260614-growth-navigation-v1`;
+  - deployed with
+    `npm run deploy:macos -- --plugin growth --execute` from
+    `/Users/hermes-dev/HermesMobileDev/app`;
+  - production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T032732Z-plugin-growth-manual`.
 - User-visible bug:
   - on a Growth practice/generated-card detail page, Home AI right-swipe/back
     could return to the host instead of first returning to the Growth parent
@@ -57,6 +65,9 @@
   - `ai-ops-control-plane.js` classified the change as H3 and did not require
     a visual lane, but this was treated locally as H2 because it changes
     embedded plugin back/right-swipe behavior.
+  - evidence ledger ids:
+    `evidence-7e9cc5d7-a164-4237-9fbd-f952db55ceb1`,
+    `evidence-46b0897b-c715-426a-8dcd-f4412e2a0e48`.
 
 ## 2026-06-14 Growth Audio Playback Hotfix
 
