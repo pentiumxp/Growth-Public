@@ -9,6 +9,50 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth AI Card Route Closed-Loop Harness Slice
+
+- Current workspace state: implemented and locally validated. This handoff
+  section is included with the slice commit.
+- Previous slice committed and pushed:
+  `6a0630f Add Growth AI card closed loop harness`.
+- Scope:
+  - extended `tests/learning-card-ai-loop-harness.test.js` with an HTTP route
+    scenario that uses real Growth services behind `createServer`;
+  - route coverage now proves
+    `POST /api/v1/growth/cards/generate` -> learner submission route ->
+    `POST /api/v1/growth/evaluations/process` -> follow-up generation can
+    carry the same generated-card, one-shot evaluation, profile trajectory,
+    trajectory recommendation, and accepted lifecycle as the service harness;
+  - the route harness checks workspace bearer authorization and route request
+    normalization while retaining fake Gateway boundaries and raw-answer marker
+    privacy assertions.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`.
+- Harness updated:
+  - `tests/learning-card-ai-loop-harness.test.js`.
+- Validation passed:
+  - `node --check tests/learning-card-ai-loop-harness.test.js`;
+  - `node --test tests/learning-card-ai-loop-harness.test.js` with 2 passing
+    tests.
+  - focused AI card loop gate:
+    `node --test tests/learning-card-ai-loop-harness.test.js tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js`
+    with 50 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 226 passing tests;
+  - Home AI app AI Ops Gateway focused checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`, and
+    `node tests/runtime-config-provider.test.js`;
+  - Home AI app harness-map guard:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in Growth and Home AI app workspaces.
+- AI Ops evidence:
+  - test: `evidence-c24e9fff-c578-4831-831f-62ea2f60f5cb`.
+- CodeGraph status after sync: 124 files, 1317 nodes, 4634 edges.
+
 ## 2026-06-14 Growth AI Card Closed-Loop Harness Slice
 
 - Current workspace state: implemented and locally validated. This handoff

@@ -5,6 +5,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 
+const { createServer } = require("../src/app/http-server");
 const { createGrowthEvaluationService } = require("../src/services/growth-evaluation-service");
 const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
@@ -27,6 +28,19 @@ const RAW_MARKER = "RAW_FANFAN_ANSWER_MUST_NOT_LEAVE_SQLITE";
 
 function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "growth-ai-card-loop-"));
+}
+
+function listen(server) {
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+}
+
+function close(server) {
+  return new Promise((resolve) => server.close(resolve));
 }
 
 function graphPack() {
@@ -706,6 +720,130 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
     assert.equal(projectedAfterConsumption.recentTrajectory[0].nextRecommendation.status, "accepted");
     assert.equal(JSON.stringify(projectedAfterConsumption).includes(RAW_MARKER), false);
   } finally {
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  }
+});
+
+test("AI card loop routes generate, submit, evaluate, and generate from the accepted recommendation", async () => {
+  const harness = createLoopHarness();
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== WORKSPACE_ID) {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: WORKSPACE_ID };
+      },
+      viewTargets({ actorRole, currentWorkspaceId }) {
+        return {
+          ok: true,
+          viewer: { role: actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: currentWorkspaceId,
+          targets: [{ workspaceId: WORKSPACE_ID, label: "Fanfan", current: true }]
+        };
+      }
+    },
+    growthService: {
+      async submitEvidence({ workspaceId, taskCardId, body }) {
+        return harness.store.submitEvidence(Object.assign({}, body, {
+          workspaceId,
+          taskCardId
+        }));
+      }
+    },
+    growthEvaluationService: harness.evaluationService,
+    learningCardGenerationService: harness.generationService
+  });
+  const baseUrl = await listen(server);
+  try {
+    const first = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: WORKSPACE_ID,
+        learner_id: WORKSPACE_ID,
+        program_id: PROGRAM_ID,
+        recipe_id: "daily_english_v1",
+        generation_key: "route-ai-loop-initial-card"
+      })
+    });
+    assert.equal(first.status, 201);
+    const firstBody = await first.json();
+    assert.equal(firstBody.ok, true);
+    assert.equal(firstBody.learningGraphPlan.targetNodeId, TARGET_NODE_ID);
+    assert.equal(firstBody.nextCardStrategy.recommendationMode, "profile_strategy");
+
+    const submitted = await fetch(`${baseUrl}/api/v1/growth/cards/${encodeURIComponent(firstBody.published.taskCardId)}/submissions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: WORKSPACE_ID,
+        text: "The character seems nervous because the text says his hands shook. I can improve by copying the exact words."
+      })
+    });
+    assert.equal(submitted.status, 202);
+    const submittedBody = await submitted.json();
+    assert.equal(submittedBody.ok, true);
+    assert.equal(submittedBody.evaluation_job.status, "pending");
+
+    const processed = await fetch(`${baseUrl}/api/v1/growth/evaluations/process`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: WORKSPACE_ID,
+        limit: 1
+      })
+    });
+    assert.equal(processed.status, 200);
+    assert.equal((await processed.json()).processed, 1);
+
+    const second = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        workspace_id: WORKSPACE_ID,
+        learner_id: WORKSPACE_ID,
+        program_id: PROGRAM_ID,
+        recipe_id: "daily_english_v1",
+        generation_key: "route-ai-loop-followup-card"
+      })
+    });
+    assert.equal(second.status, 201);
+    const secondBody = await second.json();
+    assert.equal(secondBody.ok, true);
+    assert.equal(secondBody.nextCardStrategy.recommendationMode, "trajectory");
+    assert.equal(secondBody.recommendationAcceptance.ok, true);
+    assert.equal(secondBody.recommendationAcceptance.previousStatus, "pending");
+    assert.equal(JSON.stringify(harness.gatewayCalls).includes(RAW_MARKER), false);
+
+    const db = new DatabaseSync(harness.dbPath, { readOnly: true });
+    try {
+      const trajectory = db.prepare("SELECT next_recommendation_json FROM learning_growth_card_trajectories WHERE source_evaluation_id = ?").get("eval_ai_loop_1");
+      const nextRecommendation = JSON.parse(trajectory.next_recommendation_json);
+      assert.equal(nextRecommendation.status, "accepted");
+      assert.equal(nextRecommendation.generatedTaskCardId, secondBody.published.taskCardId);
+    } finally {
+      db.close();
+    }
+  } finally {
+    await close(server);
     fs.rmSync(harness.root, { recursive: true, force: true });
   }
 });

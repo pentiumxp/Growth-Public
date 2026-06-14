@@ -443,11 +443,16 @@ Focused harnesses must cover:
 - `growth-evaluation-service` using the injected Gateway evaluator before
   writing evaluation/profile/reward state.
 
-The end-to-end service harness is
+The end-to-end service and route harness is
 `tests/learning-card-ai-loop-harness.test.js`. It uses the real Growth SQLite
 store, graph planning, card authoring, evidence write, evaluation, mastery,
 trajectory, recommendation, next-target, and generation services with fake
-Gateway authoring/evaluation boundaries. It also plants a raw-answer marker in
+Gateway authoring/evaluation boundaries. It also runs the HTTP route chain
+through `POST /api/v1/growth/cards/generate`,
+`POST /api/v1/growth/cards/:taskCardId/submissions`,
+`POST /api/v1/growth/evaluations/process`, and a follow-up generation request
+to prove route authorization and request normalization preserve the same
+closed-loop service contract. The harness plants a raw-answer marker in
 historical SQLite evidence and asserts the marker does not appear in Gateway
 authoring input, profile projection, or trajectory recommendation lifecycle
 payloads.
