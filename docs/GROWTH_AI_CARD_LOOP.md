@@ -398,6 +398,10 @@ a partial `learning_evaluations` row.
 
 Focused harnesses must cover:
 
+- end-to-end AI card loop flow where a generated daily card accepts learner
+  evidence, records one evaluation, updates mastery/profile trajectory, projects
+  a pending trajectory recommendation, generates the next card from that
+  recommendation, and marks the consumed recommendation accepted after publish;
 - profile update from one evaluation without raw answer leakage;
 - idempotent replay of the same evaluation;
 - weak evidence selects `repair` or `stabilize`;
@@ -438,6 +442,15 @@ Focused harnesses must cover:
   from Gateway evaluation;
 - `growth-evaluation-service` using the injected Gateway evaluator before
   writing evaluation/profile/reward state.
+
+The end-to-end service harness is
+`tests/learning-card-ai-loop-harness.test.js`. It uses the real Growth SQLite
+store, graph planning, card authoring, evidence write, evaluation, mastery,
+trajectory, recommendation, next-target, and generation services with fake
+Gateway authoring/evaluation boundaries. It also plants a raw-answer marker in
+historical SQLite evidence and asserts the marker does not appear in Gateway
+authoring input, profile projection, or trajectory recommendation lifecycle
+payloads.
 
 Full production automation and broad visual UI controls for stage assessment
 activation remain later slices.

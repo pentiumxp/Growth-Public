@@ -9,10 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth AI Card Closed-Loop Harness Slice
+
+- Current workspace state: implemented and locally validated. This handoff
+  section is included with the slice commit.
+- Scope:
+  - added `tests/learning-card-ai-loop-harness.test.js` as the H1 service
+    workflow harness for generated daily card -> learner evidence -> one
+    evaluation -> mastery/profile update -> trajectory recommendation -> next
+    card generated from that recommendation -> recommendation accepted after
+    publish;
+  - the harness uses the real Growth SQLite store, graph planning, card
+    authoring, evidence write, evaluation, mastery profile, trajectory,
+    recommendation, next-target, and generation services with fake Gateway
+    authoring/evaluation boundaries;
+  - the harness plants a raw-answer marker in historical SQLite evidence and
+    asserts the marker is absent from Gateway authoring input, profile
+    projection, and recommendation lifecycle payloads.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added:
+  - `tests/learning-card-ai-loop-harness.test.js`.
+- Validation passed:
+  - `node --check tests/learning-card-ai-loop-harness.test.js`;
+  - `node --test tests/learning-card-ai-loop-harness.test.js`;
+  - focused AI card loop gate:
+    `node --test tests/learning-card-ai-loop-harness.test.js tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js`
+    with 49 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 225 passing tests;
+  - Home AI app AI Ops Gateway focused checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`, and
+    `node tests/runtime-config-provider.test.js`;
+  - Home AI app harness-map guard:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in Growth and Home AI app workspaces.
+- AI Ops evidence:
+  - test: `evidence-3d85a19c-1e9b-4805-95ff-e68a4b5eb730`.
+- CodeGraph status after sync: 124 files, 1315 nodes, 4631 edges.
+
 ## 2026-06-14 Growth Post-Publish Context Refresh Slice
 
-- Current workspace state: implemented and locally validated; commit/push is
-  pending in this Codex turn.
+- Current workspace state: implemented, locally validated, committed, and
+  pushed as `8422736 Refresh Growth generation context after publish`.
 - Previous slice already committed and pushed:
   `8a042e7 Expose Growth recommendation lifecycle`.
 - Scope:
@@ -52,8 +97,8 @@
 
 ## 2026-06-14 Growth Recommendation Lifecycle Visibility Slice
 
-- Current workspace state: implemented and locally validated; commit/push is
-  pending in this Codex turn.
+- Current workspace state: implemented, locally validated, committed, and
+  pushed as `8a042e7 Expose Growth recommendation lifecycle`.
 - Scope:
   - `learning-profile-projection-service` preserves bounded generated
     card/plan ids and accepted/superseded timestamps from trajectory
