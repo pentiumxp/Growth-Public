@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Evaluation Gateway Readiness Slice
+
+- Status: implemented locally and validated; production deploy/config update is
+  the next closure step.
+- Change:
+  - `learning-card-generation-context-service` now exposes
+    `authoringGatewayConfigured`, `evaluationGatewayConfigured`, and
+    `aiLoopGatewayReady` separately while keeping card generation readiness
+    gated by authoring Gateway, graph, target, and history readiness;
+  - Owner generation UI renders a separate `Gateway evaluation` readiness row
+    so deterministic evaluation fallback is visible instead of silent;
+  - `tests/learning-card-ai-loop-harness.test.js` now routes evaluation through
+    fake `growth-gateway-evaluation-client` plus
+    `learning-card-evaluation-service`, not a direct hand-written evaluator;
+  - the route harness fixes `submitted_at` to keep queue availability stable
+    against real clock drift.
+- Home AI installer dependency:
+  - `/Users/hermes-dev/HermesMobileDev/app/scripts/install-growth-launchd-service.js`
+    now supports `--gateway-evaluation-endpoint`,
+    `--gateway-evaluation-access-token-path`,
+    `--gateway-evaluation-protocol`, and `--gateway-evaluation-model`;
+  - deployment docs now require Growth production AI card evaluation to set
+    `GROWTH_GATEWAY_EVALUATION_*` by file path, not raw token.
+- Validation passed:
+  - Growth focused: `node --test
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/learning-card-evaluation-service.test.js
+    tests/growth-frontend-adapter.test.js`;
+  - Growth full: `npm run --silent check`; `npm test -- --runInBand`
+    (`227` tests);
+  - Home AI installer: `node --check scripts/install-growth-launchd-service.js`;
+    `node tests/install-growth-launchd-service.test.js`;
+  - AI Ops intake classified the work as H1 and the required Home AI
+    Gateway/deploy checks passed:
+    `gateway-run-lifecycle-service`, `gateway-run-start-service`,
+    `gateway-run-stream-service`, `runtime-config-provider`,
+    `macos-production-deploy-script`, `production-status-smoke-harness`,
+    Home AI deploy plan, and `git diff --check`.
+- Production note:
+  - current production LaunchDaemon was verified to have authoring Gateway env
+    only. It still needs `GROWTH_GATEWAY_EVALUATION_ENDPOINT`,
+    `GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH`, and
+    `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` before production
+    evaluation is fully model-backed.
+
 ## 2026-06-14 Growth AI Card Closed Loop Production Deploy
 
 - Growth commits already pushed before deploy:

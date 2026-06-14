@@ -413,6 +413,9 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       learningGraphReady: true,
       historySummaryReady: true,
       gatewayConfigured: true,
+      authoringGatewayConfigured: true,
+      evaluationGatewayConfigured: true,
+      aiLoopGatewayReady: true,
       blockingOpenGeneration: false
     },
     graph: { nodeCount: 294, edgeCount: 329 },
@@ -498,6 +501,7 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-manager/);
   assert.match(html, /日常英语卡/);
   assert.match(html, /data-card-generation-submit/);
+  assert.match(html, /Gateway evaluation/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
   assert.match(html, /data-card-generation-lifecycle/);

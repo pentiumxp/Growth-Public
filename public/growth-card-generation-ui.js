@@ -43,7 +43,8 @@
       ["学习者已开通", readiness.workspaceProvisioned, context.target?.enabled ? "凡凡 sample 已启用" : "当前只开放凡凡 sample"],
       ["学习图谱", readiness.learningGraphReady, `${Number(graph.nodeCount || 0)} 节点 / ${Number(graph.edgeCount || 0)} 关系`],
       ["历史摘要", readiness.historySummaryReady, "只读取卡片、评价、反思和掌握度摘要"],
-      ["Gateway authoring", readiness.gatewayConfigured, "SSE / JSON 输出进入 draft 校验"]
+      ["Gateway authoring", readiness.authoringGatewayConfigured ?? readiness.gatewayConfigured, "SSE / JSON 输出进入 draft 校验"],
+      ["Gateway evaluation", readiness.evaluationGatewayConfigured, "批改 draft 先校验再写入画像"]
     ];
     return rows.map(([label, ok, meta]) => `<div class="learning-card-generation-readiness-row" data-ready="${ok ? "true" : "false"}">
       <span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(meta)}</small></span>

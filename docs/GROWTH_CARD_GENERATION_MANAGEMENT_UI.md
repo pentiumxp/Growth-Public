@@ -77,6 +77,8 @@ selected learner target, not the iframe's Owner workspace.
    - learning graph is imported;
    - mastery/history summary is available;
    - Gateway authoring boundary is configured;
+   - Gateway evaluation boundary is shown separately so Owner can see whether
+     the post-submit AI loop is model-backed;
    - there is no blocking open generation job.
 8. Owner reviews the structured plan preview:
    - learning graph plan;
@@ -316,6 +318,9 @@ Recommended context response:
     "learningGraphReady": true,
     "historySummaryReady": true,
     "gatewayConfigured": true,
+    "authoringGatewayConfigured": true,
+    "evaluationGatewayConfigured": true,
+    "aiLoopGatewayReady": true,
     "blockingOpenGeneration": false
   },
   "suggestedPlan": {
@@ -517,6 +522,14 @@ Production generation requires:
   explicit model;
 - the Gateway token through `GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH` or the
   platform secret boundary.
+- a configured Gateway evaluation endpoint:
+  `GROWTH_GATEWAY_EVALUATION_ENDPOINT`;
+- the official Gateway Responses protocol for evaluation, either explicit
+  through `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` or inferred from a
+  `/v1/responses` endpoint;
+- the evaluation Gateway token through
+  `GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH` or the platform secret
+  boundary.
 
 The Home AI same-origin plugin proxy is the expected UI path. It checks Hermes
 workspace access first, then attaches the server-side Growth workspace bearer
@@ -565,13 +578,13 @@ Add focused tests before broad regression runs:
 | Boundary | Harness |
 | --- | --- |
 | Recipe policy service | normalizes compact `daily_english_v1` requests, exposes public recipe context, and leaves stage assessment outside daily defaults |
-| Context service | returns Fanfan sample, readiness, recipe, graph suggestion, bounded history summary, selected learner profile projection |
+| Context service | returns Fanfan sample, readiness, separate authoring/evaluation Gateway status, recipe, graph suggestion, bounded history summary, selected learner profile projection |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context and POST generate with workspace query/header handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders learning profile/trajectory projection |
 | UI target state | Fanfan enabled, disabled targets do not generate |
-| UI readiness | generate button disabled until readiness passes |
+| UI readiness | generate button disabled until authoring readiness passes; evaluation Gateway status remains visible as AI-loop readiness |
 | UI submit | calls Growth endpoint, not Gateway directly |
 | UI success | published result shows card preview and open-card action |
 | UI failures | timeout, invalid JSON, privacy failure, and DB publish failure display bounded messages |

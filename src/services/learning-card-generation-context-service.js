@@ -155,7 +155,7 @@ function readinessReady(readiness = {}) {
     && bool(readiness.workspaceProvisioned)
     && bool(readiness.learningGraphReady)
     && bool(readiness.historySummaryReady)
-    && bool(readiness.gatewayConfigured)
+    && bool(readiness.authoringGatewayConfigured || readiness.gatewayConfigured)
     && !bool(readiness.blockingOpenGeneration);
 }
 
@@ -190,6 +190,8 @@ function createLearningCardGenerationContextService(options = {}) {
   const profileProjectionService = options.profileProjectionService || null;
   const recipePolicyService = options.recipePolicyService || createLearningCardGenerationRecipePolicyService();
   const gatewayConfigured = options.gatewayConfigured || (() => false);
+  const authoringGatewayConfigured = options.authoringGatewayConfigured || gatewayConfigured;
+  const evaluationGatewayConfigured = options.evaluationGatewayConfigured || (() => false);
 
   function graphSuggestedNode(input = {}) {
     if (!graphRepository || typeof graphRepository.suggestNodes !== "function") return null;
@@ -359,9 +361,12 @@ function createLearningCardGenerationContextService(options = {}) {
       workspaceProvisioned: Boolean(workspaceId),
       learningGraphReady: Boolean(graph.ok && graph.nodeCount > 0 && suggestedPlan?.targetNodeId),
       historySummaryReady: Boolean(history?.ok),
-      gatewayConfigured: Boolean(gatewayConfigured()),
+      gatewayConfigured: Boolean(authoringGatewayConfigured()),
+      authoringGatewayConfigured: Boolean(authoringGatewayConfigured()),
+      evaluationGatewayConfigured: Boolean(evaluationGatewayConfigured()),
       blockingOpenGeneration: false
     };
+    readiness.aiLoopGatewayReady = readiness.authoringGatewayConfigured && readiness.evaluationGatewayConfigured;
     return {
       ok: true,
       source: "growth-learning-card-generation-context-service",

@@ -8,8 +8,10 @@ const { DatabaseSync } = require("node:sqlite");
 const { createServer } = require("../src/app/http-server");
 const { createGrowthEvaluationService } = require("../src/services/growth-evaluation-service");
 const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
+const { createGrowthGatewayEvaluationClient } = require("../src/services/growth-gateway-evaluation-client");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
+const { createLearningCardEvaluationService } = require("../src/services/learning-card-evaluation-service");
 const { createLearningCardGenerationRecipePolicyService } = require("../src/services/learning-card-generation-recipe-policy-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
@@ -493,6 +495,40 @@ function validDraftForRequest(request = {}, titleSuffix = "") {
   };
 }
 
+function validEvaluationDraftForRequest(request = {}) {
+  const targetNodeId = request.card?.targetNodeIds?.[0] || TARGET_NODE_ID;
+  return {
+    schemaVersion: "growth.card.evaluation.v1",
+    evaluationId: "eval_ai_loop_1",
+    status: "completed",
+    score: 48,
+    maxScore: 100,
+    passed: false,
+    confidence: 0.82,
+    summary: "The answer has a reason, but it does not quote exact evidence.",
+    feedbackSections: {
+      strengths: ["A claim and reason were present."],
+      focusAreas: ["Copy the exact words from the text."],
+      reflectionPrompts: ["Optional: which words would you quote next time?"],
+      nextPractice: "Use the score to shape the next low-pressure daily card."
+    },
+    remainingWeaknesses: ["Quote the exact words that prove the claim."],
+    skillResults: [{
+      nodeId: targetNodeId,
+      score: 48,
+      confidence: 0.82,
+      status: "developing",
+      evidenceSummary: "Reason is present; exact quote is missing."
+    }],
+    evidenceRefs: ["growth-ai-loop-harness:evaluation-gateway:v1"],
+    reward: {
+      eligible: true,
+      currency: "growth_coin",
+      reason: "daily_score_once_reward_eligible"
+    }
+  };
+}
+
 function createLoopHarness() {
   const root = tempDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");
@@ -522,6 +558,20 @@ function createLoopHarness() {
         }
       };
     }
+  });
+  const evaluationGatewayCalls = [];
+  const evaluationGatewayClient = createGrowthGatewayEvaluationClient({
+    transport(payload) {
+      evaluationGatewayCalls.push(payload);
+      return {
+        json: {
+          output_text: JSON.stringify(validEvaluationDraftForRequest(payload.input))
+        }
+      };
+    }
+  });
+  const learningCardEvaluationService = createLearningCardEvaluationService({
+    gatewayClient: evaluationGatewayClient
   });
   const authoringService = createLearningCardAuthoringService({
     gatewayClient,
@@ -571,34 +621,13 @@ function createLoopHarness() {
     nextCardStrategyService,
     trajectoryService,
     eventService: { emit: async () => ({ ok: true }) },
-    evaluator: async () => ({
-      evaluationId: "eval_ai_loop_1",
-      status: "completed",
-      score: 48,
-      maxScore: 100,
-      passed: false,
-      confidence: 0.82,
-      summary: "The answer has a reason, but it does not quote exact evidence.",
-      revisionRequirements: [],
-      remainingWeaknesses: ["Quote the exact words that prove the claim."],
-      feedbackSections: {
-        strengths: ["A claim and reason were present."],
-        focusAreas: ["Copy the exact words from the text."],
-        reflectionPrompts: ["Optional: which words would you quote next time?"],
-        nextPractice: "Use the score to shape the next low-pressure daily card."
-      },
-      evidenceRefs: ["growth-ai-loop-harness:evaluation:v1"],
-      reward: {
-        eligible: true,
-        currency: "growth_coin",
-        reason: "daily_score_once_reward_eligible"
-      }
-    }),
+    evaluator: learningCardEvaluationService.evaluateSubmission,
     now: () => new Date("2026-06-14T08:12:00.000Z")
   });
 
   return {
     dbPath,
+    evaluationGatewayCalls,
     evaluationService,
     gatewayCalls,
     generationService,
@@ -644,6 +673,12 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
     });
     assert.equal(processed.ok, true);
     assert.equal(processed.processed, 1);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls[0].kind, "growth.card_evaluation.evaluate");
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "daily_score_once");
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.evaluationAttempts, 1);
+    assert.ok(harness.evaluationGatewayCalls[0].input.card.targetNodeIds.includes(TARGET_NODE_ID));
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
 
     const pendingRecommendation = harness.recommendationService.recommendNextCard({
       workspaceId: WORKSPACE_ID,
@@ -789,7 +824,8 @@ test("AI card loop routes generate, submit, evaluate, and generate from the acce
       },
       body: JSON.stringify({
         workspace_id: WORKSPACE_ID,
-        text: "The character seems nervous because the text says his hands shook. I can improve by copying the exact words."
+        text: "The character seems nervous because the text says his hands shook. I can improve by copying the exact words.",
+        submitted_at: "2026-06-14T08:05:00.000Z"
       })
     });
     assert.equal(submitted.status, 202);
@@ -810,6 +846,11 @@ test("AI card loop routes generate, submit, evaluate, and generate from the acce
     });
     assert.equal(processed.status, 200);
     assert.equal((await processed.json()).processed, 1);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls[0].kind, "growth.card_evaluation.evaluate");
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.passScoreRequired, false);
+    assert.ok(harness.evaluationGatewayCalls[0].input.card.targetNodeIds.includes(TARGET_NODE_ID));
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
 
     const second = await fetch(`${baseUrl}/api/v1/growth/cards/generate`, {
       method: "POST",
@@ -832,6 +873,7 @@ test("AI card loop routes generate, submit, evaluate, and generate from the acce
     assert.equal(secondBody.recommendationAcceptance.ok, true);
     assert.equal(secondBody.recommendationAcceptance.previousStatus, "pending");
     assert.equal(JSON.stringify(harness.gatewayCalls).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls).includes(RAW_MARKER), false);
 
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
     try {

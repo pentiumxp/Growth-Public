@@ -117,7 +117,9 @@ function createServices(config) {
     profileProjectionService: learningProfileProjectionService,
     nextCardStrategyService: learningNextCardStrategyService,
     recipePolicyService: learningCardGenerationRecipePolicyService,
-    gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint)
+    gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint),
+    authoringGatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint),
+    evaluationGatewayConfigured: () => Boolean(config.gatewayEvaluationEndpoint)
   });
   const growthEvaluationService = createGrowthEvaluationService({
     learningStore: growthLearningStore,

@@ -10,6 +10,7 @@ function createContextService(options = {}) {
   const historyCalls = [];
   const service = createLearningCardGenerationContextService({
     gatewayConfigured: () => options.gatewayConfigured !== false,
+    evaluationGatewayConfigured: () => options.evaluationGatewayConfigured !== false,
     graphRepository: {
       readback() {
         return {
@@ -82,6 +83,9 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.target.enabled, true);
   assert.equal(result.readiness.ready, true);
   assert.equal(result.readiness.gatewayConfigured, true);
+  assert.equal(result.readiness.authoringGatewayConfigured, true);
+  assert.equal(result.readiness.evaluationGatewayConfigured, true);
+  assert.equal(result.readiness.aiLoopGatewayReady, true);
   assert.equal(result.graph.nodeCount, 294);
   assert.equal(result.suggestedPlan.targetNodeId, "kg_english_main_idea");
   assert.equal(result.suggestedPlan.cardRole, "practice");
@@ -98,6 +102,22 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.historySummary.recentTrajectoryCount, 1);
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);
   assert.equal(historyCalls[0].learningGraphPlan.targetNodeId, "kg_english_main_idea");
+});
+
+test("card generation context reports evaluation Gateway readiness separately from generation readiness", () => {
+  const { service } = createContextService({ evaluationGatewayConfigured: false });
+
+  const result = service.context({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    displayName: "凡凡"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.readiness.ready, true);
+  assert.equal(result.readiness.authoringGatewayConfigured, true);
+  assert.equal(result.readiness.evaluationGatewayConfigured, false);
+  assert.equal(result.readiness.aiLoopGatewayReady, false);
 });
 
 test("card generation context keeps non-Fanfan targets disabled in V1", () => {

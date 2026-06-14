@@ -35,6 +35,12 @@ selected learner's bounded profile/trajectory projection, explicit
 generation so the Owner can see whether the next card comes from a persisted
 trajectory recommendation, recomputed profile strategy, or graph suggestion,
 and whether recent recommendations are pending, accepted, or superseded.
+It must also distinguish card-authoring Gateway readiness from card-evaluation
+Gateway readiness. Authoring Gateway readiness gates new card generation.
+Evaluation Gateway readiness is exposed as `evaluationGatewayConfigured` and
+`aiLoopGatewayReady`; when it is false, the card can still be authored, but the
+AI-driven loop is not production-complete because evaluation will use the local
+fallback boundary.
 
 ## Ownership
 
@@ -63,6 +69,12 @@ written.
 Gateway is the only model boundary for Growth card evaluation. Growth may use
 Home AI Gateway access/config, but it must not import Home AI old Growth server
 internals or call model vendors directly.
+
+Production-complete AI evaluation requires `GROWTH_GATEWAY_EVALUATION_ENDPOINT`
+and its token/protocol settings in the Growth LaunchDaemon environment. The
+deterministic evaluator is retained only for harness/local fallback and visible
+failure isolation, not as the final pedagogy path for ordinary production
+cards.
 
 ## Summary-Only Inputs
 
@@ -427,6 +439,10 @@ Focused harnesses must cover:
   next-card strategy fields without raw answer/source-ref leakage;
 - Owner generation UI renders the selected learner's profile projection and
   explicit next-card recommendation reason without creating any write action;
+- card-generation context exposes `authoringGatewayConfigured`,
+  `evaluationGatewayConfigured`, and `aiLoopGatewayReady` separately, so Owner
+  can see whether generation is possible and whether evaluation is also on the
+  model-backed Gateway path;
 - learner difficulty feedback writes through `learning-experience-signal-service`,
   rejects unanchored/private input, updates `learning_growth_experience_signals`,
   and refreshes the current card projection;
@@ -447,15 +463,18 @@ The end-to-end service and route harness is
 `tests/learning-card-ai-loop-harness.test.js`. It uses the real Growth SQLite
 store, graph planning, card authoring, evidence write, evaluation, mastery,
 trajectory, recommendation, next-target, and generation services with fake
-Gateway authoring/evaluation boundaries. It also runs the HTTP route chain
+Gateway authoring/evaluation boundaries. Evaluation goes through
+`growth-gateway-evaluation-client` and `learning-card-evaluation-service`,
+which parse and validate the fake Gateway draft before `growth-evaluation-service`
+writes profile/reward/trajectory state. It also runs the HTTP route chain
 through `POST /api/v1/growth/cards/generate`,
 `POST /api/v1/growth/cards/:taskCardId/submissions`,
 `POST /api/v1/growth/evaluations/process`, and a follow-up generation request
 to prove route authorization and request normalization preserve the same
 closed-loop service contract. The harness plants a raw-answer marker in
 historical SQLite evidence and asserts the marker does not appear in Gateway
-authoring input, profile projection, or trajectory recommendation lifecycle
-payloads.
+authoring input, Gateway evaluation input, profile projection, or trajectory
+recommendation lifecycle payloads.
 
 ## Production Evidence
 
@@ -490,6 +509,13 @@ on 2026-06-14 through the central Home AI deploy script:
     solid backgrounds, no low-contrast semantic text, and stable bottom-nav
     samples.
 - AI Ops evidence id: `evidence-8dbf71e4-1906-422a-b8df-b1c4cdfb93fd`.
+
+The 2026-06-14 deploy configured authoring Gateway only. A later production
+closure must add `GROWTH_GATEWAY_EVALUATION_ENDPOINT`,
+`GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH`, and
+`GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` to the Growth LaunchDaemon and
+repeat a bounded evaluation smoke before claiming fully model-backed
+production evaluation.
 
 Full production automation and broad visual UI controls for stage assessment
 activation remain later slices.
