@@ -280,6 +280,10 @@ activation decision. The loop is:
 6. The authoring/publisher boundary writes the formal task card and graph
    binding. Stage assessment cards use `formal_assessment` metadata, default
    `300` Growth learning coins, and mastery evidence weight `1`.
+7. When the formal evaluation is persisted, `growth-evaluation-service`
+   delegates completion to `learning-stage-assessment-service`, which marks the
+   active cycle `completed`, records `completedAt`, preserves the original
+   cycle target and generated card id, and sets the next cooldown window.
 
 Default V1 policy:
 
@@ -302,11 +306,19 @@ When an evaluation is persisted:
 2. Growth derives bounded evidence items from evaluation status, score,
    confidence, `skillResults`, `remainingWeaknesses`, and graph-bound card
    nodes;
-3. profile updates are idempotent by source evaluation id and target node;
-4. card trajectory is idempotent by task card id and source evaluation id;
-5. reward settlement does not directly write mastery state; only the
+3. mastery evidence is weighted by card role: generated ordinary daily cards
+   currently write low-weight evidence, while `stage_assessment` cards write
+   formal evidence weight `1`;
+4. formal assessment evidence covers the declared assessment coverage nodes,
+   not only the first target node;
+5. profile updates are idempotent by source evaluation id and target node, and
+   repository writes merge legacy mastery rows by workspace, learner, program,
+   and node before creating a new state row;
+6. card trajectory is idempotent by task card id and source evaluation id;
+7. reward settlement does not directly write mastery state; only the
    evaluation/reflection evidence boundary does;
-6. profile and trajectory failures must be visible in service results but must
+8. profile, trajectory, and stage-assessment-cycle failures must be visible in
+   service results but must
    not duplicate the evaluation or reward settlement.
 
 For ordinary `daily_score_once` cards, a low score is feedback for the next
@@ -451,6 +463,9 @@ Focused harnesses must cover:
 - Owner manual activation generates a `stage_assessment` card with
   `stageAssessmentCycleId`, active activation metadata, `formal_assessment`
   policy, and default `300` coin reward metadata;
+- stage assessment evaluation completion records formal evidence weight in the
+  mastery profile, preserves summary-only evidence metadata, closes the active
+  cycle, and projects cooldown on the next eligibility check;
 - executor challenge activation can only target the executor's own workspace
   and does not generate during active cooldown;
 - valid streaming response and valid JSON response from Gateway evaluation;

@@ -8,6 +8,9 @@ function fakeRepository(initialCycle = null) {
   let latest = initialCycle;
   return {
     saved,
+    cycleById(cycleId) {
+      return latest && latest.cycleId === cycleId ? latest : null;
+    },
     cycleIdFor: () => "cycle_stage_1",
     latestCycle() {
       return latest;
@@ -171,4 +174,67 @@ test("executor challenge activation respects hard cooldown and does not generate
   assert.equal(result.error, "stage_assessment_cooldown_active");
   assert.equal(result.activationState, "cooldown");
   assert.equal(generationCalls.length, 0);
+});
+
+test("stage assessment completion closes the active cycle and sets cooldown", () => {
+  const repository = fakeRepository({
+    cycleId: "cycle_stage_1",
+    workspaceId: "weixin_fanfan",
+    learnerId: "weixin_fanfan",
+    programId: "program_english",
+    subjectId: "english",
+    capabilityClusterId: "reading_main_idea",
+    targetNodeIds: ["kg_main_idea", "kg_inference"],
+    status: "active",
+    activationReason: "owner_manual",
+    activationSource: "owner_manual",
+    eligibleAt: "2026-06-14T08:00:00.000Z",
+    activatedAt: "2026-06-14T08:05:00.000Z",
+    sourceCardIds: ["card_1", "card_2"],
+    generatedTaskCardId: "stage_card_1"
+  });
+  const service = createLearningStageAssessmentService({
+    repository,
+    profileProjectionService: { profileContext: () => profile() },
+    cardGenerationService: { generateCard: async () => ({ ok: true }) },
+    now: () => new Date("2026-06-14T09:00:00.000Z")
+  });
+
+  const result = service.recordAssessmentCompletion({
+    workspaceId: "weixin_fanfan",
+    taskCard: {
+      id: "stage_card_1",
+      workspace_id: "weixin_fanfan",
+      learner_id: "weixin_fanfan",
+      program_id: "program_english",
+      domain: "english",
+      capability_cluster_id: "reading_main_idea",
+      card_role: "stage_assessment",
+      stage_assessment_cycle_id: "cycle_stage_1",
+      skill_ids_json: JSON.stringify(["kg_main_idea", "kg_inference"]),
+      raw_json: JSON.stringify({
+        learningGraph: {
+          targetNodeIds: ["kg_main_idea"],
+          assessmentCoverageNodeIds: ["kg_main_idea", "kg_inference"]
+        },
+        completionPolicy: { mode: "formal_assessment" },
+        stageAssessment: { cycleId: "cycle_stage_1" }
+      })
+    },
+    evaluation: {
+      evaluationId: "eval_stage_1",
+      score: 88,
+      evaluatedAt: "2026-06-14T09:00:00.000Z"
+    }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.activationState, "cooldown");
+  assert.equal(result.cycle.status, "completed");
+  assert.equal(result.cycle.completedAt, "2026-06-14T09:00:00.000Z");
+  assert.equal(result.cycle.cooldownUntil, "2026-06-19T09:00:00.000Z");
+  assert.equal(result.cycle.generatedTaskCardId, "stage_card_1");
+  assert.deepEqual(result.cycle.sourceCardIds, ["card_1", "card_2", "stage_card_1"]);
+  assert.equal(repository.saved.at(-1).activationReason, "owner_manual");
+  assert.equal(repository.saved.at(-1).activationSource, "owner_manual");
 });

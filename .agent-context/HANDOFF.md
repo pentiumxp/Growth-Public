@@ -9,6 +9,61 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Stage Assessment Closed-Loop Profile Slice
+
+- Status: implemented and locally validated; commit/push pending in this turn.
+- Scope:
+  - `learning-mastery-profile-service` now reads card evidence role and
+    `mastery_evidence_weight`;
+  - formal `stage_assessment` evaluations write weight `1` evidence, can mark
+    high-score formal evidence as `mastered`, and include declared assessment
+    coverage nodes in the profile update;
+  - `mastery-profile` repository now stores summary-only evidence weight
+    metadata in `raw_json`, uses weighted score aggregation, and merges legacy
+    mastery rows by workspace/learner/program/node before creating a new state
+    row;
+  - `learning-stage-assessment-service` now exposes
+    `recordAssessmentCompletion`, which preserves the original active cycle
+    target, generated card id, and activation metadata, then writes
+    `status=completed`, `completedAt`, and `cooldownUntil`;
+  - `growth-evaluation-service` injects `stageAssessmentService` and delegates
+    formal cycle completion after the evaluation/reward/profile/trajectory
+    writes;
+  - `src/app/services.js` wires the stage assessment service into evaluation
+    orchestration.
+- Harness added/updated:
+  - `tests/learning-mastery-profile-service.test.js` covers formal evidence
+    weight, coverage-node profile writes, and raw-answer exclusion;
+  - `tests/learning-stage-assessment-service.test.js` covers active-cycle
+    completion and cooldown;
+  - `tests/growth-evaluation-service.test.js` covers evaluation orchestration
+    calling stage assessment completion;
+  - `tests/learning-card-ai-loop-harness.test.js` now covers Owner activation
+    -> stage assessment generation -> submission -> Gateway evaluation ->
+    weighted profile update -> completed cycle -> cooldown projection.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation passed:
+  - syntax checks for changed service/store/app modules;
+  - focused service and AI-loop tests:
+    `node --test tests/learning-mastery-profile-service.test.js
+    tests/learning-stage-assessment-service.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-card-ai-loop-harness.test.js`;
+  - Growth AI loop focused set from `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+    (`61` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`231` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `124` files, `1334` nodes, `4801` edges.
+
 ## 2026-06-14 Growth Daily English Three-Step Interaction Slice
 
 - Status: implemented, pushed, deployed, and visually validated.

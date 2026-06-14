@@ -171,3 +171,87 @@ test("mastery profile service is idempotent for the same evaluation evidence", (
   });
 });
 
+test("formal stage assessment evidence carries higher mastery weight and coverage", () => {
+  withProfileDb(({ dbPath, repository }) => {
+    const service = createLearningMasteryProfileService({
+      repository,
+      now: () => new Date("2026-06-14T05:00:00.000Z")
+    });
+    const daily = service.recordEvaluationEvidence({
+      taskCard: taskCard(),
+      evaluation: {
+        evaluationId: "eval_daily_low",
+        status: "completed",
+        score: 50,
+        passed: true,
+        confidence: 0.72,
+        summary: "Daily practice showed partial evidence use.",
+        remainingWeaknesses: ["Needs exact quotation."]
+      }
+    });
+    assert.equal(daily.ok, true);
+    assert.equal(daily.evidenceWeight, 0.2);
+    assert.equal(daily.evidenceRole, "daily_practice");
+
+    const formal = service.recordEvaluationEvidence({
+      taskCard: {
+        id: "stage_card_1",
+        learner_id: "weixin_stephen",
+        workspace_id: "weixin_stephen",
+        program_id: "program_english",
+        title: "Formal evidence checkpoint",
+        card_role: "stage_assessment",
+        stage_assessment_cycle_id: "cycle_stage_1",
+        mastery_evidence_weight: 1,
+        skill_ids_json: JSON.stringify(["kg_english_evidence_answering"]),
+        raw_json: JSON.stringify({
+          completionPolicy: { mode: "formal_assessment" },
+          learningGraph: {
+            targetNodeIds: ["kg_english_evidence_answering"],
+            assessmentCoverageNodeIds: ["kg_english_evidence_answering", "kg_english_claim_reason"]
+          },
+          stageAssessment: { cycleId: "cycle_stage_1" }
+        })
+      },
+      evaluation: {
+        evaluationId: "eval_stage_high",
+        status: "completed",
+        score: 90,
+        passed: true,
+        confidence: 0.9,
+        summary: "Formal assessment confirms independent evidence use.",
+        remainingWeaknesses: []
+      }
+    });
+
+    assert.equal(formal.ok, true);
+    assert.equal(formal.evidenceWeight, 1);
+    assert.equal(formal.evidenceRole, "formal_assessment");
+    assert.deepEqual(formal.targetNodeIds.sort(), ["kg_english_claim_reason", "kg_english_evidence_answering"]);
+    assert.equal(formal.masteryChanges.find((item) => item.nodeId === "kg_english_evidence_answering").to, "mastered");
+
+    const db = new DatabaseSync(dbPath);
+    try {
+      const rows = db.prepare("SELECT * FROM learning_growth_mastery_states ORDER BY node_id").all();
+      assert.equal(rows.length, 2);
+      const primary = rows.find((row) => row.node_id === "kg_english_evidence_answering");
+      assert.equal(primary.status, "mastered");
+      assert.equal(primary.score, 83);
+      assert.equal(primary.evidence_count, 2);
+      const raw = JSON.parse(primary.raw_json);
+      assert.equal(raw.summaryOnly, true);
+      assert.equal(raw.lastEvidenceWeight, 1);
+      assert.equal(raw.lastEvidenceRole, "formal_assessment");
+      assert.equal(raw.evidenceWeightTotal, 1.2);
+      assert.equal(raw.formalEvidenceCount, 1);
+      assert.equal(raw.dailyEvidenceCount, 1);
+      assert.equal(JSON.stringify(raw).includes("PRIVATE RAW LEARNER ANSWER"), false);
+      const coverage = rows.find((row) => row.node_id === "kg_english_claim_reason");
+      assert.equal(coverage.status, "mastered");
+      assert.equal(coverage.score, 90);
+      assert.equal(coverage.evidence_count, 1);
+    } finally {
+      db.close();
+    }
+  });
+});

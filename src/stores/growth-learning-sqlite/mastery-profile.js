@@ -81,6 +81,11 @@ function publicMasteryState(row = {}) {
     summary: boundedText(row.summary || raw.summary, 320),
     updatedAt: cleanString(row.updated_at || raw.updatedAt),
     evidenceRefs: uniqueStrings(raw.evidenceRefs).slice(0, 20),
+    evidenceWeightTotal: numberValue(raw.evidenceWeightTotal),
+    lastEvidenceWeight: numberValue(raw.lastEvidenceWeight),
+    lastEvidenceRole: cleanString(raw.lastEvidenceRole),
+    formalEvidenceCount: Number(raw.formalEvidenceCount || 0) || 0,
+    dailyEvidenceCount: Number(raw.dailyEvidenceCount || 0) || 0,
     typicalWeaknesses: asArray(raw.typicalWeaknesses).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 8)
   };
 }
@@ -185,23 +190,58 @@ function createMasteryProfileRepository({ open } = {}) {
       if (!workspaceId || !nodeId) return { ok: false, error: "mastery_profile_target_required" };
       const programId = cleanString(input.programId);
       const evidenceRef = cleanString(input.evidenceRef);
-      const id = cleanString(input.id) || stableMasteryStateId({ workspaceId, learnerId, programId, nodeId });
-      const existing = db.prepare("SELECT * FROM learning_growth_mastery_states WHERE id = ?").get(id) || null;
+      let id = cleanString(input.id) || stableMasteryStateId({ workspaceId, learnerId, programId, nodeId });
+      let existing = db.prepare("SELECT * FROM learning_growth_mastery_states WHERE id = ?").get(id) || null;
+      if (!existing) {
+        const legacy = db.prepare(`
+          SELECT * FROM learning_growth_mastery_states
+          WHERE workspace_id = ?
+            AND learner_id = ?
+            AND program_id = ?
+            AND node_id = ?
+          ORDER BY updated_at DESC, id DESC
+          LIMIT 1
+        `).get(workspaceId, learnerId, programId, nodeId) || null;
+        if (legacy) {
+          existing = legacy;
+          id = cleanString(legacy.id);
+        }
+      }
       const existingState = publicMasteryState(existing);
+      const existingRaw = rawObject(existing || {});
       if (existingState && evidenceRef && existingState.evidenceRefs.includes(evidenceRef)) {
         return { ok: true, duplicate: true, state: existingState };
       }
       const oldCount = existingState?.evidenceCount || 0;
       const nextCount = oldCount + 1;
-      const nextScore = oldCount
-        ? Math.round(((existingState.score * oldCount) + scoreTo100(input.score)) / nextCount)
+      const evidenceWeight = Math.max(0.05, Math.min(1, numberValue(input.evidenceWeight) || 0.2));
+      const previousWeightTotal = Math.max(0, numberValue(existingRaw.evidenceWeightTotal) || oldCount);
+      const nextWeightTotal = previousWeightTotal + evidenceWeight;
+      const weightedPreviousScore = oldCount ? scoreTo100(existingState.score) * previousWeightTotal : 0;
+      const nextScore = nextWeightTotal
+        ? Math.round((weightedPreviousScore + scoreTo100(input.score) * evidenceWeight) / nextWeightTotal)
         : scoreTo100(input.score);
       const evidenceRefs = uniqueStrings([...(existingState?.evidenceRefs || []), evidenceRef]).slice(-20);
       const typicalWeaknesses = uniqueStrings([...(existingState?.typicalWeaknesses || []), ...(input.typicalWeaknesses || [])]).slice(-8);
+      const evidenceRole = cleanString(input.evidenceRole || input.cardRole || input.completionPolicy);
+      const evidenceWeights = asArray(existingRaw.evidenceWeights).concat({
+        evidenceRef,
+        weight: evidenceWeight,
+        role: evidenceRole,
+        score: scoreTo100(input.score)
+      }).slice(-20);
+      const formalEvidenceCount = Number(existingRaw.formalEvidenceCount || 0) + (evidenceRole === "formal_assessment" ? 1 : 0);
+      const dailyEvidenceCount = Number(existingRaw.dailyEvidenceCount || 0) + (evidenceRole === "daily_practice" ? 1 : 0);
       const raw = {
         summaryOnly: true,
         evidenceRefs,
         lastEvidenceRef: evidenceRef,
+        lastEvidenceWeight: evidenceWeight,
+        lastEvidenceRole: evidenceRole,
+        evidenceWeightTotal: Number(nextWeightTotal.toFixed(3)),
+        evidenceWeights,
+        formalEvidenceCount,
+        dailyEvidenceCount,
         lastSignalType: cleanString(input.signalType),
         typicalWeaknesses,
         sourceType: cleanString(input.sourceType || "evaluation"),

@@ -78,6 +78,7 @@ function createGrowthEvaluationService(options = {}) {
   const eventService = options.eventService || null;
   const profileService = options.profileService || null;
   const nextCardStrategyService = options.nextCardStrategyService || null;
+  const stageAssessmentService = options.stageAssessmentService || null;
   const trajectoryService = options.trajectoryService || null;
   const evaluator = typeof options.evaluator === "function" ? options.evaluator : deterministicEvaluate;
   const now = typeof options.now === "function" ? options.now : () => new Date();
@@ -111,12 +112,14 @@ function createGrowthEvaluationService(options = {}) {
         submissionId: claimed.submissionId,
         workspaceId: claimed.workspaceId
       });
+      const evaluatedAt = now().toISOString();
       const recorded = learningStore.recordEvaluation({
         submission: context.submission,
         taskCard: context.taskCard,
         submissionId: claimed.submissionId,
         workspaceId: claimed.workspaceId,
-        evaluation: Object.assign({}, evaluation, { evaluatedAt: now().toISOString() })
+        evaluatedAt,
+        evaluation: Object.assign({}, evaluation, { evaluatedAt })
       });
       if (!recorded?.ok) throw new Error(recorded?.error || "growth_evaluation_record_failed");
       const rewardSettlement = typeof learningStore.settleEvaluationReward === "function"
@@ -148,6 +151,12 @@ function createGrowthEvaluationService(options = {}) {
         nextCardStrategy,
         workspaceId: claimed.workspaceId
       });
+      const stageAssessmentCycle = recordStageAssessmentCompletion({
+        stageAssessmentService,
+        taskCard: context.taskCard,
+        evaluation: recorded.evaluation,
+        workspaceId: claimed.workspaceId
+      });
       const emittedEvents = await emitEvaluationEvents({
         eventService,
         evaluation: recorded.evaluation,
@@ -166,6 +175,7 @@ function createGrowthEvaluationService(options = {}) {
         reward_settlement: rewardSettlement,
         profile_update: profileUpdate,
         next_card_strategy: nextCardStrategy,
+        stage_assessment_cycle: stageAssessmentCycle,
         trajectory,
         events: emittedEvents,
         workspace_id: claimed.workspaceId,
@@ -214,6 +224,22 @@ function createGrowthEvaluationService(options = {}) {
     processEvaluationJob,
     processEvaluationQueue
   };
+}
+
+function recordStageAssessmentCompletion(input = {}) {
+  const service = input.stageAssessmentService;
+  if (!service || typeof service.recordAssessmentCompletion !== "function") {
+    return { ok: true, available: false, skipped: true, reason: "stage_assessment_service_unavailable" };
+  }
+  try {
+    return service.recordAssessmentCompletion({
+      taskCard: input.taskCard,
+      evaluation: input.evaluation,
+      workspaceId: input.workspaceId
+    });
+  } catch (err) {
+    return { ok: false, error: cleanString(err.message || err) || "stage_assessment_completion_failed" };
+  }
 }
 
 function recordProfileUpdate(input = {}) {

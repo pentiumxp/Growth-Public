@@ -1,6 +1,6 @@
 # Growth Plugin Architecture
 
-Last updated: 2026-06-12.
+Last updated: 2026-06-14.
 
 This document records Growth-local architecture boundaries. Platform rules stay
 in the canonical Home AI contract docs referenced by
@@ -69,7 +69,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
 | Embedded UI boot | `public/app.js` | Boot/wiring layer for the embedded Growth app. |
 | Embedded UI adapters | `public/growth-appearance.js`, `public/growth-api-client.js`, `public/growth-view-model.js`, `public/growth-route-controller.js`, `public/growth-navigation-controller.js` | Host appearance mapping, API client/query handling, board/card view-model normalization, manifest route/action handling, and plugin-owned secondary-view back/navigation state. The API client includes card generation and stage-assessment eligibility/activation helpers. |
-| Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/growth-card-generation-ui.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction and Owner generation surfaces. Learner cards support one submission, visible evaluation refresh, optional one-time reflection, and text/audio evidence routed through plugin APIs. Owner generation supports daily cards, visible next-card recommendation rationale, read-only recommendation lifecycle history, post-publish context refresh that preserves the published preview, and stage-assessment eligibility/Owner manual activation controls. Controllers own ephemeral UI state while service/store rules remain backend-owned. |
+| Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/growth-card-generation-ui.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction and Owner generation surfaces. Learner daily cards support one submission, visible evaluation refresh, one reflection stage that can be submitted once, and text/audio evidence routed through plugin APIs. Owner generation supports daily cards, visible next-card recommendation rationale, read-only recommendation lifecycle history, post-publish context refresh that preserves the published preview, and stage-assessment eligibility/Owner manual activation controls. Controllers own ephemeral UI state while service/store rules remain backend-owned. |
 | Migrated UI baseline | `public/growth-legacy-*.js`, `public/growth-homeai-legacy.css` | Plugin-owned copy of the migrated Growth UI baseline. Future Growth UI changes happen here, not in Home AI host files. |
 
 ## Current Refactor Boundary
@@ -141,7 +141,8 @@ The first core-module split is behavior-preserving:
   program/draft parent rows, the generated task card, and graph binding in one
   SQLite transaction. Generated daily cards use the
   `daily_score_once` completion policy: one submission evaluation, one
-  optional reflection, completion after the first evaluation, and
+  reflection stage that can be submitted once, completion after the first
+  evaluation, and
   score-proportional rewards without a pass-line gate.
   `growth-gateway-authoring-client` can speak the fake harness `{ kind,
   input }` protocol and the official Gateway `/v1/responses` protocol. The
@@ -177,12 +178,21 @@ The first core-module split is behavior-preserving:
   limited to the executor's own workspace and respects hard cooldown. Generated
   formal cards carry `stageAssessmentCycleId`, activation metadata,
   `formal_assessment` completion metadata, default `300` coin reward metadata,
-  and mastery evidence weight `1`.
+  and mastery evidence weight `1`. After a formal evaluation is persisted,
+  `growth-evaluation-service` delegates to
+  `learning-stage-assessment-service` to mark the linked cycle completed,
+  preserve the original cycle target, generated card id, and activation
+  metadata, and set the next cooldown window.
 - The AI card loop is Growth-owned. `learning-mastery-profile-service`,
   `learning-card-trajectory-service`, and `learning-next-card-strategy-service`
   close the first service slice from evaluation evidence to profile update,
   trajectory, and next-card strategy. Evaluation is the evidence boundary;
-  reward settlement must not directly mutate mastery state. See
+  reward settlement must not directly mutate mastery state. Mastery writes use
+  bounded evidence weights: ordinary generated daily cards currently use low
+  evidence weight, while formal `stage_assessment` cards use weight `1` and
+  cover declared assessment coverage nodes. Repository writes also merge
+  legacy mastery rows by workspace, learner, program, and node to avoid
+  duplicate profile states for the same capability. See
   `docs/GROWTH_AI_CARD_LOOP.md`.
 - Gateway-backed evaluation is Growth-owned. `learning-card-evaluation-service`
   calls `growth-gateway-evaluation-client` only when
@@ -284,7 +294,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-card-next-target-service.test.js tests/growth-routes.test.js` |
-| Growth AI card loop profile, trajectory, recommendation lifecycle, strategy, projection, Gateway evaluation, Owner recovery, route entry, and closed-loop card progression | `node --test tests/learning-card-ai-loop-harness.test.js tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-next-target-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
+| Growth AI card loop profile, trajectory, recommendation lifecycle, strategy, projection, Gateway evaluation, stage-assessment completion, Owner recovery, route entry, and closed-loop card progression | `node --test tests/learning-card-ai-loop-harness.test.js tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-stage-assessment-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-next-target-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
 | Growth learner experience signal writes | `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js` |
 | Embedded frontend adapters, card generation UI, learner card interaction UI, and Owner evaluation retry action | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/learning-card-generation-context-service.test.js tests/learning-profile-projection-service.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |

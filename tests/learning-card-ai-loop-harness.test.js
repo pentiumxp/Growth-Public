@@ -21,6 +21,7 @@ const { createLearningGraphPlanService } = require("../src/services/learning-gra
 const { createLearningMasteryProfileService } = require("../src/services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
+const { createLearningStageAssessmentService } = require("../src/services/learning-stage-assessment-service");
 const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
 
 const WORKSPACE_ID = "weixin_fanfan";
@@ -366,6 +367,27 @@ function createAiLoopTables(db) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE learning_growth_stage_assessment_cycles (
+      id TEXT PRIMARY KEY,
+      workspace_id TEXT NOT NULL DEFAULT '',
+      learner_workspace_id TEXT NOT NULL DEFAULT '',
+      learner_id TEXT NOT NULL DEFAULT '',
+      program_id TEXT NOT NULL DEFAULT '',
+      subject_id TEXT NOT NULL DEFAULT '',
+      capability_cluster_id TEXT NOT NULL DEFAULT '',
+      target_node_ids_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL,
+      activation_reason TEXT NOT NULL DEFAULT '',
+      activation_source TEXT NOT NULL DEFAULT '',
+      eligible_at TEXT NOT NULL DEFAULT '',
+      activated_at TEXT NOT NULL DEFAULT '',
+      completed_at TEXT NOT NULL DEFAULT '',
+      cooldown_until TEXT NOT NULL DEFAULT '',
+      source_card_ids_json TEXT NOT NULL DEFAULT '[]',
+      raw_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 }
 
@@ -465,11 +487,12 @@ function validDraftForRequest(request = {}, titleSuffix = "") {
   return {
     schemaVersion: request.cardSchemaVersion || "growth.card.authoring.v1",
     cardRole: role,
-    title: `Evidence practice${titleSuffix}`,
+    title: role === "stage_assessment" ? `Evidence checkpoint${titleSuffix}` : `Evidence practice${titleSuffix}`,
     targetNodeIds: [targetNodeId],
-    expectedTimeMinutes: 12,
+    assessmentCoverageNodeIds: request.learningGraphPlan?.assessmentCoverage || [targetNodeId],
+    expectedTimeMinutes: role === "stage_assessment" ? 25 : 12,
     difficultyBasis: "Use summary-only profile and graph context.",
-    supportLevel: request.nextCardStrategy?.supportLevel || "guided",
+    supportLevel: role === "stage_assessment" ? "independent" : request.nextCardStrategy?.supportLevel || "guided",
     teachingFlow: {
       learningTarget: "Answer with a claim and one exact piece of evidence.",
       prerequisites: [{ id: "kg_english_claim_reason", label: "Claim and reason", evidence: "summary_only" }],
@@ -497,28 +520,31 @@ function validDraftForRequest(request = {}, titleSuffix = "") {
 
 function validEvaluationDraftForRequest(request = {}) {
   const targetNodeId = request.card?.targetNodeIds?.[0] || TARGET_NODE_ID;
+  const formal = request.policy?.completionPolicy === "formal_assessment" || request.card?.cardRole === "stage_assessment";
   return {
     schemaVersion: "growth.card.evaluation.v1",
     evaluationId: "eval_ai_loop_1",
     status: "completed",
-    score: 48,
+    score: formal ? 90 : 48,
     maxScore: 100,
-    passed: false,
-    confidence: 0.82,
-    summary: "The answer has a reason, but it does not quote exact evidence.",
+    passed: formal,
+    confidence: formal ? 0.9 : 0.82,
+    summary: formal
+      ? "The formal checkpoint confirms independent evidence use."
+      : "The answer has a reason, but it does not quote exact evidence.",
     feedbackSections: {
-      strengths: ["A claim and reason were present."],
-      focusAreas: ["Copy the exact words from the text."],
+      strengths: formal ? ["The exact evidence was selected independently."] : ["A claim and reason were present."],
+      focusAreas: formal ? [] : ["Copy the exact words from the text."],
       reflectionPrompts: ["Optional: which words would you quote next time?"],
       nextPractice: "Use the score to shape the next low-pressure daily card."
     },
-    remainingWeaknesses: ["Quote the exact words that prove the claim."],
+    remainingWeaknesses: formal ? [] : ["Quote the exact words that prove the claim."],
     skillResults: [{
       nodeId: targetNodeId,
-      score: 48,
-      confidence: 0.82,
-      status: "developing",
-      evidenceSummary: "Reason is present; exact quote is missing."
+      score: formal ? 90 : 48,
+      confidence: formal ? 0.9 : 0.82,
+      status: formal ? "mastered" : "developing",
+      evidenceSummary: formal ? "Independent checkpoint evidence is strong." : "Reason is present; exact quote is missing."
     }],
     evidenceRefs: ["growth-ai-loop-harness:evaluation-gateway:v1"],
     reward: {
@@ -615,11 +641,18 @@ function createLoopHarness() {
     repository: store.masteryProfileRepository,
     now: () => new Date("2026-06-14T08:11:00.000Z")
   });
+  const stageAssessmentService = createLearningStageAssessmentService({
+    repository: store.stageAssessmentCycleRepository,
+    profileProjectionService,
+    cardGenerationService: generationService,
+    now: () => new Date("2026-06-14T08:12:00.000Z")
+  });
   const evaluationService = createGrowthEvaluationService({
     learningStore: store,
     profileService,
     nextCardStrategyService,
     trajectoryService,
+    stageAssessmentService,
     eventService: { emit: async () => ({ ok: true }) },
     evaluator: learningCardEvaluationService.evaluateSubmission,
     now: () => new Date("2026-06-14T08:12:00.000Z")
@@ -634,6 +667,7 @@ function createLoopHarness() {
     profileProjectionService,
     recommendationService,
     root,
+    stageAssessmentService,
     store
   };
 }
@@ -754,6 +788,89 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
     });
     assert.equal(projectedAfterConsumption.recentTrajectory[0].nextRecommendation.status, "accepted");
     assert.equal(JSON.stringify(projectedAfterConsumption).includes(RAW_MARKER), false);
+  } finally {
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  }
+});
+
+test("stage assessment loop activates, evaluates with formal weight, and cools the cycle", async () => {
+  const harness = createLoopHarness();
+  try {
+    const activation = await harness.stageAssessmentService.activateStageAssessment({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      subjectId: "english",
+      capabilityClusterId: "english.evidence",
+      targetNodeId: TARGET_NODE_ID,
+      assessmentCoverageNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      activationSource: "owner_manual",
+      generationKey: "ai-loop-stage-assessment"
+    });
+    assert.equal(activation.ok, true);
+    assert.equal(activation.activationState, "active");
+    assert.equal(activation.generation.published.card.cardRole, "stage_assessment");
+
+    const submitted = harness.store.submitEvidence({
+      workspaceId: WORKSPACE_ID,
+      taskCardId: activation.published.taskCardId,
+      text: "The strongest evidence is the exact phrase in the text. I explain the claim and quote the words that prove it.",
+      submittedAt: "2026-06-14T08:10:00.000Z"
+    });
+    assert.equal(submitted.ok, true);
+    assert.equal(submitted.evaluation_job.status, "pending");
+
+    const processed = await harness.evaluationService.processEvaluationQueue({
+      workspaceId: WORKSPACE_ID,
+      limit: 1
+    });
+    assert.equal(processed.ok, true);
+    assert.equal(processed.processed, 1);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "formal_assessment");
+    assert.equal(harness.evaluationGatewayCalls[0].input.card.cardRole, "stage_assessment");
+
+    const db = new DatabaseSync(harness.dbPath, { readOnly: true });
+    try {
+      const stageCard = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?")
+        .get(activation.published.taskCardId);
+      assert.equal(stageCard.card_role, "stage_assessment");
+      assert.equal(stageCard.mastery_evidence_weight, 1);
+      assert.equal(JSON.parse(stageCard.completion_policy_json).mode, "formal_assessment");
+
+      const cycle = db.prepare("SELECT * FROM learning_growth_stage_assessment_cycles WHERE id = ?")
+        .get(activation.cycle.cycleId);
+      assert.equal(cycle.status, "completed");
+      assert.equal(cycle.completed_at, "2026-06-14T08:12:00.000Z");
+      assert.equal(cycle.cooldown_until, "2026-06-19T08:12:00.000Z");
+      assert.equal(JSON.parse(cycle.raw_json).generatedTaskCardId, activation.published.taskCardId);
+
+      const mastery = db.prepare("SELECT * FROM learning_growth_mastery_states WHERE node_id = ?")
+        .get(TARGET_NODE_ID);
+      assert.equal(mastery.status, "mastered");
+      assert.equal(mastery.evidence_count, 3);
+      const raw = JSON.parse(mastery.raw_json);
+      assert.equal(raw.lastEvidenceWeight, 1);
+      assert.equal(raw.lastEvidenceRole, "formal_assessment");
+      assert.equal(raw.formalEvidenceCount, 1);
+      assert.equal(raw.summaryOnly, true);
+      assert.equal(JSON.stringify(raw).includes(RAW_MARKER), false);
+    } finally {
+      db.close();
+    }
+
+    const eligibilityAfterCompletion = harness.stageAssessmentService.evaluateEligibility({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      subjectId: "english",
+      capabilityClusterId: "english.evidence",
+      targetNodeId: TARGET_NODE_ID,
+      assessmentCoverageNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"]
+    });
+    assert.equal(eligibilityAfterCompletion.ok, true);
+    assert.equal(eligibilityAfterCompletion.eligible, false);
+    assert.equal(eligibilityAfterCompletion.activationState, "cooldown");
   } finally {
     fs.rmSync(harness.root, { recursive: true, force: true });
   }

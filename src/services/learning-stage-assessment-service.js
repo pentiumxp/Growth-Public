@@ -20,6 +20,16 @@ function boundedText(value, max = 320) {
   return cleanString(value).slice(0, max);
 }
 
+function parseJson(text, fallback) {
+  if (!text) return fallback;
+  if (typeof text === "object") return text;
+  try {
+    return JSON.parse(text);
+  } catch (_error) {
+    return fallback;
+  }
+}
+
 function parseTime(value) {
   const parsed = Date.parse(cleanString(value));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -96,6 +106,62 @@ function normalizeActivationSource(input = {}) {
   if (source === "executor" || source === "challenge" || source === "executor_challenge") return "executor_challenge";
   if (source === "system" || source === "auto" || source === "automatic") return "system";
   return source || "system";
+}
+
+function taskRaw(taskCard = {}) {
+  return parseJson(taskCard.raw_json, {}) || {};
+}
+
+function completionPolicyMode(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  return cleanString(
+    taskCard.completionPolicy?.mode
+      || taskCard.completion_policy
+      || parseJson(taskCard.completion_policy_json, {})?.mode
+      || raw.completionPolicy?.mode
+      || raw.completion_policy?.mode
+  ).toLowerCase();
+}
+
+function taskCardRole(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  return cleanString(taskCard.card_role || taskCard.cardRole || raw.cardRole || raw.card_role).toLowerCase();
+}
+
+function stageAssessmentCycleIdFromTask(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  return cleanString(
+    taskCard.stage_assessment_cycle_id
+      || taskCard.stageAssessmentCycleId
+      || raw.stageAssessment?.cycleId
+      || raw.stage_assessment?.cycle_id
+  );
+}
+
+function isStageAssessmentTask(taskCard = {}) {
+  return taskCardRole(taskCard) === "stage_assessment" || completionPolicyMode(taskCard) === "formal_assessment";
+}
+
+function assessmentTargetFromTask(taskCard = {}, input = {}) {
+  const raw = taskRaw(taskCard);
+  const learningGraph = raw.learningGraph || raw.learning_graph || {};
+  return normalizeAssessmentTarget({
+    workspaceId: input.workspaceId || taskCard.workspace_id || taskCard.workspaceId,
+    learnerId: input.learnerId || taskCard.learner_id || taskCard.learnerId || taskCard.workspace_id || taskCard.workspaceId,
+    programId: input.programId || taskCard.program_id || taskCard.programId,
+    subjectId: input.subjectId || taskCard.subject_id || taskCard.subjectId || taskCard.domain,
+    capabilityClusterId: input.capabilityClusterId || taskCard.capability_cluster_id || taskCard.capabilityClusterId,
+    assessmentCoverageNodeIds: uniqueStrings(
+      input.assessmentCoverageNodeIds
+        || learningGraph.assessmentCoverageNodeIds
+        || learningGraph.assessment_coverage_node_ids
+        || raw.assessmentCoverageNodeIds
+        || raw.assessment_coverage_node_ids
+        || learningGraph.targetNodeIds
+        || learningGraph.target_node_ids
+        || parseJson(taskCard.skill_ids_json, [])
+    )
+  });
 }
 
 function createLearningStageAssessmentService(options = {}) {
@@ -304,14 +370,69 @@ function createLearningStageAssessmentService(options = {}) {
     };
   }
 
+  function recordAssessmentCompletion(input = {}) {
+    if (!repository || typeof repository.saveCycle !== "function") {
+      return unavailable("stage_assessment_cycle_repository_unavailable");
+    }
+    const taskCard = input.taskCard || {};
+    if (!isStageAssessmentTask(taskCard)) {
+      return { ok: true, skipped: true, reason: "not_stage_assessment" };
+    }
+    const cycleId = cleanString(input.cycleId || input.stageAssessmentCycleId || stageAssessmentCycleIdFromTask(taskCard));
+    if (!cycleId) {
+      return unavailable("stage_assessment_cycle_id_required");
+    }
+    const timestamp = cleanString(input.completedAt || input.evaluation?.evaluatedAt || input.evaluation?.createdAt) || now().toISOString();
+    const cooldownUntil = cleanString(input.cooldownUntil || taskCard.cooldown_until || taskCard.cooldownUntil) || addDaysIso(timestamp, cooldownDays);
+    const target = assessmentTargetFromTask(taskCard, input);
+    const byId = typeof repository.cycleById === "function" ? repository.cycleById(cycleId) : null;
+    const latestCycle = byId || (typeof repository.latestCycle === "function" ? repository.latestCycle(target) : null);
+    const saveTarget = Object.assign({}, target, {
+      workspaceId: cleanString(latestCycle?.workspaceId) || target.workspaceId,
+      learnerId: cleanString(latestCycle?.learnerId) || target.learnerId,
+      programId: cleanString(latestCycle?.programId) || target.programId,
+      subjectId: cleanString(latestCycle?.subjectId) || target.subjectId,
+      capabilityClusterId: cleanString(latestCycle?.capabilityClusterId) || target.capabilityClusterId,
+      targetNodeIds: uniqueStrings(latestCycle?.targetNodeIds || target.targetNodeIds),
+      assessmentCoverageNodeIds: uniqueStrings(latestCycle?.targetNodeIds || target.assessmentCoverageNodeIds)
+    });
+    const taskCardId = cleanString(taskCard.id || taskCard.taskCardId || input.taskCardId);
+    const generatedTaskCardId = cleanString(latestCycle?.generatedTaskCardId || taskCardId);
+    const saved = repository.saveCycle(Object.assign({}, saveTarget, {
+      cycleId,
+      status: "completed",
+      activationReason: cleanString(latestCycle?.activationReason || taskCard.activation_reason || taskCard.activationReason),
+      activationSource: cleanString(latestCycle?.activationSource || taskCard.activation_source || taskCard.activationSource),
+      eligibleAt: cleanString(latestCycle?.eligibleAt),
+      activatedAt: cleanString(latestCycle?.activatedAt || taskCard.activated_at || taskCard.activatedAt),
+      completedAt: timestamp,
+      cooldownUntil,
+      sourceCardIds: uniqueStrings(asArray(latestCycle?.sourceCardIds).concat(taskCardId)),
+      generatedTaskCardId,
+      updatedAt: timestamp,
+      note: boundedText(input.note || "completed_after_evaluation")
+    }));
+    if (!saved?.ok) return saved;
+    return {
+      ok: true,
+      source: "growth-learning-stage-assessment-service",
+      activationState: "cooldown",
+      completedAt: timestamp,
+      cooldownUntil,
+      cycle: saved.cycle
+    };
+  }
+
   return {
     activateStageAssessment,
     evaluateEligibility,
-    normalizeAssessmentTarget
+    normalizeAssessmentTarget,
+    recordAssessmentCompletion
   };
 }
 
 module.exports = {
   createLearningStageAssessmentService,
+  isStageAssessmentTask,
   normalizeAssessmentTarget
 };

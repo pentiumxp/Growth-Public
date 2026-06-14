@@ -125,6 +125,7 @@ function createServices(config) {
     learningStore: growthLearningStore,
     profileService: learningMasteryProfileService,
     nextCardStrategyService: learningNextCardStrategyService,
+    stageAssessmentService: learningStageAssessmentService,
     trajectoryService: learningCardTrajectoryService,
     eventService: growthEventService,
     evaluator: config.gatewayEvaluationEndpoint

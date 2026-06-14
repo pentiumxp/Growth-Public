@@ -197,3 +197,122 @@ test("evaluation service uses injected Gateway evaluator before recording", asyn
   assert.equal(result.evaluation.evaluationId, "eval_gateway");
   assert.deepEqual(calls, ["claim", "context", "gatewayEvaluator", "recordEvaluation", "reward", "complete"]);
 });
+
+test("evaluation service closes stage assessment cycle after formal evaluation", async () => {
+  const calls = [];
+  const job = {
+    jobId: "job_stage",
+    submissionId: "submission_stage",
+    taskCardId: "stage_card_1",
+    workspaceId: "weixin_fanfan",
+    attemptCount: 1,
+    status: "pending"
+  };
+  const learningStore = {
+    claimEvaluationJob() {
+      calls.push("claim");
+      return Object.assign({}, job, { status: "processing" });
+    },
+    evaluationJobContext() {
+      calls.push("context");
+      return {
+        submission: {
+          id: "submission_stage",
+          task_card_id: "stage_card_1",
+          learner_id: "weixin_fanfan",
+          workspace_id: "weixin_fanfan",
+          program_id: "program_science"
+        },
+        taskCard: {
+          id: "stage_card_1",
+          learner_id: "weixin_fanfan",
+          workspace_id: "weixin_fanfan",
+          program_id: "program_science",
+          title: "Science formal checkpoint",
+          card_role: "stage_assessment",
+          stage_assessment_cycle_id: "cycle_science_1",
+          mastery_evidence_weight: 1,
+          raw_json: JSON.stringify({
+            completionPolicy: { mode: "formal_assessment" },
+            learningGraph: { targetNodeIds: ["kg_science_variables"] },
+            stageAssessment: { cycleId: "cycle_science_1" }
+          })
+        },
+        taskRaw: { learningGraph: { targetNodeIds: ["kg_science_variables"] } },
+        submissionRaw: { text: "I changed one variable and kept the others the same because that makes the comparison fair." }
+      };
+    },
+    recordEvaluation(input) {
+      calls.push("recordEvaluation");
+      return {
+        ok: true,
+        evaluation: Object.assign({}, input.evaluation, {
+          evaluationId: "eval_stage",
+          evaluatedAt: "2026-06-14T10:00:00.000Z"
+        })
+      };
+    },
+    settleEvaluationReward() {
+      calls.push("reward");
+      return { ok: true, settlement: { coinAmount: 260 } };
+    },
+    completeEvaluationJob() {
+      calls.push("complete");
+      return Object.assign({}, job, { status: "done" });
+    }
+  };
+  const profileService = {
+    recordEvaluationEvidence() {
+      calls.push("profile");
+      return { ok: true, masterySummary: { masteryStates: [] }, targetNodeIds: ["kg_science_variables"] };
+    }
+  };
+  const stageAssessmentService = {
+    recordAssessmentCompletion(input) {
+      calls.push("stageAssessment");
+      assert.equal(input.taskCard.stage_assessment_cycle_id, "cycle_science_1");
+      assert.equal(input.evaluation.evaluationId, "eval_stage");
+      return {
+        ok: true,
+        activationState: "cooldown",
+        cooldownUntil: "2026-06-19T10:00:00.000Z",
+        cycle: { cycleId: "cycle_science_1", status: "completed" }
+      };
+    }
+  };
+  const service = createGrowthEvaluationService({
+    learningStore,
+    profileService,
+    nextCardStrategyService: { chooseNextCardStrategy: () => ({ ok: true, strategy: "stabilize" }) },
+    trajectoryService: { recordEvaluationTrajectory: () => ({ ok: true }) },
+    stageAssessmentService,
+    eventService: { emit: async () => ({ ok: true }) },
+    evaluator: () => ({
+      evaluationId: "eval_stage",
+      status: "completed",
+      score: 87,
+      maxScore: 100,
+      passed: true,
+      confidence: 0.91,
+      summary: "Formal checkpoint confirms the skill.",
+      remainingWeaknesses: [],
+      skillResults: [{ nodeId: "kg_science_variables", score: 87, confidence: 0.91 }]
+    }),
+    now: () => new Date("2026-06-14T10:00:00.000Z")
+  });
+
+  const result = await service.processEvaluationJob(job);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.stage_assessment_cycle.ok, true);
+  assert.equal(result.stage_assessment_cycle.activationState, "cooldown");
+  assert.deepEqual(calls, [
+    "claim",
+    "context",
+    "recordEvaluation",
+    "reward",
+    "profile",
+    "stageAssessment",
+    "complete"
+  ]);
+});

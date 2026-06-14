@@ -37,6 +37,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   reflection stage, completion after the first evaluation, and
   score-proportional rewards without a pass-line gate. The generated-card
   learner UI may expose at most one active text submission box per stage.
+  Stage assessment cards are separate formal cards: activation is owned by
+  `learning-stage-assessment-service`, formal evaluation writes higher-weight
+  mastery evidence across declared assessment coverage nodes, and completed
+  assessment cycles move into cooldown.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

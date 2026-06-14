@@ -180,6 +180,15 @@ function createStageAssessmentCycleRepository({ open, now } = {}) {
     });
   }
 
+  function cycleById(cycleId = "") {
+    const id = cleanString(cycleId);
+    if (!id) return null;
+    return withDb(true, (db) => {
+      if (!tableExists(db, "learning_growth_stage_assessment_cycles")) return null;
+      return publicCycle(db.prepare("SELECT * FROM learning_growth_stage_assessment_cycles WHERE id = ? LIMIT 1").get(id) || null);
+    });
+  }
+
   function saveCycle(input = {}) {
     return withDb(false, (db) => {
       if (!tableExists(db, "learning_growth_stage_assessment_cycles")) {
@@ -194,6 +203,7 @@ function createStageAssessmentCycleRepository({ open, now } = {}) {
   }
 
   return {
+    cycleById,
     cycleIdFor,
     latestCycle,
     saveCycle

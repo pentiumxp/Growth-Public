@@ -1,6 +1,6 @@
 # Growth Card Generation Rules
 
-Last updated: 2026-06-12.
+Last updated: 2026-06-14.
 
 This document consolidates the current Growth card-generation rules from the
 migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
@@ -578,6 +578,19 @@ Activated cards must include:
 - `activationSource` such as `owner_manual`, `executor_challenge`, or `system`;
 - `formal_assessment` completion metadata;
 - default `300` coin reward metadata and mastery evidence weight `1`.
+
+When a formal assessment evaluation is persisted, it is a profile update
+boundary as well as a card result. Growth must:
+
+- record bounded summary-only mastery evidence for every declared assessment
+  coverage node;
+- apply the formal mastery evidence weight when updating
+  `learning_growth_mastery_states`;
+- preserve evidence metadata such as role, weight, source evaluation ref, and
+  bounded weakness summaries without storing raw learner answers, transcripts,
+  prompts, answer keys, or provider output;
+- close the linked `learning_growth_stage_assessment_cycles` row and set the
+  next cooldown window.
 
 ## Evergreen And Sequence Behavior
 

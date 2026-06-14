@@ -36,9 +36,14 @@ function nodeIdsFromTaskCard(taskCard = {}) {
   const raw = typeof taskCard.raw_json === "object" ? taskCard.raw_json : parseJson(taskCard.raw_json, {});
   return uniqueStrings(
     asArray(raw.learningGraph?.targetNodeIds)
+      .concat(raw.learningGraph?.assessmentCoverageNodeIds || [])
+      .concat(raw.learningGraph?.assessment_coverage_node_ids || [])
       .concat(raw.learning_graph?.target_node_ids || [])
+      .concat(raw.learning_graph?.assessment_coverage_node_ids || [])
       .concat(raw.targetNodeIds || [])
+      .concat(raw.assessmentCoverageNodeIds || [])
       .concat(parseJson(taskCard.skill_ids_json, []))
+      .concat(parseJson(taskCard.assessment_coverage_json, []))
       .concat(taskCard.capability_cluster_id)
   );
 }
@@ -53,24 +58,68 @@ function nodeIdsFromEvaluation(evaluation = {}) {
   );
 }
 
-function profileStatusForEvaluation(evaluation = {}) {
+function taskRaw(taskCard = {}) {
+  return typeof taskCard.raw_json === "object" ? taskCard.raw_json : parseJson(taskCard.raw_json, {});
+}
+
+function completionPolicyMode(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  return cleanString(
+    taskCard.completionPolicy?.mode
+      || taskCard.completion_policy
+      || parseJson(taskCard.completion_policy_json, {})?.mode
+      || raw.completionPolicy?.mode
+      || raw.completion_policy?.mode
+  ).toLowerCase();
+}
+
+function cardRole(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  return cleanString(taskCard.card_role || taskCard.cardRole || raw.cardRole || raw.card_role).toLowerCase();
+}
+
+function evidenceWeightForTaskCard(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  const explicit = Number(
+    taskCard.mastery_evidence_weight
+      || taskCard.masteryEvidenceWeight
+      || raw.masteryEvidenceWeight
+      || raw.mastery_evidence_weight
+  );
+  if (Number.isFinite(explicit) && explicit > 0) return Math.max(0.05, Math.min(1, explicit));
+  if (cardRole(taskCard) === "stage_assessment" || completionPolicyMode(taskCard) === "formal_assessment") return 1;
+  return 0.2;
+}
+
+function evidenceRoleForTaskCard(taskCard = {}) {
+  if (cardRole(taskCard) === "stage_assessment" || completionPolicyMode(taskCard) === "formal_assessment") return "formal_assessment";
+  return "daily_practice";
+}
+
+function profileStatusForEvaluation(evaluation = {}, context = {}) {
   const score = scoreTo100(evaluation.score);
+  const passed = evaluation.passed !== false;
   if (score < 60) return "needs_repair";
+  if (context.evidenceRole === "formal_assessment" && score >= 85 && passed) return "mastered";
   if (score >= 85) return "strengthening";
   return "developing";
 }
 
-function signalForEvaluation(evaluation = {}) {
+function signalForEvaluation(evaluation = {}, context = {}) {
   const score = scoreTo100(evaluation.score);
+  const passed = evaluation.passed !== false;
   if (score < 60 || asArray(evaluation.remainingWeaknesses).length) return "not_learned";
+  if (context.evidenceRole === "formal_assessment" && score >= 85 && passed) return "challenge_ready";
   if (score >= 90 && evaluation.passed) return "challenge_ready";
   if (evaluation.passed || score >= 60) return "right_level";
   return "not_learned";
 }
 
-function masteryLevelForEvaluation(evaluation = {}) {
+function masteryLevelForEvaluation(evaluation = {}, context = {}) {
   const score = scoreTo100(evaluation.score);
+  const passed = evaluation.passed !== false;
   if (score < 60) return "repair";
+  if (context.evidenceRole === "formal_assessment" && score >= 85 && passed) return "mastered";
   if (score >= 85) return "stable";
   return "foundation";
 }
@@ -95,8 +144,11 @@ function createLearningMasteryProfileService(options = {}) {
       return { ok: false, error: "mastery_profile_target_required", targetNodeIds };
     }
     const recordedAt = now().toISOString();
-    const status = profileStatusForEvaluation(evaluation);
-    const signalType = signalForEvaluation(evaluation);
+    const evidenceWeight = evidenceWeightForTaskCard(taskCard);
+    const evidenceRole = evidenceRoleForTaskCard(taskCard);
+    const evidenceContext = { evidenceWeight, evidenceRole };
+    const status = profileStatusForEvaluation(evaluation, evidenceContext);
+    const signalType = signalForEvaluation(evaluation, evidenceContext);
     const typicalWeaknesses = asArray(evaluation.remainingWeaknesses).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 5);
     const summary = boundedText(evaluation.summary || typicalWeaknesses.join("; "), 320);
     const masteryChanges = [];
@@ -109,9 +161,11 @@ function createLearningMasteryProfileService(options = {}) {
         programId,
         nodeId,
         status,
-        masteryLevel: masteryLevelForEvaluation(evaluation),
+        masteryLevel: masteryLevelForEvaluation(evaluation, evidenceContext),
         score: scoreTo100(evaluation.score),
         confidence: Number(evaluation.confidence || 0),
+        evidenceWeight,
+        evidenceRole,
         summary,
         evidenceRef,
         signalType,
@@ -126,6 +180,8 @@ function createLearningMasteryProfileService(options = {}) {
         from: mastery.previousState?.status || "new",
         to: mastery.state?.status || status,
         evidenceRef,
+        evidenceWeight,
+        evidenceRole,
         duplicate: Boolean(mastery.duplicate)
       });
       const signal = repository.recordExperienceSignal({
@@ -153,6 +209,8 @@ function createLearningMasteryProfileService(options = {}) {
       programId,
       targetNodeIds,
       evidenceRef,
+      evidenceWeight,
+      evidenceRole,
       duplicateEvidenceCount,
       masteryChanges,
       experienceSignals,
@@ -170,6 +228,8 @@ function createLearningMasteryProfileService(options = {}) {
 module.exports = {
   createLearningMasteryProfileService,
   nodeIdsFromTaskCard,
+  evidenceRoleForTaskCard,
+  evidenceWeightForTaskCard,
   profileStatusForEvaluation,
   signalForEvaluation
 };
