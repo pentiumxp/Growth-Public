@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Owner Evaluation Retry UI Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - added an Owner-only `重新批改` action to the generated-card failed
+    evaluation panel rendered by `public/growth-legacy-task-ui.js`;
+  - wired `public/app.js` to dispatch that action through
+    `growth-card-interaction-controller`;
+  - added `retryEvaluation` in `public/growth-card-interaction-controller.js`;
+    it calls `retryGrowthEvaluation`, then requests one evaluation process
+    refresh and reloads the card detail;
+  - kept non-Owner learners on the visible recovery/read-only state with
+    `刷新状态` only;
+  - added mobile-safe action wrapping/gap and secondary button contrast in
+    `public/growth-homeai-legacy.css`;
+  - bumped static Growth asset URLs in `public/index.html` to
+    `20260614-owner-evaluation-retry-ui-v1`.
+- Documentation updated:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js tests/growth-routes.test.js tests/learning-evaluation-owner-review-service.test.js`
+    with 59 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - local Playwright mobile/dark smoke against `http://127.0.0.1:4895/`:
+    13 static assets used `20260614-owner-evaluation-retry-ui-v1`, old cache
+    keys were absent, the failed-evaluation panel rendered, and Owner
+    `重新批改` was visible/enabled with `data-workspace-id=weixin_fanfan`;
+  - `npm test` with 204 passing tests;
+  - app AI Ops H3 required check from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`;
+  - CodeGraph status after edits: 117 files, 1220 nodes, 4248 edges.
+- Browser/tooling:
+  - Codex in-app Browser was unavailable (`iab` not connected), so local visual
+    validation used Home AI app Playwright from
+    `/Users/hermes-dev/HermesMobileDev/app/node_modules/playwright`.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-2d36a31f-a00f-443a-a7ec-05e383a25f5d`.
+- Remaining architecture work:
+  - expose queue retry timing/status or retry history in Owner views if failed
+    evaluations become common;
+  - consider an Owner-wide evaluation recovery queue instead of only per-card
+    action once there is more than one active learner;
+  - production deployment still requires the central Home AI visual/prod smoke
+    gates.
+
 ## 2026-06-14 Growth Owner Evaluation Retry Slice
 
 - Current workspace state: implemented and locally validated; this handoff
@@ -57,8 +115,7 @@
     Map and did not require deployment or visual lane;
   - evidence id: `evidence-ac01e0d2-1ab5-4653-bb4c-afcd680e16cd`.
 - Remaining architecture work:
-  - add an Owner UI button/panel for the existing failed-evaluation retry API
-    if Owner should execute retry from the plugin without a manual API call;
+  - Owner UI button/panel work is completed in the following UI slice above;
   - expose queue retry timing/status in card detail if delayed retries become
     common in production;
   - production deployment still requires the central Home AI visual/prod smoke

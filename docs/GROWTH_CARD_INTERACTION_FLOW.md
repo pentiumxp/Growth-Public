@@ -70,9 +70,9 @@ Within the `提交作答` section:
   `批改未完成`, a visible `需要处理` state, and a `刷新状态` action plus Owner
   review guidance instead of leaving the card as hidden waiting work;
 - Owner review can retry that terminal failed evaluation through
-  `POST /api/v1/growth/evaluations/owner-review`; the learner card still has
-  one saved submission and one optional reflection, and retry only reprocesses
-  the saved evaluation job;
+  `POST /api/v1/growth/evaluations/owner-review`; the failed-evaluation panel
+  renders `重新批改` only when `state.auth.isOwner` is true, and retry only
+  reprocesses the saved evaluation job;
 - after evaluation, show score, summary, strengths, weak points, and next
   practice suggestions;
 - after evaluation, show an optional one-time reflection form with text and
@@ -94,7 +94,7 @@ local evaluator remains a fallback. Both paths keep the same
 `daily_score_once` rule: one evaluation, no retry-until-pass loop, and score as
 the outcome.
 
-Owner recovery remains backend-owned as well. Owner surfaces may call
+Owner recovery remains backend-owned as well. The failed-evaluation panel uses
 `retryGrowthEvaluation`, which delegates to
 `learning-evaluation-owner-review-service` and can only move a terminal failed
 job back to `retry` after Growth view-target authorization. It must not create
@@ -245,6 +245,8 @@ Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
   Owner evaluation retry, and embedded-proxy audio URL resolution;
 - generated card detail before submission;
 - submitted card waiting for evaluation with visible `刷新批改`;
+- terminal failed evaluation with a learner-visible recovery panel and
+  Owner-only `重新批改` action;
 - generated card detail after one-shot evaluation and optional reflection;
 - active difficulty-signal buttons writing through the Growth API helper and
   refreshing the current card projection;

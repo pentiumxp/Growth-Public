@@ -503,15 +503,20 @@
     const evaluationJob = task.latestEvaluationJob || null;
     const evaluationJobFailed = String(evaluationJob?.status || "").toLowerCase() === "failed";
     const state = options.state || {};
+    const owner = Boolean(state.auth?.isOwner);
     const busy = Boolean(state.learningGrowthEvaluationBusy?.[cardId]);
     const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "evaluation")] || "";
+    const workspaceId = String(task.workspaceId || options.workspaceId || "");
     if (!submission && !evaluation) return "";
     if (!evaluation) {
       if (evaluationJobFailed) {
+        const ownerRetryButton = owner
+          ? `<button type="button" class="learning-growth-secondary-action" data-learning-growth-evaluation-retry="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(workspaceId)}" ${busy ? "disabled" : ""}>${busy ? "处理中" : "重新批改"}</button>`
+          : "";
         return `<div class="todo-learning-growth-evaluation is-failed" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
           <div class="todo-learning-growth-evaluation-head"><strong>批改未完成</strong><span class="todo-learning-growth-score-pill">需要处理</span></div>
           <p>${escapeHtmlLocal(message || "作答已保存，但系统批改多次未完成。请稍后刷新状态，或让 Owner 检查后再处理。")}</p>
-          <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新状态"}</button></div>
+          <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新状态"}</button>${ownerRetryButton}</div>
         </div>`;
       }
       return `<div class="todo-learning-growth-evaluation" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">

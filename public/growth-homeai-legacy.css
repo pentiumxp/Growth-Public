@@ -12372,6 +12372,8 @@ body.task-markdown-preview-open {
 
 .learning-growth-teaching-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
 }
 
@@ -12379,6 +12381,12 @@ body.task-markdown-preview-open {
   min-height: 40px;
   padding: 0 16px;
   border-radius: 8px;
+}
+
+.learning-growth-teaching-actions .learning-growth-secondary-action {
+  border: 1px solid var(--ui-hairline-strong);
+  color: var(--ink);
+  background: var(--ui-control-bg);
 }
 
 .learning-growth-experience-actions {

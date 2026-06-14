@@ -265,7 +265,7 @@ be feature-driven:
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
 | Growth AI card loop profile, trajectory, strategy, projection, Gateway evaluation, and Owner recovery | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
 | Growth learner experience signal writes | `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js` |
-| Embedded frontend adapters, card generation UI, and learner card interaction UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
+| Embedded frontend adapters, card generation UI, learner card interaction UI, and Owner evaluation retry action | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |
 | Growth service facade/snapshot/provider selection | `node --test tests/growth-service.test.js` |

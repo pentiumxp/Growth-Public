@@ -374,6 +374,17 @@
           });
       });
     });
+    root.querySelectorAll("[data-learning-growth-evaluation-retry]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const cardId = clean(button.dataset.learningGrowthEvaluationRetry);
+        cardInteractionController.retryEvaluation(cardId, button.dataset.workspaceId)
+          .catch((error) => {
+            cardInteractionController.setMessage(cardId, "evaluation", error.message || String(error));
+            renderShell();
+          });
+      });
+    });
     root.querySelectorAll("[data-learning-growth-reflection-form]").forEach((form) => {
       form.addEventListener("submit", (event) => {
         event.preventDefault();

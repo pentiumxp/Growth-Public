@@ -347,6 +347,59 @@ test("Growth card interaction controller submits experience signal and refreshes
   assert.deepEqual(refreshed[0], { cardId: "card_1", workspaceId: "weixin_fanfan" });
 });
 
+test("Growth card interaction controller lets Owner retry a failed evaluation and refresh", async () => {
+  const windowRef = loadPublicScript("growth-card-interaction-controller.js");
+  const calls = [];
+  const refreshed = [];
+  let renders = 0;
+  const pageState = {
+    cardGeneration: {},
+    learningGrowthEvaluationBusy: {},
+    learningGrowthInteractionMessages: {},
+    learningGrowthRecordings: {}
+  };
+  const controller = windowRef.HermesGrowthCardInteractionController.createGrowthCardInteractionController({
+    api: {
+      async retryGrowthEvaluation(payload, workspaceId) {
+        calls.push({ type: "retry", payload, workspaceId });
+        return { ok: true };
+      },
+      async processGrowthEvaluations(workspaceId, limit) {
+        calls.push({ type: "process", workspaceId, limit });
+        return { ok: true, processed: 1 };
+      }
+    },
+    pageState,
+    model: {
+      overview: {
+        programs: { taskCards: [{ taskCardId: "card_1", workspaceId: "weixin_fanfan" }] },
+        board: { cards: [] }
+      },
+      detailCache: new Map()
+    },
+    viewModel: { normalizeCard: (card) => card },
+    renderShell: () => {
+      renders += 1;
+    },
+    refreshCard: async (cardId, workspaceId) => refreshed.push({ cardId, workspaceId }),
+    getCurrentWorkspaceId: () => "owner"
+  });
+
+  await controller.retryEvaluation("card_1");
+
+  assert.equal(calls[0].type, "retry");
+  assert.equal(calls[0].workspaceId, "weixin_fanfan");
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].payload)), {
+    task_card_id: "card_1",
+    reason: "owner_retry_from_growth_ui"
+  });
+  assert.deepEqual(calls[1], { type: "process", workspaceId: "weixin_fanfan", limit: 3 });
+  assert.equal(pageState.learningGrowthEvaluationBusy.card_1, false);
+  assert.equal(pageState.learningGrowthInteractionMessages["card_1:evaluation"], "批改状态已刷新。");
+  assert.deepEqual(refreshed[0], { cardId: "card_1", workspaceId: "weixin_fanfan" });
+  assert.ok(renders >= 3);
+});
+
 test("Growth card generation UI renders Owner panel and structured payload", () => {
   const windowRef = loadPublicScript("growth-card-generation-ui.js");
   const context = {
@@ -652,8 +705,48 @@ test("Growth teaching card UI renders visible failed evaluation state", () => {
   assert.match(html, /Owner 检查/);
   assert.match(html, /刷新状态/);
   assert.match(html, /todo-learning-growth-evaluation is-failed/);
+  assert.doesNotMatch(html, /data-learning-growth-evaluation-retry/);
+  assert.doesNotMatch(html, /重新批改/);
   assert.doesNotMatch(html, /作答已保存，系统会处理一次批改/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
+});
+
+test("Growth teaching card UI renders Owner retry action for failed evaluation", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "submitted",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    },
+    latestSubmission: {
+      submissionId: "submission_1",
+      submittedAt: "2026-06-12T10:00:00.000Z",
+      textCharCount: 42
+    },
+    latestEvaluationJob: {
+      jobId: "job_1",
+      status: "failed",
+      attemptCount: 3,
+      failedVisible: true
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      auth: { isOwner: true },
+      learningGrowthEvaluationBusy: { ltask_daily_1: false }
+    }
+  });
+
+  assert.match(html, /data-learning-growth-evaluation-retry="ltask_daily_1"/);
+  assert.match(html, /data-workspace-id="weixin_fanfan"/);
+  assert.match(html, /重新批改/);
+  assert.match(html, /刷新状态/);
 });
 
 test("Growth teaching card UI renders one-shot evaluation and optional reflection after submission", () => {
@@ -1057,7 +1150,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-owner-evaluation-retry-v1";
+  const staticVersion = "20260614-owner-evaluation-retry-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1074,4 +1167,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
   assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);
   assert.doesNotMatch(html, /20260614-evaluation-failure-ui-v1/);
+  assert.doesNotMatch(html, /20260614-owner-evaluation-retry-v1/);
 });

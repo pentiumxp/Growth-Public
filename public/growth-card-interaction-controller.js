@@ -336,6 +336,29 @@
       await refreshCard(cardId, targetWorkspaceId);
     }
 
+    async function retryEvaluation(taskCardId, workspaceId = "") {
+      const cardId = clean(taskCardId);
+      if (!cardId) return;
+      const targetWorkspaceId = workspaceIdForTaskCard(cardId, workspaceId);
+      pageState.learningGrowthEvaluationBusy[cardId] = true;
+      setMessage(cardId, "evaluation", "正在重新加入批改队列。");
+      renderShell();
+      try {
+        await api.retryGrowthEvaluation({
+          task_card_id: cardId,
+          reason: "owner_retry_from_growth_ui"
+        }, targetWorkspaceId);
+        setMessage(cardId, "evaluation", "已重新加入批改队列，正在刷新批改状态。");
+      } catch (error) {
+        setMessage(cardId, "evaluation", `重新批改失败：${error.message || String(error)}`);
+        return;
+      } finally {
+        pageState.learningGrowthEvaluationBusy[cardId] = false;
+        renderShell();
+      }
+      await refreshEvaluation(cardId, targetWorkspaceId);
+    }
+
     async function submitEvidence(form) {
       const cardId = clean(form.dataset.learningGrowthSubmissionForm || form.dataset.learningGrowthTeachingCheckForm);
       if (!cardId) return;
@@ -444,6 +467,7 @@
       clearRecording,
       handleRecordingPlaybackError,
       refreshEvaluation,
+      retryEvaluation,
       setMessage,
       submitEvidence,
       submitExperienceSignal,
