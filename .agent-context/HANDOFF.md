@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth AI Card Closed Loop Production Deploy
+
+- Growth commits already pushed before deploy:
+  - `6a0630f Add Growth AI card closed loop harness`;
+  - `4514a39 Add Growth AI card route loop harness`.
+- Home AI deploy-gate fix required for this deploy:
+  - central `scripts/deploy-macos-production.js` now runs the bounded
+    shared-auth ACL repair before `codex-auth-profile-audit` for every
+    non-`sync-only`, non-static Home AI or plugin deploy, not only `home-ai`;
+  - this matches `docs/MODULES/deployment.md`, which treats post-repair
+    `codex_auth_*` audit issues as real production blockers.
+- Production deployment completed through the central Home AI deploy script:
+  - command target: `npm run --silent deploy:macos -- --plugin growth --json
+    --reason growth-ai-card-closed-loop --execute`;
+  - source commit: `4514a39c324a`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T082018Z-plugin-growth-growth-ai-card-closed-loop`;
+  - restarted `com.hermesmobile.plugin.growth`.
+- Deploy validation passed:
+  - `codex-shared-auth-permissions-repair` ran for `plugin:growth` and
+    reported `userCount=8`;
+  - `launchd-print` reported Growth LaunchDaemon running;
+  - plugin health URL
+    `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` returned the Growth
+    manifest;
+  - `codex-auth-profile-audit` returned `codexIssueCount=0`. The audit still
+    reported 6 non-`codex_auth_*` legacy issues, so they were not deploy
+    blockers for this Growth plugin slice.
+- Production read smoke passed:
+  - `GET /api/v1/growth/status?workspaceId=weixin_fanfan` returned
+    plugin-owned SQLite status with `quick_check=ok`;
+  - Owner `GET /api/v1/growth/view-targets` returned the sample learner target
+    `weixin_stephen` labeled `凡凡`;
+  - Owner `GET /api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen`
+    returned `ready=true`, KG `294` nodes / `329` edges, recipe
+    `daily_english_v1`, completion policy `daily_score_once`, and
+    `passScoreRequired=false`;
+  - `GET /api/v1/growth/board?workspaceId=weixin_stephen` returned two ready
+    cards and SQLite integrity `quick_check=ok`.
+- Visual evidence passed:
+  - Home AI production Playwright mobile smoke passed at
+    `http://127.0.0.1:8797/?_hmv=growth-ai-loop-deploy`, client version
+    `20260614-plugin-audit-v770`, screenshot
+    `/tmp/homeai-growth-ai-loop-production-smoke.png`;
+  - central iOS PWA visual harness `embedded-plugin-shell --plugin-id growth`
+    passed against production with client version `20260614-plugin-audit-v770`,
+    iframe size `402x628`, no horizontal overflow, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260614T082700Z.png`;
+  - central iOS PWA visual harness `dark-growth-surfaces` passed against
+    production with 38 Growth surface samples, no pale solid backgrounds, no
+    low-contrast semantic text, stable bottom-nav samples, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260614T082711Z.png`.
+- AI Ops evidence:
+  - deploy: `evidence-8dbf71e4-1906-422a-b8df-b1c4cdfb93fd`.
+
 ## 2026-06-14 Growth AI Card Route Closed-Loop Harness Slice
 
 - Current workspace state: implemented and locally validated. This handoff

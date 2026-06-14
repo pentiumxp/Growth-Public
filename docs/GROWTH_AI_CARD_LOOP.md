@@ -457,5 +457,39 @@ historical SQLite evidence and asserts the marker does not appear in Gateway
 authoring input, profile projection, or trajectory recommendation lifecycle
 payloads.
 
+## Production Evidence
+
+The closed-loop service and route harness slice was deployed to Mac production
+on 2026-06-14 through the central Home AI deploy script:
+
+- Growth source commit: `4514a39c324a`.
+- Production path: `/Users/hermes-host/HermesMobile/plugins/growth`.
+- Backup:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260614T082018Z-plugin-growth-growth-ai-card-closed-loop`.
+- Deploy validation passed for `plugin:growth`: shared Codex auth ACL repair,
+  Growth LaunchDaemon `launchd-print`, plugin manifest health, and
+  `codex-auth-profile-audit` with `codexIssueCount=0`.
+- Production read smokes passed:
+  - `GET /api/v1/growth/status` returned plugin-owned SQLite status with
+    `quick_check=ok`;
+  - Owner `GET /api/v1/growth/view-targets` returned the sample learner target
+    `weixin_stephen` labeled `凡凡`;
+  - Owner `GET /api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen`
+    returned `ready=true`, KG `294` nodes / `329` edges, recipe
+    `daily_english_v1`, and completion policy `daily_score_once` with
+    `passScoreRequired=false`;
+  - `GET /api/v1/growth/board?workspaceId=weixin_stephen` returned two ready
+    cards and SQLite integrity `quick_check=ok`.
+- Production visual smokes passed:
+  - Home AI Playwright mobile smoke against
+    `http://127.0.0.1:8797/?_hmv=growth-ai-loop-deploy`, client version
+    `20260614-plugin-audit-v770`;
+  - central iOS PWA `embedded-plugin-shell --plugin-id growth`, iframe
+    `402x628`, no horizontal overflow;
+  - central iOS PWA `dark-growth-surfaces`, 38 Growth surface samples, no pale
+    solid backgrounds, no low-contrast semantic text, and stable bottom-nav
+    samples.
+- AI Ops evidence id: `evidence-8dbf71e4-1906-422a-b8df-b1c4cdfb93fd`.
+
 Full production automation and broad visual UI controls for stage assessment
 activation remain later slices.
