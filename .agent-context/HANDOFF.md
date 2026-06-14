@@ -11,8 +11,8 @@
 
 ## 2026-06-14 Growth Evaluation Gateway Readiness Slice
 
-- Status: implemented locally and validated; production deploy/config update is
-  the next closure step.
+- Status: implemented, pushed, deployed, configured in production launchd, and
+  production-smoked.
 - Change:
   - `learning-card-generation-context-service` now exposes
     `authoringGatewayConfigured`, `evaluationGatewayConfigured`, and
@@ -48,12 +48,37 @@
     `gateway-run-stream-service`, `runtime-config-provider`,
     `macos-production-deploy-script`, `production-status-smoke-harness`,
     Home AI deploy plan, and `git diff --check`.
-- Production note:
-  - current production LaunchDaemon was verified to have authoring Gateway env
-    only. It still needs `GROWTH_GATEWAY_EVALUATION_ENDPOINT`,
-    `GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH`, and
-    `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` before production
-    evaluation is fully model-backed.
+- Commit/push:
+  - Growth commit `8d324234e76a` pushed to `origin/main` and `public/main`;
+  - Home AI commit `8fce09e7ac3b` pushed to `origin/main`.
+- Production deploy/config:
+  - Home AI deploy reason `growth-evaluation-gateway-installer`, backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T084515Z-home-ai-growth-evaluation-gateway-installer`;
+  - Growth deploy reason `growth-evaluation-gateway-readiness`, backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T084538Z-plugin-growth-growth-evaluation-gateway-readiness`;
+  - `scripts/install-growth-launchd-service.js --execute --bootstrap` rewrote
+    and restarted `com.hermesmobile.plugin.growth` with both
+    `GROWTH_GATEWAY_AUTHORING_*` and `GROWTH_GATEWAY_EVALUATION_*` set by
+    endpoint/protocol plus token file path only.
+- Production smokes:
+  - `launchctl print system/com.hermesmobile.plugin.growth` shows
+    `state=running`, `GROWTH_GATEWAY_EVALUATION_ENDPOINT`,
+    `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses`, and
+    `GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH`;
+  - Owner card-generation context for `weixin_stephen` returned
+    `ready=true`, `authoringGatewayConfigured=true`,
+    `evaluationGatewayConfigured=true`, and `aiLoopGatewayReady=true`;
+  - a no-write production Gateway evaluation draft smoke passed through
+    `growth-gateway-evaluation-client` and `learning-card-evaluation-service`
+    with `ok=true`, `gatewayMode=json`, score `85`, and
+    `evidenceRefs=["growth-gateway-evaluation:v1"]`;
+  - iOS PWA visual harness passed:
+    `embedded-plugin-shell --plugin-id growth` screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260614T085055Z.png`;
+    `dark-growth-surfaces` screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260614T085102Z.png`.
+- AI Ops evidence:
+  - `evidence-84963973-8f58-41a9-b96b-1e7202b96cc8`.
 
 ## 2026-06-14 Growth AI Card Closed Loop Production Deploy
 

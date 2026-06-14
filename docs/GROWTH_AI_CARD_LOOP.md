@@ -510,12 +510,33 @@ on 2026-06-14 through the central Home AI deploy script:
     samples.
 - AI Ops evidence id: `evidence-8dbf71e4-1906-422a-b8df-b1c4cdfb93fd`.
 
-The 2026-06-14 deploy configured authoring Gateway only. A later production
-closure must add `GROWTH_GATEWAY_EVALUATION_ENDPOINT`,
-`GROWTH_GATEWAY_EVALUATION_ACCESS_TOKEN_PATH`, and
-`GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses` to the Growth LaunchDaemon and
-repeat a bounded evaluation smoke before claiming fully model-backed
-production evaluation.
+The evaluation Gateway readiness slice was then deployed and configured on
+2026-06-14:
+
+- Home AI source commit: `8fce09e7ac3b`, deployed with backup
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260614T084515Z-home-ai-growth-evaluation-gateway-installer`;
+- Growth source commit: `8d324234e76a`, deployed with backup
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260614T084538Z-plugin-growth-growth-evaluation-gateway-readiness`;
+- Growth LaunchDaemon readback showed:
+  - `GROWTH_GATEWAY_AUTHORING_ENDPOINT=http://127.0.0.1:18751/v1/responses`;
+  - `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses`;
+  - `GROWTH_GATEWAY_EVALUATION_ENDPOINT=http://127.0.0.1:18751/v1/responses`;
+  - `GROWTH_GATEWAY_EVALUATION_PROTOCOL=responses`;
+  - authoring and evaluation Gateway token paths set by file path only;
+- Owner production card-generation context for `weixin_stephen` returned
+  `ready=true`, `authoringGatewayConfigured=true`,
+  `evaluationGatewayConfigured=true`, `aiLoopGatewayReady=true`, KG `294`
+  nodes / `329` edges, and recipe `daily_english_v1`;
+- a no-write production evaluation draft smoke against the real Gateway
+  evaluation client passed after using a realistic task-card raw graph binding;
+  the smoke returned `ok=true`, `gatewayMode=json`, score `85`, and
+  `evidenceRefs=["growth-gateway-evaluation:v1"]`;
+- central iOS PWA visual harness passed:
+  - `embedded-plugin-shell --plugin-id growth`, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260614T085055Z.png`;
+  - `dark-growth-surfaces`, 38 samples, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260614T085102Z.png`;
+- AI Ops evidence id: `evidence-84963973-8f58-41a9-b96b-1e7202b96cc8`.
 
 Full production automation and broad visual UI controls for stage assessment
 activation remain later slices.
