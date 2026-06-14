@@ -33,7 +33,7 @@ The daily-card completion policy is `daily_score_once`:
 - the card completes after that one evaluation, regardless of whether the
   score is high or low;
 - learning coins are calculated from the score and card reward cap;
-- reflection, when offered, can be submitted once only;
+- the reflection stage appears after evaluation and can be submitted once only;
 - reflection is recorded as learning evidence and must not reopen grading,
   require a second reflection, or block completion;
 - the UI contract stays compatible with the existing card renderer:
@@ -61,21 +61,25 @@ Codex or manual database operations:
 1. The learner opens the generated card in the existing Growth card detail.
 2. The learner sees a single vertical workflow page, not a stepper-only page:
    status rail, score policy, learning target, lesson, worked example, guided
-   practice, submission, evaluation, optional reflection, and completion
+   practice instructions, submission, evaluation, reflection, and completion
    feedback are all in the same scrollable card detail.
-3. The learner reads the lesson, uses the guided practice area, then submits
-   one final answer from the submission section.
-4. The final answer can include text, audio, or both. Audio is optional and is
+3. The daily workflow has exactly three learner-facing stages: submit once,
+   evaluate once, then reflect once. Each stage may expose at most one active
+   text submission box; lesson and guided-practice sections must not add
+   separate answer boxes.
+4. The learner reads the lesson and guided-practice hints, then submits one
+   final answer from the submission section.
+5. The final answer can include text, audio, or both. Audio is optional and is
    stored only through plugin-owned evidence/audio routes.
-5. After submission, the UI shows a saved-evidence state and either waits for
+6. After submission, the UI shows a saved-evidence state and either waits for
    the worker or offers a visible `刷新批改` action that calls the plugin
    evaluation processor.
-6. The first completed evaluation is the card result. The UI shows the score,
+7. The first completed evaluation is the card result. The UI shows the score,
    summary, strengths, weak points, and next-practice suggestions, but it must
    not ask the child to retry until a pass score is reached.
-7. The learner may submit one optional reflection with text, audio, or both.
-   Reflection is evidence only. It must not reopen grading, change the score,
-   block completion, or require another reflection.
+8. The learner can submit one reflection with text, audio, or both. Reflection
+   is evidence only. It must not reopen grading, change the score, block
+   completion, or require another reflection.
 
 The plugin frontend must show visible errors for submission, evaluation refresh,
 and reflection failures. A button press must not fail silently.

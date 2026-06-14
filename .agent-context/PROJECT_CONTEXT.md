@@ -33,9 +33,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   bounded completion/mastery/review event emission. It also owns native
   knowledge-graph import/planning/binding and Gateway-backed card generation
   from graph plans plus historical SQLite summaries. New generated daily cards
-  use `daily_score_once`: one evaluation, one optional reflection,
-  completion after the first evaluation, and score-proportional rewards
-  without a pass-line gate.
+  use `daily_score_once`: one submission stage, one evaluation stage, one
+  reflection stage, completion after the first evaluation, and
+  score-proportional rewards without a pass-line gate. The generated-card
+  learner UI may expose at most one active text submission box per stage.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

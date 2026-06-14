@@ -18,6 +18,10 @@ function loadPublicScript(fileName) {
   return windowRef;
 }
 
+function countMatches(value, pattern) {
+  return (String(value || "").match(pattern) || []).length;
+}
+
 test("Growth appearance adapter normalizes host theme and font-size payloads", () => {
   const windowRef = loadPublicScript("growth-appearance.js");
   const params = new URLSearchParams("pluginTheme=dark&pluginFontSize=default");
@@ -626,7 +630,7 @@ test("Growth teaching card UI renders submit and recording controls for a genera
     state: {
       learningGrowthTeachingStepByCardId: { ltask_daily_1: "quick_check" },
       learningGrowthTeachingDrafts: {
-        ltask_daily_1: { guidedPracticeText: "The repeated idea is water saving.", quickCheckText: "The paragraph is about saving water." }
+        ltask_daily_1: { submissionText: "The paragraph is about saving water." }
       },
       learningGrowthRecordings: {
         "ltask_daily_1:submission": { status: "ready", url: "blob:submission", durationMs: 4200 }
@@ -636,15 +640,20 @@ test("Growth teaching card UI renders submit and recording controls for a genera
   });
 
   assert.match(html, /data-learning-growth-daily-flow/);
-  assert.match(html, /data-learning-growth-flow-step="learn"/);
-  assert.match(html, /data-learning-growth-flow-step="learn"><b>学习<\/b><small>学习中<\/small>/);
-  assert.match(html, /data-learning-growth-flow-step="submit"><b>作答<\/b><small>待提交<\/small>/);
+  assert.doesNotMatch(html, /data-learning-growth-flow-step="learn"/);
+  assert.match(html, /data-learning-growth-flow-step="submit"><b>提交<\/b><small>待提交<\/small>/);
+  assert.match(html, /data-learning-growth-flow-step="evaluate"><b>批改<\/b><small>待提交后<\/small>/);
+  assert.match(html, /data-learning-growth-flow-step="reflect"><b>反思<\/b><small>待批改后<\/small>/);
   assert.match(html, /学习流程/);
-  assert.match(html, /提交一次/);
+  assert.match(html, /提交、批改、反思三步/);
   assert.match(html, /Find the main idea in one paragraph/);
   assert.match(html, /paragraph/);
   assert.match(html, /A main idea tells what the paragraph is mostly about/);
   assert.match(html, /Underline the sentence/);
+  assert.match(html, /data-field="submissionText"/);
+  assert.doesNotMatch(html, /data-field="guidedPracticeText"/);
+  assert.doesNotMatch(html, /data-field="quickCheckText"/);
+  assert.equal(countMatches(html, /<textarea\b/g), 1);
   assert.match(html, /data-learning-growth-submission-form="ltask_daily_1"/);
   assert.match(html, /data-learning-growth-record-toggle="ltask_daily_1"/);
   assert.match(html, /data-record-kind="submission"/);
@@ -717,6 +726,7 @@ test("Growth teaching card UI renders submitted waiting-evaluation state", () =>
   assert.match(html, /等待批改/);
   assert.match(html, /刷新批改/);
   assert.match(html, /data-learning-growth-flow-step="evaluate"/);
+  assert.equal(countMatches(html, /<textarea\b/g), 0);
   assert.doesNotMatch(html, />提交作答<\/button>/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
@@ -764,6 +774,7 @@ test("Growth teaching card UI renders visible failed evaluation state", () => {
   assert.doesNotMatch(html, /错误摘要/);
   assert.doesNotMatch(html, /gateway_timeout/);
   assert.doesNotMatch(html, /作答已保存，系统会处理一次批改/);
+  assert.equal(countMatches(html, /<textarea\b/g), 0);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 
@@ -861,8 +872,10 @@ test("Growth teaching card UI renders one-shot evaluation and optional reflectio
   assert.match(html, /反思只保存学习证据/);
   assert.match(html, /批改已完成/);
   assert.match(html, /确定分数 72\/100/);
-  assert.match(html, /可选反思一次/);
+  assert.match(html, /反思一次/);
   assert.match(html, /data-learning-growth-reflection-form="ltask_daily_1"/);
+  assert.match(html, /data-learning-growth-reflection-text="ltask_daily_1"/);
+  assert.equal(countMatches(html, /<textarea\b/g), 1);
   assert.match(html, /data-record-kind="reflection"/);
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/submissions\/submission_1/);
   assert.match(html, /data-learning-growth-saved-audio/);
@@ -906,6 +919,7 @@ test("Growth teaching card UI renders submitted reflection audio without reopeni
   assert.match(html, /反思已提交/);
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/reflections\/reflection_1/);
   assert.match(html, /录音暂时无法播放/);
+  assert.equal(countMatches(html, /<textarea\b/g), 0);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 

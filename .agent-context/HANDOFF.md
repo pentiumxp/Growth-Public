@@ -9,6 +9,45 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Daily English Three-Step Interaction Slice
+
+- Status: implemented and locally validated.
+- Product rule now enforced in the generated daily-card UI:
+  - stage rail is `提交 -> 批改 -> 反思`;
+  - the `跟做` section is instruction-only and no longer opens a separate
+    learner text box;
+  - before submission, the card renders exactly one active answer textarea;
+  - waiting/failed evaluation states render no active textarea;
+  - after the first evaluation, the card renders exactly one reflection
+    textarea;
+  - after reflection is submitted, the reflection form does not reopen.
+- Frontend/controller changes:
+  - `public/growth-legacy-task-ui.js` renders the single submission field as
+    `data-field="submissionText"` and preserves old `quickCheckText` state only
+    as display fallback;
+  - `public/growth-card-interaction-controller.js` submits only that single
+    answer field, with legacy `quickCheckText` fallback for old in-memory
+    drafts, and no longer concatenates guided-practice text into the answer;
+  - `public/growth-homeai-legacy.css` aligns the daily flow rail to three
+    columns.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`.
+- Harness updated:
+  - `tests/growth-frontend-adapter.test.js` now asserts active textarea counts
+    across pre-submit, waiting-evaluation, failed-evaluation, evaluated, and
+    reflected states.
+- Validation passed:
+  - `node --check public/growth-card-interaction-controller.js public/growth-legacy-task-ui.js tests/growth-frontend-adapter.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`227` tests);
+  - `git diff --check`.
+- Not yet committed, pushed, or deployed in this slice.
+
 ## 2026-06-14 Growth Evaluation Gateway Readiness Slice
 
 - Status: implemented, pushed, deployed, configured in production launchd, and

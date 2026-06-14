@@ -304,13 +304,9 @@
     function submissionTextForCard(taskCardId, form) {
       const id = clean(taskCardId);
       const draft = pageState.learningGrowthTeachingDrafts[id] || {};
-      const quickInput = form.querySelector(`[data-learning-growth-teaching-draft="${cssEscape(id)}"][data-field="quickCheckText"]`);
-      const guided = clean(draft.guidedPracticeText);
-      const quick = clean(quickInput?.value || draft.quickCheckText);
-      return [
-        guided ? `跟做：${guided}` : "",
-        quick ? `检查：${quick}` : ""
-      ].filter(Boolean).join("\n\n");
+      const submissionInput = form.querySelector(`[data-learning-growth-teaching-draft="${cssEscape(id)}"][data-field="submissionText"]`);
+      const legacyQuickInput = form.querySelector(`[data-learning-growth-teaching-draft="${cssEscape(id)}"][data-field="quickCheckText"]`);
+      return clean(submissionInput?.value || draft.submissionText || legacyQuickInput?.value || draft.quickCheckText);
     }
 
     function setSubmissionBusy(taskCardId, value) {

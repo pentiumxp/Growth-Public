@@ -330,15 +330,11 @@
   }
 
   function renderTeachingGuidedPracticeSection(task, flow, draft = {}, options = {}) {
-    const cardId = String(task.taskCardId || task.id || "");
-    const hasSubmission = Boolean(task.latestSubmission);
-    const readonly = hasSubmission ? " readonly" : "";
     return `<section class="learning-growth-teaching-section" data-learning-growth-teaching-section="guided_practice">
       <h4>跟着做一小步</h4>
       <p>${escapeHtmlLocal(flow.guidedPractice.instruction)}</p>
       ${flow.guidedPractice.hints.length ? `<div class="learning-growth-teaching-hints">${flow.guidedPractice.hints.map((item) => `<span>${escapeHtmlLocal(item)}</span>`).join("")}</div>` : ""}
-      <textarea class="input learning-growth-teaching-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="guidedPracticeText" placeholder="写下跟做过程，简短也可以。"${readonly}>${escapeHtmlLocal(draft.guidedPracticeText || "")}</textarea>
-      ${hasSubmission ? `<p class="learning-native-growth-submission-state">跟做记录已随作答保存，提交后本卡不再要求重做。</p>` : ""}
+      <p class="learning-native-growth-submission-state">这里先看提示和例子；需要写下来的内容统一放到下面的提交框。</p>
     </section>`;
   }
 
@@ -367,14 +363,8 @@
     const hasReflection = Boolean(task.latestReflection);
     const steps = [
       {
-        key: "learn",
-        label: "学习",
-        state: hasSubmission ? "done" : "current",
-        status: hasSubmission ? "已完成" : "学习中",
-      },
-      {
         key: "submit",
-        label: "作答",
+        label: "提交",
         state: hasSubmission ? "done" : "current",
         status: hasSubmission ? "已提交" : "待提交",
       },
@@ -386,9 +376,9 @@
       },
       {
         key: "reflect",
-        label: "反思（可选）",
+        label: "反思",
         state: hasReflection ? "done" : hasEvaluation ? "current" : "pending",
-        status: hasReflection ? "已记录" : hasEvaluation ? "可选" : "待批改后",
+        status: hasReflection ? "已记录" : hasEvaluation ? "待反思" : "待批改后",
       },
     ];
     return `<div class="learning-growth-daily-flow" data-learning-growth-daily-flow>
@@ -409,10 +399,10 @@
       <div class="learning-growth-answer-reward-grid">
         <span><b>1 次</b><small>提交作答</small></span>
         <span><b>1 次</b><small>系统批改</small></span>
-        <span><b>${escapeHtmlLocal(score || "待评分")}</b><small>按实际成绩记录</small></span>
-        <span><b>${escapeHtmlLocal(earned ? String(earned) : String(cap))}</b><small>${escapeHtmlLocal(earned ? "已结算金币" : "金币上限")}</small></span>
+        <span><b>1 次</b><small>学习反思</small></span>
+        <span><b>${escapeHtmlLocal(score || "待评分")}</b><small>${escapeHtmlLocal(earned ? `已结算 ${earned} 金币` : `${cap} 金币上限`)}</small></span>
       </div>
-      <p>这张日常卡提交一次、批改一次，并按一次批改结果打分；反思只保存学习证据，不触发第二次批改，也不要求达到固定通过线。</p>
+      <p>这张日常卡按提交、批改、反思三步完成。每一步只保留一个输入位置；批改只运行一次，并按一次批改结果打分，不要求达到固定通过线。</p>
       ${support ? `<p class="learning-growth-daily-support">${escapeHtmlLocal(support)}</p>` : ""}
     </section>`;
   }
@@ -572,8 +562,8 @@
     const busy = Boolean(state.learningGrowthReflectionBusy?.[cardId]);
     const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "reflection")] || "";
     return `<form class="todo-learning-growth-reflection learning-native-growth-submission-form" data-learning-growth-reflection-form="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(options.workspaceId || task.workspaceId || "")}">
-      <strong>可选反思一次</strong>
-      <p>可以用一句话或一段录音说清楚：哪里做得好、哪里下次继续练。反思不影响本卡分数。</p>
+      <strong>反思一次</strong>
+      <p>可以用一句话或一段录音说清楚：哪里做得好、哪里下次继续练。反思只保存学习证据，不影响本卡分数。</p>
       <textarea class="input learning-native-growth-submission-input" rows="3" maxlength="2000" data-learning-growth-reflection-text="${escapeHtmlLocal(cardId)}" placeholder="写下反思，或者只提交录音。">${escapeHtmlLocal(draft.text || "")}</textarea>
       ${renderRecorderControls(task, "reflection", options)}
       ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
@@ -587,14 +577,15 @@
     const busy = Boolean(options.busy || state.learningGrowthSubmissionBusy?.[cardId] || state.learningGrowthTeachingCheckBusy?.[cardId]);
     const completed = String(task.status || "").trim().toLowerCase() === "completed";
     const hasSubmission = Boolean(task.latestSubmission);
-    const validation = draft.quickCheckText ? validateSubmissionText(draft.quickCheckText, { minWords: 1, minChars: 1 }) : null;
+    const submissionText = draft.submissionText || draft.quickCheckText || "";
+    const validation = submissionText ? validateSubmissionText(submissionText, { minWords: 1, minChars: 1 }) : null;
     const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "submission")] || "";
-    return `<section class="learning-growth-teaching-section learning-growth-daily-submit-panel" data-learning-growth-teaching-section="quick_check">
+    return `<section class="learning-growth-teaching-section learning-growth-daily-submit-panel" data-learning-growth-teaching-section="submit">
       <form class="learning-growth-teaching-check-form learning-native-growth-submission-form" data-learning-growth-teaching-check-form="${escapeHtmlLocal(cardId)}" data-learning-growth-submission-form="${escapeHtmlLocal(cardId)}" data-workspace-id="${escapeHtmlLocal(options.workspaceId || task.workspaceId || "")}">
         <h4>提交作答</h4>
         <p>${escapeHtmlLocal(flow.quickCheck.instruction)}</p>
         ${flow.quickCheck.completionCriteria.length ? `<ul>${flow.quickCheck.completionCriteria.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul>` : ""}
-        ${hasSubmission ? "" : `<textarea class="input learning-growth-teaching-input learning-native-growth-submission-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="quickCheckText" placeholder="写一句你确认掌握的内容，或者写下哪里还卡住。">${escapeHtmlLocal(draft.quickCheckText || "")}</textarea>`}
+        ${hasSubmission ? "" : `<textarea class="input learning-growth-teaching-input learning-native-growth-submission-input" rows="4" maxlength="3000" data-learning-growth-teaching-draft="${escapeHtmlLocal(cardId)}" data-field="submissionText" placeholder="把本次作答写在这里；这是提交阶段唯一的文字框。">${escapeHtmlLocal(submissionText)}</textarea>`}
         ${hasSubmission ? "" : renderRecorderControls(task, "submission", options)}
         ${message ? `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(message)}</p>` : ""}
         ${validation ? `<p class="todo-learning-growth-submit-requirement ${validation.ok ? "is-ready" : "is-short"}">${escapeHtmlLocal(submissionRequirementLabel(validation.guard, validation.stats))}</p>` : ""}

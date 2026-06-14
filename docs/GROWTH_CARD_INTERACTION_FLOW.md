@@ -3,8 +3,8 @@
 Last updated: 2026-06-14.
 
 This document defines the plugin-owned learner interaction flow for generated
-Growth cards. It covers submission, evaluation refresh, optional reflection,
-and audio evidence from the embedded Growth UI.
+Growth cards. It covers the three learner-facing stages, evaluation refresh,
+single reflection, and audio evidence from the embedded Growth UI.
 
 ## Scope
 
@@ -30,12 +30,22 @@ Generated ordinary daily cards use `daily_score_once`:
 - the card completes after the first evaluation, regardless of pass/fail
   threshold;
 - rewards are score-proportional;
-- reflection is optional and can be submitted once only;
+- the reflection stage appears after evaluation and can be submitted once only;
 - reflection never reopens grading, requires no second reflection, and does not
   block completion.
 
 The UI must avoid old retry-gate wording such as "must pass", "revise until
 passed", or "reflection required" for daily cards.
+
+The daily learner workflow is exactly three stages:
+
+1. submit once;
+2. evaluate once;
+3. reflect once.
+
+Each stage may expose at most one active text submission box. The learning,
+lesson, guided-practice, hint, and criteria sections can show instructions, but
+they must not create additional text areas outside the active stage.
 
 ## UI Flow
 
@@ -43,15 +53,17 @@ The generated daily card detail uses the old Growth card-detail pattern: one
 vertical, scrollable workflow page. It should not hide the lower workflow behind
 a stepper-only UI. The page renders these sections in order:
 
-1. status rail: `学习 -> 作答 -> 批改 -> 反思（可选）`;
+1. status rail: `提交 -> 批改 -> 反思`;
 2. score policy: one submission, one evaluation, score-proportional reward, no
    pass-line gate;
 3. `学习目标` and prerequisites;
 4. `讲解`: short lesson and worked example;
-5. `跟做`: learner draft area;
-6. `提交作答`: final answer text, optional recording, and visible submit state;
+5. `跟做`: instruction and hints only, without a separate learner text box;
+6. `提交作答`: the only pre-evaluation answer text box, optional recording,
+   and visible submit state;
 7. saved submission / waiting evaluation / evaluation result;
-8. optional one-time reflection after the first evaluation;
+8. one-time reflection after the first evaluation, with one reflection text box
+   and optional recording;
 9. completion feedback and low-pressure difficulty signal status after
    completion.
 
@@ -79,8 +91,8 @@ Within the `提交作答` section:
   not expose Gateway/provider error details;
 - after evaluation, show score, summary, strengths, weak points, and next
   practice suggestions;
-- after evaluation, show an optional one-time reflection form with text and
-  optional recording;
+- after evaluation, show one reflection form with one text box and optional
+  recording;
 - after reflection, show saved reflection status and audio playback, and do
   not reopen the reflection form.
 
@@ -248,13 +260,18 @@ Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
 - API helper paths for card fetch, submission, reflection, evaluation process,
   Owner evaluation retry, and embedded-proxy audio URL resolution;
 - generated card detail before submission;
+- generated card detail before submission has exactly one textarea, the
+  submission textbox;
 - submitted card waiting for evaluation with visible `刷新批改`;
+- waiting-evaluation and failed-evaluation states have no active textareas;
 - terminal failed evaluation with a learner-visible recovery panel and
   Owner-only `重新批改` action plus bounded Owner-only job diagnostics;
-- generated card detail after one-shot evaluation and optional reflection;
+- generated card detail after one-shot evaluation has exactly one textarea,
+  the reflection textbox;
 - active difficulty-signal buttons writing through the Growth API helper and
   refreshing the current card projection;
-- submitted reflection audio playback without reopening reflection.
+- submitted reflection audio playback without reopening reflection, leaving no
+  active textareas.
 
 Backend projection coverage lives in
 `tests/growth-learning-sqlite-projection.test.js` and asserts that
