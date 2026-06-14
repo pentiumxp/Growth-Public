@@ -80,12 +80,20 @@ Codex or manual database operations:
 The plugin frontend must show visible errors for submission, evaluation refresh,
 and reflection failures. A button press must not fail silently.
 
-Difficulty feedback is a runtime signal, not a grading gate. The generated-card
-UI may display already-recorded `too_easy`, `right_level`, or `too_hard`
-signals, but it must not expose active difficulty-signal buttons unless the
-Growth plugin has a plugin-owned write route, validation service, and store
-coverage for that signal. Without that closed loop, the UI must render a
-read-only status instead of a clickable control.
+Difficulty feedback is a runtime signal, not a grading gate. Generated-card UI
+may expose `too_easy`, `right_level`, and `too_hard` buttons only through the
+Growth-owned signal path:
+
+- `learning-experience-signal-service`;
+- `POST /api/v1/growth/cards/:taskCardId/experience-signals`;
+- `learning_growth_experience_signals`;
+- graph-node anchored card projection via `targetNodeIds`.
+
+The signal path must stay summary-only. It records learner difficulty feedback
+as `sourceType=learner_feedback` and must reject raw answers, transcripts,
+prompts, answer keys, secrets, private paths, or provider configuration. A card
+without graph target nodes must show a disabled status instead of writing an
+unanchored signal.
 
 ## Card Roles
 
@@ -464,8 +472,9 @@ Rules:
 - `right_level` reinforces the current difficulty band;
 - `interest` can influence topic or format but must not override prerequisite
   gaps.
-- new learner-facing signal controls must be implemented inside Growth as a
-  complete write path before they become clickable in the embedded UI.
+- learner-facing signal controls are clickable only when the card projection
+  contains graph target nodes; unanchored legacy cards remain non-writable for
+  difficulty feedback.
 
 ## Stage Assessment Activation
 

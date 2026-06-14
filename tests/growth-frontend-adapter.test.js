@@ -162,6 +162,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     audio: { dataBase64: "YXVkaW8=", name: "answer.webm", mime: "audio/webm" }
   }, "weixin_fanfan");
   await client.submitGrowthCardReflection("ltask_daily_1", { text: "Next time I will add evidence." }, "weixin_fanfan");
+  await client.submitGrowthExperienceSignal("ltask_daily_1", { signalType: "too_hard", targetNodeIds: ["kg_main_idea"] }, "weixin_fanfan");
   await client.processGrowthEvaluations("weixin_fanfan", 3);
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
@@ -179,8 +180,14 @@ test("Growth API client exposes card generation context and write helpers", asyn
     audio: { dataBase64: "YXVkaW8=", name: "answer.webm", mime: "audio/webm" }
   });
   assert.equal(calls[4].path, "/api/v1/growth/cards/ltask_daily_1/reflections");
-  assert.equal(calls[5].path, "/api/v1/growth/evaluations/process");
-  assert.deepEqual(JSON.parse(calls[5].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
+  assert.equal(calls[5].path, "/api/v1/growth/cards/ltask_daily_1/experience-signals");
+  assert.deepEqual(JSON.parse(calls[5].options.body), {
+    workspace_id: "weixin_fanfan",
+    signalType: "too_hard",
+    targetNodeIds: ["kg_main_idea"]
+  });
+  assert.equal(calls[6].path, "/api/v1/growth/evaluations/process");
+  assert.deepEqual(JSON.parse(calls[6].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -264,6 +271,57 @@ test("Growth card interaction controller records visible preview playback failur
 
   controller.handleRecordingPlaybackError("card_1", "submission");
   assert.equal(renders, 1);
+});
+
+test("Growth card interaction controller submits experience signal and refreshes card", async () => {
+  const windowRef = loadPublicScript("growth-card-interaction-controller.js");
+  const calls = [];
+  const refreshed = [];
+  const pageState = {
+    cardGeneration: {},
+    learningGrowthExperienceSignalBusy: {},
+    learningGrowthExperienceSignalSubmitted: {},
+    learningGrowthInteractionMessages: {},
+    learningGrowthRecordings: {}
+  };
+  const controller = windowRef.HermesGrowthCardInteractionController.createGrowthCardInteractionController({
+    api: {
+      async submitGrowthExperienceSignal(taskCardId, payload, workspaceId) {
+        calls.push({ taskCardId, payload, workspaceId });
+        return { ok: true };
+      }
+    },
+    pageState,
+    model: {
+      overview: {
+        programs: { taskCards: [{ taskCardId: "card_1", workspaceId: "weixin_fanfan" }] },
+        board: { cards: [] }
+      },
+      detailCache: new Map()
+    },
+    viewModel: { normalizeCard: (card) => card },
+    renderShell: () => null,
+    refreshCard: async (cardId, workspaceId) => refreshed.push({ cardId, workspaceId }),
+    getCurrentWorkspaceId: () => "owner"
+  });
+
+  await controller.submitExperienceSignal({
+    taskCardId: "card_1",
+    signalType: "too_hard",
+    targetNodeIds: ["kg_main_idea"]
+  });
+
+  assert.equal(calls[0].taskCardId, "card_1");
+  assert.equal(calls[0].workspaceId, "weixin_fanfan");
+  assert.equal(JSON.stringify(calls[0].payload), JSON.stringify({
+    signalType: "too_hard",
+    targetNodeIds: ["kg_main_idea"],
+    source: "growth-plugin-card-ui"
+  }));
+  assert.equal(pageState.learningGrowthExperienceSignalSubmitted.card_1, "too_hard");
+  assert.equal(pageState.learningGrowthExperienceSignalBusy.card_1, "");
+  assert.equal(pageState.learningGrowthInteractionMessages["card_1:experience"], "难度感受已记录。");
+  assert.deepEqual(refreshed[0], { cardId: "card_1", workspaceId: "weixin_fanfan" });
 });
 
 test("Growth card generation UI renders Owner panel and structured payload", () => {
@@ -499,7 +557,8 @@ test("Growth teaching card UI renders one-shot evaluation and optional reflectio
         remainingWeaknesses: ["Add one detail next time"],
         nextPractice: ["Use because to explain evidence"]
       }
-    }
+    },
+    targetNodeIds: ["kg_english_main_idea"]
   }, {
     workspaceId: "weixin_fanfan",
     state: {
@@ -519,9 +578,10 @@ test("Growth teaching card UI renders one-shot evaluation and optional reflectio
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/submissions\/submission_1/);
   assert.match(html, /data-learning-growth-saved-audio/);
   assert.match(html, /data-learning-growth-audio-error hidden/);
-  assert.match(html, /data-learning-growth-experience-mode="readonly"/);
-  assert.match(html, /难度感受写入还没有在插件内启用/);
-  assert.doesNotMatch(html, /data-learning-growth-experience-signal/);
+  assert.match(html, /data-learning-growth-experience-mode="active"/);
+  assert.match(html, /data-learning-growth-experience-signal="ltask_daily_1"/);
+  assert.match(html, /data-target-node-ids="kg_english_main_idea"/);
+  assert.match(html, /选择一项，下一张卡会参考这个信号/);
   assert.doesNotMatch(html, />提交作答<\/button>/);
 });
 

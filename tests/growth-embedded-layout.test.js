@@ -51,13 +51,13 @@ test("Generated Growth card flow keeps mobile and dark-mode layout guards", () =
   assert.match(css, /\.learning-growth-daily-flow\s*\{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
   assert.match(css, /\.learning-growth-card-detail-shell \.learning-growth-teaching-section,[\s\S]*?\.learning-growth-card-detail-shell \.learning-growth-teaching-feedback\s*\{[\s\S]*?padding: 12px;/);
   assert.match(css, /\.learning-growth-card-detail-shell \.learning-native-growth-submission-form\s*\{[\s\S]*?background: transparent;/);
-  assert.match(css, /\.learning-growth-experience-actions\.is-readonly\s*\{[\s\S]*?display: flex;/);
-  assert.match(css, /\.learning-growth-experience-actions span\s*\{[\s\S]*?display: inline-flex;/);
-  assert.match(css, /\.learning-growth-experience-actions span\s*\{[\s\S]*?border-radius: 999px;/);
+  assert.match(css, /\.learning-growth-experience-actions\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  assert.match(css, /\.learning-growth-experience-actions button,[\s\S]*?\.learning-growth-experience-actions span\s*\{[\s\S]*?border-radius: 7px;/);
+  assert.match(css, /\.learning-growth-experience-actions small\s*\{[\s\S]*?grid-column: 1 \/ -1;/);
   assert.match(css, /@media \(max-width: 520px\)[\s\S]*\.learning-growth-daily-flow\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-daily-flow/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-daily-flow span\.is-current/);
-  assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-experience-actions span/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-experience-actions button/);
   assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-growth-daily-flow span\.is-current/);
-  assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-growth-experience-actions span/);
+  assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-growth-experience-actions button/);
 });

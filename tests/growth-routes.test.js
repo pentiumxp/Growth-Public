@@ -509,6 +509,71 @@ test("growth card reflection route requires workspace bearer", async () => {
   }
 });
 
+test("growth experience signal route requires workspace bearer and delegates service write", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "growth:test") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "test" };
+      }
+    },
+    learningExperienceSignalService: {
+      recordSignal(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          taskCardId: input.taskCardId,
+          signalType: input.signalType,
+          targetNodeIds: input.targetNodeIds,
+          signals: [{ signalType: input.signalType, targetNodeId: input.targetNodeIds[0] }]
+        };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/experience-signals`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace_id: "growth:test", signalType: "too_hard", targetNodeIds: ["kg_main_idea"] })
+    });
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/cards/card_1/experience-signals`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workspace_id: "growth:test", signalType: "too_hard", targetNodeIds: ["kg_main_idea"] })
+    });
+    assert.equal(accepted.status, 202);
+    const body = await accepted.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.signals[0].targetNodeId, "kg_main_idea");
+    assert.deepEqual(calls[0], {
+      workspace_id: "growth:test",
+      signalType: "too_hard",
+      targetNodeIds: ["kg_main_idea"],
+      workspaceId: "test",
+      learnerId: "test",
+      taskCardId: "card_1"
+    });
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth evaluation process route requires workspace bearer", async () => {
   const calls = [];
   const server = createServer({

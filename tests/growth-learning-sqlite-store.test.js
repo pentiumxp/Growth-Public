@@ -22,6 +22,7 @@ function createSourceDb(dbPath, suffix = "") {
   try {
     for (const table of REQUIRED_GROWTH_TABLES) {
       if (table === "learning_task_cards") continue;
+      if (table === "learning_growth_experience_signals") continue;
       if (table === "learning_task_submissions") continue;
       if (table === "learning_evaluations") continue;
       if (table === "learning_task_reflections") continue;
@@ -72,6 +73,19 @@ function createSourceDb(dbPath, suffix = "") {
         submitted_at TEXT NOT NULL,
         created_at TEXT NOT NULL,
         workspace_id TEXT NOT NULL DEFAULT '',
+        raw_json TEXT NOT NULL DEFAULT '{}'
+      );
+      CREATE TABLE learning_growth_experience_signals (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        learner_id TEXT NOT NULL DEFAULT '',
+        program_id TEXT NOT NULL DEFAULT '',
+        node_id TEXT NOT NULL DEFAULT '',
+        signal_type TEXT NOT NULL,
+        strength TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL DEFAULT '',
+        source_type TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
         raw_json TEXT NOT NULL DEFAULT '{}'
       );
       CREATE TABLE learning_evaluations (
@@ -168,12 +182,23 @@ function createSourceDb(dbPath, suffix = "") {
         curriculum_refs_json, privacy_level, card_role, capability_cluster_id,
         raw_json, created_at, updated_at
       ) VALUES (?, 'program_1', 'draft_1', 'weixin_child', 'weixin_child', ?, ?, 'english',
-        'practice', 'active', '2026-06-10', 15, '[]',
+        'practice', 'active', '2026-06-10', 15, '["kg_main_idea"]',
         'template_1', '[]', '[]', '[]', 'member_self', 'practice',
         'english.reading', ?, '2026-06-10T00:00:00.000Z', '2026-06-10T00:00:00.000Z')
     `).run(`card_${suffix || "1"}`, `kanban_${suffix || "1"}`, `Read ${suffix || "one"}`, JSON.stringify({
-      instructionPreview: `Practice ${suffix || "reading"}`
+      instructionPreview: `Practice ${suffix || "reading"}`,
+      learningGraph: { targetNodeIds: ["kg_main_idea"] }
     }));
+    db.prepare(`
+      INSERT INTO learning_growth_experience_signals(
+        id, workspace_id, learner_id, program_id, node_id, signal_type,
+        strength, summary, source_type, created_at, raw_json
+      ) VALUES (
+        'signal_1', 'weixin_child', 'weixin_child', 'program_1', 'kg_main_idea',
+        'too_hard', 'high', 'Learner felt this was too hard.',
+        'learner_feedback', '2026-06-10T00:03:00.000Z', '{}'
+      )
+    `).run();
     db.prepare("INSERT INTO learning_task_submissions(id, task_card_id, status, submission_kind, submitted_at, created_at, workspace_id, raw_json) VALUES (?, ?, 'submitted', 'text', '2026-06-10T00:01:00.000Z', '2026-06-10T00:01:00.000Z', 'weixin_child', ?)")
       .run(`submission_${suffix || "1"}`, `card_${suffix || "1"}`, "{}");
   } finally {
@@ -230,10 +255,14 @@ test("reads Growth plugin-owned SQLite board and card projections", () => {
   assert.equal(board.summary.total, 1);
   assert.equal(board.cards[0].taskCardId, "card_1");
   assert.equal(board.cards[0].latestSubmission.submissionId, "submission_1");
+  assert.deepEqual(board.cards[0].targetNodeIds, ["kg_main_idea"]);
+  assert.equal(board.cards[0].experienceSummary.latestSignalType, "too_hard");
+  assert.equal(board.cards[0].experienceSummary.latestSignalSourceType, "learner_feedback");
 
   const card = store.card({ workspaceId: "weixin_child", taskCardId: "card_1" });
   assert.equal(card.ok, true);
   assert.equal(card.card.title, "Read one");
+  assert.equal(card.card.experienceSummary.latestSignalType, "too_hard");
 });
 
 test("projects board lanes with legacy Growth UI semantics", () => {

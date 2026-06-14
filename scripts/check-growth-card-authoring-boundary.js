@@ -12,6 +12,8 @@ const REQUIRED_DOC_MARKERS = Object.freeze([
   "learning-card-evaluation-service",
   "growth-gateway-evaluation-client",
   "learning-profile-projection-service",
+  "learning-experience-signal-service",
+  "POST /api/v1/growth/cards/:taskCardId/experience-signals",
   "learning-card-generation-service",
   "history-summary",
   "card-authoring-publisher",

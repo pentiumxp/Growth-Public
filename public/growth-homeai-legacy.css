@@ -12439,6 +12439,7 @@ body.task-markdown-preview-open {
 }
 
 .learning-growth-experience-actions small {
+  grid-column: 1 / -1;
   flex: 1 0 100%;
   min-width: 0;
   color: var(--muted);

@@ -410,6 +410,35 @@
       }
     }
 
+    async function submitExperienceSignal(input = {}) {
+      const cardId = clean(input.taskCardId);
+      const signalType = clean(input.signalType);
+      if (!cardId || !signalType) return;
+      const workspaceId = workspaceIdForTaskCard(cardId, input.workspaceId);
+      const targetNodeIds = Array.isArray(input.targetNodeIds)
+        ? input.targetNodeIds.map(clean).filter(Boolean)
+        : clean(input.targetNodeIds).split(/\s+/).map(clean).filter(Boolean);
+      pageState.learningGrowthExperienceSignalBusy[cardId] = signalType;
+      setMessage(cardId, "experience", "正在记录难度感受。");
+      renderShell();
+      try {
+        await api.submitGrowthExperienceSignal(cardId, {
+          signalType,
+          targetNodeIds,
+          source: "growth-plugin-card-ui"
+        }, workspaceId);
+        pageState.learningGrowthExperienceSignalSubmitted[cardId] = signalType;
+        setMessage(cardId, "experience", "难度感受已记录。");
+        await refreshCard(cardId, workspaceId);
+      } catch (error) {
+        setMessage(cardId, "experience", error.message || String(error));
+        renderShell();
+      } finally {
+        pageState.learningGrowthExperienceSignalBusy[cardId] = "";
+        renderShell();
+      }
+    }
+
     return {
       clearAllRecordings,
       clearRecording,
@@ -417,6 +446,7 @@
       refreshEvaluation,
       setMessage,
       submitEvidence,
+      submitExperienceSignal,
       submitReflection,
       toggleRecording,
       workspaceIdForTaskCard

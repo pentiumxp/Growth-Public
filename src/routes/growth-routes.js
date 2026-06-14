@@ -216,6 +216,19 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 202 : 400, result);
   }
 
+  const experienceSignalMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)\/experience-signals$/);
+  if (request.method === "POST" && experienceSignalMatch) {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const taskCardId = decodeURIComponent(experienceSignalMatch[1] || "");
+    const result = services.learningExperienceSignalService.recordSignal(Object.assign({}, body, {
+      workspaceId: serviceWorkspaceId,
+      learnerId: body.learnerId || body.learner_id || serviceWorkspaceId,
+      taskCardId
+    }));
+    return sendJson(response, result.ok ? 202 : 400, result);
+  }
+
   if (request.method === "POST" && url.pathname === "/api/v1/growth/evaluations/process") {
     const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
     const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);

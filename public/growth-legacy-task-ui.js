@@ -584,7 +584,7 @@
     return `<section class="learning-growth-teaching-feedback" data-learning-growth-teaching-feedback>
       <strong>${escapeHtmlLocal(completed ? "本卡已完成" : "学习反馈已记录")}</strong>
       <p>${escapeHtmlLocal(earned ? `已按本次分数结算 ${earned} / ${cap} 金币；这张卡只作为低压力学习证据，不当作正式能力测验。` : `最高 ${cap} 金币，按本次分数比例结算；这张卡不当作正式能力测验。`)}</p>
-      ${completed ? `<p class="learning-growth-experience-prompt">${escapeHtmlLocal("完成后可以记录难度感受，用来帮助下一张卡调节难度；当前界面只显示已记录或待接入的只读状态。")}</p>${renderExperienceSignalActions(task, state)}` : ""}
+      ${completed ? `<p class="learning-growth-experience-prompt">${escapeHtmlLocal("完成后可以记录难度感受，用来帮助下一张卡调节难度。")}</p>${renderExperienceSignalActions(task, state)}` : ""}
     </section>`;
   }
 
@@ -595,6 +595,10 @@
     const submitted = state.learningGrowthExperienceSignalSubmitted?.[cardId] || "";
     const busy = state.learningGrowthExperienceSignalBusy?.[cardId] || "";
     const selected = String(summary.latestSignalType || submitted || "").trim();
+    const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "experience")] || "";
+    const targetNodeIds = asArray(task.targetNodeIds || summary.targetNodeIds);
+    const targetNodeText = targetNodeIds.join(" ");
+    const disabled = !targetNodeIds.length;
     const actions = [
       ["too_easy", "太简单"],
       ["right_level", "正合适"],
@@ -602,14 +606,16 @@
     ];
     const note = selected
       ? "难度感受已记录到成长画像输入。"
-      : "难度感受写入还没有在插件内启用；当前先按本次批改分数完成结算。";
-    return `<div class="learning-growth-experience-actions is-readonly" data-learning-growth-experience-actions="${escapeHtmlLocal(cardId)}" data-learning-growth-experience-mode="readonly">
+      : disabled
+        ? "这张卡缺少图谱节点绑定，暂时不能写入难度感受。"
+        : "选择一项，下一张卡会参考这个信号。";
+    return `<div class="learning-growth-experience-actions" data-learning-growth-experience-actions="${escapeHtmlLocal(cardId)}" data-learning-growth-experience-mode="active">
       ${actions.map(([type, label]) => {
         const isPending = busy === type;
         const isSelected = selected === type || isPending;
-        return `<span class="${isSelected ? "is-selected" : ""}${isPending ? " is-pending" : ""}" data-signal-type="${escapeHtmlLocal(type)}" aria-current="${isSelected ? "true" : "false"}">${escapeHtmlLocal(isPending ? "记录中" : label)}</span>`;
+        return `<button type="button" class="${isSelected ? "is-selected" : ""}${isPending ? " is-pending" : ""}" data-learning-growth-experience-signal="${escapeHtmlLocal(cardId)}" data-signal-type="${escapeHtmlLocal(type)}" data-workspace-id="${escapeHtmlLocal(task.workspaceId || "")}" data-target-node-ids="${escapeHtmlLocal(targetNodeText)}" aria-current="${isSelected ? "true" : "false"}" ${busy || disabled ? "disabled" : ""}>${escapeHtmlLocal(isPending ? "记录中" : label)}</button>`;
       }).join("")}
-      <small data-learning-growth-experience-note>${escapeHtmlLocal(note)}</small>
+      <small data-learning-growth-experience-note>${escapeHtmlLocal(message || note)}</small>
     </div>`;
   }
 

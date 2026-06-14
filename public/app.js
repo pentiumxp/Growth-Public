@@ -377,6 +377,20 @@
         });
       });
     });
+    root.querySelectorAll("[data-learning-growth-experience-signal]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        cardInteractionController.submitExperienceSignal({
+          taskCardId: button.dataset.learningGrowthExperienceSignal,
+          signalType: button.dataset.signalType,
+          workspaceId: button.dataset.workspaceId,
+          targetNodeIds: clean(button.dataset.targetNodeIds).split(/\s+/).filter(Boolean)
+        }).catch((error) => {
+          cardInteractionController.setMessage(button.dataset.learningGrowthExperienceSignal, "experience", error.message || String(error));
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-learning-settings-task-back]").forEach((button) => {
       button.addEventListener("click", () => {
         pageState.learningGrowthSettingsTaskId = "";

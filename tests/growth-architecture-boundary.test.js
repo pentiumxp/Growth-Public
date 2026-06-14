@@ -79,6 +79,22 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.doesNotMatch(ui, /sourceRef/);
 });
 
+test("Growth learner experience signal writes stay service-owned", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningExperienceSignalService/);
+  assert.match(services, /learningExperienceSignalService/);
+
+  const signalService = read(path.join("src", "services", "learning-experience-signal-service.js"));
+  assert.match(signalService, /recordExperienceSignal/);
+  assert.match(signalService, /learner_feedback/);
+  assert.match(signalService, /experience_signal_privacy_failed/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /experience-signals/);
+  assert.doesNotMatch(routes, /recordExperienceSignal/);
+  assert.doesNotMatch(routes, /learning_growth_experience_signals/);
+});
+
 test("Growth frontend app remains boot wiring over adapter modules", () => {
   const app = read(path.join("public", "app.js"));
   assert.match(app, /HermesGrowthAppearance/);

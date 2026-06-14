@@ -125,6 +125,14 @@
       }, payload));
     }
 
+    function submitGrowthExperienceSignal(taskCardId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const cardId = clean(taskCardId);
+      if (!cardId) throw new Error("missing_task_card_id");
+      return postJson(growthApiPath("cards", encodeURIComponent(cardId), "experience-signals"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function processGrowthEvaluations(targetWorkspaceId = getWorkspaceId(), limit = 5) {
       return postJson(growthApiPath("evaluations", "process"), {
         workspace_id: targetWorkspaceId,
@@ -142,6 +150,7 @@
       processGrowthEvaluations,
       resolveGrowthApiPath,
       submitGrowthCardEvidence,
+      submitGrowthExperienceSignal,
       submitGrowthCardReflection,
       updateWorkspaceUrl,
       workspaceQuery

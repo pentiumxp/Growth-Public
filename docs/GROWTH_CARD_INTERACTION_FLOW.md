@@ -87,17 +87,24 @@ local evaluator remains a fallback. Both paths keep the same
 `daily_score_once` rule: one evaluation, no retry-until-pass loop, and score as
 the outcome.
 
-The daily-card completion footer may display already-recorded difficulty
-signals, but it must not render active difficulty-signal buttons until the Growth
-plugin owns the matching persistence route and service. Until that service
-exists, the UI shows a read-only status note instead of a dead clickable
-control.
+The daily-card completion footer can record low-pressure difficulty feedback.
+The buttons are not grading gates and do not reopen evaluation. They call the
+Growth-owned learner feedback path:
+
+- `learning-experience-signal-service`;
+- `POST /api/v1/growth/cards/:taskCardId/experience-signals`;
+- `learning_growth_experience_signals`;
+- card projection `experienceSummary.latestSignalType`.
+
+Signals must be anchored to card `targetNodeIds`. If a legacy card has no graph
+target, the UI shows a disabled status instead of writing an unanchored signal.
 
 ## API Boundary
 
 The frontend uses `public/growth-api-client.js` helpers:
 
 - `fetchGrowthCard(taskCardId, workspaceId)`;
+- `submitGrowthExperienceSignal(taskCardId, payload, workspaceId)`;
 - `submitGrowthCardEvidence(taskCardId, payload, workspaceId)`;
 - `processGrowthEvaluations(workspaceId, limit)`;
 - `submitGrowthCardReflection(taskCardId, payload, workspaceId)`;
@@ -219,7 +226,8 @@ Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
 - generated card detail before submission;
 - submitted card waiting for evaluation with visible `刷新批改`;
 - generated card detail after one-shot evaluation and optional reflection;
-- read-only difficulty-signal status without an inactive clickable control;
+- active difficulty-signal buttons writing through the Growth API helper and
+  refreshing the current card projection;
 - submitted reflection audio playback without reopening reflection.
 
 Backend projection coverage lives in

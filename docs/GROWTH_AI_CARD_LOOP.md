@@ -92,6 +92,15 @@ generation:
     `challenge_ready`;
   - never writes raw answers, raw transcripts, raw prompts, or answer keys into
     long-lived profile rows.
+- `learning-experience-signal-service`
+  - records learner-facing difficulty feedback (`too_easy`, `right_level`,
+    `too_hard`, and `not_learned`) through the Growth-owned
+    `POST /api/v1/growth/cards/:taskCardId/experience-signals` route;
+  - requires graph target nodes from the card projection before writing;
+  - writes `sourceType=learner_feedback` rows in
+    `learning_growth_experience_signals`;
+  - rejects raw answers, transcripts, prompts, answer keys, secrets, private
+    paths, and provider configuration.
 - `learning-card-trajectory-service`
   - writes one summary-only trajectory row per evaluated card and source
     evaluation;
@@ -230,6 +239,9 @@ Focused harnesses must cover:
   next-card strategy fields without raw answer/source-ref leakage;
 - Owner generation UI renders the selected learner's profile projection and
   next-card reason without creating any write action.
+- learner difficulty feedback writes through `learning-experience-signal-service`,
+  rejects unanchored/private input, updates `learning_growth_experience_signals`,
+  and refreshes the current card projection;
 - valid streaming response and valid JSON response from Gateway evaluation;
 - invalid JSON, missing schema fields, privacy-risk output, and model timeout
   from Gateway evaluation;

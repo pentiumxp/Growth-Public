@@ -328,6 +328,13 @@ model output. `learningProfile` is target-workspace scoped; Owner viewing a
 learner must see that learner's profile projection, not the Owner workspace's
 profile rows.
 
+`learningProfile.recentExperienceSignals` can come from two Growth-owned
+sources: evaluation-derived mastery updates and learner-facing difficulty
+feedback written by `learning-experience-signal-service` through
+`POST /api/v1/growth/cards/:taskCardId/experience-signals`. The Owner
+generation page only reads these summary-only signals; it does not write
+difficulty feedback from the Owner generation surface.
+
 ## Generate Request
 
 The UI should call the existing generation endpoint with bounded recipe and

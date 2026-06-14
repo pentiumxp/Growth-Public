@@ -122,6 +122,61 @@ function rewardPolicyForCard(raw = {}, row = {}) {
   };
 }
 
+function uniqueStrings(values = []) {
+  return Array.from(new Set(asArray(values).map(cleanString).filter(Boolean)));
+}
+
+function targetNodeIdsForCard(raw = {}, row = {}) {
+  return uniqueStrings(
+    asArray(raw.learningGraph?.targetNodeIds)
+      .concat(raw.learning_graph?.target_node_ids || [])
+      .concat(raw.targetNodeIds || [])
+      .concat(raw.target_node_ids || [])
+      .concat(parseJson(row.skill_ids_json, []))
+  ).slice(0, 12);
+}
+
+function publicLatestExperienceSignal(row = {}) {
+  if (!row) return null;
+  return {
+    latestSignalType: cleanString(row.signal_type),
+    latestSignalStrength: cleanString(row.strength),
+    latestSignalSummary: cleanString(row.summary).slice(0, 260),
+    latestSignalSourceType: cleanString(row.source_type),
+    latestAt: cleanString(row.created_at),
+    targetNodeId: cleanString(row.node_id)
+  };
+}
+
+function latestExperienceSignalForCard(db, row = {}, raw = {}) {
+  if (!tableExists(db, "learning_growth_experience_signals")) return null;
+  const targetNodeIds = targetNodeIdsForCard(raw, row);
+  if (!targetNodeIds.length) return null;
+  const placeholders = targetNodeIds.map(() => "?").join(", ");
+  try {
+    return db.prepare(`
+      SELECT * FROM learning_growth_experience_signals
+      WHERE workspace_id = ?
+        AND learner_id = ?
+        AND node_id IN (${placeholders})
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(cleanString(row.workspace_id), cleanString(row.learner_id) || cleanString(row.workspace_id), ...targetNodeIds) || null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function experienceSummaryForCard(db, row = {}, raw = {}) {
+  const base = raw.experienceSummary && typeof raw.experienceSummary === "object"
+    ? raw.experienceSummary
+    : {};
+  const targetNodeIds = targetNodeIdsForCard(raw, row);
+  const latestSignal = publicLatestExperienceSignal(latestExperienceSignalForCard(db, row, raw));
+  if (!Object.keys(base).length && !latestSignal) return null;
+  return Object.assign({}, base, latestSignal || {}, { targetNodeIds });
+}
+
 function sequenceIndexForTask(task = {}, fallbackIndex = 0) {
   const values = [
     task.sequenceIndex,
@@ -541,7 +596,8 @@ function publicCardFromRow(db, row, context = {}, index = 0) {
     cardRole: row.card_role || raw.cardRole || "",
     taskModel: raw.taskModel && typeof raw.taskModel === "object" ? raw.taskModel : null,
     teachingFlow: raw.teachingFlow || raw.taskModel?.teachingFlow || null,
-    experienceSummary: raw.experienceSummary || null,
+    targetNodeIds: targetNodeIdsForCard(raw, row),
+    experienceSummary: experienceSummaryForCard(db, row, raw),
     capabilityClusterId: row.capability_cluster_id || raw.capabilityClusterId || "",
     expectedDurationMinutes: {
       min: numberValue(row.expected_duration_minutes_min),

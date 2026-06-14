@@ -192,6 +192,66 @@
     service/harness slice;
   - run central visual evidence and production smoke before any deployment.
 
+## 2026-06-14 Growth Learner Experience Signal Write Slice
+
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public`; not deployed.
+- Scope:
+  - added `learning-experience-signal-service` as the Growth-owned learner
+    feedback writer for `too_easy`, `right_level`, `too_hard`, and
+    `not_learned`;
+  - added `POST /api/v1/growth/cards/:taskCardId/experience-signals`, using
+    the existing workspace bearer authorization path;
+  - wired the embedded generated-card completion footer so active difficulty
+    buttons call the Growth API helper, show progress/error/success state, and
+    refresh the current card projection;
+  - updated SQLite card projection so graph-bound cards expose `targetNodeIds`
+    and `experienceSummary.latestSignalType` from the latest
+    `learning_growth_experience_signals` row.
+- Product boundary:
+  - difficulty feedback is not grading and does not reopen evaluation or
+    reflection;
+  - learner feedback writes require graph target nodes. Legacy/unanchored cards
+    show a disabled status instead of writing unanchored signals;
+  - the service rejects raw answers, transcripts, prompts, answer keys, secrets,
+    private paths, and provider configuration.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-experience-signal-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-learning-sqlite-store.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/check-growth-card-authoring-boundary.js`.
+- Validation passed:
+  - `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check`;
+  - `npm test` with 182 passing tests;
+  - `git diff --check`;
+  - CodeGraph status after edits: 111 files, 1150 nodes, 3894 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require visual lane or deployment;
+  - required app-side checks passed from `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js` and
+    `git diff --check`;
+  - evidence id: `evidence-7e5e39e7-7d09-4e6f-a572-9a3ed0a61c93`.
+- Remaining architecture work:
+  - implement stage-assessment eligibility and activation as a separate
+    service/harness slice;
+  - add a broader workflow recovery harness for listener restart/stale
+    evaluation leases before scaling generated cards beyond the initial sample;
+  - run central visual evidence and production smoke before any deployment.
+
 ## 2026-06-14 Growth Card Detail Back Navigation Hotfix
 
 - Current workspace state: implemented, validated, committed, pushed to
