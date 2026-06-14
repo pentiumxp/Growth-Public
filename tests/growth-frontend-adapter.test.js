@@ -166,6 +166,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.evaluateGrowthStageAssessment({ target_node_id: "kg_main_idea", assessment_coverage_node_ids: ["kg_main_idea"] }, "weixin_fanfan");
   await client.activateGrowthStageAssessment({ target_node_id: "kg_main_idea", assessment_coverage_node_ids: ["kg_main_idea"], activation_source: "owner_manual" }, "weixin_fanfan");
   await client.processGrowthEvaluations("weixin_fanfan", 3);
+  await client.retryGrowthEvaluation({ task_card_id: "ltask_daily_1", reason: "owner retry" }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/cards/generate");
@@ -203,6 +204,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
   assert.equal(calls[8].path, "/api/v1/growth/evaluations/process");
   assert.deepEqual(JSON.parse(calls[8].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
+  assert.equal(calls[9].path, "/api/v1/growth/evaluations/owner-review");
+  assert.deepEqual(JSON.parse(calls[9].options.body), {
+    workspace_id: "weixin_fanfan",
+    action: "retry",
+    task_card_id: "ltask_daily_1",
+    reason: "owner retry"
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -1049,7 +1057,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-evaluation-failure-ui-v1";
+  const staticVersion = "20260614-owner-evaluation-retry-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1065,4 +1073,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.equal((html.match(new RegExp(staticVersion, "g")) || []).length, 13);
   assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
   assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);
+  assert.doesNotMatch(html, /20260614-evaluation-failure-ui-v1/);
 });

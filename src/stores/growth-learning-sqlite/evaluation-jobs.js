@@ -37,6 +37,33 @@ function createEvaluationJobRepository({ open }) {
     return publicGrowthEvaluationJob(db.prepare("SELECT * FROM learning_growth_evaluation_jobs WHERE id = ?").get(cleanString(jobId)));
   }
 
+  function latestEvaluationJobRow(db, input = {}) {
+    const jobId = cleanString(input.jobId);
+    const taskCardId = cleanString(input.taskCardId);
+    const workspaceId = cleanString(input.workspaceId);
+    if (jobId) {
+      const values = [jobId];
+      const where = ["id = ?"];
+      if (workspaceId) {
+        where.push("workspace_id = ?");
+        values.push(workspaceId);
+      }
+      if (taskCardId) {
+        where.push("task_card_id = ?");
+        values.push(taskCardId);
+      }
+      return db.prepare(`SELECT * FROM learning_growth_evaluation_jobs WHERE ${where.join(" AND ")}`).get(...values);
+    }
+    if (!taskCardId) return null;
+    const values = [taskCardId];
+    const where = ["task_card_id = ?"];
+    if (workspaceId) {
+      where.push("workspace_id = ?");
+      values.push(workspaceId);
+    }
+    return db.prepare(`SELECT * FROM learning_growth_evaluation_jobs WHERE ${where.join(" AND ")} ORDER BY updated_at DESC, created_at DESC LIMIT 1`).get(...values);
+  }
+
   function listEvaluationJobs(filters = {}) {
     const db = open(true);
     try {
@@ -140,6 +167,51 @@ function createEvaluationJobRepository({ open }) {
     }
   }
 
+  function ownerReviewEvaluationJob(input = {}) {
+    const db = open(false);
+    try {
+      if (!tableExists(db, "learning_growth_evaluation_jobs")) return { ok: false, error: "evaluation_job_table_missing" };
+      const action = cleanString(input.action || "retry").toLowerCase();
+      if (action !== "retry") return { ok: false, error: "unsupported_owner_evaluation_action" };
+      const row = latestEvaluationJobRow(db, input);
+      if (!row) return { ok: false, error: "evaluation_job_not_found" };
+      const current = publicGrowthEvaluationJob(row);
+      if (cleanString(row.status).toLowerCase() !== "failed") {
+        return { ok: false, error: "evaluation_job_not_failed", job: current };
+      }
+      const now = cleanString(input.now) || new Date().toISOString();
+      const review = {
+        action: "retry",
+        reason: cleanString(input.reason).slice(0, 240) || "owner_retry",
+        reviewedBy: cleanString(input.reviewedBy).slice(0, 120),
+        reviewedAt: now
+      };
+      const raw = parseJson(row.raw_json, {}) || {};
+      const ownerReviews = asArray(raw.ownerReviews).filter((item) => item && typeof item === "object").slice(-7);
+      raw.ownerReviews = ownerReviews.concat(review);
+      raw.lastOwnerReview = review;
+      db.prepare(`
+        UPDATE learning_growth_evaluation_jobs
+        SET status = 'retry',
+            lease_owner = '',
+            lease_until = '',
+            last_error = '',
+            available_at = ?,
+            updated_at = ?,
+            raw_json = ?
+        WHERE id = ?
+      `).run(now, now, JSON.stringify(raw), row.id);
+      return {
+        ok: true,
+        action: "retry",
+        job: getGrowthEvaluationJob(db, row.id),
+        previous_job: current
+      };
+    } finally {
+      db.close();
+    }
+  }
+
   function evaluationJobContext(input = {}) {
     const db = open(true);
     try {
@@ -220,6 +292,7 @@ function createEvaluationJobRepository({ open }) {
     evaluationJobContext,
     failEvaluationJob,
     listEvaluationJobs,
+    ownerReviewEvaluationJob,
     recordEvaluation
   };
 }

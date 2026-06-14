@@ -1,6 +1,6 @@
 # Growth Card Interaction Flow
 
-Last updated: 2026-06-12.
+Last updated: 2026-06-14.
 
 This document defines the plugin-owned learner interaction flow for generated
 Growth cards. It covers submission, evaluation refresh, optional reflection,
@@ -69,6 +69,10 @@ Within the `提交作答` section:
 - if the evaluation job exhausts retries and no evaluation was recorded, show
   `批改未完成`, a visible `需要处理` state, and a `刷新状态` action plus Owner
   review guidance instead of leaving the card as hidden waiting work;
+- Owner review can retry that terminal failed evaluation through
+  `POST /api/v1/growth/evaluations/owner-review`; the learner card still has
+  one saved submission and one optional reflection, and retry only reprocesses
+  the saved evaluation job;
 - after evaluation, show score, summary, strengths, weak points, and next
   practice suggestions;
 - after evaluation, show an optional one-time reflection form with text and
@@ -90,6 +94,12 @@ local evaluator remains a fallback. Both paths keep the same
 `daily_score_once` rule: one evaluation, no retry-until-pass loop, and score as
 the outcome.
 
+Owner recovery remains backend-owned as well. Owner surfaces may call
+`retryGrowthEvaluation`, which delegates to
+`learning-evaluation-owner-review-service` and can only move a terminal failed
+job back to `retry` after Growth view-target authorization. It must not create
+a second learner submission or invoke Gateway directly from the browser.
+
 The daily-card completion footer can record low-pressure difficulty feedback.
 The buttons are not grading gates and do not reopen evaluation. They call the
 Growth-owned learner feedback path:
@@ -110,6 +120,7 @@ The frontend uses `public/growth-api-client.js` helpers:
 - `submitGrowthExperienceSignal(taskCardId, payload, workspaceId)`;
 - `submitGrowthCardEvidence(taskCardId, payload, workspaceId)`;
 - `processGrowthEvaluations(workspaceId, limit)`;
+- `retryGrowthEvaluation(payload, workspaceId)`;
 - `submitGrowthCardReflection(taskCardId, payload, workspaceId)`;
 - `resolveGrowthApiPath(path, workspaceId)` for audio playback URLs projected
   as `/api/v1/growth/audio/...`.
@@ -119,6 +130,7 @@ Write endpoints remain plugin-owned:
 ```http
 POST /api/v1/growth/cards/:taskCardId/submissions
 POST /api/v1/growth/evaluations/process
+POST /api/v1/growth/evaluations/owner-review
 POST /api/v1/growth/cards/:taskCardId/reflections
 ```
 
@@ -211,6 +223,9 @@ Business rules remain in plugin services/stores:
   `src/services/growth-evaluation-service.js`;
   pending/retry jobs are durable, active `processing` leases are protected, and
   stale `processing` leases become recoverable after `leaseUntil`;
+- Owner evaluation recovery:
+  `src/services/learning-evaluation-owner-review-service.js` validates the
+  retry target and delegates bounded job requeue to the SQLite repository;
 - Gateway evaluation draft parsing and validation:
   `src/services/learning-card-evaluation-service.js` and
   `src/services/growth-gateway-evaluation-client.js`;
@@ -227,7 +242,7 @@ Business rules remain in plugin services/stores:
 Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
 
 - API helper paths for card fetch, submission, reflection, evaluation process,
-  and embedded-proxy audio URL resolution;
+  Owner evaluation retry, and embedded-proxy audio URL resolution;
 - generated card detail before submission;
 - submitted card waiting for evaluation with visible `刷新批改`;
 - generated card detail after one-shot evaluation and optional reflection;
@@ -262,7 +277,7 @@ Run focused validation:
 node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js
 node --test tests/growth-architecture-boundary.test.js
 node --test tests/growth-learning-sqlite-projection.test.js
-node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js
+node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js tests/learning-evaluation-owner-review-service.test.js tests/growth-routes.test.js
 ```
 
 Run the full Growth gate before production publish:

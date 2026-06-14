@@ -40,6 +40,7 @@ Growth should stay a service-first embedded plugin:
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
 | Card evaluation service | `src/services/learning-card-evaluation-service.js` | Growth-owned Gateway evaluation orchestration. It assembles bounded authenticated evaluation input, parses Gateway output as an evaluation draft, validates schema/graph/privacy policy, and returns the same evaluator DTO consumed by `growth-evaluation-service`. |
 | Gateway evaluation client | `src/services/growth-gateway-evaluation-client.js` | Gateway-only model boundary for card evaluation. It supports fake harness `{ kind, input }`, official Gateway `/v1/responses`, SSE, JSON, timeout handling, and no direct model-vendor calls. |
+| Evaluation owner review service | `src/services/learning-evaluation-owner-review-service.js` | Owner-only recovery orchestration for terminal failed evaluation jobs. It validates the target, delegates requeue to the SQLite evaluation-job repository, returns bounded retry status, and never calls Gateway or stores raw learner content. |
 | Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
 | Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and next recommendation in `learning_growth_card_trajectories`. |
 | Experience signal service | `src/services/learning-experience-signal-service.js` | Learner feedback writer for `too_easy`, `right_level`, `too_hard`, and `not_learned` signals. It validates graph target anchors, rejects raw/private fields, writes `sourceType=learner_feedback`, and returns summary-only signal DTOs. |
@@ -87,8 +88,9 @@ The first core-module split is behavior-preserving:
   revision/reflection lanes.
 - `evidence-writes.js` owns plugin-owned learner evidence write transactions
   and keeps submission/reflection write behavior out of the store facade.
-- `evaluation-jobs.js` owns plugin-owned evaluation queue state and evaluation
-  record insertion.
+- `evaluation-jobs.js` owns plugin-owned evaluation queue state, Owner retry
+  requeue state, bounded Owner-review audit metadata, and evaluation record
+  insertion.
 - `rewards.js` owns plugin-owned reward settlement and learning-coin ledger
   operations while keeping platform `Tongbao` exchange outside this refactor.
 - `growth-service-models.js` and `home-ai-growth-facade-client.js` keep pure
@@ -251,7 +253,7 @@ be feature-driven:
 | SQLite audio playback and backfill | `node --test tests/growth-learning-sqlite-audio.test.js` |
 | SQLite public projections | `node --test tests/growth-learning-sqlite-projection.test.js` |
 | SQLite evidence writes | `node --test tests/growth-learning-sqlite-evidence-writes.test.js` |
-| SQLite evaluation queue and records | `node --test tests/growth-learning-sqlite-evaluation-jobs.test.js` |
+| SQLite evaluation queue, Owner retry, and records | `node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/learning-evaluation-owner-review-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | SQLite rewards and learning coin ledger | `node --test tests/growth-learning-sqlite-rewards.test.js` |
 | Regenerable card retirement | `node --test tests/growth-card-retirement-service.test.js` |
 | SQLite store facade behavior | `node --test tests/growth-learning-sqlite-store.test.js` |
@@ -261,7 +263,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
-| Growth AI card loop profile, trajectory, strategy, projection, and Gateway evaluation | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js` |
+| Growth AI card loop profile, trajectory, strategy, projection, Gateway evaluation, and Owner recovery | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
 | Growth learner experience signal writes | `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js` |
 | Embedded frontend adapters, card generation UI, and learner card interaction UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |

@@ -181,6 +181,17 @@ function normalizeStageAssessmentInput(body, workspaceId) {
   };
 }
 
+function normalizeEvaluationOwnerReviewInput(body, workspaceId, request, url) {
+  return {
+    workspaceId,
+    taskCardId: body.taskCardId || body.task_card_id,
+    jobId: body.jobId || body.job_id || body.evaluationJobId || body.evaluation_job_id,
+    action: body.action || "retry",
+    reason: body.reason || body.note,
+    reviewedBy: requestedWorkspaceId(request, url, "")
+  };
+}
+
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
     const workspaceId = requestedWorkspaceId(request, url);
@@ -266,6 +277,18 @@ async function handleGrowthRoute(request, response, url, services) {
       limit: body.limit
     });
     return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/evaluations/owner-review") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_evaluation_owner_required", "Evaluation owner review requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const result = services.learningEvaluationOwnerReviewService.retryFailedEvaluation(
+      normalizeEvaluationOwnerReviewInput(body, serviceWorkspaceId, request, url)
+    );
+    return sendJson(response, result.ok ? 202 : 400, result);
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-coins/balance") {

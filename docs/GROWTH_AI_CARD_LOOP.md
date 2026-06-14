@@ -229,16 +229,26 @@ Recovery rules:
   projection must surface `latestEvaluationJob.failedVisible`,
   `laneId=evaluation_failed`, and `primaryAction=owner_review` so the learner
   sees a recoverable state instead of hidden `waiting_feedback`.
+- Owner recovery is an explicit plugin action. `POST
+  /api/v1/growth/evaluations/owner-review` can retry only a terminal `failed`
+  job after target visibility and Owner workspace authorization pass. The route
+  delegates to `learning-evaluation-owner-review-service`, which writes bounded
+  audit metadata and moves the saved job back to `retry`; it does not reopen the
+  learner's submission or reflection, and it does not call Gateway directly.
 
 Harness coverage:
 
 - `tests/growth-learning-sqlite-evaluation-jobs.test.js` proves active leases
-  are protected and stale processing leases can be reclaimed;
+  are protected, stale processing leases can be reclaimed, and Owner retry
+  writes bounded audit metadata for terminal failed jobs;
 - `tests/growth-learning-sqlite-store.test.js` proves a stale processing job
   survives a simulated worker restart, resumes after lease expiry, completes
   the card, and settles rewards exactly once. The same store harness also
   proves exhausted evaluation failures project a visible card failure without
   reopening submission.
+- `tests/learning-evaluation-owner-review-service.test.js` and
+  `tests/growth-routes.test.js` prove Owner retry validation, Owner-only route
+  authorization, visible target scoping, and service delegation.
 
 ## Gateway Evaluation Contract
 

@@ -11,6 +11,7 @@ const { createLearningCardGraphBindingService } = require("../services/learning-
 const { createLearningCardGenerationContextService } = require("../services/learning-card-generation-context-service");
 const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
 const { createLearningCardTrajectoryService } = require("../services/learning-card-trajectory-service");
+const { createLearningEvaluationOwnerReviewService } = require("../services/learning-evaluation-owner-review-service");
 const { createLearningExperienceSignalService } = require("../services/learning-experience-signal-service");
 const { createLearningGraphPlanService } = require("../services/learning-graph-plan-service");
 const { createLearningMasteryProfileService } = require("../services/learning-mastery-profile-service");
@@ -73,6 +74,9 @@ function createServices(config) {
   const learningExperienceSignalService = createLearningExperienceSignalService({
     repository: growthLearningStore.masteryProfileRepository
   });
+  const learningEvaluationOwnerReviewService = createLearningEvaluationOwnerReviewService({
+    repository: growthLearningStore
+  });
   const learningProfileProjectionService = createLearningProfileProjectionService({
     repository: growthLearningStore.masteryProfileRepository,
     nextCardStrategyService: learningNextCardStrategyService
@@ -119,6 +123,7 @@ function createServices(config) {
     learningCardGenerationService,
     learningCardGraphBindingService,
     learningCardTrajectoryService,
+    learningEvaluationOwnerReviewService,
     learningExperienceSignalService,
     learningGraphPlanService,
     learningMasteryProfileService,

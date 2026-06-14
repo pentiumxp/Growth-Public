@@ -152,6 +152,13 @@
       });
     }
 
+    function retryGrowthEvaluation(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("evaluations", "owner-review"), Object.assign({
+        workspace_id: targetWorkspaceId,
+        action: "retry"
+      }, payload));
+    }
+
     return {
       appendWorkspaceQuery,
       activateGrowthStageAssessment,
@@ -162,6 +169,7 @@
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,
+      retryGrowthEvaluation,
       resolveGrowthApiPath,
       submitGrowthCardEvidence,
       submitGrowthExperienceSignal,

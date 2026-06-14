@@ -9,6 +9,61 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Owner Evaluation Retry Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - added `learning-evaluation-owner-review-service` as the Service First
+    Owner recovery boundary for terminal failed evaluation jobs;
+  - added `POST /api/v1/growth/evaluations/owner-review`, Owner-only role
+    enforcement, view-target scoping, and workspace bearer authorization;
+  - added SQLite evaluation-job repository retry support that only accepts
+    terminal `failed` jobs, moves them back to `retry`, clears stale lease/error
+    fields, and writes bounded `raw.ownerReviews` / `raw.lastOwnerReview`
+    audit metadata;
+  - kept the learner card contract unchanged: one saved submission, one
+    evaluation outcome, one optional reflection, no retry-until-pass loop, and
+    no direct Gateway calls from the browser or Owner review route;
+  - added `retryGrowthEvaluation` to the frontend API client for Owner surfaces
+    and bumped static Growth assets to
+    `20260614-owner-evaluation-retry-v1`.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-evaluation-owner-review-service.test.js`;
+  - `tests/growth-learning-sqlite-evaluation-jobs.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `tests/growth-frontend-adapter.test.js`.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/learning-evaluation-owner-review-service.test.js tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-store.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-frontend-adapter.test.js`
+    with 74 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm test` with 202 passing tests;
+  - app AI Ops H3 required check from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`;
+  - CodeGraph status after edits: 117 files, 1219 nodes, 4280 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-ac01e0d2-1ab5-4653-bb4c-afcd680e16cd`.
+- Remaining architecture work:
+  - add an Owner UI button/panel for the existing failed-evaluation retry API
+    if Owner should execute retry from the plugin without a manual API call;
+  - expose queue retry timing/status in card detail if delayed retries become
+    common in production;
+  - production deployment still requires the central Home AI visual/prod smoke
+    gates.
+
 ## 2026-06-14 Growth Visible Evaluation Failure Slice
 
 - Current workspace state: implemented, locally validated, committed and

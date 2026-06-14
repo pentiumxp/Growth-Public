@@ -42,6 +42,22 @@ test("Growth Gateway evaluation boundary stays service-owned", () => {
   assert.doesNotMatch(routes, /evaluateCardSubmission/);
 });
 
+test("Growth evaluation owner review retry stays service-owned", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningEvaluationOwnerReviewService/);
+  assert.match(services, /learningEvaluationOwnerReviewService/);
+
+  const ownerReviewService = read(path.join("src", "services", "learning-evaluation-owner-review-service.js"));
+  assert.match(ownerReviewService, /ownerReviewEvaluationJob/);
+  assert.doesNotMatch(ownerReviewService, /learning_growth_evaluation_jobs/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /evaluations\/owner-review/);
+  assert.match(routes, /retryFailedEvaluation/);
+  assert.doesNotMatch(routes, /ownerReviewEvaluationJob/);
+  assert.doesNotMatch(routes, /learning_growth_evaluation_jobs/);
+});
+
 test("Growth read and write provider boundaries stay separated", () => {
   const readProvider = read(path.join("src", "services", "growth-providers", "sqlite-provider.js"));
   const writeProvider = read(path.join("src", "services", "growth-providers", "sqlite-write-provider.js"));

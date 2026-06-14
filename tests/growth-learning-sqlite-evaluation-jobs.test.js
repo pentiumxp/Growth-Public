@@ -211,3 +211,34 @@ test("evaluation repository fails jobs with bounded retry metadata", () => {
     assert.equal(failed.availableAt, "2026-06-11T01:00:00.000Z");
   });
 });
+
+test("evaluation repository lets Owner retry a terminal failed job with audit metadata", () => {
+  withEvaluationDb(({ repository }) => {
+    repository.failEvaluationJob("job_1", {
+      status: "failed",
+      error: "gateway_unavailable",
+      availableAt: "2026-06-11T00:45:00.000Z",
+      now: "2026-06-11T00:45:00.000Z"
+    });
+
+    const result = repository.ownerReviewEvaluationJob({
+      workspaceId: "weixin_child",
+      taskCardId: "ltask_1",
+      action: "retry",
+      reason: "Owner confirmed the saved answer should be retried.",
+      reviewedBy: "owner_workspace",
+      now: "2026-06-11T01:00:00.000Z"
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.previous_job.status, "failed");
+    assert.equal(result.job.status, "retry");
+    assert.equal(result.job.lastError, "");
+    assert.equal(result.job.availableAt, "2026-06-11T01:00:00.000Z");
+
+    const context = repository.evaluationJobContext({ jobId: "job_1" });
+    assert.equal(context.job.raw.lastOwnerReview.action, "retry");
+    assert.equal(context.job.raw.lastOwnerReview.reviewedBy, "owner_workspace");
+    assert.equal(context.job.raw.ownerReviews.length, 1);
+  });
+});

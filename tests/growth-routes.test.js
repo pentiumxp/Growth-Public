@@ -624,6 +624,97 @@ test("growth evaluation process route requires workspace bearer", async () => {
   }
 });
 
+test("growth evaluation owner-review route is Owner-only and delegates retry", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "owner") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: "owner" };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole },
+          targets: [
+            { workspaceId: "owner", label: "Owner", current: true },
+            { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+          ]
+        };
+      }
+    },
+    learningEvaluationOwnerReviewService: {
+      retryFailedEvaluation(input) {
+        calls.push(input);
+        return { ok: true, action: "retry", job: { jobId: "job_1", status: "retry" } };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/evaluations/owner-review`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_fanfan", task_card_id: "card_1" })
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_evaluation_owner_required");
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/evaluations/owner-review`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        task_card_id: "card_1",
+        reason: "retry after Gateway recovery"
+      })
+    });
+    assert.equal(accepted.status, 202);
+    assert.equal((await accepted.json()).job.status, "retry");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      taskCardId: "card_1",
+      jobId: undefined,
+      action: "retry",
+      reason: "retry after Gateway recovery",
+      reviewedBy: "owner"
+    });
+
+    const hidden = await fetch(`${baseUrl}/api/v1/growth/evaluations/owner-review`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_hidden", task_card_id: "card_1" })
+    });
+    assert.equal(hidden.status, 403);
+    assert.equal((await hidden.json()).error.code, "growth_target_not_visible");
+    assert.equal(calls.length, 1);
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth learning coin monthly clear route requires workspace bearer", async () => {
   const calls = [];
   const server = createServer({
