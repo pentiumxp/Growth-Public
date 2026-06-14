@@ -387,6 +387,7 @@ function setup(options = {}) {
     nextCardStrategyService
   });
   const recommendationService = createLearningCardRecommendationService({
+    repository: store.masteryProfileRepository,
     profileProjectionService
   });
   const recipePolicyService = createLearningCardGenerationRecipePolicyService();
@@ -571,6 +572,7 @@ test("card generation can choose the next target from the latest trajectory reco
     `).run(
       "Ratio order is weak because prerequisite part-whole language is unstable.",
       JSON.stringify({
+        status: "pending",
         strategy: "repair",
         cardRole: "teaching",
         difficultyBand: "repair",
@@ -592,11 +594,20 @@ test("card generation can choose the next target from the latest trajectory reco
 
   assert.equal(result.ok, true);
   assert.equal(result.learningGraphPlan.targetNodeId, "kg_fraction_meaning");
+  assert.equal(result.nextCardStrategy.strategy, "repair");
+  assert.equal(result.recommendationAcceptance.ok, true);
   assert.equal(gatewayCalls[0].input.learningGraphPlan.targetNodeId, "kg_fraction_meaning");
+  assert.equal(gatewayCalls[0].input.nextCardStrategy.strategy, "repair");
   const readDb = new DatabaseSync(dbPath);
   try {
     const card = readDb.prepare("SELECT skill_ids_json FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
     assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_fraction_meaning"]);
+    const trajectory = readDb.prepare("SELECT next_recommendation_json FROM learning_growth_card_trajectories WHERE id = 'traj_fraction_repair'").get();
+    const nextRecommendation = JSON.parse(trajectory.next_recommendation_json);
+    assert.equal(nextRecommendation.status, "accepted");
+    assert.equal(nextRecommendation.generatedTaskCardId, result.published.taskCardId);
+    assert.equal(nextRecommendation.generatedLearningGraphPlanId, result.learningGraphPlan.learningGraphPlanId);
+    assert.equal(nextRecommendation.acceptedBy, "growth-learning-card-generation-service");
   } finally {
     readDb.close();
   }

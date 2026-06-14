@@ -95,10 +95,14 @@ test("card trajectory service records an idempotent summary-only next recommenda
       assert.equal(rows.length, 1);
       assert.equal(rows[0].strategy, "stabilize");
       assert.equal(JSON.parse(rows[0].target_node_ids_json)[0], "kg_english_evidence_answering");
+      const nextRecommendation = JSON.parse(rows[0].next_recommendation_json);
+      assert.equal(nextRecommendation.status, "pending");
+      assert.equal(nextRecommendation.sourceTaskCardId, "ltask_1");
+      assert.equal(nextRecommendation.sourceEvaluationId, "eval_1");
+      assert.equal(nextRecommendation.statusUpdatedAt, "2026-06-14T06:00:00.000Z");
       assert.equal(JSON.stringify(rows[0]).includes("RAW ANSWER"), false);
     } finally {
       db.close();
     }
   });
 });
-

@@ -61,6 +61,7 @@ function planWithStrategy(plan = null, strategy = null) {
 
 function publicEvidenceBasis(basis = {}) {
   return {
+    trajectoryId: cleanString(basis.trajectoryId),
     taskCardId: cleanString(basis.taskCardId),
     sourceEvaluationId: cleanString(basis.sourceEvaluationId),
     trajectoryUpdatedAt: cleanString(basis.trajectoryUpdatedAt),
@@ -93,6 +94,8 @@ function publicNextCardRecommendation(selection = {}, strategy = {}) {
     source: "growth-learning-card-generation-context-service",
     selectionMode: cleanString(selection.selectionMode || (selection.targetNode ? "graph_suggestion" : "")),
     recommendationMode: cleanString(selection.recommendationMode),
+    recommendationId: cleanString(selection.recommendationId || strategy.recommendationId),
+    recommendationStatus: cleanString(selection.recommendationStatus || strategy.recommendationStatus),
     strategy: strategyName,
     cardRole: cleanString(selection.cardRole || strategy.cardRole),
     difficultyBand: cleanString(selection.difficultyBand || strategy.difficultyBand),

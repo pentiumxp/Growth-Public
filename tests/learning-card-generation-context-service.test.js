@@ -353,6 +353,8 @@ test("card generation context exposes recommendation-driven next-card rationale"
           ok: true,
           selectionMode: "recommendation",
           recommendationMode: "trajectory",
+          recommendationId: "traj_1",
+          recommendationStatus: "pending",
           targetNodeId: "kg_english_evidence_answering",
           targetNodeIds: ["kg_english_evidence_answering"],
           targetNode: {
@@ -373,7 +375,10 @@ test("card generation context exposes recommendation-driven next-card rationale"
             supportLevel: "guided",
             targetNodeIds: ["kg_english_evidence_answering"],
             reason: "Latest evaluation trajectory asks for one evidence repair card.",
+            recommendationId: "traj_1",
+            recommendationStatus: "pending",
             evidenceBasis: {
+              trajectoryId: "traj_1",
               taskCardId: "ltask_1",
               sourceEvaluationId: "eval_1",
               trajectoryUpdatedAt: "2026-06-14T08:00:00.000Z"
@@ -426,8 +431,11 @@ test("card generation context exposes recommendation-driven next-card rationale"
   assert.equal(result.suggestedPlan.cardRole, "teaching");
   assert.equal(result.nextCardRecommendation.selectionMode, "recommendation");
   assert.equal(result.nextCardRecommendation.recommendationMode, "trajectory");
+  assert.equal(result.nextCardRecommendation.recommendationId, "traj_1");
+  assert.equal(result.nextCardRecommendation.recommendationStatus, "pending");
   assert.equal(result.nextCardRecommendation.strategy, "repair");
   assert.equal(result.nextCardRecommendation.reason, "Latest evaluation trajectory asks for one evidence repair card.");
+  assert.equal(result.nextCardRecommendation.evidenceBasis.trajectoryId, "traj_1");
   assert.equal(result.nextCardRecommendation.evidenceBasis.sourceEvaluationId, "eval_1");
   assert.equal(result.nextCardRecommendation.learningProfileSummary.weaknessCount, 1);
   assert.equal(result.nextCardStrategy.strategy, "repair");

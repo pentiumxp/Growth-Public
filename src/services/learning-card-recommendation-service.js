@@ -47,13 +47,26 @@ function normalizeCandidate(candidate = {}, fallback = {}) {
   };
 }
 
+function recommendationStatus(candidate = {}) {
+  return cleanString(candidate.status || candidate.recommendationStatus).toLowerCase() || "pending";
+}
+
+function isConsumedRecommendation(candidate = {}) {
+  return ["accepted", "skipped", "expired", "superseded"].includes(recommendationStatus(candidate));
+}
+
 function trajectoryRecommendation(profile = {}) {
   for (const trajectory of asArray(profile.recentTrajectory)) {
-    const candidate = normalizeCandidate(trajectory.nextRecommendation || {}, trajectory);
+    const sourceRecommendation = trajectory.nextRecommendation || {};
+    if (isConsumedRecommendation(sourceRecommendation)) continue;
+    const candidate = normalizeCandidate(sourceRecommendation, trajectory);
     if (!candidate.ok) continue;
     return Object.assign(candidate, {
       recommendationMode: "trajectory",
+      recommendationId: cleanString(sourceRecommendation.recommendationId || sourceRecommendation.trajectoryId || trajectory.id),
+      recommendationStatus: recommendationStatus(sourceRecommendation),
       evidenceBasis: {
+        trajectoryId: cleanString(sourceRecommendation.trajectoryId || trajectory.id),
         taskCardId: cleanString(trajectory.taskCardId),
         sourceEvaluationId: cleanString(trajectory.sourceEvaluationId),
         trajectoryUpdatedAt: cleanString(trajectory.updatedAt || trajectory.createdAt)
@@ -76,6 +89,7 @@ function profileStrategyRecommendation(profile = {}) {
 
 function createLearningCardRecommendationService(options = {}) {
   const profileProjectionService = options.profileProjectionService || null;
+  const repository = options.repository || null;
 
   function recommendNextCard(input = {}) {
     const workspaceId = cleanString(input.workspaceId || input.workspace_id);
@@ -155,7 +169,31 @@ function createLearningCardRecommendationService(options = {}) {
     }, recommendation);
   }
 
+  function markRecommendationAccepted(input = {}) {
+    if (!repository || typeof repository.markTrajectoryRecommendationAccepted !== "function") {
+      return {
+        ok: false,
+        available: false,
+        source: "growth-learning-card-recommendation-service",
+        error: "learning_card_recommendation_repository_unavailable"
+      };
+    }
+    const evidenceBasis = input.evidenceBasis || {};
+    return repository.markTrajectoryRecommendationAccepted({
+      trajectoryId: input.trajectoryId || input.recommendationId || evidenceBasis.trajectoryId,
+      workspaceId: input.workspaceId || input.workspace_id,
+      learnerId: input.learnerId || input.learner_id,
+      programId: input.programId || input.program_id,
+      sourceTaskCardId: input.sourceTaskCardId || evidenceBasis.taskCardId,
+      sourceEvaluationId: input.sourceEvaluationId || evidenceBasis.sourceEvaluationId,
+      generatedTaskCardId: input.generatedTaskCardId || input.taskCardId || input.task_card_id,
+      generatedLearningGraphPlanId: input.generatedLearningGraphPlanId || input.learningGraphPlanId || input.learning_graph_plan_id,
+      acceptedAt: input.acceptedAt
+    });
+  }
+
   return {
+    markRecommendationAccepted,
     recommendNextCard
   };
 }

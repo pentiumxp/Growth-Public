@@ -24,7 +24,10 @@ The loop is:
 10. record a card trajectory row;
 11. project the latest trajectory recommendation as the first candidate for
     the next generation, then fall back to recomputed profile strategy and graph
-    suggestions.
+    suggestions;
+12. after a trajectory recommendation successfully publishes a generated card,
+    mark that recommendation `accepted` so later generations do not reuse the
+    same pending recommendation.
 
 The Owner generation surface must make the loop observable. It should show the
 selected learner's bounded profile/trajectory projection and explicit
@@ -113,12 +116,18 @@ generic graph suggestion.
   - writes one summary-only trajectory row per evaluated card and source
     evaluation;
   - stores target nodes, strategy, difficulty, strengths, remaining weaknesses,
-    mastery changes, and next recommendation;
+    mastery changes, and a pending next recommendation;
+  - stores recommendation lifecycle metadata such as `status`, source card id,
+    source evaluation id, and bounded timestamps in `next_recommendation_json`;
   - is idempotent for the same card/evaluation source.
 - `learning-card-recommendation-service`
   - reads the selected learner's summary-only profile projection;
-  - promotes the latest persisted trajectory `nextRecommendation` into an
-    explicit next-card recommendation before recomputing strategy;
+  - promotes the latest pending persisted trajectory `nextRecommendation` into
+    an explicit next-card recommendation before recomputing strategy;
+  - treats legacy recommendations without a `status` as pending, and skips
+    `accepted`, `skipped`, `expired`, and `superseded` recommendations;
+  - exposes a service method for marking the selected trajectory
+    recommendation accepted after generation publishes a card;
   - falls back to `learning-next-card-strategy-service` output when no
     trajectory recommendation is available;
   - never returns raw learner answers, transcripts, prompts, answer keys, raw
@@ -134,6 +143,8 @@ generic graph suggestion.
     projection, or bounded history summary;
   - uses recommendation/strategy target nodes to choose an existing graph node
     for the next daily card when Owner did not hand-pick a target;
+  - carries the selected recommendation id, status, and evidence basis through
+    generation and delegates accepted-status writes after successful publish;
   - falls back to bounded graph suggestions only when no strategy target can be
     resolved;
   - never reads raw learner answers, transcripts, prompts, answer keys, or raw
@@ -169,6 +180,36 @@ learner, Growth must use the selected learner workspace from
 projection is read-only and must not expose raw learner answers, transcripts,
 prompts, answer keys, raw model output, private file paths, or internal source
 refs.
+
+## Trajectory Recommendation Lifecycle
+
+Trajectory recommendations are a lightweight queue stored inside the existing
+`learning_growth_card_trajectories.next_recommendation_json` column. V1 does
+not introduce a separate queue table.
+
+Lifecycle rules:
+
+- new recommendations written by `learning-card-trajectory-service` use
+  `status: "pending"`;
+- legacy recommendations with no status are treated as pending for backward
+  compatibility;
+- `learning-card-recommendation-service` selects the latest pending
+  recommendation that resolves to a known graph node;
+- `learning-card-generation-service` marks the selected trajectory
+  recommendation `accepted` only after authoring validates and the card
+  publisher commits the generated task card and graph binding;
+- accepted recommendations store only bounded ids and timestamps:
+  `generatedTaskCardId`, `generatedLearningGraphPlanId`, `acceptedAt`,
+  `statusUpdatedAt`, and `acceptedBy`;
+- accepted, skipped, expired, and superseded recommendations are skipped by
+  future recommendation projection;
+- if the accepted-status write fails after publish, generation still returns
+  the bounded `recommendationAcceptance` result so Owner review or a retry path
+  can detect the lifecycle gap without corrupting the published card.
+
+The lifecycle payload must remain summary-only. It must not contain raw
+answers, transcripts, prompts, answer keys, raw Gateway output, private paths,
+or provider configuration.
 
 ## Strategy Rules
 
@@ -344,8 +385,12 @@ Focused harnesses must cover:
 - weak evidence selects `repair` or `stabilize`;
 - stable high-confidence evidence selects `stretch`;
 - trajectory records the reason and next recommendation;
-- recommendation projection prefers the latest trajectory next recommendation
-  before recomputing a profile strategy;
+- trajectory recommendations are written as pending and are idempotent by
+  source card/evaluation;
+- recommendation projection prefers the latest pending trajectory next
+  recommendation before recomputing a profile strategy;
+- consumed trajectory recommendations are skipped, and generation marks the
+  selected trajectory recommendation accepted after the published card commits;
 - recipe policy accepts compact `daily_english_v1` generation input while
   keeping graph target, role, difficulty, and completion-policy internals in
   service-owned code;

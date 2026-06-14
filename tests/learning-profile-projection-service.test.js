@@ -45,6 +45,7 @@ test("learning profile projection returns bounded mastery, signal, trajectory, a
             sourceRef: "evaluation:eval_1"
           }],
           recentTrajectory: [{
+            id: "traj_1",
             taskCardId: "ltask_1",
             sourceEvaluationId: "eval_1",
             strategy: "stabilize",
@@ -53,7 +54,14 @@ test("learning profile projection returns bounded mastery, signal, trajectory, a
             performanceSummary: "Score 64; evidence was vague.",
             confirmedStrengths: ["Gives a reason."],
             remainingWeaknesses: ["Quote exact evidence."],
-            nextRecommendation: { strategy: "stabilize", reason: "Narrow evidence practice." },
+            nextRecommendation: {
+              status: "pending",
+              strategy: "stabilize",
+              supportLevel: "light_hint",
+              reason: "Narrow evidence practice.",
+              sourceTaskCardId: "ltask_1",
+              sourceEvaluationId: "eval_1"
+            },
             createdAt: "2026-06-14T08:00:00.000Z"
           }]
         };
@@ -86,7 +94,10 @@ test("learning profile projection returns bounded mastery, signal, trajectory, a
   assert.equal(result.masteryStates[0].nodeId, "kg_english_evidence_answering");
   assert.equal(result.weaknesses[0].summary, "Needs exact text evidence.");
   assert.equal(result.recentExperienceSignals[0].signalType, "not_learned");
+  assert.equal(result.recentTrajectory[0].id, "traj_1");
   assert.equal(result.recentTrajectory[0].strategy, "stabilize");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.status, "pending");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.supportLevel, "light_hint");
   assert.equal(result.nextCardStrategy.strategy, "stabilize");
   assert.equal(JSON.stringify(result).includes("RAW ANSWER"), false);
   assert.equal(JSON.stringify(result).includes("sourceRef"), false);

@@ -352,8 +352,10 @@ The service-owned runtime path is:
    that explicit graph target. If a daily generation request omits a target,
    `learning-card-next-target-service` first reads
    `learning-card-recommendation-service`. That service promotes the latest
-   persisted trajectory `nextRecommendation` from the selected learner before
-   falling back to the recomputed profile strategy. The first resolvable
+   pending persisted trajectory `nextRecommendation` from the selected learner
+   before falling back to the recomputed profile strategy. Legacy trajectory
+   recommendations without a status are treated as pending. Accepted, skipped,
+   expired, and superseded recommendations are ignored. The first resolvable
    recommendation/strategy target node is used, and bounded graph suggestions
    are used only when no learner-specific target exists;
 3. `learning-graph-plan-service` validates the selected target node,
@@ -377,7 +379,11 @@ The service-owned runtime path is:
 9. `card-authoring-publisher` writes the minimum FK parent rows in
    `learning_programs` and `learning_plan_drafts`, then writes
    `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
-   transaction.
+   transaction;
+10. if the generated card consumed a trajectory recommendation,
+    `learning-card-generation-service` marks that recommendation `accepted`
+    after the publish transaction succeeds. The accepted marker stores bounded
+    ids and timestamps only, and future generation skips it.
 
 The protected runtime endpoint is `POST /api/v1/growth/cards/generate`. It is
 workspace-bearer scoped, normalizes snake_case and camelCase graph inputs, and
@@ -408,9 +414,10 @@ The Owner generation page may display `learningProfile` and
 `nextCardRecommendation` before generation. That display is a read-only
 target-workspace projection and must remain summary-only. It is allowed to show
 bounded weaknesses, strengths, signals, recent trajectory, selection mode,
-recommendation mode, graph target, role, difficulty, and the next-card reason;
-it is not allowed to show raw answers, transcripts, prompts, hidden answer
-keys, model output, private file paths, or internal source refs.
+recommendation mode, recommendation status, graph target, role, difficulty,
+and the next-card reason; it is not allowed to show raw answers, transcripts,
+prompts, hidden answer keys, model output, private file paths, or internal
+source refs.
 
 ## Gateway Response Modes
 
@@ -610,6 +617,8 @@ graph-plus-history generation, Gateway authoring, validation, and SQLite
 publishing:
 
 - `src/services/learning-card-generation-service.js`;
+- `src/services/learning-card-recommendation-service.js`;
+- `src/services/learning-card-next-target-service.js`;
 - `src/services/learning-card-authoring-service.js`;
 - `src/services/growth-gateway-authoring-client.js`;
 - `src/services/learning-card-authoring-validation-service.js`;
@@ -618,5 +627,6 @@ publishing:
 
 New plugin-owned generated cards use the protected
 `POST /api/v1/growth/cards/generate` route or the same service directly. The
-remaining architecture work is target selection, stage-assessment activation,
-Owner review/retry policy, and production Gateway configuration validation.
+remaining architecture work is broader learner policy configuration,
+stage-assessment expansion, Owner review/retry policy, and production Gateway
+configuration validation.

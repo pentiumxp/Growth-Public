@@ -85,6 +85,7 @@ function createServices(config) {
     nextCardStrategyService: learningNextCardStrategyService
   });
   const learningCardRecommendationService = createLearningCardRecommendationService({
+    repository: growthLearningStore.masteryProfileRepository,
     profileProjectionService: learningProfileProjectionService
   });
   const learningCardGenerationRecipePolicyService = createLearningCardGenerationRecipePolicyService();

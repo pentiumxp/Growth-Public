@@ -125,36 +125,47 @@ function createLearningCardGenerationService(options = {}) {
     return recipePolicyService.normalizeGenerationInput(input);
   }
 
-  function normalizePlanInputWithDefaultTarget(input = {}, policy = {}) {
+  function planInputWithDefaultTarget(input = {}, policy = {}) {
     const planInput = normalizePlanInput(input);
     if (hasExplicitPlanTarget(input) || cleanString(planInput.cardRole).toLowerCase() === "stage_assessment") {
-      return applyRecipePlanFallbacks(planInput, policy, {
-        allowCardRole: !hasExplicitCardRole(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment",
-        allowDifficultyBand: !hasExplicitDifficultyBand(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment"
-      });
+      return {
+        planInput: applyRecipePlanFallbacks(planInput, policy, {
+          allowCardRole: !hasExplicitCardRole(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment",
+          allowDifficultyBand: !hasExplicitDifficultyBand(input) && cleanString(planInput.cardRole).toLowerCase() !== "stage_assessment"
+        }),
+        targetSelection: null
+      };
     }
-    if (!nextTargetService || typeof nextTargetService.selectNextTarget !== "function") return planInput;
+    if (!nextTargetService || typeof nextTargetService.selectNextTarget !== "function") {
+      return { planInput, targetSelection: null };
+    }
     const selection = nextTargetService.selectNextTarget(planInput);
-    if (!selection?.ok) return planInput;
-    return applyRecipePlanFallbacks(Object.assign({}, planInput, {
-      targetNodeId: selection.targetNodeId,
-      targetNodeIds: selection.targetNodeIds,
-      cardRole: planInput.cardRole || selection.cardRole,
-      difficultyBand: planInput.difficultyBand || selection.difficultyBand
-    }), policy, {
-      allowCardRole: !hasExplicitCardRole(input),
-      allowDifficultyBand: !hasExplicitDifficultyBand(input)
-    });
+    if (!selection?.ok) return { planInput, targetSelection: selection || null };
+    return {
+      planInput: applyRecipePlanFallbacks(Object.assign({}, planInput, {
+        targetNodeId: selection.targetNodeId,
+        targetNodeIds: selection.targetNodeIds,
+        cardRole: planInput.cardRole || selection.cardRole,
+        difficultyBand: planInput.difficultyBand || selection.difficultyBand
+      }), policy, {
+        allowCardRole: !hasExplicitCardRole(input),
+        allowDifficultyBand: !hasExplicitDifficultyBand(input)
+      }),
+      targetSelection: selection
+    };
   }
 
   async function resolvePlan(input = {}, policy = {}) {
-    if (input.learningGraphPlan?.learningGraphPlanId) return input.learningGraphPlan;
+    if (input.learningGraphPlan?.learningGraphPlanId) {
+      return { ok: true, plan: input.learningGraphPlan, targetSelection: null };
+    }
     if (!graphPlanService || typeof graphPlanService.createPlan !== "function") {
       return unavailable("learning_graph_plan_service_unavailable", { stage: "plan" });
     }
-    const plan = await graphPlanService.createPlan(normalizePlanInputWithDefaultTarget(input, policy));
+    const targetResult = planInputWithDefaultTarget(input, policy);
+    const plan = await graphPlanService.createPlan(targetResult.planInput);
     if (!plan?.ok) return unavailable(plan?.error || "learning_graph_plan_failed", { stage: "plan", planResult: plan || null });
-    return plan;
+    return { ok: true, plan, targetSelection: targetResult.targetSelection };
   }
 
   function resolveHistory(input = {}, plan = {}) {
@@ -171,12 +182,29 @@ function createLearningCardGenerationService(options = {}) {
     return history;
   }
 
+  function markRecommendationAccepted(targetSelection = null, output = {}) {
+    if (!targetSelection?.ok) return null;
+    if (cleanString(targetSelection.selectionMode) !== "recommendation") return null;
+    if (!nextTargetService || typeof nextTargetService.markRecommendationAccepted !== "function") {
+      return unavailable("learning_card_recommendation_acceptance_unavailable", { stage: "recommendation_acceptance" });
+    }
+    try {
+      return nextTargetService.markRecommendationAccepted(targetSelection, output);
+    } catch (err) {
+      return unavailable(cleanString(err.message || err) || "learning_card_recommendation_acceptance_failed", {
+        stage: "recommendation_acceptance"
+      });
+    }
+  }
+
   async function generateCard(input = {}) {
     const policy = normalizeGenerationInput(input);
     if (!policy?.ok) return unavailable(policy?.error || "learning_card_generation_recipe_policy_failed", { stage: "recipe", recipePolicy: policy || null });
     const normalizedInput = policy.input || input;
-    const plan = await resolvePlan(normalizedInput, policy);
-    if (!plan?.ok) return plan;
+    const resolvedPlan = await resolvePlan(normalizedInput, policy);
+    if (!resolvedPlan?.ok) return resolvedPlan;
+    const plan = resolvedPlan.plan;
+    const targetSelection = resolvedPlan.targetSelection || null;
     const history = resolveHistory(normalizedInput, plan);
     if (!history?.ok) return history;
     if (!authoringService || typeof authoringService.authorCard !== "function") {
@@ -185,14 +213,16 @@ function createLearningCardGenerationService(options = {}) {
     const firstCard = firstPlanCard(plan);
     const graphSources = graphSourceSummaries(graphRepository, plan);
     const sourceSummaries = graphSources.concat(asArray(normalizedInput.sourceSummaries || normalizedInput.source_summaries)).slice(0, 12);
-    const nextCardStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
+    const selectedStrategy = targetSelection?.nextCardStrategy?.ok ? targetSelection.nextCardStrategy : null;
+    const computedStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
       ? nextCardStrategyService.chooseNextCardStrategy({
         masterySummary: history.masterySummary,
         recentExperienceSignals: history.recentExperienceSignals,
         recentTrajectory: history.recentTrajectory,
         targetNodeIds: planTargetNodeIds(plan)
       })
-      : normalizedInput.nextCardStrategy || normalizedInput.next_card_strategy || null;
+      : null;
+    const nextCardStrategy = selectedStrategy || computedStrategy || normalizedInput.nextCardStrategy || normalizedInput.next_card_strategy || null;
     const authoring = await authoringService.authorCard({
       learningGraphPlan: plan,
       learnerSummary: history.learnerSummary,
@@ -221,6 +251,11 @@ function createLearningCardGenerationService(options = {}) {
         authoring
       });
     }
+    const recommendationAcceptance = markRecommendationAccepted(targetSelection, {
+      generatedTaskCardId: authoring.published?.taskCardId,
+      generatedLearningGraphPlanId: plan.learningGraphPlanId,
+      acceptedAt: new Date().toISOString()
+    });
     return {
       ok: true,
       source: "growth-learning-card-generation-service",
@@ -228,6 +263,7 @@ function createLearningCardGenerationService(options = {}) {
       learningGraphPlan: plan,
       historySummary: normalizeResultHistory(history),
       nextCardStrategy,
+      recommendationAcceptance,
       sourceSummaryCount: sourceSummaries.length,
       draft: authoring.draft,
       published: authoring.published,

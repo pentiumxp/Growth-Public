@@ -82,12 +82,19 @@ test("next target service chooses a persisted trajectory recommendation before r
         return {
           ok: true,
           recommendationMode: "trajectory",
+          recommendationId: "traj_1",
+          recommendationStatus: "pending",
           strategy: "repair",
           cardRole: "teaching",
           difficultyBand: "repair",
           supportLevel: "guided",
           targetNodeIds: ["kg_english_evidence_answering"],
-          reason: "Latest trajectory asks for repair."
+          reason: "Latest trajectory asks for repair.",
+          evidenceBasis: {
+            trajectoryId: "traj_1",
+            taskCardId: "ltask_1",
+            sourceEvaluationId: "eval_1"
+          }
         };
       }
     },
@@ -120,7 +127,63 @@ test("next target service chooses a persisted trajectory recommendation before r
   assert.equal(result.targetNodeId, "kg_english_evidence_answering");
   assert.equal(result.cardRole, "teaching");
   assert.equal(result.difficultyBand, "repair");
+  assert.equal(result.recommendationId, "traj_1");
+  assert.equal(result.recommendationStatus, "pending");
+  assert.equal(result.evidenceBasis.trajectoryId, "traj_1");
   assert.equal(result.nextCardStrategy.strategy, "repair");
+});
+
+test("next target service marks selected trajectory recommendations accepted", () => {
+  const calls = [];
+  const service = createLearningCardNextTargetService({
+    graphRepository: graphRepository(),
+    recommendationService: {
+      recommendNextCard() {
+        return {
+          ok: true,
+          recommendationMode: "trajectory",
+          recommendationId: "traj_1",
+          recommendationStatus: "pending",
+          strategy: "repair",
+          cardRole: "teaching",
+          difficultyBand: "repair",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          evidenceBasis: {
+            trajectoryId: "traj_1",
+            taskCardId: "ltask_1",
+            sourceEvaluationId: "eval_1"
+          }
+        };
+      },
+      markRecommendationAccepted(input) {
+        calls.push(input);
+        return { ok: true };
+      }
+    }
+  });
+
+  const selection = service.selectNextTarget({ workspaceId: "weixin_fanfan", learnerId: "fanfan" });
+  const result = service.markRecommendationAccepted(selection, {
+    generatedTaskCardId: "ltask_generated",
+    generatedLearningGraphPlanId: "lgp_1",
+    acceptedAt: "2026-06-14T09:00:00.000Z"
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(calls[0], {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "",
+    recommendationId: "traj_1",
+    evidenceBasis: {
+      trajectoryId: "traj_1",
+      taskCardId: "ltask_1",
+      sourceEvaluationId: "eval_1"
+    },
+    generatedTaskCardId: "ltask_generated",
+    generatedLearningGraphPlanId: "lgp_1",
+    acceptedAt: "2026-06-14T09:00:00.000Z"
+  });
 });
 
 test("next target service falls back to bounded history strategy and graph suggestion", () => {

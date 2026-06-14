@@ -51,6 +51,7 @@ function normalizeTrajectory(input = {}) {
     ? input.nextRecommendation
     : {};
   return {
+    id: cleanString(input.id),
     taskCardId: cleanString(input.taskCardId),
     sourceEvaluationId: cleanString(input.sourceEvaluationId),
     strategy: cleanString(input.strategy || nextRecommendation.strategy),
@@ -60,11 +61,17 @@ function normalizeTrajectory(input = {}) {
     confirmedStrengths: asArray(input.confirmedStrengths).map((item) => boundedText(item, 140)).filter(Boolean).slice(0, 5),
     remainingWeaknesses: asArray(input.remainingWeaknesses).map((item) => boundedText(item, 140)).filter(Boolean).slice(0, 5),
     nextRecommendation: {
+      status: cleanString(nextRecommendation.status),
       strategy: cleanString(nextRecommendation.strategy),
       cardRole: cleanString(nextRecommendation.cardRole),
       difficultyBand: cleanString(nextRecommendation.difficultyBand),
+      supportLevel: cleanString(nextRecommendation.supportLevel),
       reason: boundedText(nextRecommendation.reason, 220),
-      targetNodeIds: uniqueStrings(nextRecommendation.targetNodeIds).slice(0, 8)
+      targetNodeIds: uniqueStrings(nextRecommendation.targetNodeIds).slice(0, 8),
+      sourceTaskCardId: cleanString(nextRecommendation.sourceTaskCardId),
+      sourceEvaluationId: cleanString(nextRecommendation.sourceEvaluationId),
+      createdAt: cleanString(nextRecommendation.createdAt),
+      statusUpdatedAt: cleanString(nextRecommendation.statusUpdatedAt)
     },
     createdAt: cleanString(input.createdAt),
     updatedAt: cleanString(input.updatedAt)

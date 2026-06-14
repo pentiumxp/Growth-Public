@@ -293,6 +293,90 @@ function createMasteryProfileRepository({ open } = {}) {
     });
   }
 
+  function markTrajectoryRecommendationAccepted(input = {}) {
+    return withDb(false, (db) => {
+      if (!tableExists(db, "learning_growth_card_trajectories")) {
+        return { ok: false, available: false, error: "learning_growth_card_trajectories_missing" };
+      }
+      const trajectoryId = cleanString(input.trajectoryId || input.id);
+      const workspaceId = cleanString(input.workspaceId);
+      const learnerId = cleanString(input.learnerId);
+      const programId = cleanString(input.programId);
+      const sourceTaskCardId = cleanString(input.sourceTaskCardId);
+      const sourceEvaluationId = cleanString(input.sourceEvaluationId);
+      let row = null;
+      if (trajectoryId) {
+        const filters = [];
+        const values = [trajectoryId];
+        if (workspaceId) {
+          filters.push("workspace_id = ?");
+          values.push(workspaceId);
+        }
+        if (learnerId) {
+          filters.push("learner_id = ?");
+          values.push(learnerId);
+        }
+        row = db.prepare(`SELECT * FROM learning_growth_card_trajectories WHERE id = ?${filters.length ? ` AND ${filters.join(" AND ")}` : ""} LIMIT 1`).get(...values) || null;
+      }
+      if (!row && (sourceTaskCardId || sourceEvaluationId)) {
+        const filters = [];
+        const values = [];
+        if (workspaceId) {
+          filters.push("workspace_id = ?");
+          values.push(workspaceId);
+        }
+        if (learnerId) {
+          filters.push("learner_id = ?");
+          values.push(learnerId);
+        }
+        if (programId) {
+          filters.push("program_id = ?");
+          values.push(programId);
+        }
+        if (sourceTaskCardId) {
+          filters.push("task_card_id = ?");
+          values.push(sourceTaskCardId);
+        }
+        if (sourceEvaluationId) {
+          filters.push("source_evaluation_id = ?");
+          values.push(sourceEvaluationId);
+        }
+        row = filters.length
+          ? db.prepare(`SELECT * FROM learning_growth_card_trajectories WHERE ${filters.join(" AND ")} ORDER BY updated_at DESC LIMIT 1`).get(...values) || null
+          : null;
+      }
+      if (!row) {
+        return { ok: false, available: true, error: "trajectory_recommendation_not_found" };
+      }
+      const existingRecommendation = parseJson(row.next_recommendation_json, {}) || {};
+      const existingStatus = cleanString(existingRecommendation.status).toLowerCase();
+      if (existingStatus === "accepted") {
+        return { ok: true, duplicate: true, trajectory: publicTrajectory(row) };
+      }
+      const acceptedAt = cleanString(input.acceptedAt || input.statusUpdatedAt) || new Date().toISOString();
+      const nextRecommendation = Object.assign({}, existingRecommendation, {
+        status: "accepted",
+        acceptedAt,
+        statusUpdatedAt: acceptedAt,
+        generatedTaskCardId: cleanString(input.generatedTaskCardId),
+        generatedLearningGraphPlanId: cleanString(input.generatedLearningGraphPlanId || input.learningGraphPlanId),
+        acceptedBy: "growth-learning-card-generation-service"
+      });
+      db.prepare(`
+        UPDATE learning_growth_card_trajectories
+        SET next_recommendation_json = ?, updated_at = ?
+        WHERE id = ?
+      `).run(jsonText(nextRecommendation), acceptedAt, row.id);
+      const updated = db.prepare("SELECT * FROM learning_growth_card_trajectories WHERE id = ?").get(row.id);
+      return {
+        ok: true,
+        duplicate: false,
+        previousStatus: existingStatus || "pending",
+        trajectory: publicTrajectory(updated)
+      };
+    });
+  }
+
   function projectForNextCard(input = {}) {
     return withDb(true, (db) => {
       const targetNodeIds = uniqueStrings(input.targetNodeIds || input.nodeIds);
@@ -330,6 +414,7 @@ function createMasteryProfileRepository({ open } = {}) {
   }
 
   return {
+    markTrajectoryRecommendationAccepted,
     projectForNextCard,
     recordCardTrajectory,
     recordExperienceSignal,

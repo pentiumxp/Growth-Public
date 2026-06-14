@@ -35,6 +35,7 @@ function createLearningCardTrajectoryService(options = {}) {
     const programId = cleanString(taskCard.program_id || taskCard.programId || evaluation.programId || input.programId);
     const taskCardId = cleanString(taskCard.id || taskCard.taskCardId || evaluation.taskCardId || input.taskCardId);
     const sourceEvaluationId = cleanString(evaluation.evaluationId || evaluation.id || input.sourceEvaluationId);
+    const recordedAt = now().toISOString();
     const targetNodeIds = uniqueStrings(
       nextRecommendation.targetNodeIds
         || profileUpdate.targetNodeIds
@@ -56,13 +57,19 @@ function createLearningCardTrajectoryService(options = {}) {
       remainingWeaknesses,
       masteryChanges: asArray(profileUpdate.masteryChanges).slice(0, 12),
       nextRecommendation: {
+        status: "pending",
         strategy: cleanString(nextRecommendation.strategy || "stabilize"),
         targetNodeIds,
         difficultyBand: cleanString(nextRecommendation.difficultyBand || "foundation"),
         cardRole: cleanString(nextRecommendation.cardRole || "practice"),
-        reason: boundedText(nextRecommendation.reason, 260)
+        supportLevel: cleanString(nextRecommendation.supportLevel || nextRecommendation.support_level),
+        reason: boundedText(nextRecommendation.reason, 260),
+        sourceTaskCardId: taskCardId,
+        sourceEvaluationId,
+        createdAt: recordedAt,
+        statusUpdatedAt: recordedAt
       },
-      recordedAt: now().toISOString()
+      recordedAt
     });
   }
 

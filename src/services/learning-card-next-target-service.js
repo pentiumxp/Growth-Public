@@ -154,6 +154,10 @@ function createLearningCardNextTargetService(options = {}) {
         targetNode: recommendationNode,
         cardRole: cleanString(input.cardRole || input.card_role || recommendation.cardRole) || "practice",
         difficultyBand: cleanString(input.difficultyBand || input.difficulty_band || recommendation.difficultyBand || recommendationNode.stage) || "foundation",
+        supportLevel: cleanString(recommendation.supportLevel),
+        recommendationId: cleanString(recommendation.recommendationId),
+        recommendationStatus: cleanString(recommendation.recommendationStatus),
+        evidenceBasis: recommendation.evidenceBasis || null,
         nextCardStrategy: recommendation,
         learningProfileSummary: recommendation.learningProfileSummary || null
       };
@@ -196,7 +200,38 @@ function createLearningCardNextTargetService(options = {}) {
     };
   }
 
+  function markRecommendationAccepted(selection = {}, output = {}) {
+    const recommendationMode = cleanString(selection.recommendationMode || selection.nextCardStrategy?.recommendationMode);
+    if (cleanString(selection.selectionMode) !== "recommendation" || recommendationMode !== "trajectory") {
+      return {
+        ok: true,
+        skipped: true,
+        source: "growth-learning-card-next-target-service",
+        reason: "selection_is_not_trajectory_recommendation"
+      };
+    }
+    if (!recommendationService || typeof recommendationService.markRecommendationAccepted !== "function") {
+      return {
+        ok: false,
+        available: false,
+        source: "growth-learning-card-next-target-service",
+        error: "learning_card_recommendation_acceptance_unavailable"
+      };
+    }
+    return recommendationService.markRecommendationAccepted({
+      workspaceId: selection.workspaceId,
+      learnerId: selection.learnerId,
+      programId: selection.programId,
+      recommendationId: selection.recommendationId || selection.nextCardStrategy?.recommendationId,
+      evidenceBasis: selection.evidenceBasis || selection.nextCardStrategy?.evidenceBasis,
+      generatedTaskCardId: output.generatedTaskCardId || output.taskCardId || output.task_card_id,
+      generatedLearningGraphPlanId: output.generatedLearningGraphPlanId || output.learningGraphPlanId || output.learning_graph_plan_id,
+      acceptedAt: output.acceptedAt
+    });
+  }
+
   return {
+    markRecommendationAccepted,
     selectNextTarget
   };
 }

@@ -33,11 +33,11 @@ Growth should stay a service-first embedded plugin:
 | Growth write providers | `src/services/growth-providers/sqlite-write-provider.js` | Source-specific plugin SQLite command adapter for evidence, reflection, and Growth learning-coin writes. |
 | Growth service models | `src/services/growth-service-models.js` | Pure bounded status, board, snapshot, card, and migration summary projections used by the orchestration service. |
 | Home AI facade client | `src/services/home-ai-growth-facade-client.js` | Bounded Home AI Growth facade HTTP client with base URL normalization and workspace query/header handling. |
-| Card generation service | `src/services/learning-card-generation-service.js` | Graph-plus-history card generation orchestration. It normalizes recipe policy, creates a graph plan, reads historical summaries, adds graph source summaries, calls authoring, and returns the published card result. |
+| Card generation service | `src/services/learning-card-generation-service.js` | Graph-plus-history card generation orchestration. It normalizes recipe policy, creates a graph plan, reads historical summaries, adds graph source summaries, calls authoring, returns the published card result, and marks consumed trajectory recommendations accepted after publish. |
 | Card generation recipe policy service | `src/services/learning-card-generation-recipe-policy-service.js` | Service-owned recipe catalog and defaults for generated cards. V1 owns `daily_english_v1`, English domain/subject defaults, card schema version, and `daily_score_once` policy so the Owner UI can submit a compact recipe request without graph-policy internals. |
 | Card generation context service | `src/services/learning-card-generation-context-service.js` | Owner UI read-context service for card generation readiness. It returns Fanfan sample eligibility, recipe-policy metadata, graph readiness, suggested graph target, explicit next-card recommendation/rationale, bounded history counts, Gateway configured state, and the `daily_score_once` policy without exposing raw learner content. |
-| Card recommendation service | `src/services/learning-card-recommendation-service.js` | Summary-only next-card recommendation projection. It promotes the latest persisted trajectory `nextRecommendation` before falling back to recomputed profile strategy, giving the evaluation-to-profile loop a concrete input for the next generation. |
-| Card next-target service | `src/services/learning-card-next-target-service.js` | Summary-only selector for the default next graph target. It uses the selected learner profile projection and next-card strategy target nodes before falling back to graph suggestions, so generation can proceed from weak/stabilize/stretch signals when Owner does not hand-pick a node. |
+| Card recommendation service | `src/services/learning-card-recommendation-service.js` | Summary-only next-card recommendation projection. It promotes the latest pending persisted trajectory `nextRecommendation`, skips consumed statuses, falls back to recomputed profile strategy, and delegates accepted-status writes to the mastery-profile repository. |
+| Card next-target service | `src/services/learning-card-next-target-service.js` | Summary-only selector for the default next graph target. It uses the selected learner profile projection and next-card strategy target nodes before falling back to graph suggestions, carries selected recommendation lifecycle metadata, and delegates accepted-status writes after generation publishes. |
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
 | Gateway authoring client | `src/services/growth-gateway-authoring-client.js` | Gateway-only model boundary for card authoring. It supports SSE and JSON Gateway responses and does not call model vendors directly. |
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
@@ -45,7 +45,7 @@ Growth should stay a service-first embedded plugin:
 | Gateway evaluation client | `src/services/growth-gateway-evaluation-client.js` | Gateway-only model boundary for card evaluation. It supports fake harness `{ kind, input }`, official Gateway `/v1/responses`, SSE, JSON, timeout handling, and no direct model-vendor calls. |
 | Evaluation owner review service | `src/services/learning-evaluation-owner-review-service.js` | Owner-only recovery orchestration for terminal failed evaluation jobs. It validates the target, delegates requeue to the SQLite evaluation-job repository, returns bounded retry status, and never calls Gateway or stores raw learner content. |
 | Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
-| Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and next recommendation in `learning_growth_card_trajectories`. |
+| Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and a pending next recommendation in `learning_growth_card_trajectories`. |
 | Experience signal service | `src/services/learning-experience-signal-service.js` | Learner feedback writer for `too_easy`, `right_level`, `too_hard`, and `not_learned` signals. It validates graph target anchors, rejects raw/private fields, writes `sourceType=learner_feedback`, and returns summary-only signal DTOs. |
 | Stage assessment service | `src/services/learning-stage-assessment-service.js` | Formal assessment eligibility and activation policy. It reads the selected learner profile projection, applies recent-practice/high-pressure/cooldown rules, records cycle state, and activates `stage_assessment` generation with cycle metadata. |
 | Next-card strategy service | `src/services/learning-next-card-strategy-service.js` | Deterministic strategy selector over mastery summary, experience signals, and trajectory. It chooses repair/stabilize/transfer/stretch/integrate/review before card generation. |
@@ -151,12 +151,17 @@ The first core-module split is behavior-preserving:
 - If Owner does not hand-pick a target for daily generation,
   `learning-card-next-target-service` selects a graph node from
   `learning-card-recommendation-service` first. That recommendation service
-  promotes the selected learner's latest trajectory `nextRecommendation`
-  before falling back to the summary-only profile strategy. Generic graph
-  suggestions are used only after those learner-specific candidates fail to
-  resolve. The generation context preview and actual generation route share
+  promotes the selected learner's latest pending trajectory
+  `nextRecommendation` before falling back to the summary-only profile
+  strategy. Legacy recommendations without a status are treated as pending,
+  while accepted/skipped/expired/superseded recommendations are ignored. Generic
+  graph suggestions are used only after those learner-specific candidates fail
+  to resolve. The generation context preview and actual generation route share
   this service so the shown suggested plan, visible recommendation rationale,
-  and published card do not diverge.
+  and published card do not diverge. After a generated card publishes,
+  `learning-card-generation-service` asks the next-target/recommendation
+  services to mark the consumed trajectory recommendation accepted using only
+  bounded ids and timestamps.
 - Stage assessment activation is a separate Growth-owned service boundary.
   `learning-stage-assessment-service` reads summary-only profile projection,
   writes `learning_growth_stage_assessment_cycles` through
@@ -277,7 +282,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-card-next-target-service.test.js tests/growth-routes.test.js` |
-| Growth AI card loop profile, trajectory, recommendation, strategy, projection, Gateway evaluation, and Owner recovery | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
+| Growth AI card loop profile, trajectory, recommendation lifecycle, strategy, projection, Gateway evaluation, and Owner recovery | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-next-target-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
 | Growth learner experience signal writes | `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js` |
 | Embedded frontend adapters, card generation UI, learner card interaction UI, and Owner evaluation retry action | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |

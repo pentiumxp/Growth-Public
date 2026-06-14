@@ -9,6 +9,84 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Recommendation Lifecycle Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - `learning-card-trajectory-service` now writes trajectory
+    `nextRecommendation` rows with `status="pending"`, source card/evaluation
+    ids, and bounded lifecycle timestamps;
+  - `learning-profile-projection-service` preserves bounded trajectory id and
+    recommendation lifecycle fields so recommendation projection can make a
+    status-aware decision;
+  - `learning-card-recommendation-service` now treats legacy no-status
+    recommendations as pending, skips `accepted`, `skipped`, `expired`, and
+    `superseded` recommendations, and exposes a service method to mark a
+    selected trajectory recommendation accepted;
+  - `learning-card-next-target-service` carries recommendation id/status and
+    evidence basis through target selection, and delegates accepted-status
+    writes after generation publishes;
+  - `learning-card-generation-service` preserves the selected trajectory
+    recommendation as the Gateway `nextCardStrategy`, and after the card
+    publisher commits the generated task card and graph binding, marks the
+    consumed trajectory recommendation `accepted` with bounded generated card
+    and graph-plan ids;
+  - `createServices` wires the recommendation service to the
+    `masteryProfileRepository` so the lifecycle write stays service-owned;
+  - no route now owns recommendation lifecycle logic, and no Home AI old Growth
+    server logic or direct model-vendor boundary was introduced.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-trajectory-service.test.js`;
+  - `tests/learning-profile-projection-service.test.js`;
+  - `tests/learning-card-recommendation-service.test.js`;
+  - `tests/learning-card-next-target-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/learning-card-generation-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - focused AI loop gate:
+    `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/growth-architecture-boundary.test.js`
+    with 57 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-card-authoring-boundary.test.js`;
+  - `git diff --check` in Growth and Home AI app workspaces;
+  - `npm run check`;
+  - `npm test` with 222 passing tests;
+  - app AI Ops H1 Gateway required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`;
+  - app architecture map:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - CodeGraph status after edits: 123 files, 1290 nodes, 4577 edges.
+- AI Ops:
+  - H1 Gateway Runtime checks were required because generation input crosses
+    the Gateway-backed card authoring boundary;
+  - evidence id: `evidence-de61e01b-0508-4d19-a901-d33fadbff24e`.
+- Documentation discipline note:
+  - this Growth plugin workspace does not have generic
+    `docs/DOCS_INDEX.md`, `docs/TEST_MATRIX.md`, or
+    `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`; current startup
+    uses `docs/GROWTH_DOCS_INDEX.md` plus
+    `docs/HOME_AI_PLATFORM_CONTRACT.md` as the Growth-local index and
+    validation matrix.
+- Remaining architecture work:
+  - add Owner-visible lifecycle history only if Owner needs to see accepted,
+    skipped, expired, or superseded recommendation history;
+  - add skip/expire/supersede commands only when Product needs Owner override
+    controls or automatic stale-recommendation expiry;
+  - production deployment still requires the central Home AI visual and
+    production smoke gates.
+
 ## 2026-06-14 Growth Card Generation Recipe Policy Slice
 
 - Current workspace state: implemented and locally validated; this handoff
