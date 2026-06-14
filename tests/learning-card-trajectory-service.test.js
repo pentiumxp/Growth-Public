@@ -106,3 +106,79 @@ test("card trajectory service records an idempotent summary-only next recommenda
     }
   });
 });
+
+test("card trajectory service supersedes older pending recommendations for the same learner", () => {
+  withTrajectoryDb(({ dbPath, repository }) => {
+    const service = createLearningCardTrajectoryService({
+      repository,
+      now: () => new Date("2026-06-14T07:00:00.000Z")
+    });
+    const base = {
+      taskCard: {
+        learner_id: "weixin_fanfan",
+        workspace_id: "weixin_fanfan",
+        program_id: "program_english",
+        raw_json: JSON.stringify({ learningGraph: { targetNodeIds: ["kg_english_evidence_answering"] } })
+      },
+      evaluation: {
+        status: "completed",
+        summary: "Needs focused evidence practice."
+      },
+      nextRecommendation: {
+        strategy: "stabilize",
+        targetNodeIds: ["kg_english_evidence_answering"],
+        difficultyBand: "foundation",
+        reason: "Use one focused evidence-answering card."
+      }
+    };
+
+    const first = service.recordEvaluationTrajectory({
+      ...base,
+      taskCard: { ...base.taskCard, id: "ltask_old" },
+      evaluation: { ...base.evaluation, evaluationId: "eval_old" }
+    });
+    const accepted = repository.markTrajectoryRecommendationAccepted({
+      trajectoryId: first.trajectory.id,
+      workspaceId: "weixin_fanfan",
+      learnerId: "weixin_fanfan",
+      generatedTaskCardId: "ltask_generated_old",
+      generatedLearningGraphPlanId: "lgp_old",
+      acceptedAt: "2026-06-14T07:05:00.000Z"
+    });
+    assert.equal(accepted.ok, true);
+
+    const pending = service.recordEvaluationTrajectory({
+      ...base,
+      taskCard: { ...base.taskCard, id: "ltask_pending" },
+      evaluation: { ...base.evaluation, evaluationId: "eval_pending" }
+    });
+    assert.deepEqual(pending.supersededRecommendationIds, []);
+
+    const newest = service.recordEvaluationTrajectory({
+      ...base,
+      taskCard: { ...base.taskCard, id: "ltask_new" },
+      evaluation: { ...base.evaluation, evaluationId: "eval_new" },
+      nextRecommendation: {
+        strategy: "repair",
+        targetNodeIds: ["kg_english_evidence_answering"],
+        difficultyBand: "repair",
+        reason: "Use the newest repair recommendation."
+      }
+    });
+
+    assert.equal(newest.ok, true);
+    assert.deepEqual(newest.supersededRecommendationIds, [pending.trajectory.id]);
+
+    const db = new DatabaseSync(dbPath);
+    try {
+      const rows = db.prepare("SELECT id, next_recommendation_json FROM learning_growth_card_trajectories ORDER BY task_card_id ASC").all();
+      const recommendations = Object.fromEntries(rows.map((row) => [row.id, JSON.parse(row.next_recommendation_json)]));
+      assert.equal(recommendations[first.trajectory.id].status, "accepted");
+      assert.equal(recommendations[pending.trajectory.id].status, "superseded");
+      assert.equal(recommendations[pending.trajectory.id].supersededByTrajectoryId, newest.trajectory.id);
+      assert.equal(recommendations[newest.trajectory.id].status, "pending");
+    } finally {
+      db.close();
+    }
+  });
+});

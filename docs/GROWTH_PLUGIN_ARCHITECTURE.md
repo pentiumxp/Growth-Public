@@ -45,7 +45,7 @@ Growth should stay a service-first embedded plugin:
 | Gateway evaluation client | `src/services/growth-gateway-evaluation-client.js` | Gateway-only model boundary for card evaluation. It supports fake harness `{ kind, input }`, official Gateway `/v1/responses`, SSE, JSON, timeout handling, and no direct model-vendor calls. |
 | Evaluation owner review service | `src/services/learning-evaluation-owner-review-service.js` | Owner-only recovery orchestration for terminal failed evaluation jobs. It validates the target, delegates requeue to the SQLite evaluation-job repository, returns bounded retry status, and never calls Gateway or stores raw learner content. |
 | Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
-| Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and a pending next recommendation in `learning_growth_card_trajectories`. |
+| Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and a pending next recommendation in `learning_growth_card_trajectories`, and supersedes older pending recommendations for the same learner/program. |
 | Experience signal service | `src/services/learning-experience-signal-service.js` | Learner feedback writer for `too_easy`, `right_level`, `too_hard`, and `not_learned` signals. It validates graph target anchors, rejects raw/private fields, writes `sourceType=learner_feedback`, and returns summary-only signal DTOs. |
 | Stage assessment service | `src/services/learning-stage-assessment-service.js` | Formal assessment eligibility and activation policy. It reads the selected learner profile projection, applies recent-practice/high-pressure/cooldown rules, records cycle state, and activates `stage_assessment` generation with cycle metadata. |
 | Next-card strategy service | `src/services/learning-next-card-strategy-service.js` | Deterministic strategy selector over mastery summary, experience signals, and trajectory. It chooses repair/stabilize/transfer/stretch/integrate/review before card generation. |
@@ -154,14 +154,16 @@ The first core-module split is behavior-preserving:
   promotes the selected learner's latest pending trajectory
   `nextRecommendation` before falling back to the summary-only profile
   strategy. Legacy recommendations without a status are treated as pending,
-  while accepted/skipped/expired/superseded recommendations are ignored. Generic
-  graph suggestions are used only after those learner-specific candidates fail
-  to resolve. The generation context preview and actual generation route share
-  this service so the shown suggested plan, visible recommendation rationale,
-  and published card do not diverge. After a generated card publishes,
-  `learning-card-generation-service` asks the next-target/recommendation
-  services to mark the consumed trajectory recommendation accepted using only
-  bounded ids and timestamps.
+  while accepted/skipped/expired/superseded recommendations are ignored. When a
+  new trajectory recommendation is written, older pending recommendations for
+  the same learner/program are marked superseded so a later accepted generation
+  cannot fall back to stale work. Generic graph suggestions are used only after
+  those learner-specific candidates fail to resolve. The generation context
+  preview and actual generation route share this service so the shown suggested
+  plan, visible recommendation rationale, and published card do not diverge.
+  After a generated card publishes, `learning-card-generation-service` asks the
+  next-target/recommendation services to mark the consumed trajectory
+  recommendation accepted using only bounded ids and timestamps.
 - Stage assessment activation is a separate Growth-owned service boundary.
   `learning-stage-assessment-service` reads summary-only profile projection,
   writes `learning_growth_stage_assessment_cycles` through

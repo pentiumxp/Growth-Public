@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Recommendation Supersede Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - `mastery-profile` repository now supersedes older pending
+    `learning_growth_card_trajectories.next_recommendation_json` entries for
+    the same learner/program when a newer trajectory recommendation is written;
+  - legacy no-status recommendation payloads are treated as pending only when
+    they contain a recommendation payload, then can be superseded by a newer
+    recommendation;
+  - accepted, skipped, expired, and already-superseded recommendations are not
+    rewritten by the supersede pass;
+  - `learning-card-recommendation-service` already skips superseded rows, so a
+    newly accepted latest recommendation can no longer fall back to stale older
+    pending work.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-trajectory-service.test.js`;
+  - `tests/learning-card-recommendation-service.test.js`.
+- Validation passed:
+  - focused supersede gate:
+    `node --test tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-profile-projection-service.test.js tests/learning-card-generation-service.test.js`
+    with 16 passing tests;
+  - focused AI loop gate:
+    `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-card-recommendation-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/growth-architecture-boundary.test.js`
+    with 58 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `git diff --check` in Growth and Home AI app workspaces;
+  - `npm run check`;
+  - `npm test` with 223 passing tests;
+  - app AI Ops H1 Gateway required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`;
+  - app architecture map:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - CodeGraph status after edits: 123 files, 1294 nodes, 4596 edges.
+- AI Ops:
+  - evidence id: `evidence-670ec445-7576-48c6-9572-5d9711f804dc`.
+- Remaining architecture work:
+  - Owner-visible lifecycle history is still not implemented;
+  - explicit Owner skip/expire controls are still deferred until product needs
+    manual lifecycle override;
+  - production deployment still requires central visual and production smoke
+    gates.
+
 ## 2026-06-14 Growth Recommendation Lifecycle Slice
 
 - Current workspace state: implemented and locally validated; this handoff

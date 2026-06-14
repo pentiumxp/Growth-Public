@@ -193,6 +193,9 @@ Lifecycle rules:
   `status: "pending"`;
 - legacy recommendations with no status are treated as pending for backward
   compatibility;
+- when a new pending recommendation is written for the same learner and
+  program, older pending recommendations are marked `superseded`; accepted,
+  skipped, expired, and already-superseded recommendations are not rewritten;
 - `learning-card-recommendation-service` selects the latest pending
   recommendation that resolves to a known graph node;
 - `learning-card-generation-service` marks the selected trajectory

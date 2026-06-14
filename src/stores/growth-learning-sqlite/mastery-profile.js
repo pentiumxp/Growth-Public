@@ -126,6 +126,20 @@ function publicTrajectory(row = {}) {
   };
 }
 
+function recommendationStatus(recommendation = {}) {
+  return cleanString(recommendation.status || recommendation.recommendationStatus).toLowerCase();
+}
+
+function hasRecommendationPayload(recommendation = {}) {
+  return Boolean(recommendation && typeof recommendation === "object" && Object.keys(recommendation).length);
+}
+
+function isPendingRecommendation(recommendation = {}) {
+  if (!hasRecommendationPayload(recommendation)) return false;
+  const status = recommendationStatus(recommendation);
+  return !status || status === "pending";
+}
+
 function selectByWorkspace(db, tableName, input = {}, order = "updated_at DESC", limit = 24) {
   if (!tableExists(db, tableName)) return [];
   const values = [];
@@ -251,6 +265,43 @@ function createMasteryProfileRepository({ open } = {}) {
     });
   }
 
+  function supersedeOlderPendingTrajectoryRecommendations(db, input = {}) {
+    const workspaceId = cleanString(input.workspaceId);
+    const learnerId = cleanString(input.learnerId) || workspaceId;
+    const programId = cleanString(input.programId);
+    const currentTrajectoryId = cleanString(input.currentTrajectoryId);
+    const now = cleanString(input.statusUpdatedAt) || new Date().toISOString();
+    if (!workspaceId || !learnerId || !currentTrajectoryId) return [];
+    const rows = db.prepare(`
+      SELECT * FROM learning_growth_card_trajectories
+      WHERE workspace_id = ?
+        AND learner_id = ?
+        AND id <> ?
+        AND (? = '' OR program_id = ?)
+      ORDER BY updated_at DESC
+      LIMIT 100
+    `).all(workspaceId, learnerId, currentTrajectoryId, programId, programId);
+    const supersededIds = [];
+    for (const row of rows) {
+      const recommendation = parseJson(row.next_recommendation_json, {}) || {};
+      if (!isPendingRecommendation(recommendation)) continue;
+      const nextRecommendation = Object.assign({}, recommendation, {
+        status: "superseded",
+        supersededAt: now,
+        statusUpdatedAt: now,
+        supersededByTrajectoryId: currentTrajectoryId,
+        supersededBy: "growth-learning-card-trajectory-service"
+      });
+      db.prepare(`
+        UPDATE learning_growth_card_trajectories
+        SET next_recommendation_json = ?, updated_at = ?
+        WHERE id = ?
+      `).run(jsonText(nextRecommendation), now, row.id);
+      supersededIds.push(cleanString(row.id));
+    }
+    return supersededIds;
+  }
+
   function recordCardTrajectory(input = {}) {
     return withDb(false, (db) => {
       if (!tableExists(db, "learning_growth_card_trajectories")) {
@@ -289,7 +340,19 @@ function createMasteryProfileRepository({ open } = {}) {
         updated_at: now
       };
       insertDynamic(db, "learning_growth_card_trajectories", values);
-      return { ok: true, duplicate: false, trajectory: publicTrajectory(db.prepare("SELECT * FROM learning_growth_card_trajectories WHERE id = ?").get(id)) };
+      const supersededRecommendationIds = supersedeOlderPendingTrajectoryRecommendations(db, {
+        workspaceId,
+        learnerId,
+        programId: values.program_id,
+        currentTrajectoryId: id,
+        statusUpdatedAt: now
+      });
+      return {
+        ok: true,
+        duplicate: false,
+        trajectory: publicTrajectory(db.prepare("SELECT * FROM learning_growth_card_trajectories WHERE id = ?").get(id)),
+        supersededRecommendationIds
+      };
     });
   }
 

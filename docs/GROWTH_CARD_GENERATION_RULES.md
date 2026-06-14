@@ -355,7 +355,10 @@ The service-owned runtime path is:
    pending persisted trajectory `nextRecommendation` from the selected learner
    before falling back to the recomputed profile strategy. Legacy trajectory
    recommendations without a status are treated as pending. Accepted, skipped,
-   expired, and superseded recommendations are ignored. The first resolvable
+   expired, and superseded recommendations are ignored. When a new trajectory
+   recommendation is written for the same learner/program, older pending
+   recommendations are marked superseded so the selector cannot fall back to
+   stale work after a newer recommendation is consumed. The first resolvable
    recommendation/strategy target node is used, and bounded graph suggestions
    are used only when no learner-specific target exists;
 3. `learning-graph-plan-service` validates the selected target node,

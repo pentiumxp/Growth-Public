@@ -88,6 +88,17 @@ test("recommendation service skips consumed trajectory recommendations", () => {
               generatedTaskCardId: "ltask_generated"
             }
           }, {
+            id: "traj_superseded",
+            taskCardId: "ltask_middle",
+            sourceEvaluationId: "eval_middle",
+            targetNodeIds: ["kg_english_evidence_answering"],
+            nextRecommendation: {
+              status: "superseded",
+              strategy: "repair",
+              targetNodeIds: ["kg_english_evidence_answering"],
+              supersededByTrajectoryId: "traj_pending"
+            }
+          }, {
             id: "traj_pending",
             taskCardId: "ltask_new",
             sourceEvaluationId: "eval_new",
