@@ -339,13 +339,16 @@ The service-owned runtime path is:
 2. `history-summary` reads bounded historical data from Growth SQLite:
    recent card status, evaluation summaries, mastery states, experience
    signals, recent trajectories, and aggregate counts;
-3. `learning-card-generation-service` combines graph source summaries and
+3. `learning-profile-projection-service` prepares the selected learner's
+   Owner-visible profile projection: mastery states, strengths, weaknesses,
+   recent experience signals, recent trajectory, and next-card strategy reason;
+4. `learning-card-generation-service` combines graph source summaries and
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
-4. `learning-next-card-strategy-service` chooses a bounded next-card strategy
+5. `learning-next-card-strategy-service` chooses a bounded next-card strategy
    from profile, signals, and trajectory;
-5. `learning-card-authoring-service` calls Gateway and validates the draft;
-6. `card-authoring-publisher` writes the minimum FK parent rows in
+6. `learning-card-authoring-service` calls Gateway and validates the draft;
+7. `card-authoring-publisher` writes the minimum FK parent rows in
    `learning_programs` and `learning_plan_drafts`, then writes
    `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
    transaction.
@@ -362,6 +365,13 @@ The current implementation supports generating a formal Growth card from the
 imported knowledge graph and historical Growth SQLite summaries when a Gateway
 authoring endpoint is configured. It does not direct-call model vendors and it
 does not ask Home AI old Growth routes to author cards.
+
+The Owner generation page may display `learningProfile` before generation.
+That display is a read-only target-workspace projection and must remain
+summary-only. It is allowed to show bounded weaknesses, strengths, signals,
+recent trajectory, and the next-card strategy reason; it is not allowed to show
+raw answers, transcripts, prompts, hidden answer keys, model output, private
+file paths, or internal source refs.
 
 ## Gateway Response Modes
 

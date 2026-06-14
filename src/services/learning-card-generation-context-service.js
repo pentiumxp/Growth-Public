@@ -76,10 +76,34 @@ function readinessReady(readiness = {}) {
     && !bool(readiness.blockingOpenGeneration);
 }
 
+function unavailableLearningProfile(input = {}, error = "learning_profile_projection_unavailable") {
+  return {
+    ok: false,
+    available: false,
+    error,
+    targetNodeIds: asArray(input.targetNodeIds).map(cleanString).filter(Boolean),
+    summary: {
+      masteryStateCount: 0,
+      weaknessCount: 0,
+      strengthCount: 0,
+      recentExperienceSignalCount: 0,
+      recentTrajectoryCount: 0,
+      lastTrajectoryAt: ""
+    },
+    masteryStates: [],
+    strengths: [],
+    weaknesses: [],
+    recentExperienceSignals: [],
+    recentTrajectory: [],
+    nextCardStrategy: { ok: false, error: "next_card_strategy_unavailable" }
+  };
+}
+
 function createLearningCardGenerationContextService(options = {}) {
   const graphRepository = options.graphRepository;
   const historySummaryRepository = options.historySummaryRepository;
   const nextCardStrategyService = options.nextCardStrategyService;
+  const profileProjectionService = options.profileProjectionService || null;
   const gatewayConfigured = options.gatewayConfigured || (() => false);
 
   function suggestedNode() {
@@ -146,6 +170,26 @@ function createLearningCardGenerationContextService(options = {}) {
     }
   }
 
+  function learningProfileForPlan(input = {}, plan = null) {
+    if (!profileProjectionService || typeof profileProjectionService.profileContext !== "function") {
+      return unavailableLearningProfile({
+        targetNodeIds: plan?.targetNodeIds || []
+      }, "learning_profile_projection_service_unavailable");
+    }
+    try {
+      return profileProjectionService.profileContext({
+        workspaceId: input.workspaceId,
+        learnerId: input.learnerId,
+        programId: input.programId,
+        targetNodeIds: plan?.targetNodeIds || []
+      });
+    } catch (_error) {
+      return unavailableLearningProfile({
+        targetNodeIds: plan?.targetNodeIds || []
+      });
+    }
+  }
+
   function context(input = {}) {
     const workspaceId = cleanString(input.workspaceId);
     const learnerId = cleanString(input.learnerId) || workspaceId;
@@ -167,7 +211,10 @@ function createLearningCardGenerationContextService(options = {}) {
     const node = suggestedNode();
     const baseSuggestedPlan = nodePlan(node, input);
     const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
-    const nextCardStrategy = nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
+    const learningProfile = learningProfileForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
+    const nextCardStrategy = learningProfile?.nextCardStrategy?.ok
+      ? learningProfile.nextCardStrategy
+      : nextCardStrategyService && typeof nextCardStrategyService.chooseNextCardStrategy === "function"
       ? nextCardStrategyService.chooseNextCardStrategy({
         masterySummary: history?.masterySummary || {},
         recentExperienceSignals: history?.recentExperienceSignals || [],
@@ -201,6 +248,7 @@ function createLearningCardGenerationContextService(options = {}) {
       },
       suggestedPlan,
       nextCardStrategy,
+      learningProfile,
       historySummary: {
         learnerSummary: {
           recentCardCount: Number(learnerSummary.recentCardCount || 0) || 0,

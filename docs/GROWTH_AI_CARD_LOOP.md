@@ -23,6 +23,10 @@ The loop is:
 9. record a card trajectory row;
 10. use the updated profile and trajectory for the next generation.
 
+The Owner generation surface must make the loop observable. It should show the
+selected learner's bounded profile/trajectory projection before generation so
+the Owner can see why the next card is repair, stabilize, stretch, or review.
+
 ## Ownership
 
 Growth owns the whole learning loop inside the plugin boundary.
@@ -100,6 +104,28 @@ generation:
     `stretch`, `integrate`, or `review`;
   - prefers prerequisite repair for repeated weak evidence and only stretches
     when confidence and stability are high.
+
+## Owner Profile Projection Slice
+
+The Owner-facing generation view reads profile state through
+`learning-profile-projection-service`. This is a read projection over
+`learning_growth_mastery_states`, `learning_growth_experience_signals`, and
+`learning_growth_card_trajectories`.
+
+The projection returns:
+
+- bounded mastery states for target/prerequisite graph nodes;
+- current strengths and weaknesses;
+- recent experience signals;
+- recent card trajectory rows;
+- the next-card strategy and reason.
+
+The projection is target-workspace scoped. When Owner is viewing another
+learner, Growth must use the selected learner workspace from
+`GET /api/v1/growth/card-generation/context`, not the Owner workspace. The
+projection is read-only and must not expose raw learner answers, transcripts,
+prompts, answer keys, raw model output, private file paths, or internal source
+refs.
 
 ## Strategy Rules
 
@@ -200,6 +226,10 @@ Focused harnesses must cover:
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
 - card-generation context uses strategy/profile output in its summary-only
   preview.
+- learning profile projection returns bounded mastery, signal, trajectory, and
+  next-card strategy fields without raw answer/source-ref leakage;
+- Owner generation UI renders the selected learner's profile projection and
+  next-card reason without creating any write action.
 - valid streaming response and valid JSON response from Gateway evaluation;
 - invalid JSON, missing schema fields, privacy-risk output, and model timeout
   from Gateway evaluation;

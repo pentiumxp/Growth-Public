@@ -11,8 +11,9 @@
 
 ## 2026-06-14 Growth Gateway Evaluation Boundary Slice
 
-- Current workspace state: implemented and locally validated; not committed,
-  pushed, or deployed at the time this section was written.
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public` in `d18d425`
+  (`Add Growth AI card loop evaluation boundary`); not deployed.
 - Scope:
   - added `growth-gateway-evaluation-client` as the Growth-owned Gateway-only
     model client for card evaluation;
@@ -79,8 +80,9 @@
 
 ## 2026-06-14 Growth AI Card Loop Service Slice
 
-- Current workspace state: implemented and locally validated; not committed,
-  pushed, or deployed at the time this section was written.
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public` in `d18d425`
+  (`Add Growth AI card loop evaluation boundary`); not deployed.
 - Scope:
   - added `docs/GROWTH_AI_CARD_LOOP.md` as the plugin-owned contract for
     learner profile -> next-card strategy -> card generation -> evaluation
@@ -131,6 +133,64 @@
   - add experience-signal write route before making learner difficulty buttons
     active;
   - implement stage-assessment activation as a separate service/harness slice.
+
+## 2026-06-14 Growth Owner Profile Projection Slice
+
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public`; not deployed.
+- Scope:
+  - added `learning-profile-projection-service` so Owner card generation reads
+    a selected learner's bounded mastery, weakness, strength, experience signal,
+    trajectory, and next-card strategy projection through a Growth service;
+  - wired `learning-card-generation-context-service` to include
+    `learningProfile` in the generation context for the selected target
+    workspace, not the Owner workspace;
+  - updated the Owner card generation UI to render a read-only `学习画像`
+    panel with weakness, trajectory, and next recommendation summaries;
+  - kept the projection summary-only and excluded raw answers, raw transcripts,
+    raw prompts, and source document bodies from the UI/context path.
+- Product boundary:
+  - this slice makes the AI learning loop observable to Owner before generation;
+  - it does not yet add learner difficulty feedback write routes or automatic
+    stage-assessment activation;
+  - production visual publish still requires the central Home AI embedded
+    visual harness before deployment.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-profile-projection-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/check-growth-card-authoring-boundary.js`.
+- Validation passed:
+  - `node --test tests/learning-profile-projection-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check`;
+  - `npm test` with 177 passing tests;
+  - `git diff --check`;
+  - CodeGraph status after edits: 109 files, 1128 nodes, 3842 edges.
+- AI Ops:
+  - intake classified the slice as H1 Gateway Runtime and did not require a
+    visual lane;
+  - required app-side checks passed from `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`, and `git diff --check`;
+  - evidence id: `evidence-e236c860-6c49-4462-8392-82e0919af890`.
+- Remaining architecture work:
+  - add an experience-signal write route before enabling learner difficulty
+    feedback controls;
+  - implement stage-assessment eligibility and activation as a separate
+    service/harness slice;
+  - run central visual evidence and production smoke before any deployment.
 
 ## 2026-06-14 Growth Card Detail Back Navigation Hotfix
 

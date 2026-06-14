@@ -105,13 +105,67 @@
 
   function historyFacts(context = {}, escapeHtml = defaultEscapeHtml) {
     const learner = context.historySummary?.learnerSummary || {};
+    const profile = context.learningProfile?.summary || {};
     const rows = [
       ["近期卡片", learner.recentCardCount],
       ["已完成", learner.completedRecentCardCount],
-      ["批改", learner.evaluationCount],
-      ["反思", learner.reflectionCount]
+      ["画像点", profile.masteryStateCount ?? context.historySummary?.masteryStateCount],
+      ["轨迹", profile.recentTrajectoryCount ?? context.historySummary?.recentTrajectoryCount]
     ];
     return rows.map(([label, value]) => `<span><small>${escapeHtml(label)}</small><strong>${escapeHtml(String(Number(value || 0) || 0))}</strong></span>`).join("");
+  }
+
+  function profileItemRows(items = [], emptyText = "暂无记录", escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(items).slice(0, 3);
+    if (!rows.length) return `<div class="learning-card-generation-profile-empty">${escapeHtml(emptyText)}</div>`;
+    return rows.map((item) => {
+      const label = clean(item.nodeId || item.targetNodeId || item.strategy || item.signalType || "记录");
+      const meta = clean(item.summary || item.performanceSummary || item.reason || item.status || "");
+      const score = Number(item.score || 0) || 0;
+      const badge = clean(item.signalType || item.strategy || item.status || (score ? `${score}` : ""));
+      return `<div class="learning-card-generation-profile-row">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(meta || "summary-only")}</small>
+        </span>
+        <em>${escapeHtml(badge || "摘要")}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function learningProfilePanel(context = {}, escapeHtml = defaultEscapeHtml) {
+    const profile = context.learningProfile || {};
+    const strategy = profile.nextCardStrategy || context.nextCardStrategy || {};
+    const summary = profile.summary || {};
+    const profileReady = profile.ok !== false && profile.available !== false;
+    return `<section class="learning-card-generation-profile" data-card-generation-profile>
+      <div class="learning-card-generation-profile-head">
+        <span>
+          <strong>学习画像</strong>
+          <small>${profileReady ? "掌握度、信号和轨迹摘要" : "等待评价后形成画像"}</small>
+        </span>
+        <em>${escapeHtml(clean(strategy.strategy) || "stabilize")}</em>
+      </div>
+      <div class="learning-card-generation-profile-metrics">
+        <span><small>弱点</small><strong>${escapeHtml(String(Number(summary.weaknessCount || 0) || 0))}</strong></span>
+        <span><small>强项</small><strong>${escapeHtml(String(Number(summary.strengthCount || 0) || 0))}</strong></span>
+        <span><small>信号</small><strong>${escapeHtml(String(Number(summary.recentExperienceSignalCount || 0) || 0))}</strong></span>
+      </div>
+      <div class="learning-card-generation-profile-columns">
+        <div>
+          <b>需要加强</b>
+          ${profileItemRows(profile.weaknesses, "暂无明显弱点", escapeHtml)}
+        </div>
+        <div>
+          <b>近期轨迹</b>
+          ${profileItemRows(profile.recentTrajectory, "暂无轨迹", escapeHtml)}
+        </div>
+      </div>
+      <div class="learning-card-generation-profile-reason">
+        <strong>下一张建议</strong>
+        <small>${escapeHtml(clean(strategy.reason) || "根据当前图谱目标生成一张日常英语练习卡。")}</small>
+      </div>
+    </section>`;
   }
 
   function structuredPreview(context = {}, escapeHtml = defaultEscapeHtml) {
@@ -120,6 +174,7 @@
     const preview = {
       learningGraphPlan: plan.targetNodeId || "",
       learnerSummary: "summary_only",
+      learningProfile: "mastery_trajectory_projection",
       recentSignals: "bounded_experience_signals",
       cardSchema: "growth.learningCard.v1",
       completionPolicy: policy.mode || "daily_score_once"
@@ -291,6 +346,7 @@
           <div class="learning-card-generation-readiness">
             ${readinessRows(context, escapeHtml)}
           </div>
+          ${learningProfilePanel(context, escapeHtml)}
           <div class="learning-card-generation-field-list">
             <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
             <div><span><strong>完成规则</strong><small>提交一次，批改一次，反思最多一次，不设通过线</small></span><em>daily</em></div>

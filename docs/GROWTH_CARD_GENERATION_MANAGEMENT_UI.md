@@ -283,13 +283,50 @@ Recommended context response:
     "recentCards": 6,
     "recentEvaluations": 4,
     "recentReflections": 1
+  },
+  "learningProfile": {
+    "summary": {
+      "masteryStateCount": 2,
+      "weaknessCount": 1,
+      "strengthCount": 1,
+      "recentExperienceSignalCount": 1,
+      "recentTrajectoryCount": 1
+    },
+    "weaknesses": [
+      {
+        "nodeId": "kg_english_evidence_answering",
+        "status": "developing",
+        "score": 64,
+        "summary": "Needs exact text evidence."
+      }
+    ],
+    "recentExperienceSignals": [
+      {
+        "targetNodeId": "kg_english_evidence_answering",
+        "signalType": "not_learned",
+        "summary": "Needs another focused practice."
+      }
+    ],
+    "recentTrajectory": [
+      {
+        "taskCardId": "ltask_1",
+        "strategy": "stabilize",
+        "performanceSummary": "Score 64; evidence was vague."
+      }
+    ],
+    "nextCardStrategy": {
+      "strategy": "stabilize",
+      "reason": "Use one more short evidence-answering card."
+    }
   }
 }
 ```
 
 The context endpoint must be read-only and summary-only. It must not expose raw
 learner submissions, raw transcripts, raw prompts, hidden answer keys, or raw
-model output.
+model output. `learningProfile` is target-workspace scoped; Owner viewing a
+learner must see that learner's profile projection, not the Owner workspace's
+profile rows.
 
 ## Generate Request
 
@@ -398,8 +435,10 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
 
 1. Add read-only context service:
    - `learning-card-generation-context-service`;
-   - uses view targets, graph repository, and history summary;
-   - returns readiness and recipe options.
+   - uses view targets, graph repository, profile projection, and history
+     summary;
+   - returns readiness, recipe options, selected learner profile/trajectory,
+     and next-card strategy reason.
 2. Add route:
    - `GET /api/v1/growth/card-generation/context`.
 3. Add frontend API helpers:
@@ -418,9 +457,11 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
 Implemented V1 files:
 
 - `src/services/learning-card-generation-context-service.js`;
+- `src/services/learning-profile-projection-service.js`;
 - `GET /api/v1/growth/card-generation/context` in
   `src/routes/growth-routes.js`;
 - `public/growth-card-generation-ui.js`;
+- `public/growth-homeai-legacy.css`;
 - `public/growth-api-client.js`;
 - Owner `生成` tab integration in `public/growth-legacy-ui.js`;
 - Owner management entry and generation event handling in `public/app.js`.
@@ -431,10 +472,11 @@ Add focused tests before broad regression runs:
 
 | Boundary | Harness |
 | --- | --- |
-| Context service | returns Fanfan sample, readiness, recipe, graph suggestion, bounded history summary |
+| Context service | returns Fanfan sample, readiness, recipe, graph suggestion, bounded history summary, selected learner profile projection |
+| Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context and POST generate with workspace query/header handling |
-| UI render | Owner sees `生成`; learner does not |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning profile/trajectory projection |
 | UI target state | Fanfan enabled, disabled targets do not generate |
 | UI readiness | generate button disabled until readiness passes |
 | UI submit | calls Growth endpoint, not Gateway directly |
@@ -449,6 +491,7 @@ Recommended command group after implementation:
 
 ```bash
 node --test tests/learning-card-generation-context-service.test.js \
+  tests/learning-profile-projection-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-frontend-adapter.test.js
 npm run check

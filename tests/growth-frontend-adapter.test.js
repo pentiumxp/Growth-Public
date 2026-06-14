@@ -291,6 +291,31 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       difficultyBand: "foundation",
       evidenceRequirements: ["short_answer"]
     },
+    learningProfile: {
+      ok: true,
+      summary: {
+        masteryStateCount: 2,
+        weaknessCount: 1,
+        strengthCount: 1,
+        recentExperienceSignalCount: 1,
+        recentTrajectoryCount: 1
+      },
+      weaknesses: [{
+        nodeId: "kg_english_evidence_answering",
+        status: "developing",
+        score: 64,
+        summary: "Needs exact text evidence."
+      }],
+      recentTrajectory: [{
+        taskCardId: "ltask_1",
+        strategy: "stabilize",
+        performanceSummary: "Score 64; evidence was vague."
+      }],
+      nextCardStrategy: {
+        strategy: "stabilize",
+        reason: "Use one more short evidence-answering card."
+      }
+    },
     completionPolicy: { mode: "daily_score_once" },
     historySummary: { learnerSummary: { recentCardCount: 6, completedRecentCardCount: 4, evaluationCount: 4, reflectionCount: 1 } }
   };
@@ -306,8 +331,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-manager/);
   assert.match(html, /日常英语卡/);
   assert.match(html, /data-card-generation-submit/);
+  assert.match(html, /data-card-generation-profile/);
+  assert.match(html, /学习画像/);
+  assert.match(html, /Needs exact text evidence/);
+  assert.match(html, /Use one more short evidence-answering card/);
   assert.match(html, /weixin_stephen · 稍后开放/);
   assert.match(html, /daily_score_once/);
+  assert.match(html, /mastery_trajectory_projection/);
 
   const payload = windowRef.HermesGrowthCardGenerationUi.createDailyEnglishGeneratePayload({
     context,

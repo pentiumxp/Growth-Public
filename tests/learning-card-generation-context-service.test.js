@@ -109,6 +109,110 @@ test("card generation context keeps non-Fanfan targets disabled in V1", () => {
   assert.equal(result.readiness.ready, false);
 });
 
+test("card generation context exposes bounded learning profile projection for selected target", () => {
+  const { service } = (() => {
+    const service = createLearningCardGenerationContextService({
+      gatewayConfigured: () => true,
+      graphRepository: {
+        readback() {
+          return {
+            ok: true,
+            import_id: "kg_import_fanfan",
+            version: "2026-05-27-v1",
+            import_counts: { nodes: 294, edges: 329 },
+            warnings: []
+          };
+        },
+        suggestNodes() {
+          return [{
+            nodeId: "kg_english_evidence_answering",
+            domain: "english",
+            subject: "english",
+            title: "Use exact text evidence",
+            stage: "foundation",
+            evidenceRequired: ["short_answer"]
+          }];
+        }
+      },
+      historySummaryRepository: {
+        summaryForAuthoringPlan() {
+          return {
+            ok: true,
+            learnerSummary: { recentCardCount: 3, evaluationCount: 2 },
+            masterySummary: { masteryStates: [] },
+            recentExperienceSignals: [],
+            recentTrajectory: []
+          };
+        }
+      },
+      profileProjectionService: {
+        profileContext(input) {
+          assert.equal(input.workspaceId, "weixin_stephen");
+          assert.equal(input.learnerId, "weixin_stephen");
+          assert.deepEqual(input.targetNodeIds, ["kg_english_evidence_answering"]);
+          return {
+            ok: true,
+            targetNodeIds: ["kg_english_evidence_answering"],
+            summary: {
+              masteryStateCount: 1,
+              weaknessCount: 1,
+              strengthCount: 0,
+              recentExperienceSignalCount: 1,
+              recentTrajectoryCount: 1,
+              lastTrajectoryAt: "2026-06-14T08:00:00.000Z"
+            },
+            masteryStates: [{
+              nodeId: "kg_english_evidence_answering",
+              status: "developing",
+              score: 64,
+              summary: "Needs exact text evidence."
+            }],
+            strengths: [],
+            weaknesses: [{
+              nodeId: "kg_english_evidence_answering",
+              status: "developing",
+              score: 64,
+              summary: "Needs exact text evidence."
+            }],
+            recentExperienceSignals: [{
+              targetNodeId: "kg_english_evidence_answering",
+              signalType: "not_learned",
+              summary: "Needs another focused card."
+            }],
+            recentTrajectory: [{
+              taskCardId: "ltask_1",
+              strategy: "stabilize",
+              performanceSummary: "Score 64; evidence was vague."
+            }],
+            nextCardStrategy: {
+              ok: true,
+              strategy: "stabilize",
+              targetNodeIds: ["kg_english_evidence_answering"],
+              cardRole: "practice",
+              difficultyBand: "foundation",
+              reason: "Use one more short evidence-answering card."
+            }
+          };
+        }
+      }
+    });
+    return { service };
+  })();
+
+  const result = service.context({
+    workspaceId: "weixin_stephen",
+    learnerId: "weixin_stephen",
+    displayName: "凡凡"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.learningProfile.ok, true);
+  assert.equal(result.learningProfile.summary.weaknessCount, 1);
+  assert.equal(result.learningProfile.weaknesses[0].summary, "Needs exact text evidence.");
+  assert.equal(result.nextCardStrategy.strategy, "stabilize");
+  assert.equal(result.suggestedPlan.strategy, "stabilize");
+});
+
 test("card generation context reports not ready when graph or history stores are unavailable", () => {
   const service = createLearningCardGenerationContextService({
     gatewayConfigured: () => true,

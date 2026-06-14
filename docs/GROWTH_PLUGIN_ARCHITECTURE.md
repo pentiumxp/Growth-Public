@@ -43,6 +43,7 @@ Growth should stay a service-first embedded plugin:
 | Mastery profile service | `src/services/learning-mastery-profile-service.js` | Summary-only evaluation-to-profile updater. It derives bounded evidence, updates `learning_growth_mastery_states`, records safe experience signals, and rejects raw learner/private content in durable profile rows. |
 | Card trajectory service | `src/services/learning-card-trajectory-service.js` | Idempotent trajectory writer for evaluated cards. It records strategy, graph targets, strengths, remaining weaknesses, mastery changes, and next recommendation in `learning_growth_card_trajectories`. |
 | Next-card strategy service | `src/services/learning-next-card-strategy-service.js` | Deterministic strategy selector over mastery summary, experience signals, and trajectory. It chooses repair/stabilize/transfer/stretch/integrate/review before card generation. |
+| Learning profile projection service | `src/services/learning-profile-projection-service.js` | Owner/UI-safe read projection over mastery states, recent experience signals, recent card trajectory, and next-card strategy. It returns summary-only profile context for generation views without raw answers, transcripts, prompts, or source refs. |
 | Card authoring SQLite publisher | `src/stores/growth-learning-sqlite/card-authoring-publisher.js` | Transactional publisher for validated authoring drafts. It creates missing FK parent rows in `learning_programs` and `learning_plan_drafts`, upserts `learning_task_cards`, writes `learning_card_graph_bindings`, and rolls back on partial failure. |
 | Historical authoring summary | `src/stores/growth-learning-sqlite/history-summary.js` | Summary-only historical context reader for generated cards. It exposes card/evaluation/mastery/experience aggregates without raw learner submissions or transcripts. |
 | Knowledge Graph import | `src/services/learning-graph-import-service.js`, `src/stores/growth-learning-sqlite/graph-schema.js`, `src/stores/growth-learning-sqlite/graph-repository.js`, `scripts/import-learning-graph-pack.js` | Source-pack parser and native SQLite graph importer for recovered Growth Knowledge Graph seeds. Dry-run is the default; write mode is explicit and imports bounded graph metadata only. |
@@ -156,10 +157,20 @@ The first core-module split is behavior-preserving:
   `skillResults` graph bindings, and privacy and bounded-content scans.
   Invalid JSON, empty output, missing fields, privacy-risk fields, timeout, or
   repair pass failure must not write a partial `learning_evaluations` row.
+- Owner profile/trajectory projection is Growth-owned. The Owner card
+  generation view reads the selected learner's `learningProfile` from
+  `learning-profile-projection-service` through
+  `learning-card-generation-context-service`. This projection includes bounded
+  mastery states, strengths, weaknesses, recent experience signals, recent
+  trajectories, and the next-card strategy reason. It is read-only and must use
+  the selected target workspace, not the Owner workspace, when Owner is viewing
+  another learner. It must not expose raw answers, transcripts, prompts, answer
+  keys, raw model output, private file paths, or repository source refs.
 - Owner card generation management is exposed through the embedded plugin UI.
   The Owner `生成` tab reads
   `GET /api/v1/growth/card-generation/context`, keeps learner targets separate
-  from the Owner actor, and posts generation requests to
+  from the Owner actor, renders the selected learner's profile/trajectory
+  projection, and posts generation requests to
   `POST /api/v1/growth/cards/generate`. The frontend never calls Gateway or
   model vendors directly. Through the Home AI same-origin plugin proxy, write
   requests receive the server-side `.hermes-growth/access-key.txt` bearer after
@@ -229,7 +240,7 @@ be feature-driven:
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
 | Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
-| Growth AI card loop profile, trajectory, strategy, and Gateway evaluation | `node --test tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js` |
+| Growth AI card loop profile, trajectory, strategy, projection, and Gateway evaluation | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js` |
 | Embedded frontend adapters, card generation UI, and learner card interaction UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |

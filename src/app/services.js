@@ -14,6 +14,7 @@ const { createLearningCardTrajectoryService } = require("../services/learning-ca
 const { createLearningGraphPlanService } = require("../services/learning-graph-plan-service");
 const { createLearningMasteryProfileService } = require("../services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../services/learning-next-card-strategy-service");
+const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
 const { createGrowthEventOutboxStore } = require("../stores/growth-event-outbox-store");
 const { createGrowthLearningSqliteStore } = require("../stores/growth-learning-sqlite-store");
@@ -67,6 +68,10 @@ function createServices(config) {
   const learningCardTrajectoryService = createLearningCardTrajectoryService({
     repository: growthLearningStore.masteryProfileRepository
   });
+  const learningProfileProjectionService = createLearningProfileProjectionService({
+    repository: growthLearningStore.masteryProfileRepository,
+    nextCardStrategyService: learningNextCardStrategyService
+  });
   const learningCardGenerationService = createLearningCardGenerationService({
     graphPlanService: learningGraphPlanService,
     graphRepository: growthLearningStore.learningGraphRepository,
@@ -77,6 +82,7 @@ function createServices(config) {
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    profileProjectionService: learningProfileProjectionService,
     nextCardStrategyService: learningNextCardStrategyService,
     gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint)
   });
@@ -106,6 +112,7 @@ function createServices(config) {
     learningGraphPlanService,
     learningMasteryProfileService,
     learningNextCardStrategyService,
+    learningProfileProjectionService,
     pluginService: createHermesPluginService({ config, workspaceStore })
   };
 }

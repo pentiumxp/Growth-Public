@@ -63,6 +63,22 @@ test("Growth SQLite store facade stays a composition boundary", () => {
   assert.match(store, /createRewardRepository/);
 });
 
+test("Growth learning profile projection stays service-owned", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningProfileProjectionService/);
+  assert.match(services, /learningProfileProjectionService/);
+  assert.match(services, /profileProjectionService: learningProfileProjectionService/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.doesNotMatch(routes, /projectForNextCard/);
+  assert.doesNotMatch(routes, /learning_growth_mastery_states/);
+
+  const ui = read(path.join("public", "growth-card-generation-ui.js"));
+  assert.match(ui, /data-card-generation-profile/);
+  assert.doesNotMatch(ui, /rawAnswer/);
+  assert.doesNotMatch(ui, /sourceRef/);
+});
+
 test("Growth frontend app remains boot wiring over adapter modules", () => {
   const app = read(path.join("public", "app.js"));
   assert.match(app, /HermesGrowthAppearance/);
