@@ -31,7 +31,13 @@
       generatedResult: null,
       error: "",
       progressStep: "",
-      progressMessage: ""
+      progressMessage: "",
+      stageAssessment: {
+        status: "idle",
+        eligibility: null,
+        result: null,
+        error: ""
+      }
     },
   };
   const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
@@ -466,6 +472,37 @@
         });
       });
     });
+    root.querySelectorAll("[data-stage-assessment-check]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        checkStageAssessmentEligibility().catch((error) => {
+          pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-stage-assessment-activate]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        activateStageAssessmentFromUi().catch((error) => {
+          clearCardGenerationProgressTimers();
+          pageState.cardGeneration.status = "failed";
+          pageState.cardGeneration.error = error.message || String(error);
+          pageState.cardGeneration.progressStep = "failed";
+          pageState.cardGeneration.progressMessage = "阶段测评生成失败。";
+          pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
   }
 
   async function loadViewTargets() {
@@ -511,6 +548,44 @@
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
     pageState.cardGeneration.progressMessage = "";
+    pageState.cardGeneration.stageAssessment = {
+      status: "idle",
+      eligibility: null,
+      result: null,
+      error: ""
+    };
+    renderShell();
+  }
+
+  function createStageAssessmentPayload(activationSource = "owner_manual") {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createStageAssessmentPayload !== "function") {
+      throw new Error("stage_assessment_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createStageAssessmentPayload({ context, workspaceId: targetWorkspaceId, activationSource }),
+      targetWorkspaceId
+    };
+  }
+
+  async function checkStageAssessmentEligibility() {
+    const { payload, targetWorkspaceId } = createStageAssessmentPayload("system");
+    pageState.cardGeneration.stageAssessment = {
+      status: "checking",
+      eligibility: pageState.cardGeneration.stageAssessment?.eligibility || null,
+      result: pageState.cardGeneration.stageAssessment?.result || null,
+      error: ""
+    };
+    renderShell();
+    const result = await api.evaluateGrowthStageAssessment(payload, targetWorkspaceId);
+    pageState.cardGeneration.stageAssessment = {
+      status: result.activationState || result.cycle?.status || (result.eligible ? "eligible" : "dormant"),
+      eligibility: result,
+      result: pageState.cardGeneration.stageAssessment?.result || null,
+      error: ""
+    };
     renderShell();
   }
 
@@ -554,6 +629,54 @@
     }
   }
 
+  async function activateStageAssessmentFromUi() {
+    const { payload, targetWorkspaceId } = createStageAssessmentPayload("owner_manual");
+    pageState.cardGeneration.status = "generating";
+    pageState.cardGeneration.error = "";
+    pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.progressStep = "prepare";
+    pageState.cardGeneration.progressMessage = "正在整理阶段测评覆盖点和学习画像。";
+    pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
+      status: "activating",
+      error: ""
+    });
+    renderShell();
+    scheduleCardGenerationProgress();
+    try {
+      const result = await api.activateGrowthStageAssessment(payload, targetWorkspaceId);
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "published";
+      pageState.cardGeneration.generatedResult = result.generation || result;
+      pageState.cardGeneration.error = "";
+      pageState.cardGeneration.progressStep = "done";
+      pageState.cardGeneration.progressMessage = "阶段测评已发布。";
+      pageState.cardGeneration.stageAssessment = {
+        status: result.activationState || result.cycle?.status || "active",
+        eligibility: pageState.cardGeneration.stageAssessment?.eligibility || null,
+        result,
+        error: ""
+      };
+      model.detailCache.clear();
+      try {
+        await loadCurrentWorkspace();
+      } catch (refreshError) {
+        pageState.cardGeneration.error = `阶段测评已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
+      }
+      renderShell();
+    } catch (error) {
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "failed";
+      pageState.cardGeneration.error = error.message || String(error);
+      pageState.cardGeneration.progressStep = "failed";
+      pageState.cardGeneration.progressMessage = "阶段测评生成失败。";
+      pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
+        status: "failed",
+        error: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
   async function switchWorkspace(nextWorkspaceId) {
     clearCardGenerationProgressTimers();
     cardInteractionController.clearAllRecordings();
@@ -574,7 +697,13 @@
       generatedResult: null,
       error: "",
       progressStep: "",
-      progressMessage: ""
+      progressMessage: "",
+      stageAssessment: {
+        status: "idle",
+        eligibility: null,
+        result: null,
+        error: ""
+      }
     };
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadCurrentWorkspace();

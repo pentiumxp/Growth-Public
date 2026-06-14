@@ -163,6 +163,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
   }, "weixin_fanfan");
   await client.submitGrowthCardReflection("ltask_daily_1", { text: "Next time I will add evidence." }, "weixin_fanfan");
   await client.submitGrowthExperienceSignal("ltask_daily_1", { signalType: "too_hard", targetNodeIds: ["kg_main_idea"] }, "weixin_fanfan");
+  await client.evaluateGrowthStageAssessment({ target_node_id: "kg_main_idea", assessment_coverage_node_ids: ["kg_main_idea"] }, "weixin_fanfan");
+  await client.activateGrowthStageAssessment({ target_node_id: "kg_main_idea", assessment_coverage_node_ids: ["kg_main_idea"], activation_source: "owner_manual" }, "weixin_fanfan");
   await client.processGrowthEvaluations("weixin_fanfan", 3);
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
@@ -186,8 +188,21 @@ test("Growth API client exposes card generation context and write helpers", asyn
     signalType: "too_hard",
     targetNodeIds: ["kg_main_idea"]
   });
-  assert.equal(calls[6].path, "/api/v1/growth/evaluations/process");
-  assert.deepEqual(JSON.parse(calls[6].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
+  assert.equal(calls[6].path, "/api/v1/growth/stage-assessments/eligibility");
+  assert.deepEqual(JSON.parse(calls[6].options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_id: "kg_main_idea",
+    assessment_coverage_node_ids: ["kg_main_idea"]
+  });
+  assert.equal(calls[7].path, "/api/v1/growth/stage-assessments/activate");
+  assert.deepEqual(JSON.parse(calls[7].options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_id: "kg_main_idea",
+    assessment_coverage_node_ids: ["kg_main_idea"],
+    activation_source: "owner_manual"
+  });
+  assert.equal(calls[8].path, "/api/v1/growth/evaluations/process");
+  assert.deepEqual(JSON.parse(calls[8].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -391,6 +406,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-submit/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /学习画像/);
+  assert.match(html, /data-stage-assessment-panel/);
+  assert.match(html, /阶段测评/);
+  assert.match(html, /data-stage-assessment-check/);
+  assert.match(html, /data-stage-assessment-activate/);
   assert.match(html, /Needs exact text evidence/);
   assert.match(html, /Use one more short evidence-answering card/);
   assert.match(html, /weixin_stephen · 稍后开放/);
@@ -405,6 +424,69 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(payload.target_node_id, "kg_english_main_idea");
   assert.equal(payload.card_role, "practice");
   assert.equal(payload.completion_policy.mode, "daily_score_once");
+
+  const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    activationSource: "owner_manual"
+  });
+  assert.equal(stagePayload.workspace_id, "weixin_fanfan");
+  assert.equal(stagePayload.target_node_id, "kg_english_main_idea");
+  assert.deepEqual(stagePayload.assessment_coverage_node_ids, ["kg_english_main_idea"]);
+  assert.equal(stagePayload.activation_source, "owner_manual");
+  assert.equal(stagePayload.activation_reason, "owner_manual");
+  assert.equal(stagePayload.difficulty_band, "assessment");
+});
+
+test("Growth card generation UI renders stage assessment eligibility and activation result", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_fanfan", learnerId: "weixin_fanfan", displayName: "凡凡", enabled: true },
+    selectedRecipeId: "daily_english_v1",
+    recipes: [{ id: "daily_english_v1", label: "日常英语卡" }],
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true,
+      blockingOpenGeneration: false
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_english_main_idea",
+      targetNodeIds: ["kg_english_main_idea", "kg_english_inference"],
+      title: "Reading checkpoint",
+      domain: "english",
+      evidenceRequirements: ["short_answer"]
+    },
+    learningProfile: { ok: true, summary: { recentTrajectoryCount: 4 } },
+    historySummary: { learnerSummary: { recentCardCount: 6, completedRecentCardCount: 4 } }
+  };
+
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context,
+        stageAssessment: {
+          status: "active",
+          eligibility: { ok: true, eligible: true, reason: "enough_recent_practice", cycle: { status: "eligible" } },
+          result: { ok: true, activationState: "active", published: { taskCardId: "stage_card_1" } },
+          error: ""
+        }
+      }
+    },
+    viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
+    workspaceId: "weixin_fanfan"
+  });
+
+  assert.match(html, /data-stage-assessment-status="active"/);
+  assert.match(html, /近期练习证据足够/);
+  assert.match(html, /<strong>2<\/strong>/);
+  assert.match(html, /打开阶段测评/);
+  assert.match(html, /data-learning-open-growth-task="stage_card_1"/);
 });
 
 test("Growth teaching card UI renders submit and recording controls for a generated daily card", () => {
@@ -927,6 +1009,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+  const staticVersion = "20260614-stage-assessment-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -939,4 +1022,6 @@ test("Growth index loads frontend adapters before app boot", () => {
   ].map((asset) => html.indexOf(asset));
   assert.ok(order.every((index) => index >= 0));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.equal((html.match(new RegExp(staticVersion, "g")) || []).length, 13);
+  assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
 });

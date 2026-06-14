@@ -114,8 +114,24 @@ Those routes delegate to `learning-stage-assessment-service`. The generated
 formal card still uses the same authoring/publisher pipeline, but the service
 adds `stageAssessmentCycleId`, activation metadata, assessment coverage, and
 `cardRole=stage_assessment`. The Owner UI can surface these controls in a
-later tab section without reimplementing eligibility or generation policy in
-the frontend.
+tab section without reimplementing eligibility or generation policy in the
+frontend.
+
+Implemented V1 Owner stage-assessment controls:
+
+- the `生成` tab renders a compact `阶段测评` section under the learning profile
+  panel;
+- `检查条件` calls
+  `POST /api/v1/growth/stage-assessments/eligibility` and shows the returned
+  eligible/dormant/cooldown/active state;
+- `生成阶段测评` calls
+  `POST /api/v1/growth/stage-assessments/activate` with
+  `activation_source=owner_manual`;
+- the section shows coverage-node count, formal completion marker, default
+  `300` coin reward metadata, cooldown date when present, and the published
+  card open action;
+- frontend state is only progress/error/result state. Eligibility, cooldown,
+  Owner override, and generation policy remain backend-owned.
 
 ## UI Placement
 
@@ -261,7 +277,9 @@ static plugin assets and appends the actor `workspaceId`; hard-coded API
 literals inside JavaScript can therefore be rewritten into the wrong query
 shape. Growth JS and CSS URLs in `public/index.html` should carry a version
 query for card-generation releases so mobile WebViews fetch the current API
-client and UI state code.
+client and UI state code. The V1 stage-assessment Owner UI release uses
+`20260614-stage-assessment-ui-v1`; the frontend adapter harness asserts that
+the old `20260614-growth-navigation-v1` cache key is no longer present.
 
 Recommended context response:
 

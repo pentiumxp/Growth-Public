@@ -9,10 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Stage Assessment Owner UI Slice
+
+- Current workspace state: implemented, locally validated, committed and
+  pushed as part of the current rollout; not deployed.
+- Scope:
+  - added Owner `阶段测评` controls to the Growth `生成` tab, rendered below
+    the bounded `学习画像` panel;
+  - added frontend API helpers for
+    `POST /api/v1/growth/stage-assessments/eligibility` and
+    `POST /api/v1/growth/stage-assessments/activate`;
+  - wired `public/app.js` so Owner can check eligibility, activate a formal
+    stage-assessment card, see progress/error/result state, refresh the board,
+    and open the published formal card from the generation surface;
+  - kept the UI policy-thin: readiness, cooldown, manual activation, and
+    generation state remain owned by `learning-stage-assessment-service`;
+  - added dark-mode/mobile CSS for the stage-assessment panel and action row;
+  - bumped static Growth asset URLs in `public/index.html` to
+    `20260614-stage-assessment-ui-v1` so mobile WebViews do not reuse the old
+    card-generation UI bundle.
+- Documentation updated:
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-frontend-adapter.test.js` covers stage-assessment API helper
+    routes, Owner panel rendering, activation result rendering, and the static
+    asset-version guard;
+  - `tests/growth-embedded-layout.test.js` covers mobile and dark-mode layout
+    selectors for the stage-assessment panel.
+- Validation passed:
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`
+    with 31 passing tests;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check`;
+  - `npm test` with 192 passing tests;
+  - `git diff --check`;
+  - dev-port Chrome smoke against `http://127.0.0.1:4891/` using the current
+    workspace server and system Chrome: stage-assessment renderer exported,
+    13 static assets used `20260614-stage-assessment-ui-v1`, root scroller was
+    scrollable (`844` client height, `2513` scroll height), the activation
+    button scrolled into view and remained enabled, and dark panel colors were
+    applied;
+  - app AI Ops H3 required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js` and
+    `git diff --check`;
+  - CodeGraph status after edits: 115 files, 1207 nodes, 4221 edges.
+- AI Ops:
+  - correct UI-only intake classified this slice as H3 Architecture
+    Documentation And Harness Map, with no deployment or visual lane required;
+  - evidence id: `evidence-279e2ce0-86d4-4a53-90bd-557048ed7d18`;
+  - a separate trial intake containing the word `closure` classified as Mac
+    production deployment H1; that was not used because this rollout is
+    commit/push only, not deployment.
+- Remaining architecture work:
+  - add workflow recovery harnesses for listener restart/stale evaluation
+    leases before scaling generated cards;
+  - add learner-visible challenge/assessment-entry UI if learner-initiated
+    stage challenge is needed;
+  - run the central Home AI embedded iOS visual harness and production smoke
+    before any production deployment or publish.
+
 ## 2026-06-14 Growth Stage Assessment Activation Slice
 
-- Current workspace state: implemented, locally validated, ready to commit and
-  push; not deployed.
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public` in `01b6a18`
+  (`Add Growth stage assessment activation service`); not deployed.
 - Scope:
   - added `stage-assessment-cycles` as the SQLite repository for
     `learning_growth_stage_assessment_cycles`, including imported-schema

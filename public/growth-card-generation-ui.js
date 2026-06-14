@@ -168,6 +168,73 @@
     </section>`;
   }
 
+  function stageAssessmentStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "checking") return "检查中";
+    if (value === "activating") return "生成中";
+    if (value === "eligible") return "可激活";
+    if (value === "active") return "已激活";
+    if (value === "cooldown") return "冷却中";
+    if (value === "dormant") return "暂不建议";
+    if (value === "failed") return "失败";
+    return "未检查";
+  }
+
+  function stageAssessmentReasonText(result = {}) {
+    const reason = clean(result.reason || result.activationReason || result.cycle?.activationReason || result.error);
+    const map = {
+      enough_recent_practice: "近期练习证据足够，可以生成一次阶段测评。",
+      challenge_ready: "学习者信号显示可以尝试挑战。",
+      recent_high_pressure_signal: "近期有压力信号，先降低难度或修补前置点。",
+      insufficient_recent_practice: "近期普通卡证据不足，建议先继续日常练习。",
+      stage_assessment_cooldown_active: "同一能力簇仍在冷却期。",
+      stage_assessment_recently_completed: "近期已完成正式测评，暂不需要重复。"
+    };
+    return map[reason] || reason || "先检查近期轨迹和掌握度摘要。";
+  }
+
+  function stageAssessmentPanel({ context = {}, state = {}, readiness = {}, plan = {}, escapeHtml = defaultEscapeHtml } = {}) {
+    const stage = state.stageAssessment || {};
+    const result = stage.result || stage.eligibility || {};
+    const reasonResult = (result.reason || result.activationReason || result.cycle?.activationReason || result.error)
+      ? result
+      : stage.eligibility || result;
+    const busy = stage.status === "checking" || stage.status === "activating";
+    const status = clean(result.activationState || result.cycle?.status || stage.status);
+    const readyForRequest = Boolean(
+      readiness.targetEnabled
+      && readiness.workspaceProvisioned
+      && readiness.learningGraphReady
+      && readiness.historySummaryReady
+      && readiness.gatewayConfigured
+      && clean(plan.targetNodeId)
+    );
+    const coverage = asArray(plan.targetNodeIds).length ? asArray(plan.targetNodeIds) : [plan.targetNodeId].filter(Boolean);
+    const cooldownUntil = clean(result.cooldownUntil || result.cycle?.cooldownUntil);
+    const publishedTaskCardId = clean(stage.result?.published?.taskCardId);
+    return `<section class="learning-card-generation-stage-assessment" data-stage-assessment-panel data-stage-assessment-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-stage-head">
+        <span>
+          <strong>阶段测评</strong>
+          <small>${escapeHtml(stageAssessmentReasonText(reasonResult))}</small>
+        </span>
+        <em>${escapeHtml(stageAssessmentStatusText(status || stage.status))}</em>
+      </div>
+      <div class="learning-card-generation-stage-grid">
+        <span><small>覆盖节点</small><strong>${escapeHtml(String(coverage.length || 0))}</strong></span>
+        <span><small>奖励上限</small><strong>300</strong></span>
+        <span><small>完成规则</small><strong>formal</strong></span>
+      </div>
+      ${cooldownUntil ? `<div class="learning-card-generation-stage-note">冷却至 ${escapeHtml(cooldownUntil.slice(0, 10))}</div>` : ""}
+      ${stage.error ? `<div class="learning-error" data-stage-assessment-error>${escapeHtml(stage.error)}</div>` : ""}
+      <div class="learning-card-generation-stage-actions">
+        <button type="button" data-stage-assessment-check ${busy || !readyForRequest ? "disabled" : ""}>检查条件</button>
+        <button type="button" class="primary" data-stage-assessment-activate ${busy || !readyForRequest ? "disabled" : ""}>生成阶段测评</button>
+      </div>
+      ${publishedTaskCardId ? `<button type="button" class="learning-card-generation-open-card" data-learning-open-growth-task="${escapeHtml(publishedTaskCardId)}">打开阶段测评</button>` : ""}
+    </section>`;
+  }
+
   function structuredPreview(context = {}, escapeHtml = defaultEscapeHtml) {
     const plan = context.suggestedPlan || {};
     const policy = context.completionPolicy || {};
@@ -294,6 +361,28 @@
     };
   }
 
+  function createStageAssessmentPayload({ context = {}, workspaceId = "", activationSource = "owner_manual" } = {}) {
+    const plan = context.suggestedPlan || {};
+    const coverage = asArray(plan.targetNodeIds).length ? asArray(plan.targetNodeIds) : [plan.targetNodeId].filter(Boolean);
+    return {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      subject_id: clean(plan.subject || plan.domain || "english"),
+      capability_cluster_id: clean(plan.capabilityClusterId || plan.targetNodeId),
+      target_node_id: clean(plan.targetNodeId || coverage[0]),
+      assessment_coverage_node_ids: coverage,
+      difficulty_band: "assessment",
+      evidence_requirements: asArray(plan.evidenceRequirements),
+      activation_source: clean(activationSource || "owner_manual"),
+      activation_reason: clean(activationSource) === "owner_manual" ? "owner_manual" : "",
+      generation_key: [
+        "stage_assessment",
+        clean(workspaceId || context.target?.workspaceId),
+        coverage.join(",")
+      ].filter(Boolean).join(":")
+    };
+  }
+
   function renderOwnerCardGenerationPanel(options = {}) {
     const escapeHtml = options.escapeHtml || defaultEscapeHtml;
     const state = options.state?.cardGeneration || {};
@@ -347,6 +436,7 @@
             ${readinessRows(context, escapeHtml)}
           </div>
           ${learningProfilePanel(context, escapeHtml)}
+          ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
           <div class="learning-card-generation-field-list">
             <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
             <div><span><strong>完成规则</strong><small>提交一次，批改一次，反思最多一次，不设通过线</small></span><em>daily</em></div>
@@ -378,6 +468,7 @@
 
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
+    createStageAssessmentPayload,
     isFanfanSampleTarget,
     renderOwnerCardGenerationPanel
   };
