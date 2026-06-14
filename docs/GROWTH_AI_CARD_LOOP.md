@@ -30,10 +30,11 @@ The loop is:
     same pending recommendation.
 
 The Owner generation surface must make the loop observable. It should show the
-selected learner's bounded profile/trajectory projection and explicit
-`nextCardRecommendation` before generation so the Owner can see whether the
-next card comes from a persisted trajectory recommendation, recomputed profile
-strategy, or graph suggestion.
+selected learner's bounded profile/trajectory projection, explicit
+`nextCardRecommendation`, and bounded `recommendationLifecycle` before
+generation so the Owner can see whether the next card comes from a persisted
+trajectory recommendation, recomputed profile strategy, or graph suggestion,
+and whether recent recommendations are pending, accepted, or superseded.
 
 ## Ownership
 
@@ -172,7 +173,10 @@ The projection returns:
 - recent card trajectory rows;
 - the next-card strategy and reason;
 - `nextCardRecommendation`, including selection mode, recommendation mode,
-  graph target, role, difficulty, and bounded reason.
+  graph target, role, difficulty, and bounded reason;
+- root-level `recommendationLifecycle`, derived from recent trajectory rows
+  and limited to bounded ids, status, strategy, target node ids, short reason,
+  generated card/plan ids, supersede id, and timestamps.
 
 The projection is target-workspace scoped. When Owner is viewing another
 learner, Growth must use the selected learner workspace from
@@ -213,6 +217,12 @@ Lifecycle rules:
 The lifecycle payload must remain summary-only. It must not contain raw
 answers, transcripts, prompts, answer keys, raw Gateway output, private paths,
 or provider configuration.
+
+`learning-card-generation-context-service` projects the same lifecycle into
+the Owner context as `recommendationLifecycle`. The embedded Owner generation
+UI renders it as a read-only "推荐闭环" panel. The UI must not infer lifecycle
+state from raw trajectory JSON or mutate lifecycle status; accepted and
+superseded writes remain service-owned.
 
 ## Strategy Rules
 

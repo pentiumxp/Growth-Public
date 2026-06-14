@@ -164,7 +164,7 @@ test("card generation context exposes bounded learning profile projection for se
               weaknessCount: 1,
               strengthCount: 0,
               recentExperienceSignalCount: 1,
-              recentTrajectoryCount: 1,
+              recentTrajectoryCount: 3,
               lastTrajectoryAt: "2026-06-14T08:00:00.000Z"
             },
             masteryStates: [{
@@ -186,9 +186,50 @@ test("card generation context exposes bounded learning profile projection for se
               summary: "Needs another focused card."
             }],
             recentTrajectory: [{
+              id: "traj_pending",
               taskCardId: "ltask_1",
+              sourceEvaluationId: "eval_1",
               strategy: "stabilize",
-              performanceSummary: "Score 64; evidence was vague."
+              targetNodeIds: ["kg_english_evidence_answering"],
+              performanceSummary: "Score 64; evidence was vague.",
+              nextRecommendation: {
+                status: "pending",
+                strategy: "stabilize",
+                targetNodeIds: ["kg_english_evidence_answering"],
+                reason: "Use one more short evidence-answering card.",
+                sourceTaskCardId: "ltask_1",
+                sourceEvaluationId: "eval_1",
+                rawPrompt: "RAW PROMPT MUST NOT PROJECT"
+              }
+            }, {
+              id: "traj_accepted",
+              taskCardId: "ltask_2",
+              sourceEvaluationId: "eval_2",
+              strategy: "repair",
+              targetNodeIds: ["kg_english_evidence_answering"],
+              nextRecommendation: {
+                status: "accepted",
+                strategy: "repair",
+                targetNodeIds: ["kg_english_evidence_answering"],
+                reason: "Generated the repair card.",
+                generatedTaskCardId: "ltask_generated_2",
+                generatedLearningGraphPlanId: "lgp_generated_2",
+                acceptedAt: "2026-06-14T08:10:00.000Z"
+              }
+            }, {
+              id: "traj_superseded",
+              taskCardId: "ltask_3",
+              sourceEvaluationId: "eval_3",
+              strategy: "stretch",
+              targetNodeIds: ["kg_english_main_idea"],
+              nextRecommendation: {
+                status: "superseded",
+                strategy: "stretch",
+                targetNodeIds: ["kg_english_main_idea"],
+                reason: "Older stretch suggestion was replaced.",
+                supersededAt: "2026-06-14T08:12:00.000Z",
+                supersededByTrajectoryId: "traj_accepted"
+              }
             }],
             nextCardStrategy: {
               ok: true,
@@ -215,6 +256,17 @@ test("card generation context exposes bounded learning profile projection for se
   assert.equal(result.learningProfile.ok, true);
   assert.equal(result.learningProfile.summary.weaknessCount, 1);
   assert.equal(result.learningProfile.weaknesses[0].summary, "Needs exact text evidence.");
+  assert.equal(result.recommendationLifecycle.length, 3);
+  assert.equal(result.recommendationLifecycle[0].trajectoryId, "traj_pending");
+  assert.equal(result.recommendationLifecycle[0].status, "pending");
+  assert.equal(result.recommendationLifecycle[0].reason, "Use one more short evidence-answering card.");
+  assert.equal(result.recommendationLifecycle[1].status, "accepted");
+  assert.equal(result.recommendationLifecycle[1].generatedTaskCardId, "ltask_generated_2");
+  assert.equal(result.recommendationLifecycle[1].generatedLearningGraphPlanId, "lgp_generated_2");
+  assert.equal(result.recommendationLifecycle[1].acceptedAt, "2026-06-14T08:10:00.000Z");
+  assert.equal(result.recommendationLifecycle[2].status, "superseded");
+  assert.equal(result.recommendationLifecycle[2].supersededByTrajectoryId, "traj_accepted");
+  assert.equal(JSON.stringify(result.recommendationLifecycle).includes("RAW PROMPT"), false);
   assert.equal(result.nextCardStrategy.strategy, "stabilize");
   assert.equal(result.suggestedPlan.strategy, "stabilize");
 });

@@ -110,6 +110,46 @@ function publicNextCardRecommendation(selection = {}, strategy = {}) {
   };
 }
 
+function publicRecommendationLifecycleItem(trajectory = {}) {
+  const recommendation = trajectory.nextRecommendation && typeof trajectory.nextRecommendation === "object"
+    ? trajectory.nextRecommendation
+    : {};
+  const recommendationHasPayload = Object.keys(recommendation).length > 0;
+  const targetNodeIds = asArray(recommendation.targetNodeIds).map(cleanString).filter(Boolean).length
+    ? asArray(recommendation.targetNodeIds).map(cleanString).filter(Boolean)
+    : asArray(trajectory.targetNodeIds).map(cleanString).filter(Boolean);
+  const status = cleanString(recommendation.status || trajectory.recommendationStatus || trajectory.status)
+    || (recommendationHasPayload ? "pending" : "");
+  const item = {
+    trajectoryId: cleanString(trajectory.id || recommendation.trajectoryId),
+    status,
+    strategy: cleanString(recommendation.strategy || trajectory.strategy),
+    cardRole: cleanString(recommendation.cardRole),
+    difficultyBand: cleanString(recommendation.difficultyBand || trajectory.difficultyBand),
+    supportLevel: cleanString(recommendation.supportLevel),
+    targetNodeIds: targetNodeIds.slice(0, 8),
+    reason: cleanString(recommendation.reason || trajectory.performanceSummary).slice(0, 240),
+    taskCardId: cleanString(trajectory.taskCardId || recommendation.sourceTaskCardId),
+    sourceEvaluationId: cleanString(trajectory.sourceEvaluationId || recommendation.sourceEvaluationId),
+    generatedTaskCardId: cleanString(recommendation.generatedTaskCardId),
+    generatedLearningGraphPlanId: cleanString(recommendation.generatedLearningGraphPlanId),
+    createdAt: cleanString(recommendation.createdAt || trajectory.createdAt),
+    statusUpdatedAt: cleanString(recommendation.statusUpdatedAt || trajectory.updatedAt),
+    acceptedAt: cleanString(recommendation.acceptedAt),
+    supersededAt: cleanString(recommendation.supersededAt),
+    supersededByTrajectoryId: cleanString(recommendation.supersededByTrajectoryId)
+  };
+  return item.trajectoryId || item.status || item.strategy || item.taskCardId ? item : null;
+}
+
+function publicRecommendationLifecycle(profile = {}) {
+  if (!profile || profile.ok === false || profile.available === false) return [];
+  return asArray(profile.recentTrajectory)
+    .map(publicRecommendationLifecycleItem)
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 function readinessReady(readiness = {}) {
   return bool(readiness.targetEnabled)
     && bool(readiness.workspaceProvisioned)
@@ -312,6 +352,7 @@ function createLearningCardGenerationContextService(options = {}) {
     const nextCardStrategy = selectedStrategy || computedStrategy;
     const suggestedPlan = planWithStrategy(baseSuggestedPlan, nextCardStrategy);
     const nextCardRecommendation = publicNextCardRecommendation(targetSelection, nextCardStrategy);
+    const recommendationLifecycle = publicRecommendationLifecycle(learningProfile);
     const learnerSummary = history?.learnerSummary || {};
     const readiness = {
       targetEnabled: target.enabled,
@@ -338,6 +379,7 @@ function createLearningCardGenerationContextService(options = {}) {
       },
       suggestedPlan,
       nextCardRecommendation,
+      recommendationLifecycle,
       nextCardStrategy,
       learningProfile,
       historySummary: {

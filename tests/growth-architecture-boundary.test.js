@@ -108,10 +108,13 @@ test("Growth learning profile projection stays service-owned", () => {
 
   const ui = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(ui, /data-card-generation-profile/);
+  assert.match(ui, /data-card-generation-lifecycle/);
+  assert.match(ui, /recommendationLifecycle/);
   assert.match(ui, /recipe_id/);
   assert.doesNotMatch(ui, /target_node_id: clean\(plan\.targetNodeId\)/);
   assert.doesNotMatch(ui, /completion_policy: \{/);
   assert.doesNotMatch(ui, /rawAnswer/);
+  assert.doesNotMatch(ui, /rawPrompt/);
   assert.doesNotMatch(ui, /sourceRef/);
 });
 

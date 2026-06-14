@@ -437,6 +437,27 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       targetNodeIds: ["kg_english_evidence_answering"],
       reason: "Latest trajectory asks for one evidence repair card."
     },
+    recommendationLifecycle: [{
+      trajectoryId: "traj_accepted",
+      status: "accepted",
+      strategy: "repair",
+      targetNodeIds: ["kg_english_evidence_answering"],
+      reason: "Generated an evidence repair card.",
+      generatedTaskCardId: "ltask_generated_1"
+    }, {
+      trajectoryId: "traj_superseded",
+      status: "superseded",
+      strategy: "stretch",
+      targetNodeIds: ["kg_english_main_idea"],
+      reason: "Older stretch suggestion was replaced.",
+      supersededByTrajectoryId: "traj_accepted"
+    }, {
+      trajectoryId: "traj_pending",
+      status: "pending",
+      strategy: "stabilize",
+      targetNodeIds: ["kg_english_vocab_context"],
+      reason: "Pending daily practice suggestion."
+    }],
     learningProfile: {
       ok: true,
       summary: {
@@ -479,6 +500,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-submit/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
+  assert.match(html, /data-card-generation-lifecycle/);
+  assert.match(html, /推荐闭环/);
+  assert.match(html, /已生成/);
+  assert.match(html, /已替换/);
+  assert.match(html, /待生成/);
+  assert.match(html, /ltask_generated_1/);
+  assert.match(html, /traj_accepted/);
   assert.match(html, /data-recommendation-mode="trajectory"/);
   assert.match(html, /学习画像/);
   assert.match(html, /评价轨迹/);
@@ -1184,7 +1212,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-recipe-policy-v1";
+  const staticVersion = "20260614-recommendation-lifecycle-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1205,4 +1233,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-ui-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-status-ui-v1/);
   assert.doesNotMatch(html, /20260614-recommendation-rationale-ui-v1/);
+  assert.doesNotMatch(html, /20260614-recipe-policy-v1/);
 });

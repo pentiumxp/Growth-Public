@@ -333,6 +333,30 @@ Recommended context response:
     "targetNodeId": "kg_english_evidence_answering",
     "reason": "Latest evaluation trajectory asks for one evidence repair card."
   },
+  "recommendationLifecycle": [
+    {
+      "trajectoryId": "traj_accepted_1",
+      "status": "accepted",
+      "strategy": "repair",
+      "targetNodeIds": ["kg_english_evidence_answering"],
+      "reason": "Generated an evidence repair card.",
+      "taskCardId": "ltask_1",
+      "sourceEvaluationId": "eval_1",
+      "generatedTaskCardId": "ltask_generated_1",
+      "generatedLearningGraphPlanId": "lgp_generated_1",
+      "acceptedAt": "2026-06-14T08:10:00.000Z",
+      "statusUpdatedAt": "2026-06-14T08:10:00.000Z"
+    },
+    {
+      "trajectoryId": "traj_superseded_1",
+      "status": "superseded",
+      "strategy": "stretch",
+      "targetNodeIds": ["kg_english_main_idea"],
+      "reason": "Older stretch suggestion was replaced.",
+      "supersededByTrajectoryId": "traj_accepted_1",
+      "supersededAt": "2026-06-14T08:12:00.000Z"
+    }
+  ],
   "historySummary": {
     "recentCards": 6,
     "recentEvaluations": 4,
@@ -378,9 +402,16 @@ Recommended context response:
 
 The context endpoint must be read-only and summary-only. It must not expose raw
 learner submissions, raw transcripts, raw prompts, hidden answer keys, or raw
-model output. `learningProfile` is target-workspace scoped; Owner viewing a
-learner must see that learner's profile projection, not the Owner workspace's
-profile rows.
+model output. `learningProfile`, `nextCardRecommendation`, and
+`recommendationLifecycle` are target-workspace scoped; Owner viewing a learner
+must see that learner's profile projection and recommendation lifecycle, not
+the Owner workspace's rows.
+
+The Owner UI renders `recommendationLifecycle` as the read-only "推荐闭环"
+panel. Rows may show lifecycle status, strategy, target node id, short reason,
+generated card/plan ids, superseded-by trajectory id, and bounded timestamps.
+The UI must not write lifecycle state, infer accepted/superseded from raw
+trajectory JSON, or display raw learner content.
 
 `learningProfile.recentExperienceSignals` can come from two Growth-owned
 sources: evaluation-derived mastery updates and learner-facing difficulty

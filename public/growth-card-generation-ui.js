@@ -145,6 +145,60 @@
     return "策略";
   }
 
+  function recommendationLifecycleStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "accepted") return "已生成";
+    if (value === "superseded") return "已替换";
+    if (value === "skipped") return "已跳过";
+    if (value === "expired") return "已过期";
+    if (value === "pending") return "待生成";
+    return value || "记录";
+  }
+
+  function recommendationLifecyclePanel(context = {}, escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(context.recommendationLifecycle).slice(0, 4);
+    if (!rows.length) {
+      return `<div class="learning-card-generation-lifecycle" data-card-generation-lifecycle>
+        <div class="learning-card-generation-lifecycle-head">
+          <span>
+            <strong>推荐闭环</strong>
+            <small>等待生成和评价后形成记录</small>
+          </span>
+          <em>暂无</em>
+        </div>
+      </div>`;
+    }
+    const renderedRows = rows.map((item) => {
+      const targets = asArray(item.targetNodeIds).map(clean).filter(Boolean);
+      const label = clean(targets[0] || item.strategy || item.trajectoryId || item.taskCardId || "推荐");
+      const status = clean(item.status);
+      const resultId = clean(item.generatedTaskCardId || item.supersededByTrajectoryId || item.sourceEvaluationId || item.taskCardId);
+      const detail = clean(item.reason) || resultId || "summary-only";
+      const meta = [
+        clean(item.strategy),
+        resultId
+      ].filter(Boolean).join(" · ");
+      return `<div class="learning-card-generation-lifecycle-row" data-recommendation-lifecycle-status="${escapeHtml(status)}">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(recommendationLifecycleStatusText(status))}</em>
+        ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+      </div>`;
+    }).join("");
+    return `<div class="learning-card-generation-lifecycle" data-card-generation-lifecycle>
+      <div class="learning-card-generation-lifecycle-head">
+        <span>
+          <strong>推荐闭环</strong>
+          <small>待生成 / 已生成 / 已替换 摘要</small>
+        </span>
+        <em>${escapeHtml(String(rows.length))}</em>
+      </div>
+      ${renderedRows}
+    </div>`;
+  }
+
   function nextCardRecommendationPanel(context = {}, fallbackStrategy = {}, escapeHtml = defaultEscapeHtml) {
     const recommendation = context.nextCardRecommendation || {};
     const strategy = recommendation.ok !== false && clean(recommendation.strategy)
@@ -204,6 +258,7 @@
           ${profileItemRows(profile.recentTrajectory, "暂无轨迹", escapeHtml)}
         </div>
       </div>
+      ${recommendationLifecyclePanel(context, escapeHtml)}
       ${nextCardRecommendationPanel(context, strategy, escapeHtml)}
     </section>`;
   }

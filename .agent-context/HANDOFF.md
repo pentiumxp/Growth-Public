@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Recommendation Lifecycle Visibility Slice
+
+- Current workspace state: implemented and locally validated; commit/push is
+  pending in this Codex turn.
+- Scope:
+  - `learning-profile-projection-service` preserves bounded generated
+    card/plan ids and accepted/superseded timestamps from trajectory
+    `nextRecommendation` metadata;
+  - `learning-card-generation-context-service` now exposes root-level
+    `recommendationLifecycle`, derived from selected learner trajectory
+    projection and limited to summary-only ids, status, strategy, target nodes,
+    short reason, generated ids, supersede id, and timestamps;
+  - `public/growth-card-generation-ui.js` renders a read-only "推荐闭环" panel
+    in the Owner generation page for pending, accepted, and superseded
+    recommendation rows;
+  - `public/index.html` static asset version was bumped to
+    `20260614-recommendation-lifecycle-v1`.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-profile-projection-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --check src/services/learning-card-generation-context-service.js`;
+  - `node --check src/services/learning-profile-projection-service.js`;
+  - `node --check public/growth-card-generation-ui.js`;
+  - focused lifecycle visibility gate:
+    `node --test tests/learning-profile-projection-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`
+    with 53 passing tests.
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-card-authoring-boundary.test.js`;
+  - `npm run check`;
+  - `npm test` with 223 passing tests;
+  - Home AI app required check:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in Growth and Home AI app workspaces.
+- Visual evidence:
+  - central iOS PWA visual harness attempt:
+    `node scripts/ios-pwa-visual-harness.js --scenario dark-growth-surfaces --json`
+    returned `fetch failed` because the live debug server was unavailable;
+  - Playwright mobile fallback rendered the Growth Owner generation panel with
+    real Growth CSS/JS at `390x844` in dark and light modes, with no horizontal
+    overflow, visible lifecycle statuses, `44px` submit button height, and
+    badge contrast `7.43` dark / `6.29` light;
+  - screenshots:
+    `/tmp/growth-visual-evidence/owner-generation-lifecycle-dark.png`,
+    `/tmp/growth-visual-evidence/owner-generation-lifecycle-light.png`.
+- AI Ops evidence:
+  - test: `evidence-0e8630a3-adf3-4a59-a500-8b61f0e1c980`;
+  - visual: `evidence-f496b94c-2fb2-40c3-98f7-371176eaeb46`.
+- CodeGraph status after sync: 123 files, 1298 nodes, 4639 edges.
+
 ## 2026-06-14 Growth Recommendation Supersede Slice
 
 - Current workspace state: implemented and locally validated; this handoff

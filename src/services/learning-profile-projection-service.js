@@ -70,8 +70,13 @@ function normalizeTrajectory(input = {}) {
       targetNodeIds: uniqueStrings(nextRecommendation.targetNodeIds).slice(0, 8),
       sourceTaskCardId: cleanString(nextRecommendation.sourceTaskCardId),
       sourceEvaluationId: cleanString(nextRecommendation.sourceEvaluationId),
+      generatedTaskCardId: cleanString(nextRecommendation.generatedTaskCardId),
+      generatedLearningGraphPlanId: cleanString(nextRecommendation.generatedLearningGraphPlanId),
       createdAt: cleanString(nextRecommendation.createdAt),
-      statusUpdatedAt: cleanString(nextRecommendation.statusUpdatedAt)
+      statusUpdatedAt: cleanString(nextRecommendation.statusUpdatedAt),
+      acceptedAt: cleanString(nextRecommendation.acceptedAt),
+      supersededAt: cleanString(nextRecommendation.supersededAt),
+      supersededByTrajectoryId: cleanString(nextRecommendation.supersededByTrajectoryId)
     },
     createdAt: cleanString(input.createdAt),
     updatedAt: cleanString(input.updatedAt)
@@ -164,7 +169,9 @@ function createLearningProfileProjectionService(options = {}) {
       const strengths = asArray(projected.masterySummary?.strengths).map(normalizeMasteryState).filter((item) => item.nodeId).slice(0, 8);
       const weaknesses = asArray(projected.masterySummary?.weaknesses).map(normalizeMasteryState).filter((item) => item.nodeId).slice(0, 8);
       const recentExperienceSignals = asArray(projected.recentExperienceSignals).map(normalizeExperienceSignal).filter((item) => item.signalType).slice(0, 12);
-      const recentTrajectory = asArray(projected.recentTrajectory).map(normalizeTrajectory).filter((item) => item.taskCardId || item.strategy).slice(0, 8);
+      const recentTrajectory = asArray(projected.recentTrajectory).map(normalizeTrajectory)
+        .filter((item) => item.id || item.taskCardId || item.strategy || item.nextRecommendation.status)
+        .slice(0, 8);
       const strategy = normalizeNextCardStrategy(chooseNextCardStrategy(projected, targetNodeIds));
       return {
         ok: true,

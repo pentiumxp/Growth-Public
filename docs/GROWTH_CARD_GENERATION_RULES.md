@@ -370,8 +370,9 @@ The service-owned runtime path is:
    Owner-visible profile projection: mastery states, strengths, weaknesses,
    recent experience signals, recent trajectory, and next-card strategy reason;
    `learning-card-generation-context-service` also projects the selected
-   summary-only `nextCardRecommendation` so the Owner sees the same rationale
-   that actual generation will use;
+   summary-only `nextCardRecommendation` and bounded
+   `recommendationLifecycle` so the Owner sees the same rationale and recent
+   pending/accepted/superseded states that actual generation will use;
 6. `learning-next-card-strategy-service` chooses or refreshes a bounded
    next-card strategy from profile, signals, and trajectory for the selected
    plan;
@@ -413,14 +414,15 @@ request and let the backend fill graph-policy fields. It may show the selected
 recommendation, graph target, role, and difficulty as a preview, but those
 preview fields are not required inputs for ordinary daily card creation.
 
-The Owner generation page may display `learningProfile` and
-`nextCardRecommendation` before generation. That display is a read-only
-target-workspace projection and must remain summary-only. It is allowed to show
-bounded weaknesses, strengths, signals, recent trajectory, selection mode,
-recommendation mode, recommendation status, graph target, role, difficulty,
-and the next-card reason; it is not allowed to show raw answers, transcripts,
-prompts, hidden answer keys, model output, private file paths, or internal
-source refs.
+The Owner generation page may display `learningProfile`,
+`nextCardRecommendation`, and `recommendationLifecycle` before generation. That
+display is a read-only target-workspace projection and must remain
+summary-only. It is allowed to show bounded weaknesses, strengths, signals,
+recent trajectory, selection mode, recommendation mode, recommendation status,
+graph target, role, difficulty, the next-card reason, generated card/plan ids,
+superseded-by trajectory id, and lifecycle timestamps; it is not allowed to
+show raw answers, transcripts, prompts, hidden answer keys, model output,
+private file paths, or internal source refs.
 
 ## Gateway Response Modes
 

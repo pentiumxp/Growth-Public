@@ -55,12 +55,15 @@ test("learning profile projection returns bounded mastery, signal, trajectory, a
             confirmedStrengths: ["Gives a reason."],
             remainingWeaknesses: ["Quote exact evidence."],
             nextRecommendation: {
-              status: "pending",
+              status: "accepted",
               strategy: "stabilize",
               supportLevel: "light_hint",
               reason: "Narrow evidence practice.",
               sourceTaskCardId: "ltask_1",
-              sourceEvaluationId: "eval_1"
+              sourceEvaluationId: "eval_1",
+              generatedTaskCardId: "ltask_generated_1",
+              generatedLearningGraphPlanId: "lgp_generated_1",
+              acceptedAt: "2026-06-14T08:05:00.000Z"
             },
             createdAt: "2026-06-14T08:00:00.000Z"
           }]
@@ -96,8 +99,11 @@ test("learning profile projection returns bounded mastery, signal, trajectory, a
   assert.equal(result.recentExperienceSignals[0].signalType, "not_learned");
   assert.equal(result.recentTrajectory[0].id, "traj_1");
   assert.equal(result.recentTrajectory[0].strategy, "stabilize");
-  assert.equal(result.recentTrajectory[0].nextRecommendation.status, "pending");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.status, "accepted");
   assert.equal(result.recentTrajectory[0].nextRecommendation.supportLevel, "light_hint");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.generatedTaskCardId, "ltask_generated_1");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.generatedLearningGraphPlanId, "lgp_generated_1");
+  assert.equal(result.recentTrajectory[0].nextRecommendation.acceptedAt, "2026-06-14T08:05:00.000Z");
   assert.equal(result.nextCardStrategy.strategy, "stabilize");
   assert.equal(JSON.stringify(result).includes("RAW ANSWER"), false);
   assert.equal(JSON.stringify(result).includes("sourceRef"), false);
