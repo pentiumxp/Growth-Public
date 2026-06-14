@@ -6,6 +6,7 @@ const {
   lanesForCards,
   publicCardFromRow,
   publicEvaluation,
+  publicEvaluationJob,
   publicReflection,
   publicRewardSettlement,
   publicSubmission,
@@ -58,6 +59,22 @@ function withProjectionDb(callback) {
         summary TEXT,
         raw_json TEXT,
         created_at TEXT
+      );
+      CREATE TABLE learning_growth_evaluation_jobs (
+        id TEXT PRIMARY KEY,
+        submission_id TEXT,
+        task_card_id TEXT,
+        workspace_id TEXT,
+        status TEXT,
+        attempt_count INTEGER,
+        lease_owner TEXT,
+        lease_until TEXT,
+        last_error TEXT,
+        raw_json TEXT,
+        available_at TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        completed_at TEXT
       );
       CREATE TABLE learning_task_reflections (
         id TEXT PRIMARY KEY,
@@ -121,6 +138,27 @@ function insertProjectionCard(db, input = {}) {
       input.summary || "Score recorded once."
     );
   }
+  if (input.evaluationJobStatus) {
+    db.prepare(`
+      INSERT INTO learning_growth_evaluation_jobs(
+        id, submission_id, task_card_id, workspace_id, status, attempt_count,
+        lease_owner, lease_until, last_error, raw_json, available_at, created_at,
+        updated_at, completed_at
+      ) VALUES (?, ?, ?, 'weixin_child', ?, ?, ?, ?, ?, '{}',
+        '2026-06-12T00:01:00.000Z', '2026-06-12T00:01:00.000Z',
+        '2026-06-12T00:04:00.000Z', ?)
+    `).run(
+      `job_${input.id}`,
+      `submission_${input.id}`,
+      input.id,
+      input.evaluationJobStatus,
+      Number(input.evaluationJobAttemptCount || 0),
+      input.evaluationJobLeaseOwner || "",
+      input.evaluationJobLeaseUntil || "",
+      input.evaluationJobLastError || "",
+      input.evaluationJobCompletedAt || ""
+    );
+  }
   return db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(input.id);
 }
 
@@ -162,6 +200,30 @@ test("Growth projection helpers produce bounded public records", () => {
     summary: "x".repeat(900),
     raw_json: JSON.stringify({ revisionRequirements: ["a"], remainingWeaknesses: ["b"] })
   }).summary.length, 700);
+
+  assert.deepEqual(publicEvaluationJob({
+    id: "job_1",
+    submission_id: "submission_1",
+    task_card_id: "card_1",
+    status: "failed",
+    attempt_count: 4,
+    last_error: "x".repeat(300),
+    available_at: "2026-06-12T00:00:00.000Z",
+    updated_at: "2026-06-12T00:05:00.000Z"
+  }), {
+    jobId: "job_1",
+    submissionId: "submission_1",
+    taskCardId: "card_1",
+    status: "failed",
+    attemptCount: 4,
+    availableAt: "2026-06-12T00:00:00.000Z",
+    leaseUntil: "",
+    lastError: "x".repeat(160),
+    updatedAt: "2026-06-12T00:05:00.000Z",
+    completedAt: "",
+    retryable: false,
+    failedVisible: true
+  });
 
   assert.equal(publicReflection({
     id: "reflection_1",
@@ -206,10 +268,43 @@ test("Growth projection summary and lanes preserve visible workflow buckets", ()
     ["ready", ["card_ready"]],
     ["locked_until", []],
     ["waiting_ai", []],
+    ["evaluation_failed", []],
     ["needs_revision", ["card_revision"]],
     ["reflection_required", []],
     ["completed_recent", ["card_completed"]]
   ]);
+});
+
+test("failed daily evaluation jobs project a visible failure without reopening submission", () => {
+  withProjectionDb((db) => {
+    const row = insertProjectionCard(db, {
+      id: "card_daily_failed_job",
+      title: "Daily English failed job",
+      completionPolicy: {
+        mode: "daily_score_once",
+        evaluationAttempts: 1,
+        reflectionAttempts: 1,
+        passScoreRequired: false
+      },
+      evaluationJobStatus: "failed",
+      evaluationJobAttemptCount: 3,
+      evaluationJobLastError: "gateway_timeout"
+    });
+
+    const card = publicCardFromRow(db, row, {
+      today: "2026-06-12",
+      nowIso: "2026-06-12T00:05:00.000Z"
+    });
+
+    assert.equal(card.latestEvaluation, null);
+    assert.equal(card.latestEvaluationJob.status, "failed");
+    assert.equal(card.latestEvaluationJob.failedVisible, true);
+    assert.equal(card.laneId, "evaluation_failed");
+    assert.equal(card.nextAction, "evaluation_failed");
+    assert.equal(card.primaryAction, "owner_review");
+    assert.equal(card.actions.canSubmit, false);
+    assert.equal(card.actions.canRequestOwnerReview, true);
+  });
 });
 
 test("daily score once cards complete after the first terminal evaluation regardless of pass line", () => {

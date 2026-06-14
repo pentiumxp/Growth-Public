@@ -225,6 +225,10 @@ Recovery rules:
   either completes the job or moves it to `retry`/`failed`;
 - completion clears lease fields and reward settlement stays idempotent by the
   evaluation/source ids, so a restarted worker must not duplicate Growth coins.
+- when a job reaches terminal `failed` without a persisted evaluation, card
+  projection must surface `latestEvaluationJob.failedVisible`,
+  `laneId=evaluation_failed`, and `primaryAction=owner_review` so the learner
+  sees a recoverable state instead of hidden `waiting_feedback`.
 
 Harness coverage:
 
@@ -232,7 +236,9 @@ Harness coverage:
   are protected and stale processing leases can be reclaimed;
 - `tests/growth-learning-sqlite-store.test.js` proves a stale processing job
   survives a simulated worker restart, resumes after lease expiry, completes
-  the card, and settles rewards exactly once.
+  the card, and settles rewards exactly once. The same store harness also
+  proves exhausted evaluation failures project a visible card failure without
+  reopening submission.
 
 ## Gateway Evaluation Contract
 

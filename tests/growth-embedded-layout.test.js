@@ -61,6 +61,8 @@ test("Generated Growth card flow keeps mobile and dark-mode layout guards", () =
   assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-daily-flow/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-daily-flow span\.is-current/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-growth-experience-actions button/);
+  assert.match(css, /:root\[data-theme="dark"\] \.todo-learning-growth-evaluation\.is-failed/);
   assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-growth-daily-flow span\.is-current/);
   assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-growth-experience-actions button/);
+  assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.todo-learning-growth-evaluation\.is-failed/);
 });

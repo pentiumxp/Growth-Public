@@ -52,6 +52,25 @@ function publicEvaluation(row) {
   };
 }
 
+function publicEvaluationJob(row) {
+  if (!row) return null;
+  const status = cleanString(row.status).toLowerCase();
+  return {
+    jobId: row.id,
+    submissionId: row.submission_id,
+    taskCardId: row.task_card_id,
+    status,
+    attemptCount: Number(row.attempt_count || 0),
+    availableAt: row.available_at || "",
+    leaseUntil: status === "processing" ? row.lease_until || "" : "",
+    lastError: cleanString(row.last_error).slice(0, 160),
+    updatedAt: row.updated_at || "",
+    completedAt: row.completed_at || "",
+    retryable: status === "retry",
+    failedVisible: status === "failed"
+  };
+}
+
 function publicReflection(row) {
   if (!row) return null;
   const raw = parseJson(row.raw_json, {}) || {};
@@ -322,6 +341,7 @@ function taskStatus(task = {}, latest = {}, context = {}) {
   if (["completed", "done", "closed", "archived"].includes(status)) return "complete";
   if (taskLockedUntil(task, context.nowIso)) return "locked_until";
   if (isDailyScoreOnceTask(task) && dailyScoreOnceEvaluationCompletes(latest)) return "complete";
+  if (!latest.evaluation && cleanString(latest.evaluationJob?.status).toLowerCase() === "failed") return "evaluation_failed";
   const reflectionStatus = cleanString(latest.reflection?.status);
   if (reflectionStatus === "accepted") return "complete";
   const evaluationStatus = cleanString(latest.evaluation?.status);
@@ -337,6 +357,7 @@ function laneForTask(task = {}, latest = {}, today = todayKey(), context = {}) {
   if (action === "locked_until") return "locked_until";
   if (action === "spoken_reflection") return "reflection_required";
   if (action === "revise") return "needs_revision";
+  if (action === "evaluation_failed") return "evaluation_failed";
   if (action === "waiting_feedback") return "waiting_ai";
   if (action === "complete") return "completed_recent";
   if (dateKey(task.plannedDate || task.dueLocal || task.dueAt) === today) return "today";
@@ -345,6 +366,7 @@ function laneForTask(task = {}, latest = {}, today = todayKey(), context = {}) {
 
 function primaryActionForLane(laneId, action) {
   if (laneId === "locked_until") return "locked";
+  if (laneId === "evaluation_failed") return "owner_review";
   if (laneId === "waiting_ai") return "wait";
   if (laneId === "needs_revision") return "revise";
   if (laneId === "reflection_required") return "reflect";
@@ -357,7 +379,8 @@ function actionModel(laneId, action) {
     canSubmit: laneId !== "locked_until" && (action === "submit" || action === "revise"),
     canWithdraw: action === "waiting_feedback",
     canReflect: action === "spoken_reflection",
-    canOpenArtifacts: laneId === "completed_recent" || laneId === "reflection_required" || laneId === "needs_revision",
+    canOpenArtifacts: laneId === "completed_recent" || laneId === "reflection_required" || laneId === "needs_revision" || laneId === "evaluation_failed",
+    canRequestOwnerReview: laneId === "evaluation_failed",
     primaryAction: primaryActionForLane(laneId, action)
   };
 }
@@ -514,6 +537,7 @@ function defaultLanes() {
     { id: "ready", title: "Ready", cards: [] },
     { id: "locked_until", title: "Locked until next window", cards: [] },
     { id: "waiting_ai", title: "Waiting for AI", cards: [] },
+    { id: "evaluation_failed", title: "Evaluation failed", cards: [] },
     { id: "needs_revision", title: "Needs revision", cards: [] },
     { id: "reflection_required", title: "Reflection required", cards: [] },
     { id: "completed_recent", title: "Completed recent", cards: [] }
@@ -525,8 +549,11 @@ function publicCardFromRow(db, row, context = {}, index = 0) {
   const raw = parseJson(row.raw_json, {}) || {};
   const latestSubmission = publicSubmission(latestByTask(db, "learning_task_submissions", row.id, "submitted_at"));
   const latestEvaluation = publicEvaluation(latestByTask(db, "learning_evaluations", row.id, "created_at"));
+  const latestEvaluationJob = tableExists(db, "learning_growth_evaluation_jobs")
+    ? publicEvaluationJob(latestByTask(db, "learning_growth_evaluation_jobs", row.id, "updated_at"))
+    : null;
   const latestReflection = publicReflection(latestByTask(db, "learning_task_reflections", row.id, "submitted_at"));
-  const latest = { submission: latestSubmission, evaluation: latestEvaluation, reflection: latestReflection };
+  const latest = { submission: latestSubmission, evaluation: latestEvaluation, evaluationJob: latestEvaluationJob, reflection: latestReflection };
   const rewardPolicy = rewardPolicyForCard(raw, row);
   const baseTask = Object.assign({}, raw, {
     id: row.id,
@@ -616,6 +643,7 @@ function publicCardFromRow(db, row, context = {}, index = 0) {
     laneId,
     latestSubmission,
     latestEvaluation,
+    latestEvaluationJob,
     latestReflection,
     artifactCount,
     rewardState: cleanString(raw.rewardState || raw.reward_state),
@@ -673,6 +701,7 @@ module.exports = {
   lanesForCards,
   publicCardFromRow,
   publicEvaluation,
+  publicEvaluationJob,
   publicReflection,
   publicRewardSettlement,
   publicSubmission,

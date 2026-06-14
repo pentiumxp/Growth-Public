@@ -59,7 +59,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite identifiers | `src/stores/growth-learning-sqlite/identifiers.js` | Stable Growth record ids and hashes for submissions, reflections, evaluation jobs, sessions, rewards, ledger entries, and audio blobs. |
 | SQLite audio metadata | `src/stores/growth-learning-sqlite/audio-metadata.js` | Bounded audio evidence parsing and public audio DTO projection shared by card projections and playback/backfill logic. |
 | SQLite audio repository | `src/stores/growth-learning-sqlite/audio.js` | Plugin-owned audio playback, SQLite BLOB priority reads, bounded legacy file lookup, and historical audio BLOB backfill. |
-| SQLite projections | `src/stores/growth-learning-sqlite/projection.js` | Board/card public DTO shaping, lane grouping, sequence visibility, summaries, bounded submission/evaluation/reflection/reward projections, and `daily_score_once` completion projection. |
+| SQLite projections | `src/stores/growth-learning-sqlite/projection.js` | Board/card public DTO shaping, lane grouping, sequence visibility, summaries, bounded submission/evaluation/evaluation-job/reflection/reward projections, `daily_score_once` completion projection, and visible `evaluation_failed` state for exhausted evaluation jobs. |
 | SQLite evidence writes | `src/stores/growth-learning-sqlite/evidence-writes.js` | Submission/reflection evidence writes, interaction session creation, evidence audio BLOB insertion, legacy kanban card id resolution, pending evaluation job enqueueing, and `daily_score_once` one-submission/one-reflection enforcement. |
 | SQLite evaluation jobs | `src/stores/growth-learning-sqlite/evaluation-jobs.js` | Evaluation job listing, lease-based claiming, stale-processing recovery, completion, retry/failure state, evaluation context reads, and evaluation record writes. |
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
@@ -173,7 +173,11 @@ The first core-module split is behavior-preserving:
   accepts schema `growth.card.evaluation.v1`, daily-card policy,
   `skillResults` graph bindings, and privacy and bounded-content scans.
   Invalid JSON, empty output, missing fields, privacy-risk fields, timeout, or
-  repair pass failure must not write a partial `learning_evaluations` row.
+  repair pass failure must not write a partial `learning_evaluations` row. If
+  retries are exhausted and no evaluation row exists, `projection.js` exposes a
+  bounded `latestEvaluationJob` plus `evaluation_failed` lane/action so the
+  learner sees a visible failure and Owner-review path instead of a hidden
+  waiting state.
 - Owner profile/trajectory projection is Growth-owned. The Owner card
   generation view reads the selected learner's `learningProfile` from
   `learning-profile-projection-service` through

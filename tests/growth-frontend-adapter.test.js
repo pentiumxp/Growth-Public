@@ -608,6 +608,46 @@ test("Growth teaching card UI renders submitted waiting-evaluation state", () =>
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 
+test("Growth teaching card UI renders visible failed evaluation state", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "submitted",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    },
+    latestSubmission: {
+      submissionId: "submission_1",
+      submittedAt: "2026-06-12T10:00:00.000Z",
+      textCharCount: 42
+    },
+    latestEvaluationJob: {
+      jobId: "job_1",
+      status: "failed",
+      attemptCount: 3,
+      failedVisible: true
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthEvaluationBusy: { ltask_daily_1: false }
+    }
+  });
+
+  assert.match(html, /批改未完成/);
+  assert.match(html, /需要处理/);
+  assert.match(html, /Owner 检查/);
+  assert.match(html, /刷新状态/);
+  assert.match(html, /todo-learning-growth-evaluation is-failed/);
+  assert.doesNotMatch(html, /作答已保存，系统会处理一次批改/);
+  assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
+});
+
 test("Growth teaching card UI renders one-shot evaluation and optional reflection after submission", () => {
   const windowRef = loadPublicScript("growth-legacy-task-ui.js");
   const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
@@ -1009,7 +1049,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-stage-assessment-ui-v1";
+  const staticVersion = "20260614-evaluation-failure-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1024,4 +1064,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.equal((html.match(new RegExp(staticVersion, "g")) || []).length, 13);
   assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
+  assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);
 });

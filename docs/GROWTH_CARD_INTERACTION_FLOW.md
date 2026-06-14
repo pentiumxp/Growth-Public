@@ -66,6 +66,9 @@ Within the `提交作答` section:
   status panel;
 - while evaluation is not projected yet, show `等待批改` and a visible
   `刷新批改` action;
+- if the evaluation job exhausts retries and no evaluation was recorded, show
+  `批改未完成`, a visible `需要处理` state, and a `刷新状态` action plus Owner
+  review guidance instead of leaving the card as hidden waiting work;
 - after evaluation, show score, summary, strengths, weak points, and next
   practice suggestions;
 - after evaluation, show an optional one-time reflection form with text and
@@ -243,7 +246,9 @@ Queue recovery coverage lives in
 `tests/growth-learning-sqlite-store.test.js`. It asserts that active
 `processing` leases are not stolen, stale leases are reclaimed after
 `leaseUntil`, a restarted worker can finish the job, and Growth reward
-settlement remains single-settlement.
+settlement remains single-settlement. Projection and frontend coverage assert
+that exhausted failed jobs expose `evaluation_failed` / `owner_review` state and
+render a visible learner-facing failure panel.
 
 Gateway-backed evaluation coverage lives in
 `tests/learning-card-evaluation-service.test.js` and asserts valid streaming

@@ -277,9 +277,10 @@ static plugin assets and appends the actor `workspaceId`; hard-coded API
 literals inside JavaScript can therefore be rewritten into the wrong query
 shape. Growth JS and CSS URLs in `public/index.html` should carry a version
 query for card-generation releases so mobile WebViews fetch the current API
-client and UI state code. The V1 stage-assessment Owner UI release uses
-`20260614-stage-assessment-ui-v1`; the frontend adapter harness asserts that
-the old `20260614-growth-navigation-v1` cache key is no longer present.
+client and UI state code. The current frontend cache key is
+`20260614-evaluation-failure-ui-v1`; the frontend adapter harness asserts that
+older `20260614-growth-navigation-v1` and `20260614-stage-assessment-ui-v1`
+keys are no longer present.
 
 Recommended context response:
 

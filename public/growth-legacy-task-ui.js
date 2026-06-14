@@ -355,6 +355,7 @@
   function generatedCardStatusLabel(task = {}) {
     if (task.latestReflection) return "反思已记录";
     if (task.latestEvaluation) return "批改已完成";
+    if (String(task.latestEvaluationJob?.status || "").toLowerCase() === "failed") return "批改未完成";
     if (task.latestSubmission) return "等待批改";
     return "待作答";
   }
@@ -362,6 +363,7 @@
   function renderDailyFlowRail(task = {}) {
     const hasSubmission = Boolean(task.latestSubmission);
     const hasEvaluation = Boolean(task.latestEvaluation);
+    const evaluationFailed = String(task.latestEvaluationJob?.status || "").toLowerCase() === "failed";
     const hasReflection = Boolean(task.latestReflection);
     const steps = [
       {
@@ -379,8 +381,8 @@
       {
         key: "evaluate",
         label: "批改",
-        state: hasEvaluation ? "done" : hasSubmission ? "current" : "pending",
-        status: hasEvaluation ? "已完成" : hasSubmission ? "处理中" : "待提交后",
+        state: hasEvaluation ? "done" : evaluationFailed ? "current" : hasSubmission ? "current" : "pending",
+        status: hasEvaluation ? "已完成" : evaluationFailed ? "需要处理" : hasSubmission ? "处理中" : "待提交后",
       },
       {
         key: "reflect",
@@ -498,11 +500,20 @@
     const cardId = String(task.taskCardId || task.id || "");
     const submission = task.latestSubmission || null;
     const evaluation = task.latestEvaluation || null;
+    const evaluationJob = task.latestEvaluationJob || null;
+    const evaluationJobFailed = String(evaluationJob?.status || "").toLowerCase() === "failed";
     const state = options.state || {};
     const busy = Boolean(state.learningGrowthEvaluationBusy?.[cardId]);
     const message = state.learningGrowthInteractionMessages?.[interactionKey(cardId, "evaluation")] || "";
     if (!submission && !evaluation) return "";
     if (!evaluation) {
+      if (evaluationJobFailed) {
+        return `<div class="todo-learning-growth-evaluation is-failed" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
+          <div class="todo-learning-growth-evaluation-head"><strong>批改未完成</strong><span class="todo-learning-growth-score-pill">需要处理</span></div>
+          <p>${escapeHtmlLocal(message || "作答已保存，但系统批改多次未完成。请稍后刷新状态，或让 Owner 检查后再处理。")}</p>
+          <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新状态"}</button></div>
+        </div>`;
+      }
       return `<div class="todo-learning-growth-evaluation" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
         <div class="todo-learning-growth-evaluation-head"><strong>等待批改</strong><span class="todo-learning-growth-score-pill">一次批改</span></div>
         <p>${escapeHtmlLocal(message || "作答已保存，系统会处理一次批改。也可以手动刷新批改状态。")}</p>

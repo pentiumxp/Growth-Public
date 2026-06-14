@@ -11074,6 +11074,11 @@ body.task-markdown-preview-open {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.todo-learning-growth-evaluation.is-failed {
+  border-color: rgba(155, 61, 53, 0.22);
+  background: rgba(255, 245, 242, 0.74);
+}
+
 .todo-learning-growth-evaluation-head {
   display: flex;
   align-items: center;
@@ -11092,6 +11097,11 @@ body.task-markdown-preview-open {
   font-size: 12px;
   font-weight: 650;
   background: rgba(31, 111, 98, 0.08);
+}
+
+.todo-learning-growth-evaluation.is-failed .todo-learning-growth-score-pill {
+  color: #8a332c;
+  background: rgba(155, 61, 53, 0.1);
 }
 
 .todo-learning-growth-evaluation p,
@@ -15513,6 +15523,16 @@ body.task-markdown-preview-open {
   color: var(--ink);
 }
 
+:root[data-theme="dark"] .todo-learning-growth-evaluation.is-failed {
+  border-color: rgba(255, 138, 128, 0.28);
+  background: rgba(68, 35, 34, 0.58);
+}
+
+:root[data-theme="dark"] .todo-learning-growth-evaluation.is-failed .todo-learning-growth-score-pill {
+  color: #ffd9d4;
+  background: rgba(255, 138, 128, 0.16);
+}
+
 :root[data-theme="dark"] .learning-growth-audio-error {
   color: #ffb1a6;
 }
@@ -15680,6 +15700,16 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .todo-learning-growth-feedback-list strong,
   :root[data-theme="system"] .learning-growth-submission-audio strong {
     color: var(--ink);
+  }
+
+  :root[data-theme="system"] .todo-learning-growth-evaluation.is-failed {
+    border-color: rgba(255, 138, 128, 0.28);
+    background: rgba(68, 35, 34, 0.58);
+  }
+
+  :root[data-theme="system"] .todo-learning-growth-evaluation.is-failed .todo-learning-growth-score-pill {
+    color: #ffd9d4;
+    background: rgba(255, 138, 128, 0.16);
   }
 
   :root[data-theme="system"] .learning-growth-audio-error {

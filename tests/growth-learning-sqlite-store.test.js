@@ -622,6 +622,43 @@ test("recovers stale processing Growth evaluation jobs after worker restart", as
   }
 });
 
+test("projects failed evaluation jobs as visible card failures", async () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const submitted = store.submitEvidence({
+    workspaceId: "weixin_child",
+    taskCardId: "kanban_1",
+    submissionId: "submission_failed_visible",
+    text: "I wrote an answer that should be saved even if model evaluation is unavailable.",
+    submittedAt: "2026-06-10T00:04:00.000Z"
+  });
+  assert.equal(submitted.ok, true);
+
+  const service = createGrowthEvaluationService({
+    learningStore: store,
+    maxAttempts: 1,
+    evaluator() {
+      throw new Error("gateway_unavailable");
+    },
+    now: () => new Date("2026-06-10T00:05:00.000Z")
+  });
+  const processed = await service.processEvaluationQueue({ workspaceId: "weixin_child" });
+  assert.equal(processed.ok, true);
+  assert.equal(processed.processed, 1);
+  assert.equal(processed.results[0].status, "failed");
+
+  const card = store.card({ workspaceId: "weixin_child", taskCardId: "card_1" }).card;
+  assert.equal(card.latestEvaluation, null);
+  assert.equal(card.latestEvaluationJob.status, "failed");
+  assert.equal(card.latestEvaluationJob.failedVisible, true);
+  assert.equal(card.laneId, "evaluation_failed");
+  assert.equal(card.nextAction, "evaluation_failed");
+  assert.equal(card.primaryAction, "owner_review");
+  assert.equal(card.actions.canSubmit, false);
+});
+
 test("emits completion and mastery events without real-time Tongbao exchange request", async () => {
   const root = tmpDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");

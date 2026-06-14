@@ -9,10 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-14 Growth Evaluation Queue Recovery Harness Slice
+## 2026-06-14 Growth Visible Evaluation Failure Slice
 
 - Current workspace state: implemented, locally validated, committed and
   pushed as part of the current rollout; not deployed.
+- Scope:
+  - added bounded `latestEvaluationJob` projection in
+    `src/stores/growth-learning-sqlite/projection.js`;
+  - added `evaluation_failed` lane/action and `primaryAction=owner_review`
+    for daily cards whose evaluation job reaches terminal `failed` without a
+    persisted evaluation row;
+  - kept one-submission/one-evaluation policy intact: failed evaluation jobs do
+    not reopen learner submission and do not create a retry-until-pass flow;
+  - updated generated-card detail UI to show `批改未完成`, `需要处理`, Owner
+    review guidance, and a visible `刷新状态` action instead of hidden
+    `等待批改`;
+  - added light/dark/system-dark CSS for the failed evaluation panel;
+  - bumped static Growth asset URLs in `public/index.html` to
+    `20260614-evaluation-failure-ui-v1`.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-learning-sqlite-projection.test.js`;
+  - `tests/growth-learning-sqlite-store.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`.
+- Validation passed:
+  - `node --test tests/growth-learning-sqlite-projection.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`
+    with 49 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 197 passing tests;
+  - app AI Ops H3 required checks from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js` and
+    `git diff --check`;
+  - dev-port Chrome smoke against `http://127.0.0.1:4892/` using the current
+    workspace server and system Chrome: 13 static assets used
+    `20260614-evaluation-failure-ui-v1`, old cache keys were absent, the
+    failed evaluation panel scrolled into view, the `刷新状态` button was
+    enabled, and dark failed-panel colors were applied;
+  - `git diff --check`;
+  - CodeGraph status after edits: 115 files, 1208 nodes, 4228 edges.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-f899c712-6e95-4b4a-a14e-ffa9d7e3ce2a`.
+- Remaining architecture work:
+  - implement an explicit Owner review/repair action route if Owner needs to
+    manually retry or mark an evaluation failure resolved;
+  - expose queue retry timing/status in card detail if delayed retries become
+    common in production;
+  - production deployment still requires the central Home AI visual/prod smoke
+    gates.
+
+## 2026-06-14 Growth Evaluation Queue Recovery Harness Slice
+
+- Current workspace state: implemented, locally validated, committed, and
+  pushed to `origin` and `public` in `732fe04`
+  (`Add Growth evaluation queue recovery harness`); not deployed.
 - Scope:
   - confirmed the existing evaluation queue implementation already protects
     active `processing` leases and allows expired `processing` leases to be
