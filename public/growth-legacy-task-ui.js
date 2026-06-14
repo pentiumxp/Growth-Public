@@ -435,7 +435,11 @@
     if (!url) return "";
     const duration = Number(audio.durationMs || 0);
     const suffix = Number.isFinite(duration) && duration > 0 ? ` · ${Math.round(duration / 1000)} 秒` : "";
-    return `<div class="learning-growth-submission-audio"><strong>${escapeHtmlLocal(label + suffix)}</strong><audio controls preload="metadata" src="${escapeHtmlLocal(url)}"></audio></div>`;
+    return `<div class="learning-growth-submission-audio" data-learning-growth-audio-evidence>
+      <strong>${escapeHtmlLocal(label + suffix)}</strong>
+      <audio controls preload="metadata" src="${escapeHtmlLocal(url)}" data-learning-growth-saved-audio></audio>
+      <small class="learning-growth-audio-error" data-learning-growth-audio-error hidden>录音暂时无法播放：当前浏览器不支持这个音频格式，或音频返回未通过校验。</small>
+    </div>`;
   }
 
   function renderRecorderControls(task = {}, kind = "submission", options = {}) {
@@ -445,6 +449,7 @@
     const status = String(recording.status || "").trim();
     const busy = status === "requesting" || status === "recording" || status === "stopping";
     const ready = status === "ready" && recording.url;
+    const previewReady = ready && !recording.playbackError;
     const unsupported = status === "unsupported";
     const label = kind === "reflection" ? "反思录音" : "作答录音";
     const elapsed = Number(recording.elapsedMs || 0);
@@ -462,7 +467,7 @@
         ${ready ? `<button type="button" data-learning-growth-record-clear="${escapeHtmlLocal(cardId)}" data-record-kind="${escapeHtmlLocal(kind)}">清除</button>` : ""}
       </div>
       <span class="learning-native-growth-submission-state" data-learning-growth-record-status>${escapeHtmlLocal(label)}：${escapeHtmlLocal(statusText)}</span>
-      ${ready ? `<audio controls preload="metadata" src="${escapeHtmlLocal(recording.url)}"></audio>` : ""}
+      ${previewReady ? `<audio controls preload="metadata" src="${escapeHtmlLocal(recording.url)}" data-learning-growth-record-playback="${escapeHtmlLocal(cardId)}" data-record-kind="${escapeHtmlLocal(kind)}"></audio>` : ""}
     </div>`;
   }
 

@@ -9,6 +9,58 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Audio Playback Hotfix
+
+- Current workspace state: audio playback hotfix implemented and validated
+  locally; pending commit/push/deploy at the time this section was written.
+- User-visible bug:
+  - after recording audio in a generated Growth daily card, playback could
+    show a browser-native error without a recoverable Growth UI state;
+  - submitted `.webm` audio could also be served with an Ogg content type in
+    some plugin-owned playback paths.
+- Fix:
+  - `public/growth-card-interaction-controller.js` now chooses a recorder MIME
+    that is both `MediaRecorder`-recordable and browser-playable when possible,
+    and records visible preview playback failure state;
+  - `public/growth-legacy-task-ui.js` renders recoverable local preview error
+    state and saved-audio playback error text;
+  - `public/app.js` wires local preview and saved evidence `<audio>` error
+    events to visible UI feedback;
+  - `src/stores/growth-learning-sqlite/audio-metadata.js` now preserves
+    explicit non-generic MIME values and maps `.webm` to `audio/webm` instead
+    of `audio/ogg`.
+- Documentation updated:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness updated:
+  - `tests/growth-frontend-adapter.test.js` covers record/play MIME selection,
+    preview playback failure state, recoverable recorder UI, and saved audio
+    error rendering;
+  - `tests/growth-learning-sqlite-audio.test.js` covers WebM playback MIME and
+    explicit metadata priority;
+  - `tests/growth-learning-sqlite-evidence-writes.test.js` now expects
+    no-MIME `.webm` uploads to decode as `audio/webm`.
+- Validation passed:
+  - `node --test tests/growth-frontend-adapter.test.js`;
+  - `node --test tests/growth-learning-sqlite-audio.test.js tests/growth-learning-sqlite-evidence-writes.test.js tests/growth-learning-sqlite-store.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`;
+  - `npm run check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm test` with 153 passing tests.
+- Visual evidence:
+  - Codex in-app Browser was unavailable (`Browser is not available: iab`), so
+    local visual validation used Home AI app Playwright from
+    `/Users/hermes-dev/HermesMobileDev/app/node_modules/playwright`;
+  - mobile dark recorder error screenshot:
+    `/tmp/growth-audio-preview-error-recorder-dark.png`;
+  - mobile dark saved-audio error screenshot:
+    `/tmp/growth-saved-audio-error-evidence-dark.png`;
+  - verified preview failure keeps `重新录音` and `清除`, hides the bad local
+    preview audio element, and saved-audio error text renders visible in dark
+    mode with color `rgb(255, 177, 166)`.
+
 ## 2026-06-12 Growth Generated Card Full Flow UI
 
 - Current workspace state: uncommitted dev changes in the Growth plugin

@@ -215,6 +215,57 @@ test("Growth API client avoids proxy-rewritten API string literals", () => {
   assert.doesNotMatch(source, /["'`]\/api\/hermes-plugins\/growth\/proxy/);
 });
 
+test("Growth card interaction controller chooses a recordable MIME that the browser can play", () => {
+  const windowRef = loadPublicScript("growth-card-interaction-controller.js");
+  const helper = windowRef.HermesGrowthCardInteractionController.__test;
+  const safariLikeRoot = {
+    MediaRecorder: { isTypeSupported: (type) => ["audio/mp4", "audio/webm"].includes(type) },
+    Audio: function Audio() {
+      this.canPlayType = (type) => type === "audio/mp4" ? "probably" : "";
+    }
+  };
+  const chromiumLikeRoot = {
+    MediaRecorder: { isTypeSupported: (type) => type.startsWith("audio/webm") },
+    Audio: function Audio() {
+      this.canPlayType = (type) => type.startsWith("audio/webm") ? "maybe" : "";
+    }
+  };
+
+  assert.equal(helper.preferredAudioMimeType(safariLikeRoot), "audio/mp4");
+  assert.equal(helper.preferredAudioMimeType(chromiumLikeRoot), "audio/webm;codecs=opus");
+});
+
+test("Growth card interaction controller records visible preview playback failures", () => {
+  const windowRef = loadPublicScript("growth-card-interaction-controller.js");
+  const pageState = {
+    cardGeneration: {},
+    learningGrowthInteractionMessages: {},
+    learningGrowthRecordings: {
+      "card_1:submission": { status: "ready", url: "blob:bad", message: "录音已准备" }
+    }
+  };
+  let renders = 0;
+  const controller = windowRef.HermesGrowthCardInteractionController.createGrowthCardInteractionController({
+    api: {},
+    pageState,
+    model: { overview: {}, board: {}, detailCache: new Map() },
+    viewModel: { normalizeCard: (card) => card },
+    renderShell: () => {
+      renders += 1;
+    },
+    refreshCard: async () => null,
+    getCurrentWorkspaceId: () => "weixin_fanfan"
+  });
+
+  controller.handleRecordingPlaybackError("card_1", "submission");
+  assert.equal(pageState.learningGrowthRecordings["card_1:submission"].playbackError, true);
+  assert.match(pageState.learningGrowthRecordings["card_1:submission"].message, /无法回放/);
+  assert.equal(renders, 1);
+
+  controller.handleRecordingPlaybackError("card_1", "submission");
+  assert.equal(renders, 1);
+});
+
 test("Growth card generation UI renders Owner panel and structured payload", () => {
   const windowRef = loadPublicScript("growth-card-generation-ui.js");
   const context = {
@@ -315,9 +366,43 @@ test("Growth teaching card UI renders submit and recording controls for a genera
   assert.match(html, /data-learning-growth-record-toggle="ltask_daily_1"/);
   assert.match(html, /data-record-kind="submission"/);
   assert.match(html, /blob:submission/);
+  assert.match(html, /data-learning-growth-record-playback="ltask_daily_1"/);
   assert.match(html, />提交作答<\/button>/);
   assert.doesNotMatch(html, /role="tablist"/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
+});
+
+test("Growth teaching card UI keeps a failed recording preview visible as a recoverable state", () => {
+  const windowRef = loadPublicScript("growth-legacy-task-ui.js");
+  const html = windowRef.HermesLearningGrowthTaskUi.renderTeachingCardDetail({
+    taskCardId: "ltask_daily_1",
+    workspaceId: "weixin_fanfan",
+    title: "Find the main idea",
+    status: "published",
+    cardRole: "practice",
+    teachingFlow: {
+      lesson: { title: "Main idea", explanation: "A main idea tells what the paragraph is mostly about." },
+      guidedPractice: { instruction: "Try one sentence." },
+      quickCheck: { instruction: "Write the main idea." }
+    }
+  }, {
+    workspaceId: "weixin_fanfan",
+    state: {
+      learningGrowthRecordings: {
+        "ltask_daily_1:submission": {
+          status: "ready",
+          url: "blob:bad-format",
+          playbackError: true,
+          message: "录音已保存，但当前浏览器无法回放。"
+        }
+      }
+    }
+  });
+
+  assert.match(html, /重新录音/);
+  assert.match(html, /当前浏览器无法回放/);
+  assert.match(html, /data-learning-growth-record-clear="ltask_daily_1"/);
+  assert.doesNotMatch(html, /data-learning-growth-record-playback="ltask_daily_1"/);
 });
 
 test("Growth teaching card UI renders submitted waiting-evaluation state", () => {
@@ -402,6 +487,8 @@ test("Growth teaching card UI renders one-shot evaluation and optional reflectio
   assert.match(html, /data-learning-growth-reflection-form="ltask_daily_1"/);
   assert.match(html, /data-record-kind="reflection"/);
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/submissions\/submission_1/);
+  assert.match(html, /data-learning-growth-saved-audio/);
+  assert.match(html, /data-learning-growth-audio-error hidden/);
   assert.match(html, /data-learning-growth-experience-mode="readonly"/);
   assert.match(html, /难度感受写入还没有在插件内启用/);
   assert.doesNotMatch(html, /data-learning-growth-experience-signal/);
@@ -439,6 +526,7 @@ test("Growth teaching card UI renders submitted reflection audio without reopeni
 
   assert.match(html, /反思已提交/);
   assert.match(html, /proxy:weixin_fanfan:\/api\/v1\/growth\/audio\/reflections\/reflection_1/);
+  assert.match(html, /录音暂时无法播放/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
 

@@ -150,6 +150,7 @@ The first core-module split is behavior-preserving:
   submission, audio recorder, evaluation, optional reflection, and completion
   feedback;
   `growth-card-interaction-controller.js` owns browser recording state,
+  record/play MIME selection, local preview playback errors,
   submission/reflection event flow, visible error messages, and evaluation
   refresh calls; `growth-api-client.js` exposes card
   fetch/submission/evaluation/reflection helpers plus embedded-proxy audio URL
@@ -157,6 +158,11 @@ The first core-module split is behavior-preserving:
   One-submission/one-reflection, evaluation, and reward completion rules still
   live in `evidence-writes.js`, `growth-evaluation-service.js`, and
   `rewards.js`.
+- SQLite audio projection preserves playback containers: explicit non-generic
+  stored audio MIME values are honored, `.webm` is served as `audio/webm`, and
+  legacy `.ogg` / `.opus` records remain `audio/ogg`. This boundary prevents
+  plugin-owned audio routes from returning a playable WebM BLOB with an Ogg
+  content type.
 - `growth-learning-sqlite-store.js` remains the public facade while deeper
   modules are extracted.
 

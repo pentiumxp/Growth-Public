@@ -151,7 +151,7 @@ test("evidence writer decodes bounded audio input", () => {
   });
 
   assert.equal(decoded.name, "answer.webm");
-  assert.equal(decoded.mime, "audio/ogg");
+  assert.equal(decoded.mime, "audio/webm");
   assert.equal(decoded.size, 5);
   assert.equal(decoded.durationMs, 1200);
 });

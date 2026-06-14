@@ -37,12 +37,15 @@ function publicAudio(recordType, recordId, raw = {}, fallbackDigest = "") {
 }
 
 function audioMimeForPlayback(audio = {}, filePath = "") {
+  const explicit = cleanString(audio.mime || audio.type);
+  if (explicit && explicit !== "application/octet-stream") return explicit;
   const ext = path.extname(filePath || cleanString(audio.name || audio.fileName || audio.filename)).toLowerCase();
   if (ext === ".mp3") return "audio/mpeg";
   if (ext === ".m4a" || ext === ".aac") return "audio/mp4";
   if (ext === ".wav") return "audio/wav";
-  if (ext === ".ogg" || ext === ".opus" || ext === ".webm") return "audio/ogg";
-  return cleanString(audio.mime || audio.type) || "application/octet-stream";
+  if (ext === ".webm") return "audio/webm";
+  if (ext === ".ogg" || ext === ".opus") return "audio/ogg";
+  return explicit || "application/octet-stream";
 }
 
 module.exports = {

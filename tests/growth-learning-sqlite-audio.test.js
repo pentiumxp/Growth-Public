@@ -8,6 +8,9 @@ const {
   createAudioRepository,
   normalizeAudioRoots
 } = require("../src/stores/growth-learning-sqlite/audio");
+const {
+  audioMimeForPlayback
+} = require("../src/stores/growth-learning-sqlite/audio-metadata");
 
 function withAudioDb(callback) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-audio-repo-"));
@@ -88,6 +91,12 @@ function withAudioDb(callback) {
 
 test("audio repository normalizes explicit legacy roots", () => {
   assert.deepEqual(normalizeAudioRoots(["./data", "./data"], "/tmp/growth.sqlite3"), [path.resolve("./data")]);
+});
+
+test("audio playback MIME preserves webm and honors explicit metadata", () => {
+  assert.equal(audioMimeForPlayback({ name: "answer.webm" }), "audio/webm");
+  assert.equal(audioMimeForPlayback({ name: "answer.ogg" }), "audio/ogg");
+  assert.equal(audioMimeForPlayback({ name: "answer.ogg", mime: "audio/webm; codecs=opus" }), "audio/webm; codecs=opus");
 });
 
 test("audio repository reads stored BLOBs before legacy files", () => {

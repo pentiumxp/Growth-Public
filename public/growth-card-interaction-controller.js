@@ -1,4 +1,68 @@
 (function registerGrowthCardInteractionController(root) {
+  const AUDIO_MIME_CANDIDATES = [
+    "audio/mp4",
+    "audio/aac",
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/ogg"
+  ];
+
+  function cleanValue(value) {
+    return String(value ?? "").trim();
+  }
+
+  function supportsRecordingMimeType(rootRef, mimeType) {
+    const type = cleanValue(mimeType);
+    const mediaRecorder = rootRef.MediaRecorder;
+    if (!type || !mediaRecorder || typeof mediaRecorder.isTypeSupported !== "function") return false;
+    try {
+      return Boolean(mediaRecorder.isTypeSupported(type));
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function audioPlaybackSupport(rootRef, mimeType) {
+    const type = cleanValue(mimeType);
+    if (!type) return "unknown";
+    let audio = null;
+    try {
+      if (typeof rootRef.Audio === "function") audio = new rootRef.Audio();
+      else if (rootRef.document && typeof rootRef.document.createElement === "function") audio = rootRef.document.createElement("audio");
+    } catch (error) {
+      audio = null;
+    }
+    if (!audio || typeof audio.canPlayType !== "function") return "unknown";
+    const support = cleanValue(audio.canPlayType(type));
+    return support === "probably" || support === "maybe" ? "supported" : "unsupported";
+  }
+
+  function canPlayAudioMimeType(rootRef, mimeType) {
+    return audioPlaybackSupport(rootRef, mimeType) !== "unsupported";
+  }
+
+  function preferredAudioMimeType(rootRef = root) {
+    const mediaRecorder = rootRef.MediaRecorder;
+    if (!mediaRecorder || typeof mediaRecorder.isTypeSupported !== "function") return "";
+    const recordable = AUDIO_MIME_CANDIDATES.filter((type) => supportsRecordingMimeType(rootRef, type));
+    return recordable.find((type) => canPlayAudioMimeType(rootRef, type)) || recordable[0] || "";
+  }
+
+  function audioPlaybackWarning(rootRef, mimeType) {
+    return audioPlaybackSupport(rootRef, mimeType) === "unsupported"
+      ? "录音已保存，但当前浏览器不能直接回放此音频格式。请重新录音；如果仍失败，可以先提交文字作答。"
+      : "";
+  }
+
+  function audioFileSuffix(mimeType) {
+    const type = cleanValue(mimeType).toLowerCase();
+    if (type.includes("mp4") || type.includes("m4a")) return "m4a";
+    if (type.includes("aac")) return "aac";
+    if (type.includes("ogg") || type.includes("opus")) return "ogg";
+    return "webm";
+  }
+
   function createGrowthCardInteractionController({
     api,
     pageState,
@@ -93,26 +157,8 @@
       });
     }
 
-    function preferredAudioMimeType() {
-      const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/mp4",
-        "audio/ogg;codecs=opus",
-        "audio/ogg"
-      ];
-      const mediaRecorder = root.MediaRecorder;
-      if (!mediaRecorder || typeof mediaRecorder.isTypeSupported !== "function") return "";
-      return candidates.find((type) => mediaRecorder.isTypeSupported(type)) || "";
-    }
-
     function audioFileName(kind, mimeType) {
-      const suffix = String(mimeType || "").includes("mp4")
-        ? "m4a"
-        : String(mimeType || "").includes("ogg")
-          ? "ogg"
-          : "webm";
-      return `growth-${clean(kind) || "audio"}-${Date.now()}.${suffix}`;
+      return `growth-${clean(kind) || "audio"}-${Date.now()}.${audioFileSuffix(mimeType)}`;
     }
 
     function blobToBase64(blob) {
@@ -153,7 +199,7 @@
       renderShell();
       try {
         const stream = await root.navigator.mediaDevices.getUserMedia({ audio: true });
-        const mimeType = preferredAudioMimeType();
+        const mimeType = preferredAudioMimeType(root);
         const recorder = new mediaRecorder(stream, mimeType ? { mimeType } : undefined);
         const chunks = [];
         const startedAt = Date.now();
@@ -176,12 +222,14 @@
           stopRecordingStream(recording);
           const durationMs = Math.max(0, Date.now() - startedAt);
           const blob = new Blob(chunks, { type: recording.mimeType });
+          const playbackWarning = blob.size > 0 ? audioPlaybackWarning(root, recording.mimeType || blob.type) : "";
           revokeRecordingUrl(recording);
           Object.assign(recording, {
             status: blob.size > 0 ? "ready" : "error",
-            message: blob.size > 0 ? "录音已准备" : "录音为空，请重新录",
+            message: blob.size > 0 ? playbackWarning || "录音已准备" : "录音为空，请重新录",
             blob: blob.size > 0 ? blob : null,
             url: blob.size > 0 && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(blob) : "",
+            playbackError: Boolean(playbackWarning),
             durationMs,
             elapsedMs: durationMs,
             name: audioFileName(recordKind, recording.mimeType),
@@ -219,6 +267,15 @@
         recording.message = error.message || "录音停止失败";
         stopRecordingStream(recording);
       }
+      renderShell();
+    }
+
+    function handleRecordingPlaybackError(taskCardId, kind = "submission") {
+      const key = recordingKey(taskCardId, kind);
+      const recording = pageState.learningGrowthRecordings[key];
+      if (!recording || recording.status !== "ready" || recording.playbackError) return;
+      recording.playbackError = true;
+      recording.message = "录音已保存，但当前浏览器无法回放。请重新录音；如果再次失败，可以先提交文字作答。";
       renderShell();
     }
 
@@ -356,6 +413,7 @@
     return {
       clearAllRecordings,
       clearRecording,
+      handleRecordingPlaybackError,
       refreshEvaluation,
       setMessage,
       submitEvidence,
@@ -366,6 +424,11 @@
   }
 
   root.HermesGrowthCardInteractionController = {
-    createGrowthCardInteractionController
+    createGrowthCardInteractionController,
+    __test: {
+      audioPlaybackSupport,
+      canPlayAudioMimeType,
+      preferredAudioMimeType
+    }
   };
 })(typeof window !== "undefined" ? window : globalThis);

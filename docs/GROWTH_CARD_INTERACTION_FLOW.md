@@ -116,8 +116,15 @@ Direct plugin-port callers use the same helpers without a proxy prefix.
 ## Audio Evidence
 
 The browser recorder uses `MediaRecorder` when available. The plugin UI keeps
-recording state in memory only. On submit, the selected `Blob` is converted to
-bounded base64 JSON:
+recording state in memory only. The recorder must prefer a MIME type that is
+both recordable by `MediaRecorder.isTypeSupported(...)` and playable by the
+current browser's `audio.canPlayType(...)`; this prevents Safari/iOS-style
+"recorded but cannot replay" states where a browser can create one container
+but the embedded player rejects it. When no shared record/play MIME can be
+confirmed, the UI may still record with the browser default, but it must surface
+a visible recovery message if preview playback fails.
+
+On submit, the selected `Blob` is converted to bounded base64 JSON:
 
 ```json
 {
@@ -131,8 +138,17 @@ bounded base64 JSON:
 ```
 
 The plugin backend stores accepted audio in `learning_task_audio_blobs` and
-returns bounded public audio metadata. Docs and handoffs must not store raw
-audio payloads, transcripts, or learner answer bodies.
+returns bounded public audio metadata. Playback MIME must preserve the actual
+container: `.webm` is `audio/webm`, `.ogg`/`.opus` are `audio/ogg`, and an
+explicit non-generic stored MIME value wins over extension guessing. Docs and
+handoffs must not store raw audio payloads, transcripts, or learner answer
+bodies.
+
+Both local preview audio and saved submission/reflection audio must have a
+visible failure path. A local preview error keeps the recording recoverable for
+`重新录音` / `清除` and shows the card-level message. A saved evidence playback
+error reveals the bounded saved-audio error text in the evidence panel instead
+of relying only on the native browser control.
 
 ## State Ownership
 

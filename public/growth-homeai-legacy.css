@@ -4017,6 +4017,13 @@ button.directory-alias-chip {
   width: 100%;
 }
 
+.learning-growth-audio-error {
+  margin: 0;
+  color: #9b3d35;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .learning-growth-submission-transcript {
   margin-top: 8px;
 }
@@ -15338,6 +15345,10 @@ body.task-markdown-preview-open {
   color: var(--ink);
 }
 
+:root[data-theme="dark"] .learning-growth-audio-error {
+  color: #ffb1a6;
+}
+
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] .learning-growth-tab-list,
   :root[data-theme="system"] .learning-growth-settings-tabs .learning-growth-tab-list,
@@ -15501,6 +15512,10 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .todo-learning-growth-feedback-list strong,
   :root[data-theme="system"] .learning-growth-submission-audio strong {
     color: var(--ink);
+  }
+
+  :root[data-theme="system"] .learning-growth-audio-error {
+    color: #ffb1a6;
   }
 }
 

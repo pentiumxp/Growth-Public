@@ -320,6 +320,18 @@
         renderShell();
       });
     });
+    root.querySelectorAll("[data-learning-growth-record-playback]").forEach((audio) => {
+      audio.addEventListener("error", () => {
+        cardInteractionController.handleRecordingPlaybackError(audio.dataset.learningGrowthRecordPlayback, audio.dataset.recordKind || "submission");
+      });
+    });
+    root.querySelectorAll("[data-learning-growth-saved-audio]").forEach((audio) => {
+      audio.addEventListener("error", () => {
+        const holder = audio.closest("[data-learning-growth-audio-evidence]");
+        const message = holder?.querySelector("[data-learning-growth-audio-error]");
+        if (message) message.hidden = false;
+      });
+    });
     root.querySelectorAll("[data-learning-growth-submission-form]").forEach((form) => {
       form.addEventListener("submit", (event) => {
         event.preventDefault();
