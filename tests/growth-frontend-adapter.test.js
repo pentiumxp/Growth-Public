@@ -761,6 +761,80 @@ test("Growth route controller opens card and action routes without DOM coupling"
   assert.equal(ownerState.learningGrowthActiveTab, "generation");
 });
 
+test("Growth navigation controller consumes host back on card detail before host exit", () => {
+  const windowRef = loadPublicScript("growth-navigation-controller.js");
+  const listeners = {};
+  const posted = [];
+  const historyCalls = [];
+  const pageState = {
+    selectedLearningTaskCardId: "card_1",
+    learningGrowthHistoryTaskCardId: "",
+    learningGrowthSettingsTaskId: "",
+    learningGrowthSettingsOpen: false,
+    learningGrowthActiveTab: "overview",
+    learningGrowthBoardLane: "ready"
+  };
+  let renders = 0;
+  const controller = windowRef.HermesGrowthNavigation.createGrowthNavigationController({
+    pageState,
+    renderShell: () => {
+      renders += 1;
+    },
+    historyRef: {
+      replaceState: (...args) => historyCalls.push(["replace", ...args]),
+      pushState: (...args) => historyCalls.push(["push", ...args])
+    },
+    locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
+    parentRef: { postMessage: (payload) => posted.push(payload) },
+    windowRef: { addEventListener: (eventName, handler) => { listeners[eventName] = handler; } }
+  });
+
+  controller.bind();
+  assert.equal(posted.at(-1).type, "growth.plugin.navigation");
+  assert.equal(posted.at(-1).canGoBack, true);
+
+  listeners.message({ data: { type: "hermes.plugin.back", version: 1 } });
+
+  assert.equal(pageState.selectedLearningTaskCardId, "");
+  assert.equal(renders, 1);
+  assert.equal(historyCalls.at(-1)[0], "replace");
+  assert.equal(posted.at(-1).type, "growth.plugin.back_result");
+  assert.equal(posted.at(-1).handled, true);
+  assert.equal(posted.at(-1).canGoBack, false);
+  assert.equal(posted.at(-1).route.name, "root");
+});
+
+test("Growth navigation controller reports unhandled back at plugin root", () => {
+  const windowRef = loadPublicScript("growth-navigation-controller.js");
+  const posted = [];
+  const pageState = {
+    selectedLearningTaskCardId: "",
+    learningGrowthHistoryTaskCardId: "",
+    learningGrowthSettingsTaskId: "",
+    learningGrowthSettingsOpen: false,
+    learningGrowthActiveTab: "overview",
+    learningGrowthBoardLane: "ready"
+  };
+  let renders = 0;
+  const controller = windowRef.HermesGrowthNavigation.createGrowthNavigationController({
+    pageState,
+    renderShell: () => {
+      renders += 1;
+    },
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
+    parentRef: { postMessage: (payload) => posted.push(payload) },
+    windowRef: { addEventListener: () => null }
+  });
+
+  assert.equal(controller.handleBack("test_root_back"), false);
+  assert.equal(renders, 0);
+  assert.equal(posted[0].type, "growth.plugin.back_result");
+  assert.equal(posted[0].handled, false);
+  assert.equal(posted[0].canGoBack, false);
+  assert.equal(posted[0].route.name, "root");
+});
+
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
   const order = [
@@ -770,6 +844,7 @@ test("Growth index loads frontend adapters before app boot", () => {
     "/growth-route-controller.js",
     "/growth-card-generation-ui.js",
     "/growth-card-interaction-controller.js",
+    "/growth-navigation-controller.js",
     "/app.js"
   ].map((asset) => html.indexOf(asset));
   assert.ok(order.every((index) => index >= 0));

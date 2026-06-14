@@ -113,6 +113,23 @@ In Home AI embedded proxy mode, the frontend resolves projected Growth audio
 paths through the plugin proxy and appends the target learner workspace query.
 Direct plugin-port callers use the same helpers without a proxy prefix.
 
+## Back Navigation
+
+Generated teaching/practice card detail is a Growth-owned secondary view. When
+the learner opens a card from the Growth board, Growth records an internal
+history entry and emits `growth.plugin.navigation` with `canGoBack: true`.
+Home AI back or right-swipe gestures send `hermes.plugin.back` to the iframe;
+Growth must consume that event while a card detail, history page, or Owner
+settings page is open, clear the secondary view, render the parent list, and
+emit `growth.plugin.back_result` with `handled: true`.
+
+At the Growth root board, the same back event must return
+`growth.plugin.back_result` with `handled: false` so the Home AI host can leave
+the plugin and restore the outer route. Browser `popstate` should follow the
+same internal route state when available. A practice card detail must not let
+right-swipe return directly to the Home AI host while a Growth list parent is
+available.
+
 ## Audio Evidence
 
 The browser recorder uses `MediaRecorder` when available. The plugin UI keeps

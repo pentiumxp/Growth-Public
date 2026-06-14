@@ -36,6 +36,7 @@
   };
   const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
   let cardGenerationProgressTimers = [];
+  let growthNavigationController = null;
   const fanfanSampleWorkspaceIds = ["weixin_stephen", "weixin_fanfan"];
 
   function clean(value) {
@@ -159,6 +160,7 @@
       escapeHtml,
     });
     bindEvents();
+    growthNavigationController?.emitNavigation("render");
   }
 
   async function ensureCardGenerationTargetSelected() {
@@ -204,10 +206,11 @@
     });
   }
 
-  async function openCard(taskCardId, workspaceId = "") {
+  async function openCard(taskCardId, workspaceId = "", options = {}) {
     const id = clean(taskCardId);
     if (!id) return;
     const targetWorkspaceId = workspaceIdForTaskCard(id, workspaceId);
+    const previousCardId = clean(pageState.selectedLearningTaskCardId);
     pageState.learningGrowthSettingsOpen = false;
     pageState.learningGrowthHistoryTaskCardId = "";
     pageState.selectedLearningTaskCardId = id;
@@ -225,6 +228,9 @@
       model.overview.programs.executableTasks = cards;
       model.overview.board.cards = model.overview.board.cards.map((card) => clean(card.taskCardId) === id ? Object.assign({}, card, detail) : card);
     }
+    const historyMode = clean(options.historyMode || (previousCardId === id ? "replace" : "push"));
+    if (historyMode === "replace") growthNavigationController?.replaceHistory("card_detail");
+    else if (historyMode === "push") growthNavigationController?.pushHistory("card_detail");
     renderShell();
   }
 
@@ -233,8 +239,18 @@
     if (!id) return;
     const targetWorkspaceId = workspaceIdForTaskCard(id, workspaceId);
     model.detailCache.delete(`${targetWorkspaceId}:${id}`);
-    await openCard(id, targetWorkspaceId);
+    await openCard(id, targetWorkspaceId, { historyMode: "replace" });
   }
+
+  growthNavigationController = window.HermesGrowthNavigation.createGrowthNavigationController({
+    pageState,
+    renderShell,
+    historyRef: window.history,
+    locationRef: window.location,
+    parentRef: window.parent,
+    windowRef: window
+  });
+  growthNavigationController.bind();
 
   const routeController = window.HermesGrowthRouteController.createGrowthRouteController({
     pluginRoute,
@@ -372,6 +388,7 @@
         event.preventDefault();
         pageState.learningGrowthSettingsOpen = true;
         pageState.learningGrowthActiveTab = pageState.learningGrowthActiveTab || "overview";
+        growthNavigationController?.pushHistory("owner_settings");
         renderShell();
       });
     });
@@ -380,6 +397,7 @@
         event.preventDefault();
         pageState.learningGrowthSettingsOpen = false;
         pageState.learningGrowthSettingsTaskId = "";
+        growthNavigationController?.replaceHistory("owner_settings_close");
         renderShell();
       });
     });
@@ -531,6 +549,7 @@
     pageState.selectedLearningTaskCardId = "";
     pageState.learningGrowthHistoryTaskCardId = "";
     pageState.learningGrowthSettingsTaskId = "";
+    growthNavigationController?.replaceHistory("workspace_switch");
     model.viewTargets = model.viewTargets.map((target) => Object.assign({}, target, {
       current: clean(target.workspaceId) === clean(currentWorkspaceId),
     }));
@@ -552,6 +571,7 @@
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadViewTargets();
     await loadCurrentWorkspace();
+    growthNavigationController.replaceHistory("workspace_loaded");
     const renderedByRoute = await routeController.applyInitialPluginRoute();
     if (pageState.auth.isOwner && pageState.learningGrowthSettingsOpen && pageState.learningGrowthActiveTab === "generation") {
       await ensureCardGenerationTargetSelected();

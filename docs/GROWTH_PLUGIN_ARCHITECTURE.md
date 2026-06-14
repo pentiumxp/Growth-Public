@@ -55,7 +55,7 @@ Growth should stay a service-first embedded plugin:
 | SQLite evaluation jobs | `src/stores/growth-learning-sqlite/evaluation-jobs.js` | Evaluation job listing, claiming, completion, retry/failure state, evaluation context reads, and evaluation record writes. |
 | SQLite rewards | `src/stores/growth-learning-sqlite/rewards.js` | Score-proportional daily-card reward settlement, task completion side effects, Growth learning-coin balance, and monthly clear ledger writes. |
 | Embedded UI boot | `public/app.js` | Boot/wiring layer for the embedded Growth app. |
-| Embedded UI adapters | `public/growth-appearance.js`, `public/growth-api-client.js`, `public/growth-view-model.js`, `public/growth-route-controller.js` | Host appearance mapping, API client/query handling, board/card view-model normalization, and manifest route/action handling. |
+| Embedded UI adapters | `public/growth-appearance.js`, `public/growth-api-client.js`, `public/growth-view-model.js`, `public/growth-route-controller.js`, `public/growth-navigation-controller.js` | Host appearance mapping, API client/query handling, board/card view-model normalization, manifest route/action handling, and plugin-owned secondary-view back/navigation state. |
 | Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction surface for one submission, visible evaluation refresh, optional one-time reflection, and text/audio evidence routed through plugin APIs. The controller owns ephemeral evidence/recording flow state while service/store rules remain backend-owned. |
 | Migrated UI baseline | `public/growth-legacy-*.js`, `public/growth-homeai-legacy.css` | Plugin-owned copy of the migrated Growth UI baseline. Future Growth UI changes happen here, not in Home AI host files. |
 
@@ -149,6 +149,11 @@ The first core-module split is behavior-preserving:
   cards: status rail, score policy, learning target, lesson, guided practice,
   submission, audio recorder, evaluation, optional reflection, and completion
   feedback;
+  `growth-navigation-controller.js` owns plugin navigation state for Growth
+  secondary views, emits `growth.plugin.navigation`, consumes
+  `hermes.plugin.back` while a card detail is open, and returns
+  `growth.plugin.back_result` so Home AI right-swipe goes back to the Growth
+  list before leaving the plugin;
   `growth-card-interaction-controller.js` owns browser recording state,
   record/play MIME selection, local preview playback errors,
   submission/reflection event flow, visible error messages, and evaluation

@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Card Detail Back Navigation Hotfix
+
+- Current workspace state: implemented and locally validated; pending
+  commit/push/deploy at the time this section was written.
+- User-visible bug:
+  - on a Growth practice/generated-card detail page, Home AI right-swipe/back
+    could return to the host instead of first returning to the Growth parent
+    list.
+- Fix:
+  - added `public/growth-navigation-controller.js`;
+  - `public/app.js` now emits `growth.plugin.navigation`, handles
+    `hermes.plugin.back`, and returns `growth.plugin.back_result`;
+  - card detail open pushes an internal Growth history entry; card refresh
+    replaces the current entry instead of stacking duplicate detail states;
+  - back at a card detail clears `selectedLearningTaskCardId`, renders the
+    Growth board/list, and reports `handled:true`;
+  - back at the Growth root reports `handled:false` so the Home AI host can
+    own the next outer back action.
+- Static asset version:
+  - `20260614-growth-navigation-v1`.
+- Documentation updated:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness updated:
+  - `tests/growth-frontend-adapter.test.js` covers host back consumption on
+    card detail, unhandled root back, and the new script load order;
+  - `package.json` includes `public/growth-navigation-controller.js` in
+    `npm run check`.
+- Validation passed:
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check`;
+  - `npm test` with 155 passing tests;
+  - `git diff --check`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - CodeGraph status after edits: 96 files, 969 nodes, 3152 edges.
+- Visual/behavior evidence:
+  - local Playwright mobile dark harness loaded real Growth UI renderers and
+    `growth-navigation-controller.js`, simulated `hermes.plugin.back`, and
+    verified detail -> board transition plus `growth.plugin.back_result`
+    `handled:true`;
+  - screenshot:
+    `/tmp/growth-navigation-back-mobile-dark.png`.
+- AI Ops note:
+  - `ai-ops-control-plane.js` classified the change as H3 and did not require
+    a visual lane, but this was treated locally as H2 because it changes
+    embedded plugin back/right-swipe behavior.
+
 ## 2026-06-14 Growth Audio Playback Hotfix
 
 - Current workspace state: audio playback hotfix implemented, committed,
