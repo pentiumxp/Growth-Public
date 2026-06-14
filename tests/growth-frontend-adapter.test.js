@@ -1212,7 +1212,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-recommendation-lifecycle-v1";
+  const staticVersion = "20260614-post-publish-context-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1234,4 +1234,16 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-owner-evaluation-status-ui-v1/);
   assert.doesNotMatch(html, /20260614-recommendation-rationale-ui-v1/);
   assert.doesNotMatch(html, /20260614-recipe-policy-v1/);
+  assert.doesNotMatch(html, /20260614-recommendation-lifecycle-v1/);
+});
+
+test("Growth app refreshes card generation context after publish without clearing preview", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+
+  assert.match(source, /function refreshCardGenerationContextAfterPublish/);
+  assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId\)/);
+  assert.match(source, /pageState\.cardGeneration\.context = context/);
+  assert.match(source, /pageState\.cardGeneration\.status = "published";[\s\S]*pageState\.cardGeneration\.generatedResult = result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
+  assert.match(source, /pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
+  assert.doesNotMatch(source, /await loadCardGenerationContext\(targetWorkspaceId\)/);
 });

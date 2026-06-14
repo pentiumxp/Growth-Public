@@ -224,6 +224,11 @@ UI renders it as a read-only "推荐闭环" panel. The UI must not infer lifecyc
 state from raw trajectory JSON or mutate lifecycle status; accepted and
 superseded writes remain service-owned.
 
+After a card publish succeeds, the embedded UI refreshes only the generation
+context for the selected learner. It must preserve `status="published"` and
+the generated card preview while replacing the summary-only context so the
+Owner sees accepted/superseded lifecycle changes without a manual refresh.
+
 ## Strategy Rules
 
 Strategy selection is deterministic and service-owned. Models may provide

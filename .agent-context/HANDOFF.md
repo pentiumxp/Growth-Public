@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Post-Publish Context Refresh Slice
+
+- Current workspace state: implemented and locally validated; commit/push is
+  pending in this Codex turn.
+- Previous slice already committed and pushed:
+  `8a042e7 Expose Growth recommendation lifecycle`.
+- Scope:
+  - `public/app.js` refreshes
+    `GET /api/v1/growth/card-generation/context` for the selected learner
+    after daily-card generation or stage-assessment activation publishes;
+  - the refresh replaces only `pageState.cardGeneration.context` and selected
+    target workspace, preserving `status="published"`, `generatedResult`, and
+    the visible card preview/open-card action;
+  - context refresh failure is surfaced as a bounded warning and does not roll
+    back the published result;
+  - `public/index.html` static asset version was bumped to
+    `20260614-post-publish-context-v1`.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --check public/app.js`;
+  - focused app/UI boundary gate:
+    `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js`
+    with 40 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - `npm run check`;
+  - `npm test` with 224 passing tests;
+  - Home AI app required check:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in Growth and Home AI app workspaces.
+- AI Ops evidence:
+  - test: `evidence-4bf31bea-367c-4c4d-982f-34b457e7314b`.
+- CodeGraph status after sync: 123 files, 1299 nodes, 4589 edges.
+
 ## 2026-06-14 Growth Recommendation Lifecycle Visibility Slice
 
 - Current workspace state: implemented and locally validated; commit/push is

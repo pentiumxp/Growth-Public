@@ -413,6 +413,14 @@ generated card/plan ids, superseded-by trajectory id, and bounded timestamps.
 The UI must not write lifecycle state, infer accepted/superseded from raw
 trajectory JSON, or display raw learner content.
 
+After a daily card or stage-assessment card publishes, the embedded UI must
+refresh `GET /api/v1/growth/card-generation/context` for the selected learner
+without calling the full loading path. This keeps the published card preview
+and open-card button visible while updating `recommendationLifecycle` so the
+Owner sees the consumed recommendation move out of pending state. If the
+context refresh fails, the card remains published and the UI shows a bounded
+refresh warning instead of rolling back the visible result.
+
 `learningProfile.recentExperienceSignals` can come from two Growth-owned
 sources: evaluation-derived mastery updates and learner-facing difficulty
 feedback written by `learning-experience-signal-service` through

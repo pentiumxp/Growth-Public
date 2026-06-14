@@ -568,6 +568,22 @@
     renderShell();
   }
 
+  async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId()) {
+    if (!pageState.auth.isOwner) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    try {
+      const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
+      pageState.cardGeneration.context = context;
+      pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || requestedTargetWorkspaceId);
+      return context;
+    } catch (refreshError) {
+      const message = refreshError.message || String(refreshError);
+      const prefix = pageState.cardGeneration.error ? `${pageState.cardGeneration.error}；` : "卡片已发布，但";
+      pageState.cardGeneration.error = `${prefix}生成上下文刷新失败：${message}`;
+      return null;
+    }
+  }
+
   function createStageAssessmentPayload(activationSource = "owner_manual") {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createStageAssessmentPayload !== "function") {
@@ -629,6 +645,7 @@
       } catch (refreshError) {
         pageState.cardGeneration.error = `卡片已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
       }
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -673,6 +690,7 @@
       } catch (refreshError) {
         pageState.cardGeneration.error = `阶段测评已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
       }
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
