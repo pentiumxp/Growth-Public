@@ -11,7 +11,7 @@
 
 ## 2026-06-14 Growth Stage Assessment Closed-Loop Profile Slice
 
-- Status: implemented and locally validated; commit/push pending in this turn.
+- Status: implemented, pushed, deployed, and production-smoked.
 - Scope:
   - `learning-mastery-profile-service` now reads card evidence role and
     `mastery_evidence_weight`;
@@ -63,6 +63,30 @@
   - `git diff --check`.
 - CodeGraph status after edits:
   - `124` files, `1334` nodes, `4801` edges.
+- Commit/push:
+  - Growth commit `a991a7711c1d` pushed to `origin/main` and `public/main`.
+- Production deploy:
+  - command target: `npm run --silent deploy:macos -- --plugin growth --json
+    --reason growth-stage-assessment-profile-loop --execute`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260614T140543Z-plugin-growth-growth-stage-assessment-profile-loop`;
+  - restarted `com.hermesmobile.plugin.growth`;
+  - deploy validation passed: launchd running, plugin manifest health passed,
+    and `codex_auth_*` blocker count was `0` (`codex-auth-profile-audit`
+    still reported unrelated non-`codex_auth_*` legacy issues).
+- Production smoke:
+  - `GET http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` returned
+    plugin id `growth` and the `stage_assessment` action;
+  - `GET http://127.0.0.1:4881/api/v1/growth/status?workspaceId=weixin_stephen`
+    returned `ok=true` from `growth-plugin-sqlite`;
+  - production source contains `recordAssessmentCompletion`,
+    `evidenceWeightForTaskCard`, and `evidenceWeightTotal`;
+  - production Node runtime loaded
+    `learning-stage-assessment-service` and confirmed
+    `recordAssessmentCompletion` is callable.
+- AI Ops evidence:
+  - `evidence-c4204f5a-a0ce-4c9d-ad8c-54d1fb340d67`.
 
 ## 2026-06-14 Growth Daily English Three-Step Interaction Slice
 
