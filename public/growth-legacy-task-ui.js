@@ -496,6 +496,21 @@
     return `<div class="todo-learning-growth-feedback-list"><strong>${escapeHtmlLocal(title)}</strong><ul>${list.map((item) => `<li>${escapeHtmlLocal(item)}</li>`).join("")}</ul></div>`;
   }
 
+  function renderEvaluationJobStatus(evaluationJob = {}, owner = false) {
+    evaluationJob = evaluationJob || {};
+    const status = String(evaluationJob.status || "").toLowerCase();
+    const parts = [];
+    const attemptCount = Number(evaluationJob.attemptCount || 0);
+    if (attemptCount > 0) parts.push(`已尝试 ${attemptCount} 次`);
+    if (status === "retry" && evaluationJob.availableAt) parts.push(`下次处理 ${evaluationJob.availableAt}`);
+    if (status === "processing" && evaluationJob.leaseUntil) parts.push(`处理中，租约到 ${evaluationJob.leaseUntil}`);
+    const review = evaluationJob.lastOwnerReview || null;
+    if (owner && review?.reviewedAt) parts.push(`Owner 已在 ${review.reviewedAt} 重新加入队列`);
+    if (owner && evaluationJob.lastError) parts.push(`错误摘要：${String(evaluationJob.lastError).slice(0, 120)}`);
+    if (!parts.length) return "";
+    return `<p class="learning-native-growth-submission-state">${escapeHtmlLocal(parts.join(" · "))}</p>`;
+  }
+
   function renderEvaluationPanel(task = {}, options = {}) {
     const cardId = String(task.taskCardId || task.id || "");
     const submission = task.latestSubmission || null;
@@ -516,12 +531,14 @@
         return `<div class="todo-learning-growth-evaluation is-failed" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
           <div class="todo-learning-growth-evaluation-head"><strong>批改未完成</strong><span class="todo-learning-growth-score-pill">需要处理</span></div>
           <p>${escapeHtmlLocal(message || "作答已保存，但系统批改多次未完成。请稍后刷新状态，或让 Owner 检查后再处理。")}</p>
+          ${renderEvaluationJobStatus(evaluationJob, owner)}
           <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新状态"}</button>${ownerRetryButton}</div>
         </div>`;
       }
       return `<div class="todo-learning-growth-evaluation" data-learning-growth-evaluation-panel="${escapeHtmlLocal(cardId)}">
         <div class="todo-learning-growth-evaluation-head"><strong>等待批改</strong><span class="todo-learning-growth-score-pill">一次批改</span></div>
         <p>${escapeHtmlLocal(message || "作答已保存，系统会处理一次批改。也可以手动刷新批改状态。")}</p>
+        ${renderEvaluationJobStatus(evaluationJob, owner)}
         <div class="learning-growth-teaching-actions"><button type="button" data-learning-growth-evaluation-refresh="${escapeHtmlLocal(cardId)}" ${busy ? "disabled" : ""}>${busy ? "刷新中" : "刷新批改"}</button></div>
       </div>`;
     }

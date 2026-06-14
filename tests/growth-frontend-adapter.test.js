@@ -691,7 +691,8 @@ test("Growth teaching card UI renders visible failed evaluation state", () => {
       jobId: "job_1",
       status: "failed",
       attemptCount: 3,
-      failedVisible: true
+      failedVisible: true,
+      lastError: "gateway_timeout"
     }
   }, {
     workspaceId: "weixin_fanfan",
@@ -704,9 +705,12 @@ test("Growth teaching card UI renders visible failed evaluation state", () => {
   assert.match(html, /需要处理/);
   assert.match(html, /Owner 检查/);
   assert.match(html, /刷新状态/);
+  assert.match(html, /已尝试 3 次/);
   assert.match(html, /todo-learning-growth-evaluation is-failed/);
   assert.doesNotMatch(html, /data-learning-growth-evaluation-retry/);
   assert.doesNotMatch(html, /重新批改/);
+  assert.doesNotMatch(html, /错误摘要/);
+  assert.doesNotMatch(html, /gateway_timeout/);
   assert.doesNotMatch(html, /作答已保存，系统会处理一次批改/);
   assert.doesNotMatch(html, /data-learning-growth-reflection-form/);
 });
@@ -733,7 +737,14 @@ test("Growth teaching card UI renders Owner retry action for failed evaluation",
       jobId: "job_1",
       status: "failed",
       attemptCount: 3,
-      failedVisible: true
+      failedVisible: true,
+      lastError: "gateway_timeout",
+      lastOwnerReview: {
+        action: "retry",
+        reason: "owner retry",
+        reviewedBy: "owner",
+        reviewedAt: "2026-06-14T06:15:00.000Z"
+      }
     }
   }, {
     workspaceId: "weixin_fanfan",
@@ -747,6 +758,9 @@ test("Growth teaching card UI renders Owner retry action for failed evaluation",
   assert.match(html, /data-workspace-id="weixin_fanfan"/);
   assert.match(html, /重新批改/);
   assert.match(html, /刷新状态/);
+  assert.match(html, /已尝试 3 次/);
+  assert.match(html, /Owner 已在 2026-06-14T06:15:00.000Z 重新加入队列/);
+  assert.match(html, /错误摘要：gateway_timeout/);
 });
 
 test("Growth teaching card UI renders one-shot evaluation and optional reflection after submission", () => {
@@ -1150,7 +1164,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-owner-evaluation-retry-ui-v1";
+  const staticVersion = "20260614-owner-evaluation-status-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1168,4 +1182,5 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);
   assert.doesNotMatch(html, /20260614-evaluation-failure-ui-v1/);
   assert.doesNotMatch(html, /20260614-owner-evaluation-retry-v1/);
+  assert.doesNotMatch(html, /20260614-owner-evaluation-retry-ui-v1/);
 });

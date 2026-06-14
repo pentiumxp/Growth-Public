@@ -55,6 +55,8 @@ function publicEvaluation(row) {
 function publicEvaluationJob(row) {
   if (!row) return null;
   const status = cleanString(row.status).toLowerCase();
+  const raw = parseJson(row.raw_json, {}) || {};
+  const review = raw.lastOwnerReview && typeof raw.lastOwnerReview === "object" ? raw.lastOwnerReview : null;
   return {
     jobId: row.id,
     submissionId: row.submission_id,
@@ -67,7 +69,13 @@ function publicEvaluationJob(row) {
     updatedAt: row.updated_at || "",
     completedAt: row.completed_at || "",
     retryable: status === "retry",
-    failedVisible: status === "failed"
+    failedVisible: status === "failed",
+    lastOwnerReview: review ? {
+      action: cleanString(review.action).slice(0, 40),
+      reason: cleanString(review.reason).slice(0, 160),
+      reviewedBy: cleanString(review.reviewedBy).slice(0, 120),
+      reviewedAt: cleanString(review.reviewedAt).slice(0, 40)
+    } : null
   };
 }
 

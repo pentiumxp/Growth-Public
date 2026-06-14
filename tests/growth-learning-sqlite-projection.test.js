@@ -144,7 +144,7 @@ function insertProjectionCard(db, input = {}) {
         id, submission_id, task_card_id, workspace_id, status, attempt_count,
         lease_owner, lease_until, last_error, raw_json, available_at, created_at,
         updated_at, completed_at
-      ) VALUES (?, ?, ?, 'weixin_child', ?, ?, ?, ?, ?, '{}',
+      ) VALUES (?, ?, ?, 'weixin_child', ?, ?, ?, ?, ?, ?,
         '2026-06-12T00:01:00.000Z', '2026-06-12T00:01:00.000Z',
         '2026-06-12T00:04:00.000Z', ?)
     `).run(
@@ -156,6 +156,7 @@ function insertProjectionCard(db, input = {}) {
       input.evaluationJobLeaseOwner || "",
       input.evaluationJobLeaseUntil || "",
       input.evaluationJobLastError || "",
+      JSON.stringify(input.evaluationJobRaw || {}),
       input.evaluationJobCompletedAt || ""
     );
   }
@@ -222,7 +223,8 @@ test("Growth projection helpers produce bounded public records", () => {
     updatedAt: "2026-06-12T00:05:00.000Z",
     completedAt: "",
     retryable: false,
-    failedVisible: true
+    failedVisible: true,
+    lastOwnerReview: null
   });
 
   assert.equal(publicReflection({
@@ -288,7 +290,15 @@ test("failed daily evaluation jobs project a visible failure without reopening s
       },
       evaluationJobStatus: "failed",
       evaluationJobAttemptCount: 3,
-      evaluationJobLastError: "gateway_timeout"
+      evaluationJobLastError: "gateway_timeout",
+      evaluationJobRaw: {
+        lastOwnerReview: {
+          action: "retry",
+          reason: "Owner confirmed retry.",
+          reviewedBy: "owner_workspace",
+          reviewedAt: "2026-06-12T00:04:00.000Z"
+        }
+      }
     });
 
     const card = publicCardFromRow(db, row, {
@@ -299,6 +309,12 @@ test("failed daily evaluation jobs project a visible failure without reopening s
     assert.equal(card.latestEvaluation, null);
     assert.equal(card.latestEvaluationJob.status, "failed");
     assert.equal(card.latestEvaluationJob.failedVisible, true);
+    assert.deepEqual(card.latestEvaluationJob.lastOwnerReview, {
+      action: "retry",
+      reason: "Owner confirmed retry.",
+      reviewedBy: "owner_workspace",
+      reviewedAt: "2026-06-12T00:04:00.000Z"
+    });
     assert.equal(card.laneId, "evaluation_failed");
     assert.equal(card.nextAction, "evaluation_failed");
     assert.equal(card.primaryAction, "owner_review");

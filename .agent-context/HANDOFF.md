@@ -9,6 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Owner Evaluation Job Status UI Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - extended `latestEvaluationJob` projection with bounded
+    `lastOwnerReview` summary fields from job `raw_json`;
+  - updated failed/waiting evaluation panels to show bounded job status:
+    attempt count, due retry time, processing lease time, and latest Owner
+    retry timestamp;
+  - kept `lastError` display Owner-only and bounded; learner views do not
+    expose Gateway/provider error details;
+  - bumped static Growth asset URLs in `public/index.html` to
+    `20260614-owner-evaluation-status-ui-v1`.
+- Documentation updated:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/growth-learning-sqlite-projection.test.js`;
+  - `tests/growth-frontend-adapter.test.js`.
+- Validation passed:
+  - `npm run check`;
+  - `node --test tests/growth-learning-sqlite-projection.test.js tests/growth-frontend-adapter.test.js tests/growth-learning-sqlite-store.test.js`
+    with 46 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - local Playwright mobile/dark smoke against `http://127.0.0.1:4895/`:
+    13 static assets used `20260614-owner-evaluation-status-ui-v1`, old retry
+    UI keys were absent, Owner retry button remained visible, and job status /
+    Owner-only error text rendered;
+  - `npm test` with 204 passing tests;
+  - app AI Ops H3 required check from
+    `/Users/hermes-dev/HermesMobileDev/app`:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check`;
+  - CodeGraph status after edits: 117 files, 1220 nodes, 4247 edges.
+- Browser/tooling:
+  - Codex in-app Browser was unavailable (`iab` not connected), so local visual
+    validation used Home AI app Playwright from
+    `/Users/hermes-dev/HermesMobileDev/app/node_modules/playwright`.
+- AI Ops:
+  - intake classified the slice as H3 Architecture Documentation And Harness
+    Map and did not require deployment or visual lane;
+  - evidence id: `evidence-40380118-b8e5-465a-b32f-b6459e8f526c`.
+- Remaining architecture work:
+  - consider an Owner-wide evaluation recovery queue instead of only per-card
+    actions once there is more than one active learner;
+  - production deployment still requires the central Home AI visual/prod smoke
+    gates.
+
 ## 2026-06-14 Growth Owner Evaluation Retry UI Slice
 
 - Current workspace state: implemented and locally validated; this handoff

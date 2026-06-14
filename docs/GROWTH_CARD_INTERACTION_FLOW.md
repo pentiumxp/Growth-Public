@@ -73,6 +73,10 @@ Within the `提交作答` section:
   `POST /api/v1/growth/evaluations/owner-review`; the failed-evaluation panel
   renders `重新批改` only when `state.auth.isOwner` is true, and retry only
   reprocesses the saved evaluation job;
+- the panel may show bounded job status such as attempt count, next retry time,
+  processing lease, and the latest Owner retry timestamp. Internal
+  `lastError` text is Owner-only and must remain bounded; learner views must
+  not expose Gateway/provider error details;
 - after evaluation, show score, summary, strengths, weak points, and next
   practice suggestions;
 - after evaluation, show an optional one-time reflection form with text and
@@ -246,7 +250,7 @@ Focused frontend coverage lives in `tests/growth-frontend-adapter.test.js`:
 - generated card detail before submission;
 - submitted card waiting for evaluation with visible `刷新批改`;
 - terminal failed evaluation with a learner-visible recovery panel and
-  Owner-only `重新批改` action;
+  Owner-only `重新批改` action plus bounded Owner-only job diagnostics;
 - generated card detail after one-shot evaluation and optional reflection;
 - active difficulty-signal buttons writing through the Growth API helper and
   refreshing the current card projection;
