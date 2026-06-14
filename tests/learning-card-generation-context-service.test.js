@@ -213,6 +213,107 @@ test("card generation context exposes bounded learning profile projection for se
   assert.equal(result.suggestedPlan.strategy, "stabilize");
 });
 
+test("card generation context uses strategy-driven next target before static graph suggestion", () => {
+  const historyCalls = [];
+  const service = createLearningCardGenerationContextService({
+    gatewayConfigured: () => true,
+    graphRepository: {
+      readback() {
+        return {
+          ok: true,
+          import_id: "kg_import_fanfan",
+          version: "2026-05-27-v1",
+          import_counts: { nodes: 294, edges: 329 },
+          warnings: []
+        };
+      },
+      suggestNodes() {
+        return [{
+          nodeId: "kg_english_main_idea",
+          domain: "english",
+          subject: "english",
+          title: "Find the main idea",
+          stage: "foundation",
+          evidenceRequired: ["short_answer"]
+        }];
+      }
+    },
+    nextTargetService: {
+      selectNextTarget(input) {
+        assert.equal(input.workspaceId, "weixin_fanfan");
+        return {
+          ok: true,
+          selectionMode: "strategy",
+          targetNodeId: "kg_english_evidence_answering",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          targetNode: {
+            nodeId: "kg_english_evidence_answering",
+            domain: "english",
+            subject: "english",
+            title: "Use exact text evidence",
+            stage: "foundation",
+            evidenceRequired: ["text_evidence"]
+          },
+          nextCardStrategy: {
+            ok: true,
+            strategy: "repair",
+            cardRole: "teaching",
+            difficultyBand: "repair",
+            targetNodeIds: ["kg_english_evidence_answering"],
+            reason: "Repair weak evidence-answering first."
+          }
+        };
+      }
+    },
+    historySummaryRepository: {
+      summaryForAuthoringPlan(input) {
+        historyCalls.push(input);
+        return {
+          ok: true,
+          learnerSummary: { recentCardCount: 4, evaluationCount: 3 },
+          masterySummary: { masteryStates: [{ nodeId: "kg_english_evidence_answering", status: "weak" }] },
+          recentExperienceSignals: [{ targetNodeId: "kg_english_evidence_answering", signalType: "not_learned" }],
+          recentTrajectory: []
+        };
+      }
+    },
+    profileProjectionService: {
+      profileContext(input) {
+        assert.deepEqual(input.targetNodeIds, ["kg_english_evidence_answering"]);
+        return {
+          ok: true,
+          targetNodeIds: ["kg_english_evidence_answering"],
+          summary: { weaknessCount: 1 },
+          weaknesses: [{ nodeId: "kg_english_evidence_answering", summary: "Needs exact text evidence." }],
+          nextCardStrategy: {
+            ok: true,
+            strategy: "repair",
+            cardRole: "teaching",
+            difficultyBand: "repair",
+            targetNodeIds: ["kg_english_evidence_answering"],
+            reason: "Repair weak evidence-answering first."
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.context({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    displayName: "凡凡"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.suggestedPlan.targetNodeId, "kg_english_evidence_answering");
+  assert.equal(result.suggestedPlan.cardRole, "teaching");
+  assert.equal(result.suggestedPlan.difficultyBand, "repair");
+  assert.equal(result.suggestedPlan.strategy, "repair");
+  assert.equal(result.suggestedPlan.title, "Use exact text evidence");
+  assert.equal(result.nextCardStrategy.reason, "Repair weak evidence-answering first.");
+  assert.equal(historyCalls[0].learningGraphPlan.targetNodeId, "kg_english_evidence_answering");
+});
+
 test("card generation context reports not ready when graph or history stores are unavailable", () => {
   const service = createLearningCardGenerationContextService({
     gatewayConfigured: () => true,

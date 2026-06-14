@@ -66,6 +66,14 @@ function normalizePlanInput(input = {}) {
   };
 }
 
+function hasExplicitPlanTarget(input = {}) {
+  return Boolean(
+    cleanString(input.targetNodeId || input.target_node_id)
+    || uniqueStrings(input.targetNodeIds || input.target_node_ids).length
+    || input.learningGraphPlan?.learningGraphPlanId
+  );
+}
+
 function normalizeResultHistory(history = {}) {
   return {
     learnerSummary: history.learnerSummary || {},
@@ -79,15 +87,32 @@ function createLearningCardGenerationService(options = {}) {
   const graphPlanService = options.graphPlanService;
   const graphRepository = options.graphRepository;
   const historySummaryRepository = options.historySummaryRepository;
+  const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
   const authoringService = options.authoringService;
+
+  function normalizePlanInputWithDefaultTarget(input = {}) {
+    const planInput = normalizePlanInput(input);
+    if (hasExplicitPlanTarget(input) || cleanString(planInput.cardRole).toLowerCase() === "stage_assessment") {
+      return planInput;
+    }
+    if (!nextTargetService || typeof nextTargetService.selectNextTarget !== "function") return planInput;
+    const selection = nextTargetService.selectNextTarget(planInput);
+    if (!selection?.ok) return planInput;
+    return Object.assign({}, planInput, {
+      targetNodeId: selection.targetNodeId,
+      targetNodeIds: selection.targetNodeIds,
+      cardRole: planInput.cardRole || selection.cardRole,
+      difficultyBand: planInput.difficultyBand || selection.difficultyBand
+    });
+  }
 
   async function resolvePlan(input = {}) {
     if (input.learningGraphPlan?.learningGraphPlanId) return input.learningGraphPlan;
     if (!graphPlanService || typeof graphPlanService.createPlan !== "function") {
       return unavailable("learning_graph_plan_service_unavailable", { stage: "plan" });
     }
-    const plan = await graphPlanService.createPlan(normalizePlanInput(input));
+    const plan = await graphPlanService.createPlan(normalizePlanInputWithDefaultTarget(input));
     if (!plan?.ok) return unavailable(plan?.error || "learning_graph_plan_failed", { stage: "plan", planResult: plan || null });
     return plan;
   }

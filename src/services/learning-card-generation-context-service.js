@@ -102,11 +102,16 @@ function unavailableLearningProfile(input = {}, error = "learning_profile_projec
 function createLearningCardGenerationContextService(options = {}) {
   const graphRepository = options.graphRepository;
   const historySummaryRepository = options.historySummaryRepository;
+  const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
   const profileProjectionService = options.profileProjectionService || null;
   const gatewayConfigured = options.gatewayConfigured || (() => false);
 
-  function suggestedNode() {
+  function suggestedNode(input = {}) {
+    if (nextTargetService && typeof nextTargetService.selectNextTarget === "function") {
+      const selection = nextTargetService.selectNextTarget(input);
+      if (selection?.ok && selection.targetNode) return selection.targetNode;
+    }
     if (!graphRepository || typeof graphRepository.suggestNodes !== "function") return null;
     try {
       const english = graphRepository.suggestNodes({ domain: "english", subject: "english", limit: 1 })[0] || null;
@@ -208,7 +213,7 @@ function createLearningCardGenerationContextService(options = {}) {
       sample: "fanfan"
     };
     const graph = graphReadiness();
-    const node = suggestedNode();
+    const node = suggestedNode({ workspaceId, learnerId, programId: input.programId, cardRole: input.cardRole, domain: "english", subject: "english" });
     const baseSuggestedPlan = nodePlan(node, input);
     const history = historyForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);
     const learningProfile = learningProfileForPlan({ workspaceId, learnerId, programId: input.programId }, baseSuggestedPlan);

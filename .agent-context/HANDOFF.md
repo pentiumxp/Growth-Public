@@ -9,6 +9,63 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-14 Growth Profile-Driven Next Target Slice
+
+- Current workspace state: implemented and locally validated; this handoff
+  section is included with the slice commit.
+- Scope:
+  - added `learning-card-next-target-service` as the Service First boundary for
+    default next-card target selection;
+  - wired card generation and card generation context to share the same
+    next-target service, so Owner preview and actual generation use the same
+    selected target;
+  - when Owner does not hand-pick a target for an ordinary daily card, Growth
+    now selects the next graph node from the learner's summary-only profile and
+    next-card strategy before falling back to bounded graph suggestions;
+  - explicit `targetNodeId` remains authoritative and validated before use;
+  - formal stage assessment generation still requires explicit target coverage
+    and does not auto-select a default target;
+  - kept the model boundary unchanged: Growth still calls Gateway through the
+    authoring client/adapter and does not call provider APIs directly.
+- Documentation updated:
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness added/updated:
+  - `tests/learning-card-next-target-service.test.js`;
+  - `tests/learning-card-generation-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `npm run check`;
+  - `npm test` with 209 passing tests;
+  - focused AI card loop gate:
+    `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/growth-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/learning-card-next-target-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-generation-service.test.js tests/growth-architecture-boundary.test.js`
+    with 44 passing tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-card-authoring-boundary.js`;
+  - app AI Ops intake classified the task as H1 Gateway Runtime because the
+    card loop crosses the Gateway model boundary; required app checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`;
+  - app architecture harness:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `git diff --check` in both Growth plugin and Home AI app workspaces;
+  - CodeGraph status after edits: 119 files, 1238 nodes, 4302 edges.
+- AI Ops:
+  - evidence id: `evidence-bdf3868b-23c2-4b05-a2e9-f3282d89ff1b`;
+  - deployment was not required by the intake packet for this slice.
+- Remaining architecture work:
+  - add a higher-level generation recipe/policy service so Owner can request
+    "daily English" without knowing graph/domain parameters;
+  - close the loop from evaluation/profile deltas into queued next-card
+    recommendations instead of only selecting at generation time;
+  - add Owner-visible next-card rationale history once more than one learner is
+    enabled.
+
 ## 2026-06-14 Growth Owner Evaluation Job Status UI Slice
 
 - Current workspace state: implemented and locally validated; this handoff

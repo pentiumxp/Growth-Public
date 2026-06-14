@@ -10,6 +10,7 @@ const { createLearningCardEvaluationService } = require("../services/learning-ca
 const { createLearningCardGraphBindingService } = require("../services/learning-card-graph-binding-service");
 const { createLearningCardGenerationContextService } = require("../services/learning-card-generation-context-service");
 const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
+const { createLearningCardNextTargetService } = require("../services/learning-card-next-target-service");
 const { createLearningCardTrajectoryService } = require("../services/learning-card-trajectory-service");
 const { createLearningEvaluationOwnerReviewService } = require("../services/learning-evaluation-owner-review-service");
 const { createLearningExperienceSignalService } = require("../services/learning-experience-signal-service");
@@ -81,10 +82,17 @@ function createServices(config) {
     repository: growthLearningStore.masteryProfileRepository,
     nextCardStrategyService: learningNextCardStrategyService
   });
+  const learningCardNextTargetService = createLearningCardNextTargetService({
+    graphRepository: growthLearningStore.learningGraphRepository,
+    historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    profileProjectionService: learningProfileProjectionService,
+    nextCardStrategyService: learningNextCardStrategyService
+  });
   const learningCardGenerationService = createLearningCardGenerationService({
     graphPlanService: learningGraphPlanService,
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    nextTargetService: learningCardNextTargetService,
     nextCardStrategyService: learningNextCardStrategyService,
     authoringService: learningCardAuthoringService
   });
@@ -96,6 +104,7 @@ function createServices(config) {
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
+    nextTargetService: learningCardNextTargetService,
     profileProjectionService: learningProfileProjectionService,
     nextCardStrategyService: learningNextCardStrategyService,
     gatewayConfigured: () => Boolean(config.gatewayAuthoringEndpoint)
@@ -122,6 +131,7 @@ function createServices(config) {
     learningCardGenerationContextService,
     learningCardGenerationService,
     learningCardGraphBindingService,
+    learningCardNextTargetService,
     learningCardTrajectoryService,
     learningEvaluationOwnerReviewService,
     learningExperienceSignalService,

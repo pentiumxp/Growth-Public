@@ -342,21 +342,28 @@ summary-only request.
 
 The service-owned runtime path is:
 
-1. `learning-graph-plan-service` validates the target node, prerequisite path,
-   card role, and assessment coverage;
-2. `history-summary` reads bounded historical data from Growth SQLite:
+1. If Owner or caller supplied a target, `learning-graph-plan-service` uses
+   that explicit graph target. If a daily generation request omits a target,
+   `learning-card-next-target-service` first reads the selected learner's
+   summary-only profile projection and next-card strategy, chooses the first
+   resolvable `nextCardStrategy.targetNodeIds` node, and falls back to bounded
+   graph suggestions only when no strategy target exists;
+2. `learning-graph-plan-service` validates the selected target node,
+   prerequisite path, card role, and assessment coverage;
+3. `history-summary` reads bounded historical data from Growth SQLite:
    recent card status, evaluation summaries, mastery states, experience
    signals, recent trajectories, and aggregate counts;
-3. `learning-profile-projection-service` prepares the selected learner's
+4. `learning-profile-projection-service` prepares the selected learner's
    Owner-visible profile projection: mastery states, strengths, weaknesses,
    recent experience signals, recent trajectory, and next-card strategy reason;
-4. `learning-card-generation-service` combines graph source summaries and
+5. `learning-next-card-strategy-service` chooses or refreshes a bounded
+   next-card strategy from profile, signals, and trajectory for the selected
+   plan;
+6. `learning-card-generation-service` combines graph source summaries and
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
-5. `learning-next-card-strategy-service` chooses a bounded next-card strategy
-   from profile, signals, and trajectory;
-6. `learning-card-authoring-service` calls Gateway and validates the draft;
-7. `card-authoring-publisher` writes the minimum FK parent rows in
+7. `learning-card-authoring-service` calls Gateway and validates the draft;
+8. `card-authoring-publisher` writes the minimum FK parent rows in
    `learning_programs` and `learning_plan_drafts`, then writes
    `learning_task_cards` and `learning_card_graph_bindings` in one SQLite
    transaction.
@@ -373,6 +380,11 @@ The current implementation supports generating a formal Growth card from the
 imported knowledge graph and historical Growth SQLite summaries when a Gateway
 authoring endpoint is configured. It does not direct-call model vendors and it
 does not ask Home AI old Growth routes to author cards.
+
+For ordinary daily cards, omitting `targetNodeId` is a supported profile-driven
+generation path. It should use weak or stabilizing evidence from the selected
+learner before generic graph suggestions. Formal `stage_assessment` generation
+still requires explicit target and assessment coverage.
 
 The Owner generation page may display `learningProfile` before generation.
 That display is a read-only target-workspace projection and must remain

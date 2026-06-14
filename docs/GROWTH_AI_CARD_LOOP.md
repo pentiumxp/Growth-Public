@@ -81,8 +81,11 @@ They must not use:
 ## First Implementation Slice
 
 The first plugin-local implementation slice creates the profile/trajectory/
-strategy service boundary without enabling fully automatic large-scale card
-generation:
+strategy service boundary and uses it for bounded default next-target
+selection. Owner can still hand-pick a graph target, but if a daily generation
+request omits `targetNodeId`, Growth selects the next target from the selected
+learner's summary-only profile and next-card strategy before falling back to a
+generic graph suggestion.
 
 - `learning-mastery-profile-service`
   - turns persisted evaluation/reflection summaries into bounded mastery
@@ -113,6 +116,14 @@ generation:
     `stretch`, `integrate`, or `review`;
   - prefers prerequisite repair for repeated weak evidence and only stretches
     when confidence and stability are high.
+- `learning-card-next-target-service`
+  - reads the selected learner profile projection or bounded history summary;
+  - uses `nextCardStrategy.targetNodeIds` to choose an existing graph node for
+    the next daily card when Owner did not hand-pick a target;
+  - falls back to bounded graph suggestions only when no strategy target can be
+    resolved;
+  - never reads raw learner answers, transcripts, prompts, answer keys, or raw
+    model output.
 
 ## Owner Profile Projection Slice
 
@@ -314,6 +325,9 @@ Focused harnesses must cover:
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
 - card-generation context uses strategy/profile output in its summary-only
   preview.
+- card generation can create a plan from the learner profile strategy when
+  Owner does not hand-pick a target node, and the published card remains bound
+  to that strategy-selected graph node;
 - learning profile projection returns bounded mastery, signal, trajectory, and
   next-card strategy fields without raw answer/source-ref leakage;
 - Owner generation UI renders the selected learner's profile projection and

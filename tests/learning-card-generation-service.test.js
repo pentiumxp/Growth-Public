@@ -9,8 +9,10 @@ const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-g
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
+const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
+const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
 const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
 
 function tempDir() {
@@ -358,14 +360,26 @@ function setup(options = {}) {
   const planService = createLearningGraphPlanService({
     graphRepository: store.learningGraphRepository
   });
+  const nextCardStrategyService = createLearningNextCardStrategyService();
+  const profileProjectionService = createLearningProfileProjectionService({
+    repository: store.masteryProfileRepository,
+    nextCardStrategyService
+  });
+  const nextTargetService = createLearningCardNextTargetService({
+    graphRepository: store.learningGraphRepository,
+    historySummaryRepository: store.learningHistorySummaryRepository,
+    profileProjectionService,
+    nextCardStrategyService
+  });
   const generationService = createLearningCardGenerationService({
     graphPlanService: planService,
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
-    nextCardStrategyService: createLearningNextCardStrategyService(),
+    nextTargetService,
+    nextCardStrategyService,
     authoringService
   });
-  return { dbPath, gatewayCalls, generationService, planService, store };
+  return { dbPath, gatewayCalls, generationService, nextTargetService, planService, store };
 }
 
 test("card generation creates a graph plan, summarizes history, and publishes a bound SQLite card", async () => {
@@ -453,6 +467,45 @@ test("card generation creates missing program and draft parent rows for FK-backe
     assert.equal(draft.program_id, "program_generated_fk");
     assert.equal(draft.status, "published");
     assert.equal(db.prepare("PRAGMA foreign_key_check").all().length, 0);
+  } finally {
+    db.close();
+  }
+});
+
+test("card generation can choose the next target from learner profile when Owner does not hand-pick a node", async () => {
+  const { dbPath, gatewayCalls, generationService } = setup({
+    gatewayResponse() {
+      return {
+        json: {
+          output_text: JSON.stringify(validDraft({
+            cardRole: "practice",
+            title: "Ratio intro practice",
+            targetNodeIds: ["kg_ratio_intro"]
+          }))
+        }
+      };
+    }
+  });
+
+  const result = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    programId: "program_1",
+    cardRole: "practice",
+    generationKey: "ratio-auto-next-target"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.learningGraphPlan.targetNodeId, "kg_ratio_intro");
+  assert.deepEqual(result.learningGraphPlan.cardSequence[0].targetNodeIds, ["kg_ratio_intro"]);
+  assert.equal(result.nextCardStrategy.targetNodeIds[0], "kg_ratio_intro");
+  assert.equal(gatewayCalls[0].input.learningGraphPlan.targetNodeId, "kg_ratio_intro");
+  assert.equal(gatewayCalls[0].input.nextCardStrategy.strategy, "stabilize");
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
+    assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
   } finally {
     db.close();
   }

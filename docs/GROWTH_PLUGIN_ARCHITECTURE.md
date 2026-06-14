@@ -35,6 +35,7 @@ Growth should stay a service-first embedded plugin:
 | Home AI facade client | `src/services/home-ai-growth-facade-client.js` | Bounded Home AI Growth facade HTTP client with base URL normalization and workspace query/header handling. |
 | Card generation service | `src/services/learning-card-generation-service.js` | Graph-plus-history card generation orchestration. It creates a graph plan, reads historical summaries, adds graph source summaries, calls authoring, and returns the published card result. |
 | Card generation context service | `src/services/learning-card-generation-context-service.js` | Owner UI read-context service for card generation readiness. It returns Fanfan sample eligibility, daily English recipe metadata, graph readiness, suggested graph target, bounded history counts, Gateway configured state, and the `daily_score_once` policy without exposing raw learner content. |
+| Card next-target service | `src/services/learning-card-next-target-service.js` | Summary-only selector for the default next graph target. It uses the selected learner profile projection and next-card strategy target nodes before falling back to graph suggestions, so generation can proceed from weak/stabilize/stretch signals when Owner does not hand-pick a node. |
 | Card authoring service | `src/services/learning-card-authoring-service.js` | Growth-owned card authoring orchestration. It assembles summary-only graph/mastery/experience input, calls Gateway, runs validation/repair policy, and delegates accepted drafts to an injected publisher. |
 | Gateway authoring client | `src/services/growth-gateway-authoring-client.js` | Gateway-only model boundary for card authoring. It supports SSE and JSON Gateway responses and does not call model vendors directly. |
 | Card authoring validation | `src/services/learning-card-authoring-validation-service.js` | Authoring draft validator for JSON parsing, `teachingFlow`, role policy, graph binding consistency, privacy, and bounded-content checks. |
@@ -127,6 +128,7 @@ The first core-module split is behavior-preserving:
   directly. The graph-plus-history generation slice is implemented in
   `learning-card-generation-context-service`,
   `learning-card-generation-service`,
+  `learning-card-next-target-service`,
   `learning-card-authoring-service`,
   `growth-gateway-authoring-client`, and
   `learning-card-authoring-validation-service`, with `history-summary` and
@@ -143,6 +145,12 @@ The first core-module split is behavior-preserving:
   latter is selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or by a
   `/v1/responses` endpoint, and it keeps model prompting inside Growth while
   provider credentials remain behind Gateway.
+- If Owner does not hand-pick a target for daily generation,
+  `learning-card-next-target-service` selects a graph node from the selected
+  learner's summary-only profile and `learning-next-card-strategy-service`
+  result before falling back to generic graph suggestions. The generation
+  context preview and actual generation route share this service so the shown
+  suggested plan and published card do not diverge.
 - Stage assessment activation is a separate Growth-owned service boundary.
   `learning-stage-assessment-service` reads summary-only profile projection,
   writes `learning_growth_stage_assessment_cycles` through
@@ -262,7 +270,7 @@ be feature-driven:
 | Growth service write providers and command policy | `node --test tests/growth-service-write-providers.test.js tests/growth-service.test.js tests/growth-routes.test.js` |
 | Growth Knowledge Graph import | `node --test tests/learning-graph-import-service.test.js tests/learning-graph-repository.test.js` |
 | Growth Knowledge Graph plan and binding | `node --test tests/learning-graph-plan-binding-service.test.js tests/growth-routes.test.js` |
-| Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |
+| Growth card authoring and generation boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-card-next-target-service.test.js tests/growth-routes.test.js` |
 | Growth AI card loop profile, trajectory, strategy, projection, Gateway evaluation, and Owner recovery | `node --test tests/learning-profile-projection-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-mastery-profile-service.test.js tests/learning-card-trajectory-service.test.js tests/learning-next-card-strategy-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-evaluation-owner-review-service.test.js` |
 | Growth learner experience signal writes | `node --test tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-learning-sqlite-store.test.js tests/growth-frontend-adapter.test.js` |
 | Embedded frontend adapters, card generation UI, learner card interaction UI, and Owner evaluation retry action | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |

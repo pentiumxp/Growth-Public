@@ -85,10 +85,14 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(services, /createLearningProfileProjectionService/);
   assert.match(services, /learningProfileProjectionService/);
   assert.match(services, /profileProjectionService: learningProfileProjectionService/);
+  assert.match(services, /createLearningCardNextTargetService/);
+  assert.match(services, /learningCardNextTargetService/);
+  assert.match(services, /nextTargetService: learningCardNextTargetService/);
 
   const routes = read(path.join("src", "routes", "growth-routes.js"));
   assert.doesNotMatch(routes, /projectForNextCard/);
   assert.doesNotMatch(routes, /learning_growth_mastery_states/);
+  assert.doesNotMatch(routes, /selectNextTarget/);
 
   const ui = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(ui, /data-card-generation-profile/);
