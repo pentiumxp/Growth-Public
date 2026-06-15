@@ -1035,6 +1035,7 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /productionPlannerReadinessEvidence/);
   assert.match(service, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(service, /productionLearningLoopStateSmokeEvidence/);
+  assert.match(service, /stageCheckpointEvidence/);
   assert.match(service, /productionProposalSmokeEvidence/);
   assert.match(service, /productionSchedulerDryRunSmokeEvidence/);
   assert.match(service, /productionActionHandoffSmokeEvidence/);
@@ -1045,6 +1046,7 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /smoke-growth-planner-readiness\.js/);
   assert.match(service, /smoke-growth-daily-loop-preview\.js/);
   assert.match(service, /smoke-growth-learning-loop-state\.js/);
+  assert.match(service, /smoke-growth-stage-assessment\.js/);
   assert.match(service, /smoke-growth-automation-proposal\.js/);
   assert.match(service, /smoke-growth-scheduler-dry-run\.js/);
   assert.match(service, /smoke-growth-automation-action-handoff\.js/);

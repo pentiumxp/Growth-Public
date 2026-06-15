@@ -9,6 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:53Z - Stage Checkpoint Evidence In Release Bundle
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because this slice adds
+  release-evidence/readiness harness and docs only.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    read-only `stage_assessment` task in the default task set and maps it to
+    `stageCheckpointEvidence`;
+  - `npm run smoke:release-evidence-bundle` can run
+    `scripts/smoke-growth-stage-assessment.js` through the injected command
+    runner and bundle bounded `stageReadiness` evidence when
+    `--target-node-id` is supplied;
+  - missing target-node scope remains a visible blocked task, not an implicit
+    pass;
+  - `npm run smoke:release-readiness -- --evidence-bundle-file <bundle>` now
+    consumes that summary evidence as the `stage_checkpoint_evidence` advisory
+    check;
+  - the boundary remains summary-only, no-write by default, and
+    `writefulSchedulingAllowed=false`; it does not call Gateway, publish
+    plans, generate cards, evaluate, execute schedulers, run scheduler ticks,
+    deliver notifications, activate stage assessments, mutate learner state,
+    or act as a release switch.
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - stage-only `npm run smoke:release-evidence-bundle` against a temporary
+    SQLite DB, followed by `npm run smoke:release-readiness
+    -- --evidence-bundle-file <bundle>`; readiness recognized
+    `stage_checkpoint_evidence=pass` while staying incomplete and no-write;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-stage-assessment-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`540` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,172` nodes,
+    `12,251` edges, index up to date).
+
 ## 2026-06-15T10:42Z - Release Evidence Bundle Includes Proposal Smoke
 
 - Status: implemented and locally validated; commit/push follows this handoff

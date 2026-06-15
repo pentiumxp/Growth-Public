@@ -9,6 +9,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
   "learning_loop_state",
+  "stage_assessment",
   "proposal",
   "scheduler_dry_run",
   "action_handoff",
@@ -36,6 +37,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "stage_assessment",
+    evidenceKey: "stageCheckpointEvidence",
+    script: "scripts/smoke-growth-stage-assessment.js",
+    commandName: "npm run smoke:stage-assessment"
   },
   {
     taskId: "proposal",

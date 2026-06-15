@@ -109,6 +109,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
 });
 
@@ -140,6 +141,36 @@ test("release evidence bundle script writes a summary-only bundle from a read-on
     assert.equal(fileBundle.evidence.productionActionHandoffSmokeEvidence.source, "growth-release-evidence-bundle-builder");
     assert.equal(fileBundle.evidence.productionActionHandoffSmokeEvidence.smoke, "npm run smoke:action-handoff");
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+  });
+});
+
+test("release evidence bundle script writes stage-checkpoint evidence from read-only stage smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "stage-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--target-node-id", "kg_science_fair_test",
+      "--task", "stage_assessment",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.stageCheckpointEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.stageCheckpointEvidence.smoke, "npm run smoke:stage-assessment");
+    assert.equal(fileBundle.evidence.stageCheckpointEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.stageCheckpointEvidence.summary.operation, "readiness");
+    assert.equal(fileBundle.evidence.stageCheckpointEvidence.summary.activationState, "dormant");
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
   });
 });

@@ -300,14 +300,16 @@ Use the Growth-owned release-readiness boundary:
   scope, `--evidence-json`, `--release-approval-json`, and evidence flags
   override them.
 - release evidence bundle builder CLI:
-  `npm run smoke:release-evidence-bundle -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --output-file <bundle.json> --json`.
+  `npm run smoke:release-evidence-bundle -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --target-node-id <target-node-id> --output-file <bundle.json> --json`.
   This builder delegates to
   `learning-automation-release-evidence-bundle-service`, runs selected
-  no-write/default-disabled smoke CLIs including read-only proposal smoke by
-  default, emits only
+  no-write/default-disabled smoke CLIs including read-only stage-assessment
+  readiness and proposal smoke by default, emits only
   `growth.learningAutomationReleaseEvidenceBundle.v1` summary evidence, and
   can feed `npm run smoke:release-readiness -- --evidence-bundle-file
-  <bundle.json>`. It must not write business state or act as a release switch.
+  <bundle.json>`. Include `--target-node-id` when collecting the
+  stage-assessment readiness task. It must not write business state or act as
+  a release switch.
 - scheduler dry-run smoke CLI:
   `npm run smoke:scheduler-dry-run -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
 - digest smoke CLI:
@@ -347,7 +349,7 @@ The service aggregates summary-only readiness evidence:
 
 - Owner daily UI product/visual evidence;
 - Owner audit/correction UI evidence;
-- stage-checkpoint separation evidence;
+- stage-checkpoint separation evidence from `npm run smoke:stage-assessment`;
 - proposal review UI evidence;
 - production proposal smoke evidence from `npm run smoke:proposal`;
 - automation digest UI evidence;
@@ -541,7 +543,7 @@ becomes future planning evidence, not a required retry loop.
 | Scheduler run | Repository/service/route tests, `tests/growth-automation-scheduler-run-smoke-script.test.js`, `npm run smoke:scheduler-run`, read-only list by default, explicit `--allow-write` for run, default-disabled blocked run evidence, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler execution bypass, action handoff delivery, worker timer, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler worker target | Repository/service/route tests, `tests/growth-automation-scheduler-worker-target-smoke-script.test.js`, `npm run smoke:scheduler-worker-target`, read-only list/runnable operations by default, explicit `--allow-write` for create/review, target provisioning plus Owner review evidence, `productionSchedulingAllowed=false`, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler run/execution bypass, action handoff delivery, worker timer, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler worker | Worker service/lease repository/run service tests, `tests/growth-automation-scheduler-worker-smoke-script.test.js`, `npm run smoke:scheduler-worker`, disabled no-write status by default, explicit `--allow-write` for enabled tick/tick-targets, blocked lease/run evidence while scheduler run remains disabled, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler run/execution bypass, action handoff delivery, worker-target service bypass, stage activation, learner-state mutation, or direct repository access from the CLI. |
-| Release readiness | Snapshot, release-approval, and release-evidence-bundle repository/service/route/script tests, `tests/growth-release-readiness-smoke-script.test.js`, `tests/growth-release-evidence-bundle-script.test.js`, `tests/learning-automation-release-evidence-bundle-service.test.js`, `tests/growth-automation-release-approval-smoke-script.test.js`, `npm run smoke:release-readiness`, `npm run smoke:release-evidence-bundle`, `npm run smoke:release-approval`, automation digest/action handoff/execution/run/worker-target UI evidence, production proposal smoke evidence from `npm run smoke:proposal`, production action handoff smoke evidence, production scheduler execution smoke evidence, production scheduler run smoke evidence, production scheduler worker target smoke evidence, production scheduler worker smoke evidence, production planner readiness smoke evidence from `npm run smoke:planner-readiness`, production daily-loop preview smoke evidence, production learning-loop state smoke evidence from `npm run smoke:learning-loop-state`, production controlled daily-loop write-smoke evidence, production scheduler dry-run smoke evidence from `npm run smoke:scheduler-dry-run`, release-readiness internal no-write scheduler dry-run safety evidence, and architecture guard for no Gateway, publication, evaluation, scheduler, notification delivery, stage, learner-state mutation, or direct repository access from release-readiness or the bundle-builder boundary. |
+| Release readiness | Snapshot, release-approval, and release-evidence-bundle repository/service/route/script tests, `tests/growth-release-readiness-smoke-script.test.js`, `tests/growth-release-evidence-bundle-script.test.js`, `tests/learning-automation-release-evidence-bundle-service.test.js`, `tests/growth-automation-release-approval-smoke-script.test.js`, `npm run smoke:release-readiness`, `npm run smoke:release-evidence-bundle`, `npm run smoke:release-approval`, stage-checkpoint evidence from `npm run smoke:stage-assessment`, automation digest/action handoff/execution/run/worker-target UI evidence, production proposal smoke evidence from `npm run smoke:proposal`, production action handoff smoke evidence, production scheduler execution smoke evidence, production scheduler run smoke evidence, production scheduler worker target smoke evidence, production scheduler worker smoke evidence, production planner readiness smoke evidence from `npm run smoke:planner-readiness`, production daily-loop preview smoke evidence, production learning-loop state smoke evidence from `npm run smoke:learning-loop-state`, production controlled daily-loop write-smoke evidence, production scheduler dry-run smoke evidence from `npm run smoke:scheduler-dry-run`, release-readiness internal no-write scheduler dry-run safety evidence, and architecture guard for no Gateway, publication, evaluation, scheduler, notification delivery, stage, learner-state mutation, or direct repository access from release-readiness or the bundle-builder boundary. |
 | UI | Progress state, visible errors, mobile scroll, dark-mode contrast, embedded sizing, and no hidden final action controls. |
 | Docs | `node scripts/check-growth-docs-locality.js` and `node --test tests/growth-docs-locality.test.js`. |
 | Broad local gate | `npm run check`, `npm test`, and `git diff --check` before commit/deploy. `scripts/check-growth-syntax-coverage.js` and `tests/growth-architecture-boundary.test.js` must keep `npm run check` covering every runtime JavaScript file under `scripts/`, `src/`, and `public/`. |

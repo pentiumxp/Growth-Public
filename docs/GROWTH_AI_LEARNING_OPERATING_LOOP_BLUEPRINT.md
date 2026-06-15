@@ -412,15 +412,16 @@ Backend shape:
   under `/api/v1/growth/automation/release-readiness/snapshots`.
 - `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
   assembly from selected no-write/default-disabled smoke CLIs, including
-  read-only proposal smoke by default.
+  read-only stage-assessment readiness and proposal smoke by default.
 
 Required behavior:
 
-- aggregate product UI, audit UI, stage-checkpoint, proposal review,
-  production proposal smoke, digest, active failure-policy, delivered handoff,
-  execution gate, scheduler run, reviewed worker target, worker lease, planner
-  smoke, controlled daily-loop write smoke, production dry-run, platform
-  Action Inbox/Web Push, visual, and release approval evidence;
+- aggregate product UI, audit UI, stage-checkpoint evidence from
+  `npm run smoke:stage-assessment`, proposal review, production proposal smoke,
+  digest, active failure-policy, delivered handoff, execution gate, scheduler
+  run, reviewed worker target, worker lease, planner smoke, controlled
+  daily-loop write smoke, production dry-run, platform Action Inbox/Web Push,
+  visual, and release approval evidence;
 - return bounded `pass`, `missing`, `blocked`, or `not_applicable` check
   states;
 - persist optional summary-only readiness snapshots for Owner/release review;

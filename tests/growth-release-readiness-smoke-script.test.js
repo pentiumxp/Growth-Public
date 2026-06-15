@@ -163,6 +163,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     },
     evidence: {
       ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+      stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
       platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" }
     },
     releaseApproval: {
@@ -208,6 +209,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       },
       evidence: {
         ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
       },
@@ -220,6 +222,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     });
     assert.deepEqual(evidenceFromArgs(args), {
       ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+      stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
       platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
       centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
       ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
@@ -240,6 +243,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       limit: 9,
       evidence: {
         ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
         ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
