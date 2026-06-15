@@ -413,7 +413,9 @@ Backend shape:
 - `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
   assembly from selected no-write/default-disabled smoke CLIs, including
   read-only stage-assessment readiness, proposal smoke, and release-approval
-  bag projection by default.
+  bag projection by default. The controlled daily-loop draft/publish evidence
+  path is the explicit non-default `daily_loop_write` task, gated by
+  `--allow-write-evidence` and delegated to `scripts/smoke-growth-daily-loop.js`.
 
 Required behavior:
 
@@ -429,7 +431,9 @@ Required behavior:
 - accept summary-only `growth.learningAutomationReleaseEvidenceBundle.v1`
   artifacts produced by the bundle builder without trusting raw smoke output,
   including bounded `releaseApproval` fields collected from
-  `npm run smoke:release-approval -- --operation bag`;
+  `npm run smoke:release-approval -- --operation bag` and bounded
+  `productionDailyLoopWriteSmokeEvidence` only when the explicit
+  `daily_loop_write` task passes;
 - keep `writefulSchedulingAllowed=false`;
 - never call Gateway, plan publication, card generation, evaluation,
   proposal execution, scheduler execution, scheduler run, Action Inbox/Web

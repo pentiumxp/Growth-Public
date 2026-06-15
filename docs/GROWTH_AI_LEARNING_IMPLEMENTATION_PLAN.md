@@ -661,8 +661,13 @@ Implemented backend shape:
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
-  collecting stage-checkpoint evidence. Use `--output-file` and
-  then pass that file to
+  collecting stage-checkpoint evidence. Use `--task daily_loop_write
+  --allow-write-evidence --daily-loop-write-operation draft|publish` only when
+  intentionally collecting controlled production daily-loop write evidence;
+  the task is outside the default bundle, fails closed without that explicit
+  flag, requires `--plan-draft-id` for publish, and delegates through
+  `scripts/smoke-growth-daily-loop.js` rather than importing daily-loop
+  services. Use `--output-file` and then pass that file to
   `npm run smoke:release-readiness -- --evidence-bundle-file <path>` when
   release review needs structured smoke evidence without Codex hand-spliced
   JSON.
@@ -692,7 +697,8 @@ Required behavior:
   `npm run smoke:daily-loop-preview`, production learning-loop state smoke
   evidence from `npm run smoke:learning-loop-state`, production controlled daily-loop
   draft/publish smoke evidence from
-  `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,
+  `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`
+  or the explicit write-gated `daily_loop_write` release-bundle task,
   production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`, release-readiness internal
   no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push evidence,
@@ -733,8 +739,11 @@ Remaining release gaps:
 - Home AI platform Action Inbox/Web Push evidence;
 - central embedded-plugin visual evidence for mobile scroll, dark mode,
   progress, and embedded shell;
-- production planner readiness smoke, production learning-loop state smoke,
-  production controlled daily-loop draft/publish smoke, and production scheduler dry-run smoke evidence from
+- production planner readiness smoke from `npm run smoke:planner-readiness`,
+  production learning-loop state smoke from `npm run smoke:learning-loop-state`,
+  production controlled daily-loop draft/publish smoke from
+  `npm run smoke:daily-loop` or the explicit `daily_loop_write`
+  release-bundle task, and production scheduler dry-run smoke from
   `npm run smoke:scheduler-dry-run`;
 - Owner-visible product UI evidence for recording/reviewing release approvals
   outside the smoke CLI.

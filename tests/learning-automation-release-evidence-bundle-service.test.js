@@ -27,6 +27,7 @@ function createServiceWithRunner(runner) {
 
 test("release evidence bundle service normalizes scope and task args", () => {
   assert.deepEqual(normalizeTaskIds({}), Array.from(DEFAULT_TASK_IDS));
+  assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
     "scheduler_dry_run"
@@ -46,7 +47,10 @@ test("release evidence bundle service normalizes scope and task args", () => {
     horizon: "daily_plan",
     availableMinutes: 15,
     limit: 12,
-    targetNodeIds: ["kg_science_fair_test"]
+    targetNodeIds: ["kg_science_fair_test"],
+    allowWriteEvidence: false,
+    dailyLoopWriteOperation: "draft",
+    planDraftId: ""
   });
   assert.deepEqual(scopeArgs({
     workspaceId: "weixin_fanfan",
@@ -198,6 +202,91 @@ test("release evidence bundle service collects release approval bag without evid
   assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
 });
 
+test("release evidence bundle service blocks controlled daily-loop write evidence unless explicitly allowed", () => {
+  const { calls, service } = createServiceWithRunner(() => {
+    throw new Error("runner should not be called for gated write evidence");
+  });
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["daily_loop_write"]
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(calls.length, 0);
+  assert.equal(result.bundle.summary.taskCount, 1);
+  assert.equal(result.bundle.summary.blockedCount, 1);
+  assert.deepEqual(result.bundle.summary.failedTaskIds, ["daily_loop_write"]);
+  const evidence = result.bundle.evidence.productionDailyLoopWriteSmokeEvidence;
+  assert.equal(evidence.status, "blocked");
+  assert.equal(evidence.error, "release_evidence_bundle_write_evidence_not_allowed");
+  assert.equal(evidence.requiredFlag, "--allow-write-evidence");
+  assert.equal(evidence.summary.writeEvidenceAllowed, false);
+  assert.equal(result.bundle.tasks[0].source, "npm run smoke:daily-loop");
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle service runs controlled daily-loop write smoke only after bundle write approval", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      operation: "publish",
+      source: path.basename(args[0]),
+      summary: { published: true }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    planDraftId: "lgpd_daily_1",
+    dailyLoopWriteOperation: "publish",
+    allowWriteEvidence: true,
+    tasks: ["daily_loop_write"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-daily-loop.js"));
+  assert.ok(calls[0].args.includes("--allow-write"));
+  assert.ok(calls[0].args.includes("--operation"));
+  assert.ok(calls[0].args.includes("publish"));
+  assert.ok(calls[0].args.includes("--plan-draft-id"));
+  assert.ok(calls[0].args.includes("lgpd_daily_1"));
+  const evidence = result.bundle.evidence.productionDailyLoopWriteSmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.smoke, "npm run smoke:daily-loop");
+  assert.equal(evidence.summary.operation, "publish");
+});
+
+test("release evidence bundle service blocks unsafe daily-loop write task scope before runner execution", () => {
+  const { calls, service } = createServiceWithRunner(() => {
+    throw new Error("runner should not be called for invalid write scope");
+  });
+
+  const invalidOperation = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    allowWriteEvidence: true,
+    dailyLoopWriteOperation: "preview",
+    tasks: ["daily_loop_write"]
+  });
+  assert.equal(invalidOperation.ok, false);
+  assert.equal(invalidOperation.bundle.evidence.productionDailyLoopWriteSmokeEvidence.error, "release_evidence_bundle_daily_loop_write_operation_invalid");
+  assert.deepEqual(invalidOperation.bundle.evidence.productionDailyLoopWriteSmokeEvidence.allowedOperations, ["draft", "publish"]);
+
+  const missingDraftId = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    allowWriteEvidence: true,
+    dailyLoopWriteOperation: "publish",
+    tasks: ["daily_loop_write"]
+  });
+  assert.equal(missingDraftId.ok, false);
+  assert.equal(missingDraftId.bundle.evidence.productionDailyLoopWriteSmokeEvidence.error, "release_evidence_bundle_plan_draft_id_required");
+  assert.equal(calls.length, 0);
+});
+
 test("release evidence bundle service fails closed for missing workspace, invalid task, and privacy-risk smoke output", () => {
   const missingWorkspace = createServiceWithRunner(() => ({ status: 0, stdout: "{}" }))
     .service
@@ -213,6 +302,7 @@ test("release evidence bundle service fails closed for missing workspace, invali
   assert.equal(invalidTask.ok, false);
   assert.equal(invalidTask.error, "release_evidence_bundle_task_invalid");
   assert.deepEqual(invalidTask.invalidTaskIds, ["unknown_task"]);
+  assert.ok(invalidTask.allowedTaskIds.includes("daily_loop_write"));
 
   const privacy = createServiceWithRunner(() => ({
     status: 0,

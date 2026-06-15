@@ -4,6 +4,7 @@ const path = require("node:path");
 
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish"]);
 
 const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
@@ -44,6 +45,13 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "daily_loop_write",
+    evidenceKey: "productionDailyLoopWriteSmokeEvidence",
+    script: "scripts/smoke-growth-daily-loop.js",
+    commandName: "npm run smoke:daily-loop",
+    writeEvidence: true
   },
   {
     taskId: "stage_assessment",
@@ -117,6 +125,10 @@ function clampLimit(value, fallback = 12) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.max(1, Math.min(50, Math.round(numeric)));
+}
+
+function booleanFlag(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function nowIso(now) {
@@ -199,6 +211,7 @@ function scopeArgs(scope = {}) {
 function publicScope(input = {}) {
   const workspaceId = cleanString(input.workspaceId || input.workspace_id, 120);
   const targetNodeIds = uniqueStrings(input.targetNodeIds || input.target_node_ids || []);
+  const dailyLoopWriteOperation = cleanString(input.dailyLoopWriteOperation || input.daily_loop_write_operation || "draft", 40).toLowerCase() || "draft";
   return {
     workspaceId,
     learnerId: cleanString(input.learnerId || input.learner_id || workspaceId, 120),
@@ -209,7 +222,10 @@ function publicScope(input = {}) {
     horizon: cleanString(input.horizon || "daily_plan", 80),
     availableMinutes: clampLimit(input.availableMinutes || input.available_minutes || 15, 15),
     limit: clampLimit(input.limit || 12, 12),
-    targetNodeIds
+    targetNodeIds,
+    allowWriteEvidence: booleanFlag(input.allowWriteEvidence || input.allow_write_evidence),
+    dailyLoopWriteOperation,
+    planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120)
   };
 }
 
@@ -332,6 +348,71 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
   return evidence;
 }
 
+function blockedEvidenceFromTask(task, generatedAt, error, details = {}) {
+  const evidence = {
+    ok: false,
+    status: "blocked",
+    source: "growth-release-evidence-bundle-builder",
+    smoke: task.commandName,
+    taskId: task.taskId,
+    evidenceId: `growth_release_evidence_${task.taskId}_${generatedAt.replace(/[^0-9A-Za-z]/g, "")}`,
+    generatedAt,
+    exitCode: null,
+    error: cleanString(error, 160),
+    summary: Object.assign({
+      source: "growth-release-evidence-bundle-builder",
+      taskId: task.taskId
+    }, details.summary || {})
+  };
+  if (details.requiredFlag) evidence.requiredFlag = cleanString(details.requiredFlag, 80);
+  if (Array.isArray(details.allowedOperations)) evidence.allowedOperations = details.allowedOperations.map((item) => cleanString(item, 40)).filter(Boolean);
+  return evidence;
+}
+
+function preflightTaskEvidence(task, scope, generatedAt) {
+  if (!task.writeEvidence) return null;
+  if (!scope.allowWriteEvidence) {
+    return blockedEvidenceFromTask(task, generatedAt, "release_evidence_bundle_write_evidence_not_allowed", {
+      requiredFlag: "--allow-write-evidence",
+      summary: {
+        writeEvidenceAllowed: false,
+        requiredFlag: "--allow-write-evidence"
+      }
+    });
+  }
+  if (task.taskId === "daily_loop_write") {
+    if (!DAILY_LOOP_WRITE_OPERATIONS.has(scope.dailyLoopWriteOperation)) {
+      return blockedEvidenceFromTask(task, generatedAt, "release_evidence_bundle_daily_loop_write_operation_invalid", {
+        allowedOperations: Array.from(DAILY_LOOP_WRITE_OPERATIONS),
+        summary: {
+          writeEvidenceAllowed: true,
+          operation: scope.dailyLoopWriteOperation,
+          allowedOperations: Array.from(DAILY_LOOP_WRITE_OPERATIONS)
+        }
+      });
+    }
+    if (scope.dailyLoopWriteOperation === "publish" && !scope.planDraftId) {
+      return blockedEvidenceFromTask(task, generatedAt, "release_evidence_bundle_plan_draft_id_required", {
+        summary: {
+          writeEvidenceAllowed: true,
+          operation: "publish",
+          requiredField: "planDraftId"
+        }
+      });
+    }
+  }
+  return null;
+}
+
+function taskSpecificArgs(task, scope) {
+  const args = Array.from(task.extraArgs || []);
+  if (task.taskId === "daily_loop_write") {
+    args.push("--operation", scope.dailyLoopWriteOperation, "--allow-write");
+    if (scope.planDraftId) args.push("--plan-draft-id", scope.planDraftId);
+  }
+  return args;
+}
+
 function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
   const runCommand = options.runCommand;
   const repoRoot = options.repoRoot || process.cwd();
@@ -349,7 +430,7 @@ function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
     const args = [
       path.join(repoRoot, task.script),
       ...scopeArgs(scope),
-      ...(task.extraArgs || []),
+      ...taskSpecificArgs(task, scope),
       "--json"
     ];
     const result = runCommand(nodePath, args, {
@@ -383,6 +464,19 @@ function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
     const taskResults = [];
     for (const taskId of taskIds) {
       const task = TASK_BY_ID.get(taskId);
+      const blockedEvidence = preflightTaskEvidence(task, scope, generatedAt);
+      if (blockedEvidence) {
+        evidence[task.evidenceKey] = blockedEvidence;
+        taskResults.push({
+          taskId,
+          evidenceKey: task.evidenceKey,
+          ok: false,
+          status: "blocked",
+          error: blockedEvidence.error,
+          source: task.commandName
+        });
+        continue;
+      }
       const taskRun = runTask(task, scope);
       if (task.outputKey === "releaseApproval") {
         const approvalResult = releaseApprovalTaskResult(task, taskRun, generatedAt);

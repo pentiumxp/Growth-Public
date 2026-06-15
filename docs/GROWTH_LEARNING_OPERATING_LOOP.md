@@ -1591,9 +1591,13 @@ Implementation progress on 2026-06-15:
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
   default-disabled smoke CLIs, includes read-only stage-assessment readiness
   proposal smoke, and read-only release approval bag projection by default,
-  and emits only summary evidence. This remains input normalization only:
-  readiness remains no-write by default, `--write-snapshot` is still explicit,
-  and the boundary still cannot enable writeful scheduling.
+  and emits only summary evidence. Controlled daily-loop draft/publish smoke
+  can be added only with the explicit non-default `daily_loop_write` task plus
+  `--allow-write-evidence`, and the builder then delegates to the existing
+  daily-loop smoke write gate instead of importing daily-loop services. This
+  remains input normalization only: readiness remains no-write by default,
+  `--write-snapshot` is still explicit, and the boundary still cannot enable
+  writeful scheduling.
 
 The next product-completeness slice is embedded UI and production readiness:
 

@@ -991,7 +991,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.doesNotMatch(releaseReadinessService, /generateCard/);
 });
 
-test("Growth release evidence bundle builder stays service-owned and no-write", () => {
+test("Growth release evidence bundle builder stays service-owned and write-gated", () => {
   const packageJson = JSON.parse(read("package.json"));
   assert.equal(
     packageJson.scripts["smoke:release-evidence-bundle"],
@@ -1009,6 +1009,9 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(script, /--fail-on-blocked/);
   assert.match(script, /--result-json/);
   assert.match(script, /--output-file/);
+  assert.match(script, /--allow-write-evidence/);
+  assert.match(script, /--daily-loop-write-operation/);
+  assert.match(script, /--plan-draft-id/);
   assert.doesNotMatch(script, /readEnv/);
   assert.doesNotMatch(script, /createServices/);
   assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
@@ -1030,6 +1033,13 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /runCommand/);
   assert.match(service, /releaseApproval/);
   assert.match(service, /release_approval/);
+  assert.match(service, /daily_loop_write/);
+  assert.match(service, /productionDailyLoopWriteSmokeEvidence/);
+  assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);
+  assert.match(service, /release_evidence_bundle_daily_loop_write_operation_invalid/);
+  assert.match(service, /release_evidence_bundle_plan_draft_id_required/);
+  assert.match(service, /allowWriteEvidence/);
+  assert.match(service, /writeEvidence/);
   assert.match(service, /privacyClass: "summary_only"/);
   assert.match(service, /summaryOnly: true/);
   assert.match(service, /scanPrivacy/);
@@ -1049,6 +1059,7 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /backgroundWorkerApproval/);
   assert.match(service, /smoke-growth-planner-readiness\.js/);
   assert.match(service, /smoke-growth-daily-loop-preview\.js/);
+  assert.match(service, /smoke-growth-daily-loop\.js/);
   assert.match(service, /smoke-growth-learning-loop-state\.js/);
   assert.match(service, /smoke-growth-stage-assessment\.js/);
   assert.match(service, /smoke-growth-automation-proposal\.js/);
@@ -1076,10 +1087,15 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
 
   const serviceHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
   assert.match(serviceHarness, /builds summary-only bundle from no-write smoke tasks/);
+  assert.match(serviceHarness, /blocks controlled daily-loop write evidence unless explicitly allowed/);
+  assert.match(serviceHarness, /runs controlled daily-loop write smoke only after bundle write approval/);
+  assert.match(serviceHarness, /blocks unsafe daily-loop write task scope before runner execution/);
   assert.match(serviceHarness, /privacy-risk smoke output/);
 
   const scriptHarness = read(path.join("tests", "growth-release-evidence-bundle-script.test.js"));
   assert.match(scriptHarness, /writes a summary-only bundle from a read-only smoke/);
+  assert.match(scriptHarness, /exposes controlled daily-loop write evidence only as explicit blocked task by default/);
+  assert.match(scriptHarness, /fails closed before write smoke when controlled publish lacks a plan draft id/);
   assert.match(scriptHarness, /fails closed for missing workspace and invalid task/);
 });
 

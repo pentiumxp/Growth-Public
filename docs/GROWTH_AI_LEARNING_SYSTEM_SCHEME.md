@@ -125,7 +125,10 @@ The current product state should therefore be described precisely:
   embedded plugin without Codex or database-console work;
 - release-reviewable means product, platform, visual, production controlled
   daily-loop write smoke, production dry-run, and harness evidence can be
-  inspected by a human release decision;
+  inspected by a human release decision; controlled daily-loop write smoke may
+  be collected through the explicit non-default `daily_loop_write`
+  release-bundle task, but that collection is evidence only and not an
+  automation permission;
 - writeful automation allowed means a later, explicit release-management
   boundary has approved runtime config after all previous evidence exists.
 

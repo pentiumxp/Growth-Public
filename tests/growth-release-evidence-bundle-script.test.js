@@ -57,6 +57,9 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--tasks", "daily_loop_preview,learning_loop_state,scheduler_dry_run",
     "--requested-by", "owner",
     "--created-at", "2026-06-15T06:10:00.000Z",
+    "--allow-write-evidence",
+    "--daily-loop-write-operation", "publish",
+    "--plan-draft-id", "lgpd_daily_1",
     "--output-file", "/tmp/release-evidence.json"
   ];
 
@@ -84,7 +87,10 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     requestedBy: "owner",
     createdAt: "2026-06-15T06:10:00.000Z",
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
-    tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"]
+    tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"],
+    allowWriteEvidence: true,
+    dailyLoopWriteOperation: "publish",
+    planDraftId: "lgpd_daily_1"
   });
 });
 
@@ -112,7 +118,48 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
+  assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
+});
+
+test("release evidence bundle script exposes controlled daily-loop write evidence only as explicit blocked task by default", () => {
+  const result = runScript([
+    "--workspace-id", "smoke_workspace",
+    "--learner-id", "smoke_learner",
+    "--task", "daily_loop_write",
+    "--json"
+  ]);
+
+  assert.equal(result.status, 0);
+  const bundle = parseStdout(result);
+  assert.equal(bundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
+  assert.equal(bundle.summary.taskCount, 1);
+  assert.equal(bundle.summary.blockedCount, 1);
+  assert.deepEqual(bundle.summary.failedTaskIds, ["daily_loop_write"]);
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.status, "blocked");
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.error, "release_evidence_bundle_write_evidence_not_allowed");
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.requiredFlag, "--allow-write-evidence");
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.smoke, "npm run smoke:daily-loop");
+  assert.equal(JSON.stringify(bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle script fails closed before write smoke when controlled publish lacks a plan draft id", () => {
+  const result = runScript([
+    "--workspace-id", "smoke_workspace",
+    "--learner-id", "smoke_learner",
+    "--task", "daily_loop_write",
+    "--allow-write-evidence",
+    "--daily-loop-write-operation", "publish",
+    "--json"
+  ]);
+
+  assert.equal(result.status, 0);
+  const bundle = parseStdout(result);
+  assert.equal(bundle.summary.blockedCount, 1);
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.status, "blocked");
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.error, "release_evidence_bundle_plan_draft_id_required");
+  assert.equal(bundle.evidence.productionDailyLoopWriteSmokeEvidence.summary.operation, "publish");
+  assert.equal(JSON.stringify(bundle).includes("stdout"), false);
 });
 
 test("release evidence bundle script writes a summary-only bundle from a read-only smoke", () => {

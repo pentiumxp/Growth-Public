@@ -148,7 +148,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-learning-loop-state-smoke-evidence` after
   `npm run smoke:learning-loop-state` has produced bounded no-write production
   learning-loop state evidence, accepts
-  `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag,
+  `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag
+  or from an explicit release evidence bundle `daily_loop_write` task,
   accepts `--production-scheduler-dry-run-smoke-evidence` after
   `npm run smoke:scheduler-dry-run` has produced bounded no-write production
   scheduler dry-run evidence, and also performs an internal no-write scheduler
@@ -164,10 +165,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
-  without hand-splicing JSON in Codex. The builder maps persisted approvals
-  into the versioned bundle `releaseApproval` field only; it does not write
-  business state, does not call Gateway, and does not change release-readiness
-  or scheduler permission. Release-readiness writes a summary-only advisory
+  without hand-splicing JSON in Codex. It also exposes an opt-in
+  `daily_loop_write` task for controlled daily-loop draft/publish smoke
+  evidence; the task is outside the default set, fails closed without
+  `--allow-write-evidence`, requires `--daily-loop-write-operation draft` or
+  `publish`, requires `--plan-draft-id` for publish, and then delegates to the
+  existing `scripts/smoke-growth-daily-loop.js` write gate instead of calling
+  daily-loop services directly. The builder maps persisted approvals into the
+  versioned bundle `releaseApproval` field only and maps controlled daily-loop
+  write smoke into `productionDailyLoopWriteSmokeEvidence`; it does not write
+  business state of its own, does not call Gateway, and does not change
+  release-readiness or scheduler permission. Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

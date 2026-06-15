@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T11:14Z - Release Evidence Bundle Opt-In Daily Loop Write Task
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  release-evidence collection, docs, and harness only.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now allows an
+    explicit `daily_loop_write` task mapped to
+    `productionDailyLoopWriteSmokeEvidence`;
+  - `daily_loop_write` is intentionally not part of `DEFAULT_TASK_IDS`;
+  - without `--allow-write-evidence`, the bundle returns bounded blocked
+    evidence and does not spawn any smoke command;
+  - with `--allow-write-evidence`, only `draft` or `publish` are accepted, and
+    `publish` requires `--plan-draft-id`;
+  - after those bundle-level checks pass, the builder delegates to
+    `scripts/smoke-growth-daily-loop.js` through the injected runner and passes
+    the daily-loop CLI's own `--allow-write` gate;
+  - the bundle builder still has no route, repository, service-graph import,
+    Gateway call, direct daily-loop service call, publication/generation/
+    evaluation call, scheduler execution/tick, notification delivery, stage
+    activation, learner-state mutation, or production deploy behavior.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`.
+- Validation passed:
+  - operational blocked smoke:
+    `node scripts/build-growth-release-evidence-bundle.js --workspace-id
+    smoke_workspace --learner-id smoke_learner --task daily_loop_write
+    --json`;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`547` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,182` nodes,
+    `12,295` edges, index up to date).
+
 ## 2026-06-15T11:03Z - Release Evidence Bundle Collects Approval Bag
 
 - Status: implemented and locally validated; commit/push follows this handoff
