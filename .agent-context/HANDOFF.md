@@ -11,7 +11,7 @@
 
 ## 2026-06-15T18:06Z - Release Controls Persisted Audit Readback
 
-- Status: implemented and validated locally. This slice is Growth
+- Status: implemented, validated, and committed locally. This slice is Growth
   backend/Harness/docs only. It does not
   deploy, apply runtime config, grant scheduler permission, write release
   records, call Gateway, publish cards, run scheduling, or deliver
@@ -77,6 +77,9 @@
   - only after those pass, perform any explicit platform/runtime-config
     enablement outside Growth and read it back through
     `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
+- Git:
+  - implementation commit `c0ef721` `Harden release controls audit readback`;
+  - remote push status should be checked with `git status -sb`.
 
 ## 2026-06-15T17:53Z - Owner Release Controls Readback Aggregate
 
