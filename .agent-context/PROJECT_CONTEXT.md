@@ -226,6 +226,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   next-action, and artifact readback surface for Owner UI/release audit use. It
   owns no repository/table, calls no Gateway/model provider, writes no business
   state, and keeps all runtime mutation and scheduling permission flags false.
+  The release evidence bundle can also collect it explicitly through the
+  non-default `release_dashboard` task, which stores bounded
+  `releaseDashboardSmokeEvidence` as final readback packaging only.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only

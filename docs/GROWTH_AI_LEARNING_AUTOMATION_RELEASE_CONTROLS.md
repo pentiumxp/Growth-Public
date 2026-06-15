@@ -237,6 +237,27 @@ artifact. It is also non-default and no-write. A passing task proves the
 inventory readback was collected; consumers must still read the nested
 inventory and controls summaries for the actual release state.
 
+The companion release dashboard read model can also be collected as a final
+non-default bundle task:
+
+```bash
+npm run smoke:release-evidence-bundle -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --task release_dashboard \
+  --activation-gates writeful_execution \
+  --required-approval-key writefulExecutionApproval \
+  --activation-record-limit 20 \
+  --runtime-enablement-record-limit 20 \
+  --json
+```
+
+This task writes `releaseDashboardSmokeEvidence` inside the bundle artifact.
+It is no-write and means only that the dashboard read model was collected.
+Consumers must still read the nested dashboard/readiness/controls/inventory
+statuses and next action. The task remains outside `DEFAULT_TASK_IDS` to avoid
+turning the default evidence bundle into a circular final readback.
+
 ## Release Dashboard Read Model
 
 Owner UI and release audit tooling can read one bounded release status model

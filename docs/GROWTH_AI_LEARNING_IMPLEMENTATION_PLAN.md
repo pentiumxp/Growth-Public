@@ -885,8 +885,10 @@ Required behavior:
   `npm run smoke:release-evidence-bundle-audit`, optional final
   release-controls readback through the non-default `release_controls`
   release-bundle task, optional final release-inventory readback through the
-  non-default `release_inventory` release-bundle task, and explicit release
-  approval records for each writeful config gate;
+  non-default `release_inventory` release-bundle task, optional final
+  release-dashboard readback through the non-default `release_dashboard`
+  release-bundle task, and explicit release approval records for each writeful
+  config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
 - return a bounded `releaseReview` remediation plan derived from non-passing
@@ -938,7 +940,8 @@ Required harness:
 - `tests/growth-release-package-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js` and
   `tests/growth-release-evidence-bundle-script.test.js` for the optional
-  non-default `release_controls` and `release_inventory` evidence-bundle tasks;
+  non-default `release_controls`, `release_inventory`, and
+  `release_dashboard` evidence-bundle tasks;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`,
   including the `releaseReview` remediation fields;

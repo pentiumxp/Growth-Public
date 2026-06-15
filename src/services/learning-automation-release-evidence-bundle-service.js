@@ -163,6 +163,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "releaseInventorySmokeEvidence",
     script: "scripts/smoke-growth-release-inventory.js",
     commandName: "npm run smoke:release-inventory"
+  },
+  {
+    taskId: "release_dashboard",
+    evidenceKey: "releaseDashboardSmokeEvidence",
+    script: "scripts/smoke-growth-release-dashboard.js",
+    commandName: "npm run smoke:release-dashboard"
   }
 ]);
 
@@ -501,9 +507,47 @@ function releaseInventorySummaryFromSmoke(value = {}) {
   };
 }
 
+function releaseDashboardSummaryFromSmoke(value = {}) {
+  const dashboard = value.releaseDashboard && typeof value.releaseDashboard === "object" ? value.releaseDashboard : {};
+  const readiness = value.releaseReadiness && typeof value.releaseReadiness === "object" ? value.releaseReadiness : {};
+  const controls = value.releaseControls && typeof value.releaseControls === "object" ? value.releaseControls : {};
+  const inventory = value.releaseInventory && typeof value.releaseInventory === "object" ? value.releaseInventory : {};
+  return {
+    source: cleanString(value.source || "growth-learning-automation-release-dashboard-service", 160),
+    status: cleanString(dashboard.status || value.status, 120),
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 160),
+    readyForReleaseReview: dashboard.readyForReleaseReview === true,
+    requiredActionCount: Number(dashboard.requiredActionCount) || 0,
+    nextActionKey: cleanString(dashboard.nextAction?.key || dashboard.next_action?.key, 120),
+    readinessStatus: cleanString(dashboard.readinessStatus || dashboard.readiness_status || readiness.status, 120),
+    controlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status || controls.status, 120),
+    inventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status || inventory.status, 120),
+    artifactCount: Number(dashboard.artifactCount || inventory.artifactCount || inventory.artifact_count) || 0,
+    latestCollectionRunId: cleanString(dashboard.latestCollectionRunId || dashboard.latest_collection_run_id || inventory.latestCollectionRunId || inventory.latest_collection_run_id, 120),
+    latestPackageId: cleanString(dashboard.latestPackageId || dashboard.latest_package_id || inventory.latestPackageId || inventory.latest_package_id, 120),
+    latestDecisionId: cleanString(dashboard.latestDecisionId || dashboard.latest_decision_id || inventory.latestDecisionId || inventory.latest_decision_id, 120),
+    latestActivationId: cleanString(dashboard.latestActivationId || dashboard.latest_activation_id || inventory.latestActivationId || inventory.latest_activation_id, 120),
+    latestRuntimeEnablementId: cleanString(dashboard.latestRuntimeEnablementId || dashboard.latest_runtime_enablement_id || inventory.latestRuntimeEnablementId || inventory.latest_runtime_enablement_id, 120),
+    missingRecordKinds: uniqueStrings(dashboard.missingRecordKinds || dashboard.missing_record_kinds || inventory.missingRecordKinds || inventory.missing_record_kinds || []),
+    blockedRecordKinds: uniqueStrings(dashboard.blockedRecordKinds || dashboard.blocked_record_kinds || inventory.blockedRecordKinds || inventory.blocked_record_kinds || []),
+    missingCheckKeys: uniqueStrings(dashboard.missingCheckKeys || dashboard.missing_check_keys || []),
+    blockedCheckKeys: uniqueStrings(dashboard.blockedCheckKeys || dashboard.blocked_check_keys || []),
+    missingEvidenceKeys: uniqueStrings(dashboard.missingEvidenceKeys || dashboard.missing_evidence_keys || []),
+    missingApprovalKeys: uniqueStrings(dashboard.missingApprovalKeys || dashboard.missing_approval_keys || []),
+    persistedApprovalKeys: uniqueStrings(dashboard.persistedApprovalKeys || dashboard.persisted_approval_keys || []),
+    configChangeApplied: value.configChangeApplied === true,
+    runtimeConfigChange: value.runtimeConfigChange === true,
+    runtimeConfigMutationPerformed: value.runtimeConfigMutationPerformed === true,
+    writefulSchedulingAllowed: value.writefulSchedulingAllowed === true,
+    backgroundSchedulingAllowed: value.backgroundSchedulingAllowed === true,
+    backgroundWorkerAllowed: value.backgroundWorkerAllowed === true
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
+  if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
@@ -657,7 +701,7 @@ function taskSpecificArgs(task, scope) {
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
   }
-  if (task.taskId === "release_controls" || task.taskId === "release_inventory") {
+  if (task.taskId === "release_controls" || task.taskId === "release_inventory" || task.taskId === "release_dashboard") {
     if (scope.collectionRunId) args.push("--collection-run-id", scope.collectionRunId);
     if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));
     if (scope.requiredApprovalKeys.length) args.push("--required-approval-keys", scope.requiredApprovalKeys.join(","));
