@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T04:45Z - Growth Release Readiness Automation UI Evidence Gate Slice
+
+- Status: implemented and locally validated. This slice makes automation
+  digest UI, automation action handoff UI, scheduler execution UI, scheduler
+  run UI, and scheduler worker-target UI evidence explicit release-readiness
+  checks without implementing those UI surfaces, enabling writeful scheduling,
+  calling Gateway, publishing plans, evaluating submissions, running scheduler
+  ticks, delivering notifications, activating stage assessments, or mutating
+  learner state.
+- Change classification: H2 backend/Harness/docs evidence boundary by Growth
+  scope because it changes release-readiness contract evidence. Home AI AI Ops
+  intake classified the slice as H3 and required architecture documentation
+  mapping, touched-file syntax checks, and diff hygiene; no visual lane or
+  deployment plan was required.
+- Scope:
+  - `learning-automation-release-readiness-service` now requires
+    `automation_digest_ui_evidence`,
+    `automation_action_handoff_ui_evidence`,
+    `scheduler_execution_ui_evidence`, `scheduler_run_ui_evidence`, and
+    `scheduler_worker_target_ui_evidence`;
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--automation-digest-ui-evidence`,
+    `--automation-action-handoff-ui-evidence`,
+    `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
+    `--scheduler-worker-target-ui-evidence`;
+  - release-readiness service, smoke-script, and architecture harnesses assert
+    the new evidence keys, CLI flags, and required actions;
+  - Growth implementation, next-stage, architecture, platform pointer, and
+    project-context docs now summarize proposal/digest/action/execution/run/
+    worker-target UI evidence as release-review prerequisites.
+- Boundary:
+  - the new checks are summary-only external evidence inputs; they do not prove
+    the UI exists by themselves;
+  - `npm run smoke:release-readiness` remains no-write by default and writes
+    snapshots only with explicit `--write-snapshot`;
+  - release readiness remains advisory and always returns
+    `writefulSchedulingAllowed=false`;
+  - this slice must not call Gateway, daily-loop services, action handoff
+    delivery, publication, evaluation, scheduler execution, scheduler ticks,
+    notification delivery, stage activation, direct repositories from the CLI,
+    or learner-state mutation.
+- Validation passed:
+  - `npm run --silent check` (`runtimeCount=134`, `checkedCount=134`);
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --workspace-id smoke_workspace
+    --automation-digest-ui-evidence
+    --automation-action-handoff-ui-evidence
+    --scheduler-execution-ui-evidence --scheduler-run-ui-evidence
+    --scheduler-worker-target-ui-evidence --json`, which returned all five
+    new UI checks as `pass` while the overall readiness stayed `incomplete`
+    and `writefulSchedulingAllowed=false`;
+  - `codegraph sync && codegraph status` (`224` files, `2,739` nodes,
+    `10,747` edges; index up to date);
+  - Home AI required checks: `node tests/architecture-code-test-harness-map.test.js`,
+    absolute `node --check` commands for the touched Growth files, and Growth
+    and Home AI `git diff --check`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-d7ce7a95-ffe4-4a38-bb4e-1789fa2c07c7`;
+  - production deploy was not executed because this was a Growth local
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T04:36Z - Growth Release Readiness Scheduler Worker Target Smoke Evidence Slice
 
 - Status: implemented and locally validated. This slice makes production

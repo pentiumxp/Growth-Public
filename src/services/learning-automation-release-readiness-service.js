@@ -339,9 +339,11 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       presentCheck(input, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
       presentCheck(input, "stageCheckpointEvidence", "stage_checkpoint_evidence", "Stage-checkpoint separation evidence", "validate_stage_checkpoint_separation"),
       presentCheck(input, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
+      presentCheck(input, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),
       reviewedDigestCheck(scope),
       activeFailurePolicyCheck(scope),
       deliveredHandoffCheck(scope),
+      presentCheck(input, "automationActionHandoffUiEvidence", "automation_action_handoff_ui_evidence", "Automation action handoff UI evidence", "complete_automation_action_handoff_ui"),
       presentCheck(input, "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence", "Production action handoff smoke", "run_production_action_handoff_smoke"),
       check("owner_explicit_execution_gate", "pass", {
         label: "Owner-explicit execution boundary",
@@ -349,6 +351,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         currentEnabled: Boolean(config.automationWritefulExecutionEnabled),
         writefulSchedulingAllowed: false
       }),
+      presentCheck(input, "schedulerExecutionUiEvidence", "scheduler_execution_ui_evidence", "Scheduler execution UI evidence", "complete_scheduler_execution_ui"),
       presentCheck(input, "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence", "Production scheduler execution smoke", "run_production_scheduler_execution_smoke"),
       check("scheduler_run_default_disabled", config.automationBackgroundSchedulerEnabled ? "blocked" : "pass", {
         label: "Scheduler run default-disabled status",
@@ -358,7 +361,9 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_scheduler_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
+      presentCheck(input, "schedulerRunUiEvidence", "scheduler_run_ui_evidence", "Scheduler run UI evidence", "complete_scheduler_run_ui"),
       presentCheck(input, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
+      presentCheck(input, "schedulerWorkerTargetUiEvidence", "scheduler_worker_target_ui_evidence", "Scheduler worker target UI evidence", "complete_scheduler_worker_target_ui"),
       presentCheck(input, "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence", "Production scheduler worker target smoke", "run_production_scheduler_worker_target_smoke"),
       reviewedWorkerTargetCheck(scope),
       check("worker_timer_default_disabled", config.automationBackgroundWorkerEnabled ? "blocked" : "pass", {

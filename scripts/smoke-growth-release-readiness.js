@@ -56,6 +56,11 @@ function evidenceFromArgs(args) {
   if (evidenceFlag(args, "--owner-audit-ui-evidence")) evidence.ownerAuditUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--stage-checkpoint-evidence")) evidence.stageCheckpointEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--proposal-review-ui-evidence")) evidence.proposalReviewUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--automation-digest-ui-evidence")) evidence.automationDigestUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--automation-action-handoff-ui-evidence")) evidence.automationActionHandoffUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--scheduler-execution-ui-evidence")) evidence.schedulerExecutionUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--scheduler-run-ui-evidence")) evidence.schedulerRunUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--scheduler-worker-target-ui-evidence")) evidence.schedulerWorkerTargetUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-action-handoff-smoke-evidence")) evidence.productionActionHandoffSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-execution-smoke-evidence")) evidence.productionSchedulerExecutionSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-run-smoke-evidence")) evidence.productionSchedulerRunSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };

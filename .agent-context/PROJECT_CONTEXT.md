@@ -91,6 +91,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   the release-readiness boundary. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
+  `--automation-digest-ui-evidence`,
+  `--automation-action-handoff-ui-evidence`,
+  `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
+  `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
+  flags, accepts
   `--production-action-handoff-smoke-evidence` after
   `npm run smoke:action-handoff` has produced bounded Growth-side action
   handoff smoke evidence, accepts

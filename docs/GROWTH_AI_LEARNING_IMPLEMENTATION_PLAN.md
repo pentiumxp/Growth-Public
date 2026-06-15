@@ -635,13 +635,15 @@ Implemented backend shape:
 Required behavior:
 
 - aggregate summary-only evidence for Owner daily UI, audit/correction UI,
-  stage-checkpoint separation, proposal review, digest review, active failure
-  policy, delivered action handoff, production action handoff smoke evidence
-  from `npm run smoke:action-handoff`, Owner-explicit execution gate status,
-  production scheduler execution smoke evidence from
+  stage-checkpoint separation, proposal review, automation digest UI,
+  digest review, active failure policy, delivered action handoff, automation
+  action handoff UI, production action handoff smoke evidence from
+  `npm run smoke:action-handoff`, Owner-explicit execution gate status,
+  scheduler execution UI, production scheduler execution smoke evidence from
   `npm run smoke:scheduler-execution`, scheduler run default-disabled status,
-  production scheduler run smoke evidence from `npm run smoke:scheduler-run`,
-  production scheduler worker target smoke evidence from
+  scheduler run UI, production scheduler run smoke evidence from
+  `npm run smoke:scheduler-run`, scheduler worker-target UI, production
+  scheduler worker target smoke evidence from
   `npm run smoke:scheduler-worker-target`, reviewed enabled worker targets,
   worker lease/timer default-disabled status, production scheduler worker smoke
   evidence from

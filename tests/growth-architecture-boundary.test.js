@@ -830,6 +830,11 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /createSnapshot/);
   assert.match(script, /shouldWriteSnapshot/);
   assert.match(script, /--write-snapshot/);
+  assert.match(script, /--automation-digest-ui-evidence/);
+  assert.match(script, /--automation-action-handoff-ui-evidence/);
+  assert.match(script, /--scheduler-execution-ui-evidence/);
+  assert.match(script, /--scheduler-run-ui-evidence/);
+  assert.match(script, /--scheduler-worker-target-ui-evidence/);
   assert.match(script, /--production-action-handoff-smoke-evidence/);
   assert.match(script, /--production-scheduler-execution-smoke-evidence/);
   assert.match(script, /--production-scheduler-run-smoke-evidence/);
@@ -856,6 +861,11 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   const scriptHarness = read(path.join("tests", "growth-release-readiness-smoke-script.test.js"));
   assert.match(scriptHarness, /without writing a snapshot by default/);
   assert.match(scriptHarness, /writes summary-only snapshots only when requested/);
+  assert.match(scriptHarness, /automationDigestUiEvidence/);
+  assert.match(scriptHarness, /automationActionHandoffUiEvidence/);
+  assert.match(scriptHarness, /schedulerExecutionUiEvidence/);
+  assert.match(scriptHarness, /schedulerRunUiEvidence/);
+  assert.match(scriptHarness, /schedulerWorkerTargetUiEvidence/);
   assert.match(scriptHarness, /productionActionHandoffSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerExecutionSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerRunSmokeEvidence/);
@@ -866,6 +876,21 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
+  assert.match(releaseReadinessService, /automationDigestUiEvidence/);
+  assert.match(releaseReadinessService, /automation_digest_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_automation_digest_ui/);
+  assert.match(releaseReadinessService, /automationActionHandoffUiEvidence/);
+  assert.match(releaseReadinessService, /automation_action_handoff_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_automation_action_handoff_ui/);
+  assert.match(releaseReadinessService, /schedulerExecutionUiEvidence/);
+  assert.match(releaseReadinessService, /scheduler_execution_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_scheduler_execution_ui/);
+  assert.match(releaseReadinessService, /schedulerRunUiEvidence/);
+  assert.match(releaseReadinessService, /scheduler_run_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_scheduler_run_ui/);
+  assert.match(releaseReadinessService, /schedulerWorkerTargetUiEvidence/);
+  assert.match(releaseReadinessService, /scheduler_worker_target_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_scheduler_worker_target_ui/);
   assert.match(releaseReadinessService, /productionActionHandoffSmokeEvidence/);
   assert.match(releaseReadinessService, /production_action_handoff_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_action_handoff_smoke/);
