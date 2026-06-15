@@ -57,7 +57,8 @@ Growth should become a low-pressure learning operating loop:
 9. write evaluation, reward, evidence, profile, trajectory, and profile-delta
    audit records;
 10. let Owner inspect and correct the audit;
-11. use the updated profile and evidence for the next plan.
+11. use the updated profile, evidence, profile-delta audit, and trajectory
+    recommendation for the next plan.
 
 The product goal is not simply more generated cards. The product goal is a
 closed loop where each next card can be explained from durable, bounded,
@@ -158,7 +159,7 @@ amount of code that already exists.
 | --- | --- | --- |
 | W1: Scope, graph, and provisioning | Owner selects an authorized learner, domain pack, domain, subject, horizon, and time budget. | View-target authorization, explicit provision checks, graph option projection, wrong-subject blocking, and target-workspace row ownership are covered by service, route, and vertical harnesses. |
 | W2: Daily learning action | Owner publishes one low-pressure daily card and learner completes it. | `daily_score_once`, one submission, one evaluation, one optional reflection, audio record/playback, score-proportional reward, visible progress, and visible failure state are covered by backend and UI harnesses. |
-| W3: Audit, profile, and correction | Owner can explain what happened and adjust future learning evidence. | Evidence ledger, Profile V2, profile delta, cycle audit, audit completeness, correction read/write, privacy projection, next recommendation, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs. |
+| W3: Audit, profile, and correction | Owner can explain what happened and adjust future learning evidence. | Evidence ledger, Profile V2, profile delta, cycle audit, audit completeness, correction read/write, privacy projection, next recommendation, post-cycle `growth.learningLoopState.v1`, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs. |
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
@@ -183,7 +184,7 @@ confusing a backend-capable slice with a product-complete learning system.
 | Level | Closed capability | Required proof |
 | --- | --- | --- |
 | L0: Data foundation | Growth can import or read graph/profile/evidence foundations for a target. | Native graph import/readback, target provisioning, summary-only privacy checks, and target-workspace ownership tests. |
-| L1: Backend daily loop | Services can draft, publish, evaluate, record evidence, update profile projections, and audit one daily card. | Service/route/repository/vertical harnesses prove the loop without browser reconstruction or direct model calls outside Gateway clients. |
+| L1: Backend daily loop | Services can draft, publish, evaluate, record evidence, update profile projections, audit one daily card, and expose the next planning action from the completed cycle. | Service/route/repository/vertical harnesses prove the loop without browser reconstruction or direct model calls outside Gateway clients. |
 | L2: Browser daily loop | Owner and learner can complete the same daily loop from the embedded plugin. | UI progress/errors, mobile scroll, dark-mode contrast, audio playback, one-box-per-stage flow, and central visual evidence. |
 | L3: Audit/correction loop | Owner can inspect why the card happened and add correction evidence. | Cycle audit, evidence audit, profile-delta audit, correction read/write, completeness, `tests/growth-owner-audit-smoke-script.test.js`, and privacy UI tests. |
 | L4: Checkpoint loop | Formal stage checkpoints update profile confidence without becoming daily pressure. | Stage readiness, activation, coverage, completion, cooldown, direct daily-publish blocking, and formal evidence weight tests. |

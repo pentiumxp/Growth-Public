@@ -79,8 +79,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   refuses direct formal stage-assessment publication. A service-level
   Fanfan science vertical harness now proves planner draft, publish, science
   card generation, learner evidence, Gateway evaluation, evidence ledger, and
-  Profile V2 feedback. The staged delivery roadmap for the supervised AI
-  learning system is now summarized first in
+  Profile V2 feedback; it also projects the completed cycle through
+  `learning-loop-state-service` as `ready_to_draft` with a `draft_daily_plan`
+  next action from persisted profile-delta/trajectory evidence. The staged
+  delivery roadmap for the supervised AI learning system is now summarized first in
   `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`; the closed-loop contract is in
   `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`, with staged delivery captured
   in `docs/GROWTH_AI_LEARNING_ROADMAP.md`. The next-stage execution selector is
@@ -455,7 +457,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GET /api/v1/growth/learning-loop/state`. It composes the existing
   daily-loop preview DTO and read-only `learning-stage-assessment-service`
   readiness into compact `growth.learningLoopState.v1` state/next-action
-  output for UI/harness use. It is no-write, summary-only, and does not call
+  output for UI/harness use. The AI-loop harness now covers post-cycle readback
+  from a completed Fanfan science daily card into the next planning action. It
+  is no-write, summary-only, and does not call
   Gateway, publish plans, generate cards, evaluate submissions, run schedulers,
   deliver notifications, activate stage assessments, or inspect SQLite tables.
   `npm run smoke:daily-loop` now provides a controlled local/production smoke
@@ -512,9 +516,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   on 2026-06-15 at Growth commit `ffabbbf4ef55`. Production smoke passed for
   manifest/status/static-version, central `embedded-plugin-shell` visual
   evidence, production Gateway planner readiness, daily-loop preview,
-  learning-loop state, and release-readiness Owner-loop aggregation. Fanfan
-  science currently remains intentionally blocked until Owner explicitly
-  provisions `domain_pack_fanfan_cambridge_pathway_v1` / `science`.
+  learning-loop state, and release-readiness Owner-loop aggregation. A later
+  2026-06-15 production operation provisioned Fanfan science for
+  `domain_pack_fanfan_cambridge_pathway_v1` / `science` and published one
+  Owner-supervised daily card; production learner-cycle writes remain gated
+  behind explicit Owner-provided learner evidence.
   Older-cycle selection over the implemented current-cycle drilldown, formal
   stage-checkpoint UI, proposal/digest/action/execution UI, platform
   Action Inbox/Web Push evidence, and full automation release review remain

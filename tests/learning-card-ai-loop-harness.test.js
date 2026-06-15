@@ -10,19 +10,28 @@ const { createGrowthEvaluationService } = require("../src/services/growth-evalua
 const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
 const { createGrowthGatewayEvaluationClient } = require("../src/services/growth-gateway-evaluation-client");
 const { createGrowthGatewayPlannerClient } = require("../src/services/growth-gateway-planner-client");
+const { createLearningAuditCompletenessService } = require("../src/services/learning-audit-completeness-service");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardEvaluationService } = require("../src/services/learning-card-evaluation-service");
+const { createLearningCardGenerationContextService } = require("../src/services/learning-card-generation-context-service");
 const { createLearningCardGenerationRecipePolicyService } = require("../src/services/learning-card-generation-recipe-policy-service");
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
 const { createLearningCardTrajectoryService } = require("../src/services/learning-card-trajectory-service");
+const { createLearningCycleAuditService } = require("../src/services/learning-cycle-audit-service");
+const { createLearningDailyLoopService } = require("../src/services/learning-daily-loop-service");
+const { createLearningEvidenceAuditService } = require("../src/services/learning-evidence-audit-service");
 const { createLearningEvidenceLedgerService } = require("../src/services/learning-evidence-ledger-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
+const { createLearningLoopStateService } = require("../src/services/learning-loop-state-service");
 const { createLearningMasteryProfileService } = require("../src/services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
+const { createLearningOwnerCorrectionService } = require("../src/services/learning-owner-correction-service");
+const { createLearningPlanAuditService } = require("../src/services/learning-plan-audit-service");
 const { createLearningProfileDeltaService } = require("../src/services/learning-profile-delta-service");
+const { createLearningProfileDeltaAuditService } = require("../src/services/learning-profile-delta-audit-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../src/services/learning-profile-v2-service");
 const { createLearningPlanOrchestratorService } = require("../src/services/learning-plan-orchestrator-service");
@@ -779,6 +788,54 @@ function createLoopHarness() {
     cardGenerationService: generationService,
     targetProvisioningService
   });
+  const evidenceAuditService = createLearningEvidenceAuditService({
+    evidenceLedgerService
+  });
+  const planAuditService = createLearningPlanAuditService({
+    repository: store.learningPlanDraftRepository
+  });
+  const profileDeltaAuditService = createLearningProfileDeltaAuditService({
+    repository: store.profileDeltaAuditRepository
+  });
+  const ownerCorrectionService = createLearningOwnerCorrectionService({
+    evidenceLedgerService,
+    targetProvisioningService,
+    now: () => new Date("2026-06-14T08:13:00.000Z")
+  });
+  const cycleAuditService = createLearningCycleAuditService({
+    planAuditService,
+    evidenceAuditService,
+    profileDeltaAuditService,
+    ownerCorrectionService
+  });
+  const auditCompletenessService = createLearningAuditCompletenessService({
+    cycleAuditService
+  });
+  const contextService = createLearningCardGenerationContextService({
+    graphRepository: store.learningGraphRepository,
+    historySummaryRepository: store.learningHistorySummaryRepository,
+    nextTargetService,
+    profileProjectionService,
+    profileV2Service,
+    evidenceLedgerService,
+    planAuditService,
+    profileDeltaAuditService,
+    ownerCorrectionService,
+    plannerContextService,
+    targetProvisioningService,
+    nextCardStrategyService,
+    recipePolicyService: createLearningCardGenerationRecipePolicyService(),
+    gatewayConfigured: () => true,
+    authoringGatewayConfigured: () => true,
+    evaluationGatewayConfigured: () => true,
+    plannerGatewayConfigured: () => true
+  });
+  const dailyLoopService = createLearningDailyLoopService({
+    contextService,
+    planPublisherService,
+    cycleAuditService,
+    auditCompletenessService
+  });
   const profileService = createLearningMasteryProfileService({
     repository: store.masteryProfileRepository,
     now: () => new Date("2026-06-14T08:10:00.000Z")
@@ -792,6 +849,10 @@ function createLoopHarness() {
     profileProjectionService,
     cardGenerationService: generationService,
     now: () => new Date("2026-06-14T08:12:00.000Z")
+  });
+  const loopStateService = createLearningLoopStateService({
+    dailyLoopService,
+    stageAssessmentService
   });
   const evaluationService = createGrowthEvaluationService({
     learningStore: store,
@@ -808,6 +869,10 @@ function createLoopHarness() {
 
   return {
     dbPath,
+    auditCompletenessService,
+    contextService,
+    cycleAuditService,
+    dailyLoopService,
     evidenceLedgerService,
     evaluationGatewayCalls,
     evaluationService,
@@ -815,6 +880,7 @@ function createLoopHarness() {
     generationService,
     planPublisherService,
     plannerGatewayCalls,
+    loopStateService,
     profileDeltaService,
     profileV2Service,
     profileProjectionService,
@@ -1072,6 +1138,34 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
     assert.equal(profileV2.weaknesses.some((item) => item.nodeId === SCIENCE_NODE_ID), true);
     assert.equal(profileV2.recommendedPlannerHints.strategy, "repair");
     assert.equal(JSON.stringify(profileV2).includes(RAW_MARKER), false);
+
+    const nextLoopState = harness.loopStateService.state({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      taskCardId: published.generation.published.taskCardId,
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(nextLoopState.ok, true);
+    assert.equal(nextLoopState.schemaVersion, "growth.learningLoopState.v1");
+    assert.equal(nextLoopState.privacyClass, "summary_only");
+    assert.equal(nextLoopState.status, "ready_to_draft");
+    assert.equal(nextLoopState.audit.complete, true);
+    assert.equal(nextLoopState.audit.readyForAutomation, true);
+    assert.equal(nextLoopState.audit.evidenceCount >= 1, true);
+    assert.equal(nextLoopState.audit.profileDeltaCount >= 1, true);
+    assert.deepEqual(nextLoopState.audit.missingRequired, []);
+    assert.equal(nextLoopState.recommendation.available, true);
+    assert.equal(nextLoopState.recommendation.strategy, "repair");
+    assert.equal(nextLoopState.recommendation.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(nextLoopState.nextAction.action, "draft_daily_plan");
+    assert.equal(nextLoopState.nextAction.reason, "next_strategy:repair");
+    assert.equal(nextLoopState.nextAction.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(nextLoopState).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(nextLoopState).includes("rawPrompt"), false);
+    assert.equal(JSON.stringify(nextLoopState).includes("answerKey"), false);
 
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
     try {

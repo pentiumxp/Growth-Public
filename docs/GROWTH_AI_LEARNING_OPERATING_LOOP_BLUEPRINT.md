@@ -201,7 +201,7 @@ opaque automation switch.
 
 | Milestone | Capability | Completion rule |
 | --- | --- | --- |
-| Backend evidence loop | Growth can persist summary-only evidence, project Profile V2, draft a Gateway plan, publish one selected item, evaluate once, persist profile delta, and expose bounded audit readback. | Service, repository, route, and AI-loop harness pass locally. |
+| Backend evidence loop | Growth can persist summary-only evidence, project Profile V2, draft a Gateway plan, publish one selected item, evaluate once, persist profile delta, expose bounded audit readback, and project the completed cycle into the next `ready_to_draft` learning-loop state. | Service, repository, route, and AI-loop harness pass locally, including post-cycle state readback. |
 | Owner supervised daily loop | Owner can select learner/domain/subject, inspect compact loop status from `growth.learningLoopState.v1`, publish one validated daily card, and inspect completion audit from the Growth UI. | Learning-loop state smoke, daily-loop smoke, embedded UI, mobile/dark-mode visual harness, and production readiness smoke pass. |
 | Stage checkpoint loop | Growth can recommend formal checkpoints from Profile V2 and evidence freshness while activation/cooldown remains owned by `learning-stage-assessment-service`. | Stage planning harness proves no daily backlog debt and no silent formal card publication. |
 | Multi-workspace/domain-pack loop | Any visible and provisioned learner/domain pack can use the same planner/author/evaluate/audit pipeline. | Cross-workspace allow/deny route and UI harnesses prove actor workspace and learner workspace never mix. |

@@ -9,6 +9,45 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:30Z - Post-Cycle Learning Loop State Harness
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because only harness, docs, and
+  workspace context changed.
+- Scope:
+  - expanded `tests/learning-card-ai-loop-harness.test.js` to instantiate the
+    same audit/context/daily-loop/learning-loop-state service chain used by the
+    normal Growth service graph;
+  - the Fanfan science vertical harness now proves a completed daily card can
+    flow from planner draft, publish, learner evidence, Gateway evaluation,
+    evidence ledger, Profile V2, profile-delta audit, and trajectory
+    recommendation into `growth.learningLoopState.v1`;
+  - the post-cycle state assertion requires `status=ready_to_draft`,
+    `nextAction.action=draft_daily_plan`,
+    `nextAction.reason=next_strategy:repair`, complete cycle audit,
+    profile-delta/evaluation evidence counts, empty missing-required list, and
+    no raw learner/model content leakage.
+- Docs updated:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/learning-card-ai-loop-harness.test.js`;
+  - `node --test tests/learning-card-ai-loop-harness.test.js
+    tests/learning-loop-state-service.test.js
+    tests/growth-learning-loop-state-smoke-script.test.js
+    tests/learning-daily-loop-service.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`245` files, `3,135` nodes,
+    `12,144` edges, index up to date);
+  - `npm test -- --test-reporter=spec` (`534` tests).
+
 ## 2026-06-15T10:20Z - Audit Completeness Privacy Projection Refined
 
 - Status: implemented, locally validated, pushed to both remotes, deployed to
