@@ -1,6 +1,6 @@
 # Growth Card Interaction Flow
 
-Last updated: 2026-06-14.
+Last updated: 2026-06-15.
 
 This document defines the plugin-owned learner interaction flow for generated
 Growth cards. It covers the three learner-facing stages, evaluation refresh,
@@ -287,6 +287,21 @@ Queue recovery coverage lives in
 settlement remains single-settlement. Projection and frontend coverage assert
 that exhausted failed jobs expose `evaluation_failed` / `owner_review` state and
 render a visible learner-facing failure panel.
+
+Service-level learner-cycle coverage lives in
+`tests/growth-learner-cycle-smoke-script.test.js` and
+`npm run smoke:learner-cycle`. The smoke instantiates the normal Growth service
+graph and defaults to the no-write `audit` operation. `submit`, `evaluate`,
+`reflect`, and `full` require explicit `--allow-write`; `full` runs the daily
+sequence through `learning-learner-cycle-service`: submit once through
+`growthService.submitEvidence`, process one evaluation queue pass through
+`growthEvaluationService.processEvaluationQueue`, submit one reflection through
+`growthService.submitReflection`, then read cycle audit and completeness. The
+CLI output is summary-only (`growth.learningLearnerCycleSmoke.v1`) and must not
+echo learner answer text, reflection text, raw prompts, answer keys, raw model
+output, transcripts, credentials, or provider configuration. Production use
+should run the default audit readback unless the submitted text/reflection is a
+real learner action explicitly requested by Owner.
 
 Gateway-backed evaluation coverage lives in
 `tests/learning-card-evaluation-service.test.js` and asserts valid streaming

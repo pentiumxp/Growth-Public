@@ -190,7 +190,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   That CLI still delegates only through `learning-daily-loop-service` and the
   normal service graph; it does not import repositories, call Gateway directly,
   call the plan publisher or card generator directly, run schedulers, deliver
-  notifications, or activate stage assessments. Target provisioning smoke
+  notifications, or activate stage assessments. Learner daily-card cycle smoke
+  evidence is now available through `npm run smoke:learner-cycle`, backed by
+  `learning-learner-cycle-service`. It defaults to no-write `audit` and returns
+  summary-only cycle audit/completeness; `submit`, `evaluate`, `reflect`, and
+  `full` require explicit `--allow-write` and delegate through the normal
+  Growth service graph for submission, evaluation queue processing, reflection,
+  profile/evidence/profile-delta effects, and audit readback. The smoke output
+  must not echo learner text, reflections, transcripts, prompts, answer keys,
+  raw model output, credentials, or provider config. Target provisioning smoke
   evidence is available through `npm run smoke:target-provisioning`; it
   delegates only to `learning-target-provisioning-service`, defaults to
   read-only resolve, requires explicit `--allow-write` for provision writes,

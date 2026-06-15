@@ -30,6 +30,7 @@ const { createLearningAuditCompletenessService } = require("../services/learning
 const { createLearningCycleAuditService } = require("../services/learning-cycle-audit-service");
 const { createLearningDailyLoopService } = require("../services/learning-daily-loop-service");
 const { createLearningLoopStateService } = require("../services/learning-loop-state-service");
+const { createLearningLearnerCycleService } = require("../services/learning-learner-cycle-service");
 const { createLearningEvidenceAuditService } = require("../services/learning-evidence-audit-service");
 const { createLearningEvidenceLedgerService } = require("../services/learning-evidence-ledger-service");
 const { createLearningEvaluationOwnerReviewService } = require("../services/learning-evaluation-owner-review-service");
@@ -314,6 +315,12 @@ function createServices(config) {
       ? learningCardEvaluationService.evaluateSubmission
       : undefined
   });
+  const learningLearnerCycleService = createLearningLearnerCycleService({
+    growthService,
+    evaluationService: growthEvaluationService,
+    cycleAuditService: learningCycleAuditService,
+    auditCompletenessService: learningAuditCompletenessService
+  });
   return {
     config,
     growthEvaluationService,
@@ -350,6 +357,7 @@ function createServices(config) {
     learningEvaluationOwnerReviewService,
     learningExperienceSignalService,
     learningGraphPlanService,
+    learningLearnerCycleService,
     learningLoopStateService,
     learningMasteryProfileService,
     learningNextCardStrategyService,

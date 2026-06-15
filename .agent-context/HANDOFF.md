@@ -9,6 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:03Z - Learner Cycle Smoke Implemented Locally
+
+- Status: implemented and locally validated; not deployed at the time of this
+  entry.
+- Scope:
+  - added `src/services/learning-learner-cycle-service.js`, a service-owned
+    learner daily-card cycle facade with `audit`, `submit`, `evaluate`,
+    `reflect`, and `full` operations;
+  - wired `learningLearnerCycleService` into `src/app/services.js`;
+  - added `scripts/smoke-growth-learner-cycle.js` and
+    `npm run smoke:learner-cycle`;
+  - added `tests/growth-learner-cycle-smoke-script.test.js`;
+  - expanded `tests/growth-architecture-boundary.test.js` and
+    `package.json` syntax coverage.
+- Boundary:
+  - the smoke defaults to no-write `audit`;
+  - `submit`, `evaluate`, `reflect`, and `full` require explicit
+    `--allow-write`;
+  - the CLI delegates only through `learning-learner-cycle-service`, which in
+    turn delegates to `growthService.submitEvidence`,
+    `growthEvaluationService.processEvaluationQueue`,
+    `growthService.submitReflection`, `learning-cycle-audit-service`, and
+    `learning-audit-completeness-service`;
+  - it does not import repositories, call Gateway directly, publish plans,
+    generate cards, run schedulers, deliver notifications, or activate stage
+    assessments;
+  - output is summary-only `growth.learningLearnerCycleSmoke.v1` and must not
+    echo learner answer text, reflection text, transcripts, raw prompts, answer
+    keys, raw model output, credentials, or provider config.
+- Harness behavior:
+  - the new sub-process harness prepares a temporary daily-card SQLite
+    fixture, runs `full` through the smoke CLI, verifies one submission, one
+    evaluation, one reflection, one completed evaluation job, evidence ledger,
+    profile-delta audit, mastery-state update, completed card status, and no
+    learner text leakage in CLI output;
+  - it also covers no-write default audit, explicit write gate, invalid JSON,
+    missing workspace, and privacy-risk input rejection.
+- Validation passed:
+  - `node --check src/services/learning-learner-cycle-service.js &&
+    node --check scripts/smoke-growth-learner-cycle.js`;
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check` (`runtimeCount=145`, `checkedCount=145`);
+  - `npm test -- --test-reporter=spec` (`532` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`245` files, `3,132` nodes,
+    `12,118` edges; index up to date, with an informational older-engine
+    rebuild notice).
+- Docs updated:
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Production note: do not run `submit`, `reflect`, or `full` against the
+  existing Fanfan production science card unless Owner explicitly supplies a
+  real learner submission/reflection. Use default no-write `audit` for
+  production smoke.
+
 ## 2026-06-15T09:18Z - Fanfan Science Target Provisioned And Daily Card Published
 
 - Status: deployed to Mac production, smoke validated, and one Fanfan science
