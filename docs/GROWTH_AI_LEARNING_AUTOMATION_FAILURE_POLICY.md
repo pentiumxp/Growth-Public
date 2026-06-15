@@ -39,6 +39,7 @@ Implemented locally:
 - Owner-only `POST /api/v1/growth/automation/failure-policies`;
 - Owner-only
   `POST /api/v1/growth/automation/failure-policies/:policyId/review`;
+- service-owned `npm run smoke:failure-policy`;
 - focused repository, service, route, and architecture harnesses.
 
 Not implemented by this layer:
@@ -178,6 +179,65 @@ Route responsibilities:
 Routes must not inspect SQLite tables, calculate Profile V2, call Gateway,
 publish cards, send notifications, or start scheduling.
 
+## Operational Smoke CLI
+
+The service-owned smoke entry is:
+
+```bash
+npm run smoke:failure-policy -- --operation readiness --workspace-id <workspace>
+```
+
+It instantiates the normal Growth service graph and delegates only to
+`learningAutomationFailurePolicyService`.
+
+Supported operations:
+
+| Operation | Write gate | Service method | Purpose |
+| --- | --- | --- | --- |
+| `readiness` | None; this is the default. | `evaluateReadiness(input)` | Read-only readiness evidence for the scoped active-policy prerequisite. |
+| `list` | None. | `listPolicies(input)` | Read-only scoped policy listing. |
+| `create` | Requires `--allow-write`. | `createPolicy(input)` | Creates a draft summary-only policy through the service. |
+| `review` | Requires `--allow-write` and `--policy-id`. | `reviewPolicy(input)` | Activates, archives, or supersedes a draft through bounded Owner review metadata. |
+
+Example read-only readiness check:
+
+```bash
+npm run smoke:failure-policy -- --workspace-id fanfan --learner-id fanfan --program-id default
+```
+
+Example write-gated policy creation:
+
+```bash
+npm run smoke:failure-policy -- \
+  --operation create \
+  --workspace-id fanfan \
+  --learner-id fanfan \
+  --program-id default \
+  --domain-pack-id uk-hk-curriculum-foundation \
+  --domain science \
+  --subject science \
+  --allow-write
+```
+
+Example write-gated activation:
+
+```bash
+npm run smoke:failure-policy -- \
+  --operation review \
+  --workspace-id fanfan \
+  --learner-id fanfan \
+  --program-id default \
+  --policy-id <policy-id> \
+  --status active \
+  --allow-write
+```
+
+The CLI must not import repositories directly, inspect `learning_growth_`
+tables, call Gateway, call scheduler dry-run, publish plans, generate cards,
+evaluate learner submissions, execute scheduler actions, run scheduler ticks,
+deliver notifications, activate stage assessments, or act as a deployment or
+release switch.
+
 ## Policy Defaults
 
 Draft policy creation normalizes caller input into these safe defaults:
@@ -246,6 +306,11 @@ Architecture harness:
 - service does not call Gateway, plan publication, accepted-proposal
   publication, scheduler/dry-run, card generation, stage activation, Action
   Inbox, notification clients, or direct SQLite tables;
+- smoke CLI delegates only to `learningAutomationFailurePolicyService`,
+  keeps `readiness` and `list` read-only, requires explicit `--allow-write`
+  for `create` and `review`, and does not call Gateway, publication,
+  evaluation, scheduler execution, scheduler ticks, action handoff, or stage
+  assessment activation;
 - store facade owns repository composition.
 
 Focused command group:
@@ -253,8 +318,10 @@ Focused command group:
 ```bash
 node --test tests/learning-automation-failure-policy-repository.test.js \
   tests/learning-automation-failure-policy-service.test.js \
+  tests/growth-automation-failure-policy-smoke-script.test.js \
   tests/growth-routes.test.js \
   tests/growth-architecture-boundary.test.js
+npm run smoke:failure-policy
 node scripts/check-growth-docs-locality.js
 node --test tests/growth-docs-locality.test.js
 git diff --check

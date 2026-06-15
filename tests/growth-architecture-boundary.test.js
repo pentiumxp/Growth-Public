@@ -943,6 +943,47 @@ test("Growth automation action handoff smoke CLI stays service-owned and write-g
   assert.match(scriptHarness, /fails closed for missing input, invalid JSON, invalid operation, and privacy risk/);
 });
 
+test("Growth automation failure policy smoke CLI stays service-owned and write-gated", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:failure-policy/);
+  assert.match(packageJson, /smoke-growth-automation-failure-policy\.js/);
+  assert.match(packageJson, /learning-automation-failure-policy-service\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-automation-failure-policy.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningAutomationFailurePolicyService/);
+  assert.match(script, /evaluateReadiness/);
+  assert.match(script, /listPolicies/);
+  assert.match(script, /createPolicy/);
+  assert.match(script, /reviewPolicy/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /automation_failure_policy_smoke_write_not_allowed/);
+  assert.match(script, /automation_failure_policy_smoke_invalid_json/);
+  assert.match(script, /automation_failure_policy_smoke_operation_invalid/);
+  assert.match(script, /workspace_id_required/);
+  assert.match(script, /policy_id_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /dryRun/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const scriptHarness = read(path.join("tests", "growth-automation-failure-policy-smoke-script.test.js"));
+  assert.match(scriptHarness, /checks readiness without writing by default/);
+  assert.match(scriptHarness, /creates and activates policy only with explicit write flag/);
+  assert.match(scriptHarness, /fails closed for missing input, invalid JSON, invalid operation, and privacy risk/);
+});
+
 test("Growth daily-loop preview smoke CLI stays service-owned and no-write", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:daily-loop-preview/);

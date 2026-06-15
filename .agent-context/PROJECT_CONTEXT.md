@@ -226,6 +226,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   scheduling prerequisite, and keeps `writefulSchedulingAllowed=false`; it
   must not publish, call Gateway, call scheduler dry-run, record proposal
   execution, notify, enqueue, or activate stage assessments.
+  `npm run smoke:failure-policy` is the service-owned operational smoke for
+  this boundary: `readiness` is the default read-only operation, `list` is
+  read-only, and `create`/`review` require explicit `--allow-write` while
+  delegating only to `learning-automation-failure-policy-service`.
   The automation action handoff backend is now implemented through
   `learning-automation-action-handoff-service`,
   `automation-action-handoffs.js`,

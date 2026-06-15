@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T02:59Z - Growth Failure Policy Smoke CLI Slice
+
+- Status: Growth automation failure policy now has a service-owned operational
+  smoke entry. This slice did not deploy, enable automation config, execute
+  scheduler actions, run scheduler ticks, call Gateway, publish cards,
+  evaluate learner submissions, deliver notifications, activate stage
+  assessments, or mutate learner state.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of deployment/architecture-doc
+  keywords; only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-automation-failure-policy.js`;
+  - added `npm run smoke:failure-policy`;
+  - wired the new runtime script into `npm run check`;
+  - added `tests/growth-automation-failure-policy-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - `readiness` is the default read-only operation and delegates to
+    `learningAutomationFailurePolicyService.evaluateReadiness`;
+  - `list` is read-only and delegates to
+    `learningAutomationFailurePolicyService.listPolicies`;
+  - `create` requires explicit `--allow-write` and delegates to
+    `learningAutomationFailurePolicyService.createPolicy`;
+  - `review` requires explicit `--allow-write`, requires a policy id, and
+    delegates to `learningAutomationFailurePolicyService.reviewPolicy`;
+  - the CLI must not import repositories directly, inspect
+    `learning_growth_` tables, call Gateway, call scheduler dry-run, publish,
+    generate cards, evaluate submissions, execute scheduler actions, run
+    scheduler ticks, call action handoff, or activate stage assessments.
+- Validation passed:
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=129`, `checkedCount=129`, no missing/stale/duplicate
+    entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node --test tests/growth-automation-failure-policy-smoke-script.test.js
+    tests/learning-automation-failure-policy-service.test.js
+    tests/learning-automation-failure-policy-repository.test.js
+    tests/growth-architecture-boundary.test.js` (`33` tests);
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`455` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`214` JavaScript files, `2,582`
+    nodes, `10,313` edges; index up to date).
+- AI Ops control-plane evidence:
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-48372130-0170-4cc6-88a1-7d10af54a31d`;
+  - production deploy was not executed because this is a local Growth
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T02:46Z - Growth Action Handoff Smoke CLI Slice
 
 - Status: Growth action handoff now has a service-owned operational smoke
