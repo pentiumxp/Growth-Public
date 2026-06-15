@@ -116,16 +116,18 @@ evidence are not closed:
 - Owner planner/provision UI now supports visible target selection,
   `targetProvisioning` status, domain-pack/subject selection, explicit Owner
   provision creation/update, daily-loop draft/publish, audit correction, and
-  current-cycle audit drilldown, but older-cycle selection and central visual
-  release evidence remain incomplete;
+  current-cycle audit drilldown. Central `embedded-plugin-shell` visual
+  evidence exists for the Growth plugin shell; richer older-cycle selection
+  and production release evidence remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
 - stage-checkpoint UI remains separate future work;
 - proposal/digest/action/execution/run/worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
-- central embedded-plugin visual evidence is required for mobile, dark mode,
-  visible progress, and embedded shell;
+- central embedded-plugin visual evidence exists for the Growth plugin shell;
+  product-specific mobile/dark checks remain covered locally until the
+  production release smoke is run;
 - production planner readiness smoke and production dry-run evidence are still
   required before release;
 - background writeful scheduling remains blocked.
@@ -145,8 +147,8 @@ The next implementation slices should be:
    item, explicitly publish one card, and refresh board/context/loop state
    without Codex. Owner can also apply a domain-pack/subject selector and
    explicitly create/update target provision rows through the Growth service
-   facade. The remaining closure is older-cycle selection, central visual
-   evidence, and production release evidence.
+   facade. The remaining closure is older-cycle selection and production
+   release evidence.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
    record/playback, and score-proportional completion. No pass-line retry loop
@@ -158,7 +160,7 @@ The next implementation slices should be:
    `learning-cycles/audit` and `learning-cycles/completeness` drilldown for
    the current generated/completed card cycle, showing summary-only timeline,
    findings, and missing-required evidence. Remaining closure is richer
-   older-cycle selection plus central visual/release evidence.
+   older-cycle selection plus production release evidence.
 4. **Formal checkpoint separation**: expose readiness and activation for
    stage assessments as a separate Owner path. Daily plan publish must still
    block direct formal assessment publication.

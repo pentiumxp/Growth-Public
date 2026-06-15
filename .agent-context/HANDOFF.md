@@ -9,10 +9,10 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-15T08:39Z - Growth Owner Target Provision Controls UI Slice
+## 2026-06-15T08:44Z - Growth Owner Target Provision Controls Central Visual Evidence
 
-- Status: implemented, documented, and locally validated. Not deployed in this
-  slice.
+- Status: implemented, documented, locally validated, and centrally visual
+  validated for embedded-plugin shell. Not deployed in this slice.
 - Change classification: Home AI AI Ops intake returned H1 under Plugin
   Platform, Topics, Provisioning, And MCP because the Owner browser surface now
   creates or updates visible-target domain-pack provisions.
@@ -74,6 +74,8 @@
     `node tests/plugin-capability-activation-service.test.js`, and
     `node tests/plugin-workspace-platform-contract-check.test.js`;
   - Home AI app `git diff --check`.
+  - central Home AI visual harness:
+    `npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/ --theme dark --timeout-ms 70000 --json`.
 - Visual evidence:
   - local browser-mode Playwright mobile checks used the Home AI workspace
     Playwright dependency and system Chrome against `http://127.0.0.1:4882/`
@@ -88,13 +90,20 @@
     clientHeight `725`, forced dark panel background
     `rgba(22, 26, 29, 0.98)`, text color `rgb(245, 247, 246)`, and primary
     button background `rgb(47, 119, 129)`.
+  - central iOS/PWA `embedded-plugin-shell` passed for `pluginId=growth`:
+    client version `20260614-plugin-audit-v770`, viewport `402x714`, plugin
+    shell/frame `402x628`, no horizontal overflow, screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260615T084336Z.png`
+    with `320312` bytes. The run used measurement fallback after a WebDriver
+    `Unexpected EOF`, but the bounded harness returned `ok=true` and all
+    scenario assertions passed.
 - AI Ops evidence appended:
-  `evidence-ebbc4dee-7e2e-44b4-89ec-8c634b3a07d6`.
+  `evidence-ebbc4dee-7e2e-44b4-89ec-8c634b3a07d6` and
+  `evidence-d9bb8c50-95ef-4863-85ab-f7fe17ac4e93`.
 - Remaining product work:
   - richer older-cycle selection/history controls over the implemented
     current-card cycle drilldown;
-  - central Home AI embedded-plugin iOS/PWA visual harness and production
-    release evidence before deployment;
+  - production release evidence and production smoke before deployment;
   - production planner/daily-loop release smoke on the actual target;
   - proposal/digest/action/execution UI after the current Owner daily-loop and
     target-provisioning controls are product-complete.

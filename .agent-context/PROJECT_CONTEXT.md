@@ -487,8 +487,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   planner context carries bounded `staleEvidence` summaries into
   `growth.learningPlanner.input.v1`.
   Older-cycle selection over the implemented current-cycle drilldown,
-  production planner smoke execution, central embedded visual evidence, and
-  production planner deployment remain future slices.
+  production planner smoke execution, production release evidence, and
+  production planner deployment remain future slices. Central Home AI
+  `embedded-plugin-shell` visual evidence has passed for `pluginId=growth` on
+  2026-06-15 through
+  `ios-pwa-visual-embedded-plugin-shell-growth-20260615T084336Z.png`.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

@@ -25,8 +25,9 @@ state after loading generation context, renders a summary-only status/next
 action panel, renders `targetProvisioning` plus filtered `graphOptions`, lets
 Owner apply a selected domain pack/subject to context refresh, and can call the
 Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
-target enablement. Remaining product closure is older-cycle selection,
-central embedded visual evidence, and production release evidence.
+target enablement. Central `embedded-plugin-shell` visual evidence passed for
+`pluginId=growth` on 2026-06-15. Remaining product closure is older-cycle
+selection and production release evidence.
 
 ## Objective
 
