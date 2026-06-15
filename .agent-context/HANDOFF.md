@@ -9,6 +9,77 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T16:32Z - Release Activation Preflight
+
+- Status: implemented and validated. This slice is backend/Harness/docs only
+  and does not require production deploy. It is a no-write preflight for Owner
+  runtime-config decisions after release closure; it does not apply config and
+  keeps `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
+  `runtimeConfigChange=false`.
+- Scope:
+  - added
+    `src/services/learning-automation-release-activation-service.js`;
+  - added `npm run smoke:release-activation` through
+    `scripts/smoke-growth-release-activation.js`;
+  - wired `learningAutomationReleaseActivationService` through
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-activation`;
+  - activation preflight composes release-closure readback with selected
+    activation gates (`writeful_execution`, `background_scheduler`,
+    `background_worker`), approval keys, current config booleans, required
+    actions, and one next action into
+    `growth.learningAutomationReleaseActivation.v1`;
+  - no repository/table was added because this boundary reads existing release
+    controls and runtime config state only.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-activation-service.test.js`;
+  - `tests/growth-release-activation-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - syntax checks for the new service, CLI, service graph, and routes;
+  - `node --test tests/learning-automation-release-activation-service.test.js tests/growth-release-activation-smoke-script.test.js`
+    (`8` tests);
+  - focused release activation route/architecture gate
+    `node --test tests/learning-automation-release-activation-service.test.js tests/growth-release-activation-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`76` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`170` runtime JS files covered);
+  - direct `npm run smoke:release-activation` no-write preflight against a
+    temporary SQLite database returned
+    `growth.learningAutomationReleaseActivation.v1`, `status=incomplete`,
+    `preflightPassed=false`, `configChangeApplied=false`,
+    `writefulSchedulingAllowed=false`, and `runtimeConfigChange=false`;
+  - `npm test` (`650` tests);
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`295` files, `3,777` nodes,
+    `14,369` edges; index up to date).
+- AI Ops evidence:
+  - test `evidence-b298c007-31e2-429d-9bb2-4934596f1bc9`;
+  - test `evidence-d9c75283-1abf-47d1-8b0a-a90fb7165532`.
+- Remaining product work:
+  - collect a real production release evidence bundle, bundle self-audit,
+    release-readiness, collection run, Owner decision, release review, release
+    authorization, closure, and activation preflight over production inputs;
+  - collect real Home AI visual artifact and platform Action Inbox/Web Push
+    receipt evidence;
+  - add embedded Owner release controls and final explicit config enablement
+    procedure before any writeful scheduling path is enabled.
+
 ## 2026-06-15T16:11Z - Release Closure Readback
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

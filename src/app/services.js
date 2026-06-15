@@ -13,6 +13,7 @@ const { createLearningAutomationFailurePolicyService } = require("../services/le
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
+const { createLearningAutomationReleaseActivationService } = require("../services/learning-automation-release-activation-service");
 const { createLearningAutomationReleaseAuthorizationService } = require("../services/learning-automation-release-authorization-service");
 const { createLearningAutomationReleaseClosureService } = require("../services/learning-automation-release-closure-service");
 const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
@@ -295,6 +296,14 @@ function createServices(config) {
     releaseReviewService: learningAutomationReleaseReviewService,
     releaseAuthorizationService: learningAutomationReleaseAuthorizationService
   });
+  const learningAutomationReleaseActivationService = createLearningAutomationReleaseActivationService({
+    releaseClosureService: learningAutomationReleaseClosureService,
+    config: {
+      automationWritefulExecutionEnabled: config.automationWritefulExecutionEnabled,
+      automationBackgroundSchedulerEnabled: config.automationBackgroundSchedulerEnabled,
+      automationBackgroundWorkerEnabled: config.automationBackgroundWorkerEnabled
+    }
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -401,6 +410,7 @@ function createServices(config) {
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
+    learningAutomationReleaseActivationService,
     learningAutomationReleaseAuthorizationService,
     learningAutomationReleaseClosureService,
     learningAutomationReleaseCollectionRunService,

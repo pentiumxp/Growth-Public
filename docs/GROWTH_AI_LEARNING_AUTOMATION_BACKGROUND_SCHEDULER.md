@@ -89,6 +89,12 @@ release decision plus release authorization. `npm run smoke:release-closure`
 and `GET /api/v1/growth/automation/release-closure` provide the no-write
 summary readback for whether those release-control artifacts are complete; they
 do not flip runtime config and are not part of the writeful execution call path.
+`npm run smoke:release-activation` and
+`GET /api/v1/growth/automation/release-activation` provide the next no-write
+preflight for an Owner runtime-config decision. They map selected activation
+gates to approval/config state and return required actions, but they also keep
+`configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
+`runtimeConfigChange=false`; they are not the config switch itself.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker

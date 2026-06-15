@@ -2611,6 +2611,32 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseActivationService: {
+      preflight(input) {
+        calls.push({ type: "releaseActivation", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseActivation.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "ready_for_owner_config_enablement",
+          preflightPassed: true,
+          requestedActivationGates: input.activationGates || ["writeful_execution"],
+          requiredApprovalKeys: input.requiredApprovalKeys || ["writefulExecutionApproval"],
+          activationPreflight: {
+            requiredActionCount: 1,
+            nextAction: {
+              key: "enable_automation_runtime_config",
+              action: "enable_runtime_config_gates_after_owner_decision",
+              requiredActor: "owner"
+            }
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false,
+          configChangeApplied: false
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -3095,6 +3121,43 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
         requiredApprovalKeys: ["writefulExecutionApproval", "backgroundSchedulerApproval"]
+      }
+    });
+
+    const releaseActivation = await fetch(`${baseUrl}/api/v1/growth/automation/release-activation?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution,background_scheduler&requiredApprovalKey=backgroundWorkerApproval&automation_digest_ui_evidence=true`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(releaseActivation.status, 200);
+    assert.equal((await releaseActivation.json()).schemaVersion, "growth.learningAutomationReleaseActivation.v1");
+    assert.deepEqual(calls[12], {
+      type: "releaseActivation",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "",
+        ownerDailyUiEvidence: false,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: true,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: ["backgroundWorkerApproval"],
+        activationGates: ["writeful_execution", "background_scheduler"]
       }
     });
 

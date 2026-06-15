@@ -210,6 +210,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationReleaseAuthorizationService/);
   assert.match(services, /createLearningAutomationReleaseClosureService/);
   assert.match(services, /learningAutomationReleaseClosureService/);
+  assert.match(services, /createLearningAutomationReleaseActivationService/);
+  assert.match(services, /learningAutomationReleaseActivationService/);
   assert.match(services, /createLearningAutomationSchedulerService/);
   assert.match(services, /learningAutomationSchedulerService/);
   assert.match(services, /createLearningTargetProvisioningService/);
@@ -251,6 +253,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /decisionService: learningAutomationReleaseDecisionService/);
   assert.match(services, /approvalService: learningAutomationReleaseApprovalService/);
   assert.match(services, /releaseReviewService: learningAutomationReleaseReviewService/);
+  assert.match(services, /releaseClosureService: learningAutomationReleaseClosureService/);
   assert.match(services, /actionHandoffService: learningAutomationActionHandoffService/);
   assert.match(services, /schedulerExecutionService: learningAutomationSchedulerExecutionService/);
   assert.match(services, /schedulerRunService: learningAutomationSchedulerRunService/);
@@ -333,6 +336,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/release-closure/);
   assert.match(routes, /normalizeAutomationReleaseClosureInput/);
   assert.match(routes, /learningAutomationReleaseClosureService\.summarize/);
+  assert.match(routes, /automation\/release-activation/);
+  assert.match(routes, /normalizeAutomationReleaseActivationInput/);
+  assert.match(routes, /learningAutomationReleaseActivationService\.preflight/);
   assert.match(routes, /automation\/release-approvals/);
   assert.match(routes, /normalizeAutomationReleaseApprovalListInput/);
   assert.match(routes, /normalizeAutomationReleaseApprovalInput/);
@@ -820,6 +826,35 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(automationReleaseClosureService, /learning_growth_/);
   assert.doesNotMatch(automationReleaseClosureService, /rawAnswer:/);
   assert.doesNotMatch(automationReleaseClosureService, /rawPrompt:/);
+
+  const automationReleaseActivationService = read(path.join("src", "services", "learning-automation-release-activation-service.js"));
+  assert.match(automationReleaseActivationService, /createLearningAutomationReleaseActivationService/);
+  assert.match(automationReleaseActivationService, /RELEASE_ACTIVATION_SCHEMA/);
+  assert.match(automationReleaseActivationService, /releaseClosureService\.summarize/);
+  assert.match(automationReleaseActivationService, /readyForOwnerRuntimeConfigDecision/);
+  assert.match(automationReleaseActivationService, /configChangeApplied: false/);
+  assert.match(automationReleaseActivationService, /writefulSchedulingAllowed: false/);
+  assert.match(automationReleaseActivationService, /runtimeConfigChange: false/);
+  assert.match(automationReleaseActivationService, /summaryOnly: true/);
+  assert.doesNotMatch(automationReleaseActivationService, /save[A-Z]/);
+  assert.doesNotMatch(automationReleaseActivationService, /repository\./);
+  assert.doesNotMatch(automationReleaseActivationService, /spawnSync/);
+  assert.doesNotMatch(automationReleaseActivationService, /execFile|exec\(/);
+  assert.doesNotMatch(automationReleaseActivationService, /readEnv/);
+  assert.doesNotMatch(automationReleaseActivationService, /createServices/);
+  assert.doesNotMatch(automationReleaseActivationService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(automationReleaseActivationService, /publishPlanItem/);
+  assert.doesNotMatch(automationReleaseActivationService, /publishAcceptedProposal/);
+  assert.doesNotMatch(automationReleaseActivationService, /generateCard/);
+  assert.doesNotMatch(automationReleaseActivationService, /evaluateSubmission/);
+  assert.doesNotMatch(automationReleaseActivationService, /executeOnce/);
+  assert.doesNotMatch(automationReleaseActivationService, /runOnce/);
+  assert.doesNotMatch(automationReleaseActivationService, /deliverHandoff/);
+  assert.doesNotMatch(automationReleaseActivationService, /emit\(/);
+  assert.doesNotMatch(automationReleaseActivationService, /activateStageAssessment/);
+  assert.doesNotMatch(automationReleaseActivationService, /learning_growth_/);
+  assert.doesNotMatch(automationReleaseActivationService, /rawAnswer:/);
+  assert.doesNotMatch(automationReleaseActivationService, /rawPrompt:/);
 
   const automationReleaseApprovalService = read(path.join("src", "services", "learning-automation-release-approval-service.js"));
   assert.match(automationReleaseApprovalService, /recordApproval/);
@@ -1367,6 +1402,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:release-closure"],
     "node scripts/smoke-growth-release-closure.js"
   );
+  assert.equal(
+    packageJson.scripts["smoke:release-activation"],
+    "node scripts/smoke-growth-release-activation.js"
+  );
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
@@ -1376,6 +1415,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-review\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-authorization\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-closure\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-activation\.js/);
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
@@ -1411,6 +1451,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-closure-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-activation-service\.js/
   );
   assert.match(
     packageJson.scripts.check,
@@ -1551,6 +1595,22 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseClosureScript, /runOnce/);
   assert.doesNotMatch(releaseClosureScript, /deliverHandoff/);
   assert.doesNotMatch(releaseClosureScript, /activateStageAssessment/);
+
+  const releaseActivationScript = read(path.join("scripts", "smoke-growth-release-activation.js"));
+  assert.match(releaseActivationScript, /readEnv/);
+  assert.match(releaseActivationScript, /createServices/);
+  assert.match(releaseActivationScript, /learningAutomationReleaseActivationService/);
+  assert.match(releaseActivationScript, /preflight/);
+  assert.doesNotMatch(releaseActivationScript, /--allow-write/);
+  assert.doesNotMatch(releaseActivationScript, /spawnSync/);
+  assert.doesNotMatch(releaseActivationScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(releaseActivationScript, /publishPlanItem/);
+  assert.doesNotMatch(releaseActivationScript, /generateCard/);
+  assert.doesNotMatch(releaseActivationScript, /evaluateSubmission/);
+  assert.doesNotMatch(releaseActivationScript, /executeOnce/);
+  assert.doesNotMatch(releaseActivationScript, /runOnce/);
+  assert.doesNotMatch(releaseActivationScript, /deliverHandoff/);
+  assert.doesNotMatch(releaseActivationScript, /activateStageAssessment/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -1976,6 +2036,11 @@ test("Growth automation release approval smoke CLI stays service-owned and write
   assert.match(closureScriptHarness, /parses bounded scope/);
   assert.match(closureScriptHarness, /delegates to service only/);
   assert.match(closureScriptHarness, /temporary SQLite db/);
+
+  const activationScriptHarness = read(path.join("tests", "growth-release-activation-smoke-script.test.js"));
+  assert.match(activationScriptHarness, /parses bounded scope/);
+  assert.match(activationScriptHarness, /delegates to service only/);
+  assert.match(activationScriptHarness, /temporary SQLite db/);
 });
 
 test("Growth automation scheduler execution smoke CLI stays service-owned and write-gated", () => {

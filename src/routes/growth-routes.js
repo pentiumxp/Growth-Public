@@ -546,6 +546,16 @@ function normalizeAutomationReleaseClosureInput(url, target) {
   return normalizeAutomationReleaseAuthorizationInput(url, target);
 }
 
+function normalizeAutomationReleaseActivationInput(url, target) {
+  const input = normalizeAutomationReleaseAuthorizationInput(url, target);
+  const activationGate = url.searchParams.get("activationGate") || url.searchParams.get("activation_gate") || "";
+  const activationGates = splitCsv(url.searchParams.get("activationGates") || url.searchParams.get("activation_gates") || "")
+    .concat(activationGate ? [activationGate] : []);
+  return Object.assign(input, {
+    activationGates: activationGates.length ? activationGates : undefined
+  });
+}
+
 function readinessEvidenceFromBody(body = {}) {
   const evidence = body.evidence || body.evidenceSummary || body.evidence_summary || {};
   return Object.assign({}, evidence, {
@@ -1245,6 +1255,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-closure") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseClosureService.summarize(normalizeAutomationReleaseClosureInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-activation") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseActivationService.preflight(normalizeAutomationReleaseActivationInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

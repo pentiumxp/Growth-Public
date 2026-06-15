@@ -267,6 +267,16 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
   check/evidence/approval keys, required actions, and one next action while
   still keeping `writefulSchedulingAllowed=false` and
+  `runtimeConfigChange=false`. Growth now also has
+  `learning-automation-release-activation-service`,
+  `npm run smoke:release-activation`, and visible-target scoped
+  `GET /api/v1/growth/automation/release-activation`. This no-write activation
+  preflight composes release-closure readback with selected runtime config
+  gates (`writeful_execution`, `background_scheduler`, `background_worker`),
+  approval keys, current config booleans, required actions, and one next action
+  into `growth.learningAutomationReleaseActivation.v1`. It can report
+  `readyForOwnerRuntimeConfigDecision=true`, but it applies no config and keeps
+  `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
   `runtimeConfigChange=false`.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI

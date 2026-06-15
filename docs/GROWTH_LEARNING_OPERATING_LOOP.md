@@ -1671,6 +1671,17 @@ Implementation progress on 2026-06-15:
   check/evidence/approval keys, required actions, and one next action while
   still keeping `writefulSchedulingAllowed=false` and
   `runtimeConfigChange=false`.
+- `npm run smoke:release-activation` and
+  `GET /api/v1/growth/automation/release-activation` provide the no-write
+  activation preflight after release closure. It composes the closure readback,
+  selected activation gates (`writeful_execution`, `background_scheduler`,
+  `background_worker`), current config booleans, approval keys, required
+  actions, and one next action into
+  `growth.learningAutomationReleaseActivation.v1`. It can report
+  `readyForOwnerRuntimeConfigDecision=true`, but it does not apply config,
+  grant scheduler permission, or run scheduling; it keeps
+  `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
+  `runtimeConfigChange=false`.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
