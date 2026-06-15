@@ -1066,6 +1066,46 @@ test("Growth automation scheduler execution smoke CLI stays service-owned and wr
   assert.match(scriptHarness, /fails closed for missing input, invalid JSON, invalid operation, and privacy risk/);
 });
 
+test("Growth automation scheduler run smoke CLI stays service-owned and write-gated", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:scheduler-run/);
+  assert.match(packageJson, /smoke-growth-automation-scheduler-run\.js/);
+  assert.match(packageJson, /learning-automation-scheduler-run-service\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-automation-scheduler-run.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningAutomationSchedulerRunService/);
+  assert.match(script, /listRuns/);
+  assert.match(script, /runOnce/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /automation_scheduler_run_smoke_write_not_allowed/);
+  assert.match(script, /automation_scheduler_run_smoke_invalid_json/);
+  assert.match(script, /automation_scheduler_run_smoke_operation_invalid/);
+  assert.match(script, /workspace_id_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /learningAutomationActionHandoffService/);
+  assert.doesNotMatch(script, /learningAutomationProposalService/);
+  assert.doesNotMatch(script, /learningAutomationSchedulerExecutionService/);
+  assert.doesNotMatch(script, /learningAutomationSchedulerService|\.dryRun/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const scriptHarness = read(path.join("tests", "growth-automation-scheduler-run-smoke-script.test.js"));
+  assert.match(scriptHarness, /lists without writing by default/);
+  assert.match(scriptHarness, /records disabled run only with explicit write flag/);
+  assert.match(scriptHarness, /fails closed for missing input, invalid JSON, invalid operation, and privacy risk/);
+});
+
 test("Growth daily-loop preview smoke CLI stays service-owned and no-write", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:daily-loop-preview/);

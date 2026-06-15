@@ -9,6 +9,83 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T03:38Z - Growth Scheduler Run Smoke CLI Slice
+
+- Status: Growth automation scheduler run/tick now has a service-owned
+  operational smoke entry. This slice did not deploy, enable
+  `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`, enable
+  `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED`, list delivered handoffs during
+  disabled run, execute scheduler actions, publish cards, call Gateway, call
+  model vendors, generate cards, evaluate learner submissions, deliver action
+  handoffs, run worker timers, activate stage assessments, enqueue work, or
+  mutate learner state outside the scheduler run service boundary.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of scheduler/deployment keywords;
+  only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-automation-scheduler-run.js`;
+  - added `npm run smoke:scheduler-run`;
+  - wired the new runtime script into `npm run check`;
+  - added `tests/growth-automation-scheduler-run-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - `list` is the default read-only operation and delegates to
+    `learningAutomationSchedulerRunService.listRuns`;
+  - `run` / `run-once` requires explicit `--allow-write` and delegates only to
+    `learningAutomationSchedulerRunService.runOnce`;
+  - with background scheduling disabled, explicit run records bounded
+    `blocked` state with
+    `learning_automation_background_scheduler_disabled`;
+  - the CLI must not import repositories directly, inspect
+    `learning_growth_` tables, call Gateway, call scheduler dry-run directly,
+    call scheduler execution directly, list or deliver handoffs directly,
+    publish directly, generate cards, evaluate submissions, run worker timers,
+    activate stage assessments, or mutate learner state outside the scheduler
+    run service.
+- Validation passed:
+  - `node --check scripts/smoke-growth-automation-scheduler-run.js`;
+  - `node --check tests/growth-automation-scheduler-run-smoke-script.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-automation-scheduler-run-smoke-script.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`82` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=132`, `checkedCount=132`, no missing/stale/duplicate
+    entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent smoke:scheduler-run -- --workspace-id smoke_workspace --json`
+    with a temporary empty SQLite DB precreated for read-only list evidence;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`470` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`220` JavaScript files, `2,672`
+    nodes, `10,550` edges; index up to date).
+- AI Ops control-plane evidence:
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-4e2ef604-4b29-4c45-81d2-af43fec0fccd`;
+  - production deploy was not executed because this is a local Growth
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T03:23Z - Growth Scheduler Execution Smoke CLI Slice
 
 - Status: Growth automation scheduler execution now has a service-owned

@@ -301,6 +301,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   domain/horizon filters, worker target create/review/list, active/stale
   worker leases, migration, privacy rejection, and Service First/
   no-direct-Gateway guards.
+  `npm run smoke:scheduler-run` now provides the service-owned operational
+  smoke for the scheduler run/tick boundary: `list` is the default read-only
+  operation and delegates only to
+  `learning-automation-scheduler-run-service.listRuns`; `run` requires
+  explicit `--allow-write` and delegates only to
+  `learning-automation-scheduler-run-service.runOnce`. With background
+  scheduling disabled, explicit run records a bounded blocked row and must not
+  list handoffs, execute actions, publish, call Gateway, run worker timers,
+  activate stage assessments, or mutate learner state.
   The Owner daily-loop backend facade is now implemented through
   `learning-daily-loop-service` and Owner-only
   `GET /api/v1/growth/daily-loop/preview`,

@@ -42,6 +42,7 @@ Implemented local shape:
 - table: `learning_growth_automation_scheduler_runs`;
 - read route: `GET /api/v1/growth/automation/scheduler/runs`;
 - controlled tick route: `POST /api/v1/growth/automation/scheduler/run-once`;
+- service-owned operational smoke: `npm run smoke:scheduler-run`;
 - config gate: `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`;
 - downstream writeful gate:
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`, still owned by the
@@ -124,6 +125,50 @@ The scheduler run service does not decide learning objectives. It does not
 draft plans, publish plan items directly, call card generation, or evaluate
 learner evidence. It only coordinates previously reviewed action records and
 delegates final writes to the stricter execution boundary.
+
+## Operational Smoke
+
+`npm run smoke:scheduler-run` is the service-owned CLI harness for local or
+production scheduler run/tick evidence.
+
+Default read-only list:
+
+```bash
+npm run smoke:scheduler-run -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --json
+```
+
+Explicit controlled tick:
+
+```bash
+npm run smoke:scheduler-run -- \
+  --operation run \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --domain-pack-id <domain-pack> \
+  --domain <domain> \
+  --subject <subject> \
+  --allow-write \
+  --json
+```
+
+The default operation is `list`, which delegates only to
+`learningAutomationSchedulerRunService.listRuns` and must not create the run
+table in an empty SQLite database. The `run` / `run-once` operation requires
+explicit `--allow-write` and delegates only to
+`learningAutomationSchedulerRunService.runOnce`.
+
+With `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED=false`, the expected
+write-gated run result is a bounded blocked row with
+`learning_automation_background_scheduler_disabled`. That blocked run must not
+list handoffs, execute actions, publish plans, generate cards, enqueue work,
+call Gateway, call model vendors, activate stage assessments, or mutate
+learner state. The CLI itself must not import repositories, inspect
+`learning_growth_*` tables, call the action-handoff service, call the execution
+service, call scheduler dry-run, call proposal publication, or bypass the run
+service.
 
 ## Worker Target Review Contract
 
@@ -432,6 +477,7 @@ Focused harness for this boundary:
 - `tests/learning-automation-scheduler-worker-target-service.test.js`;
 - `tests/learning-automation-scheduler-run-repository.test.js`;
 - `tests/learning-automation-scheduler-run-service.test.js`;
+- `tests/growth-automation-scheduler-run-smoke-script.test.js`;
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`;
 - `tests/growth-docs-locality.test.js`.
@@ -449,6 +495,11 @@ Required and implemented assertions:
 - repository migrates bounded columns, supports domain/horizon filters,
   rejects privacy-risk keys, and enforces `summary_only`;
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
+- `npm run smoke:scheduler-run` defaults to read-only list, requires explicit
+  `--allow-write` for run/tick, records default-disabled blocked state, and
+  keeps the CLI out of repositories, Gateway, execution, publication, card
+  generation, action-handoff delivery, stage activation, learner-state
+  mutation, and direct table access;
 - worker timer is default-disabled in `src/app/http-server.js`;
 - worker service does not claim leases or call scheduler run while disabled;
 - active leases are protected and expired leases are reclaimed;
