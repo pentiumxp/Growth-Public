@@ -72,7 +72,7 @@ function optionMatches(option = {}, input = {}) {
   const domain = lower(input.domain);
   const subject = lower(input.subject);
   if (domainPackId && cleanString(option.domainPackId) !== domainPackId) return false;
-  if (domain && lower(option.domain) !== domain) return false;
+  if (domain && lower(option.domain) !== domain && !subjectsForOption(option).map(lower).includes(domain)) return false;
   if (subject && !subjectsForOption(option).map(lower).includes(subject)) return false;
   return true;
 }
@@ -80,7 +80,13 @@ function optionMatches(option = {}, input = {}) {
 function provisionMatches(provision = {}, option = {}, subject = "") {
   if (cleanString(provision.domainPackId) !== cleanString(option.domainPackId)) return false;
   const provisionDomain = lower(provision.domain);
-  if (provisionDomain && provisionDomain !== lower(option.domain)) return false;
+  if (
+    provisionDomain
+    && provisionDomain !== lower(option.domain)
+    && !subjectsForOption(option).map(lower).includes(provisionDomain)
+  ) {
+    return false;
+  }
   const provisionSubject = lower(provision.subject);
   return !provisionSubject || !subject || provisionSubject === lower(subject);
 }

@@ -162,3 +162,64 @@ test("target provisioning enables arbitrary learners through summary-only provis
   assert.equal(wrongNode.ok, false);
   assert.equal(wrongNode.error, "learning_target_node_not_in_provision");
 });
+
+test("target provisioning supports cross-subject domain packs with subject-domain selections", () => {
+  const store = createGrowthLearningSqliteStore({ dbPath: tempDbPath() });
+  const service = createLearningTargetProvisioningService({
+    repository: store.domainPackProvisionRepository,
+    graphRepository: {
+      domainPackOptions() {
+        return [{
+          domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+          importId: "kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1",
+          domain: "cross_subject_curriculum",
+          title: "Fanfan Cambridge pathway",
+          sourceKind: "official_syllabus_seed",
+          version: "2026-05-27-v1",
+          visibility: "private_seed",
+          importStatus: "validated_seed",
+          nodeCount: 294,
+          subjectCount: 9,
+          subjects: ["cross_subject", "english", "mathematics", "science"]
+        }];
+      },
+      nodesByIds({ nodeIds }) {
+        const nodes = {
+          kg_lower_secondary_science: {
+            nodeId: "kg_lower_secondary_science",
+            domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+            domain: "science",
+            subject: "science"
+          }
+        };
+        return nodeIds.map((nodeId) => nodes[nodeId]).filter(Boolean);
+      }
+    }
+  });
+
+  const provisioned = service.provisionDomainPack({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+    domain: "science",
+    subject: "science",
+    requestedBy: "owner"
+  });
+  assert.equal(provisioned.ok, true);
+  assert.equal(provisioned.provision.domain, "science");
+  assert.equal(provisioned.provision.subject, "science");
+
+  const resolved = service.resolveSelection({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+    domain: "science",
+    subject: "science",
+    targetNodeIds: ["kg_lower_secondary_science"]
+  });
+  assert.equal(resolved.ok, true);
+  assert.equal(resolved.mode, "explicit_provision");
+  assert.equal(resolved.selectedDomain, "science");
+  assert.equal(resolved.selectedSubject, "science");
+  assert.deepEqual(resolved.selectedTargetNodeIds, ["kg_lower_secondary_science"]);
+});
