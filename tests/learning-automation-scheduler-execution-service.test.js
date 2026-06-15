@@ -68,12 +68,72 @@ function wouldPublishDryRun(overrides = {}) {
   }, overrides);
 }
 
+function readyActivation(overrides = {}) {
+  return Object.assign({
+    activationId: "lgact_ready_1",
+    activationVersion: "growth.learningAutomationReleaseActivation.v1",
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    collectionRunId: "lgacrn_ready_1",
+    status: "ready_for_owner_config_enablement",
+    requestedActivationGates: ["writeful_execution"],
+    activationGates: [{
+      key: "writeful_execution",
+      approvalKey: "writefulExecutionApproval",
+      currentEnabled: false,
+      readyForEnablement: true
+    }],
+    activationPreflight: {
+      schemaVersion: "growth.learningAutomationReleaseActivation.summary.v1",
+      summaryOnly: true,
+      status: "ready_for_owner_config_enablement",
+      preflightPassed: true,
+      readyForOwnerRuntimeConfigDecision: true,
+      activationAllowed: true,
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    },
+    activationDecision: {
+      schemaVersion: "growth.learningAutomationReleaseActivation.decision.v1",
+      summaryOnly: true,
+      status: "ready_for_owner_config_enablement",
+      decision: "approved_for_config_enablement",
+      preflightPassed: true,
+      readyForOwnerRuntimeConfigDecision: true,
+      recordOnly: true,
+      advisoryOnly: true,
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    },
+    evidenceSummary: {
+      schemaVersion: "growth.learningAutomationReleaseActivation.evidence.v1",
+      summaryOnly: true,
+      status: "ready_for_owner_config_enablement",
+      preflightPassed: true,
+      readyForOwnerRuntimeConfigDecision: true,
+      requestedActivationGates: ["writeful_execution"],
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    },
+    privacyClass: "summary_only"
+  }, overrides);
+}
+
 function executeInput(overrides = {}) {
   return Object.assign({
     workspaceId: "weixin_fanfan",
     learnerId: "fanfan",
     programId: "program_science",
     handoffId: "lgahand_ready_1",
+    collectionRunId: "lgacrn_ready_1",
     proposalId: "lgauto_ready_1",
     planDraftId: "lgplan_next_1",
     selectedItemId: "plan_item_next_1",
@@ -205,6 +265,58 @@ function createService(options = {}) {
         };
       }
     },
+    releaseActivationService: options.activationServiceMissing ? null : {
+      listActivations(input) {
+        calls.push({ type: "listActivations", input });
+        if (options.activationMissing) {
+          return {
+            ok: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            count: 0,
+            activations: []
+          };
+        }
+        if (options.activationUnavailable) {
+          return {
+            ok: false,
+            error: "learning_automation_release_activation_repository_unavailable"
+          };
+        }
+        if (options.activationInvalid) {
+          return {
+            ok: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            count: 1,
+            activations: [readyActivation({
+              status: "blocked",
+              activationDecision: {
+                recordOnly: true,
+                advisoryOnly: true,
+                preflightPassed: false,
+                configChangeApplied: true,
+                writefulSchedulingAllowed: false,
+                runtimeConfigChange: true
+              },
+              activationPreflight: {
+                preflightPassed: false,
+                configChangeApplied: true,
+                writefulSchedulingAllowed: false,
+                runtimeConfigChange: true
+              }
+            })]
+          };
+        }
+        return {
+          ok: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          count: 1,
+          activations: [readyActivation(options.activation || {})]
+        };
+      }
+    },
     automationProposalService: {
       async publishAcceptedProposal(input) {
         calls.push({ type: "publishAcceptedProposal", input });
@@ -259,6 +371,7 @@ test("scheduler execution publishes through accepted-proposal boundary after all
     "evaluateReadiness",
     "dryRun",
     "authorizeRelease",
+    "listActivations",
     "recordExecution",
     "publishAcceptedProposal",
     "recordExecution"
@@ -268,6 +381,9 @@ test("scheduler execution publishes through accepted-proposal boundary after all
   assert.equal(calls.find((call) => call.type === "publishAcceptedProposal").input.proposalId, "lgauto_ready_1");
   assert.equal(calls.find((call) => call.type === "dryRun").input.proposalId, "lgauto_ready_1");
   assert.equal(records[0].input.gate.releaseAuthorization.authorized, true);
+  assert.equal(records[0].input.gate.releaseActivation.valid, true);
+  assert.equal(records[0].input.gate.releaseActivation.activationId, "lgact_ready_1");
+  assert.deepEqual(calls.find((call) => call.type === "listActivations").input.activationGates, ["writeful_execution"]);
 });
 
 test("scheduler execution blocks when handoff, digest, policy, or dry-run gates fail", async () => {
@@ -308,6 +424,45 @@ test("scheduler execution blocks before publish when release authorization is mi
   assert.deepEqual(result.execution.gate.releaseAuthorization.missingApprovalKeys, ["writefulExecutionApproval"]);
   assert.equal(calls.some((call) => call.type === "publishAcceptedProposal"), false);
   assert.equal(calls.find((call) => call.type === "authorizeRelease").input.workspaceId, "weixin_fanfan");
+  assert.equal(calls.some((call) => call.type === "listActivations"), false);
+  assert.equal(records.at(-1).input.status, "blocked");
+});
+
+test("scheduler execution blocks before publish when activation audit record is unavailable or missing", async () => {
+  const unavailable = createService({ allowWritefulExecution: true, activationServiceMissing: true });
+  const unavailableResult = await unavailable.service.executeOnce(executeInput());
+
+  assert.equal(unavailableResult.ok, false);
+  assert.equal(unavailableResult.error, "learning_automation_scheduler_execution_release_activation_unavailable");
+  assert.equal(unavailableResult.execution.status, "blocked");
+  assert.equal(unavailableResult.execution.gate.releaseActivation.activationRecordRequired, true);
+  assert.equal(unavailableResult.execution.gate.releaseActivation.activationRecordPresent, false);
+  assert.equal(unavailable.calls.some((call) => call.type === "publishAcceptedProposal"), false);
+
+  const missing = createService({ allowWritefulExecution: true, activationMissing: true });
+  const missingResult = await missing.service.executeOnce(executeInput());
+
+  assert.equal(missingResult.ok, false);
+  assert.equal(missingResult.error, "learning_automation_scheduler_execution_release_activation_required");
+  assert.equal(missingResult.execution.status, "blocked");
+  assert.equal(missingResult.execution.gate.releaseActivation.valid, false);
+  assert.equal(missingResult.execution.gate.releaseActivation.activationRecordPresent, false);
+  assert.deepEqual(missing.calls.find((call) => call.type === "listActivations").input.activationGates, ["writeful_execution"]);
+  assert.equal(missing.calls.some((call) => call.type === "publishAcceptedProposal"), false);
+});
+
+test("scheduler execution rejects invalid activation audit records", async () => {
+  const { calls, records, service } = createService({ allowWritefulExecution: true, activationInvalid: true });
+
+  const result = await service.executeOnce(executeInput());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_scheduler_execution_release_activation_invalid");
+  assert.equal(result.execution.status, "blocked");
+  assert.equal(result.execution.gate.releaseActivation.activationRecordPresent, true);
+  assert.equal(result.execution.gate.releaseActivation.valid, false);
+  assert.ok(result.execution.gate.releaseActivation.invalidReasons.includes("runtime_config_change_forbidden"));
+  assert.equal(calls.some((call) => call.type === "publishAcceptedProposal"), false);
   assert.equal(records.at(-1).input.status, "blocked");
 });
 

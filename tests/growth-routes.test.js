@@ -1971,6 +1971,7 @@ test("growth automation scheduler execution routes are Owner-write and visible-t
         handoff_id: "lgahand_ready_1",
         digest_id: "lgadig_ready_1",
         policy_id: "lgafpol_active_1",
+        collection_run_id: "lgacrn_route_1",
         proposal_id: "lgauto_ready_1",
         plan_draft_id: "lgplan_next_1",
         selected_item_id: "plan_item_next_1",
@@ -1980,7 +1981,9 @@ test("growth automation scheduler execution routes are Owner-write and visible-t
         horizon: "daily_plan",
         execution_id: "lgasexec_route_1",
         execution_mode: "owner_explicit_once",
-        generation_key: "owner-explicit-scheduler-execution"
+        generation_key: "owner-explicit-scheduler-execution",
+        activation_gates: ["writeful_execution"],
+        activation_record_limit: 3
       })
     });
     assert.equal(executed.status, 201);
@@ -1996,7 +1999,7 @@ test("growth automation scheduler execution routes are Owner-write and visible-t
         handoffId: "lgahand_ready_1",
         digestId: "lgadig_ready_1",
         policyId: "lgafpol_active_1",
-        collectionRunId: undefined,
+        collectionRunId: "lgacrn_route_1",
         proposalId: "lgauto_ready_1",
         planDraftId: "lgplan_next_1",
         selectedItemId: "plan_item_next_1",
@@ -2008,6 +2011,9 @@ test("growth automation scheduler execution routes are Owner-write and visible-t
         executionMode: "owner_explicit_once",
         generationKey: "owner-explicit-scheduler-execution",
         cardSchemaVersion: undefined,
+        activationGates: ["writeful_execution"],
+        requiredApprovalKeys: undefined,
+        activationRecordLimit: 3,
         limit: undefined,
         requestedBy: "weixin_stephen",
         createdAt: undefined,

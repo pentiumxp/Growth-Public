@@ -1,6 +1,6 @@
 # Growth AI Learning Automation Background Scheduler
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -46,8 +46,9 @@ Implemented local shape:
 - config gate: `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`;
 - downstream writeful gate:
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED` plus final
-  `learning-automation-release-authorization-service` authorization, still
-  owned by the execution service.
+  `learning-automation-release-authorization-service` authorization plus
+  `learning-automation-release-activation-service` activation audit readback,
+  still owned by the execution service.
 
 Implemented local worker/lease shape:
 
@@ -88,7 +89,7 @@ self-audit evidence, persisted release collection-run evidence, and a separate
 release decision plus release authorization. `npm run smoke:release-closure`
 and `GET /api/v1/growth/automation/release-closure` provide the no-write
 summary readback for whether those release-control artifacts are complete; they
-do not flip runtime config and are not part of the writeful execution call path.
+do not flip runtime config.
 `npm run smoke:release-activation` and
 `GET /api/v1/growth/automation/release-activation` provide the next no-write
 preflight for an Owner runtime-config decision. They map selected activation
@@ -99,8 +100,10 @@ Visible-target scoped `GET /api/v1/growth/automation/release-activations`,
 Owner-only `POST /api/v1/growth/automation/release-activations`, and
 `npm run smoke:release-activation -- --operation record --allow-write` add the
 summary-only audit record for that Owner decision. The record is evidence and
-handoff state only; it must not be treated as enabling scheduler execution,
-background ticks, worker leases, or runtime config.
+handoff state only; it must not be treated as enabling runtime config,
+background ticks, or worker leases. When writeful execution is separately
+enabled, however, `learning-automation-scheduler-execution-service` must read a
+valid `writeful_execution` activation record before it delegates publication.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker
@@ -565,6 +568,7 @@ learning-automation-scheduler-worker-service
   -> learning-automation-scheduler-run-service.runOnce
   -> learning-automation-scheduler-execution-service.executeOnce
   -> learning-automation-release-authorization-service.authorize
+  -> learning-automation-release-activation-service.listActivations
   -> learning-automation-proposal-service.publishAcceptedProposal
   -> learning-plan-publisher-service.publishPlanItem
   -> learning-card-generation-service
@@ -576,6 +580,7 @@ The only allowed writeful path is:
 learning-automation-scheduler-run-service
   -> learning-automation-scheduler-execution-service.executeOnce
   -> learning-automation-release-authorization-service.authorize
+  -> learning-automation-release-activation-service.listActivations
   -> learning-automation-proposal-service.publishAcceptedProposal
   -> learning-plan-publisher-service.publishPlanItem
   -> learning-card-generation-service
@@ -593,6 +598,8 @@ Failure behavior is fail-closed:
 - missing handoff service records a bounded unavailable error;
 - missing execution service records a bounded unavailable error;
 - no delivered actions records `skipped`;
+- missing or invalid `writeful_execution` release activation audit readback
+  records downstream execution `blocked`;
 - downstream blocked or failed executions are aggregated as `failed` or
   `partial`;
 - no scheduler run may create partial card rows itself;

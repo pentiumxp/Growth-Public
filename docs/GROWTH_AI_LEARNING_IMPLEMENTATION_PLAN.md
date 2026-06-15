@@ -1,6 +1,6 @@
 # Growth AI Learning Implementation Plan
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -777,7 +777,10 @@ Implemented backend shape:
   Gateway, publish, generate, evaluate, schedule, notify, activate stage
   assessments, mutate learner state, or flip runtime config. It always keeps
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
-  `runtimeConfigChange=false`.
+  `runtimeConfigChange=false`. The activation row is not a permission grant,
+  but when writeful execution is separately enabled the scheduler execution
+  service must read back a valid summary-only `writeful_execution` activation
+  record before it can delegate publication.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

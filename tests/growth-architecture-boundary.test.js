@@ -265,6 +265,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /eventService: growthEventService/);
   assert.match(services, /automationProposalService: learningAutomationProposalService/);
   assert.match(services, /releaseAuthorizationService: learningAutomationReleaseAuthorizationService/);
+  assert.match(services, /releaseActivationService: learningAutomationReleaseActivationService/);
   assert.match(services, /allowWritefulExecution: config\.automationWritefulExecutionEnabled/);
   assert.match(services, /allowBackgroundScheduler: config\.automationBackgroundSchedulerEnabled/);
   assert.match(services, /allowBackgroundWorker: config\.automationBackgroundWorkerEnabled/);
@@ -575,6 +576,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerExecutionService, /automationProposalService\.publishAcceptedProposal/);
   assert.match(automationSchedulerExecutionService, /releaseAuthorizationService\.authorize/);
   assert.match(automationSchedulerExecutionService, /releaseAuthorization/);
+  assert.match(automationSchedulerExecutionService, /releaseActivationService\.listActivations/);
+  assert.match(automationSchedulerExecutionService, /releaseActivationGate/);
   assert.match(automationSchedulerExecutionService, /repository\.recordExecution/);
   assert.match(automationSchedulerExecutionService, /owner_explicit_once/);
   assert.match(automationSchedulerExecutionService, /allowWritefulExecution/);

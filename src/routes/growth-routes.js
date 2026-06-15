@@ -842,6 +842,8 @@ function normalizeAutomationSchedulerWorkerTargetReviewInput(body, workspaceId, 
 }
 
 function normalizeAutomationSchedulerExecutionInput(body, workspaceId, target, request, url) {
+  const activationGates = body.activationGates || body.activation_gates || body.requestedActivationGates || body.requested_activation_gates;
+  const requiredApprovalKeys = body.requiredApprovalKeys || body.required_approval_keys;
   return {
     workspaceId,
     learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
@@ -863,6 +865,9 @@ function normalizeAutomationSchedulerExecutionInput(body, workspaceId, target, r
     executionMode: body.executionMode || body.execution_mode || body.mode,
     generationKey: body.generationKey || body.generation_key,
     cardSchemaVersion: body.cardSchemaVersion || body.card_schema_version,
+    activationGates,
+    requiredApprovalKeys,
+    activationRecordLimit: body.activationRecordLimit || body.activation_record_limit,
     limit: body.limit,
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
     createdAt: body.createdAt || body.created_at,

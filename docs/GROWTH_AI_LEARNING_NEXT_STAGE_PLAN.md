@@ -1,6 +1,6 @@
 # Growth AI Learning Next-Stage Plan
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -411,7 +411,10 @@ Use the Growth-owned release-readiness boundary:
   The default operation is read-only list. `execute` requires explicit
   `--allow-write` and remains blocked unless
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true` and release
-  authorization is granted.
+  authorization is granted. When writeful execution is enabled, execution also
+  requires a valid summary-only `writeful_execution` activation audit record
+  from `learning_growth_automation_release_activations`; missing, invalid, or
+  runtime-mutating activation records are blocked before publication.
 - scheduler run smoke CLI:
   `npm run smoke:scheduler-run -- --workspace-id <workspace> --learner-id <learner> --json`.
   The default operation is read-only list. `run` requires explicit
@@ -652,7 +655,7 @@ becomes future planning evidence, not a required retry loop.
 | Digest | Repository/service/route tests, `tests/growth-automation-digest-smoke-script.test.js`, `npm run smoke:digest`, the Fanfan science completed-cycle digest in `tests/learning-card-ai-loop-harness.test.js`, read-only list/get by default, explicit `--allow-write` for create/review, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Failure policy | Repository/service/route tests, `tests/growth-automation-failure-policy-smoke-script.test.js`, `npm run smoke:failure-policy`, read-only readiness/list by default, explicit `--allow-write` for create/review, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Action handoff | Repository/service/route tests, `tests/growth-automation-action-handoff-smoke-script.test.js`, `npm run smoke:action-handoff`, explicit write gate for create/deliver, event delivery failure visibility, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, stage activation, learner-state mutation, or direct repository access from the CLI. |
-| Scheduler execution | Repository/service/route tests, `tests/growth-automation-scheduler-execution-smoke-script.test.js`, `npm run smoke:scheduler-execution`, read-only list by default, explicit `--allow-write` for execute, default-disabled blocked execution evidence, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler tick, action handoff delivery, stage activation, learner-state mutation, or direct repository access from the CLI. |
+| Scheduler execution | Repository/service/route tests, `tests/growth-automation-scheduler-execution-smoke-script.test.js`, `npm run smoke:scheduler-execution`, read-only list by default, explicit `--allow-write` for execute, default-disabled blocked execution evidence, release authorization plus release activation audit readback before publish, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler tick, action handoff delivery, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler run | Repository/service/route tests, `tests/growth-automation-scheduler-run-smoke-script.test.js`, `npm run smoke:scheduler-run`, read-only list by default, explicit `--allow-write` for run, default-disabled blocked run evidence, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler execution bypass, action handoff delivery, worker timer, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler worker target | Repository/service/route tests, `tests/growth-automation-scheduler-worker-target-smoke-script.test.js`, `npm run smoke:scheduler-worker-target`, read-only list/runnable operations by default, explicit `--allow-write` for create/review, target provisioning plus Owner review evidence, `productionSchedulingAllowed=false`, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler run/execution bypass, action handoff delivery, worker timer, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler worker | Worker service/lease repository/run service tests, `tests/growth-automation-scheduler-worker-smoke-script.test.js`, `npm run smoke:scheduler-worker`, disabled no-write status by default, explicit `--allow-write` for enabled tick/tick-targets, blocked lease/run evidence while scheduler run remains disabled, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler run/execution bypass, action handoff delivery, worker-target service bypass, stage activation, learner-state mutation, or direct repository access from the CLI. |

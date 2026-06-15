@@ -1,6 +1,6 @@
 # Growth Learning Operating Loop
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -514,7 +514,7 @@ The target loop is:
 | Scheduler dry-run layer | Read-only candidate inspection before any writeful scheduling worker. | `learning-automation-scheduler-service` and Owner-only `POST /api/v1/growth/automation/scheduler/dry-run` list accepted proposals, skip already-published executions, recheck audit completeness and target provisioning, and return `would_publish`, blocked, or skipped candidates without writes, Gateway calls, publication, notifications, or stage activation. | Add Owner digest/review UI and real production platform Action Inbox/Web Push receipt evidence before considering writeful scheduling. |
 | Automation failure-policy layer | Summary-only rollback, failure visibility, and manual retry prerequisite before writeful scheduling. | `learning-automation-failure-policy-service`, `learning_growth_automation_failure_policies`, and visible-target/Owner scoped `/api/v1/growth/automation/failure-policies` routes are implemented. Draft policies activate only through Owner review; readiness reports active policy as one prerequisite and keeps `writefulSchedulingAllowed=false`. | Render policy readiness in Owner automation UI and keep writeful scheduling blocked until action UI/platform evidence and visual evidence exist. |
 | Automation action handoff layer | Summary-only Owner action metadata after reviewed digest and active failure policy. | `learning-automation-action-handoff-service`, `learning_growth_automation_action_handoffs`, visible-target/Owner scoped `/api/v1/growth/automation/action-handoffs` routes, and `growth.automation.action_required` event mapping are implemented. Delivery records `delivered` or `delivery_failed` without publishing, proposal execution, Gateway, scheduler, or learner-state mutation. `learning-automation-platform-action-evidence-service` and `npm run smoke:platform-action-evidence` now read delivered Growth event-outbox receipts into summary-only release evidence without reading Home AI Action Inbox/Web Push internals. | Render action/delivery state in Owner automation UI and collect real production platform receipt evidence before writeful scheduling. |
-| Automation scheduler execution layer | Default-disabled Owner-explicit execution after every scheduling gate is rechecked. | `learning-automation-scheduler-execution-service`, `learning_growth_automation_scheduler_executions`, visible-target scoped `GET /api/v1/growth/automation/scheduler/executions`, and Owner-only `POST /api/v1/growth/automation/scheduler/execute-once` are implemented. Disabled config records blocked execution; enabled execution rechecks delivered handoff, reviewed digest, active policy, matching dry-run, and accepted proposal before delegating only to accepted-proposal publish. | Keep production enablement blocked until Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, and explicit release approval exist. Background scheduling remains a separate future layer. |
+| Automation scheduler execution layer | Default-disabled Owner-explicit execution after every scheduling gate is rechecked. | `learning-automation-scheduler-execution-service`, `learning_growth_automation_scheduler_executions`, visible-target scoped `GET /api/v1/growth/automation/scheduler/executions`, and Owner-only `POST /api/v1/growth/automation/scheduler/execute-once` are implemented. Disabled config records blocked execution; enabled execution rechecks delivered handoff, reviewed digest, active policy, matching dry-run, final release authorization, and valid `writeful_execution` activation audit readback before delegating only to accepted-proposal publish. | Keep production enablement blocked until Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, explicit release approval, and activation record evidence exist. Background scheduling remains a separate future layer. |
 | Automation scheduler run layer | Default-disabled supervised tick over delivered handoff actions. | `learning-automation-scheduler-run-service`, `learning_growth_automation_scheduler_runs`, visible-target scoped `GET /api/v1/growth/automation/scheduler/runs`, and Owner-only `POST /api/v1/growth/automation/scheduler/run-once` are the safe target boundary. Disabled config records blocked run state; enabled ticks may list delivered handoffs and delegate candidates only to the execution service. | Keep production background scheduling blocked until scheduler-run harness, Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, and explicit release approval exist. |
 | Automation scheduler worker target layer | Owner-reviewed target configuration for any future worker. | `learning-automation-scheduler-worker-target-service`, `automation-scheduler-worker-targets.js`, `learning_growth_automation_scheduler_worker_targets`, and visible-target/Owner scoped worker-target routes are implemented. Creation requires target provisioning, review can enable/disable/archive, and enabling rechecks provisioning. | Use reviewed `enabled` targets for production; treat environment JSON target lists as local fallback only. |
 | Automation scheduler worker lease layer | Default-disabled timer/lease boundary over reviewed scheduler-run targets. | `learning-automation-scheduler-worker-service`, `automation-scheduler-worker-leases.js`, `learning_growth_automation_scheduler_worker_leases`, and optional HTTP timer glue are implemented. `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED=false` by default; when enabled, the worker prefers reviewed enabled targets, claims one lease per summary-only target, and calls only `learning-automation-scheduler-run-service.runOnce`. Active leases are protected and stale leases are reclaimable. | Keep production unattended scheduling blocked until Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, reviewed enabled target config, and explicit worker release approval exist. |
@@ -1583,8 +1583,9 @@ Implementation progress on 2026-06-15:
 - the automation scheduler execution boundary is implemented locally as a
   default-disabled Owner-explicit repository/service/route layer: it records
   blocked execution when disabled, rechecks delivered handoff, reviewed digest,
-  active failure-policy readiness, scheduler dry-run, and final release
-  authorization when enabled, delegates only to accepted-proposal publish, and
+  active failure-policy readiness, scheduler dry-run, final release
+  authorization, and valid `writeful_execution` release activation audit
+  readback when enabled, delegates only to accepted-proposal publish, and
   records bounded execution metadata without adding a background scheduler.
 - the background scheduler contract is now Growth-local documentation in
   `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`: the safe tick
@@ -1688,7 +1689,10 @@ Implementation progress on 2026-06-15:
   provide the activation audit-record layer. These records persist only
   summary-only Owner intent and the latest activation preflight summary in
   `learning_growth_automation_release_activations`; they do not apply
-  runtime config, start scheduler execution, or change learner state.
+  runtime config, start scheduler execution, or change learner state. When
+  writeful execution is separately enabled, scheduler execution must read back
+  a valid `writeful_execution` activation record before publication; missing or
+  invalid records are blocked before the accepted-proposal publish boundary.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

@@ -257,8 +257,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   tables, and flips no runtime config. When
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, scheduler execution
   now rechecks this authorization after delivered handoff, reviewed digest,
-  failure-policy, and scheduler dry-run gates and records a blocked execution
-  instead of publishing when authorization is missing. Growth now also has
+  failure-policy, and scheduler dry-run gates. Authorization alone is still
+  insufficient for publication: execution also requires a later activation
+  audit record readback. Growth now also has
   `learning-automation-release-closure-service`,
   `npm run smoke:release-closure`, and visible-target scoped
   `GET /api/v1/growth/automation/release-closure`. This no-write summary
@@ -284,7 +285,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only activation audit records in
   `learning_growth_automation_release_activations`. These records capture
   Owner intent and preflight evidence only; they do not flip runtime config,
-  grant scheduler permission, or run scheduling.
+  grant scheduler permission, or run scheduling. When
+  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, scheduler execution now
+  reads these records through `learning-automation-release-activation-service`
+  and requires a valid summary-only `writeful_execution` record before it can
+  publish. Missing, blocked, privacy-invalid, non-record-only, or
+  runtime-mutating activation records produce blocked execution metadata.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the
@@ -522,7 +528,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `owner_explicit_once`, defaults disabled through
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=false`, records bounded blocked
   execution when disabled, rechecks delivered handoff, reviewed digest, active
-  failure-policy readiness, and scheduler dry-run before publication when
+  failure-policy readiness, scheduler dry-run, final release authorization, and
+  valid `writeful_execution` activation audit readback before publication when
   enabled, and delegates only to accepted-proposal publish. It is not a
   background scheduler or production auto-scheduling enablement.
   `npm run smoke:scheduler-execution` now provides the service-owned

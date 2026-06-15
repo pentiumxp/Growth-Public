@@ -313,6 +313,7 @@ function createServices(config) {
     schedulerService: learningAutomationSchedulerService,
     automationProposalService: learningAutomationProposalService,
     releaseAuthorizationService: learningAutomationReleaseAuthorizationService,
+    releaseActivationService: learningAutomationReleaseActivationService,
     allowWritefulExecution: config.automationWritefulExecutionEnabled
   });
   const learningAutomationSchedulerRunService = createLearningAutomationSchedulerRunService({

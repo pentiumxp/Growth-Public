@@ -9,6 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T17:09Z - Scheduler Execution Activation Readback Gate
+
+- Status: implemented, validated, and committed; push pending. This slice is
+  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway, or run background scheduling.
+- Scope:
+  - `learning-automation-scheduler-execution-service` now injects
+    `releaseActivationService` and, after final release authorization passes,
+    requires a valid summary-only `writeful_execution` activation audit record
+    before it records `started` or calls
+    `learning-automation-proposal-service.publishAcceptedProposal`;
+  - missing activation service, missing activation rows, invalid schema/privacy
+    class/status, missing `writeful_execution` gate, non-record-only decision,
+    failed preflight, or any runtime-config-change flag records a bounded
+    `blocked` execution and does not publish;
+  - disabled execution remains first and still records
+    `learning_automation_scheduler_execution_disabled` without inspecting
+    handoff, release authorization, or activation records;
+  - `src/app/services.js` wires
+    `learningAutomationReleaseActivationService` into scheduler execution;
+  - scheduler execution route and smoke CLI now pass bounded
+    `collectionRunId`, `activationGates`, `requiredApprovalKeys`, and
+    `activationRecordLimit` selectors through to the service.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-scheduler-execution-service.test.js`;
+  - `tests/growth-automation-scheduler-execution-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/smoke-growth-automation-scheduler-execution.js`.
+- Validation passed:
+  - syntax checks for scheduler execution service, app service graph, routes,
+    and scheduler execution smoke CLI;
+  - `node --test tests/learning-automation-scheduler-execution-service.test.js tests/growth-automation-scheduler-execution-smoke-script.test.js tests/learning-automation-release-activation-service.test.js tests/growth-release-activation-smoke-script.test.js`
+    (`23` tests);
+  - `node --test tests/growth-routes.test.js` (`38` tests);
+  - `node --test tests/growth-architecture-boundary.test.js` (`30` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run check` (`171/171` runtime JS files covered);
+  - `npm test` (`658` tests);
+  - `git diff --check`;
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`297` files, `3,821` nodes,
+    `14,615` edges; index up to date);
+  - direct temporary-DB CLI smoke with `--operation execute --allow-write`
+    plus `--collection-run-id` and `--activation-gates writeful_execution`
+    returned expected default-disabled
+    `learning_automation_scheduler_execution_disabled`.
+- Git:
+  - commit message: `Require activation audit before scheduler execution`;
+  - push pending.
+- Remaining product work:
+  - run the full production release evidence chain over real production inputs;
+  - collect central Home AI visual and platform Action Inbox/Web Push evidence;
+  - add embedded Owner release controls and the final explicit runtime-config
+    enablement procedure before any writeful/background scheduling is enabled.
+
 ## 2026-06-15T16:51Z - Release Activation Audit Records
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

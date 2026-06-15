@@ -14,6 +14,43 @@ function boundedText(value, max = 360) {
 }
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body)/i;
+const RELEASE_ACTIVATION_SCHEMA = "growth.learningAutomationReleaseActivation.v1";
+const READY_ACTIVATION_STATUSES = new Set(["ready_for_owner_config_enablement", "already_enabled"]);
+
+function unique(values = []) {
+  return Array.from(new Set(values.map((value) => cleanString(value)).filter(Boolean)));
+}
+
+function valuesFrom(value) {
+  if (Array.isArray(value)) return value.flatMap((item) => valuesFrom(item));
+  if (value === undefined || value === null || value === "") return [];
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function activationGateKey(value) {
+  const token = cleanString(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!token) return "";
+  if (["writefulexecution", "writeful", "writefulexecutionapproval"].includes(token)) return "writeful_execution";
+  if (["backgroundscheduler", "scheduler", "backgroundschedulerapproval"].includes(token)) return "background_scheduler";
+  if (["backgroundworker", "worker", "backgroundworkerapproval"].includes(token)) return "background_worker";
+  return cleanString(value);
+}
+
+function requestedActivationGateKeys(input = {}) {
+  const explicit = valuesFrom(input.activationGates || input.activation_gates)
+    .concat(valuesFrom(input.requestedActivationGates || input.requested_activation_gates))
+    .concat(valuesFrom(input.activationGate || input.activation_gate));
+  const gates = unique(explicit.map(activationGateKey).filter(Boolean));
+  if (!gates.includes("writeful_execution")) gates.unshift("writeful_execution");
+  return gates;
+}
 
 function scanPrivacy(value, path = "$", findings = []) {
   if (!value || typeof value !== "object") return findings;
@@ -54,7 +91,8 @@ function scopeFrom(input = {}, handoff = {}) {
     domainPackId: cleanString(input.domainPackId || input.domain_pack_id || handoff.domainPackId),
     domain: cleanString(input.domain || handoff.domain),
     subject: cleanString(input.subject || handoff.subject),
-    horizon: cleanString(input.horizon || handoff.horizon || "daily_plan") || "daily_plan"
+    horizon: cleanString(input.horizon || handoff.horizon || "daily_plan") || "daily_plan",
+    collectionRunId: cleanString(input.collectionRunId || input.collection_run_id || input.releaseCollectionRunId || input.release_collection_run_id)
   };
 }
 
@@ -76,6 +114,130 @@ function selectCandidate(dryRun = {}, scope = {}) {
   }) || null;
 }
 
+function activationRecordSummary(activation = {}) {
+  const activationDecision = objectOnly(activation.activationDecision);
+  const activationPreflight = objectOnly(activation.activationPreflight);
+  const evidenceSummary = objectOnly(activation.evidenceSummary);
+  return {
+    activationId: cleanString(activation.activationId),
+    activationVersion: cleanString(activation.activationVersion || activation.schemaVersion),
+    status: cleanString(activation.status),
+    privacyClass: cleanString(activation.privacyClass),
+    collectionRunId: cleanString(activation.collectionRunId),
+    requestedActivationGates: unique(asArray(activation.requestedActivationGates)
+      .concat(asArray(evidenceSummary.requestedActivationGates))
+      .map(activationGateKey)),
+    activationDecision: {
+      status: cleanString(activationDecision.status),
+      decision: cleanString(activationDecision.decision),
+      recordOnly: activationDecision.recordOnly === true,
+      advisoryOnly: activationDecision.advisoryOnly === true,
+      preflightPassed: activationDecision.preflightPassed === true,
+      readyForOwnerRuntimeConfigDecision: activationDecision.readyForOwnerRuntimeConfigDecision === true,
+      configChangeApplied: activationDecision.configChangeApplied === true,
+      writefulSchedulingAllowed: activationDecision.writefulSchedulingAllowed === true,
+      runtimeConfigChange: activationDecision.runtimeConfigChange === true
+    },
+    activationPreflight: {
+      status: cleanString(activationPreflight.status),
+      preflightPassed: activationPreflight.preflightPassed === true,
+      readyForOwnerRuntimeConfigDecision: activationPreflight.readyForOwnerRuntimeConfigDecision === true,
+      configChangeApplied: activationPreflight.configChangeApplied === true,
+      writefulSchedulingAllowed: activationPreflight.writefulSchedulingAllowed === true,
+      runtimeConfigChange: activationPreflight.runtimeConfigChange === true
+    },
+    evidenceSummary: {
+      preflightPassed: evidenceSummary.preflightPassed === true,
+      readyForOwnerRuntimeConfigDecision: evidenceSummary.readyForOwnerRuntimeConfigDecision === true,
+      configChangeApplied: evidenceSummary.configChangeApplied === true,
+      writefulSchedulingAllowed: evidenceSummary.writefulSchedulingAllowed === true,
+      runtimeConfigChange: evidenceSummary.runtimeConfigChange === true
+    }
+  };
+}
+
+function activationGateKeysFromRecord(activation = {}) {
+  return unique(asArray(activation.requestedActivationGates)
+    .concat(asArray(activation.activationGates).map((gate) => (
+      gate && typeof gate === "object" ? (gate.key || gate.approvalKey || gate.approval_key) : gate
+    )))
+    .concat(asArray(objectOnly(activation.evidenceSummary).requestedActivationGates))
+    .map(activationGateKey));
+}
+
+function validateActivationRecord(activation = {}, requiredActivationGates = []) {
+  const reasons = [];
+  const status = cleanString(activation.status);
+  const activationVersion = cleanString(activation.activationVersion || activation.schemaVersion);
+  const activationDecision = objectOnly(activation.activationDecision);
+  const activationPreflight = objectOnly(activation.activationPreflight);
+  const evidenceSummary = objectOnly(activation.evidenceSummary);
+  const gateKeys = activationGateKeysFromRecord(activation);
+
+  if (activationVersion !== RELEASE_ACTIVATION_SCHEMA) reasons.push("schema_version_invalid");
+  if (cleanString(activation.privacyClass) !== "summary_only") reasons.push("privacy_class_invalid");
+  if (!READY_ACTIVATION_STATUSES.has(status)) reasons.push("status_not_ready");
+  if (activationDecision.recordOnly !== true) reasons.push("record_only_required");
+  if (activationDecision.advisoryOnly !== true) reasons.push("advisory_only_required");
+  if (
+    activation.configChangeApplied === true
+    || activation.writefulSchedulingAllowed === true
+    || activation.runtimeConfigChange === true
+    || activationDecision.configChangeApplied === true
+    || activationDecision.writefulSchedulingAllowed === true
+    || activationDecision.runtimeConfigChange === true
+    || activationPreflight.configChangeApplied === true
+    || activationPreflight.writefulSchedulingAllowed === true
+    || activationPreflight.runtimeConfigChange === true
+    || evidenceSummary.configChangeApplied === true
+    || evidenceSummary.writefulSchedulingAllowed === true
+    || evidenceSummary.runtimeConfigChange === true
+  ) {
+    reasons.push("runtime_config_change_forbidden");
+  }
+  if (
+    activationDecision.preflightPassed !== true
+    && activationPreflight.preflightPassed !== true
+    && evidenceSummary.preflightPassed !== true
+  ) {
+    reasons.push("preflight_pass_required");
+  }
+  if (
+    status === "ready_for_owner_config_enablement"
+    && activationDecision.readyForOwnerRuntimeConfigDecision !== true
+    && activationPreflight.readyForOwnerRuntimeConfigDecision !== true
+    && evidenceSummary.readyForOwnerRuntimeConfigDecision !== true
+  ) {
+    reasons.push("owner_runtime_config_decision_required");
+  }
+  requiredActivationGates.forEach((gate) => {
+    if (!gateKeys.includes(gate)) reasons.push(`activation_gate_missing:${gate}`);
+  });
+
+  return {
+    ok: reasons.length === 0,
+    reasons: unique(reasons),
+    summary: activationRecordSummary(activation)
+  };
+}
+
+function releaseActivationGateSummary(gate = {}) {
+  return {
+    schemaVersion: "growth.learningAutomationSchedulerExecution.releaseActivationGate.v1",
+    summaryOnly: true,
+    activationRecordRequired: gate.activationRecordRequired === true,
+    activationRecordPresent: gate.activationRecordPresent === true,
+    valid: gate.valid === true,
+    reason: cleanString(gate.reason || gate.error),
+    requiredActivationGates: asArray(gate.requiredActivationGates).map((key) => cleanString(key)).filter(Boolean),
+    activationId: cleanString(gate.activationId),
+    status: cleanString(gate.status),
+    inspectedActivationCount: Number(gate.inspectedActivationCount || 0) || 0,
+    invalidReasons: asArray(gate.invalidReasons).map((reason) => cleanString(reason)).filter(Boolean),
+    activation: gate.activation ? activationRecordSummary(gate.activation) : null
+  };
+}
+
 function gateSummary(input = {}) {
   const handoff = input.handoff || {};
   const digest = input.digest || {};
@@ -83,6 +245,7 @@ function gateSummary(input = {}) {
   const dryRun = input.dryRun || {};
   const candidate = input.candidate || {};
   const releaseAuthorization = input.releaseAuthorization || {};
+  const releaseActivation = input.releaseActivation || {};
   return {
     schemaVersion: "growth.learningAutomationSchedulerExecution.gate.v1",
     summaryOnly: true,
@@ -125,7 +288,8 @@ function gateSummary(input = {}) {
       runtimeConfigChange: releaseAuthorization.runtimeConfigChange === true,
       requiredApprovalKeys: asArray(releaseAuthorization.requiredApprovalKeys).map((key) => cleanString(key)).filter(Boolean),
       missingApprovalKeys: asArray(releaseAuthorization.missingApprovalKeys).map((key) => cleanString(key)).filter(Boolean)
-    }
+    },
+    releaseActivation: releaseActivationGateSummary(releaseActivation)
   };
 }
 
@@ -158,6 +322,7 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
   const schedulerService = options.schedulerService || null;
   const automationProposalService = options.automationProposalService || null;
   const releaseAuthorizationService = options.releaseAuthorizationService || null;
+  const releaseActivationService = options.releaseActivationService || null;
   const allowWritefulExecution = options.allowWritefulExecution === true;
 
   function listExecutions(input = {}) {
@@ -204,6 +369,63 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
     }));
     return Object.assign(unavailable(reason, extra), {
       execution: executionResult?.execution || null
+    });
+  }
+
+  function releaseActivationGate(scope = {}, input = {}) {
+    const requiredActivationGates = requestedActivationGateKeys(input);
+    const base = {
+      activationRecordRequired: true,
+      activationRecordPresent: false,
+      valid: false,
+      requiredActivationGates,
+      inspectedActivationCount: 0
+    };
+    if (!releaseActivationService || typeof releaseActivationService.listActivations !== "function") {
+      return Object.assign({}, base, {
+        ok: false,
+        reason: "learning_automation_scheduler_execution_release_activation_unavailable"
+      });
+    }
+    const result = releaseActivationService.listActivations(Object.assign({}, scope, {
+      collectionRunId: scope.collectionRunId || input.collectionRunId || input.collection_run_id || input.releaseCollectionRunId || input.release_collection_run_id,
+      activationGates: requiredActivationGates,
+      limit: Math.max(1, Math.min(10, Number(input.activationRecordLimit || input.activation_record_limit || 10) || 10))
+    }));
+    if (!result?.ok) {
+      return Object.assign({}, base, {
+        ok: false,
+        reason: result?.error || "learning_automation_scheduler_execution_release_activation_unavailable"
+      });
+    }
+    const activations = asArray(result.activations);
+    if (!activations.length) {
+      return Object.assign({}, base, {
+        ok: false,
+        reason: "learning_automation_scheduler_execution_release_activation_required"
+      });
+    }
+    const validations = activations.map((activation) => validateActivationRecord(activation, requiredActivationGates));
+    const acceptedIndex = validations.findIndex((validation) => validation.ok);
+    if (acceptedIndex < 0) {
+      return Object.assign({}, base, {
+        ok: false,
+        activationRecordPresent: true,
+        inspectedActivationCount: activations.length,
+        reason: "learning_automation_scheduler_execution_release_activation_invalid",
+        invalidReasons: unique(validations.flatMap((validation) => validation.reasons)),
+        activation: activations[0]
+      });
+    }
+    const activation = activations[acceptedIndex];
+    return Object.assign({}, base, {
+      ok: true,
+      activationRecordPresent: true,
+      valid: true,
+      inspectedActivationCount: activations.length,
+      activationId: cleanString(activation.activationId),
+      status: cleanString(activation.status),
+      activation
     });
   }
 
@@ -317,13 +539,25 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
         releaseAuthorization
       });
     }
+    const releaseActivation = releaseActivationGate(scope, input);
+    if (!releaseActivation.ok) {
+      return recordBlocked(scope, input, releaseActivation.reason || "learning_automation_scheduler_execution_release_activation_required", {
+        handoff,
+        digest,
+        readiness,
+        dryRun,
+        candidate,
+        releaseAuthorization,
+        releaseActivation
+      });
+    }
 
     const started = repository.recordExecution(Object.assign({}, scope, {
       executionId: input.executionId || input.execution_id,
       mode,
       status: "started",
       reason: "owner_explicit_execution_started",
-      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, executionMode: mode, writefulExecutionEnabled: true }),
+      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, releaseActivation, executionMode: mode, writefulExecutionEnabled: true }),
       action: actionSummary(scope, candidate),
       execution: {
         schemaVersion: "growth.learningAutomationSchedulerExecution.execution.v1",
@@ -363,7 +597,7 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
       status,
       reason: publishResult?.ok ? "accepted_proposal_published" : (publishResult?.error || "accepted_proposal_publish_failed"),
       error: publishResult?.ok ? "" : (publishResult?.error || "learning_automation_scheduler_execution_publish_failed"),
-      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, executionMode: mode, writefulExecutionEnabled: true }),
+      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, releaseActivation, executionMode: mode, writefulExecutionEnabled: true }),
       action: actionSummary(scope, candidate),
       execution: {
         schemaVersion: "growth.learningAutomationSchedulerExecution.execution.v1",

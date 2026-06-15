@@ -16,6 +16,13 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+function splitCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function firstArgValue(args, names, fallback = "") {
   for (const name of names) {
     const value = argValue(args, name, "");
@@ -79,6 +86,12 @@ function shouldAllowWrite(args) {
 function inputFromArgs(args) {
   const jsonInput = parseJsonArg(args, ["--input-json", "--inputJson"], {});
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], jsonInput.workspaceId || jsonInput.workspace_id || "");
+  const activationGate = firstArgValue(args, ["--activation-gate", "--activationGate"], "");
+  const activationGates = splitCsv(firstArgValue(args, ["--activation-gates", "--activationGates"], ""))
+    .concat(activationGate ? [activationGate] : []);
+  const requiredApprovalKey = firstArgValue(args, ["--required-approval-key", "--requiredApprovalKey"], "");
+  const requiredApprovalKeys = splitCsv(firstArgValue(args, ["--required-approval-keys", "--requiredApprovalKeys"], ""))
+    .concat(requiredApprovalKey ? [requiredApprovalKey] : []);
   return stripUndefined(Object.assign({}, jsonInput, {
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], jsonInput.learnerId || jsonInput.learner_id || "") || workspaceId,
@@ -88,6 +101,7 @@ function inputFromArgs(args) {
     handoffId: firstArgValue(args, ["--handoff-id", "--handoffId"], jsonInput.handoffId || jsonInput.handoff_id || ""),
     digestId: firstArgValue(args, ["--digest-id", "--digestId"], jsonInput.digestId || jsonInput.digest_id || ""),
     policyId: firstArgValue(args, ["--policy-id", "--policyId"], jsonInput.policyId || jsonInput.policy_id || ""),
+    collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--release-collection-run-id", "--releaseCollectionRunId"], jsonInput.collectionRunId || jsonInput.collection_run_id || jsonInput.releaseCollectionRunId || jsonInput.release_collection_run_id || ""),
     proposalId: firstArgValue(args, ["--proposal-id", "--proposalId"], jsonInput.proposalId || jsonInput.proposal_id || ""),
     planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], jsonInput.planDraftId || jsonInput.plan_draft_id || ""),
     selectedItemId: firstArgValue(args, ["--selected-item-id", "--selectedItemId", "--item-id", "--itemId"], jsonInput.selectedItemId || jsonInput.selected_item_id || jsonInput.itemId || jsonInput.item_id || ""),
@@ -97,6 +111,9 @@ function inputFromArgs(args) {
     domain: firstArgValue(args, ["--domain"], jsonInput.domain || ""),
     subject: firstArgValue(args, ["--subject"], jsonInput.subject || ""),
     horizon: firstArgValue(args, ["--horizon"], jsonInput.horizon || "daily_plan") || "daily_plan",
+    activationGates: activationGates.length ? activationGates : (jsonInput.activationGates || jsonInput.activation_gates || jsonInput.requestedActivationGates || jsonInput.requested_activation_gates),
+    requiredApprovalKeys: requiredApprovalKeys.length ? requiredApprovalKeys : (jsonInput.requiredApprovalKeys || jsonInput.required_approval_keys),
+    activationRecordLimit: boundedNumberArg(args, ["--activation-record-limit", "--activationRecordLimit"], jsonInput.activationRecordLimit || jsonInput.activation_record_limit || 10, 1, 10),
     status: firstArgValue(args, ["--status"], jsonInput.status || ""),
     limit: boundedNumberArg(args, ["--limit"], jsonInput.limit || 20, 1, 100),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy", "--executed-by", "--executedBy"], jsonInput.requestedBy || jsonInput.requested_by || jsonInput.executedBy || jsonInput.executed_by || "")

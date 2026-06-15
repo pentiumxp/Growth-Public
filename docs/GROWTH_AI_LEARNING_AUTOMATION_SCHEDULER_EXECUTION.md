@@ -1,6 +1,6 @@
 # Growth AI Learning Automation Scheduler Execution
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -33,6 +33,11 @@ Implemented locally as a default-disabled backend slice:
   `learning-automation-release-authorization-service`,
   `GET /api/v1/growth/automation/release-authorization`, and
   `npm run smoke:release-authorization`;
+- final release activation audit readback through
+  `learning-automation-release-activation-service.listActivations`,
+  visible-target scoped `GET /api/v1/growth/automation/release-activations`,
+  Owner-only `POST /api/v1/growth/automation/release-activations`, and
+  `npm run smoke:release-activation -- --operation record --allow-write`;
 - service-owned operational smoke `npm run smoke:scheduler-execution`;
 - config gate: `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`.
 
@@ -54,6 +59,9 @@ Required input:
 - accepted proposal id;
 - optional plan draft id and selected item id;
 - optional collection run id for selecting a specific release review run;
+- optional activation gates for the activation-record readback. The execution
+  service always requires `writeful_execution`; extra gates can be supplied for
+  future Owner evidence, but they do not grant execution by themselves;
 - optional explicit execution id for idempotent Owner retry UX;
 - optional generation key and card schema version for the downstream publish
   service.
@@ -77,9 +85,16 @@ The service rechecks every gate at execution time:
    `authorized=true` after proving approved release review, ready latest
    collection run, approved latest decision, and active
    `writefulExecutionApproval`.
-9. Only after all gates pass, the service calls
+9. `learning-automation-release-activation-service.listActivations` returns a
+   latest summary-only record for the target release scope whose status is
+   `ready_for_owner_config_enablement` or `already_enabled`, whose decision is
+   `recordOnly=true`, whose preflight passed, whose requested activation gates
+   include `writeful_execution`, and whose activation/preflight/evidence
+   summaries all keep `configChangeApplied=false`,
+   `writefulSchedulingAllowed=false`, and `runtimeConfigChange=false`.
+10. Only after all gates pass, the service calls
    `learning-automation-proposal-service.publishAcceptedProposal`.
-10. The execution repository records bounded `started`, `published`, `failed`,
+11. The execution repository records bounded `started`, `published`, `failed`,
    `blocked`, or `skipped` metadata.
 
 The execution service must not call Gateway, model vendors, plan publication
@@ -157,6 +172,8 @@ npm run smoke:scheduler-execution -- \
   --operation execute \
   --workspace-id <workspace> \
   --learner-id <learner> \
+  --collection-run-id <release-collection-run-id> \
+  --activation-gates writeful_execution \
   --handoff-id <delivered-handoff-id> \
   --proposal-id <accepted-proposal-id> \
   --allow-write \
@@ -169,6 +186,12 @@ npm run smoke:scheduler-execution -- \
 visible blocked execution row with
 `learning_automation_scheduler_execution_disabled`. This is evidence that the
 execution boundary is fail-closed; it is not publication approval.
+
+When `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, the same smoke must
+still fail closed unless the release authorization readback passes and the
+activation audit readback finds a valid summary-only `writeful_execution`
+activation record. The activation record is a readback prerequisite only; it
+does not flip config and does not grant scheduler permission by itself.
 
 The smoke script must not import repositories directly, inspect
 `learning_growth_` tables, call Gateway, call the scheduler dry-run service
@@ -189,6 +212,10 @@ Failure behavior is fail-closed:
 - missing active failure policy records `blocked`;
 - dry-run candidate missing or blocked records `blocked`;
 - missing or blocked final release authorization records `blocked`;
+- missing release activation service, missing activation records, invalid
+  activation status/privacy/schema, missing `writeful_execution` gate, failed
+  activation preflight, non-record-only decision, or any runtime-config-change
+  flag in the activation record records `blocked`;
 - downstream accepted-proposal publish failure records `failed`;
 - successful downstream publish records `published`;
 - repeated downstream publish remains protected by
@@ -215,8 +242,11 @@ Required assertions:
 
 - default-disabled execution records blocked state and does not publish;
 - success path rechecks delivered handoff, reviewed digest, active policy
-  readiness, scheduler dry-run, and release authorization before publishing;
+  readiness, scheduler dry-run, release authorization, and release activation
+  audit readback before publishing;
 - missing release authorization records blocked state and does not call
+  `publishAcceptedProposal`;
+- missing or invalid release activation records blocked state and does not call
   `publishAcceptedProposal`;
 - publish delegates only to
   `learning-automation-proposal-service.publishAcceptedProposal`;
@@ -226,7 +256,8 @@ Required assertions:
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
 - `npm run smoke:scheduler-execution` defaults to read-only list, requires
   `--allow-write` for execute, records default-disabled blocked state, and
-  rejects privacy-risk input;
+  parses collection-run and activation-gate selectors, and rejects privacy-risk
+  input;
 - architecture guard proves no Gateway, direct card-generation, direct plan
   publish, stage-assessment activation, queue/worker, or direct table access
   from the execution service.
@@ -254,5 +285,6 @@ Before production enablement, Growth still needs:
 - platform Action Inbox/Web Push product evidence;
 - central Home AI embedded-plugin visual evidence;
 - production dry-run evidence;
+- summary-only release activation audit record for `writeful_execution`;
 - explicit release approval for
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`.
