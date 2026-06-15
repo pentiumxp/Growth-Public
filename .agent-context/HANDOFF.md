@@ -9,6 +9,85 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T05:59Z - Growth Owner Audit Smoke Full Readback Slice
+
+- Status: implemented and locally validated. This slice completes the
+  service-owned Owner audit smoke readback by adding evidence-audit and
+  profile-delta-audit DTOs to the existing cycle/completeness/correction
+  aggregate.
+- Change classification: H1 by Home AI AI Ops because this changes operational
+  smoke/release evidence for the learning-cycle audit boundary. No production
+  deploy was executed.
+- Scope:
+  - `scripts/smoke-growth-owner-audit.js` now delegates the default read-only
+    audit operation to:
+    `learningCycleAuditService.listCycleAudit`,
+    `learningAuditCompletenessService.evaluateCycleCompleteness`,
+    `learningEvidenceAuditService.listEvidenceAudit`,
+    `learningProfileDeltaAuditService.listProfileDeltas`, and
+    `learningOwnerCorrectionService.listCorrections`;
+  - correction writes still require `--operation correction --allow-write`,
+    call only `learningOwnerCorrectionService.recordCorrection`, and then
+    refresh the full bounded audit DTO set;
+  - `tests/growth-owner-audit-smoke-script.test.js` now proves five-service
+    readback, full refresh after correction, write gate, parse failures,
+    privacy-risk rejection, and empty-DB read-only behavior;
+  - `tests/growth-architecture-boundary.test.js` guards the expanded service
+    ownership and no-direct-Gateway/repository/scheduler/stage boundary;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`.
+- Boundary:
+  - the smoke CLI still imports only `readEnv` and `createServices`;
+  - it does not import SQLite repositories, inspect tables, call Gateway or
+    model vendors, call daily-loop services, draft or publish plans, generate
+    cards, evaluate submissions, execute scheduler actions, run scheduler
+    ticks, deliver notifications, activate stage assessments, mutate learner
+    state outside Owner correction, or act as a deploy/release switch;
+  - all returned DTOs remain summary-only service projections.
+- Validation passed:
+  - `node --check scripts/smoke-growth-owner-audit.js`;
+  - `node --check tests/growth-owner-audit-smoke-script.test.js`;
+  - focused
+    `node --test tests/growth-owner-audit-smoke-script.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`84` tests);
+  - operational read-only
+    `npm run --silent smoke:owner-audit -- --workspace-id smoke_workspace
+    --learner-id smoke_learner --program-id smoke_program --domain science
+    --subject science --json`, returning top-level `evidenceAudit` and
+    `profileDeltaAudit` without requiring write permission;
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=138`, `checkedCount=138`);
+  - `npm test -- --test-reporter=spec` (`501` tests);
+  - `codegraph sync && codegraph status` (`232` files, `2,859` nodes,
+    `11,144` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI required checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI `git diff --check`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-b2ca9bff-5234-46d7-a9f3-cc462f892698`.
+
 ## 2026-06-15T05:47Z - Growth Stage Assessment Smoke Harness Slice
 
 - Status: implemented and locally validated. This slice adds a service-owned

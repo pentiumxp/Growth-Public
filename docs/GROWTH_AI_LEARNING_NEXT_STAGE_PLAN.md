@@ -98,8 +98,8 @@ Growth already has substantial backend foundation:
 - plan draft, validation, audit, and publish bridge;
 - Owner daily-loop backend facade for preview, draft, and publish;
 - Owner audit/correction smoke CLI for read-only cycle audit/completeness/
-  correction readback and explicit `--allow-write` correction recording through
-  the normal service graph;
+  evidence audit/profile-delta audit/correction readback and explicit
+  `--allow-write` correction recording through the normal service graph;
 - Fanfan science vertical and non-sample provisioned vertical harnesses;
 - supervised automation proposal, scheduler dry-run, digest, failure policy,
   action handoff, Owner-explicit execution, scheduler run, reviewed worker
@@ -494,7 +494,7 @@ becomes future planning evidence, not a required retry loop.
 | Planner/author/evaluator Gateway clients | Fake valid stream, valid JSON, empty output, invalid JSON, timeout, repair failure, and privacy-risk output. |
 | Daily loop service | Preview, draft, publish, failed publish, audit refresh, `tests/growth-daily-loop-preview-smoke-script.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, `npm run smoke:daily-loop-preview`, controlled `npm run smoke:daily-loop` with explicit `--allow-write` for draft/publish, and no direct Gateway/card-generation calls from routes or the CLI. |
 | Learner daily interaction | One submission box, one evaluation, one optional reflection, audio record/playback, visible failed-evaluation retry path, and no pass-line loop. |
-| Evidence/profile/audit | Evidence ledger, Profile V2, profile-delta audit, correction, cycle audit, completeness, stale evidence, privacy tests, `tests/growth-owner-audit-smoke-script.test.js`, and `npm run smoke:owner-audit`. |
+| Evidence/profile/audit | Evidence ledger, evidence audit, Profile V2, profile-delta audit, correction, cycle audit, completeness, stale evidence, privacy tests, `tests/growth-owner-audit-smoke-script.test.js`, and `npm run smoke:owner-audit`; the smoke now returns cycle audit, completeness, evidence audit, profile-delta audit, and correction DTOs by default, while correction writes remain explicitly gated. |
 | Stage assessment | Readiness, activation, coverage, completion, cooldown, direct daily-publish blocking, `tests/growth-stage-assessment-smoke-script.test.js`, and `npm run smoke:stage-assessment`; the CLI defaults to read-only readiness and requires explicit `--allow-write` for eligibility, activation, or completion evidence. |
 | Multi-workspace target | Visible-target allow/deny, explicit provision enablement, wrong-subject blocking, target-workspace row ownership, and no actor/target mixing. |
 | Scheduler dry-run | Service tests, `tests/growth-scheduler-dry-run-smoke-script.test.js`, `npm run smoke:scheduler-dry-run`, and architecture guard for no Gateway, publication, evaluation, execution, scheduler tick, stage activation, notification, learner-state mutation, or direct repository access from the CLI. |

@@ -982,9 +982,13 @@ test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {
   assert.match(script, /createServices/);
   assert.match(script, /learningCycleAuditService/);
   assert.match(script, /learningAuditCompletenessService/);
+  assert.match(script, /learningEvidenceAuditService/);
+  assert.match(script, /learningProfileDeltaAuditService/);
   assert.match(script, /learningOwnerCorrectionService/);
   assert.match(script, /listCycleAudit/);
   assert.match(script, /evaluateCycleCompleteness/);
+  assert.match(script, /listEvidenceAudit/);
+  assert.match(script, /listProfileDeltas/);
   assert.match(script, /listCorrections/);
   assert.match(script, /recordCorrection/);
   assert.match(script, /--allow-write/);
@@ -1008,8 +1012,10 @@ test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {
   assert.doesNotMatch(script, /activateStageAssessment/);
 
   const scriptHarness = read(path.join("tests", "growth-owner-audit-smoke-script.test.js"));
-  assert.match(scriptHarness, /delegates read-only audit to audit, completeness, and correction services/);
-  assert.match(scriptHarness, /records correction only through Owner correction service/);
+  assert.match(scriptHarness, /delegates read-only audit to all audit readback services/);
+  assert.match(scriptHarness, /learningEvidenceAuditService/);
+  assert.match(scriptHarness, /learningProfileDeltaAuditService/);
+  assert.match(scriptHarness, /refreshes full audit/);
   assert.match(scriptHarness, /runs read-only audit on an empty DB without writing correction rows/);
   assert.match(scriptHarness, /fails closed for missing workspace, invalid JSON, privacy-risk input, and blocked writes/);
 });

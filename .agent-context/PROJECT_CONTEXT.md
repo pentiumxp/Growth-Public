@@ -426,9 +426,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   target-provisioning checks, and are absorbed by Profile V2 as auditable state
   adjustments without deleting historical evidence.
   `npm run smoke:owner-audit` is the service-owned operational smoke for this
-  boundary: it defaults to read-only cycle audit/completeness/correction
-  readback through the normal service graph, and records a correction only with
-  explicit `--operation correction --allow-write` through
+  boundary: it defaults to read-only cycle audit/completeness/evidence audit/
+  profile-delta audit/correction readback through the normal service graph,
+  and records a correction only with explicit
+  `--operation correction --allow-write` through
   `learning-owner-correction-service.recordCorrection`. This is backend
   evidence only; embedded Owner audit/correction UI remains a separate product
   closure item.

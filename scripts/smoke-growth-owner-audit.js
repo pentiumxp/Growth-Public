@@ -229,13 +229,25 @@ function readAudit(services, input) {
     input,
     "owner_audit_smoke_completeness_unavailable"
   );
+  const evidenceAudit = callService(
+    services.learningEvidenceAuditService,
+    "listEvidenceAudit",
+    input,
+    "owner_audit_smoke_evidence_audit_unavailable"
+  );
+  const profileDeltaAudit = callService(
+    services.learningProfileDeltaAuditService,
+    "listProfileDeltas",
+    input,
+    "owner_audit_smoke_profile_delta_audit_unavailable"
+  );
   const corrections = callService(
     services.learningOwnerCorrectionService,
     "listCorrections",
     input,
     "owner_audit_smoke_corrections_unavailable"
   );
-  const partialFailures = [cycleAudit, completeness, corrections]
+  const partialFailures = [cycleAudit, completeness, evidenceAudit, profileDeltaAudit, corrections]
     .filter((result) => !result?.ok)
     .map((result) => String(result.error || "").trim())
     .filter(Boolean);
@@ -246,6 +258,8 @@ function readAudit(services, input) {
     scope: publicScope(input),
     cycleAudit,
     completeness,
+    evidenceAudit,
+    profileDeltaAudit,
     corrections,
     partialFailures
   };

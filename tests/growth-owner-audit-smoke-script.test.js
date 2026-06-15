@@ -127,7 +127,7 @@ test("owner audit smoke script rejects write operations unless explicitly allowe
   });
 });
 
-test("owner audit smoke script delegates read-only audit to audit, completeness, and correction services", async () => {
+test("owner audit smoke script delegates read-only audit to all audit readback services", async () => {
   const calls = [];
   const services = {
     learningCycleAuditService: {
@@ -140,6 +140,28 @@ test("owner audit smoke script delegates read-only audit to audit, completeness,
       evaluateCycleCompleteness(input) {
         calls.push(["completeness", input.workspaceId]);
         return { ok: true, complete: false, readyForAutomation: false, summary: { missingRequired: ["profile_delta_audit"] } };
+      }
+    },
+    learningEvidenceAuditService: {
+      listEvidenceAudit(input) {
+        calls.push(["evidence", input.workspaceId]);
+        return {
+          ok: true,
+          source: "evidence",
+          summary: { evidenceCount: 1 },
+          evidence: [{ evidenceId: "lgevd_daily_1" }]
+        };
+      }
+    },
+    learningProfileDeltaAuditService: {
+      listProfileDeltas(input) {
+        calls.push(["profileDelta", input.workspaceId]);
+        return {
+          ok: true,
+          source: "profileDelta",
+          count: 1,
+          profileDeltas: [{ profileDeltaId: "lgpdelta_daily_1" }]
+        };
       }
     },
     learningOwnerCorrectionService: {
@@ -160,12 +182,20 @@ test("owner audit smoke script delegates read-only audit to audit, completeness,
   assert.equal(result.ok, true);
   assert.equal(result.source, "growth-owner-audit-smoke");
   assert.equal(result.operation, "audit");
-  assert.deepEqual(calls.map((call) => call[0]), ["cycle", "completeness", "corrections"]);
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "cycle",
+    "completeness",
+    "evidence",
+    "profileDelta",
+    "corrections"
+  ]);
   assert.equal(result.scope.workspaceId, "weixin_fanfan");
   assert.equal(result.completeness.readyForAutomation, false);
+  assert.equal(result.evidenceAudit.summary.evidenceCount, 1);
+  assert.equal(result.profileDeltaAudit.count, 1);
 });
 
-test("owner audit smoke script records correction only through Owner correction service then refreshes audit", async () => {
+test("owner audit smoke script records correction only through Owner correction service then refreshes full audit", async () => {
   const calls = [];
   const services = {
     learningCycleAuditService: {
@@ -178,6 +208,18 @@ test("owner audit smoke script records correction only through Owner correction 
       evaluateCycleCompleteness(input) {
         calls.push(["completeness", input.correctionId]);
         return { ok: true, complete: true, readyForAutomation: true, summary: { missingRequired: [] } };
+      }
+    },
+    learningEvidenceAuditService: {
+      listEvidenceAudit(input) {
+        calls.push(["evidence", input.correctionId]);
+        return { ok: true, source: "evidence", summary: { evidenceCount: 1 }, evidence: [] };
+      }
+    },
+    learningProfileDeltaAuditService: {
+      listProfileDeltas(input) {
+        calls.push(["profileDelta", input.correctionId]);
+        return { ok: true, source: "profileDelta", count: 1, profileDeltas: [] };
       }
     },
     learningOwnerCorrectionService: {
@@ -202,8 +244,17 @@ test("owner audit smoke script records correction only through Owner correction 
   assert.equal(result.ok, true);
   assert.equal(result.operation, "correction");
   assert.equal(result.correction.correctionId, "lgcorr_owner_1");
-  assert.deepEqual(calls.map((call) => call[0]), ["record", "cycle", "completeness", "corrections"]);
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "record",
+    "cycle",
+    "completeness",
+    "evidence",
+    "profileDelta",
+    "corrections"
+  ]);
   assert.equal(result.readback.scope.correctionId, "lgcorr_owner_1");
+  assert.equal(result.readback.evidenceAudit.summary.evidenceCount, 1);
+  assert.equal(result.readback.profileDeltaAudit.count, 1);
 });
 
 test("owner audit smoke script runs read-only audit on an empty DB without writing correction rows", () => {
