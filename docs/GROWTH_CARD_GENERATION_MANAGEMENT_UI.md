@@ -13,21 +13,20 @@ harness sequencing.
 
 V1 implementation status: the Owner `生成` tab, context route, frontend API
 helpers, daily English payload builder, generated-card learner submission /
-evaluation / optional-reflection UI, stage-assessment controls, and focused
-harness are implemented in the plugin workspace. The backend operating-loop
-slice also exposes planner readiness, Profile V2, evidence audit,
-`graphOptions`, plan draft/publish services, Owner-only daily-loop
-preview/draft/publish backend facade routes, compact learning-loop state
-readback through `GET /api/v1/growth/learning-loop/state`, no-write
-learning-loop state smoke, and a no-write planner readiness smoke. The Owner
-`生成` tab now reads that state after loading generation context and renders a
-summary-only status/next-action panel. The operating-loop target also requires
-a separate
-target/domain-pack provisioning policy so visible learners are not treated as
-automatically enabled for every subject. The embedded UI still needs the
-planner preview/publish panel, domain-pack/subject selector, and provision
-review/create controls before Fanfan science generation is a normal
-browser-only Owner workflow.
+evaluation / optional-reflection UI, stage-assessment controls, target
+domain-pack/subject controls, and focused harness are implemented in the
+plugin workspace. The backend operating-loop slice also exposes planner
+readiness, Profile V2, evidence audit, `graphOptions`, plan draft/publish
+services, Owner-only daily-loop preview/draft/publish backend facade routes,
+compact learning-loop state readback through
+`GET /api/v1/growth/learning-loop/state`, no-write learning-loop state smoke,
+and a no-write planner readiness smoke. The Owner `生成` tab now reads that
+state after loading generation context, renders a summary-only status/next
+action panel, renders `targetProvisioning` plus filtered `graphOptions`, lets
+Owner apply a selected domain pack/subject to context refresh, and can call the
+Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
+target enablement. Remaining product closure is older-cycle selection,
+central embedded visual evidence, and production release evidence.
 
 ## Objective
 
@@ -171,8 +170,7 @@ Implemented V1 Owner stage-assessment controls:
 
 ## Planner-Backed Owner Flow
 
-This is the next Owner UI slice. It turns the implemented backend planner
-foundation into a browser operation.
+This browser operation is implemented for the supervised daily-loop path.
 
 1. Owner opens Growth and selects `生成`.
 2. Growth loads `GET /api/v1/growth/card-generation/context` for the selected
@@ -441,11 +439,11 @@ npm run ios:pwa:visual -- \
 
 | Control | Type | V1 behavior |
 | --- | --- | --- |
-| Learner target | segmented/list row | Fanfan enabled; other provisioned targets can be shown disabled until enabled. |
+| Learner target | segmented/list row | Visible targets are selectable. Fanfan may be enabled by sample fallback; non-sample targets show a provisioning-required state until an explicit active provision exists. |
 | Recipe | segmented control | `日常英语卡` selected; future recipes hidden or disabled. |
-| Target provisioning | status row / Owner action | Shows `targetProvisioning.targetEnabled`, mode, selected domain pack/subject, and bounded block reason. Future Owner action can create an active provision for a visible non-sample learner. |
-| Domain pack | select/menu | Next planner UI slice reads `graphOptions.domainPacks`; V1 may show only the imported UK/HK curriculum pack when available. |
-| Subject | segmented/select | Next planner UI slice reads `graphOptions.subjects`; `science` is the first non-English sample subject. |
+| Target provisioning | status row / Owner action | Shows `targetProvisioning.targetEnabled`, mode, selected domain pack/subject, and bounded block reason. The Owner action calls `POST /api/v1/growth/domain-pack-provisions` only after an explicit click. |
+| Domain pack | select/menu | Reads `graphOptions.domainPacks`; applying the selector refreshes generation context with `domainPackId`, `domain`, and `subject`. |
+| Subject | segmented/select | Reads `graphOptions.subjects`; `science` is the first non-English sample subject. |
 | Graph target | bounded selector | V1 can use a recommended English graph node from the context endpoint. Planner-backed UI should normally let the plan choose the exact target node from the selected domain pack/subject. |
 | Difficulty | segmented control | default comes from recipe and history summary; Owner can choose one bounded value later. |
 | Evidence requirements | read-only chips | shows what the generated card must collect. |
@@ -961,11 +959,11 @@ Add focused tests before broad regression runs:
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, and profile-correction POST helper with workspace query/proxy handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
-| UI target state | Fanfan enabled, disabled targets do not generate |
+| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
+| UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
-| UI provisioning | next UI slice should render `targetProvisioning`, prevent silent no-op generation when blocked, and call the provision route only after explicit Owner action |
+| UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
 | UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
 | UI proposal review | lists and creates supervised proposals from a selected complete cycle, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision |

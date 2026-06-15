@@ -9,6 +9,96 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T08:39Z - Growth Owner Target Provision Controls UI Slice
+
+- Status: implemented, documented, and locally validated. Not deployed in this
+  slice.
+- Change classification: Home AI AI Ops intake returned H1 under Plugin
+  Platform, Topics, Provisioning, And MCP because the Owner browser surface now
+  creates or updates visible-target domain-pack provisions.
+- Scope:
+  - `public/growth-api-client.js` now forwards selected
+    `domainPackId`/`domain`/`subject`/horizon/minutes into generation-context
+    reads and exposes `provisionGrowthDomainPack` over the existing Owner-only
+    `POST /api/v1/growth/domain-pack-provisions` facade;
+  - `public/growth-card-generation-ui.js` now renders
+    `targetProvisioning`, domain-pack and subject selectors, apply/provision
+    controls, selected-scope structured preview data, and target rows that let
+    Owner inspect non-sample learners before provisioning;
+  - `public/app.js` owns the provision draft state, applies selected graph
+    options to context refresh, calls the provision facade, clears stale
+    draft/publish/cycle state after provisioning, and refreshes learning-loop
+    state;
+  - `public/growth-homeai-legacy.css` covers the provision panel, selector grid,
+    44px actions, mobile single-column layout, and dark/system contrast;
+  - `public/index.html` static version bumped to
+    `20260615-target-provision-controls-ui-v1`;
+  - docs updated in Growth workspace:
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`,
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - this slice did not change backend route/service behavior; it uses the
+    existing `learning-target-provisioning-service`, repository, and
+    `domain-pack-provisions` route;
+  - browser code still does not call Gateway directly, import Home AI old
+    Growth server logic, read repositories/SQLite tables, compute learning
+    policy, mutate Profile V2 locally, evaluate submissions, schedule, notify,
+    activate stage assessments, publish automatically, or bypass visible-target
+    checks;
+  - provision payloads are summary-only scope metadata: workspace id, learner
+    id, domain-pack id, domain, subject, status, and source. Raw answers,
+    transcripts, prompts, raw model output, answer keys, source-document
+    bodies, private paths, credentials, and provider config remain excluded.
+- Validation passed:
+  - syntax checks for touched public JS;
+  - focused
+    `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`103` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`240` files, `3,030` nodes,
+    `11,788` edges; index up to date);
+  - Home AI app required H1 gate:
+    `node tests/hermes-plugin-service.test.js`,
+    `node tests/hermes-plugin-authorization-service.test.js`,
+    `node tests/plugin-capability-activation-service.test.js`, and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI app `git diff --check`.
+- Visual evidence:
+  - local browser-mode Playwright mobile checks used the Home AI workspace
+    Playwright dependency and system Chrome against `http://127.0.0.1:4882/`
+    with Owner headers injected;
+  - screenshots:
+    `tmp/visual/growth-owner-target-provision-controls-mobile-dark.png`,
+    `tmp/visual/growth-owner-target-provision-after-submit-mobile-dark.png`,
+    and
+    `tmp/visual/growth-owner-target-provision-controls-forced-dark-mobile.png`;
+  - verified `data-card-generation-target-provisioning` visible, provision
+    button visible and 44px tall, active settings panel scrollHeight `5525` vs
+    clientHeight `725`, forced dark panel background
+    `rgba(22, 26, 29, 0.98)`, text color `rgb(245, 247, 246)`, and primary
+    button background `rgb(47, 119, 129)`.
+- AI Ops evidence appended:
+  `evidence-ebbc4dee-7e2e-44b4-89ec-8c634b3a07d6`.
+- Remaining product work:
+  - richer older-cycle selection/history controls over the implemented
+    current-card cycle drilldown;
+  - central Home AI embedded-plugin iOS/PWA visual harness and production
+    release evidence before deployment;
+  - production planner/daily-loop release smoke on the actual target;
+  - proposal/digest/action/execution UI after the current Owner daily-loop and
+    target-provisioning controls are product-complete.
+
 ## 2026-06-15T08:17Z - Growth Owner Cycle Audit Drilldown UI Slice
 
 - Status: implemented, documented, and locally validated. Not deployed in this

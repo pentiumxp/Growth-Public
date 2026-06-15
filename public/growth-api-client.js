@@ -59,10 +59,18 @@
       return appendWorkspaceQuery(resolveApiPath(path), targetWorkspaceId);
     }
 
-    function cardGenerationContextQuery(targetWorkspaceId = getWorkspaceId()) {
-      if (!targetWorkspaceId) return "";
+    function cardGenerationContextQuery(targetWorkspaceId = getWorkspaceId(), selection = {}) {
+      const workspaceId = clean(targetWorkspaceId);
+      const params = new URLSearchParams();
       const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
-      return `?${key}=${encodeURIComponent(targetWorkspaceId)}`;
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "domainPackId", selection.domainPackId || selection.domain_pack_id);
+      appendQueryParam(params, "domain", selection.domain);
+      appendQueryParam(params, "subject", selection.subject);
+      appendQueryParam(params, "horizon", selection.horizon);
+      appendQueryParam(params, "availableMinutes", selection.availableMinutes || selection.available_minutes);
+      const query = params.toString();
+      return query ? `?${query}` : "";
     }
 
     function appendQueryParam(params, key, value) {
@@ -149,8 +157,8 @@
       });
     }
 
-    function fetchCardGenerationContext(targetWorkspaceId = getWorkspaceId()) {
-      return fetchJson(`${growthApiPath("card-generation", "context")}${cardGenerationContextQuery(targetWorkspaceId)}`);
+    function fetchCardGenerationContext(targetWorkspaceId = getWorkspaceId(), selection = {}) {
+      return fetchJson(`${growthApiPath("card-generation", "context")}${cardGenerationContextQuery(targetWorkspaceId, selection)}`);
     }
 
     function fetchLearningLoopState(targetWorkspaceId = getWorkspaceId(), context = {}) {
@@ -183,6 +191,12 @@
 
     function submitGrowthProfileCorrection(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("profile-corrections"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function provisionGrowthDomainPack(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("domain-pack-provisions"), Object.assign({
         workspace_id: targetWorkspaceId
       }, payload));
     }
@@ -259,6 +273,7 @@
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,
+      provisionGrowthDomainPack,
       publishGrowthDailyLoop,
       retryGrowthEvaluation,
       resolveGrowthApiPath,

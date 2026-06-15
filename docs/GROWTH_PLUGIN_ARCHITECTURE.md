@@ -91,11 +91,12 @@ Known gaps before the architecture can be called production-complete for the
 full operating loop:
 
 - embedded Owner UI has a minimal plan draft preview, explicit publish path,
-  context-level audit panel, and profile-correction write form through Growth
-  service routes, plus current-card single-cycle audit/completeness drilldown
-  through Growth service routes, but production-complete scope/provision
-  controls, older-cycle selection, central visual evidence, and release
-  evidence are still pending;
+  context-level audit panel, profile-correction write form, target
+  provisioning panel, domain-pack/subject selectors, and explicit
+  domain-pack provision action through Growth service routes, plus
+  current-card single-cycle audit/completeness drilldown through Growth service
+  routes. Older-cycle selection, central visual evidence, and release evidence
+  are still pending;
 - no-write planner Gateway readiness smoke is implemented locally; production
   execution against real Gateway config is pending before planner UI deploy;
 - no-write daily-loop preview smoke CLI is implemented locally through
@@ -113,7 +114,9 @@ full operating loop:
 - the embedded Owner `生成` tab now reads
   `GET /api/v1/growth/learning-loop/state` after generation context load,
   renders the compact status/next-action, weakness, audit-gap, and
-  stage-checkpoint summary, drafts through
+  stage-checkpoint summary, renders `targetProvisioning` plus filtered
+  `graphOptions`, applies selected domain pack/subject through context refresh,
+  can explicitly call `POST /api/v1/growth/domain-pack-provisions`, drafts through
   `POST /api/v1/growth/daily-loop/draft`, previews one selected plan item, and
   publishes through `POST /api/v1/growth/daily-loop/publish`. It also renders
   `ownerAudit` from the card-generation context and writes bounded Owner
@@ -168,9 +171,9 @@ full operating loop:
   the embedded UI does not yet render the full audit surface;
 - domain-pack/subject selection beyond the Fanfan sample now has a backend
   provisioning policy, bounded `graphOptions`, graph-plan/card audit
-  `domainPackId` propagation, and a non-sample provisioned vertical service
-  harness, but the embedded UI does not yet expose provision review/create
-  controls or a provisioned selector;
+  `domainPackId` propagation, a non-sample provisioned vertical service
+  harness, and embedded Owner UI controls for context selection plus explicit
+  provision creation/update;
 - visual harness coverage is required before shipping the new planner UI.
 
 ## Architecture Optimization Backlog
@@ -642,13 +645,9 @@ easier to verify.
 The current core architecture target is implemented. Future extractions should
 be feature-driven:
 
-1. Finish Owner-safe embedded UI scope/domain-pack/provision controls on top
-   of the existing plan preview, explicit publish, and audit/correction panel.
-2. Expose provisioned `graphOptions`, `targetProvisioning`, and Owner
-   provision controls in the embedded UI.
-3. Run production planner readiness smoke and launchd config verification for
+1. Run production planner readiness smoke and launchd config verification for
    the planner Gateway boundary before enabling planner UI in production.
-4. Generalize the service-level Fanfan science vertical into provisioned
+2. Generalize the service-level Fanfan science vertical into provisioned
    subject/domain-pack selection for any authorized and provisioned target.
 5. Add richer older-cycle selection/history controls on top of the implemented
    current-cycle `learning-cycles/audit` and `learning-cycles/completeness`

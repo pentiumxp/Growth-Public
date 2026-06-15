@@ -60,7 +60,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Owner-safe Profile V2, bounded evidence audit, and `domain`/`subject` /
   `domainPackId` query selection through the existing visible-target route.
   It also projects provisioned native graph `graphOptions` and
-  `targetProvisioning` for domain-pack and subject selection, and the planner
+  `targetProvisioning` for domain-pack and subject selection. The embedded
+  Owner `生成` tab now renders those selectors, applies selected
+  domain-pack/subject context refresh, and can explicitly create/update
+  target provisions through the Owner-only
+  `POST /api/v1/growth/domain-pack-provisions` facade. The planner
   orchestrator exposes a bounded no-write readiness smoke through
   `npm run smoke:planner-readiness`. Planner horizon policy now validates
   low-pressure `daily_plan`, short no-backlog `weekly_plan`, low-pressure
@@ -482,9 +486,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   strengths become low-pressure review hints instead of stretch claims, and
   planner context carries bounded `staleEvidence` summaries into
   `growth.learningPlanner.input.v1`.
-  Owner plan preview UI, embedded domain-pack/subject selector, Owner
-  provision controls, production planner smoke execution, and production
-  planner deployment remain future slices.
+  Older-cycle selection over the implemented current-cycle drilldown,
+  production planner smoke execution, central embedded visual evidence, and
+  production planner deployment remain future slices.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

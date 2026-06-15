@@ -15,6 +15,14 @@
         data: null,
         error: ""
       },
+      targetProvisionDraft: {
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        status: "idle",
+        result: null,
+        error: ""
+      },
       dailyLoopDraftResult: null,
       dailyLoopPublishResult: null,
       generatedResult: null,
@@ -126,6 +134,7 @@
 
   function isCardGenerationTarget(target = {}) {
     const ui = window.HermesGrowthCardGenerationUi;
+    if (target?.enabled === true || target?.targetEnabled === true) return true;
     if (ui && typeof ui.isFanfanSampleTarget === "function") return ui.isFanfanSampleTarget(target);
     return false;
   }
@@ -156,10 +165,37 @@
   function selectedWorkspaceSupportsCardGeneration() {
     const workspaceId = cardGenerationWorkspaceId();
     const contextTarget = pageState.cardGeneration.context?.target || null;
+    if (clean(contextTarget?.workspaceId) === workspaceId && contextTarget?.enabled === true) return true;
     const target = cardGenerationTargetForWorkspace(workspaceId)
       || (clean(contextTarget?.workspaceId) === workspaceId ? contextTarget : null)
       || { workspaceId };
     return Boolean(target && isCardGenerationTarget(target));
+  }
+
+  function selectionFromContext(context = {}, draft = {}) {
+    const provisioning = context.targetProvisioning || {};
+    const graphOptions = provisioning.graphOptions || context.graphOptions || {};
+    const selectedPackId = clean(draft.domainPackId || draft.domain_pack_id || provisioning.selectedDomainPackId || graphOptions.selectedDomainPackId || context.domainPackId);
+    const packs = Array.isArray(graphOptions.domainPacks) ? graphOptions.domainPacks : [];
+    const pack = packs.find((item) => clean(item.domainPackId || item.domain_pack_id) === selectedPackId) || packs[0] || {};
+    const subjects = Array.isArray(pack.subjects) && pack.subjects.length
+      ? pack.subjects
+      : Array.isArray(graphOptions.subjects) ? graphOptions.subjects : [];
+    return {
+      domainPackId: selectedPackId || clean(pack.domainPackId || pack.domain_pack_id),
+      domain: clean(draft.domain || provisioning.selectedDomain || graphOptions.selectedDomain || pack.domain || context.domain),
+      subject: clean(draft.subject || provisioning.selectedSubject || graphOptions.selectedSubject || subjects[0] || context.subject),
+      status: clean(draft.status || "idle"),
+      result: draft.result || null,
+      error: clean(draft.error)
+    };
+  }
+
+  function targetProvisionSelection() {
+    return selectionFromContext(
+      pageState.cardGeneration.context || {},
+      pageState.cardGeneration.targetProvisionDraft || {}
+    );
   }
 
   const viewModel = window.HermesGrowthViewModel.createGrowthViewModel({
@@ -477,7 +513,7 @@
       button.addEventListener("click", (event) => {
         event.preventDefault();
         const nextWorkspaceId = clean(button.dataset.cardGenerationTarget);
-        if (!nextWorkspaceId || button.disabled) return;
+        if (!nextWorkspaceId) return;
         loadCardGenerationContext(nextWorkspaceId).catch((error) => {
           root.insertAdjacentHTML("afterbegin", `<div class="learning-error">${escapeHtml(error.message || String(error))}</div>`);
         });
@@ -488,6 +524,66 @@
         event.preventDefault();
         loadCardGenerationContext().catch((error) => {
           pageState.cardGeneration.status = "failed";
+          pageState.cardGeneration.error = error.message || String(error);
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-card-generation-domain-pack]").forEach((select) => {
+      select.addEventListener("change", () => {
+        const selectedDomainPackId = clean(select.value);
+        const context = pageState.cardGeneration.context || {};
+        const graphOptions = context.targetProvisioning?.graphOptions || context.graphOptions || {};
+        const packs = Array.isArray(graphOptions.domainPacks) ? graphOptions.domainPacks : [];
+        const pack = packs.find((item) => clean(item.domainPackId || item.domain_pack_id) === selectedDomainPackId) || {};
+        const subjects = Array.isArray(pack.subjects) ? pack.subjects.map(clean).filter(Boolean) : [];
+        pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+          domainPackId: selectedDomainPackId,
+          domain: clean(pack.domain || pageState.cardGeneration.targetProvisionDraft?.domain),
+          subject: subjects[0] || clean(pageState.cardGeneration.targetProvisionDraft?.subject),
+          status: "idle",
+          error: ""
+        });
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-card-generation-subject]").forEach((select) => {
+      select.addEventListener("change", () => {
+        pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+          subject: clean(select.value),
+          status: "idle",
+          error: ""
+        });
+        renderShell();
+      });
+    });
+    root.querySelectorAll("[data-card-generation-apply-target]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        const context = pageState.cardGeneration.context || {};
+        const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context.target?.workspaceId || currentWorkspaceId);
+        loadCardGenerationContext(targetWorkspaceId, {
+          selection: targetProvisionSelection()
+        }).catch((error) => {
+          pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          pageState.cardGeneration.error = error.message || String(error);
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-card-generation-provision-target]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        provisionTargetDomainPackFromUi().catch((error) => {
+          pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+            status: "failed",
+            error: error.message || String(error)
+          });
           pageState.cardGeneration.error = error.message || String(error);
           renderShell();
         });
@@ -625,9 +721,13 @@
     pageState.learningGrowthBoardLane = clean(model.overview.board.lanes[0]?.id);
   }
 
-  async function loadCardGenerationContext(targetWorkspaceId = cardGenerationWorkspaceId()) {
+  async function loadCardGenerationContext(targetWorkspaceId = cardGenerationWorkspaceId(), options = {}) {
     if (!pageState.auth.isOwner) return;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const requestedSelection = selectionFromContext(
+      pageState.cardGeneration.context || {},
+      options.selection || pageState.cardGeneration.targetProvisionDraft || {}
+    );
     clearCardGenerationProgressTimers();
     pageState.cardGeneration.selectedWorkspaceId = requestedTargetWorkspaceId;
     pageState.cardGeneration.status = "loading_context";
@@ -637,6 +737,11 @@
     pageState.cardGeneration.dailyLoopDraftResult = null;
     pageState.cardGeneration.dailyLoopPublishResult = null;
     pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.targetProvisionDraft = Object.assign({}, requestedSelection, {
+      status: "loading",
+      result: pageState.cardGeneration.targetProvisionDraft?.result || null,
+      error: ""
+    });
     pageState.cardGeneration.ownerCorrectionDraft = "";
     pageState.cardGeneration.ownerCorrectionAction = "confirm_profile_delta";
     pageState.cardGeneration.ownerCorrection = {
@@ -656,9 +761,14 @@
       error: ""
     };
     renderShell();
-    const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
+    const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId, requestedSelection);
     pageState.cardGeneration.context = context;
     pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || requestedTargetWorkspaceId);
+    pageState.cardGeneration.targetProvisionDraft = selectionFromContext(context, Object.assign({}, requestedSelection, {
+      status: "idle",
+      result: pageState.cardGeneration.targetProvisionDraft?.result || null,
+      error: ""
+    }));
     pageState.cardGeneration.status = "ready";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
@@ -704,9 +814,15 @@
     if (!pageState.auth.isOwner) return null;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
     try {
-      const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
+      const selection = targetProvisionSelection();
+      const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId, selection);
       pageState.cardGeneration.context = context;
       pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || requestedTargetWorkspaceId);
+      pageState.cardGeneration.targetProvisionDraft = selectionFromContext(context, Object.assign({}, selection, {
+        status: pageState.cardGeneration.targetProvisionDraft?.status || "idle",
+        result: pageState.cardGeneration.targetProvisionDraft?.result || null,
+        error: pageState.cardGeneration.targetProvisionDraft?.error || ""
+      }));
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
@@ -758,7 +874,11 @@
     const context = pageState.cardGeneration.context;
     const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
     return {
-      payload: ui.createDailyLoopDraftPayload({ context, workspaceId: targetWorkspaceId }),
+      payload: ui.createDailyLoopDraftPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        selection: pageState.cardGeneration.targetProvisionDraft || {}
+      }),
       targetWorkspaceId
     };
   }
@@ -774,7 +894,25 @@
       payload: ui.createDailyLoopPublishPayload({
         context,
         workspaceId: targetWorkspaceId,
-        draftResult: pageState.cardGeneration.dailyLoopDraftResult || {}
+        draftResult: pageState.cardGeneration.dailyLoopDraftResult || {},
+        selection: pageState.cardGeneration.targetProvisionDraft || {}
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  function createTargetProvisionPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createTargetProvisionPayload !== "function") {
+      throw new Error("target_provision_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createTargetProvisionPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        draft: pageState.cardGeneration.targetProvisionDraft || {}
       }),
       targetWorkspaceId
     };
@@ -862,6 +1000,56 @@
     }
   }
 
+  async function provisionTargetDomainPackFromUi() {
+    const { payload, targetWorkspaceId } = createTargetProvisionPayload();
+    if (!clean(payload.domain_pack_id) || !clean(payload.subject)) {
+      pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+        status: "failed",
+        error: "请先选择 domain pack 和 subject。"
+      });
+      renderShell();
+      return;
+    }
+    pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+      status: "submitting",
+      error: ""
+    });
+    renderShell();
+    try {
+      const result = await api.provisionGrowthDomainPack(payload, targetWorkspaceId);
+      pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+        status: "submitted",
+        result,
+        error: ""
+      });
+      const context = await api.fetchCardGenerationContext(targetWorkspaceId, targetProvisionSelection());
+      pageState.cardGeneration.context = context;
+      pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || targetWorkspaceId);
+      pageState.cardGeneration.targetProvisionDraft = selectionFromContext(context, Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+        status: "submitted",
+        result,
+        error: ""
+      }));
+      pageState.cardGeneration.dailyLoopDraftResult = null;
+      pageState.cardGeneration.dailyLoopPublishResult = null;
+      pageState.cardGeneration.generatedResult = null;
+      pageState.cardGeneration.cycleDrilldown = {
+        status: "idle",
+        audit: null,
+        completeness: null,
+        error: ""
+      };
+      await refreshLearningLoopState(targetWorkspaceId, context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+        status: "failed",
+        error: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
   async function draftDailyLoopFromUi() {
     const { payload, targetWorkspaceId } = createDailyLoopDraftPayload();
     pageState.cardGeneration.status = "drafting";
@@ -886,6 +1074,7 @@
       pageState.cardGeneration.dailyLoopDraftResult = result;
       pageState.cardGeneration.context = result.context || pageState.cardGeneration.context;
       pageState.cardGeneration.selectedWorkspaceId = clean(result.target?.workspaceId || targetWorkspaceId);
+      pageState.cardGeneration.targetProvisionDraft = selectionFromContext(pageState.cardGeneration.context, pageState.cardGeneration.targetProvisionDraft || {});
       pageState.cardGeneration.error = "";
       pageState.cardGeneration.progressStep = "validation";
       pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
@@ -927,6 +1116,7 @@
         : pageState.cardGeneration.dailyLoopDraftResult;
       pageState.cardGeneration.generatedResult = result.generation || result;
       pageState.cardGeneration.context = result.context || pageState.cardGeneration.context;
+      pageState.cardGeneration.targetProvisionDraft = selectionFromContext(pageState.cardGeneration.context, pageState.cardGeneration.targetProvisionDraft || {});
       pageState.cardGeneration.error = "";
       pageState.cardGeneration.progressStep = "done";
       pageState.cardGeneration.progressMessage = "卡片已发布，正在刷新学习闭环状态。";
@@ -1010,6 +1200,7 @@
       clearCardGenerationProgressTimers();
       pageState.cardGeneration.status = "published";
       pageState.cardGeneration.generatedResult = result.generation || result;
+      pageState.cardGeneration.targetProvisionDraft = selectionFromContext(pageState.cardGeneration.context, pageState.cardGeneration.targetProvisionDraft || {});
       pageState.cardGeneration.error = "";
       pageState.cardGeneration.progressStep = "done";
       pageState.cardGeneration.progressMessage = "阶段测评已发布。";

@@ -283,7 +283,9 @@ Required shape:
 
 - render target/domain-pack/subject scope, `targetProvisioning`,
   `graphOptions`, Profile V2, evidence audit, planner/authoring/evaluation
-  readiness, and recent Owner audit summaries in the `生成` tab;
+  readiness, and recent Owner audit summaries in the `生成` tab. The current
+  UI now includes the domain-pack/subject selector and explicit Owner
+  provision action over `POST /api/v1/growth/domain-pack-provisions`;
 - create a planner draft through `POST /api/v1/growth/daily-loop/draft`,
   which delegates to `learning-plan-publisher-service.draftPlan`;
 - show a bounded plan preview with target nodes, role, difficulty, support

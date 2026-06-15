@@ -110,10 +110,14 @@ Growth already has substantial backend foundation:
   target, default-disabled worker lease, and release-readiness evidence
   backend slices.
 
-The product is not complete because the browser and release evidence are not
-closed:
+The product is not complete because the browser history controls and release
+evidence are not closed:
 
-- Owner planner/provision UI is not fully product-closed;
+- Owner planner/provision UI now supports visible target selection,
+  `targetProvisioning` status, domain-pack/subject selection, explicit Owner
+  provision creation/update, daily-loop draft/publish, audit correction, and
+  current-cycle audit drilldown, but older-cycle selection and central visual
+  release evidence remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
@@ -139,8 +143,9 @@ The next implementation slices should be:
    runs over the existing daily-loop facade. Owner can load context, inspect
    compact learning-loop state, draft one plan, preview the selected plan
    item, explicitly publish one card, and refresh board/context/loop state
-   without Codex. The remaining closure is product-grade scope selection,
-   target provisioning controls, older-cycle selection, central visual
+   without Codex. Owner can also apply a domain-pack/subject selector and
+   explicitly create/update target provision rows through the Growth service
+   facade. The remaining closure is older-cycle selection, central visual
    evidence, and production release evidence.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
@@ -182,7 +187,7 @@ The missing product capability is the browser-operable learning loop:
 
 | Slice | Objective | Required boundary | Non-goal |
 | --- | --- | --- | --- |
-| A1: Owner daily planning UI | Owner can create one Fanfan sample daily card from persisted context through the plugin UI. Minimal draft/publish operation is implemented; scope/provision/audit polish and release evidence remain. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
+| A1: Owner daily planning UI | Owner can create one daily card from persisted context through the plugin UI, apply target domain-pack/subject scope, and explicitly provision a visible target before planning. Older-cycle selection and release evidence remain. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, `POST /api/v1/growth/domain-pack-provisions` for explicit target provision, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
 | A2: Learner daily evidence UI | Learner can finish the generated card with one submit, one evaluation, and one optional reflection. | Reuse generated-card detail flow, audio evidence, one-box-per-stage state, and visible failed-evaluation recovery. | No pass-line retry gate and no extra competing submission boxes. |
 | A3: Owner audit/correction UI | Owner can see why the card happened, what changed, and how to correct future profile evidence. | Render plan/evidence/profile-delta/cycle/completeness/correction DTOs and write corrections through `learning-owner-correction-service`. | No browser-side Profile V2 computation and no raw transcript/prompt viewer. |
 | A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher. |
@@ -553,12 +558,12 @@ A next-stage package is complete only when:
 ## Immediate Recommendation
 
 The preferred next product slice remains Path A, but the immediate focus has
-shifted from basic draft/publish operation to product-grade closure: complete
-scope/provision controls, older-cycle selection over the implemented current
-cycle audit/completeness panel, central embedded visual evidence, and
-production release evidence over the existing daily-loop facade. That keeps
-the AI loop observable and avoids adding automation before Owner can inspect
-why a card was selected and what changed after completion.
+shifted from basic draft/publish/provision operation to product-grade closure:
+older-cycle selection over the implemented current-cycle audit/completeness
+panel, central embedded visual evidence, and production release evidence over
+the existing daily-loop facade. That keeps the AI loop observable and avoids
+adding automation before Owner can inspect why a card was selected and what
+changed after completion.
 
 If the next slice must be backend-only, choose Path B and keep it strictly as
 release-readiness evidence. That boundary should make missing release evidence

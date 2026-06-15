@@ -39,11 +39,39 @@
     return "待生成";
   }
 
+  function provisioningReasonText(code = "") {
+    const value = clean(code);
+    const map = {
+      learning_target_not_provisioned: "该学习者还没有开通这个学习目标。",
+      learning_domain_pack_options_unavailable: "当前没有可用的知识图谱 domain pack。",
+      learning_domain_pack_not_provisioned: "该 domain pack 尚未为这个学习者开通。",
+      learning_domain_pack_not_found: "选择的 domain pack 不存在。",
+      learning_subject_not_provisioned: "该科目尚未为这个学习者开通。",
+      learning_subject_not_found: "选择的科目不在这个 domain pack 中。",
+      learning_target_node_not_in_provision: "选择的图谱节点不属于已开通范围。",
+      learning_target_workspace_required: "缺少目标学习者 workspace。",
+      learning_target_provision_repository_unavailable: "目标开通仓库不可用。"
+    };
+    return map[value] || value || "目标开通状态来自 Growth provisioning service。";
+  }
+
+  function targetProvisionModeText(mode = "") {
+    const value = clean(mode).toLowerCase();
+    if (value === "sample_default") return "sample";
+    if (value === "explicit_provision") return "已开通";
+    if (value === "not_provisioned") return "未开通";
+    return value || "未确认";
+  }
+
   function readinessRows(context = {}, escapeHtml = defaultEscapeHtml) {
     const readiness = context.readiness || {};
     const graph = context.graph || {};
+    const provisioning = context.targetProvisioning || {};
+    const targetMeta = provisioning.targetEnabled
+      ? `${targetProvisionModeText(provisioning.mode)} · ${provisioning.selectedSubject || provisioning.selectedDomain || "默认目标"}`
+      : provisioningReasonText(provisioning.error || "learning_target_not_provisioned");
     const rows = [
-      ["学习者已开通", readiness.workspaceProvisioned, context.target?.enabled ? "凡凡 sample 已启用" : "当前只开放凡凡 sample"],
+      ["学习目标", readiness.targetEnabled, targetMeta],
       ["学习图谱", readiness.learningGraphReady, `${Number(graph.nodeCount || 0)} 节点 / ${Number(graph.edgeCount || 0)} 关系`],
       ["历史摘要", readiness.historySummaryReady, "只读取卡片、评价、反思和掌握度摘要"],
       ["Planner context", readiness.plannerContextReady ?? readiness.learningGraphReady, "图谱、画像和近期信号摘要"],
@@ -57,21 +85,26 @@
     </div>`).join("");
   }
 
-  function targetRows(targets = [], currentWorkspaceId = "", escapeHtml = defaultEscapeHtml) {
+  function targetRows(targets = [], currentWorkspaceId = "", context = {}, escapeHtml = defaultEscapeHtml) {
     const rows = asArray(targets).filter((target) => clean(target.workspaceId));
     if (!rows.length) return `<div class="learning-coin-empty">暂无可选学习者。</div>`;
     const activeWorkspaceId = clean(currentWorkspaceId);
+    const contextTarget = context.target || {};
+    const provisioning = context.targetProvisioning || {};
     return rows.map((target) => {
       const workspaceId = clean(target.workspaceId);
       const active = activeWorkspaceId ? workspaceId === activeWorkspaceId : Boolean(target.current);
-      const enabled = isFanfanSampleTarget(target);
-      return `<button type="button" class="learning-card-generation-target${active ? " active" : ""}${enabled ? "" : " disabled"}"
-        data-card-generation-target="${escapeHtml(workspaceId)}" ${enabled ? "" : "disabled"}>
+      const contextMatches = clean(contextTarget.workspaceId) === workspaceId;
+      const enabled = Boolean(target.targetEnabled || target.enabled || isFanfanSampleTarget(target) || (contextMatches && contextTarget.enabled));
+      const mode = contextMatches ? clean(provisioning.mode) : "";
+      const status = enabled ? targetProvisionModeText(mode || (isFanfanSampleTarget(target) ? "sample_default" : "explicit_provision")) : "可开通";
+      return `<button type="button" class="learning-card-generation-target${active ? " active" : ""}${enabled ? "" : " needs-provision"}"
+        data-card-generation-target="${escapeHtml(workspaceId)}">
         <span>
           <strong>${escapeHtml(target.label || workspaceId)}</strong>
-          <small>${escapeHtml(workspaceId)}${enabled ? " · sample" : " · 稍后开放"}</small>
+          <small>${escapeHtml(workspaceId)}${enabled ? ` · ${status}` : " · 需开通"}</small>
         </span>
-        <em>${enabled ? "可生成" : "稍后"}</em>
+        <em>${escapeHtml(status)}</em>
       </button>`;
     }).join("");
   }
@@ -90,7 +123,85 @@
         current: contextWorkspaceId === clean(currentWorkspaceId)
       });
     }
-    return targetRows(rows, currentWorkspaceId, escapeHtml);
+    return targetRows(rows, currentWorkspaceId, context, escapeHtml);
+  }
+
+  function graphOptionsForContext(context = {}) {
+    const provisioning = context.targetProvisioning || {};
+    return provisioning.graphOptions || context.graphOptions || {};
+  }
+
+  function selectedProvisionDraft(context = {}, draft = {}) {
+    const provisioning = context.targetProvisioning || {};
+    const graphOptions = graphOptionsForContext(context);
+    const selectedPack = clean(draft.domainPackId || draft.domain_pack_id || provisioning.selectedDomainPackId || graphOptions.selectedDomainPackId || context.domainPackId);
+    const packs = asArray(graphOptions.domainPacks);
+    const pack = packs.find((item) => clean(item.domainPackId || item.domain_pack_id) === selectedPack) || packs[0] || {};
+    const subjects = asArray(pack.subjects).length ? asArray(pack.subjects) : asArray(graphOptions.subjects);
+    return {
+      domainPackId: selectedPack || clean(pack.domainPackId || pack.domain_pack_id),
+      domain: clean(draft.domain || provisioning.selectedDomain || graphOptions.selectedDomain || pack.domain || context.domain),
+      subject: clean(draft.subject || provisioning.selectedSubject || graphOptions.selectedSubject || subjects[0] || context.subject),
+      packs,
+      subjects: subjects.map(clean).filter(Boolean).slice(0, 40),
+      pack
+    };
+  }
+
+  function provisionStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "加载中";
+    if (value === "submitting") return "开通中";
+    if (value === "submitted") return "已开通";
+    if (value === "failed") return "失败";
+    return "待确认";
+  }
+
+  function targetProvisioningPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const provisioning = context.targetProvisioning || {};
+    const draft = selectedProvisionDraft(context, state.targetProvisionDraft || {});
+    const status = clean(state.targetProvisionDraft?.status || "idle");
+    const targetEnabled = provisioning.targetEnabled === true || context.target?.enabled === true;
+    const busy = status === "loading" || status === "submitting";
+    const packOptions = draft.packs.map((pack) => {
+      const id = clean(pack.domainPackId || pack.domain_pack_id);
+      const label = clean(pack.title || pack.domain || id);
+      return `<option value="${escapeHtml(id)}"${id === draft.domainPackId ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    }).join("");
+    const subjectOptions = draft.subjects.map((subject) => `<option value="${escapeHtml(subject)}"${subject === draft.subject ? " selected" : ""}>${escapeHtml(subject)}</option>`).join("");
+    const canProvision = Boolean(draft.domainPackId && draft.subject && !busy);
+    const statusDetail = clean(state.targetProvisionDraft?.error)
+      || (targetEnabled
+        ? `${targetProvisionModeText(provisioning.mode)} · ${draft.domainPackId || "domain pack"} · ${draft.subject || "subject"}`
+        : provisioningReasonText(provisioning.error || "learning_target_not_provisioned"));
+    return `<section class="learning-card-generation-provisioning" data-card-generation-target-provisioning data-target-provisioning-enabled="${targetEnabled ? "true" : "false"}">
+      <div class="learning-card-generation-provisioning-head">
+        <span>
+          <strong>学习目标</strong>
+          <small>${escapeHtml(statusDetail)}</small>
+        </span>
+        <em>${escapeHtml(targetEnabled ? "可规划" : provisionStatusText(status))}</em>
+      </div>
+      <div class="learning-card-generation-provisioning-grid">
+        <label>
+          <span>Domain pack</span>
+          <select data-card-generation-domain-pack ${busy || !draft.packs.length ? "disabled" : ""}>
+            ${packOptions || `<option value="">暂无 domain pack</option>`}
+          </select>
+        </label>
+        <label>
+          <span>Subject</span>
+          <select data-card-generation-subject ${busy || !draft.subjects.length ? "disabled" : ""}>
+            ${subjectOptions || `<option value="">暂无 subject</option>`}
+          </select>
+        </label>
+      </div>
+      <div class="learning-card-generation-provisioning-actions">
+        <span>${escapeHtml(targetEnabled ? "选择会刷新上下文，规划仍由服务端决定图谱节点。" : "Owner 需要先显式开通该学习者的目标范围。")}</span>
+        <button type="button" data-card-generation-apply-target ${busy || !draft.domainPackId ? "disabled" : ""}>应用选择</button>
+        <button type="button" class="primary" data-card-generation-provision-target ${canProvision ? "" : "disabled"}>${busy ? "处理中" : targetEnabled ? "更新开通" : "开通目标"}</button>
+      </div>
+    </section>`;
   }
 
 
@@ -783,8 +894,14 @@
   function structuredPreview(context = {}, escapeHtml = defaultEscapeHtml) {
     const plan = context.suggestedPlan || {};
     const policy = context.completionPolicy || {};
+    const provisioning = context.targetProvisioning || {};
     const preview = {
       learningGraphPlan: plan.targetNodeId || "",
+      targetProvisioning: {
+        mode: provisioning.mode || "",
+        domainPackId: provisioning.selectedDomainPackId || "",
+        subject: provisioning.selectedSubject || ""
+      },
       learnerSummary: "summary_only",
       learningProfile: "mastery_trajectory_projection",
       recentSignals: "bounded_experience_signals",
@@ -978,10 +1095,13 @@
     };
   }
 
-  function dailyLoopScopeFromContext(context = {}, workspaceId = "") {
+  function dailyLoopScopeFromContext(context = {}, workspaceId = "", selection = {}) {
     const plan = context.suggestedPlan || {};
     const recommendation = context.nextCardRecommendation || {};
     const defaults = context.generationDefaults || {};
+    const provisioning = context.targetProvisioning || {};
+    const graphOptions = graphOptionsForContext(context);
+    const draft = selectedProvisionDraft(context, selection);
     const targetNodeIds = asArray(recommendation.targetNodeIds).length
       ? asArray(recommendation.targetNodeIds)
       : asArray(plan.targetNodeIds).length
@@ -991,9 +1111,9 @@
       workspace_id: clean(workspaceId || context.target?.workspaceId),
       learner_id: clean(context.target?.learnerId || workspaceId),
       program_id: clean(context.programId || plan.programId || defaults.programId),
-      domain_pack_id: clean(context.domainPackId || plan.domainPackId || defaults.domainPackId),
-      domain: clean(recommendation.domain || plan.domain || context.domain || defaults.domain || "english"),
-      subject: clean(recommendation.subject || plan.subject || context.subject || defaults.subject || plan.domain || context.domain || "english"),
+      domain_pack_id: clean(draft.domainPackId || provisioning.selectedDomainPackId || graphOptions.selectedDomainPackId || context.domainPackId || plan.domainPackId || defaults.domainPackId),
+      domain: clean(draft.domain || provisioning.selectedDomain || graphOptions.selectedDomain || recommendation.domain || plan.domain || context.domain || defaults.domain || "english"),
+      subject: clean(draft.subject || provisioning.selectedSubject || graphOptions.selectedSubject || recommendation.subject || plan.subject || context.subject || defaults.subject || plan.domain || context.domain || "english"),
       horizon: clean(context.horizon || defaults.horizon || "daily_plan"),
       available_minutes: Number(defaults.availableMinutes || context.availableMinutes || 15) || 15,
       target_node_ids: targetNodeIds.map(clean).filter(Boolean).slice(0, 12),
@@ -1001,16 +1121,16 @@
     };
   }
 
-  function createDailyLoopDraftPayload({ context = {}, workspaceId = "" } = {}) {
-    const scope = dailyLoopScopeFromContext(context, workspaceId);
+  function createDailyLoopDraftPayload({ context = {}, workspaceId = "", selection = {} } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId, selection);
     return Object.fromEntries(Object.entries(scope).filter(([, value]) => {
       if (Array.isArray(value)) return value.length > 0;
       return clean(value);
     }));
   }
 
-  function createDailyLoopPublishPayload({ context = {}, workspaceId = "", draftResult = {} } = {}) {
-    const scope = dailyLoopScopeFromContext(context, workspaceId);
+  function createDailyLoopPublishPayload({ context = {}, workspaceId = "", draftResult = {}, selection = {} } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId, selection);
     const planDraft = draftResult.planDraft || {};
     const item = selectedPlanItem(planDraft);
     const targetNodeIds = asArray(item.targetNodeIds).length ? asArray(item.targetNodeIds) : asArray(planDraft.targetNodeIds);
@@ -1051,6 +1171,23 @@
       if (Array.isArray(value)) return value.length > 0;
       return clean(value);
     }));
+  }
+
+  function createTargetProvisionPayload({ context = {}, workspaceId = "", draft = {} } = {}) {
+    const selected = selectedProvisionDraft(context, draft);
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const payload = {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      program_id: clean(context.programId || plan.programId || defaults.programId),
+      domain_pack_id: clean(selected.domainPackId),
+      domain: clean(selected.domain || plan.domain || defaults.domain),
+      subject: clean(selected.subject || plan.subject || defaults.subject),
+      status: "active",
+      source: "owner"
+    };
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => clean(value)));
   }
 
   function createStageAssessmentPayload({ context = {}, workspaceId = "", activationSource = "owner_manual" } = {}) {
@@ -1134,6 +1271,7 @@
           <div class="learning-card-generation-readiness">
             ${readinessRows(context, escapeHtml)}
           </div>
+          ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${learningProfilePanel(context, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -1176,6 +1314,7 @@
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,
     createOwnerCorrectionPayload,
+    createTargetProvisionPayload,
     createStageAssessmentPayload,
     cycleAuditHasAnchor,
     isFanfanSampleTarget,

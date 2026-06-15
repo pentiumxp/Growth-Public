@@ -649,18 +649,21 @@ draft/publish path:
   using summary-only timeline/findings and keeping `readyForAutomation` as
   evidence only, not an automation permission.
 
-The product is not complete because it still lacks full scope/provision
-controls, older-cycle selection UI, proposal/digest/action UI, central visual
-evidence, platform action evidence, and execution enablement evidence.
+The product is not complete because it still lacks older-cycle selection UI,
+proposal/digest/action UI, central visual evidence, platform action evidence,
+and execution enablement evidence. Scope/provision controls now exist in the
+Owner `生成` tab over the Growth context and domain-pack provision service
+facades.
 
 Therefore the recommended next product-visible slice is still:
 
 1. finish Owner-supervised daily UI details over the existing daily-loop
-   facade, especially scope/provision controls and production visual evidence;
+   facade, especially older-cycle selection and production visual evidence;
 2. then add older-cycle selection/history controls over the implemented
    current-card cycle/completeness drilldown;
 3. then harden formal checkpoint controls;
-4. then generalize target/domain-pack UI;
+4. then generalize target/domain-pack UI beyond the current explicit provision
+   controls and service harness;
 5. then move to proposal/digest/action/execution UI;
 6. only after those gates consider background writeful scheduling.
 

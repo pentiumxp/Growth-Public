@@ -493,6 +493,44 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       blockingOpenGeneration: false
     },
     graph: { nodeCount: 294, edgeCount: 329 },
+    targetProvisioning: {
+      ok: true,
+      targetEnabled: true,
+      mode: "sample_default",
+      selectedDomainPackId: "uk_hk_curriculum_foundation",
+      selectedDomain: "science",
+      selectedSubject: "science",
+      graphOptions: {
+        ok: true,
+        available: true,
+        selectedDomainPackId: "uk_hk_curriculum_foundation",
+        selectedDomain: "science",
+        selectedSubject: "science",
+        subjects: ["science", "english"],
+        domainPacks: [{
+          domainPackId: "uk_hk_curriculum_foundation",
+          domain: "science",
+          title: "UK/HK Curriculum Foundation",
+          subjects: ["science", "english"],
+          nodeCount: 294,
+          subjectCount: 2
+        }]
+      }
+    },
+    graphOptions: {
+      selectedDomainPackId: "uk_hk_curriculum_foundation",
+      selectedDomain: "science",
+      selectedSubject: "science",
+      subjects: ["science", "english"],
+      domainPacks: [{
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        title: "UK/HK Curriculum Foundation",
+        subjects: ["science", "english"],
+        nodeCount: 294,
+        subjectCount: 2
+      }]
+    },
     suggestedPlan: {
       targetNodeId: "kg_english_main_idea",
       targetNodeIds: ["kg_english_main_idea"],
@@ -731,6 +769,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /学习闭环/);
   assert.match(html, /起草日常计划/);
   assert.match(html, /下一张策略：repair/);
+  assert.match(html, /data-card-generation-target-provisioning/);
+  assert.match(html, /data-card-generation-domain-pack/);
+  assert.match(html, /data-card-generation-subject/);
+  assert.match(html, /data-card-generation-apply-target/);
+  assert.match(html, /data-card-generation-provision-target/);
+  assert.match(html, /UK\/HK Curriculum Foundation/);
+  assert.match(html, /science/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
   assert.match(html, /data-card-generation-lifecycle/);
@@ -768,9 +813,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-stage-assessment-check/);
   assert.match(html, /data-stage-assessment-activate/);
   assert.match(html, /Needs exact text evidence/);
-  assert.match(html, /weixin_stephen · 稍后开放/);
+  assert.match(html, /weixin_stephen · 需开通/);
   assert.match(html, /daily_score_once/);
   assert.match(html, /mastery_trajectory_projection/);
+  assert.match(html, /targetProvisioning/);
 
   const payload = windowRef.HermesGrowthCardGenerationUi.createDailyEnglishGeneratePayload({
     context,
@@ -778,6 +824,27 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(payload.workspace_id, "weixin_fanfan");
   assert.equal(payload.recipe_id, "daily_english_v1");
+  const selectedDraftPayload = windowRef.HermesGrowthCardGenerationUi.createDailyLoopDraftPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selection: { domainPackId: "uk_hk_curriculum_foundation", domain: "science", subject: "science" }
+  });
+  assert.equal(selectedDraftPayload.domain_pack_id, "uk_hk_curriculum_foundation");
+  assert.equal(selectedDraftPayload.subject, "science");
+  const provisionPayload = windowRef.HermesGrowthCardGenerationUi.createTargetProvisionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    draft: { domainPackId: "uk_hk_curriculum_foundation", domain: "science", subject: "science" }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(provisionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    status: "active",
+    source: "owner"
+  });
   assert.equal(payload.card_schema_version, "growth.card.authoring.v1");
   assert.equal(Object.hasOwn(payload, "target_node_id"), false);
   assert.equal(Object.hasOwn(payload, "card_role"), false);
@@ -791,7 +858,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(draftPayload.workspace_id, "weixin_fanfan");
   assert.equal(draftPayload.learner_id, "fanfan");
-  assert.equal(draftPayload.domain, "english");
+  assert.equal(draftPayload.domain, "science");
+  assert.equal(draftPayload.subject, "science");
   assert.equal(draftPayload.horizon, "daily_plan");
   assert.deepEqual(draftPayload.target_node_ids, ["kg_english_evidence_answering"]);
 
@@ -1561,7 +1629,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260615-cycle-audit-drilldown-ui-v1";
+  const staticVersion = "20260615-target-provision-controls-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1587,6 +1655,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-recommendation-lifecycle-v1/);
   assert.doesNotMatch(html, /20260615-daily-loop-draft-publish-ui-v1/);
   assert.doesNotMatch(html, /20260615-owner-audit-correction-ui-v1/);
+  assert.doesNotMatch(html, /20260615-cycle-audit-drilldown-ui-v1/);
 });
 
 test("Growth app refreshes card generation context after publish without clearing preview", () => {
@@ -1594,7 +1663,8 @@ test("Growth app refreshes card generation context after publish without clearin
 
   assert.match(source, /function refreshLearningLoopState/);
   assert.match(source, /function refreshCardGenerationContextAfterPublish/);
-  assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId, requestedSelection\)/);
+  assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId, selection\)/);
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /pageState\.cardGeneration\.context = context/);
   assert.match(source, /await refreshLearningLoopState\(requestedTargetWorkspaceId, context\)/);
@@ -1609,11 +1679,18 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-card-generation-correction-action/);
   assert.match(source, /data-card-generation-correction-form/);
   assert.match(source, /data-card-generation-cycle-audit-refresh/);
+  assert.match(source, /data-card-generation-domain-pack/);
+  assert.match(source, /data-card-generation-subject/);
+  assert.match(source, /data-card-generation-apply-target/);
+  assert.match(source, /data-card-generation-provision-target/);
   assert.match(source, /function createOwnerCorrectionPayload/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
   assert.match(source, /function createCycleAuditQueryPayload/);
   assert.match(source, /function refreshOwnerCycleDrilldownFromUi/);
+  assert.match(source, /function createTargetProvisionPayload/);
+  assert.match(source, /function provisionTargetDomainPackFromUi/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.provisionGrowthDomainPack\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleAudit\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleCompleteness\(payload, targetWorkspaceId\)/);
   assert.match(source, /await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*await refreshOwnerCycleDrilldownFromUi\(\{ silent: true \}\);[\s\S]*renderShell\(\);/);
