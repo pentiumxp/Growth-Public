@@ -52,6 +52,7 @@ test("release package script parses package, bundle, and audit options", () => {
     "--required-task", "planner_readiness",
     "--required-tasks", "scheduler_dry_run",
     "--write-collection-run",
+    "--write-package-record",
     "--allow-write",
     "--requested-by", "owner",
     "--created-at", "2026-06-16T05:00:00.000Z",
@@ -65,6 +66,7 @@ test("release package script parses package, bundle, and audit options", () => {
   assert.equal(input.workspaceId, "weixin_fanfan");
   assert.equal(input.learnerId, "fanfan");
   assert.equal(input.writeCollectionRun, true);
+  assert.equal(input.writePackageRecord, true);
   assert.equal(input.allowWritePackage, true);
   assert.deepEqual(input.tasks, ["planner_readiness", "scheduler_dry_run"]);
   assert.deepEqual(input.requiredTaskIds, ["planner_readiness", "scheduler_dry_run"]);
@@ -83,6 +85,22 @@ test("release package script fails closed for collection-run write without allow
   assert.equal(output.ok, false);
   assert.equal(output.error, "release_package_write_not_allowed");
   assert.equal(output.requiredFlag, "--allow-write");
+});
+
+test("release package script fails closed for package-record write without allow-write", () => {
+  const result = runScript([
+    "--workspace-id", "smoke_workspace",
+    "--task", "planner_readiness",
+    "--required-task", "planner_readiness",
+    "--write-package-record",
+    "--json"
+  ]);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const output = parseStdout(result);
+  assert.equal(output.ok, false);
+  assert.equal(output.error, "release_package_write_not_allowed");
+  assert.equal(output.requiredFlag, "--allow-write");
+  assert.equal(output.writePackageRecord, true);
 });
 
 test("release package script writes summary-only package output from selected no-write smoke tasks", () => {
@@ -121,5 +139,43 @@ test("release package script writes summary-only package output from selected no
     assert.equal(JSON.stringify(output).includes("/Users/"), false);
     const fileOutput = JSON.parse(fs.readFileSync(packagePath, "utf8"));
     assert.equal(fileOutput.schemaVersion, "growth.learningAutomationReleasePackage.v1");
+  });
+});
+
+test("release package script can write a summary-only package record to Growth SQLite", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "planner_readiness",
+      "--required-task", "planner_readiness",
+      "--write-package-record",
+      "--allow-write",
+      "--result-json",
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = parseStdout(result);
+    assert.equal(output.record.ok, true);
+    assert.equal(output.record.package.workspaceId, "smoke_workspace");
+    assert.equal(output.record.package.privacyClass, "summary_only");
+    assert.equal(output.record.package.releaseControlsSummary.runtimeConfigChange, false);
+
+    const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
+    try {
+      const row = db.prepare("SELECT * FROM learning_growth_automation_release_packages WHERE workspace_id = ?").get("smoke_workspace");
+      assert.equal(row.privacy_class, "summary_only");
+      assert.equal(JSON.parse(row.package_summary_json).writefulSchedulingAllowed, false);
+      assert.equal(JSON.parse(row.step_summary_json).stepCount, 5);
+    } finally {
+      db.close();
+    }
   });
 });

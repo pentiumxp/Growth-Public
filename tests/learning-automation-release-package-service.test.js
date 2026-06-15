@@ -361,6 +361,108 @@ test("release package service fails closed when write mode has no collection rec
   assert.equal(result.error, "release_package_collection_run_record_unavailable");
 });
 
+test("release package service records summary-only package records behind explicit write gate", () => {
+  const packageResult = serviceWith().buildPackage(Object.assign(scope(), {
+    tasks: ["planner_readiness"],
+    requiredTaskIds: ["planner_readiness"],
+    requestedBy: "owner"
+  }));
+  const calls = {};
+  const service = createLearningAutomationReleasePackageService({
+    repository: {
+      savePackage(input) {
+        calls.saved = input;
+        return {
+          ok: true,
+          duplicate: false,
+          package: Object.assign({}, input, {
+            packageId: "lgapkg_saved_1"
+          })
+        };
+      },
+      listPackages(input) {
+        calls.listed = input;
+        return [{
+          packageId: "lgapkg_saved_1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: input.status || "blocked"
+        }];
+      }
+    }
+  });
+
+  const denied = service.recordPackage(Object.assign(scope(), {
+    releasePackage: packageResult.package
+  }));
+  assert.equal(denied.ok, false);
+  assert.equal(denied.error, "release_package_write_not_allowed");
+
+  const saved = service.recordPackage(Object.assign(scope(), {
+    releasePackage: packageResult.package,
+    allowWritePackage: true,
+    requestedBy: "owner"
+  }));
+  assert.equal(saved.ok, true);
+  assert.equal(saved.package.packageId, "lgapkg_saved_1");
+  assert.equal(calls.saved.privacyClass, "summary_only");
+  assert.equal(calls.saved.summaryOnly, true);
+  assert.equal(calls.saved.packageSummary.writefulSchedulingAllowed, false);
+  assert.equal(calls.saved.stepSummary.stepCount, 5);
+  assert.equal(calls.saved.releaseControlsSummary.runtimeConfigChange, false);
+  assert.equal(JSON.stringify(calls.saved).includes("artifacts"), false);
+  assert.equal(JSON.stringify(calls.saved).includes("productionPlannerReadinessEvidence"), false);
+
+  const listed = service.listPackages(Object.assign(scope(), {
+    status: "ready_for_release_review",
+    limit: 5
+  }));
+  assert.equal(listed.ok, true);
+  assert.equal(listed.count, 1);
+  assert.equal(calls.listed.status, "ready_for_release_review");
+});
+
+test("release package service rejects invalid package record artifacts", () => {
+  const service = createLearningAutomationReleasePackageService({
+    repository: {
+      savePackage() {
+        throw new Error("unexpected save");
+      },
+      listPackages() {
+        return [];
+      }
+    }
+  });
+
+  const missing = service.recordPackage(Object.assign(scope(), {
+    allowWritePackage: true
+  }));
+  assert.equal(missing.ok, false);
+  assert.equal(missing.error, "release_package_artifact_required");
+
+  const invalidSchema = service.recordPackage(Object.assign(scope(), {
+    allowWritePackage: true,
+    releasePackage: {
+      schemaVersion: "growth.other.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true
+    }
+  }));
+  assert.equal(invalidSchema.ok, false);
+  assert.equal(invalidSchema.error, "release_package_schema_invalid");
+
+  const invalidPrivacy = service.recordPackage(Object.assign(scope(), {
+    allowWritePackage: true,
+    releasePackage: {
+      schemaVersion: RELEASE_PACKAGE_SCHEMA,
+      privacyClass: "raw_private",
+      summaryOnly: false
+    }
+  }));
+  assert.equal(invalidPrivacy.ok, false);
+  assert.equal(invalidPrivacy.error, "release_package_privacy_class_required");
+});
+
 test("release package scope normalization remains bounded", () => {
   assert.deepEqual(scopeFrom({
     workspace_id: "weixin_fanfan",

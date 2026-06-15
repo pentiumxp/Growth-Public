@@ -20,6 +20,7 @@ const { createLearningAutomationReleaseCollectionRunService } = require("../serv
 const { createLearningAutomationReleaseControlsService } = require("../services/learning-automation-release-controls-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
+const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
 const { createLearningAutomationRuntimeEnablementService } = require("../services/learning-automation-runtime-enablement-service");
@@ -271,6 +272,9 @@ function createServices(config) {
   const learningAutomationReleaseDecisionService = createLearningAutomationReleaseDecisionService({
     repository: growthLearningStore.learningAutomationReleaseDecisionRepository
   });
+  const learningAutomationReleasePackageService = createLearningAutomationReleasePackageService({
+    repository: growthLearningStore.learningAutomationReleasePackageRepository
+  });
   const learningAutomationReleaseReadinessService = createLearningAutomationReleaseReadinessService({
     repository: growthLearningStore.learningAutomationReleaseReadinessRepository,
     releaseApprovalService: learningAutomationReleaseApprovalService,
@@ -437,6 +441,7 @@ function createServices(config) {
     learningAutomationReleaseControlsService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,
+    learningAutomationReleasePackageService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,
     learningAutomationRuntimeEnablementService,

@@ -76,6 +76,7 @@ function scopeFrom(input = {}) {
 function packageOptions(input = {}) {
   return {
     writeCollectionRun: booleanFlag(input.writeCollectionRun || input.write_collection_run || input.writeCollectionRunRecord || input.write_collection_run_record),
+    writePackageRecord: booleanFlag(input.writePackageRecord || input.write_package_record || input.recordPackage || input.record_package),
     allowWritePackage: booleanFlag(input.allowWritePackage || input.allow_write_package || input.allowWrite || input.allow_write),
     activationGates: uniqueStrings(input.activationGates || input.activation_gates || []),
     requiredApprovalKeys: uniqueStrings(input.requiredApprovalKeys || input.required_approval_keys || []),
@@ -198,12 +199,140 @@ function buildSummary(status, steps, options, collectionRun) {
   };
 }
 
+function packageArtifactFromInput(input = {}) {
+  const direct = input.releasePackage || input.release_package || input.package;
+  if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
+  if (cleanString(input.schemaVersion || input.schema_version, 180) === RELEASE_PACKAGE_SCHEMA) return input;
+  return null;
+}
+
+function statusFromPackage(releasePackage = {}) {
+  const status = cleanString(releasePackage.status || releasePackage.summary?.status || "blocked", 80).toLowerCase();
+  return [ "ready_for_release_review", "blocked", "incomplete" ].includes(status) ? status : "blocked";
+}
+
+function packageScopeFrom(input = {}, releasePackage = {}) {
+  return {
+    workspaceId: cleanString(input.workspaceId || input.workspace_id || releasePackage.workspaceId || releasePackage.workspace_id, 120),
+    learnerId: cleanString(input.learnerId || input.learner_id || releasePackage.learnerId || releasePackage.learner_id || input.workspaceId || input.workspace_id || releasePackage.workspaceId || releasePackage.workspace_id, 120),
+    programId: cleanString(input.programId || input.program_id || releasePackage.programId || releasePackage.program_id, 120),
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id || releasePackage.domainPackId || releasePackage.domain_pack_id, 120),
+    domain: cleanString(input.domain || releasePackage.domain, 80),
+    subject: cleanString(input.subject || releasePackage.subject, 80),
+    horizon: cleanString(input.horizon || releasePackage.horizon || "daily_plan", 80) || "daily_plan"
+  };
+}
+
+function summaryBlock(value = {}, fallback = {}) {
+  return objectOnly(value.summary || value.releaseControls || value.release_controls || value.audit || value.releaseReview || value.release_review || fallback);
+}
+
+function stepSummaryFromPackage(releasePackage = {}) {
+  const steps = asArray(releasePackage.steps).map((step = {}) => ({
+    key: cleanString(step.key, 120),
+    status: cleanString(step.status || (step.ok === true ? "pass" : "blocked"), 80),
+    ok: step.ok === true,
+    schemaVersion: cleanString(step.schemaVersion || step.schema_version, 160),
+    privacyClass: cleanString(step.privacyClass || step.privacy_class || "summary_only", 80),
+    summaryOnly: step.summaryOnly === undefined ? true : step.summaryOnly === true,
+    requiredActionCount: Number(step.requiredActionCount || step.required_action_count || 0) || 0,
+    nextActionKey: cleanString(step.nextActionKey || step.next_action_key, 120),
+    readyForReleaseEvidence: step.readyForReleaseEvidence === true || step.ready_for_release_evidence === true,
+    readyForReleaseReview: step.readyForReleaseReview === true || step.ready_for_release_review === true,
+    writefulSchedulingAllowed: false
+  })).filter((step) => step.key);
+  return {
+    schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
+    summaryOnly: true,
+    stepCount: steps.length,
+    passedCount: steps.filter((step) => step.status === "pass").length,
+    blockedCount: steps.filter((step) => step.status === "blocked").length,
+    steps
+  };
+}
+
+function artifactSummary(value = {}, fallback = {}) {
+  const summary = Object.assign({}, summaryBlock(value, fallback));
+  return Object.assign({
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version || summary.schemaVersion || summary.schema_version, 160),
+    privacyClass: cleanString(value.privacyClass || value.privacy_class || "summary_only", 80),
+    summaryOnly: true,
+    status: cleanString(value.status || summary.status || (value.ok === true ? "pass" : ""), 80),
+    ok: value.ok === true,
+    readyForReleaseEvidence: value.readyForReleaseEvidence === true || summary.readyForReleaseEvidence === true,
+    readyForReleaseReview: value.readyForReleaseReview === true || summary.readyForReleaseReview === true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  }, summary);
+}
+
+function controlsSummaryFromPackage(controls = {}) {
+  const releaseControls = objectOnly(controls.releaseControls || controls.release_controls || controls.summary);
+  const nextAction = objectOnly(releaseControls.nextAction || releaseControls.next_action);
+  return Object.assign(artifactSummary(controls, releaseControls), {
+    requiredActionCount: Number(releaseControls.requiredActionCount || releaseControls.required_action_count || 0) || 0,
+    nextAction: nextAction.key ? {
+      key: cleanString(nextAction.key, 120),
+      action: cleanString(nextAction.action, 180),
+      requiredActor: cleanString(nextAction.requiredActor || nextAction.required_actor, 80)
+    } : null,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  });
+}
+
+function collectionRunIdFromPackage(releasePackage = {}) {
+  const artifacts = objectOnly(releasePackage.artifacts);
+  const collectionRun = objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run);
+  return collectionRunIdFrom(collectionRun, cleanString(releasePackage.summary?.collectionRunId || releasePackage.summary?.collection_run_id, 160));
+}
+
+function packageRecordFromArtifact(input = {}, releasePackage = {}) {
+  const artifacts = objectOnly(releasePackage.artifacts);
+  const scope = packageScopeFrom(input, releasePackage);
+  const collectionRunId = cleanString(
+    input.collectionRunId || input.collection_run_id || input.runId || input.run_id || collectionRunIdFromPackage(releasePackage),
+    160
+  );
+  return Object.assign({}, scope, {
+    packageId: input.packageId || input.package_id || releasePackage.packageId || releasePackage.package_id || releasePackage.id,
+    collectionRunId,
+    status: statusFromPackage(releasePackage),
+    schemaVersion: cleanString(releasePackage.schemaVersion || releasePackage.schema_version || RELEASE_PACKAGE_SCHEMA, 160) || RELEASE_PACKAGE_SCHEMA,
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    packageSummary: Object.assign({
+      schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+      summaryOnly: true,
+      status: statusFromPackage(releasePackage),
+      ok: releasePackage.ok === true,
+      collectionRunId,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    }, objectOnly(releasePackage.summary)),
+    stepSummary: stepSummaryFromPackage(releasePackage),
+    releaseEvidenceBundleSummary: artifactSummary(objectOnly(artifacts.releaseEvidenceBundle || artifacts.release_evidence_bundle)),
+    releaseEvidenceBundleAuditSummary: artifactSummary(objectOnly(artifacts.releaseEvidenceBundleAudit || artifacts.release_evidence_bundle_audit)),
+    releaseReadinessSummary: artifactSummary(objectOnly(artifacts.releaseReadiness || artifacts.release_readiness)),
+    releaseCollectionRunSummary: artifactSummary(objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run)),
+    releaseControlsSummary: controlsSummaryFromPackage(objectOnly(artifacts.releaseControls || artifacts.release_controls)),
+    releaseReview: artifactSummary(objectOnly(objectOnly(artifacts.releaseReadiness || artifacts.release_readiness).releaseReview || objectOnly(artifacts.releaseReadiness || artifacts.release_readiness).release_review)),
+    createdBy: cleanString(input.createdBy || input.created_by || input.requestedBy || input.requested_by || releasePackage.requestedBy || releasePackage.requested_by, 120),
+    createdAt: cleanString(input.createdAt || input.created_at || releasePackage.createdAt || releasePackage.created_at, 80),
+    updatedAt: cleanString(input.updatedAt || input.updated_at, 80)
+  });
+}
+
 function createLearningAutomationReleasePackageService(options = {}) {
   const evidenceBundleService = options.evidenceBundleService || null;
   const evidenceBundleAuditService = options.evidenceBundleAuditService || null;
   const releaseReadinessService = options.releaseReadinessService || null;
   const releaseCollectionRunService = options.releaseCollectionRunService || null;
   const releaseControlsService = options.releaseControlsService || null;
+  const repository = options.repository || null;
   const now = options.now || (() => new Date());
 
   function buildPackage(input = {}) {
@@ -214,6 +343,12 @@ function createLearningAutomationReleasePackageService(options = {}) {
       return unavailable("release_package_write_not_allowed", scope, {
         requiredFlag: "--allow-write",
         writeCollectionRun: true
+      });
+    }
+    if (optionBag.writePackageRecord && !optionBag.allowWritePackage) {
+      return unavailable("release_package_write_not_allowed", scope, {
+        requiredFlag: "--allow-write",
+        writePackageRecord: true
       });
     }
     const inputPrivacyFindings = scanPrivacyKeys(input).slice(0, 16);
@@ -316,13 +451,68 @@ function createLearningAutomationReleasePackageService(options = {}) {
     };
   }
 
+  function recordPackage(input = {}) {
+    const releasePackage = packageArtifactFromInput(input);
+    const scope = packageScopeFrom(input, releasePackage || {});
+    if (!scope.workspaceId) return unavailable("release_package_workspace_required", scope);
+    if (!repository || typeof repository.savePackage !== "function") {
+      return unavailable("release_package_repository_unavailable", scope);
+    }
+    if (!booleanFlag(input.allowWritePackage || input.allow_write_package || input.allowWrite || input.allow_write || input.ownerAuthorizedWrite || input.owner_authorized_write)) {
+      return unavailable("release_package_write_not_allowed", scope, {
+        requiredFlag: "--allow-write",
+        writePackageRecord: true
+      });
+    }
+    if (!releasePackage) return unavailable("release_package_artifact_required", scope);
+    if (cleanString(releasePackage.schemaVersion || releasePackage.schema_version, 180) !== RELEASE_PACKAGE_SCHEMA) {
+      return unavailable("release_package_schema_invalid", scope);
+    }
+    if (releasePackage.summaryOnly !== true || cleanString(releasePackage.privacyClass || releasePackage.privacy_class, 80) !== "summary_only") {
+      return unavailable("release_package_privacy_class_required", scope);
+    }
+    const record = packageRecordFromArtifact(input, releasePackage);
+    const privacyFindings = scanPrivacyKeys(record).slice(0, 16);
+    const privateValueFindings = scanPrivateValues(record).slice(0, 16);
+    if (privacyFindings.length || privateValueFindings.length) {
+      return unavailable("release_package_privacy_failed", scope, {
+        privacyFindings,
+        privateValueFindings
+      });
+    }
+    const saved = repository.savePackage(record);
+    return Object.assign({
+      source: "growth-learning-automation-release-package-service"
+    }, saved);
+  }
+
+  function listPackages(input = {}) {
+    const scope = scopeFrom(input);
+    if (!scope.workspaceId) return unavailable("release_package_workspace_required", scope);
+    if (!repository || typeof repository.listPackages !== "function") {
+      return unavailable("release_package_repository_unavailable", scope);
+    }
+    const packages = repository.listPackages(input);
+    return {
+      ok: true,
+      source: "growth-learning-automation-release-package-service",
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      count: packages.length,
+      packages
+    };
+  }
+
   return {
-    buildPackage
+    buildPackage,
+    listPackages,
+    recordPackage
   };
 }
 
 module.exports = {
   RELEASE_PACKAGE_SCHEMA,
+  packageRecordFromArtifact,
   createLearningAutomationReleasePackageService,
   scopeFrom
 };

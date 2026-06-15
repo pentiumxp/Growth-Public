@@ -2568,6 +2568,39 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleasePackageService: {
+      listPackages(input) {
+        calls.push({ type: "listReleasePackages", input });
+        return {
+          ok: true,
+          count: 1,
+          packages: [{
+            packageId: "lgapkg_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            collectionRunId: input.collectionRunId || "lgacrn_route_1",
+            status: input.status || "blocked"
+          }]
+        };
+      },
+      recordPackage(input) {
+        calls.push({ type: "recordReleasePackage", input });
+        return {
+          ok: true,
+          duplicate: false,
+          package: {
+            packageId: "lgapkg_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            collectionRunId: input.collectionRunId || input.releasePackage?.summary?.collectionRunId,
+            status: input.status || input.releasePackage?.status || "blocked",
+            packageSummary: {
+              writefulSchedulingAllowed: false
+            }
+          }
+        };
+      }
+    },
     learningAutomationReleaseReviewService: {
       review(input) {
         calls.push({ type: "releaseReview", input });
@@ -3308,6 +3341,103 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const packageList = await fetch(`${baseUrl}/api/v1/growth/automation/release-packages?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&status=blocked&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(packageList.status, 200);
+    assert.equal((await packageList.json()).packages[0].packageId, "lgapkg_route_1");
+    assert.deepEqual(calls[15], {
+      type: "listReleasePackages",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "blocked",
+        limit: "5"
+      }
+    });
+
+    const packageCreated = await fetch(`${baseUrl}/api/v1/growth/automation/release-packages`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        release_package: {
+          schemaVersion: "growth.learningAutomationReleasePackage.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          status: "blocked",
+          summary: {
+            schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+            summaryOnly: true,
+            collectionRunId: "lgacrn_route_1",
+            writefulSchedulingAllowed: false
+          },
+          steps: [],
+          artifacts: {}
+        },
+        created_at: "2026-06-16T09:30:00.000Z"
+      })
+    });
+    assert.equal(packageCreated.status, 201);
+    assert.equal((await packageCreated.json()).package.packageId, "lgapkg_route_1");
+    assert.deepEqual(calls[16], {
+      type: "recordReleasePackage",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        packageId: undefined,
+        collectionRunId: undefined,
+        status: undefined,
+        releasePackage: {
+          schemaVersion: "growth.learningAutomationReleasePackage.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          status: "blocked",
+          summary: {
+            schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+            summaryOnly: true,
+            collectionRunId: "lgacrn_route_1",
+            writefulSchedulingAllowed: false
+          },
+          steps: [],
+          artifacts: {}
+        },
+        requestedBy: "weixin_stephen",
+        createdBy: "weixin_stephen",
+        createdAt: "2026-06-16T09:30:00.000Z",
+        ownerAuthorizedWrite: true
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -3359,6 +3489,26 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedDecisionCreate.status, 403);
     assert.equal((await deniedDecisionCreate.json()).error.code, "growth_automation_release_decision_owner_required");
+
+    const deniedPackageCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-packages`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_stephen",
+        release_package: {
+          schemaVersion: "growth.learningAutomationReleasePackage.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true
+        }
+      })
+    });
+    assert.equal(deniedPackageCreate.status, 403);
+    assert.equal((await deniedPackageCreate.json()).error.code, "growth_automation_release_package_owner_required");
 
     const deniedActivationCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations`, {
       method: "POST",

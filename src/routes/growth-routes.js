@@ -518,6 +518,23 @@ function normalizeAutomationReleaseDecisionListInput(url, target) {
   };
 }
 
+function normalizeAutomationReleasePackageListInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "",
+    collectionRunId: url.searchParams.get("collectionRunId") || url.searchParams.get("collection_run_id") || url.searchParams.get("runId") || url.searchParams.get("run_id") || "",
+    status: url.searchParams.get("status") || "",
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
 function normalizeAutomationReleaseReviewInput(url, target) {
   return Object.assign(normalizeAutomationReleaseDecisionListInput(url, target), {
     ownerDailyUiEvidence: truthy(url.searchParams.get("ownerDailyUiEvidence") || url.searchParams.get("owner_daily_ui_evidence")),
@@ -758,6 +775,30 @@ function normalizeAutomationReleaseDecisionInput(body, workspaceId, target, requ
     decidedBy: body.decidedBy || body.decided_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
     decidedAt: body.decidedAt || body.decided_at,
     createdAt: body.createdAt || body.created_at
+  };
+}
+
+function normalizeAutomationReleasePackageInput(body, workspaceId, target, request, url) {
+  const releasePackage = body.releasePackage || body.release_package || body.package
+    || (body.schemaVersion === "growth.learningAutomationReleasePackage.v1" || body.schema_version === "growth.learningAutomationReleasePackage.v1" ? body : undefined);
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || releasePackage?.learnerId || releasePackage?.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id || releasePackage?.programId || releasePackage?.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id || releasePackage?.domainPackId || releasePackage?.domain_pack_id,
+    domain: body.domain || releasePackage?.domain,
+    subject: body.subject || releasePackage?.subject,
+    horizon: body.horizon || releasePackage?.horizon || "daily_plan",
+    packageId: body.packageId || body.package_id || body.releasePackageId || body.release_package_id,
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.runId || body.run_id,
+    status: body.status,
+    releasePackage,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    createdBy: body.createdBy || body.created_by || requestedWorkspaceId(request, url, ""),
+    createdAt: body.createdAt || body.created_at,
+    ownerAuthorizedWrite: true
   };
 }
 
@@ -1334,6 +1375,12 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-packages") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleasePackageService.listPackages(normalizeAutomationReleasePackageListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-review") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseReviewService.review(normalizeAutomationReleaseReviewInput(url, target));
@@ -1622,6 +1669,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseDecisionService.recordDecision(
       normalizeAutomationReleaseDecisionInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-packages") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_package_owner_required", "Automation release packages require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleasePackageService.recordPackage(
+      normalizeAutomationReleasePackageInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

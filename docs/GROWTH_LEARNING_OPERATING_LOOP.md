@@ -1648,9 +1648,15 @@ Implementation progress on 2026-06-15:
   summary-only `growth.learningAutomationReleasePackage.v1` artifact for
   Owner/release review. The package service delegates to the release evidence
   bundle builder, bundle audit, release-readiness, collection-run, and
-  release-controls services; it defaults to no-write and can persist only the
-  existing collection-run audit record when both `--write-collection-run` and
-  `--allow-write` are present. It is not release approval, runtime config
+  release-controls services; it defaults to no-write and can persist the
+  existing collection-run audit record only when both `--write-collection-run`
+  and `--allow-write` are present. It can also persist a summarized package
+  audit record in `learning_growth_automation_release_packages` only with
+  `--write-package-record --allow-write` or the Owner-only package-record
+  route. Package record APIs list through visible-target scoped
+  `GET /api/v1/growth/automation/release-packages` and record only an existing
+  summary-only artifact through `POST /api/v1/growth/automation/release-packages`;
+  HTTP must not run smoke tasks. It is not release approval, runtime config
   enablement, deployment, scheduler permission, or card publication.
 - after a collection run exists, `npm run smoke:release-decision` can evaluate
   or persist one sanitized `growth.learningAutomationReleaseDecision.v1`

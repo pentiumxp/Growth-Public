@@ -70,6 +70,7 @@ function inputFromArgs(args) {
   return Object.assign({}, bundleInput, {
     requiredTaskIds: requiredTaskIdsFromArgs(args),
     writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun"),
+    writePackageRecord: hasFlag(args, "--write-package-record") || hasFlag(args, "--writePackageRecord") || hasFlag(args, "--record-package"),
     allowWritePackage: hasFlag(args, "--allow-write") || hasFlag(args, "--allowWrite"),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy", "--created-by", "--createdBy"], "")
       || bundleInput.requestedBy,
@@ -117,24 +118,33 @@ async function main() {
     releaseControlsService: services.learningAutomationReleaseControlsService
   });
   const result = service.buildPackage(input);
+  const recordResult = input.writePackageRecord && result.package
+    ? services.learningAutomationReleasePackageService.recordPackage(Object.assign({}, input, {
+      releasePackage: result.package
+    }))
+    : null;
+  const finalResult = recordResult
+    ? Object.assign({}, result, { ok: result.ok && recordResult.ok, packageOk: result.ok, record: recordResult })
+    : result;
   const outputFile = outputFileFromArgs(args);
   if (outputFile && result.package) {
     const writtenPath = writeJsonFile(outputFile, result.package);
     if (hasFlag(args, "--result-json")) {
       process.stdout.write(formatResult({
-        ok: result.ok,
+        ok: finalResult.ok,
         outputFile: writtenPath,
-        summary: result.summary
+        summary: result.summary,
+        record: recordResult || undefined
       }, pretty));
     } else {
       process.stdout.write(formatResult(result.package, pretty));
     }
   } else if (hasFlag(args, "--result-json")) {
-    process.stdout.write(formatResult(result, pretty));
+    process.stdout.write(formatResult(finalResult, pretty));
   } else {
     process.stdout.write(formatResult(result.package || result, pretty));
   }
-  process.exitCode = failOnBlocked && !result.ok ? 1 : 0;
+  process.exitCode = recordResult && !recordResult.ok ? 1 : (failOnBlocked && !result.ok ? 1 : 0);
 }
 
 if (require.main === module) {

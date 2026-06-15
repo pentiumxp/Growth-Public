@@ -9,6 +9,86 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T19:11Z - Release Package Persistence Records
+
+- Status: implemented and validated locally. This slice is Growth
+  backend/Harness/docs only. It adds package audit-record persistence and
+  readback for already-built release package artifacts. It does not deploy,
+  apply runtime config, grant scheduler permission, call Gateway directly,
+  publish plans/cards, evaluate submissions, run scheduling, deliver
+  notifications, activate stage assessments, mutate learner state, or run smoke
+  tasks inside HTTP.
+- Scope:
+  - added `automation-release-packages.js` with
+    `learning_growth_automation_release_packages` for summary-only package
+    audit records;
+  - added stable package ids through
+    `stableLearningAutomationReleasePackageId`;
+  - wired the repository into `growth-learning-sqlite-store` and
+    `learningAutomationReleasePackageService`;
+  - extended `learning-automation-release-package-service` with
+    `recordPackage` and `listPackages`, while keeping `buildPackage`
+    service-owned and no-spawn;
+  - extended `scripts/build-growth-release-package.js` with
+    `--write-package-record --allow-write`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-packages` and Owner-only
+    `POST /api/v1/growth/automation/release-packages`; the POST records an
+    existing summary-only package artifact and must not run smoke tasks.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/automation-release-packages.js`;
+  - `src/stores/growth-learning-sqlite/identifiers.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `src/services/learning-automation-release-package-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `scripts/build-growth-release-package.js`;
+  - `tests/learning-automation-release-package-repository.test.js`;
+  - `tests/learning-automation-release-package-service.test.js`;
+  - `tests/growth-release-package-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`.
+- Validation passed:
+  - syntax checks for the package repository, package service, and package CLI;
+  - `node --test tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js`
+    (`16` tests);
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js tests/growth-routes.test.js tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js`
+    (`88` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-package -- --workspace-id smoke_workspace --learner-id smoke_learner --task planner_readiness --required-task planner_readiness --write-package-record --allow-write --result-json --json`
+    returned expected summary-only `blocked` package because local smoke lacks
+    real Gateway/planner and production release evidence; the package record
+    path returned `record.ok=true`;
+  - `npm run check` (`179/179` runtime JavaScript files covered);
+  - `npm test` (`701` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`313` files, `4,060` nodes,
+    `15,662` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-20a1aa5f-fc24-45e5-9b98-ef9d6cde91ae`.
+- Remaining product work:
+  - build embedded Owner UI over release package/readiness/controls so release
+    review is not CLI-only;
+  - collect real production release evidence, central Home AI visual evidence,
+    Action Inbox/Web Push evidence, and production planner/loop smokes;
+  - only after release evidence, approval, and platform runtime config actions
+    pass outside Growth, read back activation/runtime enablement through the
+    existing release ladder.
+
 ## 2026-06-15T18:49Z - Release Package Builder
 
 - Status: implemented and validated locally. This slice is Growth
