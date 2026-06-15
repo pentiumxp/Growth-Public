@@ -3643,6 +3643,105 @@ test("growth automation runtime enablement routes are Owner-write and visible-ta
   }
 });
 
+test("growth automation release controls route is visible-target read only", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationReleaseControlsService: {
+      summarize(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseControls.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "activation_record_required",
+          releaseControls: {
+            summaryOnly: true,
+            status: "activation_record_required",
+            requiredActionCount: 1
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-controls?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution,background_scheduler&requiredApprovalKey=writefulExecutionApproval&activationRecordLimit=10&automation_digest_ui_evidence=true`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).schemaVersion, "growth.learningAutomationReleaseControls.v1");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "",
+      domainPackId: "",
+      domain: "",
+      subject: "",
+      horizon: "",
+      collectionRunId: "lgacrn_route_1",
+      status: "",
+      limit: "",
+      ownerDailyUiEvidence: false,
+      ownerAuditUiEvidence: false,
+      stageCheckpointEvidence: false,
+      proposalReviewUiEvidence: false,
+      automationDigestUiEvidence: true,
+      automationActionHandoffUiEvidence: false,
+      schedulerExecutionUiEvidence: false,
+      schedulerRunUiEvidence: false,
+      schedulerWorkerTargetUiEvidence: false,
+      requiredApprovalKeys: ["writefulExecutionApproval"],
+      activationGates: ["writeful_execution", "background_scheduler"],
+      enablementStatus: "",
+      activationRecordLimit: "10"
+    });
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-controls?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth profile correction routes are Owner-only and limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

@@ -33,6 +33,7 @@ they become Growth-owned.
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md` | Default-disabled Owner-explicit scheduler execution boundary. Defines execution service, repository, routes, config gate, gate rechecks, failure semantics, and harness requirements without adding a background worker or production auto-scheduling enablement. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md` | Future/default-disabled background scheduler contract. Defines the supervised scheduler tick boundary, run persistence, reviewed worker target configuration, worker lease/timer shape, route shape, config gates, delegation-only execution path, safety gates, forbidden boundaries, and harness requirements without enabling production background scheduling. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` | Runtime enablement audit/readback boundary. Defines the summary-only record layer after release activation, current config readback semantics, routes, CLI, statuses, and harness gates without mutating runtime config or granting scheduler permission. |
+| `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` | Owner release-controls readback boundary. Defines the single summary-only status surface over readiness, review, closure, activation, and runtime enablement, plus route, CLI, status semantics, forbidden boundaries, and harness gates without writing state or enabling scheduling. |
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
 | `docs/GROWTH_CARD_GENERATION_RULES.md` | Consolidated card generation and evaluation rules for new Growth card authoring and one-shot grading. |
 | `docs/GROWTH_AI_CARD_LOOP.md` | Growth-owned AI loop for learner profile, next-card strategy, card generation, Gateway evaluation evidence, trajectory, and profile update. |
@@ -88,10 +89,13 @@ For the AI-driven learning scheme, use this reading order before implementation:
 13. `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` before
     changing runtime-config enablement audit/readback, final Owner release
     controls, or any record that might be mistaken for a config switch.
-14. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
+14. `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` before changing
+    the Owner release-controls aggregation route, CLI, status semantics, or
+    any surface that may be mistaken for a release/runtime-config switch.
+15. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
    runtime layers, architecture backlog, and route/service/repository
    ownership rules.
-15. UI-specific work then reads
+16. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 

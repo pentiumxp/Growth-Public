@@ -798,6 +798,16 @@ Implemented backend shape:
   `configChangeApplied=false`, `runtimeConfigChange=false`,
   `runtimeConfigMutationPerformed=false`, `writefulSchedulingAllowed=false`,
   `backgroundSchedulingAllowed=false`, and `backgroundWorkerAllowed=false`.
+- `npm run smoke:release-controls` and
+  `GET /api/v1/growth/automation/release-controls` delegate to
+  `learning-automation-release-controls-service.summarize` and return one
+  no-write `growth.learningAutomationReleaseControls.v1` Owner status surface
+  over readiness, review, closure, activation, and runtime enablement. It
+  reports the first blocking ladder status, required actions, missing
+  evidence/check/approval keys, and one next action. It owns no repository or
+  table, writes no records, runs no smoke tasks, calls no Gateway, publishes
+  nothing, schedules nothing, and keeps all runtime mutation and scheduling
+  permission flags false.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
@@ -886,6 +896,8 @@ Required harness:
 - `tests/learning-automation-runtime-enablement-repository.test.js`;
 - `tests/learning-automation-runtime-enablement-service.test.js`;
 - `tests/growth-runtime-enablement-smoke-script.test.js`;
+- `tests/learning-automation-release-controls-service.test.js`;
+- `tests/growth-release-controls-smoke-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`,
   including the `releaseReview` remediation fields;

@@ -39,6 +39,15 @@ CLI:
 
 - `npm run smoke:runtime-enablement`
 
+Related readback aggregate:
+
+- `GET /api/v1/growth/automation/release-controls`
+- `npm run smoke:release-controls`
+
+The release-controls aggregate reads runtime enablement through this service
+and adds earlier readiness/review/closure/activation status. It writes no
+records and must not be treated as a config switch.
+
 The service depends only on
 `learning-automation-release-activation-service.listActivations` plus injected
 config booleans:
@@ -170,3 +179,7 @@ This boundary can prove that Growth is ready for a manual runtime-config step,
 or that the runtime config step has been read back after it happened outside
 Growth. It is not itself a deployment, release, config writer, background
 scheduler switch, or scheduler permission grant.
+
+Use `npm run smoke:release-controls` or
+`GET /api/v1/growth/automation/release-controls` when Owner tooling needs the
+full release-ladder status instead of only runtime enablement readback.

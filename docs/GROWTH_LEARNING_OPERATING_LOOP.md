@@ -1706,6 +1706,15 @@ Implementation progress on 2026-06-15:
   `configChangeApplied=false`, `runtimeConfigChange=false`,
   `runtimeConfigMutationPerformed=false`, `writefulSchedulingAllowed=false`,
   `backgroundSchedulingAllowed=false`, and `backgroundWorkerAllowed=false`.
+- `GET /api/v1/growth/automation/release-controls` and
+  `npm run smoke:release-controls` provide a single no-write Owner readback
+  over the release ladder. The controls service composes readiness, review,
+  closure, activation, and runtime enablement through existing services,
+  returns `growth.learningAutomationReleaseControls.v1`, reports the first
+  blocking status plus bounded required actions, and owns no repository/table.
+  It does not run smoke tasks, call Gateway, publish, generate, evaluate,
+  execute scheduler actions, run scheduler ticks, deliver notifications,
+  activate stage assessments, mutate learner state, or flip runtime config.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
