@@ -38,15 +38,16 @@ Implemented locally as a default-disabled backend slice:
   visible-target scoped `GET /api/v1/growth/automation/release-activations`,
   Owner-only `POST /api/v1/growth/automation/release-activations`, and
   `npm run smoke:release-activation -- --operation record --allow-write`;
-- separate runtime enablement audit/readback through
+- persisted runtime enablement audit/readback through
   `learning-automation-runtime-enablement-service`,
   visible-target scoped `GET /api/v1/growth/automation/runtime-enablement`,
   visible-target scoped `GET /api/v1/growth/automation/runtime-enablements`,
   Owner-only `POST /api/v1/growth/automation/runtime-enablements`, and
-  `npm run smoke:runtime-enablement`. This record can prove manual
-  config-readiness or config readback after an external platform action, but it
-  is not a scheduler permission grant and does not replace the execution-time
-  activation audit gate;
+  `npm run smoke:runtime-enablement`. When writeful execution is enabled, the
+  execution service requires a matching persisted `verified_enabled`
+  runtime-enablement record before publication. The record proves external
+  runtime config readback only; it is not a scheduler permission grant and does
+  not replace the execution-time activation audit gate;
 - service-owned operational smoke `npm run smoke:scheduler-execution`;
 - config gate: `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`.
 
@@ -101,9 +102,16 @@ The service rechecks every gate at execution time:
    include `writeful_execution`, and whose activation/preflight/evidence
    summaries all keep `configChangeApplied=false`,
    `writefulSchedulingAllowed=false`, and `runtimeConfigChange=false`.
-10. Only after all gates pass, the service calls
+10. `learning-automation-runtime-enablement-service.listEnablements` returns a
+    matching persisted summary-only runtime enablement audit row with status
+    `verified_enabled`, schema `growth.learningAutomationRuntimeEnablement.v1`,
+    `recordOnly=true`, `advisoryOnly=true`, `runtimeConfigVerified=true`, no
+    runtime mutation flags, requested gates including `writeful_execution`, and
+    current-config readback proving `automationWritefulExecutionEnabled` is
+    enabled.
+11. Only after all gates pass, the service calls
    `learning-automation-proposal-service.publishAcceptedProposal`.
-11. The execution repository records bounded `started`, `published`, `failed`,
+12. The execution repository records bounded `started`, `published`, `failed`,
    `blocked`, or `skipped` metadata.
 
 The execution service must not call Gateway, model vendors, plan publication
@@ -201,6 +209,10 @@ still fail closed unless the release authorization readback passes and the
 activation audit readback finds a valid summary-only `writeful_execution`
 activation record. The activation record is a readback prerequisite only; it
 does not flip config and does not grant scheduler permission by itself.
+Publication also requires a matching persisted runtime enablement readback
+record with status `verified_enabled` proving the external config was enabled
+and read back through Growth. Missing, unavailable, or invalid runtime
+enablement records block execution before `publishAcceptedProposal`.
 
 The smoke script must not import repositories directly, inspect
 `learning_growth_` tables, call Gateway, call the scheduler dry-run service
@@ -225,6 +237,11 @@ Failure behavior is fail-closed:
   activation status/privacy/schema, missing `writeful_execution` gate, failed
   activation preflight, non-record-only decision, or any runtime-config-change
   flag in the activation record records `blocked`;
+- missing runtime enablement service, missing runtime enablement records,
+  invalid status/privacy/schema, missing `writeful_execution` gate, missing
+  `automationWritefulExecutionEnabled` readback, non-record-only decision,
+  missing `runtimeConfigVerified=true`, or any runtime mutation flag in the
+  runtime enablement record records `blocked`;
 - downstream accepted-proposal publish failure records `failed`;
 - successful downstream publish records `published`;
 - repeated downstream publish remains protected by
@@ -251,11 +268,13 @@ Required assertions:
 
 - default-disabled execution records blocked state and does not publish;
 - success path rechecks delivered handoff, reviewed digest, active policy
-  readiness, scheduler dry-run, release authorization, and release activation
-  audit readback before publishing;
+  readiness, scheduler dry-run, release authorization, release activation audit
+  readback, and runtime enablement verified readback before publishing;
 - missing release authorization records blocked state and does not call
   `publishAcceptedProposal`;
 - missing or invalid release activation records blocked state and does not call
+  `publishAcceptedProposal`;
+- missing or invalid runtime enablement records blocked state and does not call
   `publishAcceptedProposal`;
 - publish delegates only to
   `learning-automation-proposal-service.publishAcceptedProposal`;
@@ -295,5 +314,7 @@ Before production enablement, Growth still needs:
 - central Home AI embedded-plugin visual evidence;
 - production dry-run evidence;
 - summary-only release activation audit record for `writeful_execution`;
+- persisted summary-only runtime enablement audit record with
+  `status=verified_enabled` for `writeful_execution`;
 - explicit release approval for
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`.

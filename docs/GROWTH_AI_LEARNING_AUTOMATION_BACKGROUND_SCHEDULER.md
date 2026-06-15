@@ -607,7 +607,8 @@ Failure behavior is fail-closed:
 - missing handoff service records a bounded unavailable error;
 - missing execution service records a bounded unavailable error;
 - no delivered actions records `skipped`;
-- missing or invalid `writeful_execution` release activation audit readback
+- missing or invalid `writeful_execution` release activation audit readback, or
+  missing/invalid persisted `verified_enabled` runtime enablement readback,
   records downstream execution `blocked`;
 - downstream blocked or failed executions are aggregated as `failed` or
   `partial`;

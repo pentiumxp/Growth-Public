@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T22:54Z - Runtime Enablement Gate Before Scheduler Execution
+
+- Status: implemented and validated locally; commit/push is still pending in
+  this turn. This slice is backend/Harness/docs only. It does not deploy, apply
+  runtime config, grant scheduler permission, call Gateway/model vendors,
+  publish cards/plans by itself, evaluate submissions, run scheduler ticks,
+  deliver notifications, activate stage assessments, mutate learner state, or
+  write production release records.
+- Scope:
+  - `learning-automation-scheduler-execution-service` now requires a matching
+    persisted `verified_enabled` runtime enablement audit/readback record after
+    release authorization and release activation pass, before it can call
+    `learning-automation-proposal-service.publishAcceptedProposal`;
+  - the runtime gate reads only through
+    `runtimeEnablementService.listEnablements`, checks
+    `growth.learningAutomationRuntimeEnablement.v1`, `summary_only`,
+    `recordOnly=true`, `advisoryOnly=true`, `runtimeConfigVerified=true`, no
+    runtime mutation flags, `writeful_execution` gate coverage, and current
+    config readback for `automationWritefulExecutionEnabled`;
+  - `src/app/services.js` injects
+    `learningAutomationRuntimeEnablementService` into scheduler execution;
+  - scheduler execution service harness now covers success, missing service,
+    missing record, and invalid runtime enablement record paths before publish;
+  - architecture guards and Growth docs now state that scheduler execution
+    requires release authorization, release activation audit readback, and
+    runtime enablement verified readback.
+- Changed files:
+  - `src/services/learning-automation-scheduler-execution-service.js`;
+  - `src/app/services.js`;
+  - `tests/learning-automation-scheduler-execution-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - scheduler execution/background scheduler/next-stage/architecture/platform
+    pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - `node --check src/services/learning-automation-scheduler-execution-service.js`;
+  - `node --check src/app/services.js`;
+  - `node --test tests/learning-automation-scheduler-execution-service.test.js`
+    (`10/10`);
+  - `node --test tests/growth-architecture-boundary.test.js` (`31/31`);
+  - focused scheduler/runtime/scheduler-run/worker harness (`75/75`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`186/186` runtime JavaScript files covered);
+  - `npm test` (`744/744`);
+  - Home AI platform contract checker for Growth;
+  - AI Ops required checks: app architecture-code harness, touched-file syntax
+    checks, and `git diff --check`;
+  - CodeGraph status: `327` indexed files, `4280` nodes, `16766` edges;
+  - AI Ops evidence ledger append ids:
+    `evidence-82a71919-5c37-426a-8c1b-2f0d783493aa`,
+    `evidence-e88f0915-5156-4e01-b4d7-8cf9ea195079`.
+- Next step:
+  - commit and push this slice to `origin` and `public`.
+
 ## 2026-06-15T22:42Z - Release Package Hard Authorization Gate
 
 - Status: implemented and validated locally. This slice is

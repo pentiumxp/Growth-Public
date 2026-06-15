@@ -127,6 +127,94 @@ function readyActivation(overrides = {}) {
   }, overrides);
 }
 
+function readyRuntimeEnablement(overrides = {}) {
+  return Object.assign({
+    enablementId: "lgrten_ready_1",
+    enablementVersion: "growth.learningAutomationRuntimeEnablement.v1",
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    collectionRunId: "lgacrn_ready_1",
+    status: "verified_enabled",
+    requestedActivationGates: ["writeful_execution"],
+    requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+    currentConfig: {
+      schemaVersion: "growth.learningAutomationRuntimeConfig.summary.v1",
+      summaryOnly: true,
+      gates: [{
+        key: "writeful_execution",
+        configKey: "automationWritefulExecutionEnabled",
+        currentEnabled: true
+      }],
+      enabledConfigKeys: ["automationWritefulExecutionEnabled"],
+      disabledConfigKeys: [],
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    activationSummary: {
+      schemaVersion: "growth.learningAutomationRuntimeActivationReadback.v1",
+      summaryOnly: true,
+      activationRecordCount: 1,
+      validGateCount: 1,
+      missingActivationGates: [],
+      gates: [{
+        gate: "writeful_execution",
+        configKey: "automationWritefulExecutionEnabled",
+        activationRecordCount: 1,
+        validActivationRecordId: "lgact_ready_1",
+        valid: true
+      }],
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    enablementDecision: {
+      schemaVersion: "growth.learningAutomationRuntimeEnablement.decision.v1",
+      summaryOnly: true,
+      status: "verified_enabled",
+      decision: "runtime_config_verified",
+      recordOnly: true,
+      advisoryOnly: true,
+      runtimeConfigVerified: true,
+      readyForManualRuntimeConfigEnablement: false,
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    evidenceSummary: {
+      schemaVersion: "growth.learningAutomationRuntimeEnablement.evidence.v1",
+      summaryOnly: true,
+      status: "verified_enabled",
+      runtimeConfigVerified: true,
+      readyForManualRuntimeConfigEnablement: false,
+      requestedActivationGates: ["writeful_execution"],
+      requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+      activationRecordCount: 1,
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    privacyClass: "summary_only"
+  }, overrides);
+}
+
 function executeInput(overrides = {}) {
   return Object.assign({
     workspaceId: "weixin_fanfan",
@@ -317,6 +405,77 @@ function createService(options = {}) {
         };
       }
     },
+    runtimeEnablementService: options.runtimeEnablementServiceMissing ? null : {
+      listEnablements(input) {
+        calls.push({ type: "listRuntimeEnablements", input });
+        if (options.runtimeEnablementMissing) {
+          return {
+            ok: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            count: 0,
+            enablements: []
+          };
+        }
+        if (options.runtimeEnablementUnavailable) {
+          return {
+            ok: false,
+            error: "learning_automation_runtime_enablement_repository_unavailable"
+          };
+        }
+        if (options.runtimeEnablementInvalid) {
+          return {
+            ok: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            count: 1,
+            enablements: [readyRuntimeEnablement({
+              status: "ready_for_manual_runtime_config_enablement",
+              currentConfig: {
+                schemaVersion: "growth.learningAutomationRuntimeConfig.summary.v1",
+                summaryOnly: true,
+                gates: [{
+                  key: "writeful_execution",
+                  configKey: "automationWritefulExecutionEnabled",
+                  currentEnabled: false
+                }],
+                enabledConfigKeys: [],
+                disabledConfigKeys: ["automationWritefulExecutionEnabled"],
+                configChangeApplied: false,
+                runtimeConfigChange: false,
+                runtimeConfigMutationPerformed: false,
+                writefulSchedulingAllowed: false,
+                backgroundSchedulingAllowed: false,
+                backgroundWorkerAllowed: false
+              },
+              enablementDecision: {
+                recordOnly: true,
+                advisoryOnly: true,
+                runtimeConfigVerified: false,
+                configChangeApplied: false,
+                runtimeConfigChange: false,
+                runtimeConfigMutationPerformed: false
+              },
+              evidenceSummary: {
+                runtimeConfigVerified: false,
+                requestedActivationGates: ["writeful_execution"],
+                requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+                configChangeApplied: false,
+                runtimeConfigChange: false,
+                runtimeConfigMutationPerformed: false
+              }
+            })]
+          };
+        }
+        return {
+          ok: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          count: 1,
+          enablements: [readyRuntimeEnablement(options.runtimeEnablement || {})]
+        };
+      }
+    },
     automationProposalService: {
       async publishAcceptedProposal(input) {
         calls.push({ type: "publishAcceptedProposal", input });
@@ -372,6 +531,7 @@ test("scheduler execution publishes through accepted-proposal boundary after all
     "dryRun",
     "authorizeRelease",
     "listActivations",
+    "listRuntimeEnablements",
     "recordExecution",
     "publishAcceptedProposal",
     "recordExecution"
@@ -383,7 +543,11 @@ test("scheduler execution publishes through accepted-proposal boundary after all
   assert.equal(records[0].input.gate.releaseAuthorization.authorized, true);
   assert.equal(records[0].input.gate.releaseActivation.valid, true);
   assert.equal(records[0].input.gate.releaseActivation.activationId, "lgact_ready_1");
+  assert.equal(records[0].input.gate.runtimeEnablement.valid, true);
+  assert.equal(records[0].input.gate.runtimeEnablement.enablementId, "lgrten_ready_1");
   assert.deepEqual(calls.find((call) => call.type === "listActivations").input.activationGates, ["writeful_execution"]);
+  assert.deepEqual(calls.find((call) => call.type === "listRuntimeEnablements").input.activationGates, ["writeful_execution"]);
+  assert.equal(calls.find((call) => call.type === "listRuntimeEnablements").input.status, "verified_enabled");
 });
 
 test("scheduler execution blocks when handoff, digest, policy, or dry-run gates fail", async () => {
@@ -462,6 +626,47 @@ test("scheduler execution rejects invalid activation audit records", async () =>
   assert.equal(result.execution.gate.releaseActivation.activationRecordPresent, true);
   assert.equal(result.execution.gate.releaseActivation.valid, false);
   assert.ok(result.execution.gate.releaseActivation.invalidReasons.includes("runtime_config_change_forbidden"));
+  assert.equal(calls.some((call) => call.type === "publishAcceptedProposal"), false);
+  assert.equal(records.at(-1).input.status, "blocked");
+});
+
+test("scheduler execution blocks before publish when runtime enablement audit record is unavailable or missing", async () => {
+  const unavailable = createService({ allowWritefulExecution: true, runtimeEnablementServiceMissing: true });
+  const unavailableResult = await unavailable.service.executeOnce(executeInput());
+
+  assert.equal(unavailableResult.ok, false);
+  assert.equal(unavailableResult.error, "learning_automation_scheduler_execution_runtime_enablement_unavailable");
+  assert.equal(unavailableResult.execution.status, "blocked");
+  assert.equal(unavailableResult.execution.gate.releaseActivation.valid, true);
+  assert.equal(unavailableResult.execution.gate.runtimeEnablement.runtimeEnablementRecordRequired, true);
+  assert.equal(unavailableResult.execution.gate.runtimeEnablement.runtimeEnablementRecordPresent, false);
+  assert.equal(unavailable.calls.some((call) => call.type === "publishAcceptedProposal"), false);
+
+  const missing = createService({ allowWritefulExecution: true, runtimeEnablementMissing: true });
+  const missingResult = await missing.service.executeOnce(executeInput());
+
+  assert.equal(missingResult.ok, false);
+  assert.equal(missingResult.error, "learning_automation_scheduler_execution_runtime_enablement_required");
+  assert.equal(missingResult.execution.status, "blocked");
+  assert.equal(missingResult.execution.gate.runtimeEnablement.valid, false);
+  assert.equal(missingResult.execution.gate.runtimeEnablement.runtimeEnablementRecordPresent, false);
+  assert.deepEqual(missing.calls.find((call) => call.type === "listRuntimeEnablements").input.activationGates, ["writeful_execution"]);
+  assert.equal(missing.calls.some((call) => call.type === "publishAcceptedProposal"), false);
+});
+
+test("scheduler execution rejects invalid runtime enablement audit records", async () => {
+  const { calls, records, service } = createService({ allowWritefulExecution: true, runtimeEnablementInvalid: true });
+
+  const result = await service.executeOnce(executeInput());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_scheduler_execution_runtime_enablement_invalid");
+  assert.equal(result.execution.status, "blocked");
+  assert.equal(result.execution.gate.releaseActivation.valid, true);
+  assert.equal(result.execution.gate.runtimeEnablement.runtimeEnablementRecordPresent, true);
+  assert.equal(result.execution.gate.runtimeEnablement.valid, false);
+  assert.ok(result.execution.gate.runtimeEnablement.invalidReasons.includes("status_not_verified_enabled"));
+  assert.ok(result.execution.gate.runtimeEnablement.invalidReasons.includes("runtime_config_readback_missing:writeful_execution"));
   assert.equal(calls.some((call) => call.type === "publishAcceptedProposal"), false);
   assert.equal(records.at(-1).input.status, "blocked");
 });

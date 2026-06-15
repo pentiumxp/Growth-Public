@@ -619,8 +619,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=false`, records bounded blocked
   execution when disabled, rechecks delivered handoff, reviewed digest, active
   failure-policy readiness, scheduler dry-run, final release authorization, and
-  valid `writeful_execution` activation audit readback before publication when
-  enabled, and delegates only to accepted-proposal publish. It is not a
+  valid `writeful_execution` activation audit readback plus a matching
+  persisted `verified_enabled` runtime enablement readback before publication
+  when enabled, and delegates only to accepted-proposal publish. It is not a
   background scheduler or production auto-scheduling enablement.
   `npm run smoke:scheduler-execution` now provides the service-owned
   operational smoke for this boundary: `list` is the default read-only

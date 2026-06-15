@@ -615,6 +615,10 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerExecutionService, /releaseAuthorization/);
   assert.match(automationSchedulerExecutionService, /releaseActivationService\.listActivations/);
   assert.match(automationSchedulerExecutionService, /releaseActivationGate/);
+  assert.match(automationSchedulerExecutionService, /runtimeEnablementService\.listEnablements/);
+  assert.match(automationSchedulerExecutionService, /runtimeEnablementGate/);
+  assert.match(automationSchedulerExecutionService, /learning_automation_scheduler_execution_runtime_enablement_required/);
+  assert.match(automationSchedulerExecutionService, /learning_automation_scheduler_execution_runtime_enablement_invalid/);
   assert.match(automationSchedulerExecutionService, /repository\.recordExecution/);
   assert.match(automationSchedulerExecutionService, /owner_explicit_once/);
   assert.match(automationSchedulerExecutionService, /allowWritefulExecution/);
