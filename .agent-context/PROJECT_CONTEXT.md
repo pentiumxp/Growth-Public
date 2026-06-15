@@ -239,6 +239,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   The release evidence bundle can also collect it explicitly through the
   non-default `release_dashboard` task, which stores bounded
   `releaseDashboardSmokeEvidence` as final readback packaging only.
+  Growth now also has `npm run smoke:release-workbench`, a no-write
+  Owner/visible-target action-template read model implemented by
+  `learning-automation-release-workbench-service`,
+  `scripts/smoke-growth-release-workbench.js`, and
+  `GET /api/v1/growth/automation/release-workbench`. It composes only
+  release-readiness, release-controls, release-inventory, and
+  release-dashboard DTOs into one summary-only
+  `growth.learningAutomationReleaseWorkbench.v1` surface for Owner release UI.
+  It reports bounded read routes, Owner-only record-route templates, missing
+  evidence/check/approval/record summaries, one next action, and external
+  manual-runtime-config follow-up hints without applying config. It owns no
+  repository/table, calls no Gateway/model provider, writes no business state,
+  and keeps all runtime mutation and scheduling permission flags false.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only

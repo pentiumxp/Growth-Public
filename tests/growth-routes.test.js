@@ -4232,6 +4232,113 @@ test("growth automation release dashboard route aggregates visible-target releas
   }
 });
 
+test("growth automation release workbench route returns visible-target Owner action read model", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationReleaseWorkbenchService: {
+      workbench(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseWorkbench.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "manual_runtime_config_required",
+          releaseWorkbench: {
+            schemaVersion: "growth.learningAutomationReleaseWorkbench.summary.v1",
+            summaryOnly: true,
+            status: "manual_runtime_config_required",
+            ownerActionCount: 1,
+            ownerActions: [{
+              endpointKey: "release_evidence",
+              route: { method: "POST", path: "/api/v1/growth/automation/release-evidence" }
+            }]
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution&requiredApprovalKey=writefulExecutionApproval&limit=4&runtimeEnablementRecordLimit=6`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningAutomationReleaseWorkbench.v1");
+    assert.equal(body.releaseWorkbench.ownerActionCount, 1);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "",
+      domainPackId: "",
+      domain: "",
+      subject: "",
+      horizon: "",
+      collectionRunId: "lgacrn_route_1",
+      status: "",
+      limit: "4",
+      ownerDailyUiEvidence: false,
+      ownerAuditUiEvidence: false,
+      stageCheckpointEvidence: false,
+      proposalReviewUiEvidence: false,
+      automationDigestUiEvidence: false,
+      automationActionHandoffUiEvidence: false,
+      schedulerExecutionUiEvidence: false,
+      schedulerRunUiEvidence: false,
+      schedulerWorkerTargetUiEvidence: false,
+      requiredApprovalKeys: ["writefulExecutionApproval"],
+      activationGates: ["writeful_execution"],
+      enablementStatus: "",
+      activationRecordLimit: "",
+      runtimeEnablementRecordLimit: "6"
+    });
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth profile correction routes are Owner-only and limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

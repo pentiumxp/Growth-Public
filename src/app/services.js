@@ -26,6 +26,7 @@ const { createLearningAutomationReleaseInventoryService } = require("../services
 const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
+const { createLearningAutomationReleaseWorkbenchService } = require("../services/learning-automation-release-workbench-service");
 const { createLearningAutomationRuntimeEnablementService } = require("../services/learning-automation-runtime-enablement-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
 const { createLearningAutomationSchedulerRunService } = require("../services/learning-automation-scheduler-run-service");
@@ -351,6 +352,12 @@ function createServices(config) {
     releaseControlsService: learningAutomationReleaseControlsService,
     releaseInventoryService: learningAutomationReleaseInventoryService
   });
+  const learningAutomationReleaseWorkbenchService = createLearningAutomationReleaseWorkbenchService({
+    releaseReadinessService: learningAutomationReleaseReadinessService,
+    releaseControlsService: learningAutomationReleaseControlsService,
+    releaseInventoryService: learningAutomationReleaseInventoryService,
+    releaseDashboardService: learningAutomationReleaseDashboardService
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -472,6 +479,7 @@ function createServices(config) {
     learningAutomationReleasePackageService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,
+    learningAutomationReleaseWorkbenchService,
     learningAutomationRuntimeEnablementService,
     learningAutomationSchedulerExecutionService,
     learningAutomationSchedulerRunService,

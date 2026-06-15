@@ -9,10 +9,73 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T23:18Z - Release Workbench Read Model
+
+- Status: implemented and validated locally. This slice is backend/Harness/docs
+  only. It does not deploy, apply runtime config, grant scheduler permission,
+  call Gateway/model vendors, publish cards/plans, evaluate submissions, run
+  scheduler actions, deliver notifications, activate stage assessments, mutate
+  learner state, or write production release records.
+- Scope:
+  - added `learning-automation-release-workbench-service` as a no-write
+    Owner/visible-target read model over release-readiness, release-controls,
+    release-inventory, and release-dashboard DTOs;
+  - `GET /api/v1/growth/automation/release-workbench` now returns
+    `growth.learningAutomationReleaseWorkbench.v1` with bounded read routes,
+    Owner-only record-route templates, missing evidence/check/approval/record
+    summaries, deduplicated Owner action templates, and external
+    manual-runtime-config follow-up hints without applying config;
+  - added `npm run smoke:release-workbench`, a normal-service-graph no-write
+    smoke CLI that delegates only to
+    `learningAutomationReleaseWorkbenchService.workbench`;
+  - added service, route, smoke-script, and architecture-boundary Harness
+    coverage, and updated Growth-local architecture/next-stage/platform pointer
+    docs plus `PROJECT_CONTEXT.md`.
+- Changed files:
+  - `src/services/learning-automation-release-workbench-service.js`;
+  - `scripts/smoke-growth-release-workbench.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-release-workbench-service.test.js`;
+  - `tests/growth-release-workbench-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`;
+  - Growth architecture/next-stage/platform pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - touched runtime syntax checks for the new service, smoke CLI, app service
+    graph, and route file;
+  - focused workbench/route/architecture Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`81/81`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`188/188` runtime JavaScript files covered);
+  - `npm test` (`752/752`);
+  - Home AI platform contract checker for Growth;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - touched-file syntax checks from the Home AI parent path;
+  - plugin `git diff --check`;
+  - CodeGraph status: `331` indexed files, `4331` nodes, `16992` edges;
+  - AI Ops required checks: no visual lane and no deployment required;
+  - AI Ops evidence ledger append id
+    `evidence-65cbbf8d-1ff1-437b-86d6-816a7e29a19b`.
+- Remaining product work:
+  - build the embedded Owner UI over `release-workbench` so Owner can record
+    evidence, package, activation, and runtime enablement audit rows without
+    Codex interpreting DTOs;
+  - collect real production release evidence through central visual/platform
+    tooling and Growth smoke CLIs before any runtime enablement;
+  - keep writeful/background scheduling blocked until release package,
+    dashboard/readiness, Owner approval, activation, runtime enablement audit,
+    and manual config evidence are complete.
+
 ## 2026-06-15T22:54Z - Runtime Enablement Gate Before Scheduler Execution
 
-- Status: implemented and validated locally; commit/push is still pending in
-  this turn. This slice is backend/Harness/docs only. It does not deploy, apply
+- Status: implemented, validated locally, committed, and pushed to both
+  `origin/main` and `public/main` as
+  `a24c2609c413f821f715051ee4798f283d4be9bb`. This slice is
+  backend/Harness/docs only. It does not deploy, apply
   runtime config, grant scheduler permission, call Gateway/model vendors,
   publish cards/plans by itself, evaluate submissions, run scheduler ticks,
   deliver notifications, activate stage assessments, mutate learner state, or
@@ -60,8 +123,10 @@
   - AI Ops evidence ledger append ids:
     `evidence-82a71919-5c37-426a-8c1b-2f0d783493aa`,
     `evidence-e88f0915-5156-4e01-b4d7-8cf9ea195079`.
-- Next step:
-  - commit and push this slice to `origin` and `public`.
+- Deployment:
+  - no production deploy was executed because AI Ops classified this as a
+    non-deploy backend/Harness/docs slice, and the change does not enable
+    runtime config or production scheduler permission.
 
 ## 2026-06-15T22:42Z - Release Package Hard Authorization Gate
 
