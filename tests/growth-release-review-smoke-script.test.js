@@ -120,9 +120,9 @@ function seedReleasePackage(repository, run) {
     stepSummary: {
       schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
       summaryOnly: true,
-      stepCount: 5,
-      passedCount: 5,
-      blockedCount: 0
+      stepCount: 6,
+      passingStepCount: 6,
+      blockedStepCount: 0
     },
     releaseEvidenceBundleSummary: {
       schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
@@ -156,6 +156,24 @@ function seedReleasePackage(repository, run) {
       schemaVersion: "growth.learningAutomationReleaseControls.v1",
       summaryOnly: true,
       status: "manual_runtime_config_required",
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    },
+    releaseDashboardSummary: {
+      schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+      summaryOnly: true,
+      status: "manual_runtime_config_required",
+      readinessStatus: "ready_for_release_review",
+      controlsStatus: "manual_runtime_config_required",
+      inventoryStatus: "manual_runtime_config_required",
+      requiredActionCount: 1,
+      nextAction: {
+        key: "enable_runtime_config_manually",
+        action: "perform_platform_runtime_config_enablement",
+        requiredActor: "owner"
+      },
+      latestPackageId: "",
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
@@ -286,9 +304,16 @@ test("release review smoke script reads package audit record from the real SQLit
     assert.equal(output.packageRecordPresent, true);
     assert.equal(output.latestPackage.packageId, releasePackage.packageId);
     assert.equal(output.latestPackage.collectionRunId, run.runId);
+    assert.equal(output.latestPackage.stepSummary.stepCount, 6);
+    assert.equal(output.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+    assert.equal(output.packageReadback.latestPackageStepCount, 6);
+    assert.equal(output.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
+    assert.equal(output.packageReadback.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
     assert.equal(output.releaseReview.latestPackageId, releasePackage.packageId);
     assert.equal(output.releaseReview.packageRecordStatus, "ready_for_release_review");
     assert.equal(output.releaseReview.packageRecordPresent, true);
+    assert.equal(output.releaseReview.latestPackageStepCount, 6);
+    assert.equal(output.releaseReview.latestPackageDashboardStatus, "manual_runtime_config_required");
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.releaseReview.writefulSchedulingAllowed, false);

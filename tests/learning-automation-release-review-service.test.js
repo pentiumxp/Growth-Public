@@ -159,9 +159,27 @@ test("release review reports approved advisory state from latest decision", () =
         schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
         summaryOnly: true,
         status: "ready_for_release_review",
-        stepCount: 5,
-        passingStepCount: 5,
+        stepCount: 6,
+        passingStepCount: 6,
         blockedStepCount: 0
+      },
+      releaseDashboardSummary: {
+        schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+        summaryOnly: true,
+        status: "manual_runtime_config_required",
+        readinessStatus: "ready_for_release_review",
+        controlsStatus: "manual_runtime_config_required",
+        inventoryStatus: "manual_runtime_config_required",
+        requiredActionCount: 1,
+        nextAction: {
+          key: "enable_runtime_config_manually",
+          action: "perform_platform_runtime_config_enablement",
+          requiredActor: "owner"
+        },
+        latestPackageId: "lgapkg_ready",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
       }
     },
     approvalKeys: ["writefulExecutionApproval"]
@@ -180,9 +198,16 @@ test("release review reports approved advisory state from latest decision", () =
   assert.equal(result.packageRecordPresent, true);
   assert.equal(result.latestPackage.packageId, "lgapkg_ready");
   assert.equal(result.latestPackage.packageSummary.summaryOnly, true);
-  assert.equal(result.latestPackage.stepSummary.stepCount, 5);
+  assert.equal(result.latestPackage.stepSummary.stepCount, 6);
+  assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(result.packageReadback.latestPackageStepCount, 6);
+  assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.packageReadback.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.releaseReview.latestPackageId, "lgapkg_ready");
   assert.equal(result.releaseReview.packageRecordStatus, "ready_for_release_review");
+  assert.equal(result.releaseReview.latestPackageStepCount, 6);
+  assert.equal(result.releaseReview.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseReview.latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.releaseReview.requiredActionCount, 0);
   assert.deepEqual(result.approvalSummary.approvalKeys, ["writefulExecutionApproval"]);

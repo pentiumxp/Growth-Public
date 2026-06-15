@@ -130,12 +130,22 @@ The `steps` array contains bounded summaries for:
 - `release_readiness`
 - `release_review`, including package audit-record readback fields:
   `packageRecordReadbackAvailable`, `packageRecordRequired`,
-  `packageRecordPresent`, `latestPackageId`, and `latestPackageStatus`
+  `packageRecordPresent`, `latestPackageId`, `latestPackageStatus`,
+  `latestPackageStepCount`, `latestPackageDashboardStatus`,
+  `latestPackageDashboardNextActionKey`, and
+  `latestPackageDashboardRequiredActionCount`
 - `release_closure`
 - `release_activation`
 - `runtime_enablement`
 - `activation_records`
 - `runtime_enablement_records`
+
+The release-review service also returns a bounded `packageReadback` summary.
+When a persisted package record includes `releaseDashboardSummary`, review,
+controls, inventory, and dashboard readbacks must expose the latest package's
+dashboard status, next-action key, required-action count, and package step
+count as summary-only fields. They must not expose raw package artifacts or
+raw smoke output.
 
 ## Route Semantics
 
@@ -279,6 +289,20 @@ scheduling permission flags false. The dashboard is a display/readback model;
 the source of truth remains the nested readiness, controls, and inventory
 summaries.
 
+The dashboard also projects the latest persisted package dashboard readback
+from inventory as:
+
+- `releaseDashboard.latestPackageStepCount`
+- `releaseDashboard.latestPackageDashboardStatus`
+- `releaseDashboard.latestPackageDashboardNextActionKey`
+- `releaseDashboard.latestPackageDashboardRequiredActionCount`
+- `artifactReadback.packages.latestPackageStepCount`
+- `artifactReadback.packages.latestPackageDashboardStatus`
+- `artifactReadback.packages.latestPackageDashboardNextActionKey`
+
+These are convenience Owner/UI summary fields. They are not approval flags and
+do not open runtime scheduling or writeful execution.
+
 ## Forbidden Boundaries
 
 Release controls must not:
@@ -315,8 +339,9 @@ Required focused tests:
 `tests/growth-release-review-smoke-script.test.js` must include a real SQLite
 service-graph scenario that seeds a release collection run and a matching
 release package audit record, then executes `scripts/smoke-growth-release-review.js`
-in a child process and verifies the package readback fields above. This prevents
-the release review/controls ladder from regressing to fake-service-only package
+in a child process and verifies the package readback fields above, including
+the package dashboard summary projection. This prevents the release
+review/controls/dashboard ladder from regressing to fake-service-only package
 coverage.
 
 Broad local gate:

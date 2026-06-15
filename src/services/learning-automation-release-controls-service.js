@@ -324,6 +324,8 @@ function createLearningAutomationReleaseControlsService(options = {}) {
       backgroundSchedulingAllowed: false,
       backgroundWorkerAllowed: false
     };
+    const reviewSummary = objectOnly(parts.review.releaseReview);
+    const reviewPackageReadback = objectOnly(parts.review.packageReadback || reviewSummary.packageReadback);
     const steps = [
       step("release_readiness", readiness, {
         ready: parts.readiness.readyForReleaseReview === true,
@@ -337,10 +339,14 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         packageRecordReadbackAvailable: parts.review.packageRecordReadbackAvailable === true,
         packageRecordRequired: parts.review.packageRecordRequired === true,
         packageRecordPresent: parts.review.packageRecordPresent === true,
-        latestPackageId: cleanString(objectOnly(parts.review.latestPackage).packageId || objectOnly(parts.review.releaseReview).latestPackageId, 180),
-        latestPackageStatus: cleanString(objectOnly(parts.review.latestPackage).status || objectOnly(parts.review.releaseReview).packageRecordStatus, 120),
+        latestPackageId: cleanString(objectOnly(parts.review.latestPackage).packageId || reviewSummary.latestPackageId, 180),
+        latestPackageStatus: cleanString(objectOnly(parts.review.latestPackage).status || reviewSummary.packageRecordStatus, 120),
+        latestPackageStepCount: Number(reviewSummary.latestPackageStepCount || reviewPackageReadback.latestPackageStepCount || 0) || 0,
+        latestPackageDashboardStatus: cleanString(reviewSummary.latestPackageDashboardStatus || reviewPackageReadback.latestPackageDashboardStatus, 120),
+        latestPackageDashboardNextActionKey: cleanString(reviewSummary.latestPackageDashboardNextActionKey || reviewPackageReadback.latestPackageDashboardNextActionKey, 140),
+        latestPackageDashboardRequiredActionCount: Number(reviewSummary.latestPackageDashboardRequiredActionCount || reviewPackageReadback.latestPackageDashboardRequiredActionCount || 0) || 0,
         requiredActions: actionCandidates(parts.review),
-        nextAction: objectOnly(parts.review.releaseReview).nextAction || null
+        nextAction: reviewSummary.nextAction || null
       }),
       step("release_closure", closure, {
         ready: parts.closure.backendEvidenceComplete === true,

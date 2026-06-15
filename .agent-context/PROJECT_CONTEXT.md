@@ -250,6 +250,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `learning_growth_automation_release_packages` only with
   `--write-package-record --allow-write`; package records include bounded
   `releaseDashboardSummary` in `release_dashboard_summary_json`. The
+  release review, controls, inventory, and dashboard readbacks project that
+  dashboard summary as latest-package dashboard status, next-action key,
+  required-action count, and step count without exposing raw package
+  artifacts. The
   visible-target scoped
   `GET /api/v1/growth/automation/release-packages` and Owner-only
   `POST /api/v1/growth/automation/release-packages` expose record readback and
@@ -285,9 +289,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   latest release collection run, latest Owner decision, latest persisted
   release-package audit record, and release approval bag through service
   boundaries for future Owner UI/release controls. Package record readback is
-  explicit advisory evidence (`packageRecordStatus`, `latestPackage`) and is
-  not a hard authorization gate in this stage. It does not write tables, call
-  Gateway, run smoke tasks, flip runtime config, or schedule work. Growth now
+  explicit advisory evidence (`packageRecordStatus`, `latestPackage`, and
+  bounded `packageReadback` dashboard summary fields) and is not a hard
+  authorization gate in this stage. It does not write tables, call Gateway,
+  run smoke tasks, flip runtime config, or schedule work. Growth now
   also has
   `learning-automation-release-authorization-service`,
   `npm run smoke:release-authorization`, and visible-target scoped

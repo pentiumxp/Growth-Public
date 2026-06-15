@@ -113,6 +113,38 @@ function primaryIdKeys(kind) {
   return byKind[kind] || [];
 }
 
+function packageDashboardFields(record = {}) {
+  const stepSummary = objectOnly(record.stepSummary || record.step_summary);
+  const dashboard = objectOnly(record.releaseDashboardSummary || record.release_dashboard_summary || record.dashboardSummary || record.dashboard_summary);
+  const nextAction = objectOnly(dashboard.nextAction || dashboard.next_action);
+  return {
+    latestPackageStepCount: Number(stepSummary.stepCount || stepSummary.step_count || 0) || 0,
+    latestPackageDashboardStatus: cleanString(dashboard.status, 120),
+    latestPackageDashboardReadinessStatus: cleanString(dashboard.readinessStatus || dashboard.readiness_status, 120),
+    latestPackageDashboardControlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status, 120),
+    latestPackageDashboardInventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status, 120),
+    latestPackageDashboardRequiredActionCount: Number(dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+    latestPackageDashboardNextActionKey: cleanString(nextAction.key || dashboard.nextActionKey || dashboard.next_action_key, 140),
+    releaseDashboardSummary: {
+      schemaVersion: cleanString(dashboard.schemaVersion || dashboard.schema_version, 180),
+      summaryOnly: dashboard.summaryOnly === true || dashboard.summary_only === true,
+      status: cleanString(dashboard.status, 120),
+      readinessStatus: cleanString(dashboard.readinessStatus || dashboard.readiness_status, 120),
+      controlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status, 120),
+      inventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status, 120),
+      requiredActionCount: Number(dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+      nextAction: nextAction.key ? {
+        key: cleanString(nextAction.key, 140),
+        action: cleanString(nextAction.action || nextAction.type || nextAction.reason, 180),
+        requiredActor: cleanString(nextAction.requiredActor || nextAction.required_actor || nextAction.actor, 80)
+      } : null,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    }
+  };
+}
+
 function recordSummary(kind, record = {}) {
   const packageSummary = objectOnly(record.packageSummary || record.package_summary);
   const activationGates = record.requestedActivationGates || record.requested_activation_gates || record.activationGates || record.activation_gates;
@@ -126,7 +158,7 @@ function recordSummary(kind, record = {}) {
     "enablementId", "enablement_id",
     "collectionRunId", "collection_run_id", "runId", "run_id"
   ]));
-  return {
+  const summary = {
     kind,
     id,
     status: cleanString(record.status || packageSummary.status, 120),
@@ -145,6 +177,8 @@ function recordSummary(kind, record = {}) {
     backgroundSchedulingAllowed: false,
     backgroundWorkerAllowed: false
   };
+  if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record));
+  return summary;
 }
 
 function listSummary(kind, result = {}, recordsKey) {
@@ -274,6 +308,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
     const controls = controlsSummary(objectOnly(result.controls));
     const status = inventoryStatus(controls, summaries);
     const artifactCount = summaries.reduce((total, summary) => total + (Number(summary.count) || 0), 0);
+    const latestPackage = objectOnly(summaries.find((summary) => summary.kind === "release_package")?.latest);
 
     return Object.assign({}, scope, {
       ok: true,
@@ -296,6 +331,10 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         blockedRecordKinds: summaries.filter((summary) => summary.ok === false).map((summary) => summary.kind),
         latestCollectionRunId: cleanString(summaries.find((summary) => summary.kind === "release_collection_run")?.latest?.id, 180),
         latestPackageId: cleanString(summaries.find((summary) => summary.kind === "release_package")?.latest?.id, 180),
+        latestPackageStepCount: Number(latestPackage.latestPackageStepCount || 0) || 0,
+        latestPackageDashboardStatus: cleanString(latestPackage.latestPackageDashboardStatus, 120),
+        latestPackageDashboardNextActionKey: cleanString(latestPackage.latestPackageDashboardNextActionKey, 140),
+        latestPackageDashboardRequiredActionCount: Number(latestPackage.latestPackageDashboardRequiredActionCount || 0) || 0,
         latestDecisionId: cleanString(summaries.find((summary) => summary.kind === "release_decision")?.latest?.id, 180),
         latestActivationId: cleanString(summaries.find((summary) => summary.kind === "release_activation")?.latest?.id, 180),
         latestRuntimeEnablementId: cleanString(summaries.find((summary) => summary.kind === "runtime_enablement")?.latest?.id, 180),

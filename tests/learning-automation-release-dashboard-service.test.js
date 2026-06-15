@@ -78,6 +78,10 @@ function createService(overrides = {}, calls = []) {
             blockedRecordKinds: [],
             latestCollectionRunId: input.collectionRunId,
             latestPackageId: "lgapkg_1",
+            latestPackageStepCount: 6,
+            latestPackageDashboardStatus: "manual_runtime_config_required",
+            latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+            latestPackageDashboardRequiredActionCount: 1,
             latestDecisionId: "lgard_1",
             latestActivationId: "lgaract_1",
             latestRuntimeEnablementId: ""
@@ -95,7 +99,24 @@ function createService(overrides = {}, calls = []) {
               ok: true,
               status: "records_available",
               count: 1,
-              latest: { id: "lgapkg_1", status: "ready_for_release_review" },
+              latest: {
+                id: "lgapkg_1",
+                status: "ready_for_release_review",
+                latestPackageStepCount: 6,
+                latestPackageDashboardStatus: "manual_runtime_config_required",
+                latestPackageDashboardRequiredActionCount: 1,
+                latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+                releaseDashboardSummary: {
+                  summaryOnly: true,
+                  status: "manual_runtime_config_required",
+                  requiredActionCount: 1,
+                  nextAction: {
+                    key: "enable_runtime_config_manually",
+                    action: "perform_platform_runtime_config_enablement",
+                    requiredActor: "owner"
+                  }
+                }
+              },
               statuses: ["ready_for_release_review"]
             },
             runtimeEnablements: {
@@ -139,12 +160,19 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.nextAction.key, "enable_runtime_config");
   assert.equal(result.releaseDashboard.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseDashboard.latestPackageId, "lgapkg_1");
+  assert.equal(result.releaseDashboard.latestPackageStepCount, 6);
+  assert.equal(result.releaseDashboard.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboard.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.releaseDashboard.latestPackageDashboardRequiredActionCount, 1);
   assert.deepEqual(result.releaseDashboard.missingRecordKinds, ["runtime_enablement"]);
   assert.deepEqual(result.releaseDashboard.persistedApprovalKeys, ["writefulExecutionApproval"]);
   assert.equal(result.releaseReadiness.readyForReleaseReview, false);
   assert.equal(result.releaseControls.auditReadbackStatus, "ready");
   assert.equal(result.releaseInventory.artifactCount, 7);
   assert.equal(result.artifactReadback.packages.latestId, "lgapkg_1");
+  assert.equal(result.artifactReadback.packages.latestPackageStepCount, 6);
+  assert.equal(result.artifactReadback.packages.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.artifactReadback.packages.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.deepEqual(calls.map((call) => call.type), ["readiness", "controls", "inventory"]);

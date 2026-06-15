@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T21:07Z - Release Package Dashboard Summary Readback Projection
+
+- Status: implemented and validated locally. This slice is
+  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-review-service` now exposes bounded
+    `packageReadback` plus `releaseReview.latestPackageDashboard*` fields from
+    persisted package `releaseDashboardSummary`;
+  - `learning-automation-release-controls-service` now carries the package
+    dashboard status/next-action key/required-action count/step count on the
+    `release_review` step;
+  - `learning-automation-release-inventory-service` now projects the latest
+    package dashboard summary into package artifact readback and
+    `releaseInventory`;
+  - `learning-automation-release-dashboard-service` now projects those latest
+    package dashboard fields into `releaseDashboard` and
+    `artifactReadback.packages`;
+  - no DB schema change was required because package records already persist
+    `release_dashboard_summary_json`.
+- Changed files:
+  - `src/services/learning-automation-release-review-service.js`;
+  - `src/services/learning-automation-release-controls-service.js`;
+  - `src/services/learning-automation-release-inventory-service.js`;
+  - `src/services/learning-automation-release-dashboard-service.js`;
+  - `tests/learning-automation-release-review-service.test.js`;
+  - `tests/learning-automation-release-controls-service.test.js`;
+  - `tests/learning-automation-release-inventory-service.test.js`;
+  - `tests/learning-automation-release-dashboard-service.test.js`;
+  - `tests/growth-release-review-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`.
+- Validation passed:
+  - syntax checks for changed release readback services;
+  - `node --test tests/learning-automation-release-review-service.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-release-review-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    (`54` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js tests/learning-automation-release-review-service.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-release-review-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    (`55` tests);
+  - `git diff --check`;
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`724` tests);
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops evidence ledger append ids
+    `evidence-86703ac4-a64c-48ca-be75-ce3ec7c51b70` and
+    `evidence-ba7a6b97-7a91-439d-980b-ba7d9666fc78`.
+- Remaining product work:
+  - commit and push this slice;
+  - build embedded Owner UI over package/readiness/controls/dashboard readbacks
+    only after the backend summary contracts stay stable;
+  - collect real production visual/action/scheduler/package/dashboard evidence
+    before any runtime enablement.
+
 ## 2026-06-15T20:54Z - Release Package Dashboard Readback Artifact
 
 - Status: implemented and validated locally. This slice is Growth

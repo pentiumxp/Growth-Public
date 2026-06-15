@@ -57,6 +57,45 @@ function firstItem(result, key) {
   return asArray(result && result[key])[0] || null;
 }
 
+function publicDashboardAction(action = {}) {
+  const value = objectOnly(action);
+  const key = cleanString(value.key || value.checkKey || value.check_key || value.evidenceKey || value.evidence_key, 140);
+  if (!key) return null;
+  return {
+    key,
+    action: cleanString(value.action || value.type || value.reason, 180),
+    requiredActor: cleanString(value.requiredActor || value.required_actor || value.actor, 80)
+  };
+}
+
+function publicDashboardSummary(record = {}) {
+  const dashboardSummary = objectOnly(
+    record.releaseDashboardSummary
+    || record.release_dashboard_summary
+    || record.dashboardSummary
+    || record.dashboard_summary
+  );
+  const nextAction = publicDashboardAction(dashboardSummary.nextAction || dashboardSummary.next_action);
+  return {
+    schemaVersion: cleanString(dashboardSummary.schemaVersion || dashboardSummary.schema_version, 180),
+    summaryOnly: dashboardSummary.summaryOnly === true || dashboardSummary.summary_only === true,
+    status: cleanString(dashboardSummary.status, 120),
+    readinessStatus: cleanString(dashboardSummary.readinessStatus || dashboardSummary.readiness_status, 120),
+    controlsStatus: cleanString(dashboardSummary.controlsStatus || dashboardSummary.controls_status, 120),
+    inventoryStatus: cleanString(dashboardSummary.inventoryStatus || dashboardSummary.inventory_status, 120),
+    requiredActionCount: Number(dashboardSummary.requiredActionCount || dashboardSummary.required_action_count || 0) || 0,
+    nextAction,
+    latestCollectionRunId: cleanString(dashboardSummary.latestCollectionRunId || dashboardSummary.latest_collection_run_id, 180),
+    latestPackageId: cleanString(dashboardSummary.latestPackageId || dashboardSummary.latest_package_id || record.packageId || record.package_id, 180),
+    latestDecisionId: cleanString(dashboardSummary.latestDecisionId || dashboardSummary.latest_decision_id, 180),
+    latestActivationId: cleanString(dashboardSummary.latestActivationId || dashboardSummary.latest_activation_id, 180),
+    latestRuntimeEnablementId: cleanString(dashboardSummary.latestRuntimeEnablementId || dashboardSummary.latest_runtime_enablement_id, 180),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function latestCollectionRun(collectionRunService, scope, input) {
   if (!collectionRunService || typeof collectionRunService.listRuns !== "function") {
     return unavailable("learning_automation_release_review_collection_run_unavailable");
@@ -104,6 +143,7 @@ function publicPackage(record = null) {
   if (!record) return null;
   const packageSummary = objectOnly(record.packageSummary || record.package_summary);
   const stepSummary = objectOnly(record.stepSummary || record.step_summary);
+  const releaseDashboardSummary = publicDashboardSummary(record);
   return {
     packageId: cleanString(record.packageId || record.package_id, 180),
     status: cleanString(record.status || packageSummary.status, 80),
@@ -131,9 +171,36 @@ function publicPackage(record = null) {
       runtimeConfigChange: false,
       configChangeApplied: false
     },
+    releaseDashboardSummary,
     createdAt: cleanString(record.createdAt || record.created_at, 80),
     updatedAt: cleanString(record.updatedAt || record.updated_at, 80),
     summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function packageReadbackSummary(packageResult = {}, packageRecordStatus = "") {
+  const record = objectOnly(packageResult.package);
+  const stepSummary = objectOnly(record.stepSummary);
+  const dashboard = objectOnly(record.releaseDashboardSummary);
+  const nextAction = publicDashboardAction(dashboard.nextAction);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseReview.packageReadback.v1",
+    summaryOnly: true,
+    packageRecordReadbackAvailable: packageResult.readbackAvailable === true,
+    packageRecordPresent: Boolean(packageResult.package),
+    packageRecordStatus: cleanString(packageRecordStatus || record.status, 120),
+    latestPackageId: cleanString(record.packageId || dashboard.latestPackageId, 180),
+    latestPackageStepCount: Number(stepSummary.stepCount || 0) || 0,
+    latestPackageDashboardStatus: cleanString(dashboard.status, 120),
+    latestPackageDashboardReadinessStatus: cleanString(dashboard.readinessStatus, 120),
+    latestPackageDashboardControlsStatus: cleanString(dashboard.controlsStatus, 120),
+    latestPackageDashboardInventoryStatus: cleanString(dashboard.inventoryStatus, 120),
+    latestPackageDashboardRequiredActionCount: Number(dashboard.requiredActionCount || 0) || 0,
+    latestPackageDashboardNextActionKey: cleanString(nextAction && nextAction.key, 140),
+    latestPackageDashboardNextAction: nextAction,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -298,6 +365,7 @@ function createLearningAutomationReleaseReviewService(options = {}) {
       : packageRecordRequired
         ? packageResult.readbackAvailable ? "missing" : "readback_unavailable"
         : "not_required";
+    const packageReadback = packageReadbackSummary(packageResult, packageRecordStatus);
     return Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-review-service",
@@ -320,6 +388,7 @@ function createLearningAutomationReleaseReviewService(options = {}) {
       latestCollectionRun: collection.run,
       latestDecision: decisionResult.decision,
       latestPackage: packageResult.package,
+      packageReadback,
       approvalSummary: {
         schemaVersion: "growth.learningAutomationReleaseReview.approvalSummary.v1",
         summaryOnly: true,
@@ -336,6 +405,14 @@ function createLearningAutomationReleaseReviewService(options = {}) {
         packageRecordPresent,
         packageRecordStatus,
         latestPackageId: packageResult.package?.packageId || "",
+        latestPackageStepCount: packageReadback.latestPackageStepCount,
+        latestPackageDashboardStatus: packageReadback.latestPackageDashboardStatus,
+        latestPackageDashboardReadinessStatus: packageReadback.latestPackageDashboardReadinessStatus,
+        latestPackageDashboardControlsStatus: packageReadback.latestPackageDashboardControlsStatus,
+        latestPackageDashboardInventoryStatus: packageReadback.latestPackageDashboardInventoryStatus,
+        latestPackageDashboardRequiredActionCount: packageReadback.latestPackageDashboardRequiredActionCount,
+        latestPackageDashboardNextActionKey: packageReadback.latestPackageDashboardNextActionKey,
+        packageReadback,
         nextAction,
         requiredActionCount: nextAction ? Math.max(1, readiness.requiredActionCount || 0) : 0,
         missingCheckKeys: readiness.missingCheckKeys,

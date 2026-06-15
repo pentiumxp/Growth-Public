@@ -48,7 +48,36 @@ function review(overrides = {}) {
       collectionRunId: "lgacrn_ready_1",
       status: "ready_for_release_review",
       packageVersion: "growth.learningAutomationReleasePackage.v1",
-      privacyClass: "summary_only"
+      privacyClass: "summary_only",
+      stepSummary: {
+        summaryOnly: true,
+        stepCount: 6
+      },
+      releaseDashboardSummary: {
+        summaryOnly: true,
+        status: "manual_runtime_config_required",
+        requiredActionCount: 1,
+        nextAction: {
+          key: "enable_runtime_config_manually",
+          action: "perform_platform_runtime_config_enablement",
+          requiredActor: "owner"
+        }
+      }
+    },
+    packageReadback: {
+      schemaVersion: "growth.learningAutomationReleaseReview.packageReadback.v1",
+      summaryOnly: true,
+      packageRecordReadbackAvailable: true,
+      packageRecordPresent: true,
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgapkg_ready_1",
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPackageDashboardRequiredActionCount: 1,
+      latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
     },
     releaseReview: {
       schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
@@ -59,6 +88,10 @@ function review(overrides = {}) {
       packageRecordPresent: true,
       packageRecordStatus: "ready_for_release_review",
       latestPackageId: "lgapkg_ready_1",
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPackageDashboardRequiredActionCount: 1,
+      latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
       requiredActionCount: 0,
       missingCheckKeys: [],
       blockedCheckKeys: [],
@@ -270,6 +303,10 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.steps[1].packageRecordPresent, true);
   assert.equal(result.steps[1].latestPackageId, "lgapkg_ready_1");
   assert.equal(result.steps[1].latestPackageStatus, "ready_for_release_review");
+  assert.equal(result.steps[1].latestPackageStepCount, 6);
+  assert.equal(result.steps[1].latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.steps[1].latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.steps[1].latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.auditReadback.activationRecords.count, 1);
   assert.equal(result.auditReadback.activationRecords.latestRecordId, "lgaact_ready_1");
   assert.equal(result.auditReadback.runtimeEnablementRecords.count, 1);

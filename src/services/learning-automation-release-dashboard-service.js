@@ -177,10 +177,23 @@ function controlsSummary(controls = {}) {
   };
 }
 
-function recordSummary(value = {}) {
+function packageDashboardFields(record = {}, latest = {}) {
+  const dashboard = objectOnly(latest.releaseDashboardSummary || latest.release_dashboard_summary || record.releaseDashboardSummary || record.release_dashboard_summary);
+  return {
+    latestPackageStepCount: Number(record.latestPackageStepCount || latest.latestPackageStepCount || 0) || 0,
+    latestPackageDashboardStatus: cleanString(record.latestPackageDashboardStatus || latest.latestPackageDashboardStatus || dashboard.status, 120),
+    latestPackageDashboardReadinessStatus: cleanString(latest.latestPackageDashboardReadinessStatus || dashboard.readinessStatus || dashboard.readiness_status, 120),
+    latestPackageDashboardControlsStatus: cleanString(latest.latestPackageDashboardControlsStatus || dashboard.controlsStatus || dashboard.controls_status, 120),
+    latestPackageDashboardInventoryStatus: cleanString(latest.latestPackageDashboardInventoryStatus || dashboard.inventoryStatus || dashboard.inventory_status, 120),
+    latestPackageDashboardRequiredActionCount: Number(record.latestPackageDashboardRequiredActionCount || latest.latestPackageDashboardRequiredActionCount || dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+    latestPackageDashboardNextActionKey: cleanString(record.latestPackageDashboardNextActionKey || latest.latestPackageDashboardNextActionKey || objectOnly(dashboard.nextAction || dashboard.next_action).key, 140)
+  };
+}
+
+function recordSummary(value = {}, kind = "") {
   const record = objectOnly(value);
   const latest = objectOnly(record.latest);
-  return {
+  const summary = {
     ok: record.ok !== false,
     status: cleanString(record.status, 120),
     count: Number(record.count) || 0,
@@ -188,6 +201,8 @@ function recordSummary(value = {}) {
     latestStatus: cleanString(record.latestStatus || latest.status, 120),
     statuses: uniqueStrings(record.statuses || [])
   };
+  if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record, latest));
+  return summary;
 }
 
 function artifactReadbackSummary(artifactReadback = {}) {
@@ -198,7 +213,7 @@ function artifactReadbackSummary(artifactReadback = {}) {
     snapshots: recordSummary(readback.snapshots),
     collectionRuns: recordSummary(readback.collectionRuns || readback.collection_runs),
     decisions: recordSummary(readback.decisions),
-    packages: recordSummary(readback.packages),
+    packages: recordSummary(readback.packages, "release_package"),
     approvals: recordSummary(readback.approvals),
     activations: recordSummary(readback.activations),
     runtimeEnablements: recordSummary(readback.runtimeEnablements || readback.runtime_enablements)
@@ -217,6 +232,10 @@ function inventorySummary(inventory = {}) {
     blockedRecordKinds: uniqueStrings(summary.blockedRecordKinds || []),
     latestCollectionRunId: cleanString(summary.latestCollectionRunId, 180),
     latestPackageId: cleanString(summary.latestPackageId, 180),
+    latestPackageStepCount: Number(summary.latestPackageStepCount || 0) || 0,
+    latestPackageDashboardStatus: cleanString(summary.latestPackageDashboardStatus, 120),
+    latestPackageDashboardNextActionKey: cleanString(summary.latestPackageDashboardNextActionKey, 140),
+    latestPackageDashboardRequiredActionCount: Number(summary.latestPackageDashboardRequiredActionCount || 0) || 0,
     latestDecisionId: cleanString(summary.latestDecisionId, 180),
     latestActivationId: cleanString(summary.latestActivationId, 180),
     latestRuntimeEnablementId: cleanString(summary.latestRuntimeEnablementId, 180),
@@ -258,6 +277,10 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     nextAction: firstAction(controlsPart.nextAction, readinessPart.nextAction),
     latestCollectionRunId: inventoryPart.latestCollectionRunId,
     latestPackageId: inventoryPart.latestPackageId,
+    latestPackageStepCount: inventoryPart.latestPackageStepCount,
+    latestPackageDashboardStatus: inventoryPart.latestPackageDashboardStatus,
+    latestPackageDashboardNextActionKey: inventoryPart.latestPackageDashboardNextActionKey,
+    latestPackageDashboardRequiredActionCount: inventoryPart.latestPackageDashboardRequiredActionCount,
     latestDecisionId: inventoryPart.latestDecisionId,
     latestActivationId: inventoryPart.latestActivationId,
     latestRuntimeEnablementId: inventoryPart.latestRuntimeEnablementId,

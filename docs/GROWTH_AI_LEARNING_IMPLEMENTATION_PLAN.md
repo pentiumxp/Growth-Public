@@ -754,7 +754,10 @@ Implemented backend shape:
   `automation-release-packages.js` and contain only bounded package, step,
   bundle/audit/readiness/collection-run/controls/dashboard summaries. The
   repository migrates `release_dashboard_summary_json` for persisted dashboard
-  readback. Visible-target scoped
+  readback. Release review, controls, inventory, and dashboard readbacks expose
+  only bounded latest-package dashboard summary fields (`status`,
+  `nextAction.key`, `requiredActionCount`, and `stepCount`) instead of raw
+  package artifacts. Visible-target scoped
   `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an
   existing summary-only package artifact only and does not run smoke tasks. The
@@ -780,9 +783,12 @@ Implemented backend shape:
   is explicit advisory evidence only: `packageRecordStatus` can be
   `not_required`, `missing`, `readback_unavailable`, or the persisted package
   status, and missing package records do not yet change the release
-  authorization decision. It does not write repositories or tables, run smoke
-  tasks, call Gateway, publish, generate, evaluate, schedule, notify, activate
-  stage assessments, mutate learner state, or flip runtime config.
+  authorization decision. When the package record contains
+  `releaseDashboardSummary`, review also returns `packageReadback` and
+  `releaseReview.latestPackageDashboard*` summary fields for controls and UI
+  readback. It does not write repositories or tables, run smoke tasks, call
+  Gateway, publish, generate, evaluate, schedule, notify, activate stage
+  assessments, mutate learner state, or flip runtime config.
 - `npm run smoke:release-closure` delegates to
   `learning-automation-release-closure-service.summarize` and returns a
   no-write `growth.learningAutomationReleaseClosure.v1` readback for Owner

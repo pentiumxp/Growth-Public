@@ -812,6 +812,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseReviewService, /latestPackage/);
   assert.match(automationReleaseReviewService, /packageRecordPresent/);
   assert.match(automationReleaseReviewService, /packageRecordStatus/);
+  assert.match(automationReleaseReviewService, /packageReadbackSummary/);
+  assert.match(automationReleaseReviewService, /releaseDashboardSummary/);
+  assert.match(automationReleaseReviewService, /latestPackageDashboardStatus/);
   assert.match(automationReleaseReviewService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseReviewService, /runtimeConfigChange: false/);
   assert.match(automationReleaseReviewService, /advisoryOnly: true/);
@@ -979,6 +982,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseControlsService, /release_closure_required/);
   assert.match(automationReleaseControlsService, /latestPackageId/);
   assert.match(automationReleaseControlsService, /latestPackageStatus/);
+  assert.match(automationReleaseControlsService, /latestPackageDashboardStatus/);
+  assert.match(automationReleaseControlsService, /latestPackageDashboardNextActionKey/);
   assert.match(automationReleaseControlsService, /packageRecordPresent/);
   assert.match(automationReleaseControlsService, /configChangeApplied: false/);
   assert.match(automationReleaseControlsService, /writefulSchedulingAllowed: false/);
@@ -1946,6 +1951,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /approvalService\.listApprovals/);
   assert.match(releaseInventoryService, /releaseActivationService\.listActivations/);
   assert.match(releaseInventoryService, /runtimeEnablementService\.listEnablements/);
+  assert.match(releaseInventoryService, /packageDashboardFields/);
+  assert.match(releaseInventoryService, /releaseDashboardSummary/);
+  assert.match(releaseInventoryService, /latestPackageDashboardStatus/);
   assert.doesNotMatch(releaseInventoryService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseInventoryService, /learning_growth_/);
   assert.doesNotMatch(releaseInventoryService, /spawnSync/);
@@ -1964,6 +1972,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseDashboardService, /releaseReadinessService\.evaluateReadiness/);
   assert.match(releaseDashboardService, /releaseControlsService\.summarize/);
   assert.match(releaseDashboardService, /releaseInventoryService\.inventory/);
+  assert.match(releaseDashboardService, /packageDashboardFields/);
+  assert.match(releaseDashboardService, /latestPackageDashboardStatus/);
   assert.doesNotMatch(releaseDashboardService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseDashboardService, /learning_growth_/);
   assert.doesNotMatch(releaseDashboardService, /spawnSync/);

@@ -67,6 +67,27 @@ function createService(overrides = {}, calls = []) {
             packageSummary: {
               summaryOnly: true,
               collectionRunId: input.collectionRunId
+            },
+            stepSummary: {
+              summaryOnly: true,
+              stepCount: 6
+            },
+            releaseDashboardSummary: {
+              schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+              summaryOnly: true,
+              status: "manual_runtime_config_required",
+              readinessStatus: "ready_for_release_review",
+              controlsStatus: "manual_runtime_config_required",
+              inventoryStatus: "manual_runtime_config_required",
+              requiredActionCount: 1,
+              nextAction: {
+                key: "enable_runtime_config_manually",
+                action: "perform_platform_runtime_config_enablement",
+                requiredActor: "owner"
+              },
+              writefulSchedulingAllowed: false,
+              runtimeConfigChange: false,
+              configChangeApplied: false
             }
           }]
         };
@@ -162,11 +183,19 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.releaseInventory.artifactCount, 7);
   assert.equal(result.releaseInventory.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseInventory.latestPackageId, "lgapkg_1");
+  assert.equal(result.releaseInventory.latestPackageStepCount, 6);
+  assert.equal(result.releaseInventory.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseInventory.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.releaseInventory.latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.releaseInventory.latestDecisionId, "lgard_1");
   assert.equal(result.releaseInventory.latestActivationId, "lgaract_1");
   assert.equal(result.releaseInventory.latestRuntimeEnablementId, "lgrten_1");
   assert.equal(result.artifactReadback.controls.status, "manual_runtime_config_required");
   assert.equal(result.artifactReadback.packages.latest.collectionRunId, "lgacrn_1");
+  assert.equal(result.artifactReadback.packages.latest.latestPackageStepCount, 6);
+  assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.summaryOnly, true);
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.deepEqual(calls.map((call) => call.type), [
