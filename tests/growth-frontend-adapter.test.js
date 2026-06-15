@@ -182,6 +182,11 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.retryGrowthEvaluation({ task_card_id: "ltask_daily_1", reason: "owner retry" }, "weixin_fanfan");
   await client.draftGrowthDailyLoop({ target_node_ids: ["kg_main_idea"] }, "weixin_fanfan");
   await client.publishGrowthDailyLoop({ plan_draft_id: "lgplan_1", selected_item_id: "plan_item_1" }, "weixin_fanfan");
+  await client.submitGrowthProfileCorrection({
+    target_node_ids: ["kg_main_idea"],
+    review_action: "mark_needs_repair",
+    reason: "Owner bounded note."
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -238,6 +243,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
     plan_draft_id: "lgplan_1",
     selected_item_id: "plan_item_1"
   });
+  assert.equal(calls[13].path, "/api/v1/growth/profile-corrections");
+  assert.deepEqual(JSON.parse(calls[13].options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_ids: ["kg_main_idea"],
+    review_action: "mark_needs_repair",
+    reason: "Owner bounded note."
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -262,6 +274,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
   await client.draftGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.publishGrowthDailyLoop({ plan_draft_id: "lgplan_1", selected_item_id: "plan_item_1" }, "weixin_stephen");
+  await client.submitGrowthProfileCorrection({ target_node_ids: ["kg_english_main_idea"], reason: "bounded" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -269,6 +282,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(calls[2].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
   assert.equal(calls[3].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/draft");
   assert.equal(calls[4].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/publish");
+  assert.equal(calls[5].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/profile-corrections");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -523,6 +537,54 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         reason: "Use one more short evidence-answering card."
       }
     },
+    ownerAudit: {
+      ok: true,
+      available: true,
+      summary: {
+        planDraftCount: 2,
+        publishedPlanCount: 1,
+        profileDeltaCount: 1,
+        correctionCount: 1,
+        lastPlanAt: "2026-06-14T09:15:00.000Z",
+        lastPublishedAt: "2026-06-14T09:15:00.000Z",
+        lastProfileDeltaAt: "2026-06-14T09:05:00.000Z",
+        lastCorrectionAt: "2026-06-14T09:10:00.000Z"
+      },
+      planAudit: {
+        planDrafts: [{
+          planDraftId: "lgplan_science_1",
+          status: "published",
+          generatedTaskCardId: "ltask_science_1",
+          selectedItem: {
+            itemId: "plan_item_science_1",
+            reason: "Repair measured result explanation."
+          }
+        }]
+      },
+      profileDeltaAudit: {
+        items: [{
+          profileDeltaId: "lgpdelta_science_1",
+          taskCardId: "ltask_science_1",
+          evaluationId: "eval_science_1",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          evidenceIds: ["lgevidence_science_1"],
+          changedCapabilityCount: 1,
+          summary: { reason: "Moved to repair after weak measured-result evidence." },
+          changedCapabilities: [{
+            nodeId: "kg_english_evidence_answering",
+            afterStatus: "needs_repair"
+          }]
+        }]
+      },
+      profileCorrections: {
+        items: [{
+          correctionId: "lgcorr_science_1",
+          status: "stable",
+          targetNodeIds: ["kg_english_evidence_answering"],
+          reason: "Owner confirmed the profile was too strict."
+        }]
+      }
+    },
     completionPolicy: { mode: "daily_score_once" },
     historySummary: { learnerSummary: { recentCardCount: 6, completedRecentCardCount: 4, evaluationCount: 4, reflectionCount: 1 } }
   };
@@ -532,6 +594,14 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       cardGeneration: {
         status: "ready",
         context,
+        ownerCorrectionDraft: "孩子其实能解释证据，但需要更短材料。",
+        ownerCorrectionAction: "mark_needs_repair",
+        ownerCorrection: {
+          status: "submitted",
+          result: {
+            correction: { correctionId: "lgcorr_new_1" }
+          }
+        },
         dailyLoopDraftResult: {
           ok: true,
           planDraft: {
@@ -596,6 +666,18 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
   assert.match(html, /data-card-generation-lifecycle/);
+  assert.match(html, /data-card-generation-owner-audit/);
+  assert.match(html, /审计与纠偏/);
+  assert.match(html, /lgplan_science_1/);
+  assert.match(html, /ltask_science_1/);
+  assert.match(html, /lgpdelta_science_1/);
+  assert.match(html, /needs_repair/);
+  assert.match(html, /lgcorr_science_1/);
+  assert.match(html, /data-card-generation-correction-form/);
+  assert.match(html, /data-card-generation-correction-note/);
+  assert.match(html, /data-card-generation-correction-action/);
+  assert.match(html, /保存纠偏/);
+  assert.match(html, /纠偏已写入证据账本：lgcorr_new_1/);
   assert.match(html, /推荐闭环/);
   assert.match(html, /已生成/);
   assert.match(html, /已替换/);
@@ -654,6 +736,31 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(publishPayload.plan_draft_id, "lgplan_1");
   assert.equal(publishPayload.selected_item_id, "plan_item_1");
   assert.deepEqual(publishPayload.target_node_ids, ["kg_english_evidence_answering"]);
+
+  const correctionPayload = windowRef.HermesGrowthCardGenerationUi.createOwnerCorrectionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    draft: {
+      note: "孩子其实能解释证据，但需要更短材料。",
+      reviewAction: "mark_needs_repair"
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(correctionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    target_node_ids: ["kg_english_evidence_answering"],
+    review_action: "mark_needs_repair",
+    reason: "孩子其实能解释证据，但需要更短材料。",
+    profile_delta_id: "lgpdelta_science_1",
+    task_card_id: "ltask_science_1",
+    evaluation_id: "eval_science_1",
+    source_evidence_ids: ["lgevidence_science_1"]
+  });
+  assert.equal(Object.hasOwn(correctionPayload, "raw_answer"), false);
+  assert.equal(Object.hasOwn(correctionPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(correctionPayload, "raw_prompt"), false);
 
   const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
     context,
@@ -1355,7 +1462,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260615-daily-loop-draft-publish-ui-v1";
+  const staticVersion = "20260615-owner-audit-correction-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1379,6 +1486,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-recommendation-rationale-ui-v1/);
   assert.doesNotMatch(html, /20260614-recipe-policy-v1/);
   assert.doesNotMatch(html, /20260614-recommendation-lifecycle-v1/);
+  assert.doesNotMatch(html, /20260615-daily-loop-draft-publish-ui-v1/);
 });
 
 test("Growth app refreshes card generation context after publish without clearing preview", () => {
@@ -1397,6 +1505,14 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.publishGrowthDailyLoop\(payload, targetWorkspaceId\)/);
   assert.match(source, /pageState\.cardGeneration\.status = "published";[\s\S]*pageState\.cardGeneration\.dailyLoopPublishResult = result;[\s\S]*pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
   assert.match(source, /pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
+  assert.match(source, /data-card-generation-correction-note/);
+  assert.match(source, /data-card-generation-correction-action/);
+  assert.match(source, /data-card-generation-correction-form/);
+  assert.match(source, /function createOwnerCorrectionPayload/);
+  assert.match(source, /function submitOwnerCorrectionFromUi/);
+  assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\)/);
+  assert.match(source, /pageState\.cardGeneration\.ownerCorrectionDraft = "";\s*[\s\S]*pageState\.cardGeneration\.ownerCorrection = \{\s*status: "submitted"/);
+  assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\);[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId, \{ errorPrefix: "纠偏已保存，但" \}\);[\s\S]*renderShell\(\);/);
   assert.doesNotMatch(source, /api\.generateGrowthCard/);
   assert.doesNotMatch(source, /await loadCardGenerationContext\(targetWorkspaceId\)/);
 });

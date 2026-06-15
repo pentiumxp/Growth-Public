@@ -168,8 +168,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   calls `POST /api/v1/growth/daily-loop/draft`, renders a bounded plan draft
   preview, and `发布为卡片` calls
   `POST /api/v1/growth/daily-loop/publish` before refreshing board,
-  card-generation context, and learning-loop state. The browser still does not
-  call Gateway directly, compute learning policy, or publish automatically.
+  card-generation context, and learning-loop state. It now also renders
+  `ownerAudit` from the card-generation context, including plan audit,
+  persisted profile-delta summaries, correction history, and a bounded Owner
+  correction form that calls
+  `POST /api/v1/growth/profile-corrections` before refreshing context and
+  learning-loop state. The browser still does not call Gateway directly,
+  compute learning policy, mutate Profile V2 locally, or publish automatically.
   Controlled daily-loop
   draft/publish smoke evidence is
   now available through `npm run smoke:daily-loop`; it defaults to preview, and
@@ -465,9 +470,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   profile-delta audit/correction readback through the normal service graph,
   and records a correction only with explicit
   `--operation correction --allow-write` through
-  `learning-owner-correction-service.recordCorrection`. This is backend
-  evidence only; embedded Owner audit/correction UI remains a separate product
-  closure item.
+  `learning-owner-correction-service.recordCorrection`. The embedded Owner
+  `生成` tab now consumes the same context-level audit/correction DTOs and can
+  write bounded correction evidence; explicit single-cycle
+  `learning-cycles/audit` and `learning-cycles/completeness` drilldown remains
+  a separate product closure item.
   Profile V2 now includes expanded stale-evidence freshness: daily evidence and
   formal stage-assessment evidence use separate freshness windows,
   Owner-reviewed corrections do not refresh learner-evidence recency, stale

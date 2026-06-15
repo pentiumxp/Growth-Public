@@ -153,6 +153,12 @@
       }, payload));
     }
 
+    function submitGrowthProfileCorrection(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("profile-corrections"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function evaluateGrowthStageAssessment(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("stage-assessments", "eligibility"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -220,6 +226,7 @@
       resolveGrowthApiPath,
       submitGrowthCardEvidence,
       submitGrowthExperienceSignal,
+      submitGrowthProfileCorrection,
       submitGrowthCardReflection,
       updateWorkspaceUrl,
       workspaceQuery

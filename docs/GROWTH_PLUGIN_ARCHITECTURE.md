@@ -90,10 +90,11 @@ backend boundaries:
 Known gaps before the architecture can be called production-complete for the
 full operating loop:
 
-- embedded Owner UI has a minimal plan draft preview and explicit publish path
-  through the daily-loop facade, but production-complete scope/provision
-  controls, audit/correction drilldown, central visual evidence, and release
-  evidence are still pending;
+- embedded Owner UI has a minimal plan draft preview, explicit publish path,
+  context-level audit panel, and profile-correction write form through Growth
+  service routes, but production-complete scope/provision controls,
+  single-cycle audit/completeness drilldown, central visual evidence, and
+  release evidence are still pending;
 - no-write planner Gateway readiness smoke is implemented locally; production
   execution against real Gateway config is pending before planner UI deploy;
 - no-write daily-loop preview smoke CLI is implemented locally through
@@ -113,8 +114,11 @@ full operating loop:
   renders the compact status/next-action, weakness, audit-gap, and
   stage-checkpoint summary, drafts through
   `POST /api/v1/growth/daily-loop/draft`, previews one selected plan item, and
-  publishes through `POST /api/v1/growth/daily-loop/publish`. Browser code
-  still does not call Gateway directly, compute learning policy, evaluate,
+  publishes through `POST /api/v1/growth/daily-loop/publish`. It also renders
+  `ownerAudit` from the card-generation context and writes bounded Owner
+  correction evidence through `POST /api/v1/growth/profile-corrections` before
+  refreshing context and loop state. Browser code still does not call Gateway
+  directly, compute learning policy, mutate Profile V2 locally, evaluate,
   schedule, activate stage assessments, or publish automatically;
 - controlled daily-loop smoke CLI is implemented locally through
   `npm run smoke:daily-loop`; it defaults to no-write preview, requires
@@ -587,12 +591,14 @@ The first core-module split is behavior-preserving:
   The Owner `生成` tab reads
   `GET /api/v1/growth/card-generation/context`, keeps learner targets separate
   from the Owner actor, renders the selected learner's profile/trajectory
-  projection, and posts generation requests to
-  `POST /api/v1/growth/cards/generate`. The frontend never calls Gateway or
-  model vendors directly. Through the Home AI same-origin plugin proxy, write
-  requests receive the server-side `.hermes-growth/access-key.txt` bearer after
-  Hermes workspace access is checked; direct plugin-port writes still require
-  the bearer explicitly.
+  projection, drafts/publishes through the daily-loop facade, and records
+  bounded Owner correction evidence through the profile-corrections facade.
+  The frontend never calls Gateway or model vendors directly, never imports old
+  Home AI Growth server logic, and never mutates Profile V2 optimistically.
+  Through the Home AI same-origin plugin proxy, write requests receive the
+  server-side `.hermes-growth/access-key.txt` bearer after Hermes workspace
+  access is checked; direct plugin-port writes still require the bearer
+  explicitly.
 - `growth-appearance.js`, `growth-api-client.js`, `growth-view-model.js`, and
   `growth-route-controller.js` keep host integration, API calls, UI
   normalization, and route/action resolution outside the boot script.
@@ -631,18 +637,17 @@ easier to verify.
 The current core architecture target is implemented. Future extractions should
 be feature-driven:
 
-1. Add an Owner-safe embedded UI surface for plan preview and explicit publish
-   on top of the backend plan draft/publish routes.
+1. Finish Owner-safe embedded UI scope/domain-pack/provision controls on top
+   of the existing plan preview, explicit publish, and audit/correction panel.
 2. Expose provisioned `graphOptions`, `targetProvisioning`, and Owner
    provision controls in the embedded UI.
 3. Run production planner readiness smoke and launchd config verification for
    the planner Gateway boundary before enabling planner UI in production.
 4. Generalize the service-level Fanfan science vertical into provisioned
    subject/domain-pack selection for any authorized and provisioned target.
-5. Add an embedded Owner audit UI for profile-delta and profile-correction
-   DTOs plus plan publish-attempt status; the backend correction read/write
-   route, publish-attempt audit metadata, and audit-completeness route are
-   implemented.
+5. Add explicit single-cycle drilldown for `learning-cycles/audit` and
+   `learning-cycles/completeness`; the context-level Owner audit panel and
+   correction write form are implemented.
 6. Add an Owner-reviewed proposal UI on top of
    `GET`/`POST /api/v1/growth/automation/proposals` and
    `POST /api/v1/growth/automation/proposals/:proposalId/decision` plus
@@ -692,7 +697,7 @@ be feature-driven:
 | Owner audit readback context | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-card-generation-context-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner daily-loop backend facade | `node --test tests/growth-daily-loop-smoke-script.test.js tests/growth-daily-loop-preview-smoke-script.test.js tests/learning-daily-loop-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner learning-loop state readback | `node --test tests/learning-loop-state-service.test.js tests/growth-learning-loop-state-smoke-script.test.js tests/learning-daily-loop-service.test.js tests/learning-stage-assessment-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` plus `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json` for default no-write state evidence. |
-| Owner daily-loop browser UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` proves API client draft/publish helpers, Home AI proxy path handling, separate draft/publish buttons, bounded plan preview, visible publish progress, dark-mode contrast, and mobile scroll/layout guards. |
+| Owner daily-loop browser UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` proves API client draft/publish/profile-correction helpers, Home AI proxy path handling, separate draft/publish buttons, bounded plan preview, context-level Owner audit/correction rendering, correction write payload privacy, visible publish progress, dark-mode contrast, and mobile scroll/layout guards. |
 | Learning-cycle audit aggregate | `node --test tests/learning-cycle-audit-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Learning audit completeness readback | `node --test tests/learning-audit-completeness-service.test.js tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Supervised automation proposal dry-run | `node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-proposal-service.test.js tests/learning-audit-completeness-service.test.js tests/learning-plan-publisher-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |

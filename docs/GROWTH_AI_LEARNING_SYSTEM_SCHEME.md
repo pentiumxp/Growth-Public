@@ -465,6 +465,14 @@ and central visual/release evidence before production deployment.
 
 Goal: Owner can explain and correct the completed card cycle.
 
+Current implementation status: the first embedded UI slice is implemented in
+the Owner `生成` tab. It renders `ownerAudit` from
+`GET /api/v1/growth/card-generation/context`, shows plan audit, persisted
+profile-delta summaries, correction history, and writes bounded Owner
+corrections through `POST /api/v1/growth/profile-corrections`. The UI refreshes
+context and `growth.learningLoopState.v1` after a successful correction and
+does not mutate Profile V2 locally.
+
 Required shape:
 
 - render cycle audit, evidence audit, persisted profile-delta audit,
@@ -473,6 +481,11 @@ Required shape:
 - audit DTOs remain summary-only;
 - UI privacy tests reject raw answers, transcripts, prompts, model output,
   source bodies, private paths, credentials, and provider configuration.
+
+Remaining Package 2 work: add explicit single-cycle drilldown over
+`GET /api/v1/growth/learning-cycles/audit` and
+`GET /api/v1/growth/learning-cycles/completeness`, plus central embedded
+visual evidence before production release.
 
 ### Package 3: Stage Checkpoint UI
 
@@ -622,16 +635,21 @@ draft/publish path:
 - `发布为卡片` calls `POST /api/v1/growth/daily-loop/publish`;
 - after publication the browser refreshes the board, card-generation context,
   and `growth.learningLoopState.v1` readback.
+- the same `生成` tab now renders the `ownerAudit` context DTO as an
+  audit/correction panel and writes bounded Owner correction evidence through
+  `POST /api/v1/growth/profile-corrections` before refreshing context and loop
+  state.
 
 The product is not complete because it still lacks full scope/provision
-controls, audit/correction UI, proposal/digest/action UI, central visual
-evidence, platform action evidence, and execution enablement evidence.
+controls, cycle/completeness drilldown UI, proposal/digest/action UI, central
+visual evidence, platform action evidence, and execution enablement evidence.
 
 Therefore the recommended next product-visible slice is still:
 
 1. finish Owner-supervised daily UI details over the existing daily-loop
    facade, especially scope/provision controls and production visual evidence;
-2. then finish Owner audit/correction UI;
+2. then finish Owner cycle/completeness drilldown over the existing
+   audit/correction UI;
 3. then harden formal checkpoint controls;
 4. then generalize target/domain-pack UI;
 5. then move to proposal/digest/action/execution UI;

@@ -372,6 +372,177 @@
     </section>`;
   }
 
+  function ownerAuditItems(ownerAudit = {}, key = "") {
+    const bucket = ownerAudit[key] || {};
+    return asArray(bucket.items || bucket.profileDeltas || bucket.corrections || bucket.planDrafts);
+  }
+
+  function ownerCorrectionStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "submitting") return "保存中";
+    if (value === "submitted") return "已保存";
+    if (value === "failed") return "失败";
+    return "可记录";
+  }
+
+  function ownerReviewActionText(action = "") {
+    const value = clean(action).toLowerCase();
+    if (value === "mark_needs_repair") return "标记需修补";
+    if (value === "mark_misconception") return "标记误解";
+    if (value === "mark_stable") return "确认稳定";
+    if (value === "mark_mastered") return "确认掌握";
+    return "确认观察";
+  }
+
+  function ownerCorrectionTargetNodeIds(context = {}) {
+    const ownerAudit = context.ownerAudit || {};
+    const firstDelta = ownerAuditItems(ownerAudit, "profileDeltaAudit")[0] || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const plan = context.suggestedPlan || {};
+    const values = asArray(firstDelta.targetNodeIds).length
+      ? firstDelta.targetNodeIds
+      : asArray(recommendation.targetNodeIds).length
+        ? recommendation.targetNodeIds
+        : asArray(plan.targetNodeIds).length
+          ? plan.targetNodeIds
+          : [recommendation.targetNodeId || plan.targetNodeId].filter(Boolean);
+    return values.map(clean).filter(Boolean).slice(0, 8);
+  }
+
+  function ownerAuditMetricRows(ownerAudit = {}, escapeHtml = defaultEscapeHtml) {
+    const summary = ownerAudit.summary || {};
+    const rows = [
+      ["计划", summary.planDraftCount, summary.lastPlanAt],
+      ["已发布", summary.publishedPlanCount, summary.lastPublishedAt],
+      ["画像变化", summary.profileDeltaCount, summary.lastProfileDeltaAt],
+      ["纠偏", summary.correctionCount, summary.lastCorrectionAt]
+    ];
+    return rows.map(([label, value, meta]) => `<span>
+      <small>${escapeHtml(label)}</small>
+      <strong>${escapeHtml(String(Number(value || 0) || 0))}</strong>
+      <em>${escapeHtml(clean(meta) || "无记录")}</em>
+    </span>`).join("");
+  }
+
+  function ownerPlanAuditRows(ownerAudit = {}, escapeHtml = defaultEscapeHtml) {
+    const rows = ownerAuditItems(ownerAudit, "planAudit").slice(0, 2);
+    if (!rows.length) return `<div class="learning-card-generation-owner-empty">暂无计划发布审计。</div>`;
+    return rows.map((item) => {
+      const selected = item.selectedItem || {};
+      const label = clean(item.planDraftId || item.generatedTaskCardId || "计划");
+      const detail = clean(selected.reason || item.planSummary || item.status || "summary-only");
+      const meta = clean(item.generatedTaskCardId || selected.itemId || item.status || "记录");
+      return `<div class="learning-card-generation-owner-row">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(meta)}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function ownerProfileDeltaRows(ownerAudit = {}, escapeHtml = defaultEscapeHtml) {
+    const rows = ownerAuditItems(ownerAudit, "profileDeltaAudit").slice(0, 3);
+    if (!rows.length) return `<div class="learning-card-generation-owner-empty">暂无画像变化审计。</div>`;
+    return rows.map((item) => {
+      const firstCapability = asArray(item.changedCapabilities)[0] || {};
+      const label = clean(item.profileDeltaId || item.evaluationId || "画像变化");
+      const capability = clean(firstCapability.nodeId || firstCapability.targetNodeId || asArray(item.targetNodeIds)[0] || "");
+      const after = clean(firstCapability.afterStatus || firstCapability.afterState || firstCapability.status || "");
+      const detail = clean(item.summary?.reason || capability || "summary-only");
+      return `<div class="learning-card-generation-owner-row">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(after || String(Number(item.changedCapabilityCount || 0) || 0))}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function ownerCorrectionRows(ownerAudit = {}, escapeHtml = defaultEscapeHtml) {
+    const rows = ownerAuditItems(ownerAudit, "profileCorrections").slice(0, 3);
+    if (!rows.length) return `<div class="learning-card-generation-owner-empty">暂无 Owner 纠偏记录。</div>`;
+    return rows.map((item) => {
+      const label = clean(item.correctionId || item.profileDeltaId || "纠偏");
+      const detail = clean(item.reason || item.note || asArray(item.targetNodeIds).join(" · ") || "summary-only");
+      return `<div class="learning-card-generation-owner-row">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(clean(item.status) || ownerReviewActionText(item.reviewAction))}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function ownerCorrectionStatusPanel(correction = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(correction.status);
+    const result = correction.result || {};
+    const correctionId = clean(result.correction?.correctionId || result.correctionId);
+    const error = clean(correction.error);
+    if (!status || status === "idle") return "";
+    const detail = status === "submitted"
+      ? `纠偏已写入证据账本${correctionId ? `：${correctionId}` : "。"}`
+      : status === "submitting"
+        ? "正在通过 Growth Owner correction service 写入。"
+        : error || "纠偏写入失败。";
+    return `<div class="learning-card-generation-correction-status" data-owner-correction-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(ownerCorrectionStatusText(status))}</em>
+    </div>`;
+  }
+
+  function ownerAuditPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const ownerAudit = context.ownerAudit || {};
+    const correction = state.ownerCorrection || {};
+    const draft = clean(state.ownerCorrectionDraft);
+    const action = clean(state.ownerCorrectionAction || "confirm_profile_delta");
+    const targetNodeIds = ownerCorrectionTargetNodeIds(context);
+    const disabled = correction.status === "submitting" || !targetNodeIds.length;
+    return `<section class="learning-card-generation-owner-audit" data-card-generation-owner-audit data-owner-audit-available="${ownerAudit.available !== false}">
+      <div class="learning-card-generation-owner-head">
+        <span>
+          <strong>审计与纠偏</strong>
+          <small>计划、画像变化、纠偏记录和下一步证据摘要</small>
+        </span>
+        <em>${escapeHtml(ownerAudit.ok ? "已连接" : "待证据")}</em>
+      </div>
+      <div class="learning-card-generation-owner-grid">
+        ${ownerAuditMetricRows(ownerAudit, escapeHtml)}
+      </div>
+      <div class="learning-card-generation-owner-columns">
+        <div>
+          <b>计划审计</b>
+          ${ownerPlanAuditRows(ownerAudit, escapeHtml)}
+        </div>
+        <div>
+          <b>画像变化</b>
+          ${ownerProfileDeltaRows(ownerAudit, escapeHtml)}
+        </div>
+      </div>
+      <div class="learning-card-generation-owner-corrections">
+        <b>纠偏历史</b>
+        ${ownerCorrectionRows(ownerAudit, escapeHtml)}
+      </div>
+      <form class="learning-card-generation-correction-form" data-card-generation-correction-form>
+        <label>
+          <span>Owner 纠偏</span>
+          <select data-card-generation-correction-action>
+            ${["confirm_profile_delta", "mark_needs_repair", "mark_misconception", "mark_stable", "mark_mastered"].map((item) => `<option value="${escapeHtml(item)}"${item === action ? " selected" : ""}>${escapeHtml(ownerReviewActionText(item))}</option>`).join("")}
+          </select>
+        </label>
+        <textarea data-card-generation-correction-note rows="3" maxlength="260" placeholder="只写 summary-only 纠偏说明，不填写原始答案、transcript 或 prompt。">${escapeHtml(draft)}</textarea>
+        <div class="learning-card-generation-correction-controls">
+          <span>${escapeHtml(targetNodeIds.length ? `节点：${targetNodeIds.join(" · ")}` : "等待可纠偏的图谱节点")}</span>
+          <button type="submit" class="primary" ${disabled ? "disabled" : ""}>${correction.status === "submitting" ? "保存中" : "保存纠偏"}</button>
+        </div>
+        ${ownerCorrectionStatusPanel(correction, escapeHtml)}
+      </form>
+    </section>`;
+  }
+
   function stageAssessmentPanel({ context = {}, state = {}, readiness = {}, plan = {}, escapeHtml = defaultEscapeHtml } = {}) {
     const stage = state.stageAssessment || {};
     const result = stage.result || stage.eligibility || {};
@@ -658,6 +829,35 @@
     }));
   }
 
+  function createOwnerCorrectionPayload({ context = {}, workspaceId = "", draft = {} } = {}) {
+    const ownerAudit = context.ownerAudit || {};
+    const firstDelta = ownerAuditItems(ownerAudit, "profileDeltaAudit")[0] || {};
+    const planAudit = ownerAudit.planAudit || {};
+    const latestPlan = ownerAuditItems(ownerAudit, "planAudit")[0] || {};
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const targetNodeIds = ownerCorrectionTargetNodeIds(context);
+    const payload = {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      program_id: clean(context.programId || firstDelta.programId || latestPlan.programId || plan.programId || defaults.programId),
+      domain_pack_id: clean(context.domainPackId || plan.domainPackId || defaults.domainPackId),
+      domain: clean(plan.domain || context.domain || defaults.domain),
+      subject: clean(plan.subject || context.subject || defaults.subject || plan.domain || context.domain),
+      target_node_ids: targetNodeIds,
+      review_action: clean(draft.reviewAction || "confirm_profile_delta"),
+      reason: clean(draft.note || draft.reason).slice(0, 260),
+      profile_delta_id: clean(draft.profileDeltaId || firstDelta.profileDeltaId),
+      task_card_id: clean(draft.taskCardId || firstDelta.taskCardId || latestPlan.generatedTaskCardId || planAudit.generatedTaskCardId),
+      evaluation_id: clean(draft.evaluationId || firstDelta.evaluationId),
+      source_evidence_ids: asArray(firstDelta.evidenceIds).map(clean).filter(Boolean).slice(0, 12)
+    };
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
   function createStageAssessmentPayload({ context = {}, workspaceId = "", activationSource = "owner_manual" } = {}) {
     const plan = context.suggestedPlan || {};
     const coverage = asArray(plan.targetNodeIds).length ? asArray(plan.targetNodeIds) : [plan.targetNodeId].filter(Boolean);
@@ -741,6 +941,7 @@
           </div>
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${learningProfilePanel(context, escapeHtml)}
+          ${ownerAuditPanel(context, state, escapeHtml)}
           ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
           <div class="learning-card-generation-field-list">
             <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
@@ -777,6 +978,7 @@
     createDailyEnglishGeneratePayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
+    createOwnerCorrectionPayload,
     createStageAssessmentPayload,
     isFanfanSampleTarget,
     renderOwnerCardGenerationPanel

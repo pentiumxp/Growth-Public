@@ -18,6 +18,13 @@
       dailyLoopDraftResult: null,
       dailyLoopPublishResult: null,
       generatedResult: null,
+      ownerCorrectionDraft: "",
+      ownerCorrectionAction: "confirm_profile_delta",
+      ownerCorrection: {
+        status: "idle",
+        result: null,
+        error: ""
+      },
       error: "",
       progressStep: "",
       progressMessage: "",
@@ -504,6 +511,29 @@
         });
       });
     });
+    root.querySelectorAll("[data-card-generation-correction-note]").forEach((textarea) => {
+      textarea.addEventListener("input", () => {
+        pageState.cardGeneration.ownerCorrectionDraft = textarea.value || "";
+      });
+    });
+    root.querySelectorAll("[data-card-generation-correction-action]").forEach((select) => {
+      select.addEventListener("change", () => {
+        pageState.cardGeneration.ownerCorrectionAction = clean(select.value) || "confirm_profile_delta";
+      });
+    });
+    root.querySelectorAll("[data-card-generation-correction-form]").forEach((form) => {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitOwnerCorrectionFromUi().catch((error) => {
+          pageState.cardGeneration.ownerCorrection = {
+            status: "failed",
+            result: pageState.cardGeneration.ownerCorrection?.result || null,
+            error: error.message || String(error)
+          };
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-stage-assessment-check]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -575,6 +605,13 @@
     pageState.cardGeneration.dailyLoopDraftResult = null;
     pageState.cardGeneration.dailyLoopPublishResult = null;
     pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.ownerCorrectionDraft = "";
+    pageState.cardGeneration.ownerCorrectionAction = "confirm_profile_delta";
+    pageState.cardGeneration.ownerCorrection = {
+      status: "idle",
+      result: null,
+      error: ""
+    };
     pageState.cardGeneration.learningLoopState = {
       status: "loading",
       data: null,
@@ -625,7 +662,7 @@
     }
   }
 
-  async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId()) {
+  async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId(), options = {}) {
     if (!pageState.auth.isOwner) return null;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
     try {
@@ -636,7 +673,8 @@
       return context;
     } catch (refreshError) {
       const message = refreshError.message || String(refreshError);
-      const prefix = pageState.cardGeneration.error ? `${pageState.cardGeneration.error}；` : "卡片已发布，但";
+      const fallbackPrefix = clean(options.errorPrefix) || "卡片已发布，但";
+      const prefix = pageState.cardGeneration.error ? `${pageState.cardGeneration.error}；` : fallbackPrefix;
       pageState.cardGeneration.error = `${prefix}生成上下文刷新失败：${message}`;
       return null;
     }
@@ -699,6 +737,26 @@
         context,
         workspaceId: targetWorkspaceId,
         draftResult: pageState.cardGeneration.dailyLoopDraftResult || {}
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  function createOwnerCorrectionPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createOwnerCorrectionPayload !== "function") {
+      throw new Error("owner_correction_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createOwnerCorrectionPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        draft: {
+          note: pageState.cardGeneration.ownerCorrectionDraft,
+          reviewAction: pageState.cardGeneration.ownerCorrectionAction
+        }
       }),
       targetWorkspaceId
     };
@@ -774,6 +832,43 @@
       pageState.cardGeneration.error = error.message || String(error);
       pageState.cardGeneration.progressStep = "failed";
       pageState.cardGeneration.progressMessage = "发布失败。";
+      renderShell();
+    }
+  }
+
+  async function submitOwnerCorrectionFromUi() {
+    const { payload, targetWorkspaceId } = createOwnerCorrectionPayload();
+    if (!clean(payload.reason || payload.note)) {
+      pageState.cardGeneration.ownerCorrection = {
+        status: "failed",
+        result: pageState.cardGeneration.ownerCorrection?.result || null,
+        error: "请先填写一条简短纠偏说明。"
+      };
+      renderShell();
+      return;
+    }
+    pageState.cardGeneration.ownerCorrection = {
+      status: "submitting",
+      result: pageState.cardGeneration.ownerCorrection?.result || null,
+      error: ""
+    };
+    renderShell();
+    try {
+      const result = await api.submitGrowthProfileCorrection(payload, targetWorkspaceId);
+      pageState.cardGeneration.ownerCorrectionDraft = "";
+      pageState.cardGeneration.ownerCorrection = {
+        status: "submitted",
+        result,
+        error: ""
+      };
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "纠偏已保存，但" });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.ownerCorrection = {
+        status: "failed",
+        result: pageState.cardGeneration.ownerCorrection?.result || null,
+        error: error.message || String(error)
+      };
       renderShell();
     }
   }

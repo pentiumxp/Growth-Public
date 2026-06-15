@@ -9,6 +9,89 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T07:52Z - Growth Owner Audit/Correction UI Slice
+
+- Status: implemented, documented, and locally validated. Not deployed in this
+  slice.
+- Change classification: Home AI AI Ops intake returned H3 Architecture
+  Documentation And Harness Map, but Growth treated this as higher-risk UI glue
+  because Owner correction writes create durable learning evidence.
+- Scope:
+  - `public/growth-api-client.js` now exposes
+    `submitGrowthProfileCorrection` over
+    `POST /api/v1/growth/profile-corrections`;
+  - `public/growth-card-generation-ui.js` now renders a context-level
+    `ownerAudit` panel in the Owner `生成` tab, including plan audit counts,
+    persisted profile-delta summaries, correction history, and a bounded Owner
+    correction form;
+  - `public/app.js` wires correction note/action state, submits through the
+    Growth API client, shows visible submit/failure/success state, and refreshes
+    card-generation context plus `growth.learningLoopState.v1` after success;
+  - `public/growth-homeai-legacy.css` covers the audit/correction panel,
+    textarea/select controls, mobile reachability, and dark/system contrast;
+  - `public/index.html` static version bumped to
+    `20260615-owner-audit-correction-ui-v1`;
+  - docs updated in Growth workspace:
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - browser code still does not call Gateway directly, import old Home AI
+    Growth server logic, inspect SQLite repositories, compute learning policy,
+    compute Profile V2 diffs, mutate Profile V2 optimistically, evaluate
+    submissions, schedule, notify, activate stage assessments, or auto-publish;
+  - correction payloads are bounded summary-only review action/reason plus
+    graph/evaluation ids from service DTOs. Raw answers, transcripts, prompts,
+    raw model output, answer keys, source-document bodies, private paths,
+    credentials, and provider config remain excluded.
+- Validation passed:
+  - syntax checks for touched public JS;
+  - focused
+    `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`119` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`240` files, `3,002` nodes,
+    `11,600` edges; index up to date);
+  - Home AI app required H3 gate:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `git diff --check`.
+- Visual evidence:
+  - local Playwright mobile dark check used the Home AI workspace Playwright
+    dependency and system Chrome against `http://127.0.0.1:4882/` with Owner
+    headers injected;
+  - screenshots:
+    `tmp/visual/growth-owner-audit-correction-mobile-dark.png` (`47625`
+    bytes) and
+    `tmp/visual/growth-owner-audit-correction-submit-mobile-dark.png`
+    (`60534` bytes);
+  - verified active settings tab panel scrollHeight `4351` vs clientHeight
+    `725`, `ownerAudit` visible, correction textarea visible, and `保存纠偏`
+    button reachable in dark mode. Local dev data had only `weixin_stephen`
+    visible and not target-enabled, so the submit button was correctly disabled
+    while layout reachability was still verified.
+- AI Ops evidence appended:
+  `evidence-0bb12893-8069-4c18-9e42-7524ff577699`.
+- Remaining product work:
+  - product-grade learner/domain-pack/subject provision controls in Owner UI;
+  - explicit single-cycle drilldown over `GET /api/v1/growth/learning-cycles/audit`
+    and `GET /api/v1/growth/learning-cycles/completeness`;
+  - central Home AI embedded-plugin visual harness and production release
+    evidence before deployment.
+
 ## 2026-06-15T07:36Z - Growth Owner Daily-Loop Draft/Publish UI Slice
 
 - Status: implemented, documented, and locally validated. Not deployed in this

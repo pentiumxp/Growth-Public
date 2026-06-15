@@ -281,6 +281,20 @@ evidence audit, corrections, and next recommendation stay in one refresh
 cycle. When Owner opens a specific card/evaluation/plan audit, the UI should
 call `GET /api/v1/growth/learning-cycles/audit` rather than joining plan,
 evidence, profile-delta, and correction routes in browser code.
+
+Current implementation status: the Owner `生成` tab now renders an
+`ownerAudit` panel from the card-generation context. It shows bounded plan
+audit counts, published-card ids, persisted profile-delta summaries, recent
+Owner correction history, and a compact Owner correction form. The correction
+form calls `POST /api/v1/growth/profile-corrections` through
+`growth-api-client.js`, writes only a summary-only review action and short
+reason over selected graph node ids, then refreshes the same context and
+`growth.learningLoopState.v1` readback. Browser code does not mutate Profile
+V2 optimistically and does not call Gateway, repositories, or Profile V2
+projection logic directly. The remaining audit UI work is the explicit
+single-cycle drilldown over `learning-cycles/audit` and
+`learning-cycles/completeness`.
+
 For a compact "can this cycle be trusted for closure" badge, the UI should call
 `GET /api/v1/growth/learning-cycles/completeness`. That route is read-only,
 visible-target scoped, and delegates to `learning-audit-completeness-service`.
@@ -323,7 +337,10 @@ correction action only after rendering the relevant profile-delta or Profile V2
 item. That action must call `POST /api/v1/growth/profile-corrections` and must
 not mutate local Profile V2 state optimistically as if the correction already
 changed durable evidence. After a successful correction write, the UI refreshes
-the context route and renders the corrected state from service DTOs.
+the context route and renders the corrected state from service DTOs. The first
+implemented form offers one textarea, one review-action selector, and one
+submit button; it is intended for bounded Owner review notes, not raw learner
+answers, transcripts, prompts, model output, or source material.
 
 Before production deploy of this flow, run the no-write Gateway readiness
 smoke with the same target selectors:
@@ -931,8 +948,8 @@ Add focused tests before broad regression runs:
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context, GET learning-loop state, legacy POST generate compatibility, and daily-loop draft/publish POST helpers with workspace query/proxy handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning-loop state, learning profile/trajectory projection, separate draft/publish buttons, visible progress, and bounded plan preview |
+| API client | GET context, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, and profile-correction POST helper with workspace query/proxy handling |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI target state | Fanfan enabled, disabled targets do not generate |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | next UI slice should render `targetProvisioning`, prevent silent no-op generation when blocked, and call the provision route only after explicit Owner action |

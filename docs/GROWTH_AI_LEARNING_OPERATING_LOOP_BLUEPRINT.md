@@ -326,7 +326,10 @@ Package closure checklist:
 ### Following Package: Owner Audit And Correction UI
 
 After the daily browser loop can publish a card, the next package should make
-the result explainable:
+the result explainable. Current status: the Owner `生成` tab already renders
+the context-level `ownerAudit` panel and can write bounded Owner correction
+evidence through the profile-correction route; the remaining work is explicit
+single-cycle drilldown and completeness readback:
 
 - render cycle audit, evidence audit, persisted profile-delta audit,
   correction history, and recommendation lifecycle from bounded service DTOs;
