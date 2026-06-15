@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T18:49Z - Release Package Builder
+
+- Status: implemented and validated locally. This slice is Growth
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway directly, publish plans/cards, evaluate
+  submissions, run scheduling, deliver notifications, activate stage
+  assessments, or mutate learner state.
+- Scope:
+  - added `learning-automation-release-package-service` as a summary-only
+    orchestration layer over the release evidence bundle builder, bundle audit,
+    release-readiness, collection-run, and release-controls services;
+  - added `npm run smoke:release-package` through
+    `scripts/build-growth-release-package.js`;
+  - the package emits `growth.learningAutomationReleasePackage.v1` with ordered
+    steps and nested summary-only artifacts for Owner/release review;
+  - default mode is no-write; the only write path is delegated collection-run
+    audit persistence with both `--write-collection-run` and `--allow-write`;
+  - write mode fails closed if the collection-run record boundary is
+    unavailable, and generated package output is privacy/path scanned before
+    being returned.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `src/services/learning-automation-release-package-service.js`;
+  - `scripts/build-growth-release-package.js`;
+  - `tests/learning-automation-release-package-service.test.js`;
+  - `tests/growth-release-package-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`.
+- Validation passed:
+  - syntax checks for the package service, CLI, and focused tests;
+  - `node --test tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js`
+    (`9` tests);
+  - related release evidence tests for bundle, bundle audit, readiness,
+    collection-run, controls, and package (`42` tests);
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`32` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-package -- --workspace-id smoke_workspace --learner-id smoke_learner --task planner_readiness --required-task planner_readiness --json`
+    returned the expected summary-only `blocked` package because local smoke
+    lacks real Gateway/planner and production UI/visual/action evidence;
+  - `npm run check` (`178/178` runtime JavaScript files covered);
+  - `npm test` (`694` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`311` files, `4,024` nodes,
+    `15,442` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-7fa7e30f-95b5-4764-b8db-b9b74519a184`.
+- Remaining product work:
+  - collect real production release evidence, central Home AI visual evidence,
+    Action Inbox/Web Push evidence, and production planner/loop smokes;
+  - build embedded Owner UI over release package/readiness/controls if the next
+    product step is to avoid CLI-only release review;
+  - only after evidence passes, perform explicit platform/runtime-config
+    enablement outside Growth and read it back through runtime enablement and
+    release controls.
+
 ## 2026-06-15T18:19Z - Optional Release Controls Bundle Readback
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

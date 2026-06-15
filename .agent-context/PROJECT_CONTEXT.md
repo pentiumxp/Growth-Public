@@ -224,6 +224,18 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   privacy-risk keys, and private path/value leaks, emits
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1`, and intentionally
   stays outside the bundle being audited to avoid circular release artifacts.
+  Growth now also has `npm run smoke:release-package`, a CLI-only
+  service-owned release evidence package builder implemented by
+  `learning-automation-release-package-service` and
+  `scripts/build-growth-release-package.js`. It composes the release evidence
+  bundle builder, bundle self-audit, release-readiness evaluation,
+  collection-run evaluation or explicit `--write-collection-run --allow-write`
+  persistence, and release-controls readback into one summary-only
+  `growth.learningAutomationReleasePackage.v1` artifact. The package may write
+  only a delegated collection-run audit row when explicitly allowed; it never
+  flips runtime config, grants scheduler permission, calls Gateway, publishes,
+  evaluates, schedules, delivers notifications, activates stage assessments,
+  mutates learner state, or deploys.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

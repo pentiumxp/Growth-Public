@@ -1644,6 +1644,14 @@ Implementation progress on 2026-06-15:
   explicit `--write-record`. This gives Owner/release tooling durable evidence
   of what was collected without running smoke tasks or changing scheduler
   permission.
+- `npm run smoke:release-package` can compose the same evidence into one
+  summary-only `growth.learningAutomationReleasePackage.v1` artifact for
+  Owner/release review. The package service delegates to the release evidence
+  bundle builder, bundle audit, release-readiness, collection-run, and
+  release-controls services; it defaults to no-write and can persist only the
+  existing collection-run audit record when both `--write-collection-run` and
+  `--allow-write` are present. It is not release approval, runtime config
+  enablement, deployment, scheduler permission, or card publication.
 - after a collection run exists, `npm run smoke:release-decision` can evaluate
   or persist one sanitized `growth.learningAutomationReleaseDecision.v1`
   Owner decision. It defaults to no-write, writes

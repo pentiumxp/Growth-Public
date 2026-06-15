@@ -133,7 +133,11 @@ AI-driven loop:
   production approval;
 - release-readiness evidence backend for summary-only readiness evaluation and
   Owner-created snapshots. This boundary is advisory, keeps
-  `writefulSchedulingAllowed=false`, and is not a runtime release switch.
+  `writefulSchedulingAllowed=false`, and is not a runtime release switch;
+- release package backend/CLI for composing bundle, bundle audit,
+  release-readiness, collection-run, and release-controls readback into one
+  summary-only artifact for Owner/release review without enabling scheduling,
+  runtime config, deployment, or card publication.
 
 The product is not complete because several browser and automation-safety
 surfaces are still missing:
@@ -733,6 +737,17 @@ Implemented backend shape:
   `growth.learningAutomationReleaseCollectionRun.v1` DTOs through
   visible-target scoped list and Owner-only create routes. This record is
   evidence for review, not a release switch or scheduler permission.
+- `npm run smoke:release-package` delegates to
+  `learning-automation-release-package-service` and creates one summary-only
+  `growth.learningAutomationReleasePackage.v1` release review artifact. It
+  composes the release evidence bundle builder, bundle audit, release-readiness
+  evaluation, collection-run evaluation, and release-controls readback through
+  injected services. It defaults to no-write. The only write it can request is
+  the existing collection-run audit record, and only with both
+  `--write-collection-run` and `--allow-write`; if that record boundary is not
+  available, the package fails closed. The package is not release approval,
+  runtime config enablement, scheduler permission, production deployment, or
+  card publication.
 - `npm run smoke:release-decision` delegates to
   `learning-automation-release-decision-service` and records a summary-only
   Owner release decision after a collection run exists. The CLI defaults to
@@ -903,6 +918,8 @@ Required harness:
 - `tests/growth-runtime-enablement-smoke-script.test.js`;
 - `tests/learning-automation-release-controls-service.test.js`;
 - `tests/growth-release-controls-smoke-script.test.js`;
+- `tests/learning-automation-release-package-service.test.js`;
+- `tests/growth-release-package-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js` and
   `tests/growth-release-evidence-bundle-script.test.js` for the optional
   non-default `release_controls` evidence-bundle task;
