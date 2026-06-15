@@ -322,6 +322,26 @@ test("card authoring validation rejects missing teachingFlow schema fields", asy
   assert.equal(publisher.calls.length, 0);
 });
 
+test("card authoring validation rejects daily cards outside the low-pressure duration range", async () => {
+  const publisher = createPublisher();
+  const { service } = createAuthoringHarness({
+    json: {
+      output_text: JSON.stringify(validDraft({ expectedTimeMinutes: 17 }))
+    }
+  }, { publisher });
+
+  const result = await service.authorCard({
+    learningGraphPlan: graphPlan(),
+    cardRole: "teaching"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.stage, "validation");
+  assert.equal(result.error, "card_authoring_validation_failed");
+  assert.ok(result.errors.some((error) => error.code === "daily_expected_time_out_of_range"));
+  assert.equal(publisher.calls.length, 0);
+});
+
 test("card authoring validation rejects privacy-risk draft fields", async () => {
   const publisher = createPublisher();
   const { service } = createAuthoringHarness({

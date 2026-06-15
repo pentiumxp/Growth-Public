@@ -137,12 +137,22 @@ function rolePolicyErrors(draft = {}, context = {}) {
     const minutes = Number(draft.expectedTimeMinutes || draft.expectedDurationMinutes || 0);
     if (!Number.isFinite(minutes) || minutes <= 0) {
       errors.push({ code: "expected_time_required", path: "expectedTimeMinutes" });
+    } else if (minutes < 10 || minutes > 15) {
+      errors.push({ code: "daily_expected_time_out_of_range", path: "expectedTimeMinutes", min: 10, max: 15, actual: minutes });
     }
     if (!cleanString(draft.difficultyBasis)) {
       errors.push({ code: "difficulty_basis_required", path: "difficultyBasis" });
     }
     if (!cleanString(draft.supportLevel)) {
       errors.push({ code: "support_level_required", path: "supportLevel" });
+    }
+  }
+  if (role === "stage_assessment") {
+    const minutes = Number(draft.expectedTimeMinutes || draft.expectedDurationMinutes || 0);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      errors.push({ code: "expected_time_required", path: "expectedTimeMinutes" });
+    } else if (minutes < 25 || minutes > 30) {
+      errors.push({ code: "stage_assessment_expected_time_out_of_range", path: "expectedTimeMinutes", min: 25, max: 30, actual: minutes });
     }
   }
   return errors;

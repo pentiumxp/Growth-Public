@@ -444,7 +444,11 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
     const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
     assert.equal(card.title, "Ratio intro: compare two quantities");
     assert.equal(card.card_role, "teaching");
+    assert.equal(card.planned_minutes, 12);
+    assert.equal(card.expected_duration_minutes_min, 10);
+    assert.equal(card.expected_duration_minutes_max, 15);
     const raw = JSON.parse(card.raw_json);
+    assert.equal(raw.expectedTimeMinutes, 12);
     assert.equal(raw.learningGraph.learningGraphPlanId, result.learningGraphPlan.learningGraphPlanId);
     assert.equal(raw.teachingFlow.learningTarget, "Compare two quantities using a ratio.");
     assert.equal(raw.experienceSummary.learnerSummary.completedRecentCardCount, 1);
@@ -666,8 +670,12 @@ test("stage assessment generation persists activation metadata and formal assess
     assert.equal(card.cooldown_until, "2026-06-20T00:00:00.000Z");
     assert.equal(card.default_reward_coins, 300);
     assert.equal(card.mastery_evidence_weight, 1);
+    assert.equal(card.planned_minutes, 28);
+    assert.equal(card.expected_duration_minutes_min, 25);
+    assert.equal(card.expected_duration_minutes_max, 30);
     assert.equal(JSON.parse(card.completion_policy_json).mode, "formal_assessment");
     const raw = JSON.parse(card.raw_json);
+    assert.equal(raw.expectedTimeMinutes, 28);
     assert.equal(raw.stageAssessment.cycleId, "cycle_ratio_1");
     assert.equal(raw.stageAssessment.activationSource, "owner_manual");
     assert.equal(raw.completionPolicy.mode, "formal_assessment");

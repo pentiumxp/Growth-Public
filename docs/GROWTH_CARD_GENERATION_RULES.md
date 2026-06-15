@@ -108,8 +108,13 @@ unanchored signal.
 | `integration_practice` | Combine related recently taught concepts. | `practice_feedback` | medium | 100 coins | 10-15 minutes |
 | `stage_assessment` | Formal independent mastery check. | `formal_assessment` | high | 300 coins | 25-30 minutes |
 
-Backend reward policy may override these defaults, but the defaults are part of
-the V1 product rule.
+Backend reward policy may override coin defaults, but duration defaults are a
+validated V1 product rule. Ordinary generated cards must validate
+`expectedTimeMinutes` within 10-15 minutes and persist
+`expected_duration_minutes_min=10` / `expected_duration_minutes_max=15`.
+Stage assessment cards must validate `expectedTimeMinutes` within 25-30
+minutes and persist `expected_duration_minutes_min=25` /
+`expected_duration_minutes_max=30`.
 
 Planner roles are broader than published card roles. Planner output may use
 strategy roles such as `repair` or `stretch` to describe why the next card was
@@ -196,7 +201,9 @@ Validation rules:
   quick check;
 - quick checks must be answerable from the lesson and example;
 - ordinary cards must not use formal assessment gates or exam wording;
-- ordinary cards should normally fit within 10-15 minutes;
+- ordinary cards must fit within 10-15 minutes and the publisher must persist
+  that expected duration range even when the model returns a single valid
+  minute estimate such as `12`;
 - if prerequisites are missing or uncertain, generate a teaching or repair
   card instead of a stage assessment;
 - public projections must not expose hidden answer keys, raw prompts, raw model

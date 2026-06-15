@@ -64,10 +64,27 @@ function stableBindingId(taskCardId, learningGraphPlanId) {
   return `lcgb_${sha256Hex(`${cleanString(taskCardId)}:${cleanString(learningGraphPlanId)}`).slice(0, 18)}`;
 }
 
-function expectedMinutes(draft = {}) {
+function durationPolicy(role = "") {
+  const cleanRole = cleanString(role).toLowerCase();
+  if (cleanRole === "stage_assessment") {
+    return { min: 25, max: 30, fallback: 28 };
+  }
+  if (cleanRole === "teaching" || cleanRole === "practice" || cleanRole === "integration_practice") {
+    return { min: 10, max: 15, fallback: 12 };
+  }
+  return { min: 5, max: 45, fallback: 12 };
+}
+
+function expectedMinutes(draft = {}, role = "") {
+  const policy = durationPolicy(role || draft.cardRole);
   const parsed = Number(draft.expectedTimeMinutes || draft.expectedDurationMinutes || 12);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 12;
-  return Math.max(5, Math.min(45, Math.round(parsed)));
+  if (!Number.isFinite(parsed) || parsed <= 0) return policy.fallback;
+  return Math.max(policy.min, Math.min(policy.max, Math.round(parsed)));
+}
+
+function expectedDurationRange(role = "") {
+  const policy = durationPolicy(role);
+  return { min: policy.min, max: policy.max };
 }
 
 function taskCardType(role = "") {
@@ -153,7 +170,7 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
     difficultyBasis: cleanString(draft.difficultyBasis).slice(0, 700),
     supportLevel: cleanString(draft.supportLevel),
     evidenceToRecord,
-    expectedTimeMinutes: expectedMinutes(draft),
+    expectedTimeMinutes: expectedMinutes(draft, role),
     learningGraph: {
       learningGraphPlanId: cleanString(draft.learningGraphPlanId || learningGraphPlan.learningGraphPlanId),
       domainPackId: cleanString(learningGraphPlan.domainPackId || request.domainPackId),
@@ -200,7 +217,8 @@ function cardValues(input = {}) {
   const request = input.request || {};
   const learningGraphPlan = input.learningGraphPlan || request.learningGraphPlan || {};
   const role = cleanString(draft.cardRole || request.cardRole || firstPlanCard(learningGraphPlan).cardRole || "teaching");
-  const minutes = expectedMinutes(draft);
+  const minutes = expectedMinutes(draft, role);
+  const durationRange = expectedDurationRange(role);
   const taskCardId = stableGeneratedCardId(input);
   const createdAt = cleanString(input.audit?.authoredAt) || nowIsoValue();
   const updatedAt = nowIsoValue();
@@ -231,8 +249,8 @@ function cardValues(input = {}) {
     privacy_level: "member_self",
     card_role: role,
     capability_cluster_id: capabilityClusterId(draft, request),
-    expected_duration_minutes_min: minutes,
-    expected_duration_minutes_max: Math.max(minutes, minutes + 5),
+    expected_duration_minutes_min: durationRange.min,
+    expected_duration_minutes_max: durationRange.max,
     stage_assessment_cycle_id: cleanString(draft.stageAssessmentCycleId || draft.stage_assessment_cycle_id || request.stageAssessmentCycleId || request.stage_assessment_cycle_id),
     activation_state: role === "stage_assessment"
       ? cleanString(draft.activationState || draft.activation_state || request.activationState || request.activation_state || "active")
@@ -322,7 +340,7 @@ function ensureProgramRow(db, input = {}, taskValues = {}, timestamp = "") {
     start_date: cleanString(taskValues.planned_date),
     end_date: cleanString(taskValues.planned_date),
     days_per_week: 1,
-    minutes_per_day: expectedMinutes(draft),
+      minutes_per_day: expectedMinutes(draft, draft.cardRole),
     intensity: "daily",
     status: "active",
     source_basis_refs_json: jsonText(refs),
@@ -366,7 +384,7 @@ function ensureDraftRow(db, input = {}, taskValues = {}, timestamp = "") {
     week_end: weekEndFromStart(day),
     daily_plans_json: jsonText([{
       date: day,
-      plannedMinutes: Number(taskValues.planned_minutes || expectedMinutes(draft)),
+      plannedMinutes: Number(taskValues.planned_minutes || expectedMinutes(draft, draft.cardRole)),
       tasks: [{
         taskCardId: cleanString(taskValues.id),
         title: cleanString(taskValues.title),

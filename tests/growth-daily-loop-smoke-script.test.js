@@ -669,7 +669,7 @@ test("daily-loop smoke script publishes a selected daily plan item only with exp
       const db = new DatabaseSync(dbPath, { open: true });
       const plan = db.prepare("SELECT status, selected_item_id, generated_task_card_id FROM learning_growth_plan_drafts WHERE plan_draft_id = ?")
         .get(planDraftId);
-      const card = db.prepare("SELECT id, status, card_role FROM learning_task_cards WHERE id = ?")
+      const card = db.prepare("SELECT id, status, card_role, planned_minutes, expected_duration_minutes_min, expected_duration_minutes_max FROM learning_task_cards WHERE id = ?")
         .get(output.generation.published.taskCardId);
       db.close();
       assert.equal(plan.status, "published");
@@ -677,6 +677,9 @@ test("daily-loop smoke script publishes a selected daily plan item only with exp
       assert.equal(plan.generated_task_card_id, output.generation.published.taskCardId);
       assert.equal(card.status, "published");
       assert.equal(card.card_role, "teaching");
+      assert.equal(card.planned_minutes, 12);
+      assert.equal(card.expected_duration_minutes_min, 10);
+      assert.equal(card.expected_duration_minutes_max, 15);
     });
   });
 });

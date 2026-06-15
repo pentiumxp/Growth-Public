@@ -337,7 +337,10 @@ can be visually simple, but each panel has a service-backed responsibility:
 
 The screen must keep child pressure low:
 
-- daily card default duration is 10-15 minutes;
+- daily card duration is a backend validation and persistence contract:
+  ordinary generated cards must validate within 10-15 minutes and persist
+  `expected_duration_minutes_min=10` /
+  `expected_duration_minutes_max=15`;
 - the primary daily path publishes at most one selected item at a time;
 - low scores are shown as evidence for future planning, not as failure gates;
 - reflection remains one optional post-evaluation action;
@@ -958,7 +961,7 @@ Add focused tests before broad regression runs:
 | Graph option projection | `tests/learning-graph-repository.test.js` proves domain-pack and subject options project from native graph tables without `raw_json` |
 | Planner readiness smoke CLI | `tests/growth-planner-readiness-smoke-script.test.js` proves bounded argument parsing and target-node id de-duplication |
 | Planner draft/publish service | `tests/learning-plan-publisher-service.test.js` proves validated plan drafts persist summary-only previews and publish selected items only through the card-generation service |
-| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js` and `tests/growth-routes.test.js` prove Owner-only preview/draft/publish delegation, visible-target scope, bounded generation projection, publish failure visibility, audit/completeness refresh, and privacy-risk input rejection |
+| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, and `tests/growth-routes.test.js` prove Owner-only preview/draft/publish delegation, visible-target scope, bounded generation projection, publish failure visibility, daily card duration persistence, audit/completeness refresh, and privacy-risk input rejection |
 | Automation proposal repository/service | `tests/learning-automation-proposal-repository.test.js` and `tests/learning-automation-proposal-service.test.js` prove source-cycle id, audit-completeness gate, target provisioning, idempotent summary-only proposal persistence, Owner decision statuses, accepted-only publish execution, execution metadata, legacy decision/execution-column migration, DB-level privacy-class/privacy-key rejection, and no direct card-generation/Gateway/scheduler call |
 | Target provisioning service | `tests/learning-target-provisioning-service.test.js` proves sample fallback, non-sample blocking, explicit provision success, cross-subject domain-pack plus subject-domain selection, subject mismatch rejection, graph-node mismatch rejection, and summary-only public DTOs |
 | Target provisioning smoke CLI | `tests/growth-target-provisioning-smoke-script.test.js` and `npm run smoke:target-provisioning`; the CLI defaults to read-only resolve, requires explicit `--allow-write` for provision writes, delegates to `learning-target-provisioning-service`, and supports production cross-subject packs such as `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science` |
