@@ -160,11 +160,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
   includes learning-loop state smoke, stage-assessment readiness smoke, and
-  proposal smoke in the default task set,
+  proposal smoke in the default task set, and now also collects the read-only
+  release approval bag through
+  `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
-  without hand-splicing JSON in Codex. The builder does not write business
-  state, does not call Gateway, and does not change release-readiness or
-  scheduler permission. Release-readiness writes a summary-only advisory
+  without hand-splicing JSON in Codex. The builder maps persisted approvals
+  into the versioned bundle `releaseApproval` field only; it does not write
+  business state, does not call Gateway, and does not change release-readiness
+  or scheduler permission. Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

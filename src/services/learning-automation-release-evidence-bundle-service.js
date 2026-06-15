@@ -16,7 +16,14 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "scheduler_execution",
   "scheduler_run",
   "scheduler_worker_target",
-  "scheduler_worker"
+  "scheduler_worker",
+  "release_approval"
+]);
+
+const RELEASE_APPROVAL_KEYS = Object.freeze([
+  "writefulExecutionApproval",
+  "backgroundSchedulerApproval",
+  "backgroundWorkerApproval"
 ]);
 
 const TASK_DEFINITIONS = Object.freeze([
@@ -86,6 +93,13 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionSchedulerWorkerSmokeEvidence",
     script: "scripts/smoke-growth-automation-scheduler-worker.js",
     commandName: "npm run smoke:scheduler-worker"
+  },
+  {
+    taskId: "release_approval",
+    outputKey: "releaseApproval",
+    script: "scripts/smoke-growth-automation-release-approval.js",
+    commandName: "npm run smoke:release-approval",
+    extraArgs: ["--operation", "bag"]
   }
 ]);
 
@@ -231,6 +245,63 @@ function summaryFromSmoke(value = {}) {
   return summary;
 }
 
+function publicReleaseApprovalEntry(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return {
+    approved: value.approved === true || value.status === "approved",
+    status: cleanString(value.status || (value.approved === true ? "approved" : ""), 80),
+    approvalId: cleanString(value.approvalId || value.approval_id || value.id, 120),
+    approvedBy: cleanString(value.approvedBy || value.approved_by, 120),
+    approvedAt: cleanString(value.approvedAt || value.approved_at || value.createdAt || value.created_at, 80),
+    source: cleanString(value.source || "growth_release_approval_record", 120)
+  };
+}
+
+function releaseApprovalFromSmoke(value = {}) {
+  const source = value.releaseApproval || value.release_approval || value.approvals || {};
+  const releaseApproval = {};
+  for (const key of RELEASE_APPROVAL_KEYS) {
+    const entry = publicReleaseApprovalEntry(source[key]);
+    if (entry) releaseApproval[key] = entry;
+  }
+  return releaseApproval;
+}
+
+function releaseApprovalTaskResult(task, taskResult, generatedAt) {
+  const parsed = parseJsonOutput(taskResult.stdout);
+  const parsedValue = parsed.ok ? parsed.value : {};
+  const privacyFindings = parsed.ok ? scanPrivacy(parsedValue).slice(0, 8) : [];
+  const blockedError = !parsed.ok
+    ? parsed.error
+    : privacyFindings.length
+      ? "release_evidence_bundle_smoke_privacy_failed"
+      : cleanString(parsedValue.error || taskResult.error || "");
+  const pass = parsed.ok && privacyFindings.length === 0 && taskResult.exitCode === 0 && parsedValue.ok === true;
+  const releaseApproval = pass ? releaseApprovalFromSmoke(parsedValue) : {};
+  const taskSummary = {
+    taskId: task.taskId,
+    outputKey: task.outputKey,
+    ok: pass,
+    status: pass ? "pass" : "blocked",
+    error: pass ? "" : (blockedError || "release_evidence_bundle_smoke_blocked"),
+    source: task.commandName
+  };
+  if (privacyFindings.length) taskSummary.privacyFindingCount = privacyFindings.length;
+  return {
+    ok: pass,
+    status: taskSummary.status,
+    taskSummary,
+    releaseApproval,
+    summary: {
+      source: "growth-release-evidence-bundle-builder",
+      taskId: task.taskId,
+      generatedAt,
+      outputKey: task.outputKey,
+      approvalKeys: Object.keys(releaseApproval).sort()
+    }
+  };
+}
+
 function evidenceFromTaskResult(task, taskResult, generatedAt) {
   const parsed = parseJsonOutput(taskResult.stdout);
   const parsedValue = parsed.ok ? parsed.value : {};
@@ -308,10 +379,17 @@ function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
       };
     }
     const evidence = {};
+    const releaseApproval = {};
     const taskResults = [];
     for (const taskId of taskIds) {
       const task = TASK_BY_ID.get(taskId);
       const taskRun = runTask(task, scope);
+      if (task.outputKey === "releaseApproval") {
+        const approvalResult = releaseApprovalTaskResult(task, taskRun, generatedAt);
+        Object.assign(releaseApproval, approvalResult.releaseApproval);
+        taskResults.push(approvalResult.taskSummary);
+        continue;
+      }
       const taskEvidence = evidenceFromTaskResult(task, taskRun, generatedAt);
       evidence[task.evidenceKey] = taskEvidence;
       taskResults.push({
@@ -333,7 +411,7 @@ function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
       requestedBy: cleanString(input.requestedBy || input.requested_by, 120),
       scope,
       evidence,
-      releaseApproval: {},
+      releaseApproval,
       summary: {
         source: "growth-release-evidence-bundle-builder",
         taskCount: taskResults.length,

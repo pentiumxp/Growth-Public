@@ -8,6 +8,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "build-growth-release-evidence-bundle.js");
+const releaseApprovalScriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-release-approval.js");
 
 const {
   inputFromArgs,
@@ -111,6 +112,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
+  assert.ok(output.allowedTaskIds.includes("release_approval"));
 });
 
 test("release evidence bundle script writes a summary-only bundle from a read-only smoke", () => {
@@ -172,5 +174,56 @@ test("release evidence bundle script writes stage-checkpoint evidence from read-
     assert.equal(fileBundle.evidence.stageCheckpointEvidence.summary.activationState, "dormant");
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+  });
+});
+
+test("release evidence bundle script collects persisted release approval bag", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const record = spawnSync(process.execPath, [
+      releaseApprovalScriptPath,
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--approval-key", "writeful_execution",
+      "--approved-by", "owner",
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    assert.equal(record.status, 0, record.stderr || record.stdout);
+
+    const bundlePath = path.join(dir, "approval-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "release_approval",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.deepEqual(fileBundle.evidence, {});
+    assert.equal(fileBundle.releaseApproval.writefulExecutionApproval.approved, true);
+    assert.equal(fileBundle.releaseApproval.writefulExecutionApproval.source, "growth_release_approval_record");
+    assert.equal(fileBundle.tasks[0].outputKey, "releaseApproval");
+    assert.equal(fileBundle.tasks[0].source, "npm run smoke:release-approval");
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
   });
 });

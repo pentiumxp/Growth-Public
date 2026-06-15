@@ -1028,7 +1028,8 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /RELEASE_EVIDENCE_BUNDLE_SCHEMA/);
   assert.match(service, /TASK_DEFINITIONS/);
   assert.match(service, /runCommand/);
-  assert.match(service, /releaseApproval: \{\}/);
+  assert.match(service, /releaseApproval/);
+  assert.match(service, /release_approval/);
   assert.match(service, /privacyClass: "summary_only"/);
   assert.match(service, /summaryOnly: true/);
   assert.match(service, /scanPrivacy/);
@@ -1043,6 +1044,9 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /productionSchedulerRunSmokeEvidence/);
   assert.match(service, /productionSchedulerWorkerTargetSmokeEvidence/);
   assert.match(service, /productionSchedulerWorkerSmokeEvidence/);
+  assert.match(service, /writefulExecutionApproval/);
+  assert.match(service, /backgroundSchedulerApproval/);
+  assert.match(service, /backgroundWorkerApproval/);
   assert.match(service, /smoke-growth-planner-readiness\.js/);
   assert.match(service, /smoke-growth-daily-loop-preview\.js/);
   assert.match(service, /smoke-growth-learning-loop-state\.js/);
@@ -1054,6 +1058,7 @@ test("Growth release evidence bundle builder stays service-owned and no-write", 
   assert.match(service, /smoke-growth-automation-scheduler-run\.js/);
   assert.match(service, /smoke-growth-automation-scheduler-worker-target\.js/);
   assert.match(service, /smoke-growth-automation-scheduler-worker\.js/);
+  assert.match(service, /smoke-growth-automation-release-approval\.js/);
   assert.doesNotMatch(service, /readEnv/);
   assert.doesNotMatch(service, /createServices/);
   assert.doesNotMatch(service, /require\(["']\.\.\/stores/);

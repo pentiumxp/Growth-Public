@@ -412,7 +412,8 @@ Backend shape:
   under `/api/v1/growth/automation/release-readiness/snapshots`.
 - `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
   assembly from selected no-write/default-disabled smoke CLIs, including
-  read-only stage-assessment readiness and proposal smoke by default.
+  read-only stage-assessment readiness, proposal smoke, and release-approval
+  bag projection by default.
 
 Required behavior:
 
@@ -426,7 +427,9 @@ Required behavior:
   states;
 - persist optional summary-only readiness snapshots for Owner/release review;
 - accept summary-only `growth.learningAutomationReleaseEvidenceBundle.v1`
-  artifacts produced by the bundle builder without trusting raw smoke output;
+  artifacts produced by the bundle builder without trusting raw smoke output,
+  including bounded `releaseApproval` fields collected from
+  `npm run smoke:release-approval -- --operation bag`;
 - keep `writefulSchedulingAllowed=false`;
 - never call Gateway, plan publication, card generation, evaluation,
   proposal execution, scheduler execution, scheduler run, Action Inbox/Web

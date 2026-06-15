@@ -152,6 +152,52 @@ test("release evidence bundle service keeps blocked smoke as bounded evidence", 
   assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.error, "scheduler_dry_run_smoke_blocked");
 });
 
+test("release evidence bundle service collects release approval bag without evidence splicing", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      operation: "bag",
+      releaseApproval: {
+        writefulExecutionApproval: {
+          approved: true,
+          status: "approved",
+          approvalId: "lgarap_writeful",
+          approvedBy: "owner",
+          approvedAt: "2026-06-15T06:10:00.000Z",
+          source: "growth_release_approval_record"
+        },
+        backgroundSchedulerApproval: {
+          approved: true,
+          status: "approved",
+          approvalId: "lgarap_scheduler",
+          approvedBy: "owner",
+          approvedAt: "2026-06-15T06:10:00.000Z"
+        }
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["release_approval"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.bundle.evidence, {});
+  assert.equal(result.bundle.releaseApproval.writefulExecutionApproval.approved, true);
+  assert.equal(result.bundle.releaseApproval.backgroundSchedulerApproval.source, "growth_release_approval_record");
+  assert.equal(result.bundle.releaseApproval.writefulExecutionApproval.approvalId, "lgarap_writeful");
+  assert.deepEqual(result.bundle.summary.failedTaskIds, []);
+  assert.equal(result.bundle.tasks[0].outputKey, "releaseApproval");
+  assert.equal(result.bundle.tasks[0].source, "npm run smoke:release-approval");
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-automation-release-approval.js"));
+  assert.ok(calls[0].args.includes("--operation"));
+  assert.ok(calls[0].args.includes("bag"));
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+});
+
 test("release evidence bundle service fails closed for missing workspace, invalid task, and privacy-risk smoke output", () => {
   const missingWorkspace = createServiceWithRunner(() => ({ status: 0, stdout: "{}" }))
     .service
@@ -183,4 +229,24 @@ test("release evidence bundle service fails closed for missing workspace, invali
   assert.equal(privacy.bundle.evidence.productionPlannerReadinessEvidence.error, "release_evidence_bundle_smoke_privacy_failed");
   assert.equal(privacy.bundle.evidence.productionPlannerReadinessEvidence.privacyFindingCount, 1);
   assert.equal(JSON.stringify(privacy.bundle).includes("must not be persisted"), false);
+
+  const approvalPrivacy = createServiceWithRunner(() => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      releaseApproval: {
+        writefulExecutionApproval: {
+          approved: true,
+          rawPrompt: "must not be persisted"
+        }
+      }
+    })
+  })).service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    tasks: ["release_approval"]
+  });
+  assert.equal(approvalPrivacy.ok, false);
+  assert.equal(approvalPrivacy.bundle.tasks[0].status, "blocked");
+  assert.equal(approvalPrivacy.bundle.tasks[0].error, "release_evidence_bundle_smoke_privacy_failed");
+  assert.equal(JSON.stringify(approvalPrivacy.bundle).includes("must not be persisted"), false);
 });

@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T11:03Z - Release Evidence Bundle Collects Approval Bag
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because this slice adds
+  release-evidence/readiness harness and docs only.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    read-only `release_approval` task in the default task set;
+  - `npm run smoke:release-evidence-bundle` can run
+    `scripts/smoke-growth-automation-release-approval.js --operation bag`
+    through the injected command runner and map bounded active approval records
+    into the versioned bundle `releaseApproval` field;
+  - `npm run smoke:release-readiness -- --evidence-bundle-file <bundle>` can
+    consume those approval fields as `writeful_execution_release_approval`,
+    `background_scheduler_release_approval`, and
+    `background_worker_release_approval` without Codex hand-spliced JSON;
+  - the boundary remains summary-only and no-write by default; it does not call
+    Gateway, Home AI old Growth server logic, publish plans, generate cards,
+    evaluate, execute schedulers, run scheduler ticks, deliver notifications,
+    activate stage assessments, mutate learner state, or act as a release
+    switch;
+  - a first manual smoke accidentally wrote three `smoke_workspace` approval
+    records to the default local dev DB because temp env vars were omitted; the
+    three exact `approval_id` rows were deleted immediately and
+    `PRAGMA quick_check` returned `ok`. A follow-up check confirmed
+    `defaultDbSmokeApprovalRows=0`.
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - temp-DB approval-bag chain: three write-gated
+    `npm run smoke:release-approval -- --operation record` calls, then
+    `npm run smoke:release-evidence-bundle -- --task release_approval`, then
+    `npm run smoke:release-readiness -- --evidence-bundle-file <bundle>`;
+    readiness recognized all three approval checks as `pass` while staying
+    `incomplete` and `writefulSchedulingAllowed=false`;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-automation-release-approval-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`542` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,177` nodes,
+    `12,268` edges, index up to date).
+
 ## 2026-06-15T10:53Z - Stage Checkpoint Evidence In Release Bundle
 
 - Status: implemented and locally validated; commit/push follows this handoff

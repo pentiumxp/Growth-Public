@@ -656,9 +656,12 @@ Implemented backend shape:
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
-  stage-assessment readiness and proposal smoke in the default task set. Use
-  `--target-node-id` when collecting stage-checkpoint evidence. Use
-  `--output-file` and
+  stage-assessment readiness, proposal smoke, and read-only release approval
+  bag projection in the default task set. It maps
+  `npm run smoke:release-approval -- --operation bag` into the bundle
+  `releaseApproval` field so persisted approvals can flow into
+  release-readiness without hand-spliced JSON. Use `--target-node-id` when
+  collecting stage-checkpoint evidence. Use `--output-file` and
   then pass that file to
   `npm run smoke:release-readiness -- --evidence-bundle-file <path>` when
   release review needs structured smoke evidence without Codex hand-spliced

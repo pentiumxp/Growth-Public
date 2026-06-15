@@ -1590,10 +1590,10 @@ Implementation progress on 2026-06-15:
   or `--evidence-bundle-json <json>`. The bundle can be built by
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
   default-disabled smoke CLIs, includes read-only stage-assessment readiness
-  and proposal smoke by default, and emits only summary evidence. This remains
-  input normalization only: readiness remains no-write by default,
-  `--write-snapshot` is still explicit, and the boundary still cannot enable
-  writeful scheduling.
+  proposal smoke, and read-only release approval bag projection by default,
+  and emits only summary evidence. This remains input normalization only:
+  readiness remains no-write by default, `--write-snapshot` is still explicit,
+  and the boundary still cannot enable writeful scheduling.
 
 The next product-completeness slice is embedded UI and production readiness:
 
