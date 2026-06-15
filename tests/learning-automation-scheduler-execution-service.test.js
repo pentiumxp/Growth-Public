@@ -171,6 +171,40 @@ function createService(options = {}) {
         return wouldPublishDryRun();
       }
     },
+    releaseAuthorizationService: {
+      authorize(input) {
+        calls.push({ type: "authorizeRelease", input });
+        if (options.authorizationBlocked) {
+          return {
+            ok: true,
+            schemaVersion: "growth.learningAutomationReleaseAuthorization.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            status: "blocked",
+            authorized: false,
+            reason: "learning_automation_release_authorization_approval_missing",
+            error: "learning_automation_release_authorization_approval_missing",
+            requiredApprovalKeys: ["writefulExecutionApproval"],
+            missingApprovalKeys: ["writefulExecutionApproval"],
+            writefulSchedulingAllowed: false,
+            runtimeConfigChange: false
+          };
+        }
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseAuthorization.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          status: "authorized",
+          authorized: true,
+          reason: "learning_automation_release_authorization_granted",
+          requiredApprovalKeys: ["writefulExecutionApproval"],
+          missingApprovalKeys: [],
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
     automationProposalService: {
       async publishAcceptedProposal(input) {
         calls.push({ type: "publishAcceptedProposal", input });
@@ -224,6 +258,7 @@ test("scheduler execution publishes through accepted-proposal boundary after all
     "getDigest",
     "evaluateReadiness",
     "dryRun",
+    "authorizeRelease",
     "recordExecution",
     "publishAcceptedProposal",
     "recordExecution"
@@ -232,6 +267,7 @@ test("scheduler execution publishes through accepted-proposal boundary after all
   assert.equal(records[1].input.status, "published");
   assert.equal(calls.find((call) => call.type === "publishAcceptedProposal").input.proposalId, "lgauto_ready_1");
   assert.equal(calls.find((call) => call.type === "dryRun").input.proposalId, "lgauto_ready_1");
+  assert.equal(records[0].input.gate.releaseAuthorization.authorized, true);
 });
 
 test("scheduler execution blocks when handoff, digest, policy, or dry-run gates fail", async () => {
@@ -258,6 +294,21 @@ test("scheduler execution blocks when handoff, digest, policy, or dry-run gates 
   const candidateResult = await blockedCandidate.service.executeOnce(executeInput());
   assert.equal(candidateResult.ok, false);
   assert.equal(candidateResult.error, "source_cycle_not_ready");
+});
+
+test("scheduler execution blocks before publish when release authorization is missing", async () => {
+  const { calls, records, service } = createService({ allowWritefulExecution: true, authorizationBlocked: true });
+
+  const result = await service.executeOnce(executeInput());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_release_authorization_approval_missing");
+  assert.equal(result.execution.status, "blocked");
+  assert.equal(result.execution.gate.releaseAuthorization.authorized, false);
+  assert.deepEqual(result.execution.gate.releaseAuthorization.missingApprovalKeys, ["writefulExecutionApproval"]);
+  assert.equal(calls.some((call) => call.type === "publishAcceptedProposal"), false);
+  assert.equal(calls.find((call) => call.type === "authorizeRelease").input.workspaceId, "weixin_fanfan");
+  assert.equal(records.at(-1).input.status, "blocked");
 });
 
 test("scheduler execution records publish failure for Owner retry", async () => {

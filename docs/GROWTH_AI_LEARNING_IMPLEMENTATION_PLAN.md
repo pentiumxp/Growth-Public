@@ -144,8 +144,8 @@ surfaces are still missing:
 - rollback/failure policy backend is implemented as a scheduling-readiness
   prerequisite; Growth-owned automation action handoff backend is implemented,
   and the default-disabled Owner-explicit scheduler execution backend is
-  implemented, but platform Action Inbox/Web Push product UI and central
-  visual evidence are not complete;
+  implemented with a final release-authorization gate, but platform Action
+  Inbox/Web Push product UI and central visual evidence are not complete;
 - background writeful scheduling remains blocked;
 - production planner readiness smoke and central embedded-plugin visual
   evidence are required before UI release.

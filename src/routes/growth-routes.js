@@ -525,6 +525,14 @@ function normalizeAutomationReleaseReviewInput(url, target) {
   });
 }
 
+function normalizeAutomationReleaseAuthorizationInput(url, target) {
+  const input = normalizeAutomationReleaseReviewInput(url, target);
+  const approvalKey = url.searchParams.get("requiredApprovalKey") || url.searchParams.get("required_approval_key") || "";
+  return Object.assign(input, {
+    requiredApprovalKeys: approvalKey ? [approvalKey] : undefined
+  });
+}
+
 function readinessEvidenceFromBody(body = {}) {
   const evidence = body.evidence || body.evidenceSummary || body.evidence_summary || {};
   return Object.assign({}, evidence, {
@@ -778,6 +786,7 @@ function normalizeAutomationSchedulerExecutionInput(body, workspaceId, target, r
     handoffId: body.handoffId || body.handoff_id,
     digestId: body.digestId || body.digest_id,
     policyId: body.policyId || body.policy_id,
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.releaseCollectionRunId || body.release_collection_run_id,
     proposalId: body.proposalId || body.proposal_id,
     planDraftId: body.planDraftId || body.plan_draft_id,
     selectedItemId: body.selectedItemId || body.selected_item_id || body.itemId || body.item_id,
@@ -1211,6 +1220,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-review") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseReviewService.review(normalizeAutomationReleaseReviewInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-authorization") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseAuthorizationService.authorize(normalizeAutomationReleaseAuthorizationInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

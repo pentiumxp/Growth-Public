@@ -45,8 +45,9 @@ Implemented local shape:
 - service-owned operational smoke: `npm run smoke:scheduler-run`;
 - config gate: `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`;
 - downstream writeful gate:
-  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`, still owned by the
-  execution service.
+  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED` plus final
+  `learning-automation-release-authorization-service` authorization, still
+  owned by the execution service.
 
 Implemented local worker/lease shape:
 
@@ -84,7 +85,7 @@ actor, reviewed-target, lease, and timer mechanics needed for a future release; 
 does not remove the need for product evidence, central visual evidence,
 platform action evidence, production dry-run evidence, release evidence bundle
 self-audit evidence, persisted release collection-run evidence, and a separate
-release decision.
+release decision plus release authorization.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker
@@ -548,6 +549,7 @@ The only allowed worker path is:
 learning-automation-scheduler-worker-service
   -> learning-automation-scheduler-run-service.runOnce
   -> learning-automation-scheduler-execution-service.executeOnce
+  -> learning-automation-release-authorization-service.authorize
   -> learning-automation-proposal-service.publishAcceptedProposal
   -> learning-plan-publisher-service.publishPlanItem
   -> learning-card-generation-service
@@ -558,6 +560,7 @@ The only allowed writeful path is:
 ```text
 learning-automation-scheduler-run-service
   -> learning-automation-scheduler-execution-service.executeOnce
+  -> learning-automation-release-authorization-service.authorize
   -> learning-automation-proposal-service.publishAcceptedProposal
   -> learning-plan-publisher-service.publishPlanItem
   -> learning-card-generation-service

@@ -1996,6 +1996,7 @@ test("growth automation scheduler execution routes are Owner-write and visible-t
         handoffId: "lgahand_ready_1",
         digestId: "lgadig_ready_1",
         policyId: "lgafpol_active_1",
+        collectionRunId: undefined,
         proposalId: "lgauto_ready_1",
         planDraftId: "lgplan_next_1",
         selectedItemId: "plan_item_next_1",
@@ -2575,6 +2576,22 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseAuthorizationService: {
+      authorize(input) {
+        calls.push({ type: "releaseAuthorization", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseAuthorization.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "blocked",
+          authorized: false,
+          requiredApprovalKeys: input.requiredApprovalKeys || ["writefulExecutionApproval"],
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -2987,6 +3004,42 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: true,
         schedulerWorkerTargetUiEvidence: false
+      }
+    });
+
+    const releaseAuthorization = await fetch(`${baseUrl}/api/v1/growth/automation/release-authorization?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&requiredApprovalKey=writefulExecutionApproval&owner_daily_ui_evidence=true`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(releaseAuthorization.status, 200);
+    assert.equal((await releaseAuthorization.json()).schemaVersion, "growth.learningAutomationReleaseAuthorization.v1");
+    assert.deepEqual(calls[10], {
+      type: "releaseAuthorization",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "",
+        ownerDailyUiEvidence: true,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: false,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: ["writefulExecutionApproval"]
       }
     });
 

@@ -374,13 +374,19 @@ Use the Growth-owned release-readiness boundary:
   The default operation is read-only list. `bag` is a read-only projection for
   release-readiness. `record` requires explicit `--allow-write` and writes
   one summary-only approval record for one config gate.
+- release authorization smoke CLI:
+  `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
+  The CLI is no-write and reads through the normal service graph. It authorizes
+  only after approved release review, ready latest collection run, approved
+  latest decision, and active `writefulExecutionApproval`.
 - action handoff smoke CLI:
   `npm run smoke:action-handoff -- --workspace-id <workspace> --learner-id <learner> --json`.
 - scheduler execution smoke CLI:
   `npm run smoke:scheduler-execution -- --workspace-id <workspace> --learner-id <learner> --json`.
   The default operation is read-only list. `execute` requires explicit
   `--allow-write` and remains blocked unless
-  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`.
+  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true` and release
+  authorization is granted.
 - scheduler run smoke CLI:
   `npm run smoke:scheduler-run -- --workspace-id <workspace> --learner-id <learner> --json`.
   The default operation is read-only list. `run` requires explicit

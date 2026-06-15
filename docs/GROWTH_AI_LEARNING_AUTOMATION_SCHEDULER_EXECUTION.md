@@ -29,6 +29,10 @@ Implemented locally as a default-disabled backend slice:
   `GET /api/v1/growth/automation/scheduler/executions`;
 - Owner-only
   `POST /api/v1/growth/automation/scheduler/execute-once`;
+- final release authorization readback through
+  `learning-automation-release-authorization-service`,
+  `GET /api/v1/growth/automation/release-authorization`, and
+  `npm run smoke:release-authorization`;
 - service-owned operational smoke `npm run smoke:scheduler-execution`;
 - config gate: `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`.
 
@@ -49,6 +53,7 @@ Required input:
 - active failure-policy readiness, normally derived from target scope;
 - accepted proposal id;
 - optional plan draft id and selected item id;
+- optional collection run id for selecting a specific release review run;
 - optional explicit execution id for idempotent Owner retry UX;
 - optional generation key and card schema version for the downstream publish
   service.
@@ -68,9 +73,13 @@ The service rechecks every gate at execution time:
    `would_publish` candidate with
    `dryRun=true`, `writePlanned=false`, `writesPerformed=false`, and
    `publishPlanned=false`.
-8. Only after all gates pass, the service calls
+8. `learning-automation-release-authorization-service.authorize` returns
+   `authorized=true` after proving approved release review, ready latest
+   collection run, approved latest decision, and active
+   `writefulExecutionApproval`.
+9. Only after all gates pass, the service calls
    `learning-automation-proposal-service.publishAcceptedProposal`.
-9. The execution repository records bounded `started`, `published`, `failed`,
+10. The execution repository records bounded `started`, `published`, `failed`,
    `blocked`, or `skipped` metadata.
 
 The execution service must not call Gateway, model vendors, plan publication
@@ -179,6 +188,7 @@ Failure behavior is fail-closed:
 - missing or unreviewed digest records `blocked`;
 - missing active failure policy records `blocked`;
 - dry-run candidate missing or blocked records `blocked`;
+- missing or blocked final release authorization records `blocked`;
 - downstream accepted-proposal publish failure records `failed`;
 - successful downstream publish records `published`;
 - repeated downstream publish remains protected by
@@ -195,6 +205,8 @@ Focused harness:
 - `tests/learning-automation-scheduler-execution-repository.test.js`;
 - `tests/learning-automation-scheduler-execution-service.test.js`;
 - `tests/growth-automation-scheduler-execution-smoke-script.test.js`;
+- `tests/learning-automation-release-authorization-service.test.js`;
+- `tests/growth-release-authorization-smoke-script.test.js`;
 - `tests/learning-automation-scheduler-service.test.js`;
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`.
@@ -203,7 +215,9 @@ Required assertions:
 
 - default-disabled execution records blocked state and does not publish;
 - success path rechecks delivered handoff, reviewed digest, active policy
-  readiness, and scheduler dry-run before publishing;
+  readiness, scheduler dry-run, and release authorization before publishing;
+- missing release authorization records blocked state and does not call
+  `publishAcceptedProposal`;
 - publish delegates only to
   `learning-automation-proposal-service.publishAcceptedProposal`;
 - failed publish records bounded failure metadata for explicit Owner retry;

@@ -13,6 +13,7 @@ const { createLearningAutomationFailurePolicyService } = require("../services/le
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
+const { createLearningAutomationReleaseAuthorizationService } = require("../services/learning-automation-release-authorization-service");
 const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
@@ -253,33 +254,9 @@ function createServices(config) {
   const learningAutomationReleaseEvidenceBundleAuditService = createLearningAutomationReleaseEvidenceBundleAuditService({
     readFile: fs.readFileSync
   });
-  const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
-    repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
-    actionHandoffService: learningAutomationActionHandoffService,
-    digestService: learningAutomationDigestService,
-    failurePolicyService: learningAutomationFailurePolicyService,
-    schedulerService: learningAutomationSchedulerService,
-    automationProposalService: learningAutomationProposalService,
-    allowWritefulExecution: config.automationWritefulExecutionEnabled
-  });
-  const learningAutomationSchedulerRunService = createLearningAutomationSchedulerRunService({
-    repository: growthLearningStore.learningAutomationSchedulerRunRepository,
-    actionHandoffService: learningAutomationActionHandoffService,
-    schedulerExecutionService: learningAutomationSchedulerExecutionService,
-    allowBackgroundScheduler: config.automationBackgroundSchedulerEnabled
-  });
   const learningAutomationSchedulerWorkerTargetService = createLearningAutomationSchedulerWorkerTargetService({
     repository: growthLearningStore.learningAutomationSchedulerWorkerTargetRepository,
     targetProvisioningService: learningTargetProvisioningService
-  });
-  const learningAutomationSchedulerWorkerService = createLearningAutomationSchedulerWorkerService({
-    repository: growthLearningStore.learningAutomationSchedulerWorkerLeaseRepository,
-    schedulerRunService: learningAutomationSchedulerRunService,
-    workerTargetService: learningAutomationSchedulerWorkerTargetService,
-    allowBackgroundWorker: config.automationBackgroundWorkerEnabled,
-    workerId: config.automationBackgroundWorkerId,
-    leaseMs: config.automationBackgroundWorkerLeaseMs,
-    defaultTargets: config.automationBackgroundWorkerTargets
   });
   const learningAutomationReleaseApprovalService = createLearningAutomationReleaseApprovalService({
     repository: growthLearningStore.learningAutomationReleaseApprovalRepository
@@ -309,6 +286,34 @@ function createServices(config) {
     collectionRunService: learningAutomationReleaseCollectionRunService,
     decisionService: learningAutomationReleaseDecisionService,
     approvalService: learningAutomationReleaseApprovalService
+  });
+  const learningAutomationReleaseAuthorizationService = createLearningAutomationReleaseAuthorizationService({
+    releaseReviewService: learningAutomationReleaseReviewService
+  });
+  const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
+    repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
+    actionHandoffService: learningAutomationActionHandoffService,
+    digestService: learningAutomationDigestService,
+    failurePolicyService: learningAutomationFailurePolicyService,
+    schedulerService: learningAutomationSchedulerService,
+    automationProposalService: learningAutomationProposalService,
+    releaseAuthorizationService: learningAutomationReleaseAuthorizationService,
+    allowWritefulExecution: config.automationWritefulExecutionEnabled
+  });
+  const learningAutomationSchedulerRunService = createLearningAutomationSchedulerRunService({
+    repository: growthLearningStore.learningAutomationSchedulerRunRepository,
+    actionHandoffService: learningAutomationActionHandoffService,
+    schedulerExecutionService: learningAutomationSchedulerExecutionService,
+    allowBackgroundScheduler: config.automationBackgroundSchedulerEnabled
+  });
+  const learningAutomationSchedulerWorkerService = createLearningAutomationSchedulerWorkerService({
+    repository: growthLearningStore.learningAutomationSchedulerWorkerLeaseRepository,
+    schedulerRunService: learningAutomationSchedulerRunService,
+    workerTargetService: learningAutomationSchedulerWorkerTargetService,
+    allowBackgroundWorker: config.automationBackgroundWorkerEnabled,
+    workerId: config.automationBackgroundWorkerId,
+    leaseMs: config.automationBackgroundWorkerLeaseMs,
+    defaultTargets: config.automationBackgroundWorkerTargets
   });
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
@@ -391,6 +396,7 @@ function createServices(config) {
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
+    learningAutomationReleaseAuthorizationService,
     learningAutomationReleaseCollectionRunService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,

@@ -82,6 +82,7 @@ function gateSummary(input = {}) {
   const readiness = input.readiness || {};
   const dryRun = input.dryRun || {};
   const candidate = input.candidate || {};
+  const releaseAuthorization = input.releaseAuthorization || {};
   return {
     schemaVersion: "growth.learningAutomationSchedulerExecution.gate.v1",
     summaryOnly: true,
@@ -114,6 +115,16 @@ function gateSummary(input = {}) {
       decision: cleanString(candidate.decision),
       safeToPublish: candidate.safeToPublish === true,
       wouldPublish: candidate.wouldPublish === true
+    },
+    releaseAuthorization: {
+      schemaVersion: cleanString(releaseAuthorization.schemaVersion),
+      status: cleanString(releaseAuthorization.status),
+      authorized: releaseAuthorization.authorized === true,
+      reason: cleanString(releaseAuthorization.reason || releaseAuthorization.error),
+      writefulSchedulingAllowed: releaseAuthorization.writefulSchedulingAllowed === true,
+      runtimeConfigChange: releaseAuthorization.runtimeConfigChange === true,
+      requiredApprovalKeys: asArray(releaseAuthorization.requiredApprovalKeys).map((key) => cleanString(key)).filter(Boolean),
+      missingApprovalKeys: asArray(releaseAuthorization.missingApprovalKeys).map((key) => cleanString(key)).filter(Boolean)
     }
   };
 }
@@ -146,6 +157,7 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
   const failurePolicyService = options.failurePolicyService || null;
   const schedulerService = options.schedulerService || null;
   const automationProposalService = options.automationProposalService || null;
+  const releaseAuthorizationService = options.releaseAuthorizationService || null;
   const allowWritefulExecution = options.allowWritefulExecution === true;
 
   function listExecutions(input = {}) {
@@ -281,13 +293,37 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
         candidate
       });
     }
+    if (!releaseAuthorizationService || typeof releaseAuthorizationService.authorize !== "function") {
+      return recordBlocked(scope, input, "learning_automation_scheduler_execution_release_authorization_unavailable", {
+        handoff,
+        digest,
+        readiness,
+        dryRun,
+        candidate
+      });
+    }
+    const releaseAuthorization = releaseAuthorizationService.authorize(Object.assign({}, scope, {
+      collectionRunId: input.collectionRunId || input.collection_run_id || input.releaseCollectionRunId || input.release_collection_run_id,
+      requiredApprovalKeys: input.requiredApprovalKeys || input.required_approval_keys,
+      requestedBy: input.requestedBy || input.requested_by
+    }));
+    if (!releaseAuthorization?.ok || releaseAuthorization.authorized !== true) {
+      return recordBlocked(scope, input, releaseAuthorization?.error || releaseAuthorization?.reason || "learning_automation_scheduler_execution_release_authorization_required", {
+        handoff,
+        digest,
+        readiness,
+        dryRun,
+        candidate,
+        releaseAuthorization
+      });
+    }
 
     const started = repository.recordExecution(Object.assign({}, scope, {
       executionId: input.executionId || input.execution_id,
       mode,
       status: "started",
       reason: "owner_explicit_execution_started",
-      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, executionMode: mode, writefulExecutionEnabled: true }),
+      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, executionMode: mode, writefulExecutionEnabled: true }),
       action: actionSummary(scope, candidate),
       execution: {
         schemaVersion: "growth.learningAutomationSchedulerExecution.execution.v1",
@@ -327,7 +363,7 @@ function createLearningAutomationSchedulerExecutionService(options = {}) {
       status,
       reason: publishResult?.ok ? "accepted_proposal_published" : (publishResult?.error || "accepted_proposal_publish_failed"),
       error: publishResult?.ok ? "" : (publishResult?.error || "learning_automation_scheduler_execution_publish_failed"),
-      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, executionMode: mode, writefulExecutionEnabled: true }),
+      gate: gateSummary({ handoff, digest, readiness, dryRun, candidate, releaseAuthorization, executionMode: mode, writefulExecutionEnabled: true }),
       action: actionSummary(scope, candidate),
       execution: {
         schemaVersion: "growth.learningAutomationSchedulerExecution.execution.v1",

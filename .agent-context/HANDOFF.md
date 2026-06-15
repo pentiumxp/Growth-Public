@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T16:10Z - Release Authorization Gate
+
+- Status: implemented locally; commit/push follows full validation. This slice
+  is backend/Harness/docs only and does not require production deploy. The
+  boundary is no-write summary readback and keeps
+  `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
+- Scope:
+  - added
+    `src/services/learning-automation-release-authorization-service.js`;
+  - added `npm run smoke:release-authorization` through
+    `scripts/smoke-growth-release-authorization.js`;
+  - wired `learningAutomationReleaseAuthorizationService` through
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-authorization`;
+  - scheduler execution now calls release authorization after delivered
+    handoff, reviewed digest, failure-policy readiness, and dry-run gates pass;
+  - authorization requires approved release review, ready latest collection
+    run, approved latest decision, and active `writefulExecutionApproval`;
+  - missing authorization records blocked execution and never calls
+    accepted-proposal publish;
+  - no new table was added because scheduler execution already persists the
+    blocked/started/final audit state.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-authorization-service.test.js`;
+  - `tests/growth-release-authorization-smoke-script.test.js`;
+  - `tests/learning-automation-scheduler-execution-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation already passed:
+  - `node --check src/app/services.js && node --check src/routes/growth-routes.js && node --check src/services/learning-automation-release-authorization-service.js && node --check src/services/learning-automation-scheduler-execution-service.js && node --check scripts/smoke-growth-release-authorization.js`;
+  - `node --test tests/learning-automation-release-authorization-service.test.js tests/learning-automation-scheduler-execution-service.test.js tests/growth-release-authorization-smoke-script.test.js`
+    (`15` tests);
+  - `node --test tests/growth-routes.test.js` (`38` tests);
+  - `node --test tests/growth-architecture-boundary.test.js` (`30` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`166` runtime JS files covered);
+  - `node --test tests/learning-automation-release-authorization-service.test.js tests/growth-release-authorization-smoke-script.test.js tests/learning-automation-scheduler-execution-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`83` tests);
+  - direct `npm run smoke:release-authorization` no-write readback against a
+    temporary SQLite database returned
+    `growth.learningAutomationReleaseAuthorization.v1`, `authorized=false`,
+    `status=blocked`, `writefulSchedulingAllowed=false`, and
+    `runtimeConfigChange=false`;
+  - `npm test` (`634` tests);
+  - Home AI AI Ops required check
+    `cd /Users/hermes-dev/HermesMobileDev/app && node tests/architecture-code-test-harness-map.test.js`.
+- AI Ops evidence:
+  - test `evidence-48d2cae5-f370-4f89-88c7-0968cd84fb25`.
+- Remaining before close:
+  - commit and push.
+
 ## 2026-06-15T15:31Z - Release Review Readback
 
 - Status: implemented and validated; commit/push follows this handoff update.

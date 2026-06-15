@@ -245,7 +245,20 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   latest release collection run, latest Owner decision, and release approval
   bag through service boundaries for future Owner UI/release controls. It does
   not write tables, call Gateway, run smoke tasks, flip runtime config, or
-  schedule work.
+  schedule work. Growth now also has
+  `learning-automation-release-authorization-service`,
+  `npm run smoke:release-authorization`, and visible-target scoped
+  `GET /api/v1/growth/automation/release-authorization`. This is the final
+  summary-only authorization readback consumed by scheduler execution: it
+  requires an approved `growth.learningAutomationReleaseReview.v1`, a ready
+  latest collection run, an approved latest decision, and an active
+  `writefulExecutionApproval` key. It keeps
+  `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`, writes no
+  tables, and flips no runtime config. When
+  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, scheduler execution
+  now rechecks this authorization after delivered handoff, reviewed digest,
+  failure-policy, and scheduler dry-run gates and records a blocked execution
+  instead of publishing when authorization is missing.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

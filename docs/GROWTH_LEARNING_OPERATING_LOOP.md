@@ -1583,9 +1583,9 @@ Implementation progress on 2026-06-15:
 - the automation scheduler execution boundary is implemented locally as a
   default-disabled Owner-explicit repository/service/route layer: it records
   blocked execution when disabled, rechecks delivered handoff, reviewed digest,
-  active failure-policy readiness, and scheduler dry-run when enabled, delegates
-  only to accepted-proposal publish, and records bounded execution metadata
-  without adding a background scheduler.
+  active failure-policy readiness, scheduler dry-run, and final release
+  authorization when enabled, delegates only to accepted-proposal publish, and
+  records bounded execution metadata without adding a background scheduler.
 - the background scheduler contract is now Growth-local documentation in
   `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`: the safe tick
   boundary remains default-disabled, records summary-only run state, delegates
@@ -1656,6 +1656,12 @@ Implementation progress on 2026-06-15:
   latest decision, approval bag, status, and next action. It is a service-only
   projection and does not write tables, run smoke tasks, flip runtime config,
   or schedule work.
+- `npm run smoke:release-authorization` and
+  `GET /api/v1/growth/automation/release-authorization` provide the final
+  no-write authorization readback consumed by scheduler execution. It requires
+  approved release review, ready latest collection run, approved latest
+  decision, and active `writefulExecutionApproval`; missing authorization
+  makes scheduler execution record `blocked` before publication.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
