@@ -9,6 +9,97 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T15:18Z - Release Decision Persistence
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  No production deploy is required for this slice because Growth only records a
+  summary-only Owner release decision after a release collection run already
+  exists. The boundary is advisory evidence only: it keeps
+  `writefulSchedulingAllowed=false`, does not flip runtime config, and does
+  not enable scheduler permission.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `94%` complete, about `6%`
+    remaining;
+  - full product closed loop including embedded release controls, real
+    production visual/platform artifacts, reviewed targets, Owner decisions,
+    and production scheduling decisions: about `74%` complete, about `26%`
+    remaining.
+- Scope:
+  - added
+    `src/services/learning-automation-release-decision-service.js`;
+  - added
+    `src/stores/growth-learning-sqlite/automation-release-decisions.js`
+    and `learning_growth_automation_release_decisions`;
+  - added stable `lgard_` decision ids through
+    `stableLearningAutomationReleaseDecisionId`;
+  - wired the repository through `growth-learning-sqlite-store`, the service
+    graph through `src/app/services.js`, and visible-target routes through
+    `src/routes/growth-routes.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-decisions`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/release-decisions`;
+  - added `npm run smoke:release-decision` through
+    `scripts/smoke-growth-release-decision.js`;
+  - the CLI defaults to no-write evaluation and writes only with explicit
+    `--allow-write` / `--write-record`;
+  - `approved` requires a ready summary-only
+    `growth.learningAutomationReleaseCollectionRun.v1` input;
+  - `blocked` and `needs_evidence` can persist bounded Owner review state;
+  - collection-run file paths are reduced to basenames, private path/value
+    markers and privacy-risk keys fail closed, and no Gateway/model, card
+    publication, evaluation, scheduler execution/tick, notification delivery,
+    stage activation, runtime config flip, or learner mutation is reachable
+    from this boundary.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-decision-service.test.js`;
+  - `tests/learning-automation-release-decision-repository.test.js`;
+  - `tests/growth-release-decision-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - `node --test tests/learning-automation-release-decision-service.test.js
+    tests/learning-automation-release-decision-repository.test.js
+    tests/growth-release-decision-smoke-script.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`79` tests);
+  - direct `npm run smoke:release-decision` no-write evaluation against a
+    temporary summary-only collection-run artifact:
+    `status=approved`, `writefulSchedulingAllowed=false`,
+    `runtimeConfigChange=false`;
+  - direct `npm run smoke:release-decision -- --operation record
+    --allow-write` against a temporary SQLite database wrote one `lgard_` row
+    with `status=approved`, `privacy_class=summary_only`, and no temporary
+    path/private marker leaks;
+  - direct `npm run smoke:release-decision -- --operation list` returned that
+    one bounded decision;
+  - direct SQLite readback confirmed `leakCount=0` for local paths, private
+    markers, raw prompts, raw answers, transcripts, secrets, and tokens;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`162` runtime JS files covered);
+  - `npm test` (`616` tests);
+  - `codegraph sync && codegraph status` (`279` files, `3,600` nodes,
+    `13,740` edges; index up to date).
+- Remaining product work:
+  - collect a real production default release evidence bundle, run bundle
+    self-audit, run release-readiness, persist the real collection run, and
+    record the corresponding real Owner decision;
+  - collect real Home AI visual artifact and platform Action Inbox/Web Push
+    receipt evidence;
+  - complete embedded Owner release-evidence controls and visual verification;
+  - collect reviewed enabled targets, production dry-run evidence, and explicit
+    Owner approval before enabling any writeful scheduling path.
+
 ## 2026-06-15T14:56Z - Release Collection Run Persistence
 
 - Status: implemented and validated; commit/push follows this handoff update.

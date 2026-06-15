@@ -15,6 +15,7 @@ const { createLearningAutomationDigestRepository } = require("./growth-learning-
 const { createLearningAutomationFailurePolicyRepository } = require("./growth-learning-sqlite/automation-failure-policies");
 const { createLearningAutomationProposalRepository } = require("./growth-learning-sqlite/automation-proposals");
 const { createLearningAutomationReleaseCollectionRunRepository } = require("./growth-learning-sqlite/automation-release-collection-runs");
+const { createLearningAutomationReleaseDecisionRepository } = require("./growth-learning-sqlite/automation-release-decisions");
 const { createLearningAutomationReleaseApprovalRepository } = require("./growth-learning-sqlite/automation-release-approvals");
 const { createLearningAutomationReleaseReadinessRepository } = require("./growth-learning-sqlite/automation-release-readiness");
 const { createLearningAutomationSchedulerExecutionRepository } = require("./growth-learning-sqlite/automation-scheduler-executions");
@@ -69,6 +70,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const learningAutomationFailurePolicyRepository = createLearningAutomationFailurePolicyRepository({ open });
   const learningAutomationProposalRepository = createLearningAutomationProposalRepository({ open });
   const learningAutomationReleaseCollectionRunRepository = createLearningAutomationReleaseCollectionRunRepository({ open });
+  const learningAutomationReleaseDecisionRepository = createLearningAutomationReleaseDecisionRepository({ open });
   const learningAutomationReleaseApprovalRepository = createLearningAutomationReleaseApprovalRepository({ open });
   const learningAutomationReleaseReadinessRepository = createLearningAutomationReleaseReadinessRepository({ open });
   const learningAutomationSchedulerExecutionRepository = createLearningAutomationSchedulerExecutionRepository({ open });
@@ -162,6 +164,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     learningAutomationFailurePolicyRepository,
     learningAutomationProposalRepository,
     learningAutomationReleaseCollectionRunRepository,
+    learningAutomationReleaseDecisionRepository,
     learningAutomationReleaseApprovalRepository,
     learningAutomationReleaseReadinessRepository,
     learningAutomationSchedulerExecutionRepository,

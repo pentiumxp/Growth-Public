@@ -14,6 +14,7 @@ const { createLearningAutomationPlatformActionEvidenceService } = require("../se
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
+const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
@@ -285,6 +286,9 @@ function createServices(config) {
   const learningAutomationReleaseCollectionRunService = createLearningAutomationReleaseCollectionRunService({
     repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository
   });
+  const learningAutomationReleaseDecisionService = createLearningAutomationReleaseDecisionService({
+    repository: growthLearningStore.learningAutomationReleaseDecisionRepository
+  });
   const learningAutomationReleaseReadinessService = createLearningAutomationReleaseReadinessService({
     repository: growthLearningStore.learningAutomationReleaseReadinessRepository,
     releaseApprovalService: learningAutomationReleaseApprovalService,
@@ -381,6 +385,7 @@ function createServices(config) {
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
     learningAutomationReleaseCollectionRunService,
+    learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseReadinessService,
     learningAutomationSchedulerExecutionService,

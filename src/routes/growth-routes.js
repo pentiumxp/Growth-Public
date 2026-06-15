@@ -494,6 +494,23 @@ function normalizeAutomationReleaseCollectionRunListInput(url, target) {
   };
 }
 
+function normalizeAutomationReleaseDecisionListInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "",
+    collectionRunId: url.searchParams.get("collectionRunId") || url.searchParams.get("collection_run_id") || url.searchParams.get("runId") || url.searchParams.get("run_id") || "",
+    status: url.searchParams.get("status") || url.searchParams.get("decision") || url.searchParams.get("decisionStatus") || url.searchParams.get("decision_status") || "",
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
 function readinessEvidenceFromBody(body = {}) {
   const evidence = body.evidence || body.evidenceSummary || body.evidence_summary || {};
   return Object.assign({}, evidence, {
@@ -588,6 +605,30 @@ function normalizeAutomationReleaseCollectionRunInput(body, workspaceId, target,
     releaseReadinessFile: body.releaseReadinessFile || body.release_readiness_file || body.readinessFile || body.readiness_file,
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
     createdBy: body.createdBy || body.created_by || requestedWorkspaceId(request, url, ""),
+    createdAt: body.createdAt || body.created_at
+  };
+}
+
+function normalizeAutomationReleaseDecisionInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.runId || body.run_id,
+    status: body.status || body.decision || body.decisionStatus || body.decision_status,
+    releaseCollectionRun: body.releaseCollectionRun || body.release_collection_run || body.collectionRun || body.collection_run || body.run,
+    releaseCollectionRunFile: body.releaseCollectionRunFile || body.release_collection_run_file || body.collectionRunFile || body.collection_run_file || body.runFile || body.run_file,
+    releaseDecision: body.releaseDecision || body.release_decision || body.decisionSummary || body.decision_summary,
+    note: body.note || body.reason || body.summary,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    decidedBy: body.decidedBy || body.decided_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    decidedAt: body.decidedAt || body.decided_at,
     createdAt: body.createdAt || body.created_at
   };
 }
@@ -1147,6 +1188,12 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-decisions") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseDecisionService.listDecisions(normalizeAutomationReleaseDecisionListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/failure-policies") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationFailurePolicyService.listPolicies(normalizeAutomationFailurePolicyListInput(url, target));
@@ -1380,6 +1427,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseCollectionRunService.recordRun(
       normalizeAutomationReleaseCollectionRunInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-decisions") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_decision_owner_required", "Automation release decisions require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleaseDecisionService.recordDecision(
+      normalizeAutomationReleaseDecisionInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

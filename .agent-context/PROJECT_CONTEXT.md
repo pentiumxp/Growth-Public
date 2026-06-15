@@ -229,6 +229,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GET /api/v1/growth/automation/release-collection-runs` plus Owner-only
   `POST /api/v1/growth/automation/release-collection-runs`. It is release
   evidence, not a scheduler permission or Home AI platform release switch.
+  Growth now also has `npm run smoke:release-decision`, a service-owned Owner
+  release-decision boundary after a collection run exists. It delegates to
+  `learning-automation-release-decision-service`, evaluates
+  `growth.learningAutomationReleaseDecision.v1` no-write by default, persists
+  `learning_growth_automation_release_decisions` only with explicit
+  `--allow-write`/`--write-record`, and exposes visible-target scoped
+  `GET /api/v1/growth/automation/release-decisions` plus Owner-only
+  `POST /api/v1/growth/automation/release-decisions`. Approved decisions
+  require a ready summary-only collection run and remain advisory:
+  `writefulSchedulingAllowed=false`, no runtime config flip, and no scheduler
+  permission.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

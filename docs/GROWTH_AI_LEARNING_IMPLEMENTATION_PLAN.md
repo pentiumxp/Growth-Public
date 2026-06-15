@@ -733,6 +733,17 @@ Implemented backend shape:
   `growth.learningAutomationReleaseCollectionRun.v1` DTOs through
   visible-target scoped list and Owner-only create routes. This record is
   evidence for review, not a release switch or scheduler permission.
+- `npm run smoke:release-decision` delegates to
+  `learning-automation-release-decision-service` and records a summary-only
+  Owner release decision after a collection run exists. The CLI defaults to
+  no-write evaluation, accepts a collection run id or summary-only
+  collection-run JSON/file artifact, and writes
+  `learning_growth_automation_release_decisions` only with explicit
+  `--allow-write` / `--write-record`. `approved` requires a ready
+  collection run. `blocked` and `needs_evidence` can persist bounded review
+  state. The decision remains advisory evidence only:
+  `advisoryOnly=true`, `runtimeConfigChange=false`, and
+  `writefulSchedulingAllowed=false`.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

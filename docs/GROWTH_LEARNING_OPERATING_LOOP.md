@@ -1643,6 +1643,13 @@ Implementation progress on 2026-06-15:
   explicit `--write-record`. This gives Owner/release tooling durable evidence
   of what was collected without running smoke tasks or changing scheduler
   permission.
+- after a collection run exists, `npm run smoke:release-decision` can evaluate
+  or persist one sanitized `growth.learningAutomationReleaseDecision.v1`
+  Owner decision. It defaults to no-write, writes
+  `learning_growth_automation_release_decisions` only with explicit
+  `--allow-write` / `--write-record`, and requires a ready collection run for
+  `approved`. This is review evidence only and does not flip runtime config,
+  enable writeful scheduling, or grant scheduler permission.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

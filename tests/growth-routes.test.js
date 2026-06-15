@@ -2528,6 +2528,39 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseDecisionService: {
+      listDecisions(input) {
+        calls.push({ type: "listReleaseDecisions", input });
+        return {
+          ok: true,
+          count: 1,
+          decisions: [{
+            decisionId: "lgard_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            collectionRunId: input.collectionRunId || "lgacrn_route_1",
+            status: input.status || "approved"
+          }]
+        };
+      },
+      recordDecision(input) {
+        calls.push({ type: "recordReleaseDecision", input });
+        return {
+          ok: true,
+          duplicate: false,
+          decision: {
+            decisionId: "lgard_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            collectionRunId: input.collectionRunId || input.releaseCollectionRun?.runId,
+            status: input.status,
+            decision: {
+              writefulSchedulingAllowed: false
+            }
+          }
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -2821,6 +2854,93 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const decisionList = await fetch(`${baseUrl}/api/v1/growth/automation/release-decisions?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&status=approved&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(decisionList.status, 200);
+    assert.equal((await decisionList.json()).decisions[0].decisionId, "lgard_route_1");
+    assert.deepEqual(calls[7], {
+      type: "listReleaseDecisions",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "approved",
+        limit: "5"
+      }
+    });
+
+    const decisionCreated = await fetch(`${baseUrl}/api/v1/growth/automation/release-decisions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        status: "approved",
+        release_collection_run: {
+          schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1",
+          summaryOnly: true,
+          privacyClass: "summary_only",
+          runId: "lgacrn_route_1",
+          status: "ready_for_release_review"
+        },
+        release_collection_run_file: "/tmp/collection-run.json",
+        decided_at: "2026-06-15T17:15:00.000Z"
+      })
+    });
+    assert.equal(decisionCreated.status, 201);
+    assert.equal((await decisionCreated.json()).decision.decisionId, "lgard_route_1");
+    assert.deepEqual(calls[8], {
+      type: "recordReleaseDecision",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collectionRunId: undefined,
+        status: "approved",
+        releaseCollectionRun: {
+          schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1",
+          summaryOnly: true,
+          privacyClass: "summary_only",
+          runId: "lgacrn_route_1",
+          status: "ready_for_release_review"
+        },
+        releaseCollectionRunFile: "/tmp/collection-run.json",
+        releaseDecision: undefined,
+        note: undefined,
+        requestedBy: "weixin_stephen",
+        decidedBy: "weixin_stephen",
+        decidedAt: "2026-06-15T17:15:00.000Z",
+        createdAt: undefined
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -2859,6 +2979,19 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedCollectionCreate.status, 403);
     assert.equal((await deniedCollectionCreate.json()).error.code, "growth_automation_release_collection_run_owner_required");
+
+    const deniedDecisionCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-decisions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen", collection_run_id: "lgacrn_route_1", status: "blocked" })
+    });
+    assert.equal(deniedDecisionCreate.status, 403);
+    assert.equal((await deniedDecisionCreate.json()).error.code, "growth_automation_release_decision_owner_required");
 
     const deniedRead = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness?workspaceId=weixin_fanfan`, {
       headers: {
