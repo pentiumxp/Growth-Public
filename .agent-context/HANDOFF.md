@@ -11,7 +11,8 @@
 
 ## 2026-06-15T16:11Z - Release Closure Readback
 
-- Status: implemented and validated; commit/push follows this handoff update.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`.
   This slice is backend/Harness/docs only and does not require production
   deploy. The boundary is no-write summary readback and keeps
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
@@ -71,8 +72,8 @@
     `14,208` edges; index up to date).
 - AI Ops evidence:
   - test `evidence-4681f28a-9da0-43b6-93ae-f4c9f7037511`.
-- Remaining before close:
-  - commit and push.
+- Git:
+  - commit `1bf299f` `Add release closure readback`.
 
 ## 2026-06-15T16:10Z - Release Authorization Gate
 
