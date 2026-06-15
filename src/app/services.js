@@ -14,6 +14,7 @@ const { createLearningAutomationPlatformActionEvidenceService } = require("../se
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseAuthorizationService } = require("../services/learning-automation-release-authorization-service");
+const { createLearningAutomationReleaseClosureService } = require("../services/learning-automation-release-closure-service");
 const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
@@ -290,6 +291,10 @@ function createServices(config) {
   const learningAutomationReleaseAuthorizationService = createLearningAutomationReleaseAuthorizationService({
     releaseReviewService: learningAutomationReleaseReviewService
   });
+  const learningAutomationReleaseClosureService = createLearningAutomationReleaseClosureService({
+    releaseReviewService: learningAutomationReleaseReviewService,
+    releaseAuthorizationService: learningAutomationReleaseAuthorizationService
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -397,6 +402,7 @@ function createServices(config) {
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
     learningAutomationReleaseAuthorizationService,
+    learningAutomationReleaseClosureService,
     learningAutomationReleaseCollectionRunService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,

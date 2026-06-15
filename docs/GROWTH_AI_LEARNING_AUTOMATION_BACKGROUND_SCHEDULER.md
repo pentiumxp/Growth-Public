@@ -85,7 +85,10 @@ actor, reviewed-target, lease, and timer mechanics needed for a future release; 
 does not remove the need for product evidence, central visual evidence,
 platform action evidence, production dry-run evidence, release evidence bundle
 self-audit evidence, persisted release collection-run evidence, and a separate
-release decision plus release authorization.
+release decision plus release authorization. `npm run smoke:release-closure`
+and `GET /api/v1/growth/automation/release-closure` provide the no-write
+summary readback for whether those release-control artifacts are complete; they
+do not flip runtime config and are not part of the writeful execution call path.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker

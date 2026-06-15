@@ -9,11 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T16:11Z - Release Closure Readback
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  This slice is backend/Harness/docs only and does not require production
+  deploy. The boundary is no-write summary readback and keeps
+  `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
+- Scope:
+  - added `src/services/learning-automation-release-closure-service.js`;
+  - added `npm run smoke:release-closure` through
+    `scripts/smoke-growth-release-closure.js`;
+  - wired `learningAutomationReleaseClosureService` through
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-closure`;
+  - route parsing now accepts comma-separated `requiredApprovalKeys` while
+    preserving the existing single `requiredApprovalKey` behavior;
+  - release closure composes release-review and release-authorization summaries
+    into `growth.learningAutomationReleaseClosure.v1` with
+    `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
+    check/evidence/approval keys, required actions, and next action;
+  - no repository/table was added because readiness, collection-run, decision,
+    and approval records remain the source of truth.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-closure-service.test.js`;
+  - `tests/growth-release-closure-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - package JSON parse and focused syntax checks passed;
+  - `node --test tests/learning-automation-release-closure-service.test.js tests/growth-release-closure-smoke-script.test.js`
+    (`8` tests);
+  - `node --test tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`68` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`168` runtime JS files covered);
+  - focused release chain
+    `node --test tests/learning-automation-release-closure-service.test.js tests/growth-release-closure-smoke-script.test.js tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/growth-release-review-smoke-script.test.js tests/growth-release-authorization-smoke-script.test.js tests/learning-automation-scheduler-execution-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`99` tests);
+  - `npm test` (`642` tests);
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - direct `npm run smoke:release-closure` no-write readback against a
+    temporary SQLite database returned
+    `growth.learningAutomationReleaseClosure.v1`, `status=incomplete`,
+    `backendEvidenceComplete=false`, `writefulSchedulingAllowed=false`, and
+    `runtimeConfigChange=false`;
+  - `codegraph sync && codegraph status` (`291` files, `3,729` nodes,
+    `14,208` edges; index up to date).
+- AI Ops evidence:
+  - test `evidence-4681f28a-9da0-43b6-93ae-f4c9f7037511`.
+- Remaining before close:
+  - commit and push.
+
 ## 2026-06-15T16:10Z - Release Authorization Gate
 
-- Status: implemented locally; commit/push follows full validation. This slice
-  is backend/Harness/docs only and does not require production deploy. The
-  boundary is no-write summary readback and keeps
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is backend/Harness/docs only and does not require
+  production deploy. The boundary is no-write summary readback and keeps
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
 - Scope:
   - added
@@ -69,8 +134,8 @@
     `cd /Users/hermes-dev/HermesMobileDev/app && node tests/architecture-code-test-harness-map.test.js`.
 - AI Ops evidence:
   - test `evidence-48d2cae5-f370-4f89-88c7-0968cd84fb25`.
-- Remaining before close:
-  - commit and push.
+- Git:
+  - commit `154ffa0` `Gate scheduler execution on release authorization`.
 
 ## 2026-06-15T15:31Z - Release Review Readback
 

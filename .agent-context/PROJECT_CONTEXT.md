@@ -258,7 +258,16 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, scheduler execution
   now rechecks this authorization after delivered handoff, reviewed digest,
   failure-policy, and scheduler dry-run gates and records a blocked execution
-  instead of publishing when authorization is missing.
+  instead of publishing when authorization is missing. Growth now also has
+  `learning-automation-release-closure-service`,
+  `npm run smoke:release-closure`, and visible-target scoped
+  `GET /api/v1/growth/automation/release-closure`. This no-write summary
+  readback composes release-review plus release-authorization summaries into
+  `growth.learningAutomationReleaseClosure.v1`, including
+  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
+  check/evidence/approval keys, required actions, and one next action while
+  still keeping `writefulSchedulingAllowed=false` and
+  `runtimeConfigChange=false`.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

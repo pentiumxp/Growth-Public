@@ -48,6 +48,13 @@ function truthy(value) {
   return ["1", "true", "yes", "on", "pass", "ready"].includes(String(value || "").trim().toLowerCase());
 }
 
+function splitCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function requestedWritableWorkspaceId(body, url) {
   return String(body.workspace_id || body.workspaceId || url.searchParams.get("workspace_id") || url.searchParams.get("workspaceId") || "");
 }
@@ -528,9 +535,15 @@ function normalizeAutomationReleaseReviewInput(url, target) {
 function normalizeAutomationReleaseAuthorizationInput(url, target) {
   const input = normalizeAutomationReleaseReviewInput(url, target);
   const approvalKey = url.searchParams.get("requiredApprovalKey") || url.searchParams.get("required_approval_key") || "";
+  const approvalKeys = splitCsv(url.searchParams.get("requiredApprovalKeys") || url.searchParams.get("required_approval_keys") || "")
+    .concat(approvalKey ? [approvalKey] : []);
   return Object.assign(input, {
-    requiredApprovalKeys: approvalKey ? [approvalKey] : undefined
+    requiredApprovalKeys: approvalKeys.length ? approvalKeys : undefined
   });
+}
+
+function normalizeAutomationReleaseClosureInput(url, target) {
+  return normalizeAutomationReleaseAuthorizationInput(url, target);
 }
 
 function readinessEvidenceFromBody(body = {}) {
@@ -1226,6 +1239,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-authorization") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseAuthorizationService.authorize(normalizeAutomationReleaseAuthorizationInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-closure") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseClosureService.summarize(normalizeAutomationReleaseClosureInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

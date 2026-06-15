@@ -2592,6 +2592,25 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseClosureService: {
+      summarize(input) {
+        calls.push({ type: "releaseClosure", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseClosure.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "approval_required",
+          backendEvidenceComplete: false,
+          releaseClosure: {
+            requiredActionCount: 1,
+            missingApprovalKeys: input.requiredApprovalKeys || ["writefulExecutionApproval"]
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -3040,6 +3059,42 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
         requiredApprovalKeys: ["writefulExecutionApproval"]
+      }
+    });
+
+    const releaseClosure = await fetch(`${baseUrl}/api/v1/growth/automation/release-closure?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&requiredApprovalKeys=writefulExecutionApproval,backgroundSchedulerApproval&automation_digest_ui_evidence=true`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(releaseClosure.status, 200);
+    assert.equal((await releaseClosure.json()).schemaVersion, "growth.learningAutomationReleaseClosure.v1");
+    assert.deepEqual(calls[11], {
+      type: "releaseClosure",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "",
+        ownerDailyUiEvidence: false,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: true,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: ["writefulExecutionApproval", "backgroundSchedulerApproval"]
       }
     });
 

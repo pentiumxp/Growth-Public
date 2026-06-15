@@ -752,6 +752,16 @@ Implemented backend shape:
   it does not write repositories or tables, run smoke tasks, call Gateway,
   publish, generate, evaluate, schedule, notify, activate stage assessments,
   mutate learner state, or flip runtime config.
+- `npm run smoke:release-closure` delegates to
+  `learning-automation-release-closure-service.summarize` and returns a
+  no-write `growth.learningAutomationReleaseClosure.v1` readback for Owner
+  release closure. It composes release-review plus release-authorization
+  summaries, exposes `backendEvidenceComplete`,
+  `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
+  required actions, and one next action. It does not write repositories or
+  tables, run smoke tasks, call Gateway, publish, generate, evaluate,
+  schedule, notify, activate stage assessments, mutate learner state, or flip
+  runtime config.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

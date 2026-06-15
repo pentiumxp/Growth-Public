@@ -1662,6 +1662,15 @@ Implementation progress on 2026-06-15:
   approved release review, ready latest collection run, approved latest
   decision, and active `writefulExecutionApproval`; missing authorization
   makes scheduler execution record `blocked` before publication.
+- `npm run smoke:release-closure` and
+  `GET /api/v1/growth/automation/release-closure` provide a single no-write
+  closure readback for Owner/release tooling. It composes release-review and
+  release-authorization summaries into
+  `growth.learningAutomationReleaseClosure.v1`, including
+  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
+  check/evidence/approval keys, required actions, and one next action while
+  still keeping `writefulSchedulingAllowed=false` and
+  `runtimeConfigChange=false`.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
