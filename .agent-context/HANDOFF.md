@@ -9,6 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:42Z - Release Evidence Bundle Includes Proposal Smoke
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because this slice adds
+  release-evidence/readiness harness and docs only.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    read-only `proposal` task in the default task set and maps it to
+    `productionProposalSmokeEvidence`;
+  - `npm run smoke:release-evidence-bundle` can run
+    `scripts/smoke-growth-automation-proposal.js` through the injected command
+    runner and bundle the bounded summary evidence without stdout/stderr;
+  - `learning-automation-release-readiness-service` now treats
+    `productionProposalSmokeEvidence` as a required advisory release check;
+  - `npm run smoke:release-readiness` accepts
+    `--production-proposal-smoke-evidence` and versioned bundle input for the
+    same evidence key;
+  - the boundary remains summary-only, no-write by default, and
+    `writefulSchedulingAllowed=false`; it does not call Gateway, publish
+    plans, generate cards, evaluate, execute schedulers, run scheduler ticks,
+    deliver notifications, activate stage assessments, mutate learner state,
+    or act as a release switch.
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - proposal-only `npm run smoke:release-evidence-bundle` against a temporary
+    SQLite DB, followed by `npm run smoke:release-readiness
+    -- --evidence-bundle-file <bundle>`; readiness recognized
+    `production_proposal_smoke_evidence=pass` while staying incomplete and
+    no-write;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`539` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,172` nodes,
+    `12,250` edges, index up to date).
+
 ## 2026-06-15T10:31Z - Automation Proposal Smoke CLI
 
 - Status: implemented and locally validated; commit/push follows this handoff

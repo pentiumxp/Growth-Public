@@ -120,6 +120,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
   `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
   flags, accepts
+  `--production-proposal-smoke-evidence` after
+  `npm run smoke:proposal` has produced bounded read-only production proposal
+  evidence, accepts
   `--production-action-handoff-smoke-evidence` after
   `npm run smoke:action-handoff` has produced bounded Growth-side action
   handoff smoke evidence, accepts
@@ -153,7 +156,7 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
-  includes learning-loop state smoke in the default task set,
+  includes learning-loop state smoke and proposal smoke in the default task set,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
   without hand-splicing JSON in Codex. The builder does not write business
   state, does not call Gateway, and does not change release-readiness or

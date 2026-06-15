@@ -411,15 +411,16 @@ Backend shape:
 - visible-target scoped snapshot list and Owner-only snapshot create routes
   under `/api/v1/growth/automation/release-readiness/snapshots`.
 - `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
-  assembly from selected no-write/default-disabled smoke CLIs.
+  assembly from selected no-write/default-disabled smoke CLIs, including
+  read-only proposal smoke by default.
 
 Required behavior:
 
-- aggregate product UI, audit UI, stage-checkpoint, proposal review, digest,
-  active failure-policy, delivered handoff, execution gate, scheduler run,
-  reviewed worker target, worker lease, planner smoke, controlled daily-loop
-  write smoke, production dry-run, platform Action Inbox/Web Push, visual, and
-  release approval evidence;
+- aggregate product UI, audit UI, stage-checkpoint, proposal review,
+  production proposal smoke, digest, active failure-policy, delivered handoff,
+  execution gate, scheduler run, reviewed worker target, worker lease, planner
+  smoke, controlled daily-loop write smoke, production dry-run, platform
+  Action Inbox/Web Push, visual, and release approval evidence;
 - return bounded `pass`, `missing`, `blocked`, or `not_applicable` check
   states;
 - persist optional summary-only readiness snapshots for Owner/release review;

@@ -23,6 +23,7 @@ function allEvidence() {
     ownerAuditUiEvidence: { ok: true, evidenceId: "ui_audit" },
     stageCheckpointEvidence: { ok: true, evidenceId: "stage_sep" },
     proposalReviewUiEvidence: { ok: true, evidenceId: "proposal_ui" },
+    productionProposalSmokeEvidence: { ok: true, evidenceId: "proposal_smoke" },
     automationDigestUiEvidence: { ok: true, evidenceId: "digest_ui" },
     automationActionHandoffUiEvidence: { ok: true, evidenceId: "action_handoff_ui" },
     schedulerExecutionUiEvidence: { ok: true, evidenceId: "scheduler_execution_ui" },
@@ -170,6 +171,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.summary.writefulSchedulingAllowed, false);
   assert.equal(result.releaseReview.advisoryOnly, true);
   assert.equal(result.checks.find((item) => item.key === "automation_digest_ui_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "production_proposal_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "automation_action_handoff_ui_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "scheduler_execution_ui_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "scheduler_run_ui_evidence").status, "pass");
@@ -212,6 +214,7 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.checks.find((item) => item.key === "reviewed_automation_digest").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "active_failure_policy").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "automation_digest_ui_evidence").status, "missing");
+  assert.equal(result.checks.find((item) => item.key === "production_proposal_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "automation_action_handoff_ui_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "scheduler_execution_ui_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "scheduler_run_ui_evidence").status, "missing");

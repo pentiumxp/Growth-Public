@@ -9,6 +9,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
   "learning_loop_state",
+  "proposal",
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -35,6 +36,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "proposal",
+    evidenceKey: "productionProposalSmokeEvidence",
+    script: "scripts/smoke-growth-automation-proposal.js",
+    commandName: "npm run smoke:proposal"
   },
   {
     taskId: "scheduler_dry_run",

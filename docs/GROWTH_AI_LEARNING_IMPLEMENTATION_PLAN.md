@@ -655,7 +655,8 @@ Implemented backend shape:
 - `npm run smoke:release-evidence-bundle` delegates to
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
-  from selected no-write/default-disabled smoke CLIs. Use `--output-file` and
+  from selected no-write/default-disabled smoke CLIs, including the read-only
+  proposal smoke in the default task set. Use `--output-file` and
   then pass that file to
   `npm run smoke:release-readiness -- --evidence-bundle-file <path>` when
   release review needs structured smoke evidence without Codex hand-spliced
@@ -667,9 +668,10 @@ Implemented backend shape:
 Required behavior:
 
 - aggregate summary-only evidence for Owner daily UI, audit/correction UI,
-  stage-checkpoint separation, proposal review, automation digest UI,
-  digest review, active failure policy, delivered action handoff, automation
-  action handoff UI, production action handoff smoke evidence from
+  stage-checkpoint separation, proposal review, production proposal smoke
+  evidence from `npm run smoke:proposal`, automation digest UI, digest review,
+  active failure policy, delivered action handoff, automation action handoff UI,
+  production action handoff smoke evidence from
   `npm run smoke:action-handoff`, Owner-explicit execution gate status,
   scheduler execution UI, production scheduler execution smoke evidence from
   `npm run smoke:scheduler-execution`, scheduler run default-disabled status,

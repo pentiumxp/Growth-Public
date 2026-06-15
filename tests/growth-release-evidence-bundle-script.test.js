@@ -109,6 +109,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("proposal"));
 });
 
 test("release evidence bundle script writes a summary-only bundle from a read-only smoke", () => {

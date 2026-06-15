@@ -365,7 +365,7 @@ background scheduler.
 | A5: Failure policy and action handoff | Growth records active rollback/failure policy and delivers bounded action metadata. | No learning-state mutation. |
 | A6: Owner-explicit execution | Owner can execute one delivered handoff action after every gate is rechecked. | Default-disabled; when enabled, delegates only to accepted-proposal publish and records execution audit. |
 | A7: Background scheduler contract | Default-disabled supervised tick over delivered handoff actions, Owner-reviewed persistent worker targets, and default-disabled worker leases, with any future unattended worker kept separate. | Delegates only to the execution service; production worker use requires reviewed enabled targets, release evidence, and explicit config. |
-| A8: Release-readiness evidence | Growth summarizes product, platform, visual, production controlled daily-loop write smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
+| A8: Release-readiness evidence | Growth summarizes product, platform, visual, production proposal smoke, production controlled daily-loop write smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
 
 Writeful scheduling can be considered only after:
 
