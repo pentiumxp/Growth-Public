@@ -212,6 +212,62 @@ test("automation release readiness service blocks unsafe dry-run/config states",
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run").status, "blocked");
   assert.equal(result.checks.find((item) => item.key === "scheduler_run_default_disabled").status, "blocked");
   assert.equal(result.checks.find((item) => item.key === "worker_timer_default_disabled").status, "blocked");
+  assert.equal(result.checks.find((item) => item.key === "writeful_execution_release_approval").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "background_scheduler_release_approval").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "background_worker_release_approval").status, "pass");
+  assert.equal(result.summary.writefulSchedulingAllowed, false);
+});
+
+test("automation release readiness service accepts release approval aliases but still keeps readiness advisory-only", () => {
+  const { service } = createService();
+
+  const topLevelApprovals = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: allEvidence(),
+    writefulExecutionApproval: true,
+    backgroundSchedulerApproval: { ok: true },
+    backgroundWorkerApproval: { status: "approved" }
+  }));
+
+  assert.equal(topLevelApprovals.ok, true);
+  assert.equal(topLevelApprovals.checks.find((item) => item.key === "writeful_execution_release_approval").status, "pass");
+  assert.equal(topLevelApprovals.checks.find((item) => item.key === "background_scheduler_release_approval").status, "pass");
+  assert.equal(topLevelApprovals.checks.find((item) => item.key === "background_worker_release_approval").status, "pass");
+  assert.equal(topLevelApprovals.releaseReview.advisoryOnly, true);
+  assert.equal(topLevelApprovals.summary.writefulSchedulingAllowed, false);
+
+  const approvalAlias = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: allEvidence(),
+    approvals: allApprovals()
+  }));
+
+  assert.equal(approvalAlias.ok, true);
+  assert.equal(approvalAlias.status, "ready_for_release_review");
+  assert.equal(approvalAlias.config.writefulSchedulingAllowed, false);
+});
+
+test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {
+  const { service } = createService({
+    config: {
+      automationWritefulExecutionEnabled: true,
+      automationBackgroundSchedulerEnabled: true,
+      automationBackgroundWorkerEnabled: true
+    }
+  });
+
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: allEvidence()
+  }));
+
+  const writeful = result.checks.find((item) => item.key === "writeful_execution_release_approval");
+  const scheduler = result.checks.find((item) => item.key === "background_scheduler_release_approval");
+  const worker = result.checks.find((item) => item.key === "background_worker_release_approval");
+  assert.equal(result.status, "blocked");
+  assert.equal(writeful.status, "blocked");
+  assert.equal(writeful.requiredAction.action, "disable_or_record_release_approval");
+  assert.equal(scheduler.status, "blocked");
+  assert.equal(scheduler.requiredAction.action, "disable_or_record_release_approval");
+  assert.equal(worker.status, "blocked");
+  assert.equal(worker.requiredAction.action, "disable_or_record_release_approval");
   assert.equal(result.summary.writefulSchedulingAllowed, false);
 });
 

@@ -57,6 +57,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--release-approval-json", JSON.stringify({
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" }
     }),
+    "--background-scheduler-approval",
     "--background-worker-approval",
     "--write-snapshot",
     "--created-by", "weixin_owner",
@@ -71,6 +72,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
   });
   assert.deepEqual(releaseApprovalFromArgs(args), {
     writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },
+    backgroundSchedulerApproval: { approved: true, source: "release_readiness_smoke_flag" },
     backgroundWorkerApproval: { approved: true, source: "release_readiness_smoke_flag" }
   });
   assert.deepEqual(inputFromArgs(args), {
@@ -89,6 +91,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     },
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },
+      backgroundSchedulerApproval: { approved: true, source: "release_readiness_smoke_flag" },
       backgroundWorkerApproval: { approved: true, source: "release_readiness_smoke_flag" }
     },
     requestedBy: "weixin_owner",

@@ -336,6 +336,12 @@ Snapshot persistence contract:
 - CLI-supplied evidence must be structured summary evidence through
   `--evidence-json`, `--release-approval-json`, or bounded evidence flags,
   and it is rejected by the service if privacy-risk keys are present;
+- release approval inputs may be supplied through `releaseApproval`,
+  `approvals`, top-level approval fields, or CLI flags such as
+  `--writeful-execution-approval`, `--background-scheduler-approval`, and
+  `--background-worker-approval`; the readiness service still keeps
+  `writefulSchedulingAllowed=false` and treats approval as review evidence,
+  not as a runtime switch;
 - idempotency is based on scope, status, timestamp, and check keys;
 - privacy-risk keys and non-`summary_only` privacy class are rejected;
 - routes enforce Owner-only writes, workspace bearer authorization, and
