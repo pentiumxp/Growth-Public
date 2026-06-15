@@ -389,9 +389,10 @@ Use the Growth-owned release-readiness boundary:
   records after visible-target resolution; Owner-only
   `POST /api/v1/growth/automation/release-packages` records an existing
   summary-only package artifact and must not run smoke tasks. Persisted
-  package rows include bounded `releaseDashboardSummary`; review, controls,
-  inventory, and dashboard readbacks expose only latest-package dashboard
-  summary fields for Owner status surfaces. The package is not release
+  package rows include bounded `releaseDashboardSummary`; review,
+  authorization, closure, controls, inventory, and dashboard readbacks expose
+  only latest-package dashboard summary fields for Owner status surfaces. The
+  package is not release
   approval, runtime config enablement, scheduler permission, deployment, or
   card publication.
 - scheduler dry-run smoke CLI:
@@ -421,7 +422,8 @@ Use the Growth-owned release-readiness boundary:
   `npm run smoke:release-closure -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It combines
   release-review plus release-authorization summaries into one closure readback
-  with package-record readback status, `latestPackage`,
+  with package-record readback status, `latestPackage`, `packageReadback`,
+  package dashboard summary fields,
   `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
   check/evidence/approval keys, required actions, and next action. It is not a
   runtime config switch and keeps `writefulSchedulingAllowed=false`.

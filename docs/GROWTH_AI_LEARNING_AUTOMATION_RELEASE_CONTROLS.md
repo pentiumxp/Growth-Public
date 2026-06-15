@@ -142,9 +142,11 @@ The `steps` array contains bounded summaries for:
 
 The release-review service also returns a bounded `packageReadback` summary.
 When a persisted package record includes `releaseDashboardSummary`, review,
-controls, inventory, and dashboard readbacks must expose the latest package's
-dashboard status, next-action key, required-action count, and package step
-count as summary-only fields. They must not expose raw package artifacts or
+authorization, closure, controls, inventory, and dashboard readbacks must expose
+the latest package's dashboard status, next-action key, required-action count,
+and package step count as summary-only fields. Authorization and closure use
+those fields only for Owner/audit readback; they do not make package dashboard
+state a hard authorization gate. They must not expose raw package artifacts or
 raw smoke output.
 
 ## Route Semantics

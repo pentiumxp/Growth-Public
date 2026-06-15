@@ -1678,16 +1678,19 @@ Implementation progress on 2026-06-15:
   `GET /api/v1/growth/automation/release-authorization` provide the final
   no-write authorization readback consumed by scheduler execution. It requires
   approved release review, ready latest collection run, approved latest
-  decision, and active `writefulExecutionApproval`; missing authorization
-  makes scheduler execution record `blocked` before publication.
+  decision, and active `writefulExecutionApproval`; it preserves package
+  readback and latest-package dashboard summary fields as advisory Owner/audit
+  readback only. Missing authorization makes scheduler execution record
+  `blocked` before publication.
 - `npm run smoke:release-closure` and
   `GET /api/v1/growth/automation/release-closure` provide a single no-write
   closure readback for Owner/release tooling. It composes release-review and
   release-authorization summaries into
   `growth.learningAutomationReleaseClosure.v1`, including package-record
-  readback status, `latestPackage`, `backendEvidenceComplete`,
-  `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
-  required actions, and one next action while still keeping
+  readback status, `latestPackage`, `packageReadback`, latest-package dashboard
+  summary fields, `backendEvidenceComplete`, `readyForOwnerReleaseActivation`,
+  missing check/evidence/approval keys, required actions, and one next action
+  while still keeping
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
 - `npm run smoke:release-activation` and
   `GET /api/v1/growth/automation/release-activation` provide the no-write

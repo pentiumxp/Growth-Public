@@ -76,13 +76,36 @@ function publicDecision(decision = null) {
 
 function publicPackage(record = null) {
   if (!record) return null;
+  const stepSummary = objectOnly(record.stepSummary || record.step_summary);
   return {
     packageId: cleanString(record.packageId || record.package_id, 180),
     status: cleanString(record.status, 80),
     packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
     collectionRunId: cleanString(record.collectionRunId || record.collection_run_id, 180),
     privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    stepSummary: {
+      summaryOnly: stepSummary.summaryOnly === true || stepSummary.summary_only === true,
+      stepCount: Number(stepSummary.stepCount || stepSummary.step_count || 0) || 0
+    },
+    releaseDashboardSummary: publicDashboardSummary(record),
     summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function publicDashboardSummary(record = {}) {
+  const dashboard = objectOnly(record.releaseDashboardSummary || record.release_dashboard_summary || record.dashboardSummary || record.dashboard_summary);
+  return {
+    schemaVersion: cleanString(dashboard.schemaVersion || dashboard.schema_version, 180),
+    summaryOnly: dashboard.summaryOnly === true || dashboard.summary_only === true,
+    status: cleanString(dashboard.status, 120),
+    readinessStatus: cleanString(dashboard.readinessStatus || dashboard.readiness_status, 120),
+    controlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status, 120),
+    inventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status, 120),
+    requiredActionCount: Number(dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+    nextAction: publicAction(dashboard.nextAction || dashboard.next_action),
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -91,16 +114,39 @@ function publicPackage(record = null) {
 
 function publicAction(action = null) {
   if (!action || typeof action !== "object") return null;
+  const key = cleanString(action.key || action.checkKey || action.check_key || action.evidenceKey || action.evidence_key, 140);
+  if (!key) return null;
   return {
-    key: cleanString(action.key, 120),
-    action: cleanString(action.action, 160),
-    requiredActor: cleanString(action.requiredActor || action.required_actor, 80)
+    key,
+    action: cleanString(action.action || action.type || action.reason, 180),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor, 80)
+  };
+}
+
+function packageReadbackSummary(value = {}) {
+  const releaseReview = objectOnly(value.releaseReview || value.release_review);
+  const readback = objectOnly(value.packageReadback || value.package_readback || releaseReview.packageReadback || releaseReview.package_readback);
+  return {
+    schemaVersion: cleanString(readback.schemaVersion || readback.schema_version || "growth.learningAutomationReleaseReview.packageReadback.v1", 180),
+    summaryOnly: true,
+    packageRecordReadbackAvailable: readback.packageRecordReadbackAvailable === true || value.packageRecordReadbackAvailable === true,
+    packageRecordPresent: readback.packageRecordPresent === true || value.packageRecordPresent === true,
+    packageRecordStatus: cleanString(readback.packageRecordStatus || releaseReview.packageRecordStatus || value.packageRecordStatus || value.package_record_status, 120),
+    latestPackageId: cleanString(readback.latestPackageId || releaseReview.latestPackageId || value.latestPackageId || value.latest_package_id, 180),
+    latestPackageStepCount: Number(readback.latestPackageStepCount || releaseReview.latestPackageStepCount || 0) || 0,
+    latestPackageDashboardStatus: cleanString(readback.latestPackageDashboardStatus || releaseReview.latestPackageDashboardStatus, 120),
+    latestPackageDashboardNextActionKey: cleanString(readback.latestPackageDashboardNextActionKey || releaseReview.latestPackageDashboardNextActionKey, 140),
+    latestPackageDashboardRequiredActionCount: Number(readback.latestPackageDashboardRequiredActionCount || releaseReview.latestPackageDashboardRequiredActionCount || 0) || 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
   };
 }
 
 function reviewSummary(review = {}) {
   const releaseReview = objectOnly(review.releaseReview);
   const readiness = objectOnly(review.readiness);
+  const packageReadback = packageReadbackSummary(review);
   return {
     schemaVersion: cleanString(review.schemaVersion || review.schema_version, 120),
     status: cleanString(review.status, 80),
@@ -114,6 +160,11 @@ function reviewSummary(review = {}) {
     packageRecordPresent: review.packageRecordPresent === true,
     packageRecordStatus: cleanString(releaseReview.packageRecordStatus || review.packageRecordStatus || review.package_record_status, 120),
     latestPackageId: cleanString(releaseReview.latestPackageId || review.latestPackageId || review.latest_package_id, 180),
+    latestPackageStepCount: packageReadback.latestPackageStepCount,
+    latestPackageDashboardStatus: packageReadback.latestPackageDashboardStatus,
+    latestPackageDashboardNextActionKey: packageReadback.latestPackageDashboardNextActionKey,
+    latestPackageDashboardRequiredActionCount: packageReadback.latestPackageDashboardRequiredActionCount,
+    packageReadback,
     advisoryOnly: review.advisoryOnly === true,
     privacyClass: cleanString(review.privacyClass || review.privacy_class, 80),
     summaryOnly: review.summaryOnly === true || review.summary_only === true,
@@ -140,6 +191,7 @@ function executionGateSummary(gate = {}) {
     runtimeConfigChange: gate.runtimeConfigChange === true,
     privacyClass: cleanString(gate.privacyClass || gate.privacy_class, 80),
     summaryOnly: gate.summaryOnly === true || gate.summary_only === true,
+    packageReadback: packageReadbackSummary(gate),
     latestCollectionRun: publicCollectionRun(gate.latestCollectionRun),
     latestDecision: publicDecision(gate.latestDecision),
     latestPackage: publicPackage(gate.latestPackage)
@@ -179,6 +231,10 @@ function closureStatus(review, gate) {
   if (gate.authorized === true) return "ready_for_owner_release_activation";
   if (gate.missingApprovalKeys.length) return "approval_required";
   return "authorization_blocked";
+}
+
+function hasPackageReadback(value = {}) {
+  return Boolean(value.latestPackageId || value.packageRecordStatus || value.latestPackageDashboardStatus || value.latestPackageStepCount);
 }
 
 function createLearningAutomationReleaseClosureService(options = {}) {
@@ -231,6 +287,7 @@ function createLearningAutomationReleaseClosureService(options = {}) {
     const status = closureStatus(review, gate);
     const requiredActions = requiredActionsFor(review, gate);
     const backendEvidenceComplete = review.approvedForReleaseReview === true && gate.authorized === true;
+    const packageReadback = hasPackageReadback(gate.packageReadback) ? gate.packageReadback : review.packageReadback;
     return Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-closure-service",
@@ -245,6 +302,7 @@ function createLearningAutomationReleaseClosureService(options = {}) {
       runtimeConfigChange: false,
       review,
       executionGate: gate,
+      packageReadback,
       latestCollectionRun: gate.latestCollectionRun || publicCollectionRun(reviewResult.latestCollectionRun),
       latestDecision: gate.latestDecision || publicDecision(reviewResult.latestDecision),
       latestPackage: gate.latestPackage || publicPackage(reviewResult.latestPackage),
@@ -257,6 +315,11 @@ function createLearningAutomationReleaseClosureService(options = {}) {
         packageRecordPresent: review.packageRecordPresent,
         packageRecordStatus: review.packageRecordStatus,
         latestPackageId: review.latestPackageId,
+        latestPackageStepCount: packageReadback.latestPackageStepCount,
+        latestPackageDashboardStatus: packageReadback.latestPackageDashboardStatus,
+        latestPackageDashboardNextActionKey: packageReadback.latestPackageDashboardNextActionKey,
+        latestPackageDashboardRequiredActionCount: packageReadback.latestPackageDashboardRequiredActionCount,
+        packageReadback,
         backendEvidenceComplete,
         readyForOwnerReleaseActivation: backendEvidenceComplete,
         requiredActionCount: requiredActions.length,

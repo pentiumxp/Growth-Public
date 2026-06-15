@@ -93,15 +93,70 @@ function publicDecision(decision = null) {
   };
 }
 
+function publicAction(action = null) {
+  if (!action || typeof action !== "object") return null;
+  const key = cleanString(action.key || action.checkKey || action.check_key || action.evidenceKey || action.evidence_key, 140);
+  if (!key) return null;
+  return {
+    key,
+    action: cleanString(action.action || action.type || action.reason, 180),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor, 80)
+  };
+}
+
+function publicDashboardSummary(record = {}) {
+  const dashboard = objectOnly(record.releaseDashboardSummary || record.release_dashboard_summary || record.dashboardSummary || record.dashboard_summary);
+  const nextAction = publicAction(dashboard.nextAction || dashboard.next_action);
+  return {
+    schemaVersion: cleanString(dashboard.schemaVersion || dashboard.schema_version, 180),
+    summaryOnly: dashboard.summaryOnly === true || dashboard.summary_only === true,
+    status: cleanString(dashboard.status, 120),
+    readinessStatus: cleanString(dashboard.readinessStatus || dashboard.readiness_status, 120),
+    controlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status, 120),
+    inventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status, 120),
+    requiredActionCount: Number(dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+    nextAction,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function publicPackage(record = null) {
   if (!record) return null;
+  const stepSummary = objectOnly(record.stepSummary || record.step_summary);
   return {
     packageId: cleanString(record.packageId || record.package_id, 180),
     status: cleanString(record.status, 80),
     packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
     collectionRunId: cleanString(record.collectionRunId || record.collection_run_id, 180),
     privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    stepSummary: {
+      summaryOnly: stepSummary.summaryOnly === true || stepSummary.summary_only === true,
+      stepCount: Number(stepSummary.stepCount || stepSummary.step_count || 0) || 0
+    },
+    releaseDashboardSummary: publicDashboardSummary(record),
     summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function packageReadbackSummary(review = {}) {
+  const releaseReview = objectOnly(review.releaseReview || review.release_review);
+  const readback = objectOnly(review.packageReadback || review.package_readback || releaseReview.packageReadback || releaseReview.package_readback);
+  return {
+    schemaVersion: cleanString(readback.schemaVersion || readback.schema_version || "growth.learningAutomationReleaseReview.packageReadback.v1", 180),
+    summaryOnly: true,
+    packageRecordReadbackAvailable: readback.packageRecordReadbackAvailable === true || review.packageRecordReadbackAvailable === true,
+    packageRecordPresent: readback.packageRecordPresent === true || review.packageRecordPresent === true,
+    packageRecordStatus: cleanString(readback.packageRecordStatus || releaseReview.packageRecordStatus || review.packageRecordStatus || review.package_record_status, 120),
+    latestPackageId: cleanString(readback.latestPackageId || releaseReview.latestPackageId || review.latestPackageId || review.latest_package_id, 180),
+    latestPackageStepCount: Number(readback.latestPackageStepCount || releaseReview.latestPackageStepCount || 0) || 0,
+    latestPackageDashboardStatus: cleanString(readback.latestPackageDashboardStatus || releaseReview.latestPackageDashboardStatus, 120),
+    latestPackageDashboardNextActionKey: cleanString(readback.latestPackageDashboardNextActionKey || releaseReview.latestPackageDashboardNextActionKey, 140),
+    latestPackageDashboardRequiredActionCount: Number(readback.latestPackageDashboardRequiredActionCount || releaseReview.latestPackageDashboardRequiredActionCount || 0) || 0,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -110,6 +165,7 @@ function publicPackage(record = null) {
 
 function reviewSummary(review = {}) {
   const releaseReview = objectOnly(review.releaseReview || review.release_review);
+  const packageReadback = packageReadbackSummary(review);
   return {
     schemaVersion: cleanString(review.schemaVersion || review.schema_version, 120),
     status: cleanString(review.status, 80),
@@ -121,6 +177,11 @@ function reviewSummary(review = {}) {
     packageRecordPresent: review.packageRecordPresent === true,
     packageRecordStatus: cleanString(releaseReview.packageRecordStatus || review.packageRecordStatus || review.package_record_status, 120),
     latestPackageId: cleanString(releaseReview.latestPackageId || review.latestPackageId || review.latest_package_id, 180),
+    latestPackageStepCount: packageReadback.latestPackageStepCount,
+    latestPackageDashboardStatus: packageReadback.latestPackageDashboardStatus,
+    latestPackageDashboardNextActionKey: packageReadback.latestPackageDashboardNextActionKey,
+    latestPackageDashboardRequiredActionCount: packageReadback.latestPackageDashboardRequiredActionCount,
+    packageReadback,
     advisoryOnly: review.advisoryOnly === true,
     writefulSchedulingAllowed: review.writefulSchedulingAllowed === true,
     runtimeConfigChange: review.runtimeConfigChange === true,
@@ -199,6 +260,7 @@ function createLearningAutomationReleaseAuthorizationService(options = {}) {
       runtimeConfigChange: false,
       enforcementOnly: true,
       review: reviewSummary(review),
+      packageReadback: packageReadbackSummary(review),
       latestCollectionRun: publicCollectionRun(review.latestCollectionRun),
       latestDecision: publicDecision(review.latestDecision),
       latestPackage: publicPackage(review.latestPackage)

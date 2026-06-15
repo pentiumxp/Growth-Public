@@ -41,7 +41,40 @@ function approvedReview(overrides = {}) {
       collectionRunId: "lgacrn_ready_1",
       status: "ready_for_release_review",
       packageVersion: "growth.learningAutomationReleasePackage.v1",
-      privacyClass: "summary_only"
+      privacyClass: "summary_only",
+      stepSummary: {
+        summaryOnly: true,
+        stepCount: 6
+      },
+      releaseDashboardSummary: {
+        schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+        summaryOnly: true,
+        status: "manual_runtime_config_required",
+        requiredActionCount: 1,
+        nextAction: {
+          key: "enable_runtime_config_manually",
+          action: "perform_platform_runtime_config_enablement",
+          requiredActor: "owner"
+        },
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      }
+    },
+    packageReadback: {
+      schemaVersion: "growth.learningAutomationReleaseReview.packageReadback.v1",
+      summaryOnly: true,
+      packageRecordReadbackAvailable: true,
+      packageRecordPresent: true,
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgapkg_ready_1",
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+      latestPackageDashboardRequiredActionCount: 1,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
     },
     releaseReview: {
       schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
@@ -51,7 +84,11 @@ function approvedReview(overrides = {}) {
       packageRecordRequired: true,
       packageRecordPresent: true,
       packageRecordStatus: "ready_for_release_review",
-      latestPackageId: "lgapkg_ready_1"
+      latestPackageId: "lgapkg_ready_1",
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+      latestPackageDashboardRequiredActionCount: 1
     },
     approvalSummary: {
       schemaVersion: "growth.learningAutomationReleaseReview.approvalSummary.v1",
@@ -101,7 +138,14 @@ test("release authorization grants summary-only execution authorization after ap
   assert.equal(result.latestCollectionRun.collectionRunId, "lgacrn_ready_1");
   assert.equal(result.review.packageRecordPresent, true);
   assert.equal(result.review.packageRecordStatus, "ready_for_release_review");
+  assert.equal(result.review.latestPackageStepCount, 6);
+  assert.equal(result.review.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.review.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.packageReadback.latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.latestPackage.packageId, "lgapkg_ready_1");
+  assert.equal(result.latestPackage.stepSummary.stepCount, 6);
+  assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
   assert.equal(result.latestPackage.writefulSchedulingAllowed, false);
   assert.equal(records.reviewInput.collectionRunId, "lgacrn_ready_1");
 });

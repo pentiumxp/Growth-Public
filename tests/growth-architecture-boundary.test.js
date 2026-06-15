@@ -845,6 +845,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseAuthorizationService, /writefulExecutionApproval/);
   assert.match(automationReleaseAuthorizationService, /latestPackage/);
   assert.match(automationReleaseAuthorizationService, /packageRecordPresent/);
+  assert.match(automationReleaseAuthorizationService, /packageReadbackSummary/);
+  assert.match(automationReleaseAuthorizationService, /latestPackageDashboardStatus/);
+  assert.match(automationReleaseAuthorizationService, /releaseDashboardSummary/);
   assert.match(automationReleaseAuthorizationService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseAuthorizationService, /runtimeConfigChange: false/);
   assert.match(automationReleaseAuthorizationService, /summaryOnly: true/);
@@ -877,6 +880,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseClosureService, /readyForOwnerReleaseActivation/);
   assert.match(automationReleaseClosureService, /latestPackage/);
   assert.match(automationReleaseClosureService, /packageRecordStatus/);
+  assert.match(automationReleaseClosureService, /packageReadbackSummary/);
+  assert.match(automationReleaseClosureService, /latestPackageDashboardStatus/);
+  assert.match(automationReleaseClosureService, /releaseDashboardSummary/);
   assert.match(automationReleaseClosureService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseClosureService, /runtimeConfigChange: false/);
   assert.match(automationReleaseClosureService, /summaryOnly: true/);

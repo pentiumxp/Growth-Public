@@ -250,10 +250,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `learning_growth_automation_release_packages` only with
   `--write-package-record --allow-write`; package records include bounded
   `releaseDashboardSummary` in `release_dashboard_summary_json`. The
-  release review, controls, inventory, and dashboard readbacks project that
-  dashboard summary as latest-package dashboard status, next-action key,
-  required-action count, and step count without exposing raw package
-  artifacts. The
+  release review, authorization, closure, controls, inventory, and dashboard
+  readbacks project that dashboard summary as latest-package dashboard status,
+  next-action key, required-action count, and step count without exposing raw
+  package artifacts or changing authorization conditions. The
   visible-target scoped
   `GET /api/v1/growth/automation/release-packages` and Owner-only
   `POST /api/v1/growth/automation/release-packages` expose record readback and

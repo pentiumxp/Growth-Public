@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T21:20Z - Release Authorization/Closure Package Dashboard Readback Projection
+
+- Status: implemented and validated locally. This slice is
+  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-authorization-service` now preserves bounded
+    package readback from the release-review service, including
+    `latestPackage.stepSummary.stepCount`,
+    `latestPackage.releaseDashboardSummary`, and
+    `packageReadback.latestPackageDashboard*` fields;
+  - `learning-automation-release-closure-service` now preserves the same
+    package readback from either the authorization gate or release review,
+    including package dashboard status, next-action key, required-action count,
+    and step count on `review`, `executionGate`, `releaseClosure`, and the
+    top-level `packageReadback`;
+  - release authorization rules are unchanged: package record/dashboard presence
+    is advisory Owner/audit readback only, not a hard authorization condition;
+  - CLI delegation harnesses prove release authorization/closure smoke wrappers
+    preserve the service-owned `packageReadback` fields;
+  - no DB schema change was required because persisted package records already
+    carry `release_dashboard_summary_json`.
+- Changed files:
+  - `src/services/learning-automation-release-authorization-service.js`;
+  - `src/services/learning-automation-release-closure-service.js`;
+  - `tests/learning-automation-release-authorization-service.test.js`;
+  - `tests/learning-automation-release-closure-service.test.js`;
+  - `tests/growth-release-authorization-smoke-script.test.js`;
+  - `tests/growth-release-closure-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/growth-release-authorization-smoke-script.test.js tests/growth-release-closure-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    (`49` tests);
+  - `git diff --check`;
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`724` tests);
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops evidence ledger append ids
+    `evidence-845bd9a4-1b15-4432-b340-0c0cd5b9b664` and
+    `evidence-340aad4f-8632-48b1-9782-ccea2e801b23`;
+  - CodeGraph status: `321` indexed files, `4174` nodes, `16285` edges.
+- Remaining product work:
+  - commit and push this slice;
+  - continue from backend readback closure into Owner UI / release-status surface
+    only after the summary contract remains stable;
+  - collect real production visual/action/scheduler/package/dashboard evidence
+    before any runtime enablement.
+
 ## 2026-06-15T21:07Z - Release Package Dashboard Summary Readback Projection
 
 - Status: implemented and validated locally. This slice is
@@ -65,7 +128,7 @@
     `evidence-86703ac4-a64c-48ca-be75-ce3ec7c51b70` and
     `evidence-ba7a6b97-7a91-439d-980b-ba7d9666fc78`.
 - Remaining product work:
-  - commit and push this slice;
+  - committed and pushed as `bc02324 Expose package dashboard release readback`;
   - build embedded Owner UI over package/readiness/controls/dashboard readbacks
     only after the backend summary contracts stay stable;
   - collect real production visual/action/scheduler/package/dashboard evidence

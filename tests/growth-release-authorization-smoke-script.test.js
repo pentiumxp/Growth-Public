@@ -45,12 +45,21 @@ test("release authorization smoke script delegates to service only", () => {
   const result = runOperation({
     authorize(input) {
       calls.push(input);
-      return { ok: true, authorized: false, status: "blocked" };
+      return {
+        ok: true,
+        authorized: false,
+        status: "blocked",
+        packageReadback: {
+          summaryOnly: true,
+          latestPackageDashboardStatus: "manual_runtime_config_required"
+        }
+      };
     }
   }, { workspaceId: "fanfan" });
 
   assert.equal(result.ok, true);
   assert.equal(result.authorized, false);
+  assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(calls.length, 1);
   assert.equal(calls[0].workspaceId, "fanfan");
 });
