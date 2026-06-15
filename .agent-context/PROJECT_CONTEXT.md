@@ -308,8 +308,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   repository rejects privacy-risk keys and non-summary privacy classes,
   migrates missing bounded decision/execution columns, treats duplicate
   same-status decisions as idempotent, and rejects conflicting terminal
-  decisions. Focused proposal repository/service/route/architecture harnesses
-  pass; proposal review UI remains a later slice.
+  decisions. `npm run smoke:proposal` is implemented as a service-owned
+  operational smoke; it defaults to read-only proposal list, gates
+  create/review/publish with explicit `--allow-write`, and delegates only to
+  `learning-automation-proposal-service`. Focused proposal
+  repository/service/route/script/architecture harnesses pass; proposal review
+  UI remains a later slice.
   The supervised scheduler dry-run boundary is now locally implemented through
   `learning-automation-scheduler-service` and Owner-only
   `POST /api/v1/growth/automation/scheduler/dry-run`. It lists accepted

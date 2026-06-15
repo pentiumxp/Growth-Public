@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:31Z - Automation Proposal Smoke CLI
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because this slice adds an
+  operational smoke CLI, tests, docs, and context only.
+- Scope:
+  - added `scripts/smoke-growth-automation-proposal.js` and
+    `npm run smoke:proposal`;
+  - the smoke defaults to read-only `list` and delegates only to
+    `learningAutomationProposalService.listProposals`;
+  - `create`, `review`, and `publish` require explicit `--allow-write` and
+    delegate only to `learningAutomationProposalService.createProposal`,
+    `reviewProposal`, or `publishAcceptedProposal`;
+  - the CLI rejects missing workspace, missing proposal id for review/publish,
+    missing source cycle for create, invalid JSON, invalid operation, and
+    privacy-risk input before or through the service boundary;
+  - it does not import repositories, call Gateway directly, call the plan
+    publisher directly, call card generation/evaluation directly, run
+    scheduler dry-runs, execute schedulers, deliver action handoffs, activate
+    stage assessments, or mutate learner state outside the proposal service.
+- Tests/docs updated:
+  - `tests/growth-automation-proposal-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/growth-automation-proposal-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-proposal-repository.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/growth-automation-proposal-smoke-script.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-card-ai-loop-harness.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - default read-only `npm run smoke:proposal` against a temporary SQLite DB;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`539` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,172` nodes,
+    `12,249` edges, index up to date).
+
 ## 2026-06-15T10:24Z - Completed Cycle To Automation Review Packet Harness
 
 - Status: implemented and locally validated; commit/push follows this handoff

@@ -745,8 +745,10 @@ The next implementation slice should be chosen by product goal:
   `tests/learning-card-ai-loop-harness.test.js`: a completed Fanfan science
   cycle can produce a summary-only accepted proposal, a read-only scheduler
   `would_publish` candidate, and a pending digest required action without
-  automatic publication. Implement the remaining UI/evidence around P5-P10
-  next: proposal review UI, digest/action/
+  automatic publication. Proposal operational smoke is also available through
+  `npm run smoke:proposal`, which defaults to read-only list and gates
+  create/review/publish with explicit `--allow-write`. Implement the remaining
+  UI/evidence around P5-P10 next: proposal review UI, digest/action/
   failure-policy UI, execution UI, scheduler run audit UI, platform Action
   Inbox/Web Push evidence, production dry-run evidence through
   `npm run smoke:scheduler-dry-run`, central visual evidence, and a

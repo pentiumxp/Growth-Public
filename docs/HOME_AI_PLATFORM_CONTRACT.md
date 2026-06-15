@@ -319,7 +319,8 @@ node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-owner-c
 For supervised automation proposal changes, also run:
 
 ```bash
-node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-proposal-service.test.js tests/learning-audit-completeness-service.test.js tests/learning-plan-publisher-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-proposal-service.test.js tests/growth-automation-proposal-smoke-script.test.js tests/learning-audit-completeness-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+npm run smoke:proposal -- --workspace-id <workspace> --learner-id <learner> --json
 ```
 
 For supervised automation scheduler dry-run changes, also run:
