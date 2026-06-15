@@ -329,6 +329,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/release-controls/);
   assert.match(routes, /normalizeAutomationReleaseControlsInput/);
   assert.match(routes, /learningAutomationReleaseControlsService\.summarize/);
+  assert.match(routes, /automation\/release-dashboard/);
+  assert.match(routes, /normalizeAutomationReleaseDashboardInput/);
+  assert.match(routes, /learningAutomationReleaseDashboardService\.dashboard/);
   assert.match(routes, /automation\/release-inventory/);
   assert.match(routes, /normalizeAutomationReleaseInventoryInput/);
   assert.match(routes, /learningAutomationReleaseInventoryService\.inventory/);
@@ -1599,6 +1602,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     "node scripts/smoke-growth-release-controls.js"
   );
   assert.equal(
+    packageJson.scripts["smoke:release-dashboard"],
+    "node scripts/smoke-growth-release-dashboard.js"
+  );
+  assert.equal(
     packageJson.scripts["smoke:release-inventory"],
     "node scripts/smoke-growth-release-inventory.js"
   );
@@ -1619,6 +1626,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     "scripts/smoke-growth-release-activation.js",
     "scripts/smoke-growth-runtime-enablement.js",
     "scripts/smoke-growth-release-controls.js",
+    "scripts/smoke-growth-release-dashboard.js",
     "scripts/smoke-growth-release-inventory.js"
   ]) {
     assert.match(operationalRow, new RegExp(escapeRegExp(scriptName)));
@@ -1635,6 +1643,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-activation\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-runtime-enablement\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-controls\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-dashboard\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-inventory\.js/);
   assert.match(packageJson.scripts.check, /node --check src\/stores\/growth-learning-sqlite\/automation-release-activations\.js/);
   assert.match(packageJson.scripts.check, /node --check src\/stores\/growth-learning-sqlite\/automation-runtime-enablements\.js/);
@@ -1685,6 +1694,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-controls-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-dashboard-service\.js/
   );
   assert.match(
     packageJson.scripts.check,
@@ -1904,6 +1917,22 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseInventoryScript, /deliverHandoff/);
   assert.doesNotMatch(releaseInventoryScript, /activateStageAssessment/);
 
+  const releaseDashboardScript = read(path.join("scripts", "smoke-growth-release-dashboard.js"));
+  assert.match(releaseDashboardScript, /readEnv/);
+  assert.match(releaseDashboardScript, /createServices/);
+  assert.match(releaseDashboardScript, /learningAutomationReleaseDashboardService/);
+  assert.match(releaseDashboardScript, /dashboard/);
+  assert.doesNotMatch(releaseDashboardScript, /--allow-write/);
+  assert.doesNotMatch(releaseDashboardScript, /spawnSync/);
+  assert.doesNotMatch(releaseDashboardScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(releaseDashboardScript, /publishPlanItem/);
+  assert.doesNotMatch(releaseDashboardScript, /generateCard/);
+  assert.doesNotMatch(releaseDashboardScript, /evaluateSubmission/);
+  assert.doesNotMatch(releaseDashboardScript, /executeOnce/);
+  assert.doesNotMatch(releaseDashboardScript, /runOnce/);
+  assert.doesNotMatch(releaseDashboardScript, /deliverHandoff/);
+  assert.doesNotMatch(releaseDashboardScript, /activateStageAssessment/);
+
   const releaseInventoryService = read(path.join("src", "services", "learning-automation-release-inventory-service.js"));
   assert.match(releaseInventoryService, /RELEASE_INVENTORY_SCHEMA/);
   assert.match(releaseInventoryService, /growth\.learningAutomationReleaseInventory\.v1/);
@@ -1926,6 +1955,24 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseInventoryService, /deliverHandoff/);
   assert.doesNotMatch(releaseInventoryService, /activateStageAssessment/);
   assert.doesNotMatch(releaseInventoryService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
+  const releaseDashboardService = read(path.join("src", "services", "learning-automation-release-dashboard-service.js"));
+  assert.match(releaseDashboardService, /RELEASE_DASHBOARD_SCHEMA/);
+  assert.match(releaseDashboardService, /growth\.learningAutomationReleaseDashboard\.v1/);
+  assert.match(releaseDashboardService, /releaseReadinessService\.evaluateReadiness/);
+  assert.match(releaseDashboardService, /releaseControlsService\.summarize/);
+  assert.match(releaseDashboardService, /releaseInventoryService\.inventory/);
+  assert.doesNotMatch(releaseDashboardService, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(releaseDashboardService, /learning_growth_/);
+  assert.doesNotMatch(releaseDashboardService, /spawnSync/);
+  assert.doesNotMatch(releaseDashboardService, /publishPlanItem/);
+  assert.doesNotMatch(releaseDashboardService, /generateCard/);
+  assert.doesNotMatch(releaseDashboardService, /evaluateSubmission/);
+  assert.doesNotMatch(releaseDashboardService, /executeOnce/);
+  assert.doesNotMatch(releaseDashboardService, /runOnce/);
+  assert.doesNotMatch(releaseDashboardService, /deliverHandoff/);
+  assert.doesNotMatch(releaseDashboardService, /activateStageAssessment/);
+  assert.doesNotMatch(releaseDashboardService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -2457,6 +2504,11 @@ test("Growth automation release approval smoke CLI stays service-owned and write
   assert.match(releaseControlsScriptHarness, /parses bounded scope/);
   assert.match(releaseControlsScriptHarness, /delegates only to service summary/);
   assert.match(releaseControlsScriptHarness, /temporary SQLite db/);
+
+  const releaseDashboardScriptHarness = read(path.join("tests", "growth-release-dashboard-smoke-script.test.js"));
+  assert.match(releaseDashboardScriptHarness, /parses bounded scope/);
+  assert.match(releaseDashboardScriptHarness, /delegates only to service dashboard/);
+  assert.match(releaseDashboardScriptHarness, /temporary SQLite db/);
 });
 
 test("Growth automation scheduler execution smoke CLI stays service-owned and write-gated", () => {

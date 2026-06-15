@@ -18,6 +18,7 @@ const { createLearningAutomationReleaseAuthorizationService } = require("../serv
 const { createLearningAutomationReleaseClosureService } = require("../services/learning-automation-release-closure-service");
 const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
 const { createLearningAutomationReleaseControlsService } = require("../services/learning-automation-release-controls-service");
+const { createLearningAutomationReleaseDashboardService } = require("../services/learning-automation-release-dashboard-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseInventoryService } = require("../services/learning-automation-release-inventory-service");
@@ -339,6 +340,11 @@ function createServices(config) {
     runtimeEnablementService: learningAutomationRuntimeEnablementService,
     releaseControlsService: learningAutomationReleaseControlsService
   });
+  const learningAutomationReleaseDashboardService = createLearningAutomationReleaseDashboardService({
+    releaseReadinessService: learningAutomationReleaseReadinessService,
+    releaseControlsService: learningAutomationReleaseControlsService,
+    releaseInventoryService: learningAutomationReleaseInventoryService
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -451,6 +457,7 @@ function createServices(config) {
     learningAutomationReleaseClosureService,
     learningAutomationReleaseCollectionRunService,
     learningAutomationReleaseControlsService,
+    learningAutomationReleaseDashboardService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseInventoryService,

@@ -1,0 +1,199 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const {
+  RELEASE_DASHBOARD_SCHEMA,
+  createLearningAutomationReleaseDashboardService
+} = require("../src/services/learning-automation-release-dashboard-service");
+
+function createService(overrides = {}, calls = []) {
+  return createLearningAutomationReleaseDashboardService(Object.assign({
+    releaseReadinessService: {
+      evaluateReadiness(input) {
+        calls.push({ type: "readiness", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseReadiness.v1",
+          status: "incomplete",
+          readyForReleaseReview: false,
+          releaseReview: {
+            summaryOnly: true,
+            status: "incomplete",
+            requiredActionCount: 2,
+            missingCheckKeys: ["central_visual_evidence"],
+            missingEvidenceKeys: ["central_visual_evidence"],
+            persistedApprovalKeys: ["writefulExecutionApproval"],
+            nextAction: {
+              key: "central_visual_evidence",
+              action: "run_central_visual_harness",
+              requiredActor: "owner"
+            }
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false,
+          configChangeApplied: false
+        };
+      }
+    },
+    releaseControlsService: {
+      summarize(input) {
+        calls.push({ type: "controls", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseControls.v1",
+          status: "manual_runtime_config_required",
+          releaseControls: {
+            summaryOnly: true,
+            status: "manual_runtime_config_required",
+            requiredActionCount: 1,
+            missingCheckKeys: ["runtime_enablement"],
+            missingEvidenceKeys: [],
+            missingApprovalKeys: [],
+            nextAction: {
+              key: "enable_runtime_config",
+              action: "manual_config_change",
+              requiredActor: "owner"
+            },
+            auditReadback: { summaryOnly: true, status: "ready" }
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseInventoryService: {
+      inventory(input) {
+        calls.push({ type: "inventory", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseInventory.v1",
+          status: "manual_runtime_config_required",
+          releaseInventory: {
+            summaryOnly: true,
+            status: "manual_runtime_config_required",
+            artifactCount: 7,
+            readbackKinds: ["release_collection_run", "release_package", "runtime_enablement"],
+            missingRecordKinds: ["runtime_enablement"],
+            blockedRecordKinds: [],
+            latestCollectionRunId: input.collectionRunId,
+            latestPackageId: "lgapkg_1",
+            latestDecisionId: "lgard_1",
+            latestActivationId: "lgaract_1",
+            latestRuntimeEnablementId: ""
+          },
+          artifactReadback: {
+            summaryOnly: true,
+            collectionRuns: {
+              ok: true,
+              status: "records_available",
+              count: 1,
+              latest: { id: input.collectionRunId, status: "ready_for_release_review" },
+              statuses: ["ready_for_release_review"]
+            },
+            packages: {
+              ok: true,
+              status: "records_available",
+              count: 1,
+              latest: { id: "lgapkg_1", status: "ready_for_release_review" },
+              statuses: ["ready_for_release_review"]
+            },
+            runtimeEnablements: {
+              ok: true,
+              status: "records_missing",
+              count: 0,
+              statuses: []
+            }
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false,
+          backgroundSchedulingAllowed: false,
+          backgroundWorkerAllowed: false
+        };
+      }
+    }
+  }, overrides));
+}
+
+test("release dashboard composes bounded Owner read model from release services", () => {
+  const calls = [];
+  const service = createService({}, calls);
+  const result = service.dashboard({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    collectionRunId: "lgacrn_1",
+    activationGates: ["writeful_execution"],
+    limit: 4
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.schemaVersion, RELEASE_DASHBOARD_SCHEMA);
+  assert.equal(result.status, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboard.status, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboard.readinessStatus, "incomplete");
+  assert.equal(result.releaseDashboard.controlsStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboard.inventoryStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboard.requiredActionCount, 2);
+  assert.equal(result.releaseDashboard.nextAction.key, "enable_runtime_config");
+  assert.equal(result.releaseDashboard.latestCollectionRunId, "lgacrn_1");
+  assert.equal(result.releaseDashboard.latestPackageId, "lgapkg_1");
+  assert.deepEqual(result.releaseDashboard.missingRecordKinds, ["runtime_enablement"]);
+  assert.deepEqual(result.releaseDashboard.persistedApprovalKeys, ["writefulExecutionApproval"]);
+  assert.equal(result.releaseReadiness.readyForReleaseReview, false);
+  assert.equal(result.releaseControls.auditReadbackStatus, "ready");
+  assert.equal(result.releaseInventory.artifactCount, 7);
+  assert.equal(result.artifactReadback.packages.latestId, "lgapkg_1");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigChange, false);
+  assert.deepEqual(calls.map((call) => call.type), ["readiness", "controls", "inventory"]);
+  assert.equal(calls[0].input.collectionRunId, "lgacrn_1");
+});
+
+test("release dashboard fails closed when a required readback service is unavailable", () => {
+  const service = createService({ releaseControlsService: null });
+  const result = service.dashboard({ workspaceId: "weixin_fanfan" });
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "blocked");
+  assert.equal(result.error, "learning_automation_release_dashboard_controls_unavailable");
+});
+
+test("release dashboard rejects privacy-risk input before dependency reads", () => {
+  const calls = [];
+  const service = createService({}, calls);
+  const result = service.dashboard({
+    workspaceId: "weixin_fanfan",
+    rawTranscript: "private learner transcript"
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_release_dashboard_privacy_failed");
+  assert.equal(calls.length, 0);
+});
+
+test("release dashboard rejects private paths from dependency readback", () => {
+  const service = createService({
+    releaseInventoryService: {
+      inventory() {
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseInventory.v1",
+          status: "blocked",
+          releaseInventory: { summaryOnly: true, status: "blocked" },
+          artifactReadback: {
+            packages: {
+              ok: true,
+              status: "records_available",
+              count: 1,
+              latest: { id: "lgapkg_leaky", status: "blocked", file: "/Users/private/release-package.json" }
+            }
+          }
+        };
+      }
+    }
+  });
+  const result = service.dashboard({ workspaceId: "weixin_fanfan" });
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_release_dashboard_dependency_privacy_failed");
+  assert.ok(result.privacyFindings.some((finding) => finding.includes("private_value")));
+});

@@ -931,6 +931,8 @@ Required harness:
 - `tests/growth-runtime-enablement-smoke-script.test.js`;
 - `tests/learning-automation-release-controls-service.test.js`;
 - `tests/growth-release-controls-smoke-script.test.js`;
+- `tests/learning-automation-release-dashboard-service.test.js`;
+- `tests/growth-release-dashboard-smoke-script.test.js`;
 - `tests/learning-automation-release-package-service.test.js`;
 - `tests/learning-automation-release-package-repository.test.js`;
 - `tests/growth-release-package-script.test.js`;

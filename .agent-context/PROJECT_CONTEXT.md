@@ -216,7 +216,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   UI evidence flags, and audit-record limits, and stores bounded
   `releaseControlsSmokeEvidence` for final no-write readback packaging; task
   pass means readback collection succeeded, while the nested controls status
-  remains the release-control source of truth. Release-readiness writes a summary-only advisory
+  remains the release-control source of truth. Growth now also has
+  `npm run smoke:release-dashboard`, a no-write Owner/visible-target read model
+  implemented by `learning-automation-release-dashboard-service`,
+  `scripts/smoke-growth-release-dashboard.js`, and
+  `GET /api/v1/growth/automation/release-dashboard`. It composes only
+  release-readiness, release-controls, and release-inventory DTOs into one
+  summary-only `growth.learningAutomationReleaseDashboard.v1` status,
+  next-action, and artifact readback surface for Owner UI/release audit use. It
+  owns no repository/table, calls no Gateway/model provider, writes no business
+  state, and keeps all runtime mutation and scheduling permission flags false.
+  Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only
   audit over a previously generated bundle. It validates bundle schema,

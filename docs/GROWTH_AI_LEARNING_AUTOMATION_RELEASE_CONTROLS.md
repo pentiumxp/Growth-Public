@@ -237,6 +237,27 @@ artifact. It is also non-default and no-write. A passing task proves the
 inventory readback was collected; consumers must still read the nested
 inventory and controls summaries for the actual release state.
 
+## Release Dashboard Read Model
+
+Owner UI and release audit tooling can read one bounded release status model
+without joining multiple release services in the browser:
+
+```bash
+npm run smoke:release-dashboard -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --activation-gates writeful_execution \
+  --required-approval-key writefulExecutionApproval \
+  --json
+```
+
+`learning-automation-release-dashboard-service` composes only
+release-readiness, release-controls, and release-inventory service DTOs. It
+owns no repository/table, writes no state, and keeps all runtime mutation and
+scheduling permission flags false. The dashboard is a display/readback model;
+the source of truth remains the nested readiness, controls, and inventory
+summaries.
+
 ## Forbidden Boundaries
 
 Release controls must not:

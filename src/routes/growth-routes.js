@@ -632,6 +632,10 @@ function normalizeAutomationReleaseInventoryInput(url, target) {
   return normalizeAutomationReleaseControlsInput(url, target);
 }
 
+function normalizeAutomationReleaseDashboardInput(url, target) {
+  return normalizeAutomationReleaseInventoryInput(url, target);
+}
+
 function normalizeAutomationRuntimeEnablementRecordInput(body, workspaceId, target, request, url) {
   const activationGate = body.activationGate || body.activation_gate;
   const activationGates = body.activationGates || body.activation_gates || body.requestedActivationGates || body.requested_activation_gates;
@@ -1358,6 +1362,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-controls") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseControlsService.summarize(normalizeAutomationReleaseControlsInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-dashboard") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseDashboardService.dashboard(normalizeAutomationReleaseDashboardInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

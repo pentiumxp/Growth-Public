@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T20:33Z - Release Dashboard Read Model
+
+- Status: implemented and validated locally. This slice is Growth backend /
+  route / CLI / Harness / docs only. It does not deploy, apply runtime
+  config, grant scheduler permission, call Gateway, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications,
+  activate stage assessments, mutate learner state, or write production
+  release records.
+- Scope:
+  - added `src/services/learning-automation-release-dashboard-service.js` as a
+    no-write Owner/visible-target read model over release-readiness,
+    release-controls, and release-inventory DTOs;
+  - wired `learningAutomationReleaseDashboardService` in
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-dashboard` in
+    `src/routes/growth-routes.js`;
+  - added `scripts/smoke-growth-release-dashboard.js` and
+    `npm run smoke:release-dashboard`;
+  - the DTO is `growth.learningAutomationReleaseDashboard.v1`,
+    `privacyClass=summary_only`, `advisoryOnly=true`, `recordOnly=true`,
+    includes one bounded status/next-action/artifact summary, and always keeps
+    config/runtime/scheduler mutation flags false;
+  - added service, smoke-script, route, architecture, and docs guard coverage.
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-dashboard-service.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`82` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-dashboard -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --activation-gates writeful_execution --required-approval-key writefulExecutionApproval --json`;
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`722` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`321` files, `4,159` nodes,
+    `16,127` edges; index up to date; CLI reports an advisory older-engine
+    reindex warning only);
+  - AI Ops evidence ledger append id
+    `evidence-9be341c9-ad6f-4789-a6cd-5bef28dd2c69`.
+- Remaining product work:
+  - expose release dashboard/control/inventory readbacks in the embedded Owner
+    release UI;
+  - collect real production visual, Action Inbox/Web Push, scheduler, worker,
+    daily-loop, learner-cycle, package, approval, activation, and runtime
+    enablement evidence before any runtime enablement;
+  - keep the release dashboard advisory/read-only and summary-only, not an
+    approval, deployment, runtime-config, or scheduler switch.
+
 ## 2026-06-15T20:15Z - Release Inventory Evidence Bundle Task
 
 - Status: implemented and validated locally. This slice is Growth backend /
