@@ -105,6 +105,15 @@ background ticks, or worker leases. When writeful execution is separately
 enabled, however, `learning-automation-scheduler-execution-service` must read a
 valid `writeful_execution` activation record before it delegates publication.
 
+Visible-target scoped `GET /api/v1/growth/automation/runtime-enablement`,
+visible-target scoped `GET /api/v1/growth/automation/runtime-enablements`,
+Owner-only `POST /api/v1/growth/automation/runtime-enablements`, and
+`npm run smoke:runtime-enablement` add the final Growth-local audit/readback
+record for this transition. Runtime enablement reads activation audit records
+through the release activation service and compares current config booleans,
+but still cannot apply config, grant scheduler permission, start background
+ticks, or claim worker leases.
+
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker
 enablement requires reviewed `enabled` rows from

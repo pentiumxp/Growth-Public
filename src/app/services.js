@@ -21,6 +21,7 @@ const { createLearningAutomationReleaseDecisionService } = require("../services/
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
+const { createLearningAutomationRuntimeEnablementService } = require("../services/learning-automation-runtime-enablement-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
 const { createLearningAutomationSchedulerRunService } = require("../services/learning-automation-scheduler-run-service");
 const { createLearningAutomationSchedulerService } = require("../services/learning-automation-scheduler-service");
@@ -305,6 +306,15 @@ function createServices(config) {
       automationBackgroundWorkerEnabled: config.automationBackgroundWorkerEnabled
     }
   });
+  const learningAutomationRuntimeEnablementService = createLearningAutomationRuntimeEnablementService({
+    repository: growthLearningStore.learningAutomationRuntimeEnablementRepository,
+    releaseActivationService: learningAutomationReleaseActivationService,
+    config: {
+      automationWritefulExecutionEnabled: config.automationWritefulExecutionEnabled,
+      automationBackgroundSchedulerEnabled: config.automationBackgroundSchedulerEnabled,
+      automationBackgroundWorkerEnabled: config.automationBackgroundWorkerEnabled
+    }
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -420,6 +430,7 @@ function createServices(config) {
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,
+    learningAutomationRuntimeEnablementService,
     learningAutomationSchedulerExecutionService,
     learningAutomationSchedulerRunService,
     learningAutomationSchedulerService,

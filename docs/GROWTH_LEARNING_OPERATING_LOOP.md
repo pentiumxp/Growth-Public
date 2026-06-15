@@ -1693,6 +1693,19 @@ Implementation progress on 2026-06-15:
   writeful execution is separately enabled, scheduler execution must read back
   a valid `writeful_execution` activation record before publication; missing or
   invalid records are blocked before the accepted-proposal publish boundary.
+- `GET /api/v1/growth/automation/runtime-enablement`, visible-target scoped
+  `GET /api/v1/growth/automation/runtime-enablements`, Owner-only
+  `POST /api/v1/growth/automation/runtime-enablements`, and
+  `npm run smoke:runtime-enablement` provide the final Growth-local
+  audit/readback layer after release activation. The service reads activation
+  records through the release activation service, validates one record-only
+  activation readback per selected gate, compares the current injected runtime
+  config booleans, and reports whether manual runtime-config enablement is
+  still required or has been verified. It can persist only summary-only
+  `learning_growth_automation_runtime_enablements` rows and still keeps
+  `configChangeApplied=false`, `runtimeConfigChange=false`,
+  `runtimeConfigMutationPerformed=false`, `writefulSchedulingAllowed=false`,
+  `backgroundSchedulingAllowed=false`, and `backgroundWorkerAllowed=false`.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

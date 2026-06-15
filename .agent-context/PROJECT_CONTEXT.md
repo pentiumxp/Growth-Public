@@ -291,6 +291,21 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   and requires a valid summary-only `writeful_execution` record before it can
   publish. Missing, blocked, privacy-invalid, non-record-only, or
   runtime-mutating activation records produce blocked execution metadata.
+  Growth now also has
+  `learning-automation-runtime-enablement-service`,
+  `automation-runtime-enablements.js`,
+  `learning_growth_automation_runtime_enablements`,
+  visible-target scoped `GET /api/v1/growth/automation/runtime-enablement`,
+  visible-target scoped `GET /api/v1/growth/automation/runtime-enablements`,
+  Owner-only `POST /api/v1/growth/automation/runtime-enablements`, and
+  `npm run smoke:runtime-enablement`. This is the final Growth-local
+  record-only runtime enablement audit/readback boundary after release
+  activation: it validates activation audit records for selected gates, reads
+  injected current runtime config booleans, and can report
+  `activation_record_required`, `activation_record_invalid`,
+  `ready_for_manual_runtime_config_enablement`, `partial_config`, or
+  `verified_enabled`, while still applying no config and keeping all runtime
+  mutation/scheduling permission flags false.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

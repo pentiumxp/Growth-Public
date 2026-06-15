@@ -38,6 +38,15 @@ Implemented locally as a default-disabled backend slice:
   visible-target scoped `GET /api/v1/growth/automation/release-activations`,
   Owner-only `POST /api/v1/growth/automation/release-activations`, and
   `npm run smoke:release-activation -- --operation record --allow-write`;
+- separate runtime enablement audit/readback through
+  `learning-automation-runtime-enablement-service`,
+  visible-target scoped `GET /api/v1/growth/automation/runtime-enablement`,
+  visible-target scoped `GET /api/v1/growth/automation/runtime-enablements`,
+  Owner-only `POST /api/v1/growth/automation/runtime-enablements`, and
+  `npm run smoke:runtime-enablement`. This record can prove manual
+  config-readiness or config readback after an external platform action, but it
+  is not a scheduler permission grant and does not replace the execution-time
+  activation audit gate;
 - service-owned operational smoke `npm run smoke:scheduler-execution`;
 - config gate: `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`.
 

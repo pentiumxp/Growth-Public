@@ -340,6 +340,13 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/release-activation/);
   assert.match(routes, /normalizeAutomationReleaseActivationInput/);
   assert.match(routes, /learningAutomationReleaseActivationService\.preflight/);
+  assert.match(routes, /automation\/runtime-enablement/);
+  assert.match(routes, /automation\/runtime-enablements/);
+  assert.match(routes, /normalizeAutomationRuntimeEnablementInput/);
+  assert.match(routes, /normalizeAutomationRuntimeEnablementRecordInput/);
+  assert.match(routes, /learningAutomationRuntimeEnablementService\.evaluate/);
+  assert.match(routes, /learningAutomationRuntimeEnablementService\.listEnablements/);
+  assert.match(routes, /learningAutomationRuntimeEnablementService\.recordEnablement/);
   assert.match(routes, /automation\/release-approvals/);
   assert.match(routes, /normalizeAutomationReleaseApprovalListInput/);
   assert.match(routes, /normalizeAutomationReleaseApprovalInput/);
@@ -861,6 +868,39 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(automationReleaseActivationService, /rawAnswer:/);
   assert.doesNotMatch(automationReleaseActivationService, /rawPrompt:/);
 
+  const automationRuntimeEnablementService = read(path.join("src", "services", "learning-automation-runtime-enablement-service.js"));
+  assert.match(automationRuntimeEnablementService, /createLearningAutomationRuntimeEnablementService/);
+  assert.match(automationRuntimeEnablementService, /RUNTIME_ENABLEMENT_SCHEMA/);
+  assert.match(automationRuntimeEnablementService, /releaseActivationService\.listActivations/);
+  assert.match(automationRuntimeEnablementService, /runtimeConfigVerified/);
+  assert.match(automationRuntimeEnablementService, /readyForManualRuntimeConfigEnablement/);
+  assert.match(automationRuntimeEnablementService, /recordEnablement/);
+  assert.match(automationRuntimeEnablementService, /listEnablements/);
+  assert.match(automationRuntimeEnablementService, /repository\.saveEnablement/);
+  assert.match(automationRuntimeEnablementService, /repository\.listEnablements/);
+  assert.match(automationRuntimeEnablementService, /configChangeApplied: false/);
+  assert.match(automationRuntimeEnablementService, /writefulSchedulingAllowed: false/);
+  assert.match(automationRuntimeEnablementService, /runtimeConfigChange: false/);
+  assert.match(automationRuntimeEnablementService, /runtimeConfigMutationPerformed: false/);
+  assert.match(automationRuntimeEnablementService, /summaryOnly: true/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /spawnSync/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /execFile|exec\(/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /readEnv/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /createServices/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /publishPlanItem/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /publishAcceptedProposal/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /generateCard/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /evaluateSubmission/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /executeOnce/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /runOnce/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /deliverHandoff/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /emit\(/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /activateStageAssessment/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /learning_growth_/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /rawAnswer:/);
+  assert.doesNotMatch(automationRuntimeEnablementService, /rawPrompt:/);
+
   const automationReleaseApprovalService = read(path.join("src", "services", "learning-automation-release-approval-service.js"));
   assert.match(automationReleaseApprovalService, /recordApproval/);
   assert.match(automationReleaseApprovalService, /listApprovals/);
@@ -1137,6 +1177,19 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseActivationRepository, /learning_automation_release_activation_no_runtime_change_required/);
   assert.match(automationReleaseActivationRepository, /learning_automation_release_activation_status_invalid/);
   assert.doesNotMatch(automationReleaseActivationRepository, /openai\.com/);
+
+  const automationRuntimeEnablementRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-runtime-enablements.js"));
+  assert.match(automationRuntimeEnablementRepository, /learning_growth_automation_runtime_enablements/);
+  assert.match(automationRuntimeEnablementRepository, /createLearningAutomationRuntimeEnablementRepository/);
+  assert.match(automationRuntimeEnablementRepository, /summary_only/);
+  assert.match(automationRuntimeEnablementRepository, /scanPrivacyKeys/);
+  assert.match(automationRuntimeEnablementRepository, /scanPrivateValues/);
+  assert.match(automationRuntimeEnablementRepository, /saveEnablement/);
+  assert.match(automationRuntimeEnablementRepository, /listEnablements/);
+  assert.match(automationRuntimeEnablementRepository, /learning_automation_runtime_enablement_privacy_class_required/);
+  assert.match(automationRuntimeEnablementRepository, /learning_automation_runtime_enablement_no_runtime_change_required/);
+  assert.match(automationRuntimeEnablementRepository, /learning_automation_runtime_enablement_status_invalid/);
+  assert.doesNotMatch(automationRuntimeEnablementRepository, /openai\.com/);
 
   const automationFailurePolicyRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-failure-policies.js"));
   assert.match(automationFailurePolicyRepository, /learning_growth_automation_failure_policies/);
@@ -1424,6 +1477,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:release-activation"],
     "node scripts/smoke-growth-release-activation.js"
   );
+  assert.equal(
+    packageJson.scripts["smoke:runtime-enablement"],
+    "node scripts/smoke-growth-runtime-enablement.js"
+  );
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
@@ -1434,7 +1491,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-authorization\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-closure\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-activation\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-runtime-enablement\.js/);
   assert.match(packageJson.scripts.check, /node --check src\/stores\/growth-learning-sqlite\/automation-release-activations\.js/);
+  assert.match(packageJson.scripts.check, /node --check src\/stores\/growth-learning-sqlite\/automation-runtime-enablements\.js/);
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
@@ -1474,6 +1533,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-activation-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-runtime-enablement-service\.js/
   );
   assert.match(
     packageJson.scripts.check,
@@ -1633,6 +1696,25 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseActivationScript, /runOnce/);
   assert.doesNotMatch(releaseActivationScript, /deliverHandoff/);
   assert.doesNotMatch(releaseActivationScript, /activateStageAssessment/);
+
+  const runtimeEnablementScript = read(path.join("scripts", "smoke-growth-runtime-enablement.js"));
+  assert.match(runtimeEnablementScript, /readEnv/);
+  assert.match(runtimeEnablementScript, /createServices/);
+  assert.match(runtimeEnablementScript, /learningAutomationRuntimeEnablementService/);
+  assert.match(runtimeEnablementScript, /evaluate/);
+  assert.match(runtimeEnablementScript, /listEnablements/);
+  assert.match(runtimeEnablementScript, /recordEnablement/);
+  assert.match(runtimeEnablementScript, /--allow-write/);
+  assert.match(runtimeEnablementScript, /runtime_enablement_smoke_write_not_allowed/);
+  assert.doesNotMatch(runtimeEnablementScript, /spawnSync/);
+  assert.doesNotMatch(runtimeEnablementScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(runtimeEnablementScript, /publishPlanItem/);
+  assert.doesNotMatch(runtimeEnablementScript, /generateCard/);
+  assert.doesNotMatch(runtimeEnablementScript, /evaluateSubmission/);
+  assert.doesNotMatch(runtimeEnablementScript, /executeOnce/);
+  assert.doesNotMatch(runtimeEnablementScript, /runOnce/);
+  assert.doesNotMatch(runtimeEnablementScript, /deliverHandoff/);
+  assert.doesNotMatch(runtimeEnablementScript, /activateStageAssessment/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -2064,6 +2146,12 @@ test("Growth automation release approval smoke CLI stays service-owned and write
   assert.match(activationScriptHarness, /delegates operations to service only and gates writes/);
   assert.match(activationScriptHarness, /temporary SQLite db/);
   assert.match(activationScriptHarness, /when explicitly allowed/);
+
+  const runtimeEnablementScriptHarness = read(path.join("tests", "growth-runtime-enablement-smoke-script.test.js"));
+  assert.match(runtimeEnablementScriptHarness, /parses bounded scope/);
+  assert.match(runtimeEnablementScriptHarness, /delegates operations to service only and gates writes/);
+  assert.match(runtimeEnablementScriptHarness, /temporary SQLite db/);
+  assert.match(runtimeEnablementScriptHarness, /when explicitly allowed/);
 });
 
 test("Growth automation scheduler execution smoke CLI stays service-owned and write-gated", () => {

@@ -3386,6 +3386,263 @@ test("growth automation release readiness routes are visible-target scoped and s
   }
 });
 
+test("growth automation runtime enablement routes are Owner-write and visible-target read", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "weixin_stephen") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: workspaceId };
+      },
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationRuntimeEnablementService: {
+      evaluate(input) {
+        calls.push({ type: "runtimeEnablement", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationRuntimeEnablement.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "ready_for_manual_runtime_config_enablement",
+          requestedActivationGates: input.activationGates || ["writeful_execution"],
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        };
+      },
+      listEnablements(input) {
+        calls.push({ type: "listRuntimeEnablements", input });
+        return {
+          ok: true,
+          count: 1,
+          enablements: [{
+            enablementId: "lgrten_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: input.enablementStatus || input.status || "ready_for_manual_runtime_config_enablement",
+            configChangeApplied: false,
+            runtimeConfigChange: false,
+            runtimeConfigMutationPerformed: false,
+            writefulSchedulingAllowed: false
+          }]
+        };
+      },
+      recordEnablement(input) {
+        calls.push({ type: "recordRuntimeEnablement", input });
+        return {
+          ok: true,
+          duplicate: false,
+          enablement: {
+            enablementId: "lgrten_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: "ready_for_manual_runtime_config_enablement",
+            enablementDecision: {
+              recordOnly: true,
+              advisoryOnly: true,
+              configChangeApplied: false,
+              runtimeConfigChange: false,
+              runtimeConfigMutationPerformed: false
+            },
+            configChangeApplied: false,
+            runtimeConfigChange: false,
+            runtimeConfigMutationPerformed: false,
+            writefulSchedulingAllowed: false
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const evaluated = await fetch(`${baseUrl}/api/v1/growth/automation/runtime-enablement?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution,background_scheduler&activationRecordLimit=10`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(evaluated.status, 200);
+    assert.equal((await evaluated.json()).schemaVersion, "growth.learningAutomationRuntimeEnablement.v1");
+    assert.deepEqual(calls[0], {
+      type: "runtimeEnablement",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "",
+        ownerDailyUiEvidence: false,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: false,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: undefined,
+        activationGates: ["writeful_execution", "background_scheduler"],
+        enablementStatus: "",
+        activationRecordLimit: "10"
+      }
+    });
+
+    const listed = await fetch(`${baseUrl}/api/v1/growth/automation/runtime-enablements?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&enablementStatus=ready_for_manual_runtime_config_enablement&activationGate=writeful_execution&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(listed.status, 200);
+    assert.equal((await listed.json()).enablements[0].enablementId, "lgrten_route_1");
+    assert.deepEqual(calls[1], {
+      type: "listRuntimeEnablements",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "5",
+        ownerDailyUiEvidence: false,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: false,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: undefined,
+        activationGates: ["writeful_execution"],
+        enablementStatus: "ready_for_manual_runtime_config_enablement",
+        activationRecordLimit: ""
+      }
+    });
+
+    const created = await fetch(`${baseUrl}/api/v1/growth/automation/runtime-enablements`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collection_run_id: "lgacrn_route_1",
+        activation_gates: ["writeful_execution"],
+        enablement_decision: {
+          decision: "ready_for_manual_runtime_config_enablement"
+        },
+        note: "Owner reviewed runtime enablement readback.",
+        recorded_at: "2026-06-16T10:40:00.000Z"
+      })
+    });
+    assert.equal(created.status, 201);
+    assert.equal((await created.json()).enablement.enablementId, "lgrten_route_1");
+    assert.deepEqual(calls[2], {
+      type: "recordRuntimeEnablement",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collectionRunId: "lgacrn_route_1",
+        status: undefined,
+        activationGate: undefined,
+        activationGates: ["writeful_execution"],
+        activationRecordLimit: undefined,
+        enablementDecision: {
+          decision: "ready_for_manual_runtime_config_enablement"
+        },
+        evidence: undefined,
+        note: "Owner reviewed runtime enablement readback.",
+        requestedBy: "weixin_stephen",
+        recordedBy: "weixin_stephen",
+        recordedAt: "2026-06-16T10:40:00.000Z",
+        createdAt: undefined
+      }
+    });
+
+    const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/runtime-enablements`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen", activation_gate: "writeful_execution" })
+    });
+    assert.equal(deniedCreate.status, 403);
+    assert.equal((await deniedCreate.json()).error.code, "growth_automation_runtime_enablement_owner_required");
+
+    const deniedRead = await fetch(`${baseUrl}/api/v1/growth/automation/runtime-enablement?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(deniedRead.status, 403);
+    assert.equal((await deniedRead.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth profile correction routes are Owner-only and limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

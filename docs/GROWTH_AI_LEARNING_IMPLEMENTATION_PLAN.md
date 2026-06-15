@@ -781,6 +781,23 @@ Implemented backend shape:
   but when writeful execution is separately enabled the scheduler execution
   service must read back a valid summary-only `writeful_execution` activation
   record before it can delegate publication.
+- `npm run smoke:runtime-enablement` delegates to
+  `learning-automation-runtime-enablement-service.evaluate` by default and
+  returns a no-write `growth.learningAutomationRuntimeEnablement.v1` readback
+  after release activation. It requires valid summary-only activation audit
+  rows for selected gates, compares them with injected runtime config booleans,
+  and reports `activation_record_required`, `activation_record_invalid`,
+  `ready_for_manual_runtime_config_enablement`, `partial_config`, or
+  `verified_enabled`. `--operation list` reads existing runtime enablement
+  rows, and `--operation record --allow-write` writes only
+  `learning_growth_automation_runtime_enablements` through
+  `learning-automation-runtime-enablement-service.recordEnablement` and
+  `automation-runtime-enablements.js`. It does not flip runtime config, grant
+  scheduler permission, call Gateway, publish, generate, evaluate, schedule,
+  notify, activate stage assessments, or mutate learner state. It always keeps
+  `configChangeApplied=false`, `runtimeConfigChange=false`,
+  `runtimeConfigMutationPerformed=false`, `writefulSchedulingAllowed=false`,
+  `backgroundSchedulingAllowed=false`, and `backgroundWorkerAllowed=false`.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
@@ -866,6 +883,9 @@ Required harness:
 - `tests/learning-automation-release-activation-repository.test.js`;
 - `tests/learning-automation-release-activation-service.test.js`;
 - `tests/growth-release-activation-smoke-script.test.js`;
+- `tests/learning-automation-runtime-enablement-repository.test.js`;
+- `tests/learning-automation-runtime-enablement-service.test.js`;
+- `tests/growth-runtime-enablement-smoke-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`,
   including the `releaseReview` remediation fields;

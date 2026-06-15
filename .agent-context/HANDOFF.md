@@ -9,6 +9,86 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T17:33Z - Runtime Enablement Audit/Readback Records
+
+- Status: implemented locally and validated. This slice is Growth
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway, publish cards, or run scheduling.
+- Scope:
+  - added `learning-automation-runtime-enablement-service` as the final
+    Growth-local record-only audit/readback layer after release activation;
+  - added `automation-runtime-enablements.js` and
+    `learning_growth_automation_runtime_enablements`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/runtime-enablement`,
+    visible-target scoped
+    `GET /api/v1/growth/automation/runtime-enablements`, and Owner-only
+    `POST /api/v1/growth/automation/runtime-enablements`;
+  - added `npm run smoke:runtime-enablement`; default `evaluate` is no-write,
+    `list` is read-only, and `record` requires
+    `--operation record --allow-write`;
+  - runtime enablement validates valid summary-only release activation audit
+    readback per selected gate, compares injected config booleans, and reports
+    `activation_record_required`, `activation_record_invalid`,
+    `ready_for_manual_runtime_config_enablement`, `partial_config`, or
+    `verified_enabled`;
+  - persisted runtime enablement rows are summary-only and always keep
+    `configChangeApplied=false`, `runtimeConfigChange=false`,
+    `runtimeConfigMutationPerformed=false`,
+    `writefulSchedulingAllowed=false`,
+    `backgroundSchedulingAllowed=false`, and
+    `backgroundWorkerAllowed=false`.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md`.
+- Harness/code updated:
+  - `tests/learning-automation-runtime-enablement-repository.test.js`;
+  - `tests/learning-automation-runtime-enablement-service.test.js`;
+  - `tests/growth-runtime-enablement-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/smoke-growth-runtime-enablement.js`.
+- Validation passed:
+  - focused syntax checks for the runtime enablement service, repository,
+    CLI, app service graph, and routes;
+  - `node --test tests/learning-automation-runtime-enablement-repository.test.js tests/learning-automation-runtime-enablement-service.test.js tests/growth-runtime-enablement-smoke-script.test.js`
+    (`12` tests);
+  - `node --test tests/growth-routes.test.js` (`39` tests);
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    (`31` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`174/174` runtime JS files covered);
+  - `npm test` (`671` tests);
+  - `git diff --check`;
+  - direct temporary-DB CLI smoke:
+    `npm run smoke:runtime-enablement -- --workspace-id fanfan --learner-id fanfan --activation-gates writeful_execution --json`
+    returned expected no-write `activation_record_required` with all runtime
+    mutation/scheduling permission flags false;
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`303` files, `3,901` nodes,
+    `14,925` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-145036a7-9a60-4c01-b574-4e984949eea5`.
+- Remaining product work:
+  - collect full production release evidence over real production inputs;
+  - collect central Home AI visual and Action Inbox/Web Push evidence;
+  - add embedded Owner release controls for the runtime enablement/readback
+    state;
+  - only after those pass, perform any explicit platform/runtime-config
+    enablement outside Growth and read it back through
+    `npm run smoke:runtime-enablement`.
+
 ## 2026-06-15T17:09Z - Scheduler Execution Activation Readback Gate
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

@@ -598,6 +598,42 @@ function normalizeAutomationReleaseActivationRecordInput(body, workspaceId, targ
   };
 }
 
+function normalizeAutomationRuntimeEnablementInput(url, target) {
+  const input = normalizeAutomationReleaseActivationInput(url, target);
+  return Object.assign(input, {
+    enablementStatus: url.searchParams.get("enablementStatus") || url.searchParams.get("enablement_status") || "",
+    activationRecordLimit: url.searchParams.get("activationRecordLimit") || url.searchParams.get("activation_record_limit") || ""
+  });
+}
+
+function normalizeAutomationRuntimeEnablementRecordInput(body, workspaceId, target, request, url) {
+  const activationGate = body.activationGate || body.activation_gate;
+  const activationGates = body.activationGates || body.activation_gates || body.requestedActivationGates || body.requested_activation_gates;
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.runId || body.run_id,
+    status: body.status || body.enablementStatus || body.enablement_status,
+    activationGate,
+    activationGates,
+    activationRecordLimit: body.activationRecordLimit || body.activation_record_limit || body.limit,
+    enablementDecision: body.enablementDecision || body.enablement_decision || body.ownerEnablementDecision || body.owner_enablement_decision,
+    evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
+    note: body.note || body.reason || body.summary,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    recordedBy: body.recordedBy || body.recorded_by || body.approvedBy || body.approved_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    recordedAt: body.recordedAt || body.recorded_at || body.approvedAt || body.approved_at,
+    createdAt: body.createdAt || body.created_at
+  };
+}
+
 function readinessEvidenceFromBody(body = {}) {
   const evidence = body.evidence || body.evidenceSummary || body.evidence_summary || {};
   return Object.assign({}, evidence, {
@@ -1317,6 +1353,18 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/runtime-enablement") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationRuntimeEnablementService.evaluate(normalizeAutomationRuntimeEnablementInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/runtime-enablements") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationRuntimeEnablementService.listEnablements(normalizeAutomationRuntimeEnablementInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/failure-policies") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationFailurePolicyService.listPolicies(normalizeAutomationFailurePolicyListInput(url, target));
@@ -1589,6 +1637,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseActivationService.recordActivation(
       normalizeAutomationReleaseActivationRecordInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/runtime-enablements") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_runtime_enablement_owner_required", "Automation runtime enablement records require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationRuntimeEnablementService.recordEnablement(
+      normalizeAutomationRuntimeEnablementRecordInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }
