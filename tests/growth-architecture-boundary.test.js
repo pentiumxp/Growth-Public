@@ -9,6 +9,39 @@ function read(relPath) {
   return fs.readFileSync(path.join(repoRoot, relPath), "utf8");
 }
 
+function listJsFiles(relDir) {
+  return fs.readdirSync(path.join(repoRoot, relDir), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+    .map((entry) => path.join(relDir, entry.name));
+}
+
+function checkedFilesFromPackageScript() {
+  const packageJson = JSON.parse(read("package.json"));
+  const checkScript = packageJson.scripts && packageJson.scripts.check;
+  assert.equal(typeof checkScript, "string");
+  return new Set(
+    Array.from(checkScript.matchAll(/node --check ([^&]+?\.js)/g))
+      .map((match) => match[1].trim())
+  );
+}
+
+test("Growth check gate covers learning automation and audit backend files", () => {
+  const checkedFiles = checkedFilesFromPackageScript();
+  const requiredFiles = [
+    ...listJsFiles(path.join("src", "services"))
+      .filter((fileName) => /\/learning-automation-[^/]+\.js$/.test(fileName)),
+    path.join("src", "services", "learning-evidence-audit-service.js"),
+    path.join("src", "services", "learning-plan-audit-service.js"),
+    ...listJsFiles(path.join("src", "stores", "growth-learning-sqlite"))
+      .filter((fileName) => /\/automation-[^/]+\.js$/.test(fileName))
+  ].sort();
+
+  assert.ok(requiredFiles.length > 0);
+  for (const fileName of requiredFiles) {
+    assert.ok(checkedFiles.has(fileName), `${fileName} must be covered by npm run check`);
+  }
+});
+
 test("Growth routes stay HTTP glue and do not import stores directly", () => {
   for (const fileName of ["growth-routes.js", "plugin-routes.js", "static-routes.js"]) {
     const source = read(path.join("src", "routes", fileName));

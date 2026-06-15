@@ -420,7 +420,7 @@ becomes future planning evidence, not a required retry loop.
 | Release readiness | Snapshot repository/service/route tests, `tests/growth-release-readiness-smoke-script.test.js`, `npm run smoke:release-readiness`, production controlled daily-loop write-smoke evidence, scheduler dry-run evidence, and architecture guard for no Gateway, publication, evaluation, scheduler, stage, or learner-state mutation from the release-readiness boundary. |
 | UI | Progress state, visible errors, mobile scroll, dark-mode contrast, embedded sizing, and no hidden final action controls. |
 | Docs | `node scripts/check-growth-docs-locality.js` and `node --test tests/growth-docs-locality.test.js`. |
-| Broad local gate | `npm run check`, `npm test`, and `git diff --check` before commit/deploy. |
+| Broad local gate | `npm run check`, `npm test`, and `git diff --check` before commit/deploy. `tests/growth-architecture-boundary.test.js` must keep `npm run check` covering every `learning-automation-*` service, automation SQLite repository, evidence-audit service, and plan-audit service. |
 | Production UI release | Central Home AI embedded-plugin visual harness and AI Ops evidence ledger. |
 
 ## Definition Of Done

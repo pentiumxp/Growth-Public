@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T02:27Z - Growth Backend Check Gate Completion Slice
+
+- Status: Growth backend Harness syntax coverage is hardened. This slice did
+  not change runtime behavior, deploy, enable automation config, execute
+  scheduler actions, run scheduler ticks, call Gateway, publish cards,
+  evaluate learner submissions, deliver notifications, activate stage
+  assessments, or mutate learner state.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI AI
+  Ops intake classified it as H1 because of Gateway/runtime/deploy/docs
+  keywords; only non-deploy checks were run.
+- Scope:
+  - extended `npm run check` to syntax-check all current
+    `src/services/learning-automation-*.js` files,
+    `src/services/learning-evidence-audit-service.js`,
+    `src/services/learning-plan-audit-service.js`, and
+    `src/stores/growth-learning-sqlite/automation-*.js`;
+  - added `tests/growth-architecture-boundary.test.js` coverage that reads the
+    current file list and `package.json` so future automation/audit backend
+    files cannot be missed by the check gate;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Boundary:
+  - this is a Harness/check-gate correction only;
+  - release readiness remains advisory and `writefulSchedulingAllowed` remains
+    false;
+  - no production smoke, central visual harness, runtime config change, or
+    production deploy was performed.
+- Validation passed:
+  - `node --test tests/growth-architecture-boundary.test.js` (`17` tests);
+  - dynamic check-coverage audit (`21` required automation/audit backend files,
+    no missing check entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`444` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`209` JavaScript files, `2,516`
+    nodes, `10,161` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth backend/docs/Harness slice as `H1`
+    because of Gateway/runtime/deployment/architecture-doc keywords even though
+    this Growth change did not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-e5a4d6a2-c71b-4145-8170-c05b2bd4bdaa`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
 ## 2026-06-15 Growth Release-Readiness Approval Evidence Harness Slice
 
 - Status: release-readiness approval evidence coverage is hardened. This slice

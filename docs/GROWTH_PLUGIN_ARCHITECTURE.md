@@ -238,6 +238,23 @@ also need the central Home AI embedded-plugin visual harness because mobile
 scroll, dark-mode contrast, and visible progress are platform-level release
 requirements.
 
+## Check Gate Contract
+
+`npm run check` is a backend syntax gate, not only a script smoke. It must
+include every implemented Growth automation service and repository that can
+affect release-readiness evidence, scheduler safety, action handoff, or audit
+readback. In particular, the check gate must cover:
+
+- `src/services/learning-automation-*.js`;
+- `src/services/learning-evidence-audit-service.js`;
+- `src/services/learning-plan-audit-service.js`;
+- `src/stores/growth-learning-sqlite/automation-*.js`.
+
+`tests/growth-architecture-boundary.test.js` enforces this coverage by reading
+`package.json` and the current backend file list. Adding a new automation or
+audit backend file without adding a matching `node --check` entry is a Harness
+failure, even when the file has focused service tests.
+
 ## Runtime Layers
 
 | Layer | Files | Responsibility |
