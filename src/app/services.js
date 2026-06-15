@@ -297,6 +297,7 @@ function createServices(config) {
     releaseAuthorizationService: learningAutomationReleaseAuthorizationService
   });
   const learningAutomationReleaseActivationService = createLearningAutomationReleaseActivationService({
+    repository: growthLearningStore.learningAutomationReleaseActivationRepository,
     releaseClosureService: learningAutomationReleaseClosureService,
     config: {
       automationWritefulExecutionEnabled: config.automationWritefulExecutionEnabled,

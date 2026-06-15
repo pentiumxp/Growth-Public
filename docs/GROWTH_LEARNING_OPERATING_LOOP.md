@@ -1682,6 +1682,13 @@ Implementation progress on 2026-06-15:
   grant scheduler permission, or run scheduling; it keeps
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
   `runtimeConfigChange=false`.
+- `GET /api/v1/growth/automation/release-activations`, Owner-only
+  `POST /api/v1/growth/automation/release-activations`, and
+  `npm run smoke:release-activation -- --operation record --allow-write`
+  provide the activation audit-record layer. These records persist only
+  summary-only Owner intent and the latest activation preflight summary in
+  `learning_growth_automation_release_activations`; they do not apply
+  runtime config, start scheduler execution, or change learner state.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

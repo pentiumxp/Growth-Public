@@ -2635,6 +2635,43 @@ test("growth automation release readiness routes are visible-target scoped and s
           runtimeConfigChange: false,
           configChangeApplied: false
         };
+      },
+      listActivations(input) {
+        calls.push({ type: "listReleaseActivations", input });
+        return {
+          ok: true,
+          count: 1,
+          activations: [{
+            activationId: "lgaract_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: input.status || "ready_for_owner_config_enablement",
+            configChangeApplied: false,
+            writefulSchedulingAllowed: false,
+            runtimeConfigChange: false
+          }]
+        };
+      },
+      recordActivation(input) {
+        calls.push({ type: "recordReleaseActivation", input });
+        return {
+          ok: true,
+          duplicate: false,
+          activation: {
+            activationId: "lgaract_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: "ready_for_owner_config_enablement",
+            activationPreflight: {
+              configChangeApplied: false,
+              writefulSchedulingAllowed: false,
+              runtimeConfigChange: false
+            },
+            writefulSchedulingAllowed: false,
+            runtimeConfigChange: false,
+            configChangeApplied: false
+          }
+        };
       }
     },
     growthService: {}
@@ -3161,6 +3198,110 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const activationList = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&status=ready_for_owner_config_enablement&activationGate=writeful_execution&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(activationList.status, 200);
+    assert.equal((await activationList.json()).activations[0].activationId, "lgaract_route_1");
+    assert.deepEqual(calls[13], {
+      type: "listReleaseActivations",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "ready_for_owner_config_enablement",
+        limit: "5",
+        ownerDailyUiEvidence: false,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: false,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: false,
+        schedulerWorkerTargetUiEvidence: false,
+        requiredApprovalKeys: undefined,
+        activationGates: ["writeful_execution"]
+      }
+    });
+
+    const activationCreated = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collection_run_id: "lgacrn_route_1",
+        activation_gates: ["writeful_execution", "background_scheduler"],
+        required_approval_key: "backgroundWorkerApproval",
+        automation_digest_ui_evidence: true,
+        activation_decision: {
+          decision: "approved_for_config_enablement"
+        },
+        note: "Owner reviewed activation preflight.",
+        recorded_at: "2026-06-16T09:20:00.000Z"
+      })
+    });
+    assert.equal(activationCreated.status, 201);
+    assert.equal((await activationCreated.json()).activation.activationId, "lgaract_route_1");
+    assert.deepEqual(calls[14], {
+      type: "recordReleaseActivation",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collectionRunId: "lgacrn_route_1",
+        status: undefined,
+        activationGate: undefined,
+        activationGates: ["writeful_execution", "background_scheduler"],
+        requiredApprovalKeys: "backgroundWorkerApproval",
+        ownerDailyUiEvidence: undefined,
+        ownerAuditUiEvidence: undefined,
+        stageCheckpointEvidence: undefined,
+        proposalReviewUiEvidence: undefined,
+        automationDigestUiEvidence: true,
+        automationActionHandoffUiEvidence: undefined,
+        schedulerExecutionUiEvidence: undefined,
+        schedulerRunUiEvidence: undefined,
+        schedulerWorkerTargetUiEvidence: undefined,
+        activationDecision: {
+          decision: "approved_for_config_enablement"
+        },
+        evidence: undefined,
+        note: "Owner reviewed activation preflight.",
+        requestedBy: "weixin_stephen",
+        recordedBy: "weixin_stephen",
+        recordedAt: "2026-06-16T09:20:00.000Z",
+        createdAt: undefined
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -3212,6 +3353,19 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedDecisionCreate.status, 403);
     assert.equal((await deniedDecisionCreate.json()).error.code, "growth_automation_release_decision_owner_required");
+
+    const deniedActivationCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen", activation_gate: "writeful_execution" })
+    });
+    assert.equal(deniedActivationCreate.status, 403);
+    assert.equal((await deniedActivationCreate.json()).error.code, "growth_automation_release_activation_owner_required");
 
     const deniedRead = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness?workspaceId=weixin_fanfan`, {
       headers: {

@@ -277,7 +277,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   into `growth.learningAutomationReleaseActivation.v1`. It can report
   `readyForOwnerRuntimeConfigDecision=true`, but it applies no config and keeps
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
-  `runtimeConfigChange=false`.
+  `runtimeConfigChange=false`. Growth also has visible-target scoped
+  `GET /api/v1/growth/automation/release-activations`, Owner-only
+  `POST /api/v1/growth/automation/release-activations`, and
+  `npm run smoke:release-activation -- --operation record --allow-write` for
+  summary-only activation audit records in
+  `learning_growth_automation_release_activations`. These records capture
+  Owner intent and preflight evidence only; they do not flip runtime config,
+  grant scheduler permission, or run scheduling.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

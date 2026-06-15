@@ -16,6 +16,8 @@ const {
 
 test("release activation smoke script parses bounded scope, activation gates, approvals, and evidence flags", () => {
   const input = inputFromArgs([
+    "--operation", "record",
+    "--allow-write",
     "--workspace-id", "fanfan",
     "--learner-id", "fanfan",
     "--domain", "science",
@@ -24,9 +26,14 @@ test("release activation smoke script parses bounded scope, activation gates, ap
     "--activation-gates", "writeful_execution,background_scheduler",
     "--required-approval-key", "backgroundWorkerApproval",
     "--automation-digest-ui-evidence", "true",
-    "--scheduler-run-ui-evidence", "pass"
+    "--scheduler-run-ui-evidence", "pass",
+    "--note", "Owner reviewed activation.",
+    "--recorded-by", "owner",
+    "--recorded-at", "2026-06-16T09:00:00.000Z"
   ]);
 
+  assert.equal(input.operation, "record");
+  assert.equal(input.allowWrite, true);
   assert.equal(input.workspaceId, "fanfan");
   assert.equal(input.learnerId, "fanfan");
   assert.equal(input.collectionRunId, "lgacrn_ready_1");
@@ -34,6 +41,9 @@ test("release activation smoke script parses bounded scope, activation gates, ap
   assert.deepEqual(input.requiredApprovalKeys, ["backgroundWorkerApproval"]);
   assert.equal(input.automationDigestUiEvidence, true);
   assert.equal(input.schedulerRunUiEvidence, true);
+  assert.equal(input.note, "Owner reviewed activation.");
+  assert.equal(input.recordedBy, "owner");
+  assert.equal(input.recordedAt, "2026-06-16T09:00:00.000Z");
 });
 
 test("release activation smoke script requires workspace scope", () => {
@@ -42,21 +52,44 @@ test("release activation smoke script requires workspace scope", () => {
     error: "release_activation_smoke_workspace_required"
   });
   assert.deepEqual(validateInput({ workspaceId: "fanfan" }), { ok: true });
+  assert.deepEqual(validateInput({ workspaceId: "fanfan", operation: "delete" }), {
+    ok: false,
+    error: "release_activation_smoke_operation_invalid"
+  });
 });
 
-test("release activation smoke script delegates to service only", () => {
+test("release activation smoke script delegates operations to service only and gates writes", () => {
   const calls = [];
-  const result = runOperation({
+  const service = {
     preflight(input) {
-      calls.push(input);
+      calls.push({ type: "preflight", input });
       return { ok: true, status: "ready_for_owner_config_enablement" };
+    },
+    listActivations(input) {
+      calls.push({ type: "list", input });
+      return { ok: true, activations: [] };
+    },
+    recordActivation(input) {
+      calls.push({ type: "record", input });
+      return { ok: true, activation: { activationId: "lgaract_1" } };
     }
-  }, { workspaceId: "fanfan" });
+  };
 
-  assert.equal(result.ok, true);
-  assert.equal(result.status, "ready_for_owner_config_enablement");
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].workspaceId, "fanfan");
+  const preflight = runOperation(service, { workspaceId: "fanfan" });
+  assert.equal(preflight.ok, true);
+  assert.equal(preflight.status, "ready_for_owner_config_enablement");
+
+  const list = runOperation(service, { workspaceId: "fanfan", operation: "list" });
+  assert.equal(list.ok, true);
+
+  const blocked = runOperation(service, { workspaceId: "fanfan", operation: "record" });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, "release_activation_smoke_write_not_allowed");
+
+  const record = runOperation(service, { workspaceId: "fanfan", operation: "record", allowWrite: true });
+  assert.equal(record.ok, true);
+  assert.equal(record.activation.activationId, "lgaract_1");
+  assert.deepEqual(calls.map((call) => call.type), ["preflight", "list", "record"]);
 });
 
 test("release activation smoke script runs no-write preflight against a temporary SQLite db", () => {
@@ -86,6 +119,61 @@ test("release activation smoke script runs no-write preflight against a temporar
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("release activation smoke script records summary-only audit rows against a temporary SQLite db when explicitly allowed", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-activation-record-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const stdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-activation.js"),
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--activation-gate", "writeful_execution",
+      "--recorded-by", "owner",
+      "--recorded-at", "2026-06-16T09:10:00.000Z",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    const output = JSON.parse(stdout);
+    assert.equal(output.operation, "record");
+    assert.equal(output.ok, true);
+    assert.equal(output.activation.privacyClass, "summary_only");
+    assert.equal(output.activation.activationPreflight.configChangeApplied, false);
+    assert.equal(output.configChangeApplied, false);
+    assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.runtimeConfigChange, false);
+
+    const listStdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-activation.js"),
+      "--operation", "list",
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    const listed = JSON.parse(listStdout);
+    assert.equal(listed.operation, "list");
+    assert.equal(listed.ok, true);
+    assert.equal(listed.count, 1);
+    assert.equal(listed.activations[0].activationId, output.activation.activationId);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

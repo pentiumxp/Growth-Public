@@ -37,9 +37,10 @@ function readyClosure(overrides = {}) {
   }, overrides);
 }
 
-function serviceWith(records = {}, config = {}) {
+function serviceWith(records = {}, config = {}, repository = null) {
   return createLearningAutomationReleaseActivationService({
     config,
+    repository,
     releaseClosureService: {
       summarize(input) {
         records.input = input;
@@ -169,4 +170,68 @@ test("release activation preflight rejects privacy-risk input, invalid gates, an
   });
   assert.equal(missingClosure.ok, false);
   assert.equal(missingClosure.error, "learning_automation_release_activation_closure_unavailable");
+});
+
+test("release activation service records summary-only activation audit records through repository", () => {
+  const saved = [];
+  const records = {};
+  const service = serviceWith(records, {
+    automationWritefulExecutionEnabled: false
+  }, {
+    saveActivation(input) {
+      saved.push(input);
+      return {
+        ok: true,
+        duplicate: false,
+        activation: Object.assign({ activationId: "lgaract_1" }, input)
+      };
+    },
+    listActivations(input) {
+      return saved.filter((item) => item.workspaceId === input.workspaceId);
+    }
+  });
+
+  const recorded = service.recordActivation({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    activationGate: "writeful_execution",
+    note: "Owner reviewed closure evidence.",
+    requestedBy: "weixin_owner",
+    recordedBy: "weixin_owner",
+    recordedAt: "2026-06-16T08:45:00.000Z"
+  });
+
+  assert.equal(recorded.ok, true);
+  assert.equal(recorded.activation.activationId, "lgaract_1");
+  assert.equal(recorded.activation.activationDecision.decision, "approved_for_config_enablement");
+  assert.equal(recorded.activation.activationDecision.recordOnly, true);
+  assert.equal(recorded.activation.configChangeApplied, false);
+  assert.equal(recorded.activation.writefulSchedulingAllowed, false);
+  assert.equal(recorded.activation.runtimeConfigChange, false);
+  assert.equal(saved[0].privacyClass, "summary_only");
+  assert.equal(saved[0].summaryOnly, true);
+  assert.equal(saved[0].activationPreflight.preflightPassed, true);
+
+  const listed = service.listActivations({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan"
+  });
+  assert.equal(listed.ok, true);
+  assert.equal(listed.count, 1);
+  assert.equal(listed.activations[0].workspaceId, "weixin_fanfan");
+});
+
+test("release activation service requires repository for record and list operations", () => {
+  const service = serviceWith();
+  const recorded = service.recordActivation({
+    workspaceId: "weixin_fanfan"
+  });
+  assert.equal(recorded.ok, false);
+  assert.equal(recorded.error, "learning_automation_release_activation_repository_unavailable");
+
+  const listed = service.listActivations({
+    workspaceId: "weixin_fanfan"
+  });
+  assert.equal(listed.ok, false);
+  assert.equal(listed.error, "learning_automation_release_activation_repository_unavailable");
 });

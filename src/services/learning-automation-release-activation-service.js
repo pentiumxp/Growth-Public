@@ -234,8 +234,47 @@ function activationActions(status, closure, gates) {
   }];
 }
 
+function activationDecisionSummary(input = {}, result = {}) {
+  const requested = objectOnly(input.activationDecision || input.activation_decision || input.ownerActivationDecision || input.owner_activation_decision);
+  const defaultDecision = result.status === "ready_for_owner_config_enablement"
+    ? "approved_for_config_enablement"
+    : result.status === "already_enabled" ? "already_enabled" : "blocked_or_waiting";
+  return Object.assign({}, requested, {
+    schemaVersion: cleanString(requested.schemaVersion || requested.schema_version || "growth.learningAutomationReleaseActivation.decision.v1", 160),
+    summaryOnly: true,
+    status: result.status,
+    decision: cleanString(requested.decision || requested.status || input.activationDecisionStatus || input.activation_decision_status || defaultDecision, 120),
+    preflightPassed: result.preflightPassed === true,
+    readyForOwnerRuntimeConfigDecision: result.readyForOwnerRuntimeConfigDecision === true,
+    activationAllowed: result.activationAllowed === true,
+    recordOnly: true,
+    advisoryOnly: true,
+    configChangeApplied: false,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false
+  });
+}
+
+function activationEvidenceSummary(input = {}, result = {}) {
+  const evidence = objectOnly(input.evidence || input.evidenceSummary || input.evidence_summary);
+  return Object.assign({}, evidence, {
+    schemaVersion: cleanString(evidence.schemaVersion || evidence.schema_version || "growth.learningAutomationReleaseActivation.evidence.v1", 160),
+    summaryOnly: true,
+    status: result.status,
+    preflightPassed: result.preflightPassed === true,
+    readyForOwnerRuntimeConfigDecision: result.readyForOwnerRuntimeConfigDecision === true,
+    requestedActivationGates: result.requestedActivationGates || [],
+    requiredApprovalKeys: result.requiredApprovalKeys || [],
+    missingApprovalKeys: result.missingApprovalKeys || [],
+    configChangeApplied: false,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false
+  });
+}
+
 function createLearningAutomationReleaseActivationService(options = {}) {
   const releaseClosureService = options.releaseClosureService || null;
+  const repository = options.repository || null;
   const config = Object.assign({
     automationWritefulExecutionEnabled: false,
     automationBackgroundSchedulerEnabled: false,
@@ -319,7 +358,62 @@ function createLearningAutomationReleaseActivationService(options = {}) {
     });
   }
 
-  return { preflight };
+  function recordActivation(input = {}) {
+    if (!repository || typeof repository.saveActivation !== "function") {
+      return unavailable("learning_automation_release_activation_repository_unavailable");
+    }
+    const evaluated = preflight(input);
+    if (!evaluated.ok) return evaluated;
+    const saveResult = repository.saveActivation(Object.assign({}, evaluated, {
+      activationVersion: RELEASE_ACTIVATION_SCHEMA,
+      activationDecision: activationDecisionSummary(input, evaluated),
+      evidenceSummary: activationEvidenceSummary(input, evaluated),
+      note: cleanString(input.note || input.reason || input.summary, 720),
+      requestedBy: cleanString(input.requestedBy || input.requested_by, 120),
+      recordedBy: cleanString(input.recordedBy || input.recorded_by || input.approvedBy || input.approved_by || input.requestedBy || input.requested_by, 120),
+      recordedAt: cleanString(input.recordedAt || input.recorded_at || input.approvedAt || input.approved_at, 80),
+      createdAt: cleanString(input.createdAt || input.created_at, 80)
+    }));
+    if (!saveResult?.ok) return saveResult || unavailable("learning_automation_release_activation_save_failed");
+    return {
+      ok: true,
+      source: "growth-learning-automation-release-activation-service",
+      duplicate: Boolean(saveResult.duplicate),
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      activation: saveResult.activation,
+      evaluated
+    };
+  }
+
+  function listActivations(input = {}) {
+    if (!repository || typeof repository.listActivations !== "function") {
+      return unavailable("learning_automation_release_activation_repository_unavailable");
+    }
+    const scope = scopeFrom(input);
+    if (!scope.workspaceId) return unavailable("learning_automation_release_activation_scope_required");
+    const activations = repository.listActivations(Object.assign({}, input, scope, {
+      status: cleanString(input.status || input.activationStatus || input.activation_status, 120)
+    }));
+    return {
+      ok: true,
+      source: "growth-learning-automation-release-activation-service",
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      count: activations.length,
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      activations
+    };
+  }
+
+  return {
+    listActivations,
+    preflight,
+    recordActivation
+  };
 }
 
 module.exports = {

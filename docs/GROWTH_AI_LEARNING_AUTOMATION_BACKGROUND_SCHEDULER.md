@@ -95,6 +95,12 @@ preflight for an Owner runtime-config decision. They map selected activation
 gates to approval/config state and return required actions, but they also keep
 `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
 `runtimeConfigChange=false`; they are not the config switch itself.
+Visible-target scoped `GET /api/v1/growth/automation/release-activations`,
+Owner-only `POST /api/v1/growth/automation/release-activations`, and
+`npm run smoke:release-activation -- --operation record --allow-write` add the
+summary-only audit record for that Owner decision. The record is evidence and
+handoff state only; it must not be treated as enabling scheduler execution,
+background ticks, worker leases, or runtime config.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker

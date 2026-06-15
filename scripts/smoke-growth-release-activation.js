@@ -42,6 +42,8 @@ function inputFromArgs(args) {
   const activationGates = splitCsv(firstArgValue(args, ["--activation-gates", "--activationGates"], ""))
     .concat(activationGate ? [activationGate] : []);
   return {
+    operation: firstArgValue(args, ["--operation", "--op"], "preflight") || "preflight",
+    allowWrite: hasFlag(args, "--allow-write"),
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -61,16 +63,37 @@ function inputFromArgs(args) {
     schedulerExecutionUiEvidence: truthy(firstArgValue(args, ["--scheduler-execution-ui-evidence", "--schedulerExecutionUiEvidence"], "")),
     schedulerRunUiEvidence: truthy(firstArgValue(args, ["--scheduler-run-ui-evidence", "--schedulerRunUiEvidence"], "")),
     schedulerWorkerTargetUiEvidence: truthy(firstArgValue(args, ["--scheduler-worker-target-ui-evidence", "--schedulerWorkerTargetUiEvidence"], "")),
+    note: firstArgValue(args, ["--note", "--reason", "--summary"], ""),
+    requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], ""),
+    recordedBy: firstArgValue(args, ["--recorded-by", "--recordedBy", "--approved-by", "--approvedBy"], ""),
+    recordedAt: firstArgValue(args, ["--recorded-at", "--recordedAt", "--approved-at", "--approvedAt"], ""),
+    createdAt: firstArgValue(args, ["--created-at", "--createdAt"], ""),
     limit: Number(firstArgValue(args, ["--limit"], "5")) || 5
   };
 }
 
 function validateInput(input = {}) {
   if (!input.workspaceId) return { ok: false, error: "release_activation_smoke_workspace_required" };
+  if (!["preflight", "list", "record"].includes(String(input.operation || "preflight"))) {
+    return { ok: false, error: "release_activation_smoke_operation_invalid" };
+  }
   return { ok: true };
 }
 
 function runOperation(service, input) {
+  const operation = String(input.operation || "preflight");
+  if (operation === "list") return service.listActivations(input);
+  if (operation === "record") {
+    if (!input.allowWrite) {
+      return {
+        ok: false,
+        error: "release_activation_smoke_write_not_allowed",
+        operation,
+        requires: "--allow-write"
+      };
+    }
+    return service.recordActivation(input);
+  }
   return service.preflight(input);
 }
 
@@ -90,7 +113,7 @@ async function main() {
   }
   const services = createServices(readEnv(process.env));
   const result = runOperation(services.learningAutomationReleaseActivationService, input);
-  process.stdout.write(formatResult(Object.assign({ operation: "preflight" }, result), pretty));
+  process.stdout.write(formatResult(Object.assign({ operation: input.operation || "preflight" }, result), pretty));
   process.exitCode = 0;
 }
 

@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T16:51Z - Release Activation Audit Records
+
+- Status: implemented and locally validated. This slice is backend/Harness/docs
+  only and does not require production deploy. It adds summary-only activation
+  audit records after release activation preflight; it does not apply runtime
+  config, grant scheduler permission, or run scheduling.
+- Scope:
+  - added
+    `src/stores/growth-learning-sqlite/automation-release-activations.js`
+    with `learning_growth_automation_release_activations`;
+  - added `stableLearningAutomationReleaseActivationId` and wired
+    `learningAutomationReleaseActivationRepository` through the SQLite store;
+  - extended
+    `src/services/learning-automation-release-activation-service.js` with
+    `listActivations` and `recordActivation` while keeping preflight no-write;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-activations` and Owner-only
+    `POST /api/v1/growth/automation/release-activations`;
+  - extended `scripts/smoke-growth-release-activation.js` so default
+    `preflight` stays no-write, `list` is read-only, and `record` requires
+    `--operation record --allow-write`;
+  - activation records persist only summary-only Owner intent, the sanitized
+    activation preflight, gate/approval summaries, and bounded evidence; they
+    always keep `configChangeApplied=false`, `writefulSchedulingAllowed=false`,
+    and `runtimeConfigChange=false`.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-activation-repository.test.js`;
+  - `tests/learning-automation-release-activation-service.test.js`;
+  - `tests/growth-release-activation-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - syntax checks for the new repository, activation service, routes, CLI,
+    service graph, and store;
+  - `node --test tests/learning-automation-release-activation-repository.test.js tests/learning-automation-release-activation-service.test.js tests/growth-release-activation-smoke-script.test.js`
+    (`14` tests);
+  - `node --test tests/growth-routes.test.js` (`38` tests);
+  - `node --test tests/growth-architecture-boundary.test.js` (`30` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-syntax-coverage.js` (`171/171` runtime JS
+    files covered);
+  - `git diff --check`;
+  - `npm run check`;
+  - `npm test` (`656` tests);
+  - direct temporary-DB CLI smoke:
+    `npm run smoke:release-activation -- --operation record --allow-write ...`
+    wrote one `summary_only` activation record with `status=incomplete`, then
+    `--operation list` read back `count=1`; both kept
+    `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
+    `runtimeConfigChange=false`;
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`297` files, `3,807` nodes,
+    `14,534` edges; index up to date).
+- Remaining product work:
+  - run production release evidence bundle, bundle audit, release readiness,
+    collection run, Owner decision, review, authorization, closure, activation
+    preflight, and activation record over real production inputs;
+  - collect Home AI visual and Action Inbox/Web Push evidence;
+  - add embedded Owner release controls and final explicit runtime config
+    enablement procedure before any writeful/background scheduling is enabled.
+
 ## 2026-06-15T16:32Z - Release Activation Preflight
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

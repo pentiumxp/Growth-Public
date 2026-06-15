@@ -763,16 +763,19 @@ Implemented backend shape:
   schedule, notify, activate stage assessments, mutate learner state, or flip
   runtime config.
 - `npm run smoke:release-activation` delegates to
-  `learning-automation-release-activation-service.preflight` and returns a
-  no-write `growth.learningAutomationReleaseActivation.v1` preflight for
-  Owner runtime-config enablement decisions after release closure. It maps
+  `learning-automation-release-activation-service.preflight` by default and
+  returns a no-write `growth.learningAutomationReleaseActivation.v1` preflight
+  for Owner runtime-config enablement decisions after release closure. It maps
   selected activation gates (`writeful_execution`, `background_scheduler`,
   `background_worker`) to approval keys/config keys/env names, reports current
   config state, missing approvals, `preflightPassed`,
   `readyForOwnerRuntimeConfigDecision`, required actions, and one next action.
-  It does not write repositories or tables, run smoke tasks, call Gateway,
-  publish, generate, evaluate, schedule, notify, activate stage assessments,
-  mutate learner state, or flip runtime config. It always keeps
+  `--operation list` reads existing activation audit rows, and
+  `--operation record --allow-write` records summary-only Owner activation
+  intent through `learning-automation-release-activation-service.recordActivation`
+  and `automation-release-activations.js`. It does not run smoke tasks, call
+  Gateway, publish, generate, evaluate, schedule, notify, activate stage
+  assessments, mutate learner state, or flip runtime config. It always keeps
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
   `runtimeConfigChange=false`.
 - `npm run smoke:release-approval` delegates to the approval service. It
@@ -857,6 +860,7 @@ Required harness:
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
 - `tests/growth-release-evidence-bundle-script.test.js`;
+- `tests/learning-automation-release-activation-repository.test.js`;
 - `tests/learning-automation-release-activation-service.test.js`;
 - `tests/growth-release-activation-smoke-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
