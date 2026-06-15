@@ -62,11 +62,12 @@ state. Durable release evidence remains in the existing release-readiness,
 collection-run, package, decision, approval, activation, runtime-enablement,
 scheduler, and worker-target tables. Release-readiness snapshots may include the
 bounded `evidenceReadback` catalog from
-`learning_growth_automation_release_readiness.evidence_readback_json`; controls
-and inventory read it only through the release-readiness service/repository DTOs.
-It reads package, activation, and runtime enablement audit rows only through
-their owning services and returns bounded record summaries; it must not inspect
-SQLite tables directly.
+`learning_growth_automation_release_readiness.evidence_readback_json`; controls,
+inventory, and dashboard read it only through release-readiness service/repository
+DTOs and project summary fields such as present/missing counts and source bundle
+ids. They do not expose full evidence items. Release controls reads package,
+activation, and runtime enablement audit rows only through their owning services
+and returns bounded record summaries; it must not inspect SQLite tables directly.
 
 ## DTO Contract
 

@@ -145,6 +145,27 @@ function packageDashboardFields(record = {}) {
   };
 }
 
+function evidenceReadbackSummary(record = {}) {
+  const readback = objectOnly(record.evidenceReadback || record.evidence_readback);
+  const sourceBundle = objectOnly(readback.sourceBundle || readback.source_bundle);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseInventory.evidenceReadbackSummary.v1",
+    summaryOnly: true,
+    evidenceCount: Number(readback.evidenceCount || readback.evidence_count || 0) || 0,
+    presentCount: Number(readback.presentCount || readback.present_count || 0) || 0,
+    missingCount: Number(readback.missingCount || readback.missing_count || 0) || 0,
+    missingCheckKeys: unique(readback.missingCheckKeys || readback.missing_check_keys),
+    presentEvidenceKeys: unique(readback.presentEvidenceKeys || readback.present_evidence_keys),
+    sourceBundleId: cleanString(sourceBundle.bundleId || sourceBundle.bundle_id || sourceBundle.evidenceBundleId || sourceBundle.evidence_bundle_id, 180),
+    sourceBundleStatus: cleanString(sourceBundle.status, 120),
+    sourceBundleTaskCount: Number(sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
+    sourceBundlePassCount: Number(sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function recordSummary(kind, record = {}) {
   const packageSummary = objectOnly(record.packageSummary || record.package_summary);
   const activationGates = record.requestedActivationGates || record.requested_activation_gates || record.activationGates || record.activation_gates;
@@ -177,6 +198,11 @@ function recordSummary(kind, record = {}) {
     backgroundSchedulingAllowed: false,
     backgroundWorkerAllowed: false
   };
+  if (kind === "release_readiness_snapshot") {
+    return Object.assign(summary, {
+      evidenceReadback: evidenceReadbackSummary(record)
+    });
+  }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record));
   return summary;
 }
@@ -308,6 +334,8 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
     const controls = controlsSummary(objectOnly(result.controls));
     const status = inventoryStatus(controls, summaries);
     const artifactCount = summaries.reduce((total, summary) => total + (Number(summary.count) || 0), 0);
+    const latestSnapshot = objectOnly(summaries.find((summary) => summary.kind === "release_readiness_snapshot")?.latest);
+    const latestSnapshotEvidenceReadback = objectOnly(latestSnapshot.evidenceReadback);
     const latestPackage = objectOnly(summaries.find((summary) => summary.kind === "release_package")?.latest);
 
     return Object.assign({}, scope, {
@@ -329,6 +357,10 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         readbackKinds: summaries.map((summary) => summary.kind),
         missingRecordKinds: summaries.filter((summary) => summary.status === "records_missing").map((summary) => summary.kind),
         blockedRecordKinds: summaries.filter((summary) => summary.ok === false).map((summary) => summary.kind),
+        latestReadinessSnapshotId: cleanString(latestSnapshot.id, 180),
+        latestReadinessEvidencePresentCount: Number(latestSnapshotEvidenceReadback.presentCount || 0) || 0,
+        latestReadinessEvidenceMissingCount: Number(latestSnapshotEvidenceReadback.missingCount || 0) || 0,
+        latestReadinessEvidenceSourceBundleId: cleanString(latestSnapshotEvidenceReadback.sourceBundleId, 180),
         latestCollectionRunId: cleanString(summaries.find((summary) => summary.kind === "release_collection_run")?.latest?.id, 180),
         latestPackageId: cleanString(summaries.find((summary) => summary.kind === "release_package")?.latest?.id, 180),
         latestPackageStepCount: Number(latestPackage.latestPackageStepCount || 0) || 0,

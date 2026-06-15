@@ -133,9 +133,32 @@ function actionList(values, max = 12) {
   return asArray(values).map(actionSummary).filter(Boolean).slice(0, max);
 }
 
+function evidenceReadbackSummary(value = {}) {
+  const readback = objectOnly(value);
+  const sourceBundle = objectOnly(readback.sourceBundle || readback.source_bundle);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseDashboard.evidenceReadbackSummary.v1",
+    summaryOnly: true,
+    evidenceCount: Number(readback.evidenceCount || readback.evidence_count || 0) || 0,
+    presentCount: Number(readback.presentCount || readback.present_count || 0) || 0,
+    missingCount: Number(readback.missingCount || readback.missing_count || 0) || 0,
+    missingCheckKeys: uniqueStrings(readback.missingCheckKeys || readback.missing_check_keys || []),
+    presentEvidenceKeys: uniqueStrings(readback.presentEvidenceKeys || readback.present_evidence_keys || []),
+    sourceBundleId: cleanString(readback.sourceBundleId || readback.source_bundle_id
+      || sourceBundle.bundleId || sourceBundle.bundle_id || sourceBundle.evidenceBundleId || sourceBundle.evidence_bundle_id, 180),
+    sourceBundleStatus: cleanString(readback.sourceBundleStatus || readback.source_bundle_status || sourceBundle.status, 120),
+    sourceBundleTaskCount: Number(readback.sourceBundleTaskCount || readback.source_bundle_task_count || sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
+    sourceBundlePassCount: Number(readback.sourceBundlePassCount || readback.source_bundle_pass_count || sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function readinessSummary(readiness = {}) {
   const review = objectOnly(readiness.releaseReview);
   const requiredActions = actionList(review.requiredActions || readiness.requiredActions);
+  const evidenceReadback = evidenceReadbackSummary(readiness.evidenceReadback);
   return {
     schemaVersion: "growth.learningAutomationReleaseDashboard.readinessSummary.v1",
     summaryOnly: true,
@@ -147,6 +170,7 @@ function readinessSummary(readiness = {}) {
     blockedCheckKeys: uniqueStrings(review.blockedCheckKeys || readiness.blockedCheckKeys || []),
     missingEvidenceKeys: uniqueStrings(review.missingEvidenceKeys || readiness.missingEvidenceKeys || []),
     persistedApprovalKeys: uniqueStrings(review.persistedApprovalKeys || readiness.persistedApprovalKeys || []),
+    evidenceReadback,
     writefulSchedulingAllowed: readiness.writefulSchedulingAllowed === true,
     runtimeConfigChange: readiness.runtimeConfigChange === true,
     configChangeApplied: readiness.configChangeApplied === true
@@ -201,6 +225,14 @@ function recordSummary(value = {}, kind = "") {
     latestStatus: cleanString(record.latestStatus || latest.status, 120),
     statuses: uniqueStrings(record.statuses || [])
   };
+  if (kind === "release_readiness_snapshot") {
+    const readback = evidenceReadbackSummary(latest.evidenceReadback || latest.evidence_readback);
+    return Object.assign(summary, {
+      latestEvidenceReadbackPresentCount: readback.presentCount,
+      latestEvidenceReadbackMissingCount: readback.missingCount,
+      latestEvidenceReadbackSourceBundleId: readback.sourceBundleId
+    });
+  }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record, latest));
   return summary;
 }
@@ -210,7 +242,7 @@ function artifactReadbackSummary(artifactReadback = {}) {
   return {
     schemaVersion: "growth.learningAutomationReleaseDashboard.artifactReadbackSummary.v1",
     summaryOnly: true,
-    snapshots: recordSummary(readback.snapshots),
+    snapshots: recordSummary(readback.snapshots, "release_readiness_snapshot"),
     collectionRuns: recordSummary(readback.collectionRuns || readback.collection_runs),
     decisions: recordSummary(readback.decisions),
     packages: recordSummary(readback.packages, "release_package"),
@@ -231,6 +263,10 @@ function inventorySummary(inventory = {}) {
     missingRecordKinds: uniqueStrings(summary.missingRecordKinds || []),
     blockedRecordKinds: uniqueStrings(summary.blockedRecordKinds || []),
     latestCollectionRunId: cleanString(summary.latestCollectionRunId, 180),
+    latestReadinessSnapshotId: cleanString(summary.latestReadinessSnapshotId, 180),
+    latestReadinessEvidencePresentCount: Number(summary.latestReadinessEvidencePresentCount || 0) || 0,
+    latestReadinessEvidenceMissingCount: Number(summary.latestReadinessEvidenceMissingCount || 0) || 0,
+    latestReadinessEvidenceSourceBundleId: cleanString(summary.latestReadinessEvidenceSourceBundleId, 180),
     latestPackageId: cleanString(summary.latestPackageId, 180),
     latestPackageStepCount: Number(summary.latestPackageStepCount || 0) || 0,
     latestPackageDashboardStatus: cleanString(summary.latestPackageDashboardStatus, 120),
@@ -275,6 +311,13 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     readyForReleaseReview: readinessPart.readyForReleaseReview === true,
     requiredActionCount,
     nextAction: firstAction(controlsPart.nextAction, readinessPart.nextAction),
+    readinessEvidencePresentCount: readinessPart.evidenceReadback.presentCount,
+    readinessEvidenceMissingCount: readinessPart.evidenceReadback.missingCount,
+    readinessEvidenceSourceBundleId: readinessPart.evidenceReadback.sourceBundleId,
+    latestReadinessSnapshotId: inventoryPart.latestReadinessSnapshotId,
+    latestReadinessEvidencePresentCount: inventoryPart.latestReadinessEvidencePresentCount,
+    latestReadinessEvidenceMissingCount: inventoryPart.latestReadinessEvidenceMissingCount,
+    latestReadinessEvidenceSourceBundleId: inventoryPart.latestReadinessEvidenceSourceBundleId,
     latestCollectionRunId: inventoryPart.latestCollectionRunId,
     latestPackageId: inventoryPart.latestPackageId,
     latestPackageStepCount: inventoryPart.latestPackageStepCount,

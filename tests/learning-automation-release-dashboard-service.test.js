@@ -28,6 +28,24 @@ function createService(overrides = {}, calls = []) {
               requiredActor: "owner"
             }
           },
+          evidenceReadback: {
+            schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+            summaryOnly: true,
+            evidenceCount: 27,
+            presentCount: 21,
+            missingCount: 6,
+            presentEvidenceKeys: ["ownerDailyUiEvidence"],
+            missingCheckKeys: ["central_visual_evidence"],
+            sourceBundle: {
+              bundleId: "bundle_dashboard_current",
+              status: "collected",
+              taskCount: 8,
+              passCount: 6
+            },
+            writefulSchedulingAllowed: false,
+            runtimeConfigChange: false,
+            configChangeApplied: false
+          },
           writefulSchedulingAllowed: false,
           runtimeConfigChange: false,
           configChangeApplied: false
@@ -76,6 +94,10 @@ function createService(overrides = {}, calls = []) {
             readbackKinds: ["release_collection_run", "release_package", "runtime_enablement"],
             missingRecordKinds: ["runtime_enablement"],
             blockedRecordKinds: [],
+            latestReadinessSnapshotId: "lgarsnap_1",
+            latestReadinessEvidencePresentCount: 26,
+            latestReadinessEvidenceMissingCount: 1,
+            latestReadinessEvidenceSourceBundleId: "bundle_dashboard_snapshot",
             latestCollectionRunId: input.collectionRunId,
             latestPackageId: "lgapkg_1",
             latestPackageStepCount: 6,
@@ -88,6 +110,22 @@ function createService(overrides = {}, calls = []) {
           },
           artifactReadback: {
             summaryOnly: true,
+            snapshots: {
+              ok: true,
+              status: "records_available",
+              count: 1,
+              latest: {
+                id: "lgarsnap_1",
+                status: "ready_for_release_review",
+                evidenceReadback: {
+                  summaryOnly: true,
+                  presentCount: 26,
+                  missingCount: 1,
+                  sourceBundleId: "bundle_dashboard_snapshot"
+                }
+              },
+              statuses: ["ready_for_release_review"]
+            },
             collectionRuns: {
               ok: true,
               status: "records_available",
@@ -158,6 +196,13 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.inventoryStatus, "manual_runtime_config_required");
   assert.equal(result.releaseDashboard.requiredActionCount, 2);
   assert.equal(result.releaseDashboard.nextAction.key, "enable_runtime_config");
+  assert.equal(result.releaseDashboard.readinessEvidencePresentCount, 21);
+  assert.equal(result.releaseDashboard.readinessEvidenceMissingCount, 6);
+  assert.equal(result.releaseDashboard.readinessEvidenceSourceBundleId, "bundle_dashboard_current");
+  assert.equal(result.releaseDashboard.latestReadinessSnapshotId, "lgarsnap_1");
+  assert.equal(result.releaseDashboard.latestReadinessEvidencePresentCount, 26);
+  assert.equal(result.releaseDashboard.latestReadinessEvidenceMissingCount, 1);
+  assert.equal(result.releaseDashboard.latestReadinessEvidenceSourceBundleId, "bundle_dashboard_snapshot");
   assert.equal(result.releaseDashboard.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseDashboard.latestPackageId, "lgapkg_1");
   assert.equal(result.releaseDashboard.latestPackageStepCount, 6);
@@ -167,8 +212,13 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.deepEqual(result.releaseDashboard.missingRecordKinds, ["runtime_enablement"]);
   assert.deepEqual(result.releaseDashboard.persistedApprovalKeys, ["writefulExecutionApproval"]);
   assert.equal(result.releaseReadiness.readyForReleaseReview, false);
+  assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleId, "bundle_dashboard_current");
+  assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.releaseControls.auditReadbackStatus, "ready");
   assert.equal(result.releaseInventory.artifactCount, 7);
+  assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackPresentCount, 26);
+  assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 1);
+  assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackSourceBundleId, "bundle_dashboard_snapshot");
   assert.equal(result.artifactReadback.packages.latestId, "lgapkg_1");
   assert.equal(result.artifactReadback.packages.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latestPackageDashboardStatus, "manual_runtime_config_required");

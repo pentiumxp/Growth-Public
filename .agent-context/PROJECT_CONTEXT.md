@@ -120,7 +120,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   per-check evidence references. Owner snapshots persist that readback in
   `learning_growth_automation_release_readiness.evidence_readback_json`, and
   repository privacy scanning rejects private path/token-like values even when a
-  caller bypasses the service. It now treats
+  caller bypasses the service. Release controls, inventory, and dashboard
+  readbacks now project bounded evidenceReadback summaries only, including
+  present/missing counts and source bundle ids/status/counts, without exposing
+  full evidence items or changing release/runtime state. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle

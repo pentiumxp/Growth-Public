@@ -18,6 +18,24 @@ function readiness(overrides = {}) {
     status: "ready_for_release_review",
     readyForReleaseReview: true,
     requiredActionCount: 0,
+    evidenceReadback: {
+      schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+      summaryOnly: true,
+      evidenceCount: 27,
+      presentCount: 27,
+      missingCount: 0,
+      presentEvidenceKeys: ["ownerDailyUiEvidence"],
+      missingCheckKeys: [],
+      sourceBundle: {
+        bundleId: "bundle_ready_1",
+        status: "collected",
+        taskCount: 8,
+        passCount: 8
+      },
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    },
     writefulSchedulingAllowed: false
   }, overrides);
 }
@@ -299,6 +317,10 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.releaseControls.nextAction.key, "enable_runtime_config_manually");
   assert.equal(result.releaseControls.requiredActionCount, 1);
   assert.equal(result.steps.length, 7);
+  assert.equal(result.steps[0].evidenceReadback.presentCount, 27);
+  assert.equal(result.steps[0].evidenceReadback.missingCount, 0);
+  assert.equal(result.steps[0].evidenceReadback.sourceBundleId, "bundle_ready_1");
+  assert.equal(result.steps[0].evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.steps[1].latestCollectionRunId, "lgacrn_ready_1");
   assert.equal(result.steps[1].packageRecordPresent, true);
   assert.equal(result.steps[1].latestPackageId, "lgapkg_ready_1");
@@ -424,6 +446,25 @@ test("release controls blocks when persisted audit readback fails", () => {
   assert.equal(result.auditReadback.activationRecords.error, "learning_automation_release_activation_repository_unavailable");
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
+});
+
+test("release controls rejects private values from dependency readback", () => {
+  const result = serviceWith({
+    readiness: readiness({
+      evidenceReadback: {
+        schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+        summaryOnly: true,
+        items: [{
+          key: "ownerDailyUiEvidence",
+          evidenceId: "/Users/hermes-dev/.homeai-qa/release-readiness.json"
+        }]
+      }
+    })
+  }).summarize({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_release_controls_dependency_privacy_failed");
+  assert.equal(result.privacyFindings.some((finding) => finding.includes("$.readiness.evidenceReadback.items[0].evidenceId")), true);
 });
 
 test("release controls rejects privacy-risk inputs and missing dependencies", () => {

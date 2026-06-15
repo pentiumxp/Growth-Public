@@ -103,7 +103,11 @@ backend boundaries:
   dashboard readbacks project the package `releaseDashboardSummary` as
   summary-only latest-package dashboard status, next-action key,
   required-action count, and step count so Owner surfaces do not need to
-  expand raw package artifacts.
+  expand raw package artifacts. Controls, inventory, and dashboard readbacks
+  also project only bounded release-readiness `evidenceReadback` summaries:
+  present/missing counts, source bundle id/status/counts, and missing check
+  keys. They do not expose full evidence item payloads and they cannot change
+  readiness, release, scheduler, or runtime-config state.
 
 Known gaps before the architecture can be called production-complete for the
 full operating loop:

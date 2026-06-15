@@ -2,6 +2,7 @@
 
 const RELEASE_CONTROLS_SCHEMA = "growth.learningAutomationReleaseControls.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -30,6 +31,22 @@ function scanPrivacyKeys(value, pathName = "$", findings = []) {
     const childPath = `${pathName}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+  }
+  return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
   }
   return findings;
 }
@@ -167,6 +184,27 @@ function collectMissing(parts) {
   };
 }
 
+function evidenceReadbackSummary(readback = {}) {
+  const value = objectOnly(readback);
+  const sourceBundle = objectOnly(value.sourceBundle || value.source_bundle);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseControls.evidenceReadbackSummary.v1",
+    summaryOnly: true,
+    evidenceCount: Number(value.evidenceCount || value.evidence_count || 0) || 0,
+    presentCount: Number(value.presentCount || value.present_count || 0) || 0,
+    missingCount: Number(value.missingCount || value.missing_count || 0) || 0,
+    missingCheckKeys: unique(asArray(value.missingCheckKeys || value.missing_check_keys)),
+    presentEvidenceKeys: unique(asArray(value.presentEvidenceKeys || value.present_evidence_keys)),
+    sourceBundleId: cleanString(sourceBundle.bundleId || sourceBundle.bundle_id || sourceBundle.evidenceBundleId || sourceBundle.evidence_bundle_id, 180),
+    sourceBundleStatus: cleanString(sourceBundle.status, 120),
+    sourceBundleTaskCount: Number(sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
+    sourceBundlePassCount: Number(sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function boundedLimit(value, fallback = 20) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return fallback;
@@ -248,7 +286,7 @@ function createLearningAutomationReleaseControlsService(options = {}) {
   function summarize(input = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_controls_scope_required");
-    const privacyFindings = scanPrivacyKeys(input).slice(0, 16);
+    const privacyFindings = scanPrivacyKeys(input).concat(scanPrivateValues(input)).slice(0, 16);
     if (privacyFindings.length) return unavailable("learning_automation_release_controls_privacy_failed", { privacyFindings });
     if (!releaseReadinessService || typeof releaseReadinessService.evaluateReadiness !== "function") {
       return unavailable("learning_automation_release_controls_readiness_unavailable");
@@ -292,7 +330,15 @@ function createLearningAutomationReleaseControlsService(options = {}) {
       runtime,
       activationRecords,
       runtimeEnablementRecords
-    }).slice(0, 16);
+    }).concat(scanPrivateValues({
+      readiness,
+      review,
+      closure,
+      activation,
+      runtime,
+      activationRecords,
+      runtimeEnablementRecords
+    })).slice(0, 16);
     if (dependencyPrivacyFindings.length) {
       return unavailable("learning_automation_release_controls_dependency_privacy_failed", { privacyFindings: dependencyPrivacyFindings });
     }
@@ -329,6 +375,7 @@ function createLearningAutomationReleaseControlsService(options = {}) {
     const steps = [
       step("release_readiness", readiness, {
         ready: parts.readiness.readyForReleaseReview === true,
+        evidenceReadback: evidenceReadbackSummary(parts.readiness.evidenceReadback),
         requiredActions: actionCandidates(parts.readiness),
         nextAction: objectOnly(parts.readiness.releaseReview).nextAction || null
       }),

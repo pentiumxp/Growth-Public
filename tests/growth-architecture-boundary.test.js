@@ -991,6 +991,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseControlsService, /latestPackageDashboardStatus/);
   assert.match(automationReleaseControlsService, /latestPackageDashboardNextActionKey/);
   assert.match(automationReleaseControlsService, /packageRecordPresent/);
+  assert.match(automationReleaseControlsService, /evidenceReadbackSummary/);
+  assert.match(automationReleaseControlsService, /sourceBundleTaskCount/);
   assert.match(automationReleaseControlsService, /configChangeApplied: false/);
   assert.match(automationReleaseControlsService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseControlsService, /runtimeConfigChange: false/);
@@ -1965,6 +1967,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /packageDashboardFields/);
   assert.match(releaseInventoryService, /releaseDashboardSummary/);
   assert.match(releaseInventoryService, /latestPackageDashboardStatus/);
+  assert.match(releaseInventoryService, /evidenceReadbackSummary/);
+  assert.match(releaseInventoryService, /latestReadinessEvidencePresentCount/);
   assert.doesNotMatch(releaseInventoryService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseInventoryService, /learning_growth_/);
   assert.doesNotMatch(releaseInventoryService, /spawnSync/);
@@ -1985,6 +1989,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseDashboardService, /releaseInventoryService\.inventory/);
   assert.match(releaseDashboardService, /packageDashboardFields/);
   assert.match(releaseDashboardService, /latestPackageDashboardStatus/);
+  assert.match(releaseDashboardService, /evidenceReadbackSummary/);
+  assert.match(releaseDashboardService, /readinessEvidencePresentCount/);
   assert.doesNotMatch(releaseDashboardService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseDashboardService, /learning_growth_/);
   assert.doesNotMatch(releaseDashboardService, /spawnSync/);

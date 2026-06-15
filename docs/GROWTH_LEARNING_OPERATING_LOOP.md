@@ -1751,7 +1751,10 @@ Implementation progress on 2026-06-15:
   per-check evidence references. Owner snapshots persist this catalog in
   `learning_growth_automation_release_readiness.evidence_readback_json`; it is
   audit/readback data only and cannot change runtime config, scheduling, card
-  publication, evaluation, or learner state.
+  publication, evaluation, or learner state. Release controls, inventory, and
+  dashboard project only bounded summaries of that catalog, such as present/
+  missing counts and source bundle ids, so Owner surfaces can inspect release
+  evidence completeness without expanding full evidence items.
 
 The next product-completeness slice is embedded UI and production readiness:
 

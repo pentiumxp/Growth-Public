@@ -17,6 +17,24 @@ function createService(overrides = {}, calls = []) {
             snapshotId: "lgarsnap_1",
             status: "ready_for_release_review",
             privacyClass: "summary_only",
+            evidenceReadback: {
+              schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+              summaryOnly: true,
+              evidenceCount: 27,
+              presentCount: 26,
+              missingCount: 1,
+              presentEvidenceKeys: ["ownerDailyUiEvidence"],
+              missingCheckKeys: ["central_visual_evidence"],
+              sourceBundle: {
+                bundleId: "bundle_inventory_1",
+                status: "collected",
+                taskCount: 8,
+                passCount: 7
+              },
+              writefulSchedulingAllowed: false,
+              runtimeConfigChange: false,
+              configChangeApplied: false
+            },
             createdAt: "2026-06-16T11:00:00.000Z"
           }]
         };
@@ -181,6 +199,10 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.schemaVersion, RELEASE_INVENTORY_SCHEMA);
   assert.equal(result.status, "manual_runtime_config_required");
   assert.equal(result.releaseInventory.artifactCount, 7);
+  assert.equal(result.releaseInventory.latestReadinessSnapshotId, "lgarsnap_1");
+  assert.equal(result.releaseInventory.latestReadinessEvidencePresentCount, 26);
+  assert.equal(result.releaseInventory.latestReadinessEvidenceMissingCount, 1);
+  assert.equal(result.releaseInventory.latestReadinessEvidenceSourceBundleId, "bundle_inventory_1");
   assert.equal(result.releaseInventory.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseInventory.latestPackageId, "lgapkg_1");
   assert.equal(result.releaseInventory.latestPackageStepCount, 6);
@@ -191,6 +213,10 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.releaseInventory.latestActivationId, "lgaract_1");
   assert.equal(result.releaseInventory.latestRuntimeEnablementId, "lgrten_1");
   assert.equal(result.artifactReadback.controls.status, "manual_runtime_config_required");
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.presentCount, 26);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 1);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.sourceBundleId, "bundle_inventory_1");
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.artifactReadback.packages.latest.collectionRunId, "lgacrn_1");
   assert.equal(result.artifactReadback.packages.latest.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardStatus, "manual_runtime_config_required");

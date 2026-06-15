@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T21:47Z - Release Readiness Evidence Readback Downstream Projection
+
+- Status: implemented and validated locally. This slice is
+  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-controls-service` now includes bounded
+    readiness `evidenceReadback` summary on the `release_readiness` step:
+    evidence count, present/missing counts, missing check keys, present evidence
+    keys, source bundle id/status/task count/pass count, and all runtime mutation
+    flags false;
+  - `learning-automation-release-inventory-service` now projects the latest
+    readiness snapshot's evidence-readback summary into
+    `artifactReadback.snapshots.latest.evidenceReadback` and
+    `releaseInventory.latestReadinessEvidence*` summary fields;
+  - `learning-automation-release-dashboard-service` now projects current
+    readiness evidence-readback summary and latest persisted readiness snapshot
+    evidence-readback summary into the Owner read model;
+  - downstream DTOs expose summary fields only, not full evidence item payloads;
+  - release/runtime semantics remain unchanged: these readbacks cannot approve
+    release, flip runtime config, schedule work, publish cards, evaluate, or
+    mutate learner state.
+- Changed files:
+  - `src/services/learning-automation-release-controls-service.js`;
+  - `src/services/learning-automation-release-inventory-service.js`;
+  - `src/services/learning-automation-release-dashboard-service.js`;
+  - `tests/learning-automation-release-controls-service.test.js`;
+  - `tests/learning-automation-release-inventory-service.test.js`;
+  - `tests/learning-automation-release-dashboard-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - focused syntax plus controls/inventory/dashboard/architecture harness:
+    `46` tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `node --test tests/growth-docs-locality.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-architecture-boundary.test.js`
+    (`47` tests);
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`725` tests);
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops evidence ledger append id
+    `evidence-cca3f326-10a8-4249-88c5-f1ceaafd8565`;
+  - CodeGraph status: `321` indexed files, `4187` nodes, `16366` edges.
+- Remaining product work:
+  - commit and push this slice;
+  - continue toward product-visible Owner release/evidence UI and real
+    production release evidence collection;
+  - no runtime enablement should be attempted until platform, visual, action,
+    scheduler, package/dashboard, Owner approval, and manual config evidence are
+    complete.
+
 ## 2026-06-15T21:37Z - Release Readiness Evidence Readback Catalog Projection
 
 - Status: implemented and validated locally. This slice is
