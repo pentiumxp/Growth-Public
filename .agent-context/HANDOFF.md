@@ -66,7 +66,7 @@
     `evidence-340aad4f-8632-48b1-9782-ccea2e801b23`;
   - CodeGraph status: `321` indexed files, `4174` nodes, `16285` edges.
 - Remaining product work:
-  - commit and push this slice;
+  - implementation/docs/harness slice committed and pushed;
   - continue from backend readback closure into Owner UI / release-status surface
     only after the summary contract remains stable;
   - collect real production visual/action/scheduler/package/dashboard evidence
