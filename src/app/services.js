@@ -46,6 +46,7 @@ const { createLearningPlanValidationService } = require("../services/learning-pl
 const { createLearningPlannerContextService } = require("../services/learning-planner-context-service");
 const { createLearningProfileDeltaAuditService } = require("../services/learning-profile-delta-audit-service");
 const { createLearningProfileDeltaService } = require("../services/learning-profile-delta-service");
+const { createLearningProfileFeedbackEvidenceService } = require("../services/learning-profile-feedback-evidence-service");
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../services/learning-profile-v2-service");
 const { createLearningStageAssessmentService } = require("../services/learning-stage-assessment-service");
@@ -302,6 +303,14 @@ function createServices(config) {
     dailyLoopService: learningDailyLoopService,
     stageAssessmentService: learningStageAssessmentService
   });
+  const learningProfileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
+    auditCompletenessService: learningAuditCompletenessService,
+    evidenceAuditService: learningEvidenceAuditService,
+    profileDeltaAuditService: learningProfileDeltaAuditService,
+    profileV2Service: learningProfileV2Service,
+    recommendationService: learningCardRecommendationService,
+    loopStateService: learningLoopStateService
+  });
   const growthEvaluationService = createGrowthEvaluationService({
     learningStore: growthLearningStore,
     evidenceLedgerService: learningEvidenceLedgerService,
@@ -369,6 +378,7 @@ function createServices(config) {
     learningPlannerContextService,
     learningProfileDeltaAuditService,
     learningProfileDeltaService,
+    learningProfileFeedbackEvidenceService,
     learningProfileProjectionService,
     learningProfileV2Service,
     learningStageAssessmentService,

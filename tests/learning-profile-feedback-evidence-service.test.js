@@ -1,0 +1,247 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+const {
+  createLearningProfileFeedbackEvidenceService,
+  publicScope,
+  scanPrivacy
+} = require("../src/services/learning-profile-feedback-evidence-service");
+
+function completeDependencies(overrides = {}) {
+  const calls = [];
+  const services = {
+    auditCompletenessService: {
+      evaluateCycleCompleteness(input) {
+        calls.push({ type: "completeness", input });
+        return overrides.completeness || {
+          ok: true,
+          complete: true,
+          readyForAutomation: true,
+          summary: { missingRequired: [] }
+        };
+      }
+    },
+    evidenceAuditService: {
+      listEvidenceAudit(input) {
+        calls.push({ type: "evidenceAudit", input });
+        return overrides.evidenceAudit || {
+          ok: true,
+          count: 1,
+          evidence: [{
+            evidenceId: "lgevd_daily_1",
+            graphNodeId: "kg_science_fair_test",
+            graphNodeIds: ["kg_science_fair_test"],
+            sourceType: "daily_evaluation",
+            sourceId: "leval_daily_1",
+            rawPrompt: "must not leak"
+          }]
+        };
+      }
+    },
+    profileDeltaAuditService: {
+      listProfileDeltas(input) {
+        calls.push({ type: "profileDeltaAudit", input });
+        return overrides.profileDeltaAudit || {
+          ok: true,
+          count: 1,
+          profileDeltas: [{
+            profileDeltaId: "lgpdelta_daily_1",
+            evaluationId: "leval_daily_1",
+            changedCapabilityCount: 1,
+            targetNodeIds: ["kg_science_fair_test"],
+            rawAnswer: "must not leak"
+          }]
+        };
+      }
+    },
+    profileV2Service: {
+      profileV2(input) {
+        calls.push({ type: "profileV2", input });
+        return overrides.profileV2 || {
+          ok: true,
+          available: true,
+          summary: {
+            capabilityStateCount: 1,
+            evidenceCount: 2,
+            weaknessCount: 1,
+            strengthCount: 0,
+            staleCount: 0,
+            pressureSignalCount: 0
+          },
+          weaknesses: [{
+            nodeId: "kg_science_fair_test",
+            status: "needs_repair",
+            summary: "Needs measured-result reasoning."
+          }],
+          recommendedPlannerHints: {
+            strategy: "repair",
+            rawPrompt: "must not leak"
+          }
+        };
+      }
+    },
+    recommendationService: {
+      recommendNextCard(input) {
+        calls.push({ type: "recommendation", input });
+        return overrides.recommendation || {
+          ok: true,
+          available: true,
+          recommendationMode: "trajectory",
+          recommendationStatus: "pending",
+          strategy: "repair",
+          cardRole: "practice",
+          targetNodeIds: ["kg_science_fair_test"],
+          reason: "Use a low-pressure repair card.",
+          rawPrompt: "must not leak"
+        };
+      }
+    },
+    loopStateService: {
+      state(input) {
+        calls.push({ type: "loopState", input });
+        return overrides.loopState || {
+          ok: true,
+          status: "ready_to_draft",
+          nextAction: {
+            action: "draft_daily_plan",
+            enabled: true,
+            reason: "next_strategy:repair",
+            targetNodeId: "kg_science_fair_test"
+          },
+          audit: {
+            complete: true,
+            missingRequired: []
+          }
+        };
+      }
+    }
+  };
+  return { calls, services };
+}
+
+test("profile feedback evidence service proves a completed cycle can drive the next plan", () => {
+  const { calls, services } = completeDependencies();
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domain: "science",
+    subject: "science",
+    taskCardId: "ltask_science_daily_1",
+    evaluationId: "leval_daily_1",
+    targetNodeIds: ["kg_science_fair_test"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.schemaVersion, "growth.learningProfileFeedbackEvidence.v1");
+  assert.equal(result.privacyClass, "summary_only");
+  assert.equal(result.status, "pass");
+  assert.equal(result.summary.readyForNextPlan, true);
+  assert.equal(result.summary.evidenceCount, 1);
+  assert.equal(result.summary.profileDeltaCount, 1);
+  assert.equal(result.summary.recommendationMode, "trajectory");
+  assert.equal(result.summary.nextAction, "draft_daily_plan");
+  assert.deepEqual(result.summary.missingRequired, []);
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
+  assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
+  assert.deepEqual(calls.map((call) => call.type), [
+    "completeness",
+    "evidenceAudit",
+    "profileDeltaAudit",
+    "profileV2",
+    "recommendation",
+    "loopState"
+  ]);
+});
+
+test("profile feedback evidence service requires a completed-cycle selector", () => {
+  const { calls, services } = completeDependencies();
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "missing");
+  assert.equal(result.error, "profile_feedback_cycle_selector_required");
+  assert.deepEqual(result.summary.missingRequired, ["cycle_selector_present"]);
+  assert.equal(calls.length, 0);
+});
+
+test("profile feedback evidence service reports missing profile feedback without passing release evidence", () => {
+  const { services } = completeDependencies({
+    evidenceAudit: { ok: true, count: 0, evidence: [] },
+    profileDeltaAudit: { ok: true, count: 0, profileDeltas: [] },
+    profileV2: { ok: true, available: true, summary: { evidenceCount: 0, capabilityStateCount: 0 } },
+    recommendation: {
+      ok: false,
+      available: true,
+      error: "next_card_recommendation_unavailable"
+    },
+    loopState: {
+      ok: true,
+      status: "audit_incomplete",
+      nextAction: { action: "complete_cycle_audit", enabled: true },
+      audit: { complete: false, missingRequired: ["profile_delta_audit"] }
+    }
+  });
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    taskCardId: "ltask_missing_daily_1",
+    targetNodeIds: ["kg_science_fair_test"]
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "missing");
+  assert.deepEqual(result.summary.missingRequired, [
+    "evidence_ledger_present",
+    "profile_delta_audit_present",
+    "profile_v2_projected",
+    "next_recommendation_available"
+  ]);
+  assert.equal(result.summary.readyForNextPlan, false);
+  assert.equal(result.checks.find((item) => item.key === "learning_loop_state_ready").status, "pass");
+});
+
+test("profile feedback evidence service fails closed for privacy-risk input and normalizes scope", () => {
+  assert.deepEqual(scanPrivacy({ nested: { rawPrompt: "bad" } }), ["$.nested.rawPrompt"]);
+  assert.deepEqual(publicScope({
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    target_node_ids: ["kg_science_fair_test", "kg_science_fair_test"],
+    available_minutes: 12
+  }), {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "",
+    domainPackId: "",
+    domain: "",
+    subject: "",
+    horizon: "daily_plan",
+    availableMinutes: 12,
+    planDraftId: "",
+    taskCardId: "",
+    evaluationId: "",
+    profileDeltaId: "",
+    evidenceId: "",
+    correctionId: "",
+    sourceId: "",
+    targetNodeIds: ["kg_science_fair_test"],
+    limit: 12
+  });
+
+  const result = createLearningProfileFeedbackEvidenceService(completeDependencies().services).evaluate({
+    workspaceId: "weixin_fanfan",
+    taskCardId: "ltask_daily_1",
+    rawAnswer: "must not enter smoke"
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "profile_feedback_privacy_failed");
+  assert.deepEqual(result.privacyFindings, ["$.rawAnswer"]);
+});

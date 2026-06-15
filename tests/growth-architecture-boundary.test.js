@@ -152,6 +152,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /repository: growthLearningStore\.profileDeltaAuditRepository/);
   assert.match(services, /createLearningProfileDeltaAuditService/);
   assert.match(services, /learningProfileDeltaAuditService/);
+  assert.match(services, /createLearningProfileFeedbackEvidenceService/);
+  assert.match(services, /learningProfileFeedbackEvidenceService/);
   assert.match(services, /createLearningPlannerContextService/);
   assert.match(services, /learningPlannerContextService/);
   assert.match(services, /createGrowthGatewayPlannerClient/);
@@ -201,6 +203,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /profileV2Service: learningProfileV2Service/);
   assert.match(services, /evidenceLedgerService: learningEvidenceLedgerService/);
   assert.match(services, /profileDeltaAuditService: learningProfileDeltaAuditService/);
+  assert.match(services, /recommendationService: learningCardRecommendationService/);
+  assert.match(services, /loopStateService: learningLoopStateService/);
   assert.match(services, /planAuditService: learningPlanAuditService/);
   assert.match(services, /evidenceAuditService: learningEvidenceAuditService/);
   assert.match(services, /ownerCorrectionService: learningOwnerCorrectionService/);
@@ -390,6 +394,24 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(profileDeltaAuditService, /profile_delta_audit_repository_unavailable/);
   assert.doesNotMatch(profileDeltaAuditService, /learning_growth_profile_delta_audits/);
   assert.doesNotMatch(profileDeltaAuditService, /rawAnswer/);
+
+  const profileFeedbackEvidenceService = read(path.join("src", "services", "learning-profile-feedback-evidence-service.js"));
+  assert.match(profileFeedbackEvidenceService, /createLearningProfileFeedbackEvidenceService/);
+  assert.match(profileFeedbackEvidenceService, /evaluateCycleCompleteness/);
+  assert.match(profileFeedbackEvidenceService, /listEvidenceAudit/);
+  assert.match(profileFeedbackEvidenceService, /listProfileDeltas/);
+  assert.match(profileFeedbackEvidenceService, /profileV2/);
+  assert.match(profileFeedbackEvidenceService, /recommendNextCard/);
+  assert.match(profileFeedbackEvidenceService, /loopStateService/);
+  assert.match(profileFeedbackEvidenceService, /summary_only/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /learning_growth_/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /publishPlanItem/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /generateCard/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /processEvaluationJob/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /activateStageAssessment/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /rawAnswer:/);
+  assert.doesNotMatch(profileFeedbackEvidenceService, /rawPrompt:/);
 
   const planAuditService = read(path.join("src", "services", "learning-plan-audit-service.js"));
   assert.match(planAuditService, /listPlanDrafts/);

@@ -58,6 +58,10 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--requested-by", "owner",
     "--created-at", "2026-06-15T06:10:00.000Z",
     "--task-card-id", "ltask_science_daily_1",
+    "--evaluation-id", "leval_science_daily_1",
+    "--profile-delta-id", "lgpdelta_science_daily_1",
+    "--evidence-id", "lgevd_science_daily_1",
+    "--source-id", "source_science_daily_1",
     "--learner-cycle-operation", "audit",
     "--allow-write-evidence",
     "--daily-loop-write-operation", "publish",
@@ -91,6 +95,11 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
     tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"],
     taskCardId: "ltask_science_daily_1",
+    evaluationId: "leval_science_daily_1",
+    profileDeltaId: "lgpdelta_science_daily_1",
+    evidenceId: "lgevd_science_daily_1",
+    correctionId: "",
+    sourceId: "source_science_daily_1",
     learnerCycleOperation: "audit",
     allowWriteEvidence: true,
     dailyLoopWriteOperation: "publish",
@@ -120,6 +129,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("profile_feedback"));
   assert.ok(output.allowedTaskIds.includes("learner_cycle"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
@@ -155,6 +165,38 @@ test("release evidence bundle script writes bounded learner-cycle audit evidence
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(fileBundle.scope.learnerCycleOperation, "audit");
     assert.equal(fileBundle.scope.taskCardId, "ltask_smoke_daily_1");
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script records missing profile-feedback closure as bounded evidence", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "profile-feedback-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--target-node-id", "kg_science_fair_test",
+      "--task-card-id", "ltask_missing_daily_1",
+      "--task", "profile_feedback",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.smoke, "npm run smoke:profile-feedback");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.status, "blocked");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.source, "growth-learning-profile-feedback-evidence-service");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, ["profile_feedback"]);
+    assert.equal(fileBundle.scope.taskCardId, "ltask_missing_daily_1");
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
   });

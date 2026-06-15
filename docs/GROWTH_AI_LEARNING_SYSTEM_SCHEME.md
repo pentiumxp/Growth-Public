@@ -613,7 +613,8 @@ Minimum harness by boundary:
 | Service boundary | Focused service tests for policy, validation, idempotency, dependency calls, and visible failure. |
 | Repository boundary | Transaction rollback, schema migration, idempotency, summary-only privacy class, and privacy-risk key rejection. |
 | Route boundary | Owner/workspace authorization, visible-target allow/deny, bounded input normalization, and route-as-glue architecture. |
-| Vertical loop | Fanfan science daily path from plan draft to card publish, learner evidence, evaluation, ledger, Profile V2, and profile delta. |
+| Vertical loop | Fanfan science daily path from plan draft to card publish, learner evidence, evaluation, ledger, Profile V2, profile delta, profile-feedback evidence, and next loop-state readback. |
+| Profile feedback evidence | `tests/learning-profile-feedback-evidence-service.test.js`, `tests/growth-profile-feedback-smoke-script.test.js`, the Fanfan science post-cycle assertion in `tests/learning-card-ai-loop-harness.test.js`, and `npm run smoke:profile-feedback` prove completed-cycle audit/evidence/profile-delta/Profile V2/recommendation/next-state readback without Gateway calls or writes. |
 | Learner daily-cycle smoke | `tests/growth-learner-cycle-smoke-script.test.js` and `npm run smoke:learner-cycle` prove the service-owned submit -> evaluate -> reflect -> audit path. The CLI defaults to no-write audit, requires `--allow-write` for learner-state writes, and returns summary-only ids/status/counts/findings without learner text, transcripts, raw prompts, answer keys, raw model output, credentials, or provider config. |
 | Owner audit/correction | `tests/growth-owner-audit-smoke-script.test.js` and `npm run smoke:owner-audit` prove read-only cycle audit/completeness/correction readback by default, explicit `--allow-write` before correction writes, privacy-risk input rejection, and no direct repository, Gateway, generation, evaluation, scheduler, notification, or stage-activation calls from the CLI. |
 | Non-sample loop | Visible but unprovisioned target blocks before model calls; explicit provision enables; wrong subject blocks; target workspace owns rows. |
@@ -634,10 +635,10 @@ git diff --check
 
 The current backend foundation already includes the main service boundaries
 for graph import, card authoring, evaluation, evidence ledger, Profile V2,
-profile-delta audit, plan draft/publish, cycle audit, audit completeness,
-Owner daily-loop facade, supervised proposals, scheduler dry-run, automation
-digests, failure policy, action handoff, and default-disabled Owner-explicit
-scheduler execution.
+profile-delta audit, profile-feedback evidence, plan draft/publish, cycle
+audit, audit completeness, Owner daily-loop facade, supervised proposals,
+scheduler dry-run, automation digests, failure policy, action handoff, and
+default-disabled Owner-explicit scheduler execution.
 
 The browser Owner loop now shows the compact learning-loop state/next-action
 readback in the `生成` tab and exposes a minimal supervised daily-loop

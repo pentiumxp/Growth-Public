@@ -9,6 +9,65 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T12:07Z - Completed-Cycle Profile Feedback Evidence Boundary
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  backend evidence collection, docs, and harness only.
+- Scope:
+  - added `learning-profile-feedback-evidence-service`, a no-write
+    summary-only service that proves a completed cycle can feed the next plan by
+    composing audit completeness, evidence audit, profile-delta audit,
+    Profile V2, next-card recommendation, and next learning-loop state;
+  - added `npm run smoke:profile-feedback` through
+    `scripts/smoke-growth-profile-feedback.js`; it requires `workspaceId` plus a
+    bounded completed-cycle selector such as `taskCardId`, `evaluationId`,
+    `profileDeltaId`, `evidenceId`, `planDraftId`, or `sourceId`;
+  - wired the service through `src/app/services.js`;
+  - release evidence bundle now includes the default `profile_feedback` task and
+    maps bounded output into `productionProfileFeedbackSmokeEvidence`;
+  - release readiness now requires advisory
+    `production_profile_feedback_smoke_evidence` and the smoke script accepts
+    `--production-profile-feedback-smoke-evidence`;
+  - the Fanfan science AI-loop harness now asserts post-cycle
+    `growth.learningProfileFeedbackEvidence.v1` before continuing to next
+    planning evidence;
+  - the boundary remains no-write and must not call Gateway/model vendors,
+    draft/publish plans, generate cards, evaluate submissions, schedule, notify,
+    activate stage assessments, mutate learner state, or expose raw learner
+    answers, transcripts, prompts, model output, private paths, credentials, or
+    provider config.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-profile-feedback-evidence-service.test.js`;
+  - `tests/growth-profile-feedback-smoke-script.test.js`;
+  - `tests/learning-card-ai-loop-harness.test.js`;
+  - release bundle/readiness service and smoke-script tests;
+  - architecture boundary guard and `package.json` syntax coverage.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/learning-profile-feedback-evidence-service.test.js
+    tests/growth-profile-feedback-smoke-script.test.js
+    tests/learning-card-ai-loop-harness.test.js` (`13` tests);
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js` (`63` tests);
+  - `npm run --silent check` (`148` runtime JS files covered);
+  - `npm test -- --test-reporter=spec` (`559` tests);
+  - `git diff --check`.
+
 ## 2026-06-15T12:05Z - Release Evidence Bundle Adds Learner-Cycle Audit Evidence
 
 - Status: implemented and locally validated; commit/push follows this handoff

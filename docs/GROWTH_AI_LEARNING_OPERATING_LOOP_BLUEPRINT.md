@@ -166,10 +166,17 @@ Implemented backend foundation:
   `learning_growth_automation_scheduler_worker_leases`, and optional HTTP
   timer glue. The worker prefers reviewed enabled targets before local
   environment fallback and delegates only to the scheduler run service;
+- completed-cycle profile-feedback evidence through
+  `learning-profile-feedback-evidence-service` and
+  `npm run smoke:profile-feedback`, which verifies audit completeness,
+  persisted evidence, persisted profile delta, Profile V2 projection, next-card
+  recommendation, and next learning-loop state from a bounded completed-cycle
+  selector without writing or calling Gateway;
 - target/domain-pack provisioning service and repository;
 - service-level Fanfan science vertical harness from planner draft through
   card publish, learner evidence, evaluation, evidence ledger, Profile V2, and
-  profile delta;
+  profile delta, then through no-write profile-feedback evidence and next
+  learning-loop state readback;
 - service-level non-sample science vertical harness proving explicit
   domain-pack/subject provisioning before planner/authoring Gateway calls and
   target-workspace scoped plan, card, ledger, Profile V2, and profile-delta
@@ -201,7 +208,7 @@ opaque automation switch.
 
 | Milestone | Capability | Completion rule |
 | --- | --- | --- |
-| Backend evidence loop | Growth can persist summary-only evidence, project Profile V2, draft a Gateway plan, publish one selected item, evaluate once, persist profile delta, expose bounded audit readback, project the completed cycle into the next `ready_to_draft` learning-loop state, and prepare an Owner-reviewed automation packet without publishing automatically. | Service, repository, route, and AI-loop harness pass locally, including post-cycle state readback plus completed-cycle proposal, scheduler dry-run, and digest evidence. |
+| Backend evidence loop | Growth can persist summary-only evidence, project Profile V2, draft a Gateway plan, publish one selected item, evaluate once, persist profile delta, expose bounded audit readback, project the completed cycle into no-write profile-feedback evidence and the next `ready_to_draft` learning-loop state, and prepare an Owner-reviewed automation packet without publishing automatically. | Service, repository, route, and AI-loop harness pass locally, including post-cycle profile-feedback/state readback plus completed-cycle proposal, scheduler dry-run, and digest evidence. |
 | Owner supervised daily loop | Owner can select learner/domain/subject, inspect compact loop status from `growth.learningLoopState.v1`, publish one validated daily card, and inspect completion audit from the Growth UI. | Learning-loop state smoke, daily-loop smoke, embedded UI, mobile/dark-mode visual harness, and production readiness smoke pass. |
 | Stage checkpoint loop | Growth can recommend formal checkpoints from Profile V2 and evidence freshness while activation/cooldown remains owned by `learning-stage-assessment-service`. | Stage planning harness proves no daily backlog debt and no silent formal card publication. |
 | Multi-workspace/domain-pack loop | Any visible and provisioned learner/domain pack can use the same planner/author/evaluate/audit pipeline. | Cross-workspace allow/deny route and UI harnesses prove actor workspace and learner workspace never mix. |

@@ -68,6 +68,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-planner-readiness-evidence",
     "--production-daily-loop-preview-smoke-evidence",
     "--production-learning-loop-state-smoke-evidence",
+    "--production-profile-feedback-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
     "--production-learner-cycle-smoke-evidence",
     "--production-scheduler-dry-run-smoke-evidence",
@@ -99,6 +100,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
@@ -134,6 +136,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }

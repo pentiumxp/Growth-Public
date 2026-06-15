@@ -27,6 +27,7 @@ function createServiceWithRunner(runner) {
 
 test("release evidence bundle service normalizes scope and task args", () => {
   assert.deepEqual(normalizeTaskIds({}), Array.from(DEFAULT_TASK_IDS));
+  assert.equal(DEFAULT_TASK_IDS.includes("profile_feedback"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
@@ -53,7 +54,12 @@ test("release evidence bundle service normalizes scope and task args", () => {
     dailyLoopWriteOperation: "draft",
     learnerCycleOperation: "audit",
     taskCardId: "",
-    planDraftId: ""
+    planDraftId: "",
+    evaluationId: "",
+    profileDeltaId: "",
+    evidenceId: "",
+    correctionId: "",
+    sourceId: ""
   });
   assert.deepEqual(scopeArgs({
     workspaceId: "weixin_fanfan",
@@ -98,7 +104,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     subject: "science",
     targetNodeIds: ["kg_science_fair_test"],
     taskCardId: "ltask_science_daily_1",
-    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "learner_cycle", "stage_assessment", "proposal"],
+    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "profile_feedback", "learner_cycle", "stage_assessment", "proposal"],
     requestedBy: "owner"
   });
 
@@ -112,27 +118,31 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     "productionPlannerReadinessEvidence",
     "productionDailyLoopPreviewSmokeEvidence",
     "productionLearningLoopStateSmokeEvidence",
+    "productionProfileFeedbackSmokeEvidence",
     "productionLearnerCycleSmokeEvidence",
     "stageCheckpointEvidence",
     "productionProposalSmokeEvidence"
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
-  assert.equal(result.bundle.summary.taskCount, 6);
+  assert.equal(result.bundle.summary.taskCount, 7);
   assert.equal(result.bundle.summary.blockedCount, 0);
-  assert.equal(calls.length, 6);
+  assert.equal(calls.length, 7);
   assert.equal(calls[0].command, "/node");
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-planner-readiness.js"));
   assert.ok(calls[2].args[0].endsWith("scripts/smoke-growth-learning-loop-state.js"));
-  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));
-  assert.ok(calls[3].args.includes("--operation"));
-  assert.ok(calls[3].args.includes("audit"));
+  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-profile-feedback.js"));
   assert.ok(calls[3].args.includes("--task-card-id"));
   assert.ok(calls[3].args.includes("ltask_science_daily_1"));
-  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
-  assert.ok(calls[4].args.includes("--target-node-id"));
-  assert.ok(calls[4].args.includes("kg_science_fair_test"));
-  assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
+  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));
+  assert.ok(calls[4].args.includes("--operation"));
+  assert.ok(calls[4].args.includes("audit"));
+  assert.ok(calls[4].args.includes("--task-card-id"));
+  assert.ok(calls[4].args.includes("ltask_science_daily_1"));
+  assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
+  assert.ok(calls[5].args.includes("--target-node-id"));
+  assert.ok(calls[5].args.includes("kg_science_fair_test"));
+  assert.ok(calls[6].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
   assert.ok(calls[0].args.includes("--json"));
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
 });

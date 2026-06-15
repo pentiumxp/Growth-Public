@@ -118,7 +118,8 @@ AI-driven loop:
 - Owner daily-loop backend facade for preview, draft, and publish;
 - service-level Fanfan science vertical harness from planner draft through
   card publication, learner evidence, evaluation, ledger, Profile V2, and
-  profile delta;
+  profile delta, plus no-write profile-feedback evidence proving the completed
+  cycle can feed the next recommendation and loop state;
 - non-sample provisioned science vertical harness proving target provisioning
   and target-workspace scoped writes;
 - supervised automation proposal backend, accepted-proposal explicit publish,
@@ -275,6 +276,7 @@ Implementation implication:
 | Evidence ledger | What summary evidence should profile use? | `learning-evidence-ledger-service`, `evidence-ledger.js`. |
 | Profile V2 | What does Growth currently believe about the learner? | `learning-profile-v2-service`. |
 | Profile delta | What changed after this cycle and why? | `learning-profile-delta-service`, `profile-delta-audits.js`. |
+| Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? | `learning-profile-feedback-evidence-service`, `scripts/smoke-growth-profile-feedback.js`. |
 | Owner correction | What did Owner confirm or correct? | `learning-owner-correction-service`, evidence ledger correction rows. |
 | Cycle audit | Can this card/evaluation/plan cycle explain itself? | `learning-cycle-audit-service`. |
 | Audit completeness | Is the previous cycle safe to use as automation input? | `learning-audit-completeness-service`. |
@@ -335,6 +337,8 @@ Required harness:
 - `tests/learning-loop-state-service.test.js`;
 - `tests/growth-daily-loop-preview-smoke-script.test.js`;
 - `tests/growth-learning-loop-state-smoke-script.test.js`;
+- `tests/learning-profile-feedback-evidence-service.test.js`;
+- `tests/growth-profile-feedback-smoke-script.test.js`;
 - `tests/growth-daily-loop-smoke-script.test.js`;
 - `tests/learning-card-generation-context-service.test.js`;
 - `tests/learning-plan-publisher-service.test.js`;
@@ -344,6 +348,7 @@ Required harness:
 - `tests/growth-embedded-layout.test.js`;
 - `npm run smoke:daily-loop-preview -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
+- `npm run smoke:profile-feedback -- --workspace-id <workspace> --task-card-id <taskCardId> --evaluation-id <evaluationId> --json`;
 - `npm run smoke:daily-loop -- --operation draft --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <planDraftId> --item-id <itemId> --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - central Home AI embedded-plugin visual harness before production release.
@@ -371,8 +376,11 @@ Required harness:
 - `tests/learning-evidence-audit-service.test.js`;
 - `tests/learning-plan-audit-service.test.js`;
 - `tests/learning-owner-correction-service.test.js`;
+- `tests/learning-profile-feedback-evidence-service.test.js`;
 - `tests/growth-owner-audit-smoke-script.test.js`;
 - `npm run smoke:owner-audit` for local or production service-graph evidence;
+- `npm run smoke:profile-feedback` for completed-cycle profile/evidence
+  feedback readback;
 - `tests/growth-routes.test.js`;
 - UI privacy tests and central visual evidence.
 

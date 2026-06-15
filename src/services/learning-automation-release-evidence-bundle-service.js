@@ -11,6 +11,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
   "learning_loop_state",
+  "profile_feedback",
   "learner_cycle",
   "stage_assessment",
   "proposal",
@@ -47,6 +48,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "profile_feedback",
+    evidenceKey: "productionProfileFeedbackSmokeEvidence",
+    script: "scripts/smoke-growth-profile-feedback.js",
+    commandName: "npm run smoke:profile-feedback"
   },
   {
     taskId: "learner_cycle",
@@ -203,7 +210,14 @@ function scopeArgs(scope = {}) {
     ["--domain", scope.domain],
     ["--subject", scope.subject],
     ["--horizon", scope.horizon],
-    ["--available-minutes", scope.availableMinutes]
+    ["--available-minutes", scope.availableMinutes],
+    ["--plan-draft-id", scope.planDraftId],
+    ["--task-card-id", scope.taskCardId],
+    ["--evaluation-id", scope.evaluationId],
+    ["--profile-delta-id", scope.profileDeltaId],
+    ["--evidence-id", scope.evidenceId],
+    ["--correction-id", scope.correctionId],
+    ["--source-id", scope.sourceId]
   ];
   for (const [flag, value] of optional) {
     if (value !== undefined && value !== null && String(value).trim()) {
@@ -236,7 +250,12 @@ function publicScope(input = {}) {
     dailyLoopWriteOperation,
     learnerCycleOperation,
     taskCardId: cleanString(input.taskCardId || input.task_card_id, 120),
-    planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120)
+    planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120),
+    evaluationId: cleanString(input.evaluationId || input.evaluation_id, 120),
+    profileDeltaId: cleanString(input.profileDeltaId || input.profile_delta_id, 120),
+    evidenceId: cleanString(input.evidenceId || input.evidence_id, 120),
+    correctionId: cleanString(input.correctionId || input.correction_id, 120),
+    sourceId: cleanString(input.sourceId || input.source_id, 120)
   };
 }
 
@@ -249,8 +268,10 @@ function summaryFromSmoke(value = {}) {
     "available",
     "complete",
     "readyForAutomation",
+    "readyForNextPlan",
     "activationState",
     "reason",
+    "status",
     "count"
   ];
   for (const key of scalarKeys) {

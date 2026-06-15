@@ -35,6 +35,7 @@ const { createLearningOwnerCorrectionService } = require("../src/services/learni
 const { createLearningPlanAuditService } = require("../src/services/learning-plan-audit-service");
 const { createLearningProfileDeltaService } = require("../src/services/learning-profile-delta-service");
 const { createLearningProfileDeltaAuditService } = require("../src/services/learning-profile-delta-audit-service");
+const { createLearningProfileFeedbackEvidenceService } = require("../src/services/learning-profile-feedback-evidence-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../src/services/learning-profile-v2-service");
 const { createLearningPlanOrchestratorService } = require("../src/services/learning-plan-orchestrator-service");
@@ -872,6 +873,14 @@ function createLoopHarness() {
     dailyLoopService,
     stageAssessmentService
   });
+  const profileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
+    auditCompletenessService,
+    evidenceAuditService,
+    profileDeltaAuditService,
+    profileV2Service,
+    recommendationService,
+    loopStateService
+  });
   const evaluationService = createGrowthEvaluationService({
     learningStore: store,
     evidenceLedgerService,
@@ -902,6 +911,7 @@ function createLoopHarness() {
     planPublisherService,
     plannerGatewayCalls,
     loopStateService,
+    profileFeedbackEvidenceService,
     profileDeltaService,
     profileV2Service,
     profileProjectionService,
@@ -1187,6 +1197,32 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
     assert.equal(JSON.stringify(nextLoopState).includes(RAW_MARKER), false);
     assert.equal(JSON.stringify(nextLoopState).includes("rawPrompt"), false);
     assert.equal(JSON.stringify(nextLoopState).includes("answerKey"), false);
+
+    const profileFeedbackEvidence = harness.profileFeedbackEvidenceService.evaluate({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      taskCardId: published.generation.published.taskCardId,
+      evaluationId: processed.profile_delta.basis.evaluationId,
+      profileDeltaId: processed.profile_delta.profileDeltaId,
+      evidenceId: processed.profile_delta.basis.evidenceIds[0],
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(profileFeedbackEvidence.ok, true);
+    assert.equal(profileFeedbackEvidence.schemaVersion, "growth.learningProfileFeedbackEvidence.v1");
+    assert.equal(profileFeedbackEvidence.status, "pass");
+    assert.equal(profileFeedbackEvidence.summary.readyForNextPlan, true);
+    assert.equal(profileFeedbackEvidence.summary.cycleComplete, true);
+    assert.equal(profileFeedbackEvidence.summary.profileDeltaCount >= 1, true);
+    assert.equal(profileFeedbackEvidence.summary.evidenceCount >= 1, true);
+    assert.equal(profileFeedbackEvidence.summary.nextAction, "draft_daily_plan");
+    assert.equal(profileFeedbackEvidence.recommendation.strategy, "repair");
+    assert.equal(profileFeedbackEvidence.recommendation.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(profileFeedbackEvidence).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(profileFeedbackEvidence).includes("rawPrompt"), false);
+    assert.equal(JSON.stringify(profileFeedbackEvidence).includes("answerKey"), false);
 
     const proposal = await harness.automationProposalService.createProposal({
       workspaceId: WORKSPACE_ID,
