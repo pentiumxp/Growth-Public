@@ -11,9 +11,10 @@
 
 ## 2026-06-15T10:20Z - Audit Completeness Privacy Projection Refined
 
-- Status: implemented locally and focused-test validated; production deploy
-  and production no-write learner-cycle smoke are still pending for this
-  runtime change.
+- Status: implemented, locally validated, pushed to both remotes, deployed to
+  Mac production, and production-smoked with a no-write learner-cycle audit.
+- Commit pushed to both `origin/main` and `public/main`:
+  `70edd1b` `Refine Growth audit privacy projection`.
 - Scope:
   - updated `src/services/learning-audit-completeness-service.js` so
     `privacy_projection` scans public cycle-audit DTO keys for raw/private
@@ -26,32 +27,69 @@
 - Harness:
   - expanded `tests/learning-audit-completeness-service.test.js` with
     safe-public-text and raw/private-key regression coverage.
-- Focused validation passed:
+- Validation passed:
   - `node --check src/services/learning-audit-completeness-service.js`;
   - `node --test tests/learning-audit-completeness-service.test.js
     tests/learning-cycle-audit-service.test.js
     tests/growth-learner-cycle-smoke-script.test.js
     tests/growth-architecture-boundary.test.js`.
+  - `node --test tests/learning-audit-completeness-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-learner-cycle-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`534` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`245` files, `3,135` nodes,
+    `12,129` edges).
 - Docs updated:
   - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
   - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
   - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
   - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
   - `.agent-context/PROJECT_CONTEXT.md`.
-- Next required validation before deployment:
-  - `node scripts/check-growth-docs-locality.js`;
-  - `npm run --silent check`;
-  - relevant focused and broad tests;
-  - `git diff --check`;
-  - `codegraph sync && codegraph status`.
-- Expected production smoke after deploy:
-  - rerun no-write `npm run smoke:learner-cycle` for the existing Fanfan
-    science card;
-  - if the cycle has only the already-published plan and no real learner
-    submission/evaluation/profile-delta, `privacy_projection` should no longer
-    appear in `summary.missingRequired`; the remaining required gaps should be
-    real learner-cycle evidence such as `evaluation_evidence` and
-    `profile_delta_audit`.
+- Home AI AI Ops required deployment checks passed:
+  - `node --check scripts/deploy-macos-production.js`;
+  - `node tests/macos-production-deploy-script.test.js`;
+  - `node tests/production-status-smoke-harness.test.js`;
+  - `node --check` for the changed Growth service and test;
+  - `npm run --silent deploy:macos -- --target home-ai --json`;
+  - Home AI `git diff --check`.
+- Production deploy:
+  - command shape:
+    `npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file <private-local-password-file> --json`;
+  - source commit: `70edd1b33570`;
+  - production path:
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260615T095326Z-plugin-growth-manual`;
+  - restarted launchd label:
+    `com.hermesmobile.plugin.growth`;
+  - deploy validation passed: shared auth permission repair, launchd running,
+    manifest health, and production profile audit with `codexIssueCount=0`.
+- Production no-write learner-cycle smoke:
+  - target:
+    `workspaceId=weixin_fanfan`, `learnerId=fanfan`,
+    `taskCardId=ltask_0e08f9a1b630b0ffe9`,
+    `planDraftId=lgplan_aa609b3996102fb5b9`,
+    `targetNodeId=kg_lower_secondary_science`;
+  - result: `ok=true`, `operation=audit`,
+    `schemaVersion=growth.learningLearnerCycleSmoke.v1`,
+    `privacyClass=summary_only`, card `status=published`,
+    `laneId=today`, `primaryAction=submit`, `planDraftCount=1`,
+    `hasPublishedPlan=true`, `evidenceCount=0`, `profileDeltaCount=0`,
+    `privacy_projection=true`, `complete=false`,
+    `readyForAutomation=false`;
+  - missing required findings are now only `evaluation_evidence` and
+    `profile_delta_audit`, which are real gaps until a real learner
+    submission/evaluation/profile-delta cycle exists. No production learner
+    write was performed.
+- AI Ops evidence appended:
+  - `evidence-b1ddbf03-bd07-489a-b005-832f9e41d472`;
+  - `evidence-35a6cfbf-69c0-4fd6-b9ff-96b92cdb062c`.
 
 ## 2026-06-15T10:03Z - Learner Cycle Smoke Deployed
 
