@@ -129,12 +129,42 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("cycle_history"));
   assert.ok(output.allowedTaskIds.includes("profile_feedback"));
   assert.ok(output.allowedTaskIds.includes("learner_cycle"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
+});
+
+test("release evidence bundle script writes bounded cycle-history evidence from read-only history smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "cycle-history-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "cycle_history",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.smoke, "npm run smoke:cycle-history");
+    assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.summary.source, "growth-learning-cycle-history-service");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
 });
 
 test("release evidence bundle script writes bounded learner-cycle audit evidence from read-only learner smoke", () => {

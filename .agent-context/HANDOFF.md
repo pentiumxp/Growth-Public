@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T12:44Z - Cycle History Release Evidence
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  release-evidence collection, release-readiness checks, docs, and harness only.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    default `cycle_history` task, runs `scripts/smoke-growth-cycle-history.js`,
+    and maps bounded output into `productionCycleHistorySmokeEvidence`;
+  - `learning-automation-release-readiness-service` now treats
+    `productionCycleHistorySmokeEvidence` as a required advisory release check
+    with key `production_cycle_history_smoke_evidence` and action
+    `run_production_cycle_history_smoke`;
+  - `scripts/smoke-growth-release-readiness.js` accepts
+    `--production-cycle-history-smoke-evidence`;
+  - the bundle/readiness boundary remains summary-only and no-write by default,
+    has no route/repository/service-graph import, does not call Gateway,
+    daily-loop services, cycle-history services, learner-cycle services,
+    publication, generation, evaluation, scheduler execution/ticks,
+    notification delivery, stage activation, or learner-state mutation.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/learning-automation-release-readiness-service.test.js`;
+  - `tests/growth-release-readiness-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - operational no-write bundle/readiness chain against a temporary SQLite DB:
+    `node scripts/build-growth-release-evidence-bundle.js --task cycle_history
+    --output-file <bundle> --result-json --json`, then
+    `node scripts/smoke-growth-release-readiness.js --evidence-bundle-file
+    <bundle> --json`; bundle produced
+    `productionCycleHistorySmokeEvidence.status=pass`, and readiness projected
+    `production_cycle_history_smoke_evidence=pass` while overall readiness
+    remained `incomplete` because other release evidence was absent;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-architecture-boundary.test.js` (`64` tests);
+  - `npm run --silent check` (`150` runtime JS files covered);
+  - `npm test -- --test-reporter=spec` (`568` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`255` files, `3,289` nodes,
+    `12,728` edges; index up to date with older-engine advisory).
+- Remaining product work:
+  - browser richer older-cycle history controls still need product-grade UI;
+  - release-readiness remains advisory until Owner UI, central visual evidence,
+    platform Action Inbox/Web Push evidence, production smokes, reviewed targets,
+    and explicit release approvals are all present.
+
 ## 2026-06-15T12:30Z - Learning Cycle History Readback Boundary
 
 - Status: implemented and locally validated; commit/push follows this handoff

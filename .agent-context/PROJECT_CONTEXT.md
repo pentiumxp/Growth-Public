@@ -111,9 +111,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   records as `releaseReview.persistedApprovalKeys`, but approval records remain
   advisory evidence and never flip runtime config. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
-  required readiness check and treats production learner daily-cycle smoke
-  evidence as a separate required readiness check while still never calling
-  daily-loop or learner-cycle services from the release-readiness boundary. It now also has
+  required readiness check, treats production cycle-history smoke evidence as a
+  separate required readiness check, and treats production learner daily-cycle
+  smoke evidence as a separate required readiness check while still never
+  calling daily-loop, cycle-history, or learner-cycle services from the
+  release-readiness boundary. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
   `--stage-checkpoint-evidence` after
@@ -149,6 +151,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-learning-loop-state-smoke-evidence` after
   `npm run smoke:learning-loop-state` has produced bounded no-write production
   learning-loop state evidence, accepts
+  `--production-cycle-history-smoke-evidence` after
+  `npm run smoke:cycle-history` has produced bounded no-write production
+  cycle-history readback evidence, accepts
   `--production-profile-feedback-smoke-evidence` after
   `npm run smoke:profile-feedback` has produced bounded no-write completed-cycle
   profile-feedback evidence, accepts
@@ -168,9 +173,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
-  includes learning-loop state smoke, profile-feedback smoke, learner-cycle
-  audit smoke, stage-assessment readiness smoke, and proposal smoke in the
-  default task set, and now also collects the read-only
+  includes learning-loop state smoke, cycle-history smoke, profile-feedback
+  smoke, learner-cycle audit smoke, stage-assessment readiness smoke, and
+  proposal smoke in the default task set, and now also collects the read-only
   release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
@@ -187,9 +192,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   existing `scripts/smoke-growth-daily-loop.js` write gate instead of calling
   daily-loop services directly. The builder maps persisted approvals into the
   versioned bundle `releaseApproval` field only and maps profile-feedback smoke
-  into `productionProfileFeedbackSmokeEvidence`, controlled daily-loop write
-  smoke into `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit
-  smoke into `productionLearnerCycleSmokeEvidence`; it does not write
+  into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
+  `productionCycleHistorySmokeEvidence`, controlled daily-loop write smoke into
+  `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
+  `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
   release-readiness or scheduler permission. Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Scheduler dry-run now

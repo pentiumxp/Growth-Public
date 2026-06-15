@@ -671,8 +671,9 @@ Implemented backend shape:
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
-  learner-cycle audit, stage-assessment readiness, proposal smoke, and
-  read-only release approval bag projection in the default task set. It maps
+  cycle-history readback, read-only learner-cycle audit, stage-assessment
+  readiness, proposal smoke, and read-only release approval bag projection in
+  the default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
@@ -715,7 +716,9 @@ Required behavior:
   smoke evidence from `npm run smoke:planner-readiness`, production
   daily-loop preview smoke evidence from
   `npm run smoke:daily-loop-preview`, production learning-loop state smoke
-  evidence from `npm run smoke:learning-loop-state`, production controlled daily-loop
+  evidence from `npm run smoke:learning-loop-state`, production cycle-history
+  smoke evidence from `npm run smoke:cycle-history` or the default
+  `cycle_history` release-bundle task, production controlled daily-loop
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`
   or the explicit write-gated `daily_loop_write` release-bundle task,
@@ -764,6 +767,8 @@ Remaining release gaps:
   progress, and embedded shell;
 - production planner readiness smoke from `npm run smoke:planner-readiness`,
   production learning-loop state smoke from `npm run smoke:learning-loop-state`,
+  production cycle-history smoke from `npm run smoke:cycle-history` or the
+  default `cycle_history` release-bundle task,
   production controlled daily-loop draft/publish smoke from
   `npm run smoke:daily-loop` or the explicit `daily_loop_write`
   release-bundle task, production learner-cycle audit smoke from
