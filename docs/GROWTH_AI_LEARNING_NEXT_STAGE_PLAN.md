@@ -101,6 +101,11 @@ Growth already has substantial backend foundation:
   Owner-only `GET /api/v1/growth/learning-loop/state`, and
   `npm run smoke:learning-loop-state`, projecting compact summary-only status
   and next action without writes or model calls;
+- selectable historical-cycle readback through `learning-cycle-history-service`,
+  visible-target scoped `GET /api/v1/growth/learning-cycles/history`, and
+  `npm run smoke:cycle-history`, composing public plan/evidence/profile-delta/
+  correction readbacks plus optional completeness into bounded summary-only
+  cycle rows without writes or model calls;
 - Owner audit/correction smoke CLI for read-only cycle audit/completeness/
   evidence audit/profile-delta audit/correction readback and explicit
   `--allow-write` correction recording through the normal service graph;
@@ -118,8 +123,9 @@ evidence are not closed:
   provision creation/update, daily-loop draft/publish, audit correction, and
   current-cycle audit drilldown. Central `embedded-plugin-shell` visual
   evidence and production Owner-loop smoke exist for the Growth plugin shell;
-  richer older-cycle selection, formal checkpoint UI, and full automation
-  release evidence remain incomplete;
+  backend historical-cycle readback exists, while browser richer older-cycle
+  selection controls, formal checkpoint UI, and full automation release
+  evidence remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
@@ -162,8 +168,9 @@ The next implementation slices should be:
    Owner correction service. It also renders explicit
    `learning-cycles/audit` and `learning-cycles/completeness` drilldown for
    the current generated/completed card cycle, showing summary-only timeline,
-   findings, and missing-required evidence. Remaining closure is richer
-   older-cycle selection plus production release evidence.
+   findings, and missing-required evidence. Backend selectable cycle history is
+   available through `learning-cycle-history-service`; remaining closure is
+   browser older-cycle selection plus production release evidence.
 4. **Formal checkpoint separation**: expose readiness and activation for
    stage assessments as a separate Owner path. Daily plan publish must still
    block direct formal assessment publication.
@@ -260,6 +267,10 @@ Scope:
 8. After learner completion, refresh cycle audit, evidence audit,
    profile-delta audit, corrections, completeness, and next recommendation
    from service DTOs.
+9. For older cycles, use `GET /api/v1/growth/learning-cycles/history` to
+   choose a bounded historical cycle, then drill into audit/completeness by the
+   returned selectors. The browser must not reconstruct history by joining
+   audit DTOs locally.
 
 Required closure:
 

@@ -94,6 +94,11 @@ Implemented backend foundation:
   `GET /api/v1/growth/learning-cycles/audit`, composing bounded plan,
   evidence, profile-delta, correction, and plan publish-attempt readbacks into
   one timeline DTO for a card, evaluation, or plan draft;
+- selectable learning-cycle history through `learning-cycle-history-service`,
+  `GET /api/v1/growth/learning-cycles/history`, and
+  `npm run smoke:cycle-history`, composing public plan-audit, evidence-audit,
+  profile-delta-audit, correction, and optional completeness DTOs into
+  bounded summary-only rows for Owner history selection;
 - audit-completeness evaluation through `learning-audit-completeness-service`
   and `GET /api/v1/growth/learning-cycles/completeness`, which reads only the
   public cycle-audit DTO and reports whether required audit evidence is present
@@ -188,9 +193,10 @@ Important gaps:
 
 - embedded Owner UI now exposes planner draft preview, explicit plan publish,
   `growth.learningLoopState.v1`, context-level `ownerAudit`, Owner correction
-  writes, and current-card cycle audit/completeness drilldown. It still lacks
-  product-grade domain-pack/subject selection, provision controls, older-cycle
-  selection, and central production visual release evidence;
+  writes, and current-card cycle audit/completeness drilldown. Backend
+  selectable cycle history is available, but it still lacks product-grade
+  browser history selection controls and central production visual release
+  evidence;
 - production planner readiness smoke has not yet been run against real
   Gateway config for this planner UI rollout;
 - embedded weekly and stage-checkpoint UI remains future work, but the backend
@@ -282,9 +288,10 @@ card. The Owner `生成` tab can load context, show the compact
 `growth.learningLoopState.v1` state, draft a daily-loop plan, preview the
 selected item, explicitly publish one item, and refresh the board and loop
 state. It can also inspect the current generated/completed card through
-summary-only cycle audit/completeness drilldown. The remaining product-visible
-work for this package is to make the scope/provision controls and older-cycle
-selection complete and to produce central visual release evidence.
+summary-only cycle audit/completeness drilldown. The backend selectable
+cycle-history DTO is implemented. The remaining product-visible work for this
+package is to make browser older-cycle selection controls complete and to
+produce central visual release evidence.
 
 Required shape:
 
@@ -561,6 +568,7 @@ Failure policy:
 | Evidence ledger | `learning-evidence-ledger-service`, `evidence-ledger.js` | Summary-only unified learning evidence over source rows. | Implemented. |
 | Evidence audit readback | `learning-evidence-audit-service`, `evidence-ledger.js` | Projects persisted evidence-ledger rows into Owner-safe audit DTOs for context and the evidence-audit read route. | Implemented through `GET /api/v1/growth/evidence/audit`. |
 | Learning-cycle audit aggregate | `learning-cycle-audit-service` | Composes plan, plan publish-attempt, evidence, profile-delta, and correction public readbacks into one Owner-safe cycle DTO and timeline. | Implemented through `GET /api/v1/growth/learning-cycles/audit`. |
+| Learning-cycle history readback | `learning-cycle-history-service` | Composes public plan-audit, evidence-audit, profile-delta-audit, correction, and optional completeness readbacks into bounded summary-only cycle rows for Owner selection. | Implemented through `GET /api/v1/growth/learning-cycles/history` and `npm run smoke:cycle-history`. Browser richer history controls remain pending. |
 | Audit completeness readback | `learning-audit-completeness-service` | Evaluates required audit evidence over the public cycle DTO: published plan, publish-attempt visibility, evaluation evidence, profile-delta audit, downstream partial failures, and privacy projection. | Implemented through `GET /api/v1/growth/learning-cycles/completeness`. |
 | Profile V2 | `learning-profile-v2-service` | Read projection over ledger and optional legacy profile summary, including stale-evidence freshness and low-pressure review hints for stale claims. | Implemented. |
 | Profile delta audit | `learning-profile-delta-service`, `profile-delta-audits.js` | Post-evaluation before/after audit for Owner review, including changed capability state and evidence-freshness changes. | DTO and durable repository implemented. |
@@ -1114,6 +1122,7 @@ gate.
 | Owner audit readback context | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-card-generation-context-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner daily-loop backend facade | `node --test tests/learning-daily-loop-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Learning-cycle audit aggregate | `node --test tests/learning-cycle-audit-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
+| Learning-cycle history readback | `node --test tests/learning-cycle-history-service.test.js tests/growth-cycle-history-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` and `npm run smoke:cycle-history`; the CLI defaults to no-write summary-only history over the normal service graph. |
 | Audit completeness readback | `node --test tests/learning-audit-completeness-service.test.js tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Automation proposal | `node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-proposal-service.test.js tests/growth-automation-proposal-smoke-script.test.js tests/learning-audit-completeness-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` and `npm run smoke:proposal`; the CLI defaults to read-only list and gates create/review/publish with explicit `--allow-write`. |
 | Scheduler dry-run | `node --test tests/learning-automation-scheduler-service.test.js tests/learning-automation-proposal-service.test.js tests/learning-audit-completeness-service.test.js tests/learning-target-provisioning-service.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`; the AI-loop harness proves a completed Fanfan science accepted proposal becomes one read-only `would_publish` candidate. |

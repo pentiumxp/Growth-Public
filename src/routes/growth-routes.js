@@ -343,6 +343,15 @@ function normalizeLearningCycleAuditInput(url, target) {
   };
 }
 
+function normalizeLearningCycleHistoryInput(url, target) {
+  return Object.assign(normalizeLearningCycleAuditInput(url, target), {
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    includeCompleteness: url.searchParams.get("includeCompleteness") || url.searchParams.get("include_completeness") || ""
+  });
+}
+
 function normalizeAutomationProposalListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1024,6 +1033,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-cycles/audit") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningCycleAuditService.listCycleAudit(normalizeLearningCycleAuditInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-cycles/history") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningCycleHistoryService.listCycleHistory(normalizeLearningCycleHistoryInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

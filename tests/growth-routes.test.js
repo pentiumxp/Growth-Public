@@ -611,6 +611,102 @@ test("growth learning cycle audit route is limited to visible targets", async ()
   }
 });
 
+test("growth learning cycle history route is limited to visible targets", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningCycleHistoryService: {
+      listCycleHistory(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningCycleHistory.v1",
+          privacyClass: "summary_only",
+          target: { workspaceId: input.workspaceId, learnerId: input.learnerId },
+          summary: { cycleCount: 1 },
+          cycles: [{
+            cycleId: "ltask_route_1",
+            selectors: {
+              taskCardId: "ltask_route_1",
+              evaluationId: "eval_route_1",
+              targetNodeIds: input.targetNodeIds
+            },
+            completeness: { complete: true, readyForAutomation: true },
+            counts: { evidence: 1, profileDeltas: 1 },
+            latestActivityAt: "2026-06-15T08:10:00.000Z"
+          }]
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/learning-cycles/history?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&planDraftId=lgplan_route_1&taskCardId=ltask_route_1&evaluationId=eval_route_1&profileDeltaId=lgpdelta_route_1&evidenceId=lgevd_route_1&correctionId=lgcorr_route_1&sourceId=eval_route_1&targetNodeIds=kg_science_fair_test,kg_science_variables&includeCompleteness=false&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(ownerResponse.status, 200);
+    const ownerBody = await ownerResponse.json();
+    assert.equal(ownerBody.schemaVersion, "growth.learningCycleHistory.v1");
+    assert.equal(ownerBody.cycles[0].cycleId, "ltask_route_1");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      planDraftId: "lgplan_route_1",
+      taskCardId: "ltask_route_1",
+      evaluationId: "eval_route_1",
+      profileDeltaId: "lgpdelta_route_1",
+      evidenceId: "lgevd_route_1",
+      correctionId: "lgcorr_route_1",
+      sourceId: "eval_route_1",
+      targetNodeIds: ["kg_science_fair_test", "kg_science_variables"],
+      limit: "5",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      includeCompleteness: "false"
+    });
+
+    const memberResponse = await fetch(`${baseUrl}/api/v1/growth/learning-cycles/history?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberResponse.status, 403);
+    assert.equal((await memberResponse.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth learning cycle completeness route is limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

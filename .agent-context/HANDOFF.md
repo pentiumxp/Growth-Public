@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T12:30Z - Learning Cycle History Readback Boundary
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  backend readback, docs, and harness only.
+- Scope:
+  - added `learning-cycle-history-service`, a no-write summary-only service
+    that composes public plan-audit, evidence-audit, profile-delta-audit,
+    Owner-correction, and optional audit-completeness DTOs into selectable
+    `growth.learningCycleHistory.v1` cycle rows;
+  - added visible-target scoped
+    `GET /api/v1/growth/learning-cycles/history`;
+  - added `npm run smoke:cycle-history` through
+    `scripts/smoke-growth-cycle-history.js`;
+  - wired the service through `src/app/services.js`;
+  - added service, smoke-script, route, and architecture-boundary harnesses;
+  - the boundary remains read-only and must not import repositories, call
+    Gateway/model vendors, draft/publish plans, generate cards, evaluate
+    submissions, schedule work, deliver notifications, activate stage
+    assessments, mutate learner state, or expose raw learner answers,
+    transcripts, prompts, model output, source-document bodies, private paths,
+    credentials, cookies, tokens, or provider config.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent smoke:cycle-history -- --workspace-id weixin_fanfan --learner-id fanfan --limit 3 --json`;
+  - `node --test tests/learning-cycle-history-service.test.js tests/growth-cycle-history-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` (`75` tests);
+  - `npm run --silent check` (`150` runtime JS files covered);
+  - `npm test -- --test-reporter=spec` (`567` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`255` files, `3,289` nodes,
+    `12,727` edges; index up to date with older-engine advisory).
+- Remaining product work:
+  - browser richer older-cycle history controls should call
+    `learning-cycles/history` to select a historical cycle, then drill into
+    `learning-cycles/audit` and `learning-cycles/completeness` using the
+    returned selectors;
+  - formal checkpoint UI, proposal/digest/action/execution UI, central visual
+    evidence, production smokes, and release evidence remain later slices.
+
 ## 2026-06-15T12:07Z - Completed-Cycle Profile Feedback Evidence Boundary
 
 - Status: implemented and locally validated; commit/push follows this handoff

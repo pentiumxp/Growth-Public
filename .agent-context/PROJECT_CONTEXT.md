@@ -322,6 +322,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   evidence, profile-delta, and Owner-correction readbacks into bounded counts
   and a timeline for one card/evaluation/plan without route-level table access
   or raw private payload projection.
+  Selectable learning-cycle history is now implemented through
+  `learning-cycle-history-service`, visible-target scoped
+  `GET /api/v1/growth/learning-cycles/history`, and
+  `npm run smoke:cycle-history`; it composes public plan-audit,
+  evidence-audit, profile-delta-audit, correction, and optional completeness
+  DTOs into bounded `growth.learningCycleHistory.v1` rows for Owner history
+  selection without writes, Gateway calls, direct repository access,
+  publication, generation, evaluation, scheduling, notification delivery,
+  stage activation, or learner-state mutation.
   Audit-completeness readback is now implemented through
   `learning-audit-completeness-service` and visible-target scoped
   `GET /api/v1/growth/learning-cycles/completeness`; it evaluates the public

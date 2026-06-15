@@ -168,6 +168,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningPlanAuditService/);
   assert.match(services, /createLearningCycleAuditService/);
   assert.match(services, /learningCycleAuditService/);
+  assert.match(services, /createLearningCycleHistoryService/);
+  assert.match(services, /learningCycleHistoryService/);
   assert.match(services, /createLearningAuditCompletenessService/);
   assert.match(services, /learningAuditCompletenessService/);
   assert.match(services, /createLearningDailyLoopService/);
@@ -210,6 +212,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /ownerCorrectionService: learningOwnerCorrectionService/);
   assert.match(services, /cycleAuditService: learningCycleAuditService/);
   assert.match(services, /auditCompletenessService: learningAuditCompletenessService/);
+  assert.match(services, /const learningCycleHistoryService = createLearningCycleHistoryService/);
+  assert.match(services, /learningCycleHistoryService,\n    learningDailyLoopService/);
   assert.match(services, /contextService: learningCardGenerationContextService/);
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
@@ -317,6 +321,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /learningEvidenceAuditService\.listEvidenceAudit/);
   assert.match(routes, /learningPlanAuditService\.listPlanDrafts/);
   assert.match(routes, /learningCycleAuditService\.listCycleAudit/);
+  assert.match(routes, /learningCycleHistoryService\.listCycleHistory/);
   assert.match(routes, /learningAuditCompletenessService\.evaluateCycleCompleteness/);
   assert.match(routes, /learningAutomationProposalService\.createProposal/);
   assert.match(routes, /learningAutomationProposalService\.listProposals/);
@@ -432,6 +437,25 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(cycleAuditService, /learning_growth_/);
   assert.doesNotMatch(cycleAuditService, /rawAnswer:/);
   assert.doesNotMatch(cycleAuditService, /rawPrompt:/);
+
+  const cycleHistoryService = read(path.join("src", "services", "learning-cycle-history-service.js"));
+  assert.match(cycleHistoryService, /createLearningCycleHistoryService/);
+  assert.match(cycleHistoryService, /listCycleHistory/);
+  assert.match(cycleHistoryService, /listPlanDrafts/);
+  assert.match(cycleHistoryService, /listEvidenceAudit/);
+  assert.match(cycleHistoryService, /listProfileDeltas/);
+  assert.match(cycleHistoryService, /listCorrections/);
+  assert.match(cycleHistoryService, /evaluateCycleCompleteness/);
+  assert.match(cycleHistoryService, /growth\.learningCycleHistory\.v1/);
+  assert.match(cycleHistoryService, /summary_only/);
+  assert.doesNotMatch(cycleHistoryService, /learning_growth_/);
+  assert.doesNotMatch(cycleHistoryService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(cycleHistoryService, /publishPlanItem/);
+  assert.doesNotMatch(cycleHistoryService, /generateCard/);
+  assert.doesNotMatch(cycleHistoryService, /processEvaluationJob/);
+  assert.doesNotMatch(cycleHistoryService, /activateStageAssessment/);
+  assert.doesNotMatch(cycleHistoryService, /rawAnswer:/);
+  assert.doesNotMatch(cycleHistoryService, /rawPrompt:/);
 
   const auditCompletenessService = read(path.join("src", "services", "learning-audit-completeness-service.js"));
   assert.match(auditCompletenessService, /evaluateCycleCompleteness/);

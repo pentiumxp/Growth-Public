@@ -482,7 +482,10 @@ single-cycle query and calls
 `GET /api/v1/growth/learning-cycles/audit` plus
 `GET /api/v1/growth/learning-cycles/completeness` through the browser API
 client. It renders only summary counts, timeline rows, completeness findings,
-and missing-required state.
+and missing-required state. Backend selectable history is implemented through
+`learning-cycle-history-service`, `GET /api/v1/growth/learning-cycles/history`,
+and `npm run smoke:cycle-history`; the browser still needs richer controls for
+choosing older cycles from that DTO.
 
 Required shape:
 
@@ -493,8 +496,9 @@ Required shape:
 - UI privacy tests reject raw answers, transcripts, prompts, model output,
   source bodies, private paths, credentials, and provider configuration.
 
-Remaining Package 2 work: richer selection/history controls for choosing older
-cycles after the current generated-card cycle is no longer the primary context.
+Remaining Package 2 work: browser richer selection/history controls for
+choosing older cycles after the current generated-card cycle is no longer the
+primary context.
 Central `embedded-plugin-shell` visual evidence already passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production with no-write Owner-loop smoke. Full automation
@@ -615,6 +619,7 @@ Minimum harness by boundary:
 | Route boundary | Owner/workspace authorization, visible-target allow/deny, bounded input normalization, and route-as-glue architecture. |
 | Vertical loop | Fanfan science daily path from plan draft to card publish, learner evidence, evaluation, ledger, Profile V2, profile delta, profile-feedback evidence, and next loop-state readback. |
 | Profile feedback evidence | `tests/learning-profile-feedback-evidence-service.test.js`, `tests/growth-profile-feedback-smoke-script.test.js`, the Fanfan science post-cycle assertion in `tests/learning-card-ai-loop-harness.test.js`, and `npm run smoke:profile-feedback` prove completed-cycle audit/evidence/profile-delta/Profile V2/recommendation/next-state readback without Gateway calls or writes. |
+| Cycle history readback | `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, route/architecture guards, and `npm run smoke:cycle-history` prove selectable historical-cycle readback from public audit services without Gateway calls, writes, direct repository access, publication, generation, evaluation, scheduling, notification, stage activation, or learner-state mutation. |
 | Learner daily-cycle smoke | `tests/growth-learner-cycle-smoke-script.test.js` and `npm run smoke:learner-cycle` prove the service-owned submit -> evaluate -> reflect -> audit path. The CLI defaults to no-write audit, requires `--allow-write` for learner-state writes, and returns summary-only ids/status/counts/findings without learner text, transcripts, raw prompts, answer keys, raw model output, credentials, or provider config. |
 | Owner audit/correction | `tests/growth-owner-audit-smoke-script.test.js` and `npm run smoke:owner-audit` prove read-only cycle audit/completeness/correction readback by default, explicit `--allow-write` before correction writes, privacy-risk input rejection, and no direct repository, Gateway, generation, evaluation, scheduler, notification, or stage-activation calls from the CLI. |
 | Non-sample loop | Visible but unprovisioned target blocks before model calls; explicit provision enables; wrong subject blocks; target workspace owns rows. |
@@ -636,7 +641,7 @@ git diff --check
 The current backend foundation already includes the main service boundaries
 for graph import, card authoring, evaluation, evidence ledger, Profile V2,
 profile-delta audit, profile-feedback evidence, plan draft/publish, cycle
-audit, audit completeness, Owner daily-loop facade, supervised proposals,
+audit, cycle history, audit completeness, Owner daily-loop facade, supervised proposals,
 scheduler dry-run, automation digests, failure policy, action handoff, and
 default-disabled Owner-explicit scheduler execution.
 
@@ -658,8 +663,11 @@ draft/publish path:
   drilldown over `learning-cycles/audit` and `learning-cycles/completeness`,
   using summary-only timeline/findings and keeping `readyForAutomation` as
   evidence only, not an automation permission.
+- backend `learning-cycles/history` now returns selectable summary-only cycle
+  rows for older-cycle history controls, but the browser control itself remains
+  a later product slice.
 
-The product is not complete because it still lacks older-cycle selection UI,
+The product is not complete because it still lacks browser older-cycle selection UI,
 proposal/digest/action UI, central visual evidence, platform action evidence,
 and execution enablement evidence. Scope/provision controls now exist in the
 Owner `生成` tab over the Growth context and domain-pack provision service
@@ -668,9 +676,10 @@ facades.
 Therefore the recommended next product-visible slice is still:
 
 1. finish Owner-supervised daily UI details over the existing daily-loop
-   facade, especially older-cycle selection and production visual evidence;
+   facade, especially browser older-cycle selection and production visual
+   evidence;
 2. then add older-cycle selection/history controls over the implemented
-   current-card cycle/completeness drilldown;
+   history/audit/completeness readbacks;
 3. then harden formal checkpoint controls;
 4. then generalize target/domain-pack UI beyond the current explicit provision
    controls and service harness;

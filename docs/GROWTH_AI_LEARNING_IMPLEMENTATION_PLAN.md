@@ -113,8 +113,8 @@ AI-driven loop:
 - Profile V2 projection with daily versus formal evidence freshness;
 - planner context, Gateway planner client, validation, draft persistence,
   publish bridge, and no-write planner readiness smoke;
-- plan audit, cycle audit, audit completeness, profile-delta audit, and Owner
-  correction readback services and routes;
+- plan audit, cycle audit, selectable cycle history, audit completeness,
+  profile-delta audit, and Owner correction readback services and routes;
 - Owner daily-loop backend facade for preview, draft, and publish;
 - service-level Fanfan science vertical harness from planner draft through
   card publication, learner evidence, evaluation, ledger, Profile V2, and
@@ -160,7 +160,7 @@ amount of code that already exists.
 | --- | --- | --- |
 | W1: Scope, graph, and provisioning | Owner selects an authorized learner, domain pack, domain, subject, horizon, and time budget. | View-target authorization, explicit provision checks, graph option projection, wrong-subject blocking, and target-workspace row ownership are covered by service, route, and vertical harnesses. |
 | W2: Daily learning action | Owner publishes one low-pressure daily card and learner completes it. | `daily_score_once`, one submission, one evaluation, one optional reflection, audio record/playback, score-proportional reward, visible progress, and visible failure state are covered by backend and UI harnesses. |
-| W3: Audit, profile, and correction | Owner can explain what happened and adjust future learning evidence. | Evidence ledger, Profile V2, profile delta, cycle audit, audit completeness, correction read/write, privacy projection, next recommendation, post-cycle `growth.learningLoopState.v1`, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs. |
+| W3: Audit, profile, and correction | Owner can explain what happened and adjust future learning evidence. | Evidence ledger, Profile V2, profile delta, cycle audit, selectable cycle history, audit completeness, correction read/write, privacy projection, next recommendation, post-cycle `growth.learningLoopState.v1`, `npm run smoke:cycle-history`, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs. |
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
@@ -279,6 +279,7 @@ Implementation implication:
 | Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? | `learning-profile-feedback-evidence-service`, `scripts/smoke-growth-profile-feedback.js`. |
 | Owner correction | What did Owner confirm or correct? | `learning-owner-correction-service`, evidence ledger correction rows. |
 | Cycle audit | Can this card/evaluation/plan cycle explain itself? | `learning-cycle-audit-service`. |
+| Cycle history | Which previous cycle should Owner inspect next? | `learning-cycle-history-service`, `scripts/smoke-growth-cycle-history.js`. |
 | Audit completeness | Is the previous cycle safe to use as automation input? | `learning-audit-completeness-service`. |
 | Automation proposal | What next action is proposed from an auditable source cycle? | `learning-automation-proposal-service`, `automation-proposals.js`. |
 | Scheduler dry-run | What would publish if scheduling were allowed? | `learning-automation-scheduler-service`. |
@@ -362,6 +363,9 @@ Required behavior:
 - render plan reason, evidence basis, publish attempt state, generated card
   link, evaluation summary, evidence ledger ids, Profile V2, profile delta,
   stale-evidence changes, correction history, and next recommendation;
+- render older-cycle history by selecting from
+  `learning-cycle-history-service` rows, then drilling into audit and
+  completeness through returned selectors;
 - add bounded Owner corrections through
   `learning-owner-correction-service`;
 - show audit completeness status for later proposal/scheduling input;
@@ -371,13 +375,16 @@ Required behavior:
 Required harness:
 
 - `tests/learning-cycle-audit-service.test.js`;
+- `tests/learning-cycle-history-service.test.js`;
 - `tests/learning-audit-completeness-service.test.js`;
 - `tests/learning-profile-delta-audit-service.test.js`;
 - `tests/learning-evidence-audit-service.test.js`;
 - `tests/learning-plan-audit-service.test.js`;
 - `tests/learning-owner-correction-service.test.js`;
 - `tests/learning-profile-feedback-evidence-service.test.js`;
+- `tests/growth-cycle-history-smoke-script.test.js`;
 - `tests/growth-owner-audit-smoke-script.test.js`;
+- `npm run smoke:cycle-history` for selectable historical-cycle readback;
 - `npm run smoke:owner-audit` for local or production service-graph evidence;
 - `npm run smoke:profile-feedback` for completed-cycle profile/evidence
   feedback readback;

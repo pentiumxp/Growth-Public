@@ -452,6 +452,10 @@ milestone:
 - bounded learning-cycle audit aggregate and visible-target scoped
   `GET /api/v1/growth/learning-cycles/audit` for one card/evaluation/plan
   cycle;
+- selectable learning-cycle history readback and visible-target scoped
+  `GET /api/v1/growth/learning-cycles/history`, plus
+  `npm run smoke:cycle-history`, for bounded Owner history selection without
+  writes or model calls;
 - Profile V2 projection with source-specific stale-evidence freshness;
 - planner context, Gateway planner client, plan validation, draft persistence,
   publish bridge, and no-write readiness smoke;
@@ -898,9 +902,10 @@ cards and failed/blocked publish attempts:
 4. Add progress and visible error states for every async action.
 5. Render `publishAttempt` from plan/cycle audit DTOs when a draft stays
    unpublished after a failed or blocked publish action.
-6. Use `GET /api/v1/growth/learning-cycles/completeness` in audit drilldown
-   to show whether the previous cycle has enough evidence for trusted
-   follow-up.
+6. Use `GET /api/v1/growth/learning-cycles/history` for older-cycle
+   selection, then use `GET /api/v1/growth/learning-cycles/completeness` in
+   audit drilldown to show whether the selected cycle has enough evidence for
+   trusted follow-up.
 7. Add focused frontend adapter/layout tests.
 8. Run the central visual harness before production deploy.
 
@@ -909,10 +914,10 @@ Ready-to-start contract for this slice:
 | Item | Required shape |
 | --- | --- |
 | Inputs | Owner actor role, selected target workspace, `learnerId`, `domainPackId`, `domain`, `subject`, `horizon`, `availableMinutes`, and optional target nodes. |
-| Existing backend routes | `GET /api/v1/growth/learning-loop/state`, `GET /api/v1/growth/daily-loop/preview`, `POST /api/v1/growth/daily-loop/draft`, `POST /api/v1/growth/daily-loop/publish`, plus drilldown routes `GET /api/v1/growth/card-generation/context`, `GET /api/v1/growth/learning-plans/audit`, `GET /api/v1/growth/evidence/audit`, `GET /api/v1/growth/profile-delta-audits`, `GET /api/v1/growth/profile-corrections`, `GET /api/v1/growth/learning-cycles/audit`, and `GET /api/v1/growth/learning-cycles/completeness`. |
-| UI outputs | Compact loop status, one next action, readiness summary, validated plan preview, explicit publish action, generated card link, latest publish-attempt state, audit refresh state, and bounded next-step recommendation. |
+| Existing backend routes | `GET /api/v1/growth/learning-loop/state`, `GET /api/v1/growth/daily-loop/preview`, `POST /api/v1/growth/daily-loop/draft`, `POST /api/v1/growth/daily-loop/publish`, plus drilldown routes `GET /api/v1/growth/card-generation/context`, `GET /api/v1/growth/learning-plans/audit`, `GET /api/v1/growth/evidence/audit`, `GET /api/v1/growth/profile-delta-audits`, `GET /api/v1/growth/profile-corrections`, `GET /api/v1/growth/learning-cycles/audit`, `GET /api/v1/growth/learning-cycles/history`, and `GET /api/v1/growth/learning-cycles/completeness`. |
+| UI outputs | Compact loop status, one next action, readiness summary, validated plan preview, explicit publish action, generated card link, latest publish-attempt state, audit refresh state, older-cycle history selector, and bounded next-step recommendation. |
 | Failure states | Authorization failure, target not visible, target not provisioned, no graph options, Gateway not ready, invalid plan draft, blocked formal-assessment direct publish, authoring failure, DB rollback, publish-attempt failure, and audit-completeness missing evidence. |
-| Harness | `tests/learning-loop-state-service.test.js`, `tests/growth-learning-loop-state-smoke-script.test.js`, `tests/learning-daily-loop-service.test.js`, service/route tests for touched behavior, `tests/growth-frontend-adapter.test.js`, `tests/growth-embedded-layout.test.js`, docs-locality checks, broad local gate, and central embedded-plugin visual harness before deployment. |
+| Harness | `tests/learning-loop-state-service.test.js`, `tests/growth-learning-loop-state-smoke-script.test.js`, `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, `tests/learning-daily-loop-service.test.js`, service/route tests for touched behavior, `tests/growth-frontend-adapter.test.js`, `tests/growth-embedded-layout.test.js`, docs-locality checks, broad local gate, and central embedded-plugin visual harness before deployment. |
 
 Backend status: the learning-loop state readback and daily-loop
 preview/draft/publish facade are implemented and covered by service, smoke,
