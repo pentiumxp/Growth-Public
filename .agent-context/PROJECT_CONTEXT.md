@@ -216,6 +216,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `dryRun=true`, `writePlanned=false`, `writesPerformed=false`, and
   `publishPlanned=false`; it must not publish, record proposal execution,
   notify, enqueue, call Gateway, or activate stage assessments.
+  `npm run smoke:digest` is the service-owned operational smoke for this
+  boundary: `list` is the default read-only operation, `get` is read-only, and
+  `create`/`review` require explicit `--allow-write` while delegating only to
+  `learning-automation-digest-service`.
   The automation failure-policy backend is now implemented through
   `learning-automation-failure-policy-service`,
   `automation-failure-policies.js`,

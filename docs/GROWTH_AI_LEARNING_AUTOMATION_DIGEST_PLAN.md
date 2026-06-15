@@ -24,6 +24,7 @@ Backend status:
   `POST /api/v1/growth/automation/digests`, and
   `POST /api/v1/growth/automation/digests/:digestId/review` are implemented
   locally;
+- service-owned `npm run smoke:digest` is implemented locally;
 - focused repository, service, route, and architecture harnesses are added;
 - rollback/failure policy backend is implemented locally through
   `learning-automation-failure-policy-service`,
@@ -181,6 +182,63 @@ Routes must not:
 - start a scheduler;
 - calculate Profile V2 or audit completeness in route code.
 
+## Operational Smoke CLI
+
+The service-owned smoke entry is:
+
+```bash
+npm run smoke:digest -- --operation list --workspace-id <workspace>
+```
+
+It instantiates the normal Growth service graph and delegates only to
+`learningAutomationDigestService`.
+
+Supported operations:
+
+| Operation | Write gate | Service method | Purpose |
+| --- | --- | --- | --- |
+| `list` | None; this is the default. | `listDigests(input)` | Read-only scoped digest listing. |
+| `get` | None; requires `--digest-id`. | `getDigest(input)` | Read-only exact digest readback. |
+| `create` | Requires `--allow-write`. | `createDigest(input)` | Runs the service-owned scheduler dry-run path and persists a summary-only pending digest only when dry-run flags remain non-writeful. |
+| `review` | Requires `--allow-write` and `--digest-id`. | `reviewDigest(input)` | Marks a pending digest reviewed, archived, or superseded with bounded Owner review metadata. |
+
+Example read-only list:
+
+```bash
+npm run smoke:digest -- --workspace-id fanfan --learner-id fanfan --program-id default
+```
+
+Example write-gated digest creation:
+
+```bash
+npm run smoke:digest -- \
+  --operation create \
+  --workspace-id fanfan \
+  --learner-id fanfan \
+  --program-id default \
+  --domain-pack-id uk-hk-curriculum-foundation \
+  --domain science \
+  --subject science \
+  --allow-write
+```
+
+Example write-gated review:
+
+```bash
+npm run smoke:digest -- \
+  --operation review \
+  --workspace-id fanfan \
+  --digest-id <digest-id> \
+  --status reviewed \
+  --allow-write
+```
+
+The CLI must not import repositories directly, inspect `learning_growth_`
+tables, call Gateway, draft or publish plans, generate cards, evaluate learner
+submissions, record proposal execution, execute scheduler actions, run
+scheduler ticks, deliver notifications or action handoffs, enqueue workers,
+activate stage assessments, or act as a deployment or release switch.
+
 ## Create Digest Flow
 
 `POST /api/v1/growth/automation/digests` should:
@@ -333,6 +391,11 @@ Architecture harness:
 - it must not import Gateway clients, model vendor clients, card generation,
   plan publisher publish functions, notification clients, Action Inbox clients,
   or stage-assessment activation paths.
+- smoke CLI delegates only to `learningAutomationDigestService`, keeps `list`
+  and `get` read-only, requires explicit `--allow-write` for `create` and
+  `review`, and does not call Gateway, publication, evaluation, scheduler
+  execution, scheduler ticks, action handoff, stage assessment activation, or
+  repositories directly.
 
 UI harness, when implemented:
 
@@ -348,9 +411,11 @@ Minimum command group for the future backend slice:
 ```bash
 node --test tests/learning-automation-digest-repository.test.js \
   tests/learning-automation-digest-service.test.js \
+  tests/growth-automation-digest-smoke-script.test.js \
   tests/learning-automation-scheduler-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-architecture-boundary.test.js
+npm run smoke:digest
 node scripts/check-growth-docs-locality.js
 node --test tests/growth-docs-locality.test.js
 git diff --check
