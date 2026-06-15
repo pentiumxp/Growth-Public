@@ -83,10 +83,14 @@ backend boundaries:
   summarizes product, platform, visual, automation UI, action-handoff smoke,
   scheduler-execution smoke, scheduler-run smoke, cycle-history smoke,
   daily-loop write-smoke, dry-run, worker-target smoke, reviewed-target, config,
-  bundle self-audit, collection-run, and approval evidence, but it must not
-  call Gateway, daily-loop services, cycle-history services, publish,
-  evaluate, schedule, activate stage assessments, deliver notifications, or
-  mutate learner state. Release collection runs are separate summary-only audit
+  bundle self-audit, collection-run, and approval evidence, and now projects a
+  summary-only `evidenceReadback` catalog over every readiness check plus the
+  bounded source bundle summary. Snapshot persistence stores that catalog in
+  `learning_growth_automation_release_readiness.evidence_readback_json` for
+  Owner/release audit readback. Release readiness must not call Gateway,
+  daily-loop services, cycle-history services, publish, evaluate, schedule,
+  activate stage assessments, deliver notifications, or mutate learner state.
+  Release collection runs are separate summary-only audit
   rows: they persist a completed bundle/audit/readiness collection result,
   never run smoke tasks from the route or service, and never open scheduling
   permission. Release decisions are separate Owner audit records after a
@@ -173,9 +177,12 @@ full operating loop:
   `--allow-write` before recording a correction through
   `learning-owner-correction-service.recordCorrection`;
 - no-write release-readiness smoke/snapshot CLI is implemented locally through
-  `npm run smoke:release-readiness`; production evidence collection still
-  requires explicit Owner/platform/visual evidence and `--write-snapshot` only
-  records a summary-only advisory snapshot;
+  `npm run smoke:release-readiness`; it accepts bounded source bundle metadata
+  as `evidenceBundleReadback`, service output includes summary-only
+  `evidenceReadback` over present/missing checks, and `--write-snapshot`
+  persists that catalog in `evidence_readback_json`. Production evidence
+  collection still requires explicit Owner/platform/visual evidence and
+  `--write-snapshot` only records a summary-only advisory snapshot;
 - read-only scheduler dry-run smoke CLI is implemented locally through
   `npm run smoke:scheduler-dry-run`; it delegates to
   `learning-automation-scheduler-service.dryRun`, defaults to no-write

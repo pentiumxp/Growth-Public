@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T21:37Z - Release Readiness Evidence Readback Catalog Projection
+
+- Status: implemented and validated locally. This slice is
+  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-readiness-service` now returns summary-only
+    `evidenceReadback`
+    (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with
+    source bundle readback, present/missing counts, missing check keys, and
+    bounded per-check evidence references;
+  - `scripts/smoke-growth-release-readiness.js` now projects bounded
+    `evidenceBundleReadback` from versioned
+    `growth.learningAutomationReleaseEvidenceBundle.v1` inputs into the
+    readiness service;
+  - `automation-release-readiness.js` now creates/migrates
+    `learning_growth_automation_release_readiness.evidence_readback_json` and
+    public snapshots expose `evidenceReadback`;
+  - repository privacy scanning now rejects private path/token-like string
+    values as well as risky keys, so direct repository writes cannot persist
+    private readback values;
+  - readiness semantics remain unchanged: `evidenceReadback` is audit/readback
+    data only and cannot change status, runtime config, scheduler permission,
+    Owner approval, Gateway behavior, publication, evaluation, or learner state.
+- Changed files:
+  - `src/services/learning-automation-release-readiness-service.js`;
+  - `src/stores/growth-learning-sqlite/automation-release-readiness.js`;
+  - `scripts/smoke-growth-release-readiness.js`;
+  - `tests/learning-automation-release-readiness-service.test.js`;
+  - `tests/learning-automation-release-readiness-repository.test.js`;
+  - `tests/growth-release-readiness-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - focused syntax plus release-readiness service/repository/CLI/architecture
+    harness: `48` tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `node --test tests/growth-docs-locality.test.js tests/learning-automation-release-readiness-service.test.js tests/learning-automation-release-readiness-repository.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    (`49` tests);
+  - no-tab quick check over changed release-readiness script/test files plus
+    focused smoke/architecture rerun (`37` tests);
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`724` tests);
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops evidence ledger append id
+    `evidence-aa85d9d3-4063-42ad-b32a-8ae36cf8b714`;
+  - CodeGraph status: `321` indexed files, `4182` nodes, `16327` edges.
+- Remaining product work:
+  - commit and push this slice;
+  - continue from backend release-readiness readback into the next
+    product-visible Owner/release status surface or production evidence
+    collection slice;
+  - collect real production visual/action/scheduler/package/dashboard evidence
+    before any runtime enablement.
+
 ## 2026-06-15T21:20Z - Release Authorization/Closure Package Dashboard Readback Projection
 
 - Status: implemented and validated locally. This slice is

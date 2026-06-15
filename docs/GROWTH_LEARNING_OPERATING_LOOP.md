@@ -1744,7 +1744,14 @@ Implementation progress on 2026-06-15:
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
-  review and do not enable scheduling or execution.
+  review and do not enable scheduling or execution. The same output now includes
+  summary-only `evidenceReadback`
+  (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
+  bundle readback, present/missing counts, missing check keys, and bounded
+  per-check evidence references. Owner snapshots persist this catalog in
+  `learning_growth_automation_release_readiness.evidence_readback_json`; it is
+  audit/readback data only and cannot change runtime config, scheduling, card
+  publication, evaluation, or learner state.
 
 The next product-completeness slice is embedded UI and production readiness:
 

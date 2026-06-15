@@ -113,7 +113,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `blockedCheckKeys`, `missingEvidenceKeys`, `requiredActionCount`,
   `requiredActions`, and `nextAction` so Owner/release tooling can see what
   evidence remains without walking raw checks. Approval records and remediation
-  remain advisory evidence and never flip runtime config. It now treats
+  remain advisory evidence and never flip runtime config. Release-readiness also
+  projects summary-only `evidenceReadback`
+  (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
+  bundle readback, present/missing counts, missing check keys, and bounded
+  per-check evidence references. Owner snapshots persist that readback in
+  `learning_growth_automation_release_readiness.evidence_readback_json`, and
+  repository privacy scanning rejects private path/token-like values even when a
+  caller bypasses the service. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle

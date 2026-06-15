@@ -181,6 +181,17 @@ test("automation release readiness service returns ready-for-review only when al
   assert.deepEqual(result.releaseReview.blockedCheckKeys, []);
   assert.deepEqual(result.releaseReview.missingEvidenceKeys, []);
   assert.equal(result.releaseReview.nextAction, null);
+  assert.equal(result.evidenceReadback.schemaVersion, "growth.learningAutomationReleaseReadiness.evidenceReadback.v1");
+  assert.equal(result.evidenceReadback.summaryOnly, true);
+  assert.equal(result.evidenceReadback.presentCount, 27);
+  assert.equal(result.evidenceReadback.missingCount, 0);
+  assert.equal(result.evidenceReadback.writefulSchedulingAllowed, false);
+  assert.equal(result.evidenceReadback.sourceBundle, null);
+  const ownerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
+  assert.equal(ownerDailyEvidence.checkKey, "owner_daily_ui_evidence");
+  assert.equal(ownerDailyEvidence.evidencePresent, true);
+  assert.equal(ownerDailyEvidence.evidenceId, "ui_daily");
+  assert.equal(ownerDailyEvidence.evidenceStatus, "pass");
   assert.equal(result.checks.find((item) => item.key === "automation_digest_ui_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_proposal_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "automation_action_handoff_ui_evidence").status, "pass");
@@ -234,6 +245,12 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.releaseReview.missingCheckKeys.includes("active_failure_policy"), true);
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("active_failure_policy"), false);
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
+  assert.equal(result.evidenceReadback.presentCount, 0);
+  assert.equal(result.evidenceReadback.missingCount, 27);
+  assert.equal(result.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
+  const missingOwnerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
+  assert.equal(missingOwnerDailyEvidence.evidencePresent, false);
+  assert.equal(missingOwnerDailyEvidence.checkStatus, "missing");
   const activeFailurePolicyAction = result.releaseReview.requiredActions.find((item) => item.key === "active_failure_policy");
   assert.equal(activeFailurePolicyAction.action, "activate_failure_policy");
   assert.equal(activeFailurePolicyAction.endpoint, "/api/v1/growth/automation/failure-policies");
@@ -419,10 +436,13 @@ test("automation release readiness service creates summary-only snapshots and li
   assert.equal(created.snapshot.readinessId, "lgarel_ready_1");
   assert.equal(created.snapshot.status, "ready_for_release_review");
   assert.equal(created.snapshot.summary.writefulSchedulingAllowed, false);
+  assert.equal(created.snapshot.evidenceReadback.summaryOnly, true);
+  assert.equal(created.snapshot.evidenceReadback.presentCount, 27);
   assert.equal(calls.at(-1).type, "saveSnapshot");
   assert.equal(calls.at(-1).input.privacyClass, "summary_only");
   assert.equal(calls.at(-1).input.releaseReview.requiredActionCount, 0);
   assert.deepEqual(calls.at(-1).input.releaseReview.requiredActions, []);
+  assert.equal(calls.at(-1).input.evidenceReadback.items.find((item) => item.key === "centralVisualEvidence").evidencePresent, true);
 
   const listed = service.listSnapshots(scope());
   assert.equal(listed.ok, true);
@@ -437,6 +457,18 @@ test("automation release readiness service fails closed for privacy-risk input a
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_readiness_privacy_failed");
   assert.equal(privacy.privacyFindings.includes("$.rawPrompt"), true);
+
+  const privatePath = createService().service.evaluateReadiness(Object.assign(scope(), {
+    evidence: {
+      ownerDailyUiEvidence: {
+        ok: true,
+        evidenceId: "/Users/hermes-dev/private-artifact.json"
+      }
+    }
+  }));
+  assert.equal(privatePath.ok, false);
+  assert.equal(privatePath.error, "learning_automation_release_readiness_privacy_failed");
+  assert.equal(privatePath.privacyFindings.includes("$.evidence.ownerDailyUiEvidence.evidenceId"), true);
 
   const missingRepository = createLearningAutomationReleaseReadinessService({});
   assert.equal(missingRepository.createSnapshot(scope()).error, "learning_automation_release_readiness_repository_unavailable");

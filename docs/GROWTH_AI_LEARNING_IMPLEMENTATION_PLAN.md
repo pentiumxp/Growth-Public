@@ -131,9 +131,12 @@ AI-driven loop:
   target service stores summary-only proposed/enabled/disabled/archived target
   rows and treats environment JSON targets as local fallback rather than
   production approval;
-- release-readiness evidence backend for summary-only readiness evaluation and
-  Owner-created snapshots. This boundary is advisory, keeps
-  `writefulSchedulingAllowed=false`, and is not a runtime release switch;
+- release-readiness evidence backend for summary-only readiness evaluation,
+  bounded `evidenceReadback` catalog projection, and Owner-created snapshots.
+  Snapshots persist the readback catalog in
+  `learning_growth_automation_release_readiness.evidence_readback_json`. This
+  boundary is advisory, keeps `writefulSchedulingAllowed=false`, and is not a
+  runtime release switch;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one
@@ -170,7 +173,7 @@ amount of code that already exists.
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
-| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
+| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks plus persisted `evidenceReadback`, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
 
 Sequencing rule:
 

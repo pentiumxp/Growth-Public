@@ -13,6 +13,7 @@ function asArray(value) {
 }
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|access-key\.txt|launch-token)/i;
 
 function scanPrivacy(value, path = "$", findings = []) {
   if (!value || typeof value !== "object") return findings;
@@ -23,6 +24,7 @@ function scanPrivacy(value, path = "$", findings = []) {
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
+    if (typeof child === "string" && PRIVATE_VALUE_PATTERN.test(child)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
   }
   return findings;
@@ -88,10 +90,14 @@ function evidenceRef(input = {}, key) {
   const value = input[key] ?? bag[key];
   if (!value || typeof value !== "object") return {};
   return {
-    evidenceId: cleanString(value.evidenceId || value.evidence_id || value.id),
-    status: cleanString(value.status || (value.ok === true ? "pass" : "")),
-    observedAt: cleanString(value.observedAt || value.observed_at || value.createdAt || value.created_at),
-    source: cleanString(value.source)
+    schemaVersion: boundedString(value.schemaVersion || value.schema_version, 160),
+    evidenceId: boundedString(value.evidenceId || value.evidence_id || value.id, 180),
+    status: boundedString(value.status || (value.ok === true ? "pass" : ""), 80),
+    observedAt: boundedString(value.observedAt || value.observed_at || value.createdAt || value.created_at, 120),
+    source: boundedString(value.source, 180),
+    artifactId: boundedString(value.artifactId || value.artifact_id, 180),
+    runId: boundedString(value.runId || value.run_id, 180),
+    taskId: boundedString(value.taskId || value.task_id, 180)
   };
 }
 
@@ -116,11 +122,13 @@ function presentCheck(input, evidenceKey, checkKey, label, requiredAction) {
   if (evidenceOk(input, evidenceKey)) {
     return check(checkKey, "pass", Object.assign({
       label,
+      evidenceKey,
       evidencePresent: true
     }, evidenceRef(input, evidenceKey)));
   }
   return check(checkKey, "missing", {
     label,
+    evidenceKey,
     evidencePresent: false
   }, {
     action: requiredAction,
@@ -244,6 +252,69 @@ function buildReleaseReview(summary = {}, checks = [], persistedApprovals = {}) 
     nextAction: requiredActions[0] || null,
     writefulSchedulingAllowed: false,
     advisoryOnly: true
+  };
+}
+
+function compactEvidenceField(value, max = 180) {
+  const text = boundedString(value, max);
+  if (!text || PRIVATE_VALUE_PATTERN.test(text)) return "";
+  return text;
+}
+
+function compactEvidenceItem(checkItem = {}) {
+  const summary = checkItem.summary || {};
+  const evidenceKey = boundedString(summary.evidenceKey, 140);
+  if (!evidenceKey) return null;
+  return Object.fromEntries(Object.entries({
+    key: evidenceKey,
+    checkKey: boundedString(checkItem.key, 140),
+    label: boundedString(summary.label || checkItem.key, 180),
+    checkStatus: boundedString(checkItem.status, 80),
+    evidencePresent: summary.evidencePresent === true,
+    evidenceStatus: compactEvidenceField(summary.status || (summary.evidencePresent === true ? "pass" : ""), 80),
+    evidenceId: compactEvidenceField(summary.evidenceId, 180),
+    schemaVersion: compactEvidenceField(summary.schemaVersion, 180),
+    source: compactEvidenceField(summary.source, 180),
+    observedAt: compactEvidenceField(summary.observedAt, 120),
+    artifactId: compactEvidenceField(summary.artifactId, 180),
+    runId: compactEvidenceField(summary.runId, 180),
+    taskId: compactEvidenceField(summary.taskId, 180)
+  }).filter(([, value]) => value !== undefined && value !== ""));
+}
+
+function evidenceBundleReadback(input = {}) {
+  const bundle = input.evidenceBundleReadback || input.evidenceBundle || input.evidence_bundle || {};
+  if (!bundle || typeof bundle !== "object" || Array.isArray(bundle) || !Object.keys(bundle).length) return null;
+  return Object.fromEntries(Object.entries({
+    schemaVersion: compactEvidenceField(bundle.schemaVersion || bundle.schema_version, 180),
+    bundleId: compactEvidenceField(bundle.bundleId || bundle.bundle_id || bundle.evidenceBundleId || bundle.evidence_bundle_id || bundle.id, 180),
+    status: compactEvidenceField(bundle.status, 80),
+    source: compactEvidenceField(bundle.source || "release_readiness_evidence_bundle", 120),
+    taskCount: Number(bundle.taskCount || bundle.task_count || 0) || 0,
+    passCount: Number(bundle.passCount || bundle.pass_count || 0) || 0,
+    createdAt: compactEvidenceField(bundle.createdAt || bundle.created_at, 120),
+    requestedBy: compactEvidenceField(bundle.requestedBy || bundle.requested_by || bundle.createdBy || bundle.created_by, 120)
+  }).filter(([, value]) => value !== undefined && value !== ""));
+}
+
+function buildEvidenceReadback(input = {}, checks = []) {
+  const items = checks.map(compactEvidenceItem).filter(Boolean);
+  const presentKeys = items.filter((item) => item.evidencePresent === true).map((item) => item.key);
+  const missingKeys = items.filter((item) => item.evidencePresent !== true).map((item) => item.checkKey);
+  const bundle = evidenceBundleReadback(input);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+    summaryOnly: true,
+    sourceBundle: bundle,
+    evidenceCount: items.length,
+    presentCount: presentKeys.length,
+    missingCount: missingKeys.length,
+    presentEvidenceKeys: presentKeys.sort(),
+    missingCheckKeys: missingKeys.sort(),
+    items: items.slice(0, 80),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
   };
 }
 
@@ -479,6 +550,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
     ];
     const summary = buildSummary(scope, checks);
     const releaseReview = buildReleaseReview(summary, checks, persistedApprovals);
+    const evidenceReadback = buildEvidenceReadback(input, checks);
     return {
       ok: true,
       source: "growth-learning-automation-release-readiness-service",
@@ -496,6 +568,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         summaryOnly: true,
         externalEvidenceKeys: Object.keys(evidenceBag(input)).filter((key) => !PRIVATE_KEY_PATTERN.test(key)).sort()
       },
+      evidenceReadback,
       config: {
         schemaVersion: "growth.learningAutomationReleaseReadiness.config.v1",
         summaryOnly: true,

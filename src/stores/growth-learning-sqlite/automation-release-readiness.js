@@ -11,6 +11,7 @@ const {
 const { stableLearningAutomationReleaseReadinessId } = require("./identifiers");
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|access-key\.txt|launch-token)/i;
 
 function jsonText(value) {
   return JSON.stringify(value === undefined ? null : value);
@@ -30,6 +31,7 @@ function scanPrivacyKeys(value, path = "$", findings = []) {
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
+    if (typeof child === "string" && PRIVATE_VALUE_PATTERN.test(child)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
   }
   return findings;
@@ -50,6 +52,7 @@ function ensureLearningAutomationReleaseReadinessSchema(db) {
       readiness_version TEXT NOT NULL DEFAULT 'growth.learningAutomationReleaseReadiness.v1',
       checks_json TEXT NOT NULL DEFAULT '[]',
       evidence_json TEXT NOT NULL DEFAULT '{}',
+      evidence_readback_json TEXT NOT NULL DEFAULT '{}',
       config_json TEXT NOT NULL DEFAULT '{}',
       summary_json TEXT NOT NULL DEFAULT '{}',
       release_review_json TEXT NOT NULL DEFAULT '{}',
@@ -69,6 +72,7 @@ function ensureLearningAutomationReleaseReadinessSchema(db) {
     ["readiness_version", "TEXT NOT NULL DEFAULT 'growth.learningAutomationReleaseReadiness.v1'"],
     ["checks_json", "TEXT NOT NULL DEFAULT '[]'"],
     ["evidence_json", "TEXT NOT NULL DEFAULT '{}'"],
+    ["evidence_readback_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["config_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["summary_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["release_review_json", "TEXT NOT NULL DEFAULT '{}'"],
@@ -99,6 +103,7 @@ function publicAutomationReleaseReadiness(row) {
     readinessVersion: cleanString(row.readiness_version),
     checks: asArray(parseJson(row.checks_json, []) || []),
     evidence: parseJson(row.evidence_json, {}) || {},
+    evidenceReadback: parseJson(row.evidence_readback_json, {}) || {},
     config: parseJson(row.config_json, {}) || {},
     summary: parseJson(row.summary_json, {}) || {},
     releaseReview: parseJson(row.release_review_json, {}) || {},
@@ -173,6 +178,7 @@ function createLearningAutomationReleaseReadinessRepository({ open, now } = {}) 
           || "growth.learningAutomationReleaseReadiness.v1",
         checks_json: jsonText(checks),
         evidence_json: jsonText(input.evidence || {}),
+        evidence_readback_json: jsonText(input.evidenceReadback || input.evidence_readback || {}),
         config_json: jsonText(input.config || {}),
         summary_json: jsonText(input.summary || {}),
         release_review_json: jsonText(input.releaseReview || input.release_review || {}),

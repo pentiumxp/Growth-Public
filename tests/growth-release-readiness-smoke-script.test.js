@@ -166,6 +166,12 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
   fs.writeFileSync(bundlePath, JSON.stringify({
     schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
     summaryOnly: true,
+    bundleId: "bundle_release_1",
+    status: "collected",
+    summary: {
+      taskCount: 8,
+      passCount: 6
+    },
     scope: {
       workspaceId: "bundle_workspace",
       learnerId: "bundle_learner",
@@ -212,6 +218,12 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     assert.deepEqual(evidenceBundleFromArgs(args), {
       schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
       summaryOnly: true,
+      bundleId: "bundle_release_1",
+      status: "collected",
+      summary: {
+        taskCount: 8,
+        passCount: 6
+      },
       scope: {
         workspaceId: "bundle_workspace",
         learnerId: "bundle_learner",
@@ -263,6 +275,16 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
         ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
       },
+      evidenceBundleReadback: {
+        schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+        bundleId: "bundle_release_1",
+        status: "collected",
+        source: "release_readiness_smoke_evidence_bundle",
+        taskCount: 8,
+        passCount: 6,
+        createdAt: "2026-06-15T18:21:00.000Z",
+        requestedBy: "bundle_owner"
+      },
       releaseApproval: {
         writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
         backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" },
@@ -295,6 +317,9 @@ test("release readiness smoke script evaluates readiness without writing a snaps
     assert.equal(output.status, "incomplete");
     assert.equal(output.config.writefulSchedulingAllowed, false);
     assert.equal(output.releaseReview.advisoryOnly, true);
+    assert.equal(output.evidenceReadback.summaryOnly, true);
+    assert.equal(output.evidenceReadback.presentCount, 0);
+    assert.equal(output.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(Array.isArray(output.releaseReview.requiredActions), true);
     assert.equal(output.releaseReview.nextAction.key, "owner_daily_ui_evidence");
     assert.equal(output.releaseReview.nextAction.action, "complete_owner_daily_ui_visual_validation");
@@ -331,6 +356,8 @@ test("release readiness smoke script writes summary-only snapshots only when req
     assert.equal(output.ok, true);
     assert.equal(output.snapshot.privacyClass, "summary_only");
     assert.equal(output.snapshot.summary.writefulSchedulingAllowed, false);
+    assert.equal(output.snapshot.evidenceReadback.summaryOnly, true);
+    assert.equal(output.snapshot.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const row = db.prepare("SELECT COUNT(*) AS count FROM learning_growth_automation_release_readiness").get();

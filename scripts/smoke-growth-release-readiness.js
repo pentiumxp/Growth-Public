@@ -82,6 +82,12 @@ function boundedNumberValue(value, fallback) {
   return Math.max(1, Math.min(100, Math.round(numeric)));
 }
 
+function boundedCountValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(numeric)));
+}
+
 function evidenceFlag(args, name) {
   return hasFlag(args, name) || hasFlag(args, name.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()));
 }
@@ -149,6 +155,29 @@ function evidenceBundleFromArgs(args) {
   const fromFile = parseJsonFileArg(args, ["--evidence-bundle-file", "--evidenceBundleFile"], {});
   const fromJson = parseJsonArg(args, ["--evidence-bundle-json", "--evidenceBundleJson"], {});
   return validateEvidenceBundle(mergeBundles(fromFile, fromJson), fromJson && Object.keys(fromJson).length ? "--evidence-bundle-json" : "--evidence-bundle-file");
+}
+
+function evidenceBundleReadbackFromArgs(bundle = {}) {
+  if (!bundle || !Object.keys(bundle).length) return undefined;
+  const schemaVersion = objectValue(bundle, ["schemaVersion", "schema_version"], "");
+  const bundleId = objectValue(bundle, ["bundleId", "bundle_id", "evidenceBundleId", "evidence_bundle_id", "id"], "");
+  const status = objectValue(bundle, ["status"], "");
+  const summary = objectOnly(bundle.summary);
+  const taskCount = boundedCountValue(bundle.taskCount ?? bundle.task_count ?? summary.taskCount ?? summary.task_count, 0);
+  const passCount = boundedCountValue(bundle.passCount ?? bundle.pass_count ?? summary.passCount ?? summary.pass_count, 0);
+  const createdAt = objectValue(bundle, ["createdAt", "created_at"], "");
+  const requestedBy = objectValue(bundle, ["requestedBy", "requested_by", "createdBy", "created_by"], "");
+  if (!schemaVersion && !bundleId && !status && taskCount === 0 && passCount === 0 && !createdAt && !requestedBy) return undefined;
+  return stripUndefined({
+    schemaVersion: schemaVersion || RELEASE_EVIDENCE_BUNDLE_SCHEMA,
+    bundleId,
+    status,
+    source: "release_readiness_smoke_evidence_bundle",
+    taskCount,
+    passCount,
+    createdAt,
+    requestedBy
+  });
 }
 
 function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
@@ -231,6 +260,7 @@ function inputFromArgs(args) {
       || "daily_plan",
     limit: numberArg(args, ["--limit"], boundedNumberValue(scope.limit || bundle.limit, 5)),
     evidence: evidenceFromArgs(args, bundle),
+    evidenceBundleReadback: evidenceBundleReadbackFromArgs(bundle),
     releaseApproval: releaseApprovalFromArgs(args, bundle),
     requestedBy: firstArgValue(args, ["--created-by", "--createdBy", "--requested-by", "--requestedBy"], "")
       || objectValue(bundle, ["createdBy", "created_by", "requestedBy", "requested_by"], ""),

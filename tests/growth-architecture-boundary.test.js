@@ -1236,6 +1236,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
 
   const automationReleaseReadinessRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-release-readiness.js"));
   assert.match(automationReleaseReadinessRepository, /learning_growth_automation_release_readiness/);
+  assert.match(automationReleaseReadinessRepository, /evidence_readback_json/);
   assert.match(automationReleaseReadinessRepository, /createLearningAutomationReleaseReadinessRepository/);
   assert.match(automationReleaseReadinessRepository, /summary_only/);
   assert.match(automationReleaseReadinessRepository, /scanPrivacyKeys/);
@@ -1424,6 +1425,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /growth\.learningAutomationReleaseEvidenceBundle\.v1/);
   assert.match(script, /--evidence-bundle-file/);
   assert.match(script, /--evidence-bundle-json/);
+  assert.match(script, /evidenceBundleReadbackFromArgs/);
   assert.match(script, /release_readiness_smoke_bundle_privacy_failed/);
   assert.match(script, /--automation-digest-ui-evidence/);
   assert.match(script, /--production-proposal-smoke-evidence/);
@@ -1466,6 +1468,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /releaseReview\.requiredActions/);
   assert.match(scriptHarness, /releaseReview\.nextAction/);
   assert.match(scriptHarness, /accepts versioned evidence bundle files/);
+  assert.match(scriptHarness, /evidenceBundleReadback/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence bundle input/);
   assert.match(scriptHarness, /automationDigestUiEvidence/);
   assert.match(scriptHarness, /productionProposalSmokeEvidence/);
@@ -1492,6 +1495,8 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
   assert.match(releaseReadinessService, /buildReleaseReview/);
+  assert.match(releaseReadinessService, /buildEvidenceReadback/);
+  assert.match(releaseReadinessService, /evidenceReadback/);
   assert.match(releaseReadinessService, /requiredActions/);
   assert.match(releaseReadinessService, /missingEvidenceKeys/);
   assert.match(releaseReadinessService, /blockedCheckKeys/);

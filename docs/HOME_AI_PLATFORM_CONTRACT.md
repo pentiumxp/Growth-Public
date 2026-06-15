@@ -169,6 +169,23 @@ working copies for future Growth work.
 | `plugin_manifest_actions_status` | `declared`; Growth exposes manifest `actions` for host Dock `常用`, long-press menus, and search. |
 | `growth_docs_locality` | `node scripts/check-growth-docs-locality.js`; Growth-specific docs must exist in this plugin workspace, while broad platform contracts remain centralized in the Home AI app workspace. |
 
+## Growth-Local Release-Readiness Readback Addendum
+
+`plugin_learning_automation_release_readiness` now returns summary-only
+`evidenceReadback`
+(`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with bounded
+source bundle readback, present/missing counts, missing check keys, and
+per-check evidence references. `npm run smoke:release-readiness` passes bounded
+`evidenceBundleReadback` from versioned release evidence bundles into the
+service. Snapshot writes persist the catalog in
+`learning_growth_automation_release_readiness.evidence_readback_json`.
+
+This addendum is Growth-local only. It does not change the Home AI central
+platform contract, does not grant runtime config permission, and does not allow
+release-readiness to call Gateway, publish cards, evaluate submissions, run
+schedulers, deliver notifications, activate stage assessments, or mutate learner
+state.
+
 ## Required Local Validation
 
 Run:

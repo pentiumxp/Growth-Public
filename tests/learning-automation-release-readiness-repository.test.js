@@ -48,6 +48,18 @@ function sampleSnapshot(overrides = {}) {
       schemaVersion: "growth.learningAutomationReleaseReadiness.evidence.v1",
       summaryOnly: true
     },
+    evidenceReadback: {
+      schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+      summaryOnly: true,
+      presentCount: 2,
+      missingCount: 0,
+      items: [{
+        key: "ownerDailyUiEvidence",
+        checkKey: "owner_daily_ui_evidence",
+        evidencePresent: true,
+        evidenceId: "ui_daily"
+      }]
+    },
     config: {
       schemaVersion: "growth.learningAutomationReleaseReadiness.config.v1",
       summaryOnly: true,
@@ -78,6 +90,9 @@ test("automation release readiness repository saves and lists summary-only snaps
     assert.equal(saved.snapshot.status, "ready_for_release_review");
     assert.equal(saved.snapshot.privacyClass, "summary_only");
     assert.equal(saved.snapshot.summary.writefulSchedulingAllowed, false);
+    assert.equal(saved.snapshot.evidenceReadback.summaryOnly, true);
+    assert.equal(saved.snapshot.evidenceReadback.presentCount, 2);
+    assert.equal(saved.snapshot.evidenceReadback.items[0].evidenceId, "ui_daily");
     assert.equal(saved.snapshot.checks[0].key, "owner_daily_ui_evidence");
     assert.equal(saved.snapshot.checks.some((item) => item.key === "production_daily_loop_write_smoke_evidence"), true);
 
@@ -99,6 +114,7 @@ test("automation release readiness repository saves and lists summary-only snaps
     });
     assert.equal(listed.length, 1);
     assert.equal(listed[0].readinessId, saved.snapshot.readinessId);
+    assert.equal(listed[0].evidenceReadback.items[0].key, "ownerDailyUiEvidence");
     assert.equal(JSON.stringify(listed[0]).includes("rawPrompt"), false);
   });
 });
@@ -111,6 +127,20 @@ test("automation release readiness repository rejects privacy-risk fields, non-s
     assert.equal(privacy.ok, false);
     assert.equal(privacy.error, "learning_automation_release_readiness_privacy_failed");
     assert.equal(privacy.privacyFindings.includes("$.evidence.rawPrompt"), true);
+
+    const privateValue = repository.saveSnapshot(sampleSnapshot({
+      evidenceReadback: {
+        schemaVersion: "growth.learningAutomationReleaseReadiness.evidenceReadback.v1",
+        summaryOnly: true,
+        items: [{
+          key: "ownerDailyUiEvidence",
+          evidenceId: "/Users/hermes-dev/.homeai-qa/private-output.json"
+        }]
+      }
+    }));
+    assert.equal(privateValue.ok, false);
+    assert.equal(privateValue.error, "learning_automation_release_readiness_privacy_failed");
+    assert.equal(privateValue.privacyFindings.includes("$.evidenceReadback.items[0].evidenceId"), true);
 
     const privacyClass = repository.saveSnapshot(sampleSnapshot({
       privacyClass: "raw_private"
@@ -150,6 +180,7 @@ test("automation release readiness repository migrates bounded columns on existi
     assert.equal(saved.ok, true);
     assert.equal(saved.snapshot.domainPackId, "uk_hk_curriculum_foundation");
     assert.equal(saved.snapshot.readinessVersion, "growth.learningAutomationReleaseReadiness.v1");
+    assert.equal(saved.snapshot.evidenceReadback.schemaVersion, "growth.learningAutomationReleaseReadiness.evidenceReadback.v1");
     assert.equal(saved.snapshot.releaseReview.advisoryOnly, true);
   });
 });
