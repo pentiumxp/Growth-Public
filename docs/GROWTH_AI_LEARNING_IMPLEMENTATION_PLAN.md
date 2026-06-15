@@ -642,6 +642,14 @@ Implemented backend shape:
 - `npm run smoke:release-readiness` evaluates the same service from the CLI.
   It is no-write by default and creates a snapshot only when
   `--write-snapshot` is supplied.
+- `npm run smoke:release-evidence-bundle` delegates to
+  `learning-automation-release-evidence-bundle-service` and builds a
+  summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
+  from selected no-write/default-disabled smoke CLIs. Use `--output-file` and
+  then pass that file to
+  `npm run smoke:release-readiness -- --evidence-bundle-file <path>` when
+  release review needs structured smoke evidence without Codex hand-spliced
+  JSON.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
@@ -693,6 +701,8 @@ Required harness:
 - `tests/learning-automation-release-readiness-service.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
+- `tests/learning-automation-release-evidence-bundle-service.test.js`;
+- `tests/growth-release-evidence-bundle-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`;
 - smoke syntax and package-script checks through `npm run check`;

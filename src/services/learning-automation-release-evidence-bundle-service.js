@@ -1,0 +1,346 @@
+"use strict";
+
+const path = require("node:path");
+
+const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
+const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+
+const DEFAULT_TASK_IDS = Object.freeze([
+  "planner_readiness",
+  "daily_loop_preview",
+  "scheduler_dry_run",
+  "action_handoff",
+  "scheduler_execution",
+  "scheduler_run",
+  "scheduler_worker_target",
+  "scheduler_worker"
+]);
+
+const TASK_DEFINITIONS = Object.freeze([
+  {
+    taskId: "planner_readiness",
+    evidenceKey: "productionPlannerReadinessEvidence",
+    script: "scripts/smoke-growth-planner-readiness.js",
+    commandName: "npm run smoke:planner-readiness"
+  },
+  {
+    taskId: "daily_loop_preview",
+    evidenceKey: "productionDailyLoopPreviewSmokeEvidence",
+    script: "scripts/smoke-growth-daily-loop-preview.js",
+    commandName: "npm run smoke:daily-loop-preview"
+  },
+  {
+    taskId: "scheduler_dry_run",
+    evidenceKey: "productionSchedulerDryRunSmokeEvidence",
+    script: "scripts/smoke-growth-scheduler-dry-run.js",
+    commandName: "npm run smoke:scheduler-dry-run"
+  },
+  {
+    taskId: "action_handoff",
+    evidenceKey: "productionActionHandoffSmokeEvidence",
+    script: "scripts/smoke-growth-automation-action-handoff.js",
+    commandName: "npm run smoke:action-handoff"
+  },
+  {
+    taskId: "scheduler_execution",
+    evidenceKey: "productionSchedulerExecutionSmokeEvidence",
+    script: "scripts/smoke-growth-automation-scheduler-execution.js",
+    commandName: "npm run smoke:scheduler-execution"
+  },
+  {
+    taskId: "scheduler_run",
+    evidenceKey: "productionSchedulerRunSmokeEvidence",
+    script: "scripts/smoke-growth-automation-scheduler-run.js",
+    commandName: "npm run smoke:scheduler-run"
+  },
+  {
+    taskId: "scheduler_worker_target",
+    evidenceKey: "productionSchedulerWorkerTargetSmokeEvidence",
+    script: "scripts/smoke-growth-automation-scheduler-worker-target.js",
+    commandName: "npm run smoke:scheduler-worker-target",
+    extraArgs: ["--operation", "runnable"]
+  },
+  {
+    taskId: "scheduler_worker",
+    evidenceKey: "productionSchedulerWorkerSmokeEvidence",
+    script: "scripts/smoke-growth-automation-scheduler-worker.js",
+    commandName: "npm run smoke:scheduler-worker"
+  }
+]);
+
+const TASK_BY_ID = new Map(TASK_DEFINITIONS.map((task) => [task.taskId, task]));
+
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function uniqueStrings(values = []) {
+  return Array.from(new Set(values.map((value) => cleanString(value, 120)).filter(Boolean)));
+}
+
+function clampLimit(value, fallback = 12) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(1, Math.min(50, Math.round(numeric)));
+}
+
+function nowIso(now) {
+  const value = typeof now === "function" ? now() : new Date();
+  if (value instanceof Date) return value.toISOString();
+  return cleanString(value, 64) || new Date().toISOString();
+}
+
+function scanPrivacy(value, pathName = "$", findings = []) {
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivacy(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const childPath = `${pathName}.${key}`;
+    if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
+    if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
+  }
+  return findings;
+}
+
+function parseJsonOutput(stdout = "") {
+  const text = String(stdout || "").trim();
+  if (!text) {
+    return { ok: false, error: "release_evidence_bundle_empty_smoke_output" };
+  }
+  try {
+    return { ok: true, value: JSON.parse(text) };
+  } catch (error) {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return { ok: true, value: JSON.parse(text.slice(start, end + 1)) };
+      } catch (_) {
+        // Fall through to the bounded error below.
+      }
+    }
+    return { ok: false, error: "release_evidence_bundle_invalid_smoke_json" };
+  }
+}
+
+function normalizeTaskId(value = "") {
+  return cleanString(value, 80).replace(/-/g, "_");
+}
+
+function normalizeTaskIds(input = {}) {
+  const explicit = uniqueStrings(input.tasks || input.taskIds || input.task_ids || [])
+    .map(normalizeTaskId)
+    .filter(Boolean);
+  return explicit.length ? explicit : Array.from(DEFAULT_TASK_IDS);
+}
+
+function scopeArgs(scope = {}) {
+  const args = [
+    "--workspace-id", scope.workspaceId,
+    "--learner-id", scope.learnerId || scope.workspaceId,
+    "--limit", String(scope.limit || 12)
+  ];
+  const optional = [
+    ["--program-id", scope.programId],
+    ["--domain-pack-id", scope.domainPackId],
+    ["--domain", scope.domain],
+    ["--subject", scope.subject],
+    ["--horizon", scope.horizon],
+    ["--available-minutes", scope.availableMinutes]
+  ];
+  for (const [flag, value] of optional) {
+    if (value !== undefined && value !== null && String(value).trim()) {
+      args.push(flag, String(value));
+    }
+  }
+  for (const nodeId of uniqueStrings(scope.targetNodeIds || [])) {
+    args.push("--target-node-id", nodeId);
+  }
+  return args;
+}
+
+function publicScope(input = {}) {
+  const workspaceId = cleanString(input.workspaceId || input.workspace_id, 120);
+  const targetNodeIds = uniqueStrings(input.targetNodeIds || input.target_node_ids || []);
+  return {
+    workspaceId,
+    learnerId: cleanString(input.learnerId || input.learner_id || workspaceId, 120),
+    programId: cleanString(input.programId || input.program_id, 120),
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id, 120),
+    domain: cleanString(input.domain, 80),
+    subject: cleanString(input.subject, 80),
+    horizon: cleanString(input.horizon || "daily_plan", 80),
+    availableMinutes: clampLimit(input.availableMinutes || input.available_minutes || 15, 15),
+    limit: clampLimit(input.limit || 12, 12),
+    targetNodeIds
+  };
+}
+
+function summaryFromSmoke(value = {}) {
+  const summary = {};
+  const scalarKeys = [
+    "source",
+    "operation",
+    "error",
+    "available",
+    "complete",
+    "readyForAutomation",
+    "activationState",
+    "reason",
+    "count"
+  ];
+  for (const key of scalarKeys) {
+    const valueForKey = value[key];
+    if (typeof valueForKey === "string") summary[key] = cleanString(valueForKey, 160);
+    if (typeof valueForKey === "number" || typeof valueForKey === "boolean") summary[key] = valueForKey;
+  }
+  if (value.readiness && typeof value.readiness === "object") {
+    summary.readiness = {};
+    for (const key of ["ready", "configured", "status", "reason"]) {
+      const valueForKey = value.readiness[key];
+      if (typeof valueForKey === "string") summary.readiness[key] = cleanString(valueForKey, 160);
+      if (typeof valueForKey === "number" || typeof valueForKey === "boolean") summary.readiness[key] = valueForKey;
+    }
+  }
+  if (value.summary && typeof value.summary === "object") {
+    summary.summaryKeys = Object.keys(value.summary).slice(0, 12).map((key) => cleanString(key, 80));
+  }
+  return summary;
+}
+
+function evidenceFromTaskResult(task, taskResult, generatedAt) {
+  const parsed = parseJsonOutput(taskResult.stdout);
+  const parsedValue = parsed.ok ? parsed.value : {};
+  const privacyFindings = parsed.ok ? scanPrivacy(parsedValue).slice(0, 8) : [];
+  const blockedError = !parsed.ok
+    ? parsed.error
+    : privacyFindings.length
+      ? "release_evidence_bundle_smoke_privacy_failed"
+      : cleanString(parsedValue.error || taskResult.error || "");
+  const pass = parsed.ok && privacyFindings.length === 0 && taskResult.exitCode === 0 && parsedValue.ok === true;
+  const evidence = {
+    ok: pass,
+    status: pass ? "pass" : "blocked",
+    source: "growth-release-evidence-bundle-builder",
+    smoke: task.commandName,
+    taskId: task.taskId,
+    evidenceId: `growth_release_evidence_${task.taskId}_${generatedAt.replace(/[^0-9A-Za-z]/g, "")}`,
+    generatedAt,
+    exitCode: taskResult.exitCode,
+    summary: parsed.ok && !privacyFindings.length ? summaryFromSmoke(parsedValue) : {}
+  };
+  if (!pass) {
+    evidence.error = blockedError || "release_evidence_bundle_smoke_blocked";
+  }
+  if (privacyFindings.length) {
+    evidence.privacyFindingCount = privacyFindings.length;
+  }
+  return evidence;
+}
+
+function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
+  const runCommand = options.runCommand;
+  const repoRoot = options.repoRoot || process.cwd();
+  const nodePath = options.nodePath || process.execPath;
+  const now = options.now || (() => new Date());
+
+  function runTask(task, scope) {
+    if (typeof runCommand !== "function") {
+      return {
+        exitCode: 1,
+        stdout: "",
+        error: "release_evidence_bundle_runner_unavailable"
+      };
+    }
+    const args = [
+      path.join(repoRoot, task.script),
+      ...scopeArgs(scope),
+      ...(task.extraArgs || []),
+      "--json"
+    ];
+    const result = runCommand(nodePath, args, {
+      cwd: repoRoot
+    }) || {};
+    return {
+      exitCode: Number.isInteger(result.status) ? result.status : Number.isInteger(result.exitCode) ? result.exitCode : 1,
+      stdout: String(result.stdout || ""),
+      error: cleanString(result.error || result.stderr || "")
+    };
+  }
+
+  function buildBundle(input = {}) {
+    const scope = publicScope(input);
+    if (!scope.workspaceId) {
+      return { ok: false, error: "release_evidence_bundle_workspace_required" };
+    }
+    const generatedAt = cleanString(input.createdAt || input.created_at, 64) || nowIso(now);
+    const taskIds = normalizeTaskIds(input);
+    const invalidTaskIds = taskIds.filter((taskId) => !TASK_BY_ID.has(taskId));
+    if (invalidTaskIds.length) {
+      return {
+        ok: false,
+        error: "release_evidence_bundle_task_invalid",
+        invalidTaskIds,
+        allowedTaskIds: TASK_DEFINITIONS.map((task) => task.taskId)
+      };
+    }
+    const evidence = {};
+    const taskResults = [];
+    for (const taskId of taskIds) {
+      const task = TASK_BY_ID.get(taskId);
+      const taskRun = runTask(task, scope);
+      const taskEvidence = evidenceFromTaskResult(task, taskRun, generatedAt);
+      evidence[task.evidenceKey] = taskEvidence;
+      taskResults.push({
+        taskId,
+        evidenceKey: task.evidenceKey,
+        ok: taskEvidence.ok,
+        status: taskEvidence.status,
+        error: cleanString(taskEvidence.error || ""),
+        source: task.commandName
+      });
+    }
+    const passedCount = taskResults.filter((item) => item.ok).length;
+    const blockedCount = taskResults.length - passedCount;
+    const bundle = {
+      schemaVersion: RELEASE_EVIDENCE_BUNDLE_SCHEMA,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      createdAt: generatedAt,
+      requestedBy: cleanString(input.requestedBy || input.requested_by, 120),
+      scope,
+      evidence,
+      releaseApproval: {},
+      summary: {
+        source: "growth-release-evidence-bundle-builder",
+        taskCount: taskResults.length,
+        passedCount,
+        blockedCount,
+        failedTaskIds: taskResults.filter((item) => !item.ok).map((item) => item.taskId)
+      },
+      tasks: taskResults
+    };
+    return {
+      ok: blockedCount === 0,
+      source: "growth-learning-automation-release-evidence-bundle-service",
+      bundle,
+      summary: bundle.summary
+    };
+  }
+
+  return {
+    buildBundle
+  };
+}
+
+module.exports = {
+  DEFAULT_TASK_IDS,
+  RELEASE_EVIDENCE_BUNDLE_SCHEMA,
+  TASK_DEFINITIONS,
+  createLearningAutomationReleaseEvidenceBundleService,
+  normalizeTaskIds,
+  publicScope,
+  scopeArgs
+};

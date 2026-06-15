@@ -9,6 +9,93 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T06:18Z - Growth Release Evidence Bundle Builder Slice
+
+- Status: implemented and locally validated. This slice adds a service-owned
+  summary-only builder for `growth.learningAutomationReleaseEvidenceBundle.v1`
+  so release-readiness evidence can be assembled from existing no-write or
+  default-disabled smoke CLIs without hand-splicing JSON in Codex.
+- Change classification: H1 by Home AI AI Ops because this changes release
+  evidence collection and production-readiness review tooling. No production
+  deploy was executed.
+- Scope:
+  - new service:
+    `src/services/learning-automation-release-evidence-bundle-service.js`;
+  - new CLI:
+    `npm run smoke:release-evidence-bundle`;
+  - new script:
+    `scripts/build-growth-release-evidence-bundle.js`;
+  - new harnesses:
+    `tests/learning-automation-release-evidence-bundle-service.test.js` and
+    `tests/growth-release-evidence-bundle-script.test.js`;
+  - `package.json` `check` now syntax-checks the new service and script;
+  - `tests/growth-architecture-boundary.test.js` now guards the builder as
+    service-owned, summary-only, no-write, and not a release switch;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_DOCS_INDEX.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`,
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`, and
+    `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Boundary:
+  - the builder runs selected smoke CLIs through an injected command runner;
+  - default task coverage includes planner readiness, daily-loop preview,
+    scheduler dry-run, action handoff, scheduler execution, scheduler run,
+    scheduler worker target, and scheduler worker smoke evidence;
+  - output is summary-only and excludes raw stdout/stderr, raw learner content,
+    prompts, model output, provider configuration, credentials, and private
+    paths;
+  - the builder has no route, no repository, no service-graph import, no
+    Gateway/model calls, no daily-loop direct call, no publication, no card
+    generation, no evaluation, no scheduler execution/tick bypass, no
+    notification delivery, no stage activation, no learner-state mutation, and
+    no production deploy authority.
+- Validation passed:
+  - syntax checks for the new service, script, tests, and architecture test;
+  - focused
+    `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`49` tests);
+  - operational builder smoke:
+    `npm run --silent smoke:release-evidence-bundle -- --workspace-id
+    smoke_workspace --learner-id smoke_learner --program-id smoke_program
+    --domain science --subject science --task action_handoff --output-file
+    <tmp>/bundle.json --json`;
+  - operational readiness consumption:
+    `npm run --silent smoke:release-readiness -- --workspace-id
+    smoke_workspace --evidence-bundle-file <tmp>/bundle.json --json`;
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=140`, `checkedCount=140`);
+  - `npm test -- --test-reporter=spec` (`509` tests);
+  - `codegraph sync && codegraph status` (`236` files, `2,915` nodes,
+    `11,280` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI required checks:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI `git diff --check`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-f4fc1470-bd79-49ad-a19d-8af0c9be974e`.
+- Next implementation target:
+  - use the release evidence bundle path as the backend review gate for the
+    next Owner-supervised daily-loop or release-readiness UI slice; do not
+    treat release evidence as permission to enable writeful background
+    scheduling.
+
 ## 2026-06-15T05:59Z - Growth Owner Audit Smoke Full Readback Slice
 
 - Status: implemented and locally validated. This slice completes the

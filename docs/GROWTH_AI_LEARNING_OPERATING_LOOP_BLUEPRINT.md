@@ -385,12 +385,15 @@ The owning plan is
 Backend shape:
 
 - `learning-automation-release-readiness-service`;
+- `learning-automation-release-evidence-bundle-service`;
 - `automation-release-readiness.js`;
 - `learning_growth_automation_release_readiness`;
 - visible-target scoped
   `GET /api/v1/growth/automation/release-readiness`;
 - visible-target scoped snapshot list and Owner-only snapshot create routes
   under `/api/v1/growth/automation/release-readiness/snapshots`.
+- `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
+  assembly from selected no-write/default-disabled smoke CLIs.
 
 Required behavior:
 
@@ -402,6 +405,8 @@ Required behavior:
 - return bounded `pass`, `missing`, `blocked`, or `not_applicable` check
   states;
 - persist optional summary-only readiness snapshots for Owner/release review;
+- accept summary-only `growth.learningAutomationReleaseEvidenceBundle.v1`
+  artifacts produced by the bundle builder without trusting raw smoke output;
 - keep `writefulSchedulingAllowed=false`;
 - never call Gateway, plan publication, card generation, evaluation,
   proposal execution, scheduler execution, scheduler run, Action Inbox/Web
@@ -1076,7 +1081,7 @@ gate.
 | Automation action handoff | `node --test tests/learning-automation-action-handoff-repository.test.js tests/learning-automation-action-handoff-service.test.js tests/growth-event-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Automation scheduler execution | `node --test tests/learning-automation-scheduler-execution-repository.test.js tests/learning-automation-scheduler-execution-service.test.js tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Automation scheduler run | `node --test tests/learning-automation-scheduler-run-repository.test.js tests/learning-automation-scheduler-run-service.test.js tests/learning-automation-scheduler-execution-service.test.js tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
-| Automation release readiness | `node --test tests/learning-automation-release-readiness-repository.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
+| Automation release readiness | `node --test tests/learning-automation-release-readiness-repository.test.js tests/learning-automation-release-readiness-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Operating-loop backend | `node --test tests/learning-evidence-ledger-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-profile-v2-service.test.js tests/learning-owner-correction-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-repository.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-profile-delta-service.test.js tests/learning-planner-context-service.test.js tests/learning-plan-orchestrator-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-target-provisioning-service.test.js tests/growth-planner-readiness-smoke-script.test.js tests/learning-graph-repository.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-evaluation-service.test.js tests/learning-experience-signal-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner planner/provision UI | `node --test tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-target-provisioning-service.test.js tests/growth-routes.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` |
 | Card authoring boundary | `node scripts/check-growth-card-authoring-boundary.js && node --test tests/growth-card-authoring-boundary.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js` |

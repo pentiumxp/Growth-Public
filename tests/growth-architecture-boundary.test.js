@@ -972,6 +972,87 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.doesNotMatch(releaseReadinessService, /generateCard/);
 });
 
+test("Growth release evidence bundle builder stays service-owned and no-write", () => {
+  const packageJson = JSON.parse(read("package.json"));
+  assert.equal(
+    packageJson.scripts["smoke:release-evidence-bundle"],
+    "node scripts/build-growth-release-evidence-bundle.js"
+  );
+  assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
+  );
+
+  const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
+  assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
+  assert.match(script, /spawnSync/);
+  assert.match(script, /--fail-on-blocked/);
+  assert.match(script, /--result-json/);
+  assert.match(script, /--output-file/);
+  assert.doesNotMatch(script, /readEnv/);
+  assert.doesNotMatch(script, /createServices/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learningAutomationReleaseReadinessService/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
+  const service = read(path.join("src", "services", "learning-automation-release-evidence-bundle-service.js"));
+  assert.match(service, /RELEASE_EVIDENCE_BUNDLE_SCHEMA/);
+  assert.match(service, /TASK_DEFINITIONS/);
+  assert.match(service, /runCommand/);
+  assert.match(service, /releaseApproval: \{\}/);
+  assert.match(service, /privacyClass: "summary_only"/);
+  assert.match(service, /summaryOnly: true/);
+  assert.match(service, /scanPrivacy/);
+  assert.match(service, /productionPlannerReadinessEvidence/);
+  assert.match(service, /productionDailyLoopPreviewSmokeEvidence/);
+  assert.match(service, /productionSchedulerDryRunSmokeEvidence/);
+  assert.match(service, /productionActionHandoffSmokeEvidence/);
+  assert.match(service, /productionSchedulerExecutionSmokeEvidence/);
+  assert.match(service, /productionSchedulerRunSmokeEvidence/);
+  assert.match(service, /productionSchedulerWorkerTargetSmokeEvidence/);
+  assert.match(service, /productionSchedulerWorkerSmokeEvidence/);
+  assert.match(service, /smoke-growth-planner-readiness\.js/);
+  assert.match(service, /smoke-growth-daily-loop-preview\.js/);
+  assert.match(service, /smoke-growth-scheduler-dry-run\.js/);
+  assert.match(service, /smoke-growth-automation-action-handoff\.js/);
+  assert.match(service, /smoke-growth-automation-scheduler-execution\.js/);
+  assert.match(service, /smoke-growth-automation-scheduler-run\.js/);
+  assert.match(service, /smoke-growth-automation-scheduler-worker-target\.js/);
+  assert.match(service, /smoke-growth-automation-scheduler-worker\.js/);
+  assert.doesNotMatch(service, /readEnv/);
+  assert.doesNotMatch(service, /createServices/);
+  assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /repository\./);
+  assert.doesNotMatch(service, /publishPlanItem/);
+  assert.doesNotMatch(service, /publishAcceptedProposal/);
+  assert.doesNotMatch(service, /generateCard/);
+  assert.doesNotMatch(service, /evaluateSubmission/);
+  assert.doesNotMatch(service, /executeOnce/);
+  assert.doesNotMatch(service, /runOnce/);
+  assert.doesNotMatch(service, /deliverHandoff/);
+  assert.doesNotMatch(service, /activateStageAssessment/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
+  const serviceHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
+  assert.match(serviceHarness, /builds summary-only bundle from no-write smoke tasks/);
+  assert.match(serviceHarness, /privacy-risk smoke output/);
+
+  const scriptHarness = read(path.join("tests", "growth-release-evidence-bundle-script.test.js"));
+  assert.match(scriptHarness, /writes a summary-only bundle from a read-only smoke/);
+  assert.match(scriptHarness, /fails closed for missing workspace and invalid task/);
+});
+
 test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:owner-audit/);
