@@ -59,6 +59,14 @@ function numberArg(args, names, fallback) {
   return Math.max(1, Math.min(60, Math.round(value)));
 }
 
+function recordLimitArg(args, names, fallback) {
+  const raw = firstArgValue(args, names, "");
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.min(100, Math.round(value)));
+}
+
 function targetNodeIds(args) {
   return uniqueStrings([
     ...collectRepeatedValues(args, ["--target-node-id", "--targetNodeId"]),
@@ -70,6 +78,20 @@ function taskIds(args) {
   return uniqueStrings([
     ...collectRepeatedValues(args, ["--task", "--task-id", "--taskId"]),
     ...collectCsvValues(args, ["--tasks", "--task-ids", "--taskIds"])
+  ]);
+}
+
+function activationGates(args) {
+  return uniqueStrings([
+    ...collectRepeatedValues(args, ["--activation-gate", "--activationGate"]),
+    ...collectCsvValues(args, ["--activation-gates", "--activationGates"])
+  ]);
+}
+
+function requiredApprovalKeys(args) {
+  return uniqueStrings([
+    ...collectRepeatedValues(args, ["--required-approval-key", "--requiredApprovalKey"]),
+    ...collectCsvValues(args, ["--required-approval-keys", "--requiredApprovalKeys"])
   ]);
 }
 
@@ -90,6 +112,7 @@ function inputFromArgs(args) {
     targetNodeIds: targetNodeIds(args),
     tasks: taskIds(args),
     taskCardId: firstArgValue(args, ["--task-card-id", "--taskCardId"], ""),
+    collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--run-id", "--runId"], ""),
     evaluationId: firstArgValue(args, ["--evaluation-id", "--evaluationId"], ""),
     profileDeltaId: firstArgValue(args, ["--profile-delta-id", "--profileDeltaId"], ""),
     evidenceId: firstArgValue(args, ["--evidence-id", "--evidenceId"], ""),
@@ -101,7 +124,20 @@ function inputFromArgs(args) {
     planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], ""),
     visualPluginId: firstArgValue(args, ["--visual-plugin-id", "--visualPluginId", "--plugin-id", "--pluginId"], "growth") || "growth",
     visualScenario: firstArgValue(args, ["--visual-scenario", "--visualScenario", "--scenario"], "embedded-plugin-shell") || "embedded-plugin-shell",
-    centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], "")
+    centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
+    activationGates: activationGates(args),
+    requiredApprovalKeys: requiredApprovalKeys(args),
+    activationRecordLimit: recordLimitArg(args, ["--activation-record-limit", "--activationRecordLimit"], 20),
+    runtimeEnablementRecordLimit: recordLimitArg(args, ["--runtime-enablement-record-limit", "--runtimeEnablementRecordLimit"], 20),
+    ownerDailyUiEvidence: hasFlag(args, "--owner-daily-ui-evidence") || hasFlag(args, "--ownerDailyUiEvidence"),
+    ownerAuditUiEvidence: hasFlag(args, "--owner-audit-ui-evidence") || hasFlag(args, "--ownerAuditUiEvidence"),
+    stageCheckpointEvidence: hasFlag(args, "--stage-checkpoint-evidence") || hasFlag(args, "--stageCheckpointEvidence"),
+    proposalReviewUiEvidence: hasFlag(args, "--proposal-review-ui-evidence") || hasFlag(args, "--proposalReviewUiEvidence"),
+    automationDigestUiEvidence: hasFlag(args, "--automation-digest-ui-evidence") || hasFlag(args, "--automationDigestUiEvidence"),
+    automationActionHandoffUiEvidence: hasFlag(args, "--automation-action-handoff-ui-evidence") || hasFlag(args, "--automationActionHandoffUiEvidence"),
+    schedulerExecutionUiEvidence: hasFlag(args, "--scheduler-execution-ui-evidence") || hasFlag(args, "--schedulerExecutionUiEvidence"),
+    schedulerRunUiEvidence: hasFlag(args, "--scheduler-run-ui-evidence") || hasFlag(args, "--schedulerRunUiEvidence"),
+    schedulerWorkerTargetUiEvidence: hasFlag(args, "--scheduler-worker-target-ui-evidence") || hasFlag(args, "--schedulerWorkerTargetUiEvidence")
   };
 }
 
@@ -180,6 +216,8 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   outputFileFromArgs,
+  activationGates,
+  requiredApprovalKeys,
   taskIds,
   targetNodeIds
 };

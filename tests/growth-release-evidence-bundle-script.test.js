@@ -11,8 +11,10 @@ const scriptPath = path.join(repoRoot, "scripts", "build-growth-release-evidence
 const releaseApprovalScriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-release-approval.js");
 
 const {
+  activationGates,
   inputFromArgs,
   outputFileFromArgs,
+  requiredApprovalKeys,
   taskIds,
   targetNodeIds
 } = require("../scripts/build-growth-release-evidence-bundle");
@@ -58,6 +60,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--requested-by", "owner",
     "--created-at", "2026-06-15T06:10:00.000Z",
     "--task-card-id", "ltask_science_daily_1",
+    "--collection-run-id", "lgacrn_release_1",
     "--evaluation-id", "leval_science_daily_1",
     "--profile-delta-id", "lgpdelta_science_daily_1",
     "--evidence-id", "lgevd_science_daily_1",
@@ -69,6 +72,15 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--visual-plugin-id", "growth",
     "--visual-scenario", "embedded-plugin-shell",
     "--central-visual-evidence-file", "/tmp/central-visual.json",
+    "--activation-gate", "writeful_execution",
+    "--activation-gates", "background_scheduler,background_worker",
+    "--required-approval-key", "writefulExecutionApproval",
+    "--required-approval-keys", "backgroundSchedulerApproval,backgroundWorkerApproval",
+    "--activation-record-limit", "7",
+    "--runtime-enablement-record-limit", "6",
+    "--owner-daily-ui-evidence",
+    "--automation-digest-ui-evidence",
+    "--scheduler-worker-target-ui-evidence",
     "--output-file", "/tmp/release-evidence.json"
   ];
 
@@ -81,6 +93,16 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "daily_loop_preview",
     "learning_loop_state",
     "scheduler_dry_run"
+  ]);
+  assert.deepEqual(activationGates(args), [
+    "writeful_execution",
+    "background_scheduler",
+    "background_worker"
+  ]);
+  assert.deepEqual(requiredApprovalKeys(args), [
+    "writefulExecutionApproval",
+    "backgroundSchedulerApproval",
+    "backgroundWorkerApproval"
   ]);
   assert.equal(outputFileFromArgs(args), "/tmp/release-evidence.json");
   assert.deepEqual(inputFromArgs(args), {
@@ -98,6 +120,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
     tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"],
     taskCardId: "ltask_science_daily_1",
+    collectionRunId: "lgacrn_release_1",
     evaluationId: "leval_science_daily_1",
     profileDeltaId: "lgpdelta_science_daily_1",
     evidenceId: "lgevd_science_daily_1",
@@ -109,7 +132,20 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     planDraftId: "lgpd_daily_1",
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
-    centralVisualEvidenceFile: "/tmp/central-visual.json"
+    centralVisualEvidenceFile: "/tmp/central-visual.json",
+    activationGates: ["writeful_execution", "background_scheduler", "background_worker"],
+    requiredApprovalKeys: ["writefulExecutionApproval", "backgroundSchedulerApproval", "backgroundWorkerApproval"],
+    activationRecordLimit: 7,
+    runtimeEnablementRecordLimit: 6,
+    ownerDailyUiEvidence: true,
+    ownerAuditUiEvidence: false,
+    stageCheckpointEvidence: false,
+    proposalReviewUiEvidence: false,
+    automationDigestUiEvidence: true,
+    automationActionHandoffUiEvidence: false,
+    schedulerExecutionUiEvidence: false,
+    schedulerRunUiEvidence: false,
+    schedulerWorkerTargetUiEvidence: true
   });
 });
 
@@ -144,6 +180,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("central_visual"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
+  assert.ok(output.allowedTaskIds.includes("release_controls"));
 });
 
 test("release evidence bundle script writes bounded cycle-history evidence from read-only history smoke", () => {
@@ -541,6 +578,49 @@ test("release evidence bundle script collects persisted release approval bag", (
     assert.equal(fileBundle.releaseApproval.writefulExecutionApproval.source, "growth_release_approval_record");
     assert.equal(fileBundle.tasks[0].outputKey, "releaseApproval");
     assert.equal(fileBundle.tasks[0].source, "npm run smoke:release-approval");
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script collects optional release-controls readback evidence", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "release-controls-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--collection-run-id", "lgacrn_smoke_release",
+      "--activation-gate", "writeful_execution",
+      "--required-approval-key", "writefulExecutionApproval",
+      "--activation-record-limit", "7",
+      "--runtime-enablement-record-limit", "6",
+      "--automation-digest-ui-evidence",
+      "--task", "release_controls",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.smoke, "npm run smoke:release-controls");
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.summary.source, "growth-learning-automation-release-controls-service");
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.summary.writefulSchedulingAllowed, false);
+    assert.equal(fileBundle.evidence.releaseControlsSmokeEvidence.summary.runtimeConfigMutationPerformed, false);
+    assert.equal(fileBundle.scope.collectionRunId, "lgacrn_smoke_release");
+    assert.deepEqual(fileBundle.scope.activationGates, ["writeful_execution"]);
+    assert.deepEqual(fileBundle.scope.requiredApprovalKeys, ["writefulExecutionApproval"]);
+    assert.equal(fileBundle.scope.activationRecordLimit, 7);
+    assert.equal(fileBundle.scope.runtimeEnablementRecordLimit, 6);
+    assert.equal(fileBundle.scope.automationDigestUiEvidence, true);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
   });

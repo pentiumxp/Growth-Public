@@ -9,9 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T18:19Z - Optional Release Controls Bundle Readback
+
+- Status: implemented and validated. This slice is Growth backend/Harness/docs
+  only. It does not deploy, apply runtime config, grant scheduler permission,
+  write release records, call Gateway, publish cards, run scheduling, or
+  deliver notifications.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now exposes explicit
+    non-default task `release_controls`;
+  - the task delegates only to `scripts/smoke-growth-release-controls.js`
+    through the existing injected command runner and maps bounded output into
+    `releaseControlsSmokeEvidence`;
+  - the task accepts activation gates, required approval keys, release-controls
+    UI evidence flags, `collectionRunId`, `activationRecordLimit`, and
+    `runtimeEnablementRecordLimit`;
+  - `release_controls` stays outside `DEFAULT_TASK_IDS`; a passing task means
+    the no-write controls readback was collected and privacy checked, while
+    the nested controls summary remains the source of truth for
+    `release_evidence_required`, `manual_runtime_config_required`,
+    `runtime_verified`, and related release-control states.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `src/services/learning-automation-release-evidence-bundle-service.js`;
+  - `scripts/build-growth-release-evidence-bundle.js`;
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js`;
+  - `node --check scripts/build-growth-release-evidence-bundle.js`;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-evidence-bundle-audit-service.test.js`
+    (`31` tests);
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`31` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-evidence-bundle -- --workspace-id smoke_workspace --learner-id smoke_learner --task release_controls --activation-gate writeful_execution --activation-record-limit 7 --runtime-enablement-record-limit 6 --json`
+    returned expected `releaseControlsSmokeEvidence.status=pass` with nested
+    controls `status=release_evidence_required`;
+  - `npm run check` (`176/176` runtime JS files covered);
+  - `npm test` (`684` tests);
+  - `git diff --check`;
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`307` files, `3,960` nodes,
+    `15,249` edges; index up to date).
+  - AI Ops evidence ledger append id
+    `evidence-8aaad693-b810-4f68-88a7-ae88b834b6bd`.
+- Remaining product work:
+  - collect real production release evidence, central Home AI visual evidence,
+    and Action Inbox/Web Push evidence;
+  - build embedded Owner UI over release-controls/readiness packaging if the
+    next product step is to avoid CLI-only release review;
+  - only after evidence passes, perform any explicit platform/runtime-config
+    enablement outside Growth and read it back through
+    `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
+
 ## 2026-06-15T18:06Z - Release Controls Persisted Audit Readback
 
-- Status: implemented, validated, and committed locally. This slice is Growth
+- Status: implemented, validated, committed, and pushed. This slice is Growth
   backend/Harness/docs only. It does not
   deploy, apply runtime config, grant scheduler permission, write release
   records, call Gateway, publish cards, run scheduling, or deliver
@@ -79,7 +144,10 @@
     `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
 - Git:
   - implementation commit `c0ef721` `Harden release controls audit readback`;
-  - remote push status should be checked with `git status -sb`.
+  - follow-up handoff/readback status commit `3216f59`
+    `Record release controls audit readback status`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 
 ## 2026-06-15T17:53Z - Owner Release Controls Readback Aggregate
 

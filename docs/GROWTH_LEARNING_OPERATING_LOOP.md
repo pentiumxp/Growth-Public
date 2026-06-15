@@ -1717,6 +1717,10 @@ Implementation progress on 2026-06-15:
   It does not run smoke tasks, call Gateway, publish, generate, evaluate,
   execute scheduler actions, run scheduler ticks, deliver notifications,
   activate stage assessments, mutate learner state, or flip runtime config.
+  Final evidence packaging can include the same readback with
+  `npm run smoke:release-evidence-bundle -- --task release_controls ...`; that
+  task is explicit, non-default, and records `releaseControlsSmokeEvidence`
+  only as a readback artifact.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

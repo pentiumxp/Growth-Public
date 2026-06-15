@@ -210,7 +210,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
-  release-readiness or scheduler permission. Release-readiness writes a summary-only advisory
+  release-readiness or scheduler permission. The same builder now also exposes
+  an explicit non-default `release_controls` task that runs
+  `npm run smoke:release-controls`, accepts activation gates, approval keys,
+  UI evidence flags, and audit-record limits, and stores bounded
+  `releaseControlsSmokeEvidence` for final no-write readback packaging; task
+  pass means readback collection succeeded, while the nested controls status
+  remains the release-control source of truth. Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only
   audit over a previously generated bundle. It validates bundle schema,

@@ -151,6 +151,12 @@ const TASK_DEFINITIONS = Object.freeze([
     script: "scripts/smoke-growth-automation-release-approval.js",
     commandName: "npm run smoke:release-approval",
     extraArgs: ["--operation", "bag"]
+  },
+  {
+    taskId: "release_controls",
+    evidenceKey: "releaseControlsSmokeEvidence",
+    script: "scripts/smoke-growth-release-controls.js",
+    commandName: "npm run smoke:release-controls"
   }
 ]);
 
@@ -168,6 +174,12 @@ function clampLimit(value, fallback = 12) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.max(1, Math.min(50, Math.round(numeric)));
+}
+
+function clampRecordLimit(value, fallback = 20) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(1, Math.min(100, Math.round(numeric)));
 }
 
 function booleanFlag(value) {
@@ -279,6 +291,7 @@ function publicScope(input = {}) {
     learnerCycleOperation,
     taskCardId: cleanString(input.taskCardId || input.task_card_id, 120),
     planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120),
+    collectionRunId: cleanString(input.collectionRunId || input.collection_run_id || input.runId || input.run_id, 120),
     evaluationId: cleanString(input.evaluationId || input.evaluation_id, 120),
     profileDeltaId: cleanString(input.profileDeltaId || input.profile_delta_id, 120),
     evidenceId: cleanString(input.evidenceId || input.evidence_id, 120),
@@ -286,7 +299,20 @@ function publicScope(input = {}) {
     sourceId: cleanString(input.sourceId || input.source_id, 120),
     visualPluginId: cleanString(input.visualPluginId || input.visual_plugin_id || input.pluginId || input.plugin_id || "growth", 80) || "growth",
     visualScenario: cleanString(input.visualScenario || input.visual_scenario || input.scenario || "embedded-plugin-shell", 120) || "embedded-plugin-shell",
-    centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500)
+    centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500),
+    activationGates: uniqueStrings(input.activationGates || input.activation_gates || []),
+    requiredApprovalKeys: uniqueStrings(input.requiredApprovalKeys || input.required_approval_keys || []),
+    activationRecordLimit: clampRecordLimit(input.activationRecordLimit || input.activation_record_limit || 20, 20),
+    runtimeEnablementRecordLimit: clampRecordLimit(input.runtimeEnablementRecordLimit || input.runtime_enablement_record_limit || 20, 20),
+    ownerDailyUiEvidence: booleanFlag(input.ownerDailyUiEvidence || input.owner_daily_ui_evidence),
+    ownerAuditUiEvidence: booleanFlag(input.ownerAuditUiEvidence || input.owner_audit_ui_evidence),
+    stageCheckpointEvidence: booleanFlag(input.stageCheckpointEvidence || input.stage_checkpoint_evidence),
+    proposalReviewUiEvidence: booleanFlag(input.proposalReviewUiEvidence || input.proposal_review_ui_evidence),
+    automationDigestUiEvidence: booleanFlag(input.automationDigestUiEvidence || input.automation_digest_ui_evidence),
+    automationActionHandoffUiEvidence: booleanFlag(input.automationActionHandoffUiEvidence || input.automation_action_handoff_ui_evidence),
+    schedulerExecutionUiEvidence: booleanFlag(input.schedulerExecutionUiEvidence || input.scheduler_execution_ui_evidence),
+    schedulerRunUiEvidence: booleanFlag(input.schedulerRunUiEvidence || input.scheduler_run_ui_evidence),
+    schedulerWorkerTargetUiEvidence: booleanFlag(input.schedulerWorkerTargetUiEvidence || input.scheduler_worker_target_ui_evidence)
   };
 }
 
@@ -355,6 +381,68 @@ function releaseApprovalFromSmoke(value = {}) {
   return releaseApproval;
 }
 
+function publicAuditReadbackRecords(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const latest = value.latest && typeof value.latest === "object" && !Array.isArray(value.latest)
+    ? {
+      recordId: cleanString(value.latest.recordId || value.latest.record_id, 120),
+      status: cleanString(value.latest.status, 80),
+      version: cleanString(value.latest.version, 120),
+      privacyClass: cleanString(value.latest.privacyClass || value.latest.privacy_class, 80),
+      collectionRunId: cleanString(value.latest.collectionRunId || value.latest.collection_run_id, 120),
+      requiredConfigKeys: uniqueStrings(value.latest.requiredConfigKeys || value.latest.required_config_keys || []),
+      recordedAt: cleanString(value.latest.recordedAt || value.latest.recorded_at, 80),
+      updatedAt: cleanString(value.latest.updatedAt || value.latest.updated_at, 80),
+      summaryOnly: value.latest.summaryOnly === true || value.latest.summary_only === true
+    }
+    : null;
+  return {
+    ok: value.ok !== false,
+    status: cleanString(value.status, 80),
+    count: Number(value.count) || 0,
+    statuses: uniqueStrings(value.statuses || []),
+    latest,
+    latestRecordId: cleanString(value.latestRecordId || value.latest_record_id, 120),
+    requestedActivationGates: uniqueStrings(value.requestedActivationGates || value.requested_activation_gates || []),
+    requiredConfigKeys: latest ? uniqueStrings(latest.requiredConfigKeys || []) : []
+  };
+}
+
+function releaseControlsSummaryFromSmoke(value = {}) {
+  const controls = value.releaseControls && typeof value.releaseControls === "object" ? value.releaseControls : {};
+  const auditReadback = controls.auditReadback && typeof controls.auditReadback === "object"
+    ? controls.auditReadback
+    : value.auditReadback && typeof value.auditReadback === "object"
+      ? value.auditReadback
+      : {};
+  return {
+    source: cleanString(value.source || "growth-learning-automation-release-controls-service", 160),
+    status: cleanString(controls.status || value.status, 120),
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 160),
+    requiredActionCount: Number(controls.requiredActionCount) || 0,
+    missingCheckKeys: uniqueStrings(controls.missingCheckKeys || controls.missing_check_keys || []),
+    blockedCheckKeys: uniqueStrings(controls.blockedCheckKeys || controls.blocked_check_keys || []),
+    missingEvidenceKeys: uniqueStrings(controls.missingEvidenceKeys || controls.missing_evidence_keys || []),
+    missingApprovalKeys: uniqueStrings(controls.missingApprovalKeys || controls.missing_approval_keys || []),
+    auditReadback: {
+      status: cleanString(auditReadback.status, 80),
+      activationRecords: publicAuditReadbackRecords(auditReadback.activationRecords || auditReadback.activation_records),
+      runtimeEnablementRecords: publicAuditReadbackRecords(auditReadback.runtimeEnablementRecords || auditReadback.runtime_enablement_records)
+    },
+    configChangeApplied: value.configChangeApplied === true,
+    runtimeConfigChange: value.runtimeConfigChange === true,
+    runtimeConfigMutationPerformed: value.runtimeConfigMutationPerformed === true,
+    writefulSchedulingAllowed: value.writefulSchedulingAllowed === true,
+    backgroundSchedulingAllowed: value.backgroundSchedulingAllowed === true,
+    backgroundWorkerAllowed: value.backgroundWorkerAllowed === true
+  };
+}
+
+function summaryForTask(task, value) {
+  if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
+  return summaryFromSmoke(value);
+}
+
 function releaseApprovalTaskResult(task, taskResult, generatedAt) {
   const parsed = parseJsonOutput(taskResult.stdout);
   const parsedValue = parsed.ok ? parsed.value : {};
@@ -413,7 +501,7 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
     evidenceId: `growth_release_evidence_${task.taskId}_${generatedAt.replace(/[^0-9A-Za-z]/g, "")}`,
     generatedAt,
     exitCode: taskResult.exitCode,
-    summary: parsed.ok && !privacyFindings.length ? summaryFromSmoke(parsedValue) : {}
+    summary: parsed.ok && !privacyFindings.length ? summaryForTask(task, parsedValue) : {}
   };
   if (!pass) {
     evidence.error = blockedError || "release_evidence_bundle_smoke_blocked";
@@ -504,6 +592,27 @@ function taskSpecificArgs(task, scope) {
     args.push("--plugin-id", scope.visualPluginId || "growth");
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
+  }
+  if (task.taskId === "release_controls") {
+    if (scope.collectionRunId) args.push("--collection-run-id", scope.collectionRunId);
+    if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));
+    if (scope.requiredApprovalKeys.length) args.push("--required-approval-keys", scope.requiredApprovalKeys.join(","));
+    args.push("--activation-record-limit", String(scope.activationRecordLimit));
+    args.push("--runtime-enablement-record-limit", String(scope.runtimeEnablementRecordLimit));
+    const evidenceFlags = [
+      ["--owner-daily-ui-evidence", scope.ownerDailyUiEvidence],
+      ["--owner-audit-ui-evidence", scope.ownerAuditUiEvidence],
+      ["--stage-checkpoint-evidence", scope.stageCheckpointEvidence],
+      ["--proposal-review-ui-evidence", scope.proposalReviewUiEvidence],
+      ["--automation-digest-ui-evidence", scope.automationDigestUiEvidence],
+      ["--automation-action-handoff-ui-evidence", scope.automationActionHandoffUiEvidence],
+      ["--scheduler-execution-ui-evidence", scope.schedulerExecutionUiEvidence],
+      ["--scheduler-run-ui-evidence", scope.schedulerRunUiEvidence],
+      ["--scheduler-worker-target-ui-evidence", scope.schedulerWorkerTargetUiEvidence]
+    ];
+    for (const [flag, enabled] of evidenceFlags) {
+      if (enabled) args.push(flag, "true");
+    }
   }
   return args;
 }

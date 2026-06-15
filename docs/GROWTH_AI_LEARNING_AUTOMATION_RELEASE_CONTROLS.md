@@ -163,6 +163,36 @@ The CLI delegates through the normal Growth service graph and returns
 `operation=summarize`. It does not accept `--allow-write`, does not spawn
 subprocesses, and does not call smoke CLIs internally.
 
+## Release Evidence Bundle Integration
+
+The release evidence bundle can collect the same no-write controls readback as
+an explicit non-default task:
+
+```bash
+npm run smoke:release-evidence-bundle -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --task release_controls \
+  --activation-gates writeful_execution \
+  --required-approval-key writefulExecutionApproval \
+  --activation-record-limit 20 \
+  --runtime-enablement-record-limit 20 \
+  --json
+```
+
+This task writes `releaseControlsSmokeEvidence` inside the generated
+`growth.learningAutomationReleaseEvidenceBundle.v1` artifact. The task status
+means the readback smoke completed and passed privacy checks. It does not mean
+that Growth is ready to run automation. Consumers must read the nested
+controls summary status (`release_evidence_required`,
+`manual_runtime_config_required`, `runtime_verified`, and related states) to
+decide the next Owner/platform action.
+
+`release_controls` stays outside `DEFAULT_TASK_IDS` so the normal release
+evidence bundle does not become circular. It should be added only as a final
+audit/readback task after the default bundle and bundle-audit flow already
+exists.
+
 ## Forbidden Boundaries
 
 Release controls must not:
@@ -188,6 +218,8 @@ Required focused tests:
 
 - `node --test tests/learning-automation-release-controls-service.test.js`
 - `node --test tests/growth-release-controls-smoke-script.test.js`
+- `node --test tests/learning-automation-release-evidence-bundle-service.test.js`
+- `node --test tests/growth-release-evidence-bundle-script.test.js`
 - `node --test tests/growth-routes.test.js`
 - `node --test tests/growth-architecture-boundary.test.js`
 

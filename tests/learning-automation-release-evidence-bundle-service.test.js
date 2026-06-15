@@ -34,6 +34,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
+  assert.equal(DEFAULT_TASK_IDS.includes("release_controls"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
     "scheduler_dry_run"
@@ -59,6 +60,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
     learnerCycleOperation: "audit",
     taskCardId: "",
     planDraftId: "",
+    collectionRunId: "",
     evaluationId: "",
     profileDeltaId: "",
     evidenceId: "",
@@ -66,7 +68,20 @@ test("release evidence bundle service normalizes scope and task args", () => {
     sourceId: "",
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
-    centralVisualEvidenceFile: ""
+    centralVisualEvidenceFile: "",
+    activationGates: [],
+    requiredApprovalKeys: [],
+    activationRecordLimit: 20,
+    runtimeEnablementRecordLimit: 20,
+    ownerDailyUiEvidence: false,
+    ownerAuditUiEvidence: false,
+    stageCheckpointEvidence: false,
+    proposalReviewUiEvidence: false,
+    automationDigestUiEvidence: false,
+    automationActionHandoffUiEvidence: false,
+    schedulerExecutionUiEvidence: false,
+    schedulerRunUiEvidence: false,
+    schedulerWorkerTargetUiEvidence: false
   });
   assert.deepEqual(scopeArgs({
     workspaceId: "weixin_fanfan",
@@ -263,6 +278,102 @@ test("release evidence bundle service collects release approval bag without evid
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-automation-release-approval.js"));
   assert.ok(calls[0].args.includes("--operation"));
   assert.ok(calls[0].args.includes("bag"));
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle service collects optional release-controls readback as non-default evidence", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-release-controls-service",
+      schemaVersion: "growth.learningAutomationReleaseControls.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "manual_runtime_config_required",
+      releaseControls: {
+        status: "manual_runtime_config_required",
+        requiredActionCount: 1,
+        missingCheckKeys: ["runtime_enablement"],
+        missingEvidenceKeys: ["scheduler_worker_target_ui"],
+        missingApprovalKeys: ["backgroundWorkerApproval"],
+        auditReadback: {
+          status: "ready",
+          activationRecords: {
+            ok: true,
+            status: "records_available",
+            count: 1,
+            statuses: ["recorded"],
+            latestRecordId: "lgaract_1",
+            requestedActivationGates: ["writeful_execution"]
+          },
+          runtimeEnablementRecords: {
+            ok: true,
+            status: "records_missing",
+            count: 0,
+            statuses: [],
+            latestRecordId: "",
+            requestedActivationGates: []
+          }
+        }
+      },
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    collectionRunId: "lgacrn_release_1",
+    activationGates: ["writeful_execution"],
+    requiredApprovalKeys: ["writefulExecutionApproval", "backgroundWorkerApproval"],
+    activationRecordLimit: 7,
+    runtimeEnablementRecordLimit: 6,
+    automationDigestUiEvidence: true,
+    tasks: ["release_controls"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["releaseControlsSmokeEvidence"]);
+  const evidence = result.bundle.evidence.releaseControlsSmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.smoke, "npm run smoke:release-controls");
+  assert.equal(evidence.summary.source, "growth-learning-automation-release-controls-service");
+  assert.equal(evidence.summary.status, "manual_runtime_config_required");
+  assert.equal(evidence.summary.requiredActionCount, 1);
+  assert.deepEqual(evidence.summary.missingCheckKeys, ["runtime_enablement"]);
+  assert.deepEqual(evidence.summary.missingEvidenceKeys, ["scheduler_worker_target_ui"]);
+  assert.deepEqual(evidence.summary.missingApprovalKeys, ["backgroundWorkerApproval"]);
+  assert.equal(evidence.summary.auditReadback.status, "ready");
+  assert.equal(evidence.summary.auditReadback.activationRecords.status, "records_available");
+  assert.equal(evidence.summary.auditReadback.activationRecords.latestRecordId, "lgaract_1");
+  assert.equal(evidence.summary.auditReadback.runtimeEnablementRecords.status, "records_missing");
+  assert.equal(evidence.summary.configChangeApplied, false);
+  assert.equal(evidence.summary.writefulSchedulingAllowed, false);
+  assert.equal(result.bundle.scope.collectionRunId, "lgacrn_release_1");
+  assert.deepEqual(result.bundle.scope.activationGates, ["writeful_execution"]);
+  assert.deepEqual(result.bundle.scope.requiredApprovalKeys, ["writefulExecutionApproval", "backgroundWorkerApproval"]);
+  assert.equal(result.bundle.scope.automationDigestUiEvidence, true);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-release-controls.js"));
+  assert.ok(calls[0].args.includes("--collection-run-id"));
+  assert.ok(calls[0].args.includes("lgacrn_release_1"));
+  assert.ok(calls[0].args.includes("--activation-gates"));
+  assert.ok(calls[0].args.includes("writeful_execution"));
+  assert.ok(calls[0].args.includes("--required-approval-keys"));
+  assert.ok(calls[0].args.includes("writefulExecutionApproval,backgroundWorkerApproval"));
+  assert.ok(calls[0].args.includes("--activation-record-limit"));
+  assert.ok(calls[0].args.includes("7"));
+  assert.ok(calls[0].args.includes("--runtime-enablement-record-limit"));
+  assert.ok(calls[0].args.includes("6"));
+  assert.ok(calls[0].args.includes("--automation-digest-ui-evidence"));
+  assert.ok(calls[0].args.includes("true"));
+  assert.equal(calls[0].args.includes("--allow-write"), false);
   assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
 });
 
