@@ -9,6 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T08:49Z - Growth Owner Target Provision Controls Deployed
+
+- Status: deployed to Mac production and smoke validated. This is an Owner-loop
+  UI/control deployment, not full unattended automation release.
+- Commits pushed to both `origin/main` and `public/main`:
+  - `716f1d7` `Wire Owner target provision controls`;
+  - `ffabbbf` `Record Growth central visual evidence`.
+- Production deploy:
+  - command shape:
+    `npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file <private-local-password-file> --json`;
+  - source commit: `ffabbbf4ef55`;
+  - production path:
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260615T084612Z-plugin-growth-manual`;
+  - restarted launchd label:
+    `com.hermesmobile.plugin.growth`;
+  - deploy validation passed: launchd state `running`, manifest health
+    `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`, and production
+    profile audit had `codexIssueCount=0`.
+- Production smoke passed:
+  - deployed static files include
+    `20260615-target-provision-controls-ui-v1`,
+    `data-card-generation-target-provisioning`,
+    `targetProvisioning`, and `provisionGrowthDomainPack`;
+  - direct manifest returned plugin id `growth` and embedded-app metadata;
+  - `GET /api/v1/growth/status?workspace_id=weixin_fanfan` returned
+    `quick_check=ok`, `foreign_key_issues=0`, and Fanfan production SQLite
+    counts currently show no task cards yet;
+  - `GET /api/v1/growth/status?workspace_id=weixin_stephen` returned
+    `quick_check=ok`, `foreign_key_issues=0`, and Stephen production SQLite
+    counts include `learning_task_cards=50`;
+  - central Home AI `embedded-plugin-shell` visual harness passed for
+    `pluginId=growth` with screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260615T084336Z.png`;
+  - production no-write `smoke:planner-readiness` ran as `hermes-host` using
+    production Gateway token-path permissions, reached Gateway with
+    `gatewayMode=json`, and returned one validated daily science plan item for
+    `domain_pack_fanfan_cambridge_pathway_v1`;
+  - production no-write `smoke:daily-loop-preview` and
+    `smoke:learning-loop-state` passed for Fanfan science and correctly report
+    `nextAction=provision_learning_target` until Owner explicitly provisions
+    that domain pack/subject;
+  - `smoke:release-readiness` with Owner daily UI, Owner audit UI, central
+    visual, production planner, daily-loop preview, and learning-loop state
+    evidence returned `ok=true`, `readyForOwnerLoop=true`,
+    `readyForReleaseReview=false`, and `writefulSchedulingAllowed=false`.
+- Boundary notes:
+  - no production business write was performed by the smoke commands;
+  - a direct dev-user planner smoke failed before this with `EACCES` on the
+    production Gateway token path, which is expected because production token
+    files are readable by the production service user, not the dev user;
+  - the correct production domain pack id exposed by `graphOptions` is
+    `domain_pack_fanfan_cambridge_pathway_v1`, not the older staging shorthand
+    `uk_hk_curriculum_foundation`.
+- AI Ops evidence appended:
+  `evidence-a637b1bf-3397-4edb-bad2-546d40795f53`.
+- Remaining product work:
+  - Owner must still explicitly provision Fanfan science in the UI before
+    daily-loop draft/publish can generate a science card;
+  - richer older-cycle selection/history controls over the implemented
+    current-card cycle drilldown;
+  - formal stage-checkpoint UI;
+  - proposal/digest/action/execution/run/worker-target UI and platform
+    Action Inbox/Web Push evidence;
+  - full automation release review remains incomplete and writeful scheduling
+    remains disabled.
+
 ## 2026-06-15T08:44Z - Growth Owner Target Provision Controls Central Visual Evidence
 
 - Status: implemented, documented, locally validated, and centrally visual

@@ -96,8 +96,10 @@ full operating loop:
   domain-pack provision action through Growth service routes, plus
   current-card single-cycle audit/completeness drilldown through Growth service
   routes. Central `embedded-plugin-shell` visual evidence passed for
-  `pluginId=growth` on 2026-06-15. Older-cycle selection and production release
-  evidence are still pending;
+  `pluginId=growth` on 2026-06-15, and the controls were deployed to Mac
+  production at commit `ffabbbf4ef55` with no-write Owner-loop production
+  smoke. Older-cycle selection and full automation release evidence are still
+  pending;
 - no-write planner Gateway readiness smoke is implemented locally; production
   execution against real Gateway config is pending before planner UI deploy;
 - no-write daily-loop preview smoke CLI is implemented locally through

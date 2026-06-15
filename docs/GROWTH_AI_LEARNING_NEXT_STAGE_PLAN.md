@@ -117,8 +117,9 @@ evidence are not closed:
   `targetProvisioning` status, domain-pack/subject selection, explicit Owner
   provision creation/update, daily-loop draft/publish, audit correction, and
   current-cycle audit drilldown. Central `embedded-plugin-shell` visual
-  evidence exists for the Growth plugin shell; richer older-cycle selection
-  and production release evidence remain incomplete;
+  evidence and production Owner-loop smoke exist for the Growth plugin shell;
+  richer older-cycle selection, formal checkpoint UI, and full automation
+  release evidence remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
@@ -147,8 +148,10 @@ The next implementation slices should be:
    item, explicitly publish one card, and refresh board/context/loop state
    without Codex. Owner can also apply a domain-pack/subject selector and
    explicitly create/update target provision rows through the Growth service
-   facade. The remaining closure is older-cycle selection and production
-   release evidence.
+   facade. This Owner-loop path is deployed and production smoke validated, but
+   Fanfan science still requires explicit Owner provisioning before draft/
+   publish. The remaining closure is older-cycle selection and formal
+   checkpoint/proposal/digest/action/execution surfaces.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
    record/playback, and score-proportional completion. No pass-line retry loop

@@ -486,12 +486,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   strengths become low-pressure review hints instead of stretch claims, and
   planner context carries bounded `staleEvidence` summaries into
   `growth.learningPlanner.input.v1`.
-  Older-cycle selection over the implemented current-cycle drilldown,
-  production planner smoke execution, production release evidence, and
-  production planner deployment remain future slices. Central Home AI
-  `embedded-plugin-shell` visual evidence has passed for `pluginId=growth` on
-  2026-06-15 through
-  `ios-pwa-visual-embedded-plugin-shell-growth-20260615T084336Z.png`.
+  Owner target/domain-pack provision controls were deployed to Mac production
+  on 2026-06-15 at Growth commit `ffabbbf4ef55`. Production smoke passed for
+  manifest/status/static-version, central `embedded-plugin-shell` visual
+  evidence, production Gateway planner readiness, daily-loop preview,
+  learning-loop state, and release-readiness Owner-loop aggregation. Fanfan
+  science currently remains intentionally blocked until Owner explicitly
+  provisions `domain_pack_fanfan_cambridge_pathway_v1` / `science`.
+  Older-cycle selection over the implemented current-cycle drilldown, formal
+  stage-checkpoint UI, proposal/digest/action/execution UI, platform
+  Action Inbox/Web Push evidence, and full automation release review remain
+  future slices.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

@@ -488,11 +488,12 @@ Required shape:
 - UI privacy tests reject raw answers, transcripts, prompts, model output,
   source bodies, private paths, credentials, and provider configuration.
 
-Remaining Package 2 work: production release evidence plus richer
-selection/history controls for choosing older cycles after the current
-generated-card cycle is no longer the primary context. Central
-`embedded-plugin-shell` visual evidence already passed for `pluginId=growth` on
-2026-06-15.
+Remaining Package 2 work: richer selection/history controls for choosing older
+cycles after the current generated-card cycle is no longer the primary context.
+Central `embedded-plugin-shell` visual evidence already passed for
+`pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
+deployed to Mac production with no-write Owner-loop smoke. Full automation
+release review remains incomplete.
 
 ### Package 3: Stage Checkpoint UI
 
