@@ -200,7 +200,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Growth service graph for submission, evaluation queue processing, reflection,
   profile/evidence/profile-delta effects, and audit readback. The smoke output
   must not echo learner text, reflections, transcripts, prompts, answer keys,
-  raw model output, credentials, or provider config. Audit-completeness privacy
+  raw model output, credentials, or provider config. Its harness now also
+  chains a write-gated `full` learner-cycle smoke into a no-write
+  `smoke-growth-learning-loop-state` read against the same temporary DB,
+  proving the operational smoke artifacts can feed the next planning action
+  without exposing raw learner/model content. Audit-completeness privacy
   projection now scans public DTO keys for raw/private field names instead of
   scanning arbitrary text values, so safe public vocabulary does not block a
   summary-only cycle while raw prompt, transcript, answer-key, private-path,

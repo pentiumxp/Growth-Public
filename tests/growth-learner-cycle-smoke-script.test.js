@@ -10,6 +10,7 @@ const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learni
 
 const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-learner-cycle.js");
+const loopStateScriptPath = path.join(repoRoot, "scripts", "smoke-growth-learning-loop-state.js");
 
 const {
   allowWrite,
@@ -26,6 +27,46 @@ const TASK_CARD_ID = "ltask_learner_cycle_science";
 const TARGET_NODE_ID = "kg_science_fair_test";
 const RAW_SUBMISSION_MARKER = "RAW_LEARNER_SUBMISSION_MUST_NOT_LEAVE_OUTPUT";
 const RAW_REFLECTION_MARKER = "RAW_LEARNER_REFLECTION_MUST_NOT_LEAVE_OUTPUT";
+
+function scienceGraphPack() {
+  return {
+    schemaVersion: "hermes.learningGraphSeed.v0.1",
+    importId: "kg_import_learner_cycle_smoke",
+    version: "2026-06-15-test",
+    privacyClass: "summary_only",
+    sourceDocuments: [{
+      sourceRef: "public:science-fair-test",
+      title: "Science fair-test summary",
+      localPath: ""
+    }],
+    domainPacks: [{
+      domainPackId: "domain_pack_learner_cycle_science",
+      domain: "science",
+      title: "Learner-cycle science smoke pack",
+      sourceKind: "owner_manual",
+      version: "2026-06-15-test",
+      ownerWorkspaceId: "owner",
+      visibility: "private_seed",
+      importStatus: "validated_seed"
+    }],
+    nodes: [{
+      nodeId: TARGET_NODE_ID,
+      domain: "science",
+      nodeType: "topic",
+      title: "Fair test reasoning",
+      stage: "year_6_to_7",
+      subject: "science",
+      curriculum: "test",
+      sourceKind: "owner_manual",
+      sourceRef: "public:science-fair-test",
+      version: "2026-06-15-test",
+      privacyClass: "summary_only",
+      learningOutcomes: ["Explain how one changed variable affects a measured result."],
+      evidenceRequired: ["explain_changed_variable", "explain_measured_result"]
+    }],
+    edges: []
+  };
+}
 
 function createLearningTables(db) {
   db.exec(`
@@ -402,6 +443,17 @@ function seedPublishedPlanDraft(dbPath) {
   return planDraftId;
 }
 
+function seedScienceGraph(dbPath) {
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const result = store.learningGraphRepository.importPack({
+    pack: scienceGraphPack(),
+    validation: { validation: {}, warnings: [] },
+    sourceFile: "learner-cycle-science-graph.json",
+    sourceSha256: "learner-cycle-science-test-sha256"
+  });
+  assert.equal(result.ok, true);
+}
+
 function withTempDb(callback) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-learner-cycle-smoke-"));
   const dbPath = path.join(dir, "growth-learning.sqlite3");
@@ -422,6 +474,7 @@ function withPreparedDb(callback) {
     } finally {
       db.close();
     }
+    seedScienceGraph(dbPath);
     const planDraftId = seedPublishedPlanDraft(dbPath);
     return callback({ dir, dbPath, planDraftId });
   });
@@ -429,6 +482,14 @@ function withPreparedDb(callback) {
 
 function runScript(args, env = {}) {
   return spawnSync(process.execPath, [scriptPath, ...args], {
+    cwd: repoRoot,
+    env: Object.assign({}, process.env, env),
+    encoding: "utf8"
+  });
+}
+
+function runLoopStateScript(args, env = {}) {
+  return spawnSync(process.execPath, [loopStateScriptPath, ...args], {
     cwd: repoRoot,
     env: Object.assign({}, process.env, env),
     encoding: "utf8"
@@ -579,6 +640,37 @@ test("learner-cycle smoke script runs submit, single evaluation, reflection, pro
     } finally {
       db.close();
     }
+
+    const stateResult = runLoopStateScript([
+      ...baseArgs(""),
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_DATA_OWNER: "plugin",
+      GROWTH_LEARNING_DB_PATH: dbPath,
+      GROWTH_GATEWAY_AUTHORING_ENDPOINT: "http://127.0.0.1:9/fake-authoring",
+      GROWTH_GATEWAY_EVALUATION_ENDPOINT: "http://127.0.0.1:9/fake-evaluation",
+      GROWTH_GATEWAY_PLANNER_ENDPOINT: "http://127.0.0.1:9/fake-planner"
+    });
+
+    assert.equal(stateResult.status, 0, stateResult.stdout || stateResult.stderr);
+    const stateOutput = parseStdout(stateResult);
+    const stateSerialized = JSON.stringify(stateOutput);
+    assert.equal(stateOutput.ok, true);
+    assert.equal(stateOutput.schemaVersion, "growth.learningLoopState.v1");
+    assert.equal(stateOutput.privacyClass, "summary_only");
+    assert.equal(stateOutput.status, "ready_to_draft");
+    assert.equal(stateOutput.audit.complete, true);
+    assert.equal(stateOutput.audit.readyForAutomation, true);
+    assert.deepEqual(stateOutput.audit.missingRequired, []);
+    assert.equal(stateOutput.recommendation.available, true);
+    assert.equal(stateOutput.recommendation.targetNodeId, TARGET_NODE_ID);
+    assert.equal(stateOutput.nextAction.action, "draft_daily_plan");
+    assert.equal(String(stateOutput.nextAction.reason || "").startsWith("next_strategy:"), true);
+    assert.equal(stateSerialized.includes(RAW_SUBMISSION_MARKER), false);
+    assert.equal(stateSerialized.includes(RAW_REFLECTION_MARKER), false);
+    assert.equal(stateSerialized.includes("rawPrompt"), false);
+    assert.equal(stateSerialized.includes("answerKey"), false);
   });
 });
 

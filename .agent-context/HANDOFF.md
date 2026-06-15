@@ -9,6 +9,38 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:45Z - Learner Cycle To Loop-State Smoke Chain
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required because only harness, docs, and
+  workspace context changed.
+- Scope:
+  - expanded `tests/growth-learner-cycle-smoke-script.test.js` with a minimal
+    summary-only science graph seed in the temporary SQLite fixture;
+  - after the write-gated `smoke-growth-learner-cycle.js --operation full`
+    path completes one card, the harness runs the no-write
+    `smoke-growth-learning-loop-state.js` against the same temporary DB;
+  - the chained smoke requires `growth.learningLoopState.v1`,
+    `status=ready_to_draft`, `nextAction.action=draft_daily_plan`, complete
+    cycle audit, empty missing-required list, a target-bound recommendation,
+    and no raw learner/model content leakage.
+- Docs updated:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed before commit:
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js`;
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js
+    tests/growth-learning-loop-state-smoke-script.test.js
+    tests/learning-loop-state-service.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`245` files, `3,139` nodes,
+    `12,152` edges, index up to date).
+
 ## 2026-06-15T10:30Z - Post-Cycle Learning Loop State Harness
 
 - Status: implemented and locally validated; commit/push follows this handoff
