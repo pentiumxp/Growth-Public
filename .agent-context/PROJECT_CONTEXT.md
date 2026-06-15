@@ -198,7 +198,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Growth service graph for submission, evaluation queue processing, reflection,
   profile/evidence/profile-delta effects, and audit readback. The smoke output
   must not echo learner text, reflections, transcripts, prompts, answer keys,
-  raw model output, credentials, or provider config. Target provisioning smoke
+  raw model output, credentials, or provider config. Audit-completeness privacy
+  projection now scans public DTO keys for raw/private field names instead of
+  scanning arbitrary text values, so safe public vocabulary does not block a
+  summary-only cycle while raw prompt, transcript, answer-key, private-path,
+  provider-config, credential, cookie, token, or password keys still block
+  readiness. Target provisioning smoke
   evidence is available through `npm run smoke:target-provisioning`; it
   delegates only to `learning-target-provisioning-service`, defaults to
   read-only resolve, requires explicit `--allow-write` for provision writes,

@@ -9,6 +9,50 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:20Z - Audit Completeness Privacy Projection Refined
+
+- Status: implemented locally and focused-test validated; production deploy
+  and production no-write learner-cycle smoke are still pending for this
+  runtime change.
+- Scope:
+  - updated `src/services/learning-audit-completeness-service.js` so
+    `privacy_projection` scans public cycle-audit DTO keys for raw/private
+    fields instead of scanning arbitrary text values;
+  - raw/private keys such as raw prompt, raw model output, transcript, answer
+    key, private path, provider config, credentials, cookies, tokens, and
+    passwords still block completeness;
+  - safe public text values that mention words such as token, transcript,
+    secret, prompt, or cookie no longer create a privacy false positive.
+- Harness:
+  - expanded `tests/learning-audit-completeness-service.test.js` with
+    safe-public-text and raw/private-key regression coverage.
+- Focused validation passed:
+  - `node --check src/services/learning-audit-completeness-service.js`;
+  - `node --test tests/learning-audit-completeness-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/growth-learner-cycle-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js`.
+- Docs updated:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Next required validation before deployment:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - relevant focused and broad tests;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status`.
+- Expected production smoke after deploy:
+  - rerun no-write `npm run smoke:learner-cycle` for the existing Fanfan
+    science card;
+  - if the cycle has only the already-published plan and no real learner
+    submission/evaluation/profile-delta, `privacy_projection` should no longer
+    appear in `summary.missingRequired`; the remaining required gaps should be
+    real learner-cycle evidence such as `evaluation_evidence` and
+    `profile_delta_audit`.
+
 ## 2026-06-15T10:03Z - Learner Cycle Smoke Deployed
 
 - Status: implemented, locally validated, pushed to both remotes, deployed to

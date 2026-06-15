@@ -93,8 +93,48 @@ function hasNextRecommendation(cycle = {}) {
     || asArray(cycle.planAudit?.planDrafts).some((draft) => cleanString(draft.nextRecommendationId || draft.recommendationId));
 }
 
-function hasRawMarker(value) {
-  return /rawAnswer|rawPrompt|rawModelOutput|rawTranscript|transcript|answerKey|secret|token|cookie|password|privatePath|providerConfig/.test(JSON.stringify(value || {}));
+const PRIVACY_RISK_KEYS = new Set([
+  "rawanswer",
+  "rawprompt",
+  "rawmodeloutput",
+  "rawmodelresponse",
+  "rawtranscript",
+  "transcript",
+  "answerkey",
+  "privatepath",
+  "providerconfig",
+  "apikey",
+  "accesskey",
+  "credential",
+  "credentials",
+  "authorization",
+  "authheader",
+  "bearertoken",
+  "secret",
+  "token",
+  "cookie",
+  "password"
+]);
+
+function normalizedKey(value) {
+  return cleanString(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function isPrivacyRiskKey(key) {
+  const normalized = normalizedKey(key);
+  if (!normalized) return false;
+  if (PRIVACY_RISK_KEYS.has(normalized)) return true;
+  if (normalized.startsWith("raw") && /(answer|prompt|modeloutput|modelresponse|transcript|completion|output)/.test(normalized)) return true;
+  if (/(token|secret|cookie|password)$/.test(normalized) && !/(tokencount|tokenusage|tokensused)$/.test(normalized)) return true;
+  return false;
+}
+
+function hasRawMarker(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (Array.isArray(value)) return value.some((entry) => hasRawMarker(entry, seen));
+  return Object.entries(value).some(([key, child]) => isPrivacyRiskKey(key) || hasRawMarker(child, seen));
 }
 
 function finding(code, ok, severity, evidence = {}, remediation = "") {

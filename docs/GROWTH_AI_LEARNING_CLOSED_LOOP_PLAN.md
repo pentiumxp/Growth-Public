@@ -422,7 +422,8 @@ reports whether required audit evidence is present:
 - evaluation evidence in the evidence ledger;
 - persisted or visibly failed profile-delta audit;
 - downstream partial failures;
-- privacy projection status;
+- privacy projection status, checked as risk-bearing public DTO keys rather
+  than arbitrary text-value keywords;
 - optional Owner correction and next-recommendation visibility.
 
 The route is `GET /api/v1/growth/learning-cycles/completeness`. It does not

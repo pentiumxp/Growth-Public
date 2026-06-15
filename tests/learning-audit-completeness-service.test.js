@@ -147,6 +147,104 @@ test("audit completeness service blocks automation when required audit evidence 
   assert.equal(result.findings.find((item) => item.code === "partial_failures").evidence.partialFailures[0], "learning_cycle_audit_profile_delta_service_unavailable");
 });
 
+test("audit completeness service does not treat safe public text values as privacy leaks", () => {
+  const service = createLearningAuditCompletenessService({
+    cycleAuditService: {
+      listCycleAudit() {
+        return completeCycle({
+          planAudit: {
+            ok: true,
+            planDrafts: [{
+              planDraftId: "lgplan_cycle_1",
+              status: "published",
+              generatedTaskCardId: "ltask_cycle_1",
+              targetNodeIds: ["kg_science_fair_test"],
+              planSummary: "Public vocabulary may mention token, cookie, secret, transcript, or prompt as learning topics.",
+              selectedItem: {
+                itemId: "item_1",
+                reason: "Use summary-only privacyClass fields without raw source content.",
+                evidenceRequirements: ["short_explanation"]
+              },
+              publishAttempt: {
+                status: "published",
+                stage: "published",
+                selectedItemId: "item_1",
+                attemptedAt: "2026-06-15T08:02:00.000Z",
+                attemptCount: 1
+              },
+              privacyClass: "summary_only"
+            }]
+          },
+          timeline: [
+            { type: "profile_delta", id: "lgpdelta_cycle_1", summary: "No privatePath or providerConfig keys are present." },
+            { type: "evidence", id: "lgevd_cycle_1", summary: "A learner can discuss transcript as a public word." },
+            { type: "plan", id: "lgplan_cycle_1", summary: "Token is a safe value here, not a credential key." }
+          ]
+        });
+      }
+    }
+  });
+
+  const result = service.evaluateCycleCompleteness({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    taskCardId: "ltask_cycle_1"
+  });
+
+  assert.equal(result.complete, true);
+  assert.equal(result.findings.find((item) => item.code === "privacy_projection").ok, true);
+  assert.deepEqual(result.summary.missingRequired, []);
+});
+
+test("audit completeness service blocks raw or private public DTO keys", () => {
+  const service = createLearningAuditCompletenessService({
+    cycleAuditService: {
+      listCycleAudit() {
+        return completeCycle({
+          planAudit: {
+            ok: true,
+            planDrafts: [{
+              planDraftId: "lgplan_cycle_1",
+              status: "published",
+              generatedTaskCardId: "ltask_cycle_1",
+              targetNodeIds: ["kg_science_fair_test"],
+              selectedItem: {
+                itemId: "item_1",
+                rawPrompt: "must not project"
+              }
+            }]
+          },
+          evidenceAudit: {
+            ok: true,
+            evidence: [{
+              evidenceId: "lgevd_cycle_1",
+              sourceType: "daily_evaluation",
+              sourceId: "eval_cycle_1",
+              sourceTaskCardId: "ltask_cycle_1",
+              summary: {
+                summaryOnly: true,
+                evaluationId: "eval_cycle_1",
+                providerConfig: { model: "hidden" }
+              }
+            }]
+          },
+          timeline: [{ type: "plan", id: "lgplan_cycle_1", privatePath: "/tmp/private" }]
+        });
+      }
+    }
+  });
+
+  const result = service.evaluateCycleCompleteness({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    taskCardId: "ltask_cycle_1"
+  });
+
+  assert.equal(result.complete, false);
+  assert.equal(result.findings.find((item) => item.code === "privacy_projection").ok, false);
+  assert.equal(result.summary.missingRequired.includes("privacy_projection"), true);
+});
+
 test("audit completeness service requires failed publish attempts to appear in timeline", () => {
   const service = createLearningAuditCompletenessService({
     cycleAuditService: {
