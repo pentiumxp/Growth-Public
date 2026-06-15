@@ -13,6 +13,7 @@ const { createLearningAutomationFailurePolicyService } = require("../services/le
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
+const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
 const { createLearningAutomationSchedulerRunService } = require("../services/learning-automation-scheduler-run-service");
@@ -246,6 +247,9 @@ function createServices(config) {
   const learningAutomationCentralVisualEvidenceService = createLearningAutomationCentralVisualEvidenceService({
     readFile: fs.readFileSync
   });
+  const learningAutomationReleaseEvidenceBundleAuditService = createLearningAutomationReleaseEvidenceBundleAuditService({
+    readFile: fs.readFileSync
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -372,6 +376,7 @@ function createServices(config) {
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
+    learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseReadinessService,
     learningAutomationSchedulerExecutionService,
     learningAutomationSchedulerRunService,

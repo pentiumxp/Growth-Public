@@ -176,7 +176,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   dry-run safety check from the release-readiness service,
   accepts versioned `growth.learningAutomationReleaseEvidenceBundle.v1`
   evidence bundles through `--evidence-bundle-file` or
-  `--evidence-bundle-json`. Growth now also has
+  `--evidence-bundle-json`, and accepts external
+  `releaseEvidenceBundleAudit` evidence from
+  `npm run smoke:release-evidence-bundle-audit`. Growth now also has
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
@@ -209,7 +211,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
   release-readiness or scheduler permission. Release-readiness writes a summary-only advisory
-  snapshot only when `--write-snapshot` is explicitly supplied. Scheduler dry-run now
+  snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
+  has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only
+  audit over a previously generated bundle. It validates bundle schema,
+  `summary_only`, default task coverage, pass counts, required evidence keys,
+  privacy-risk keys, and private path/value leaks, emits
+  `growth.learningAutomationReleaseEvidenceBundleAudit.v1`, and intentionally
+  stays outside the bundle being audited to avoid circular release artifacts.
+  Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the
   normal service graph and provides local or production dry-run evidence

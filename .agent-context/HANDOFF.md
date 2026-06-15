@@ -9,6 +9,83 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T14:23Z - Release Evidence Bundle Self-Audit
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  No production deploy is required for this slice because Growth only audits a
+  summary-only release evidence bundle and keeps release-readiness advisory and
+  no-write.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `91%` complete, about `9%`
+    remaining;
+  - full product closed loop including embedded UI, real production visual
+    artifacts, platform receipt evidence, reviewed targets, approvals, and
+    production scheduling decisions: about `71%` complete, about `29%`
+    remaining.
+- Scope:
+  - added
+    `src/services/learning-automation-release-evidence-bundle-audit-service.js`;
+  - added `npm run smoke:release-evidence-bundle-audit` through
+    `scripts/smoke-growth-release-evidence-bundle-audit.js`;
+  - wired the service through `src/app/services.js`;
+  - `learning-automation-release-readiness-service` now requires
+    `releaseEvidenceBundleAudit` / `release_evidence_bundle_audit` before a
+    release can be marked ready;
+  - the audit accepts explicit inline bundle JSON or an explicit bundle file,
+    strips file paths to file names, requires the release bundle schema,
+    `summary_only` privacy, `summaryOnly=true`, default task coverage, no
+    missing/unknown/blocked required tasks, required evidence key coverage, and
+    internally consistent task/pass/block counts;
+  - the audit fails closed on privacy-risk keys and private value leaks inside
+    bundle content, and does not run smoke tasks, call Gateway, spawn child
+    processes, touch repositories, publish cards, generate cards, evaluate
+    cards, schedule work, notify users, or mutate learner state.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-evidence-bundle-audit-service.test.js`;
+  - `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`;
+  - `tests/learning-automation-release-readiness-service.test.js`;
+  - `tests/growth-release-readiness-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-evidence-bundle-audit-service.test.js
+    tests/growth-release-evidence-bundle-audit-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js` (`51` tests);
+  - direct release evidence bundle audit smoke against a temporary
+    summary-only bundle: `status=pass`, `readyForReleaseEvidence=true`,
+    `defaultTaskCoverage=true`, `taskCount=18`, and no temporary path/private
+    marker leak in output;
+  - release-readiness smoke accepts `releaseEvidenceBundleAudit` as a passing
+    check while remaining `incomplete` until other real release evidence is
+    supplied and `writefulSchedulingAllowed=false`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`267` files, `3,429` nodes,
+    `13,116` edges; index up to date with older-engine advisory);
+  - `npm run check` (`156` runtime JS files covered);
+  - `npm test` (`595` tests).
+- Remaining product work:
+  - collect a real production default release bundle and run the bundle audit
+    against it;
+  - collect real production Home AI visual artifact and platform
+    Action Inbox/Web Push receipt evidence;
+  - complete embedded Owner release-evidence UI controls and visual
+    verification;
+  - collect reviewed enabled targets, production dry-run evidence, and explicit
+    Owner approval before enabling writeful scheduling.
+
 ## 2026-06-15T14:00Z - Central Visual Release Evidence
 
 - Status: implemented and validated; commit/push follows this handoff update.

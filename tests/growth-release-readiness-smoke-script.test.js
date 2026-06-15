@@ -74,6 +74,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-daily-loop-write-smoke-evidence",
     "--production-learner-cycle-smoke-evidence",
     "--production-scheduler-dry-run-smoke-evidence",
+    "--release-evidence-bundle-audit",
     "--release-approval-json", JSON.stringify({
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" }
     }),
@@ -107,7 +108,8 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+    productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" }
   });
   assert.deepEqual(releaseApprovalFromArgs(args), {
     writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },
@@ -145,7 +147,8 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+      productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" }
     },
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },

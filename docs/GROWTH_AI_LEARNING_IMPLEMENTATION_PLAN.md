@@ -712,6 +712,16 @@ Implemented backend shape:
   `npm run smoke:release-readiness -- --evidence-bundle-file <path>` when
   release review needs structured smoke evidence without Codex hand-spliced
   JSON.
+- `npm run smoke:release-evidence-bundle-audit` delegates to
+  `learning-automation-release-evidence-bundle-audit-service` and validates a
+  previously generated `growth.learningAutomationReleaseEvidenceBundle.v1`
+  artifact before release-readiness treats the bundle as complete release
+  evidence. The audit checks schema, `summary_only`, default task coverage,
+  pass counts, required evidence keys, privacy-risk keys, and private
+  path/value leaks, then emits
+  `growth.learningAutomationReleaseEvidenceBundleAudit.v1` as external
+  `releaseEvidenceBundleAudit` input. It does not run smoke tasks or embed
+  itself into the bundle being audited.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
@@ -755,7 +765,8 @@ Required behavior:
   central embedded visual evidence from
   `npm run smoke:central-visual-evidence` or the default `central_visual`
   release-bundle task after the Home AI central visual harness has produced
-  a bounded artifact, and explicit release approval records for
+  a bounded artifact, release evidence bundle self-audit evidence from
+  `npm run smoke:release-evidence-bundle-audit`, and explicit release approval records for
   each writeful config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
@@ -781,9 +792,11 @@ Required harness:
 - `tests/learning-automation-release-approval-service.test.js`;
 - `tests/learning-automation-platform-action-evidence-service.test.js`;
 - `tests/learning-automation-central-visual-evidence-service.test.js`;
+- `tests/learning-automation-release-evidence-bundle-audit-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
 - `tests/growth-platform-action-evidence-smoke-script.test.js`;
 - `tests/growth-central-visual-evidence-smoke-script.test.js`;
+- `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
@@ -814,7 +827,8 @@ Remaining release gaps:
   release-bundle task, production learner-cycle audit smoke from
   `npm run smoke:learner-cycle` or the default `learner_cycle`
   release-bundle task, and production scheduler dry-run smoke from
-  `npm run smoke:scheduler-dry-run`;
+  `npm run smoke:scheduler-dry-run`, then release evidence bundle self-audit
+  from `npm run smoke:release-evidence-bundle-audit`;
 - Owner-visible product UI evidence for recording/reviewing release approvals
   outside the smoke CLI.
 

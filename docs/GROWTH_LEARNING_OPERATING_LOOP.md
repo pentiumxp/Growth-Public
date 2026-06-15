@@ -1625,7 +1625,13 @@ Implementation progress on 2026-06-15:
   evidence. Controlled daily-loop draft/publish smoke
   can be added only with the explicit non-default `daily_loop_write` task plus
   `--allow-write-evidence`, and the builder then delegates to the existing
-  daily-loop smoke write gate instead of importing daily-loop services. This
+  daily-loop smoke write gate instead of importing daily-loop services. The
+  written bundle should then be validated by
+  `npm run smoke:release-evidence-bundle-audit`, which emits separate
+  `growth.learningAutomationReleaseEvidenceBundleAudit.v1` evidence for
+  schema, summary-only status, default task coverage, pass counts, required
+  evidence keys, and privacy/path leak checks before release-readiness treats
+  the bundle as complete evidence. This
   remains input normalization only: readiness remains no-write by default,
   `--write-snapshot` is still explicit, and the boundary still cannot enable
   writeful scheduling.

@@ -177,6 +177,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--production-daily-loop-write-smoke-evidence")) evidence.productionDailyLoopWriteSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-learner-cycle-smoke-evidence")) evidence.productionLearnerCycleSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-dry-run-smoke-evidence")) evidence.productionSchedulerDryRunSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--release-evidence-bundle-audit")) evidence.releaseEvidenceBundleAudit = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--platform-action-evidence")) evidence.platformActionEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--central-visual-evidence")) evidence.centralVisualEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   return evidence;

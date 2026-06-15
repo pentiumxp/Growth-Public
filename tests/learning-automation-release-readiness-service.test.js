@@ -43,6 +43,7 @@ function allEvidence() {
     productionDailyLoopWriteSmokeEvidence: { ok: true, evidenceId: "daily_loop_write_smoke" },
     productionLearnerCycleSmokeEvidence: { ok: true, evidenceId: "learner_cycle_smoke" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, evidenceId: "scheduler_dry_run_smoke" },
+    releaseEvidenceBundleAudit: { ok: true, evidenceId: "release_bundle_audit" },
     platformActionEvidence: { ok: true, evidenceId: "platform_action" },
     centralVisualEvidence: { ok: true, evidenceId: "visual" }
   };
@@ -200,6 +201,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_planner_readiness_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run_smoke_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "release_evidence_bundle_audit").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run").status, "pass");
   assert.deepEqual(calls.map((call) => call.type), [
     "listDigests",

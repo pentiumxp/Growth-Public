@@ -196,6 +196,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationSchedulerWorkerTargetService/);
   assert.match(services, /createLearningAutomationReleaseReadinessService/);
   assert.match(services, /learningAutomationReleaseReadinessService/);
+  assert.match(services, /createLearningAutomationReleaseEvidenceBundleAuditService/);
+  assert.match(services, /learningAutomationReleaseEvidenceBundleAuditService/);
   assert.match(services, /createLearningAutomationSchedulerService/);
   assert.match(services, /learningAutomationSchedulerService/);
   assert.match(services, /createLearningTargetProvisioningService/);
@@ -991,6 +993,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
   assert.match(script, /--production-learner-cycle-smoke-evidence/);
   assert.match(script, /--production-scheduler-dry-run-smoke-evidence/);
+  assert.match(script, /--release-evidence-bundle-audit/);
   assert.match(script, /--platform-action-evidence/);
   assert.match(script, /workspace_id_required/);
   assert.match(script, /release_readiness_smoke_invalid_json/);
@@ -1034,6 +1037,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /productionLearnerCycleSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerDryRunSmokeEvidence/);
+  assert.match(scriptHarness, /releaseEvidenceBundleAudit/);
   assert.match(scriptHarness, /platformActionEvidence/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
@@ -1100,6 +1104,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionSchedulerDryRunSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_dry_run_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_dry_run_smoke/);
+  assert.match(releaseReadinessService, /releaseEvidenceBundleAudit/);
+  assert.match(releaseReadinessService, /release_evidence_bundle_audit/);
+  assert.match(releaseReadinessService, /run_release_evidence_bundle_audit/);
   assert.match(releaseReadinessService, /platformActionEvidence/);
   assert.match(releaseReadinessService, /platform_action_evidence/);
   assert.match(releaseReadinessService, /attach_platform_action_evidence/);
@@ -1122,9 +1129,14 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:central-visual-evidence"],
     "node scripts/smoke-growth-central-visual-evidence.js"
   );
+  assert.equal(
+    packageJson.scripts["smoke:release-evidence-bundle-audit"],
+    "node scripts/smoke-growth-release-evidence-bundle-audit.js"
+  );
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-evidence-bundle-audit\.js/);
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
@@ -1136,6 +1148,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-central-visual-evidence-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-evidence-bundle-audit-service\.js/
   );
 
   const platformActionScript = read(path.join("scripts", "smoke-growth-platform-action-evidence.js"));
@@ -1164,6 +1180,23 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(centralVisualScript, /generateCard/);
   assert.doesNotMatch(centralVisualScript, /executeOnce/);
   assert.doesNotMatch(centralVisualScript, /runOnce/);
+
+  const bundleAuditScript = read(path.join("scripts", "smoke-growth-release-evidence-bundle-audit.js"));
+  assert.match(bundleAuditScript, /readEnv/);
+  assert.match(bundleAuditScript, /createServices/);
+  assert.match(bundleAuditScript, /learningAutomationReleaseEvidenceBundleAuditService/);
+  assert.match(bundleAuditScript, /\.evaluate/);
+  assert.match(bundleAuditScript, /--release-evidence-bundle-file/);
+  assert.match(bundleAuditScript, /--release-evidence-bundle-json/);
+  assert.doesNotMatch(bundleAuditScript, /spawnSync/);
+  assert.doesNotMatch(bundleAuditScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(bundleAuditScript, /publishPlanItem/);
+  assert.doesNotMatch(bundleAuditScript, /generateCard/);
+  assert.doesNotMatch(bundleAuditScript, /evaluateSubmission/);
+  assert.doesNotMatch(bundleAuditScript, /executeOnce/);
+  assert.doesNotMatch(bundleAuditScript, /runOnce/);
+  assert.doesNotMatch(bundleAuditScript, /deliverHandoff/);
+  assert.doesNotMatch(bundleAuditScript, /activateStageAssessment/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -1266,6 +1299,35 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(service, /activateStageAssessment/);
   assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
+  const bundleAuditService = read(path.join("src", "services", "learning-automation-release-evidence-bundle-audit-service.js"));
+  assert.match(bundleAuditService, /RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA/);
+  assert.match(bundleAuditService, /DEFAULT_TASK_IDS/);
+  assert.match(bundleAuditService, /TASK_DEFINITIONS/);
+  assert.match(bundleAuditService, /summaryOnly: true/);
+  assert.match(bundleAuditService, /privacyClass: "summary_only"/);
+  assert.match(bundleAuditService, /scanPrivacyKeys/);
+  assert.match(bundleAuditService, /scanPrivateValues/);
+  assert.match(bundleAuditService, /missingRequiredTasks/);
+  assert.match(bundleAuditService, /missingRequiredEvidenceKeys/);
+  assert.match(bundleAuditService, /defaultTaskCoverage/);
+  assert.match(bundleAuditService, /readyForReleaseEvidence/);
+  assert.doesNotMatch(bundleAuditService, /spawnSync/);
+  assert.doesNotMatch(bundleAuditService, /exec\(/);
+  assert.doesNotMatch(bundleAuditService, /readEnv/);
+  assert.doesNotMatch(bundleAuditService, /createServices/);
+  assert.doesNotMatch(bundleAuditService, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(bundleAuditService, /learning_growth_/);
+  assert.doesNotMatch(bundleAuditService, /repository\./);
+  assert.doesNotMatch(bundleAuditService, /publishPlanItem/);
+  assert.doesNotMatch(bundleAuditService, /publishAcceptedProposal/);
+  assert.doesNotMatch(bundleAuditService, /generateCard/);
+  assert.doesNotMatch(bundleAuditService, /evaluateSubmission/);
+  assert.doesNotMatch(bundleAuditService, /executeOnce/);
+  assert.doesNotMatch(bundleAuditService, /runOnce/);
+  assert.doesNotMatch(bundleAuditService, /deliverHandoff/);
+  assert.doesNotMatch(bundleAuditService, /activateStageAssessment/);
+  assert.doesNotMatch(bundleAuditService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
   const serviceHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
   assert.match(serviceHarness, /builds summary-only bundle from no-write smoke tasks/);
   assert.match(serviceHarness, /cycle_history/);
@@ -1289,6 +1351,15 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(scriptHarness, /exposes controlled daily-loop write evidence only as explicit blocked task by default/);
   assert.match(scriptHarness, /fails closed before write smoke when controlled publish lacks a plan draft id/);
   assert.match(scriptHarness, /fails closed for missing workspace and invalid task/);
+
+  const auditServiceHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-audit-service.test.js"));
+  assert.match(auditServiceHarness, /validates complete summary-only default bundle/);
+  assert.match(auditServiceHarness, /fails closed for incomplete bundle/);
+  assert.match(auditServiceHarness, /rejects privacy-risk keys and private value leaks/);
+
+  const auditScriptHarness = read(path.join("tests", "growth-release-evidence-bundle-audit-smoke-script.test.js"));
+  assert.match(auditScriptHarness, /validates a summary-only bundle file/);
+  assert.match(auditScriptHarness, /fails closed for missing bundle and privacy risk/);
 });
 
 test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {

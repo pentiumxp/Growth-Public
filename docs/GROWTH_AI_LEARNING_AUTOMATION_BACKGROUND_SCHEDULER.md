@@ -82,7 +82,8 @@ The initial controlled tick remains Owner-only. A true unattended worker is a
 later production release stage. The local worker service supplies only the
 actor, reviewed-target, lease, and timer mechanics needed for a future release; it
 does not remove the need for product evidence, central visual evidence,
-platform action evidence, production dry-run evidence, and a separate release
+platform action evidence, production dry-run evidence, release evidence bundle
+self-audit evidence, and a separate release
 decision.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
@@ -479,9 +480,12 @@ Background scheduling can be considered only after all of these are complete:
   `npm run smoke:central-visual-evidence`; Growth does not run Appium or
   `npm run ios:pwa:visual` from the release evidence boundary.
 - Production dry-run evidence exists for the target scope.
+- Release evidence bundle self-audit evidence has been produced through
+  `npm run smoke:release-evidence-bundle-audit` after the bundle builder wrote
+  the summary-only evidence bundle.
 - A Growth-owned release-readiness evidence snapshot records product,
-  platform, visual, reviewed-target, production dry-run, config, and explicit
-  approval evidence without enabling scheduling.
+  platform, visual, reviewed-target, production dry-run, release-bundle audit,
+  config, and explicit approval evidence without enabling scheduling.
 - `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true` has explicit release
   approval for the execution boundary.
 - `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED=true` has a separate release
