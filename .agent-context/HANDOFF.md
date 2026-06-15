@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T19:35Z - Release Review Package Readback E2E Harness
+
+- Status: implemented and validated locally. This slice is Growth
+  Harness/docs only. It does not deploy, apply runtime config, grant scheduler
+  permission, call Gateway, publish cards/plans, evaluate submissions, run
+  scheduler actions, deliver notifications, activate stage assessments, mutate
+  learner state, or write release records outside a temporary test SQLite DB.
+- Scope:
+  - `tests/growth-release-review-smoke-script.test.js` now seeds a temporary
+    real Growth SQLite database with one ready release collection run through
+    `createLearningAutomationReleaseCollectionRunRepository`;
+  - the same test seeds a matching release package audit record through
+    `createLearningAutomationReleasePackageRepository`;
+  - the test then executes `scripts/smoke-growth-release-review.js` in a child
+    process through the normal `createServices` graph and verifies
+    `packageRecordReadbackAvailable=true`, `packageRecordRequired=true`,
+    `packageRecordPresent=true`, `latestPackage.packageId`,
+    `releaseReview.latestPackageId`, and
+    `releaseReview.packageRecordStatus=ready_for_release_review`.
+- Docs updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - `node --check tests/growth-release-review-smoke-script.test.js`;
+  - `node --test tests/growth-release-review-smoke-script.test.js` (`5`
+    tests);
+  - release-focused suite covering review/authorization/closure/controls,
+    package repository/service/script, routes, architecture, and docs (`116`
+    tests);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-review -- --workspace-id smoke_workspace --learner-id smoke_learner --json`;
+  - `npm run check` (`179/179` runtime JavaScript files covered);
+  - `npm test` (`702` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`313` files, `4,068` nodes,
+    `15,710` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-26da1083-a6bc-4d0d-b199-95332cfd9197`.
+- Remaining product work:
+  - continue from backend release evidence into embedded Owner release/control
+    UI and production release evidence collection;
+  - keep Growth automation release controls advisory until external platform
+    runtime config and visual/Action Inbox/Web Push production evidence are
+    explicitly collected and read back.
+
 ## 2026-06-15T19:23Z - Release Package Readback In Release Review
 
 - Status: implemented and validated locally. This slice keeps release package

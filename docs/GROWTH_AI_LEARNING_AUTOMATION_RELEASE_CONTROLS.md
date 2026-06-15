@@ -32,7 +32,9 @@ CLI:
 The service composes existing Growth-owned services:
 
 - `learning-automation-release-readiness-service.evaluateReadiness`
-- `learning-automation-release-review-service.review`
+- `learning-automation-release-review-service.review`, which reads persisted
+  release package audit records through
+  `learning-automation-release-package-service.listPackages`
 - `learning-automation-release-closure-service.summarize`
 - `learning-automation-release-activation-service.preflight`
 - `learning-automation-release-activation-service.listActivations`
@@ -41,10 +43,10 @@ The service composes existing Growth-owned services:
 
 It does not own a repository or table because it persists no new business
 state. Durable release evidence remains in the existing release-readiness,
-collection-run, decision, approval, activation, runtime-enablement, scheduler,
-and worker-target tables. It reads activation and runtime enablement audit rows
-only through their owning services and returns bounded record summaries; it must
-not inspect SQLite tables directly.
+collection-run, package, decision, approval, activation, runtime-enablement,
+scheduler, and worker-target tables. It reads package, activation, and runtime
+enablement audit rows only through their owning services and returns bounded
+record summaries; it must not inspect SQLite tables directly.
 
 ## DTO Contract
 
@@ -110,7 +112,9 @@ The top-level DTO also includes `auditReadback`:
 The `steps` array contains bounded summaries for:
 
 - `release_readiness`
-- `release_review`
+- `release_review`, including package audit-record readback fields:
+  `packageRecordReadbackAvailable`, `packageRecordRequired`,
+  `packageRecordPresent`, `latestPackageId`, and `latestPackageStatus`
 - `release_closure`
 - `release_activation`
 - `runtime_enablement`
@@ -217,11 +221,19 @@ Release controls must not:
 Required focused tests:
 
 - `node --test tests/learning-automation-release-controls-service.test.js`
+- `node --test tests/growth-release-review-smoke-script.test.js`
 - `node --test tests/growth-release-controls-smoke-script.test.js`
 - `node --test tests/learning-automation-release-evidence-bundle-service.test.js`
 - `node --test tests/growth-release-evidence-bundle-script.test.js`
 - `node --test tests/growth-routes.test.js`
 - `node --test tests/growth-architecture-boundary.test.js`
+
+`tests/growth-release-review-smoke-script.test.js` must include a real SQLite
+service-graph scenario that seeds a release collection run and a matching
+release package audit record, then executes `scripts/smoke-growth-release-review.js`
+in a child process and verifies the package readback fields above. This prevents
+the release review/controls ladder from regressing to fake-service-only package
+coverage.
 
 Broad local gate:
 
