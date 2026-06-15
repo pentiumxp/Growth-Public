@@ -170,6 +170,7 @@ function readinessSummary(readiness = {}) {
     blockedCheckKeys: uniqueStrings(review.blockedCheckKeys || readiness.blockedCheckKeys || []),
     missingEvidenceKeys: uniqueStrings(review.missingEvidenceKeys || readiness.missingEvidenceKeys || []),
     persistedApprovalKeys: uniqueStrings(review.persistedApprovalKeys || readiness.persistedApprovalKeys || []),
+    persistedEvidenceKeys: uniqueStrings(review.persistedEvidenceKeys || readiness.persistedEvidenceKeys || []),
     evidenceReadback,
     writefulSchedulingAllowed: readiness.writefulSchedulingAllowed === true,
     runtimeConfigChange: readiness.runtimeConfigChange === true,
@@ -221,7 +222,7 @@ function recordSummary(value = {}, kind = "") {
     ok: record.ok !== false,
     status: cleanString(record.status, 120),
     count: Number(record.count) || 0,
-    latestId: cleanString(record.latestId || record.latestRecordId || latest.id || latest.runId || latest.packageId || latest.decisionId || latest.approvalId || latest.activationId || latest.enablementId, 180),
+    latestId: cleanString(record.latestId || record.latestRecordId || latest.id || latest.runId || latest.packageId || latest.decisionId || latest.approvalId || latest.evidenceRecordId || latest.activationId || latest.enablementId, 180),
     latestStatus: cleanString(record.latestStatus || latest.status, 120),
     statuses: uniqueStrings(record.statuses || [])
   };
@@ -231,6 +232,13 @@ function recordSummary(value = {}, kind = "") {
       latestEvidenceReadbackPresentCount: readback.presentCount,
       latestEvidenceReadbackMissingCount: readback.missingCount,
       latestEvidenceReadbackSourceBundleId: readback.sourceBundleId
+    });
+  }
+  if (kind === "release_evidence") {
+    return Object.assign(summary, {
+      latestEvidenceKey: cleanString(record.latestEvidenceKey || latest.evidenceKey || latest.evidence_key, 160),
+      latestCheckKey: cleanString(record.latestCheckKey || latest.checkKey || latest.check_key, 160),
+      latestObservedAt: cleanString(record.latestObservedAt || latest.observedAt || latest.observed_at, 80)
     });
   }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record, latest));
@@ -247,6 +255,7 @@ function artifactReadbackSummary(artifactReadback = {}) {
     decisions: recordSummary(readback.decisions),
     packages: recordSummary(readback.packages, "release_package"),
     approvals: recordSummary(readback.approvals),
+    releaseEvidence: recordSummary(readback.releaseEvidence || readback.release_evidence, "release_evidence"),
     activations: recordSummary(readback.activations),
     runtimeEnablements: recordSummary(readback.runtimeEnablements || readback.runtime_enablements)
   };
@@ -273,6 +282,11 @@ function inventorySummary(inventory = {}) {
     latestPackageDashboardNextActionKey: cleanString(summary.latestPackageDashboardNextActionKey, 140),
     latestPackageDashboardRequiredActionCount: Number(summary.latestPackageDashboardRequiredActionCount || 0) || 0,
     latestDecisionId: cleanString(summary.latestDecisionId, 180),
+    releaseEvidenceRecordCount: Number(summary.releaseEvidenceRecordCount || 0) || 0,
+    latestReleaseEvidenceRecordId: cleanString(summary.latestReleaseEvidenceRecordId, 180),
+    latestReleaseEvidenceKey: cleanString(summary.latestReleaseEvidenceKey, 160),
+    latestReleaseEvidenceCheckKey: cleanString(summary.latestReleaseEvidenceCheckKey, 160),
+    latestReleaseEvidenceStatus: cleanString(summary.latestReleaseEvidenceStatus, 120),
     latestActivationId: cleanString(summary.latestActivationId, 180),
     latestRuntimeEnablementId: cleanString(summary.latestRuntimeEnablementId, 180),
     controlsStatus: cleanString(objectOnly(summary.controls).status, 120),
@@ -325,6 +339,11 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     latestPackageDashboardNextActionKey: inventoryPart.latestPackageDashboardNextActionKey,
     latestPackageDashboardRequiredActionCount: inventoryPart.latestPackageDashboardRequiredActionCount,
     latestDecisionId: inventoryPart.latestDecisionId,
+    releaseEvidenceRecordCount: inventoryPart.releaseEvidenceRecordCount,
+    latestReleaseEvidenceRecordId: inventoryPart.latestReleaseEvidenceRecordId,
+    latestReleaseEvidenceKey: inventoryPart.latestReleaseEvidenceKey,
+    latestReleaseEvidenceCheckKey: inventoryPart.latestReleaseEvidenceCheckKey,
+    latestReleaseEvidenceStatus: inventoryPart.latestReleaseEvidenceStatus,
     latestActivationId: inventoryPart.latestActivationId,
     latestRuntimeEnablementId: inventoryPart.latestRuntimeEnablementId,
     artifactCount: inventoryPart.artifactCount,
@@ -335,6 +354,7 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     missingEvidenceKeys: uniqueStrings(controlsPart.missingEvidenceKeys.concat(readinessPart.missingEvidenceKeys)),
     missingApprovalKeys: controlsPart.missingApprovalKeys,
     persistedApprovalKeys: readinessPart.persistedApprovalKeys,
+    persistedEvidenceKeys: readinessPart.persistedEvidenceKeys,
     configChangeApplied: false,
     runtimeConfigChange: false,
     runtimeConfigMutationPerformed: false,

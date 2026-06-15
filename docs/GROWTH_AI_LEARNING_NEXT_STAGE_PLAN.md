@@ -360,7 +360,12 @@ Use the Growth-owned release-readiness boundary:
   read models were collected, not that release state changed. The final readback
   smoke harnesses must also prove persisted release-readiness snapshots can be
   read from SQLite by `readinessId` and projected as `latestReadinessSnapshotId`
-  with bounded evidenceReadback counts in inventory and dashboard outputs.
+  with bounded evidenceReadback counts in inventory and dashboard outputs. They
+  must also prove persisted release evidence records can be read through
+  `learning-automation-release-evidence-service.listEvidence` and projected as
+  `releaseEvidenceRecordCount`, `latestReleaseEvidenceRecordId`,
+  `latestReleaseEvidenceKey`, `latestReleaseEvidenceCheckKey`, and
+  `latestReleaseEvidenceStatus` in release inventory/dashboard outputs.
 - release evidence bundle audit CLI:
   `npm run smoke:release-evidence-bundle-audit -- --workspace-id <workspace> --release-evidence-bundle-file <bundle.json> --json`.
   This audit delegates to

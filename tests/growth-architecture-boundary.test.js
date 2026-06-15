@@ -2015,6 +2015,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /decisionService\.listDecisions/);
   assert.match(releaseInventoryService, /packageService\.listPackages/);
   assert.match(releaseInventoryService, /approvalService\.listApprovals/);
+  assert.match(releaseInventoryService, /releaseEvidenceService\.listEvidence/);
   assert.match(releaseInventoryService, /releaseActivationService\.listActivations/);
   assert.match(releaseInventoryService, /runtimeEnablementService\.listEnablements/);
   assert.match(releaseInventoryService, /packageDashboardFields/);
@@ -2022,6 +2023,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /latestPackageDashboardStatus/);
   assert.match(releaseInventoryService, /evidenceReadbackSummary/);
   assert.match(releaseInventoryService, /latestReadinessEvidencePresentCount/);
+  assert.match(releaseInventoryService, /latestReleaseEvidenceRecordId/);
+  assert.match(releaseInventoryService, /releaseEvidenceRecordCount/);
   assert.doesNotMatch(releaseInventoryService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseInventoryService, /learning_growth_/);
   assert.doesNotMatch(releaseInventoryService, /spawnSync/);
@@ -2044,6 +2047,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseDashboardService, /latestPackageDashboardStatus/);
   assert.match(releaseDashboardService, /evidenceReadbackSummary/);
   assert.match(releaseDashboardService, /readinessEvidencePresentCount/);
+  assert.match(releaseDashboardService, /persistedEvidenceKeys/);
+  assert.match(releaseDashboardService, /latestReleaseEvidenceRecordId/);
+  assert.match(releaseDashboardService, /releaseEvidenceRecordCount/);
   assert.doesNotMatch(releaseDashboardService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseDashboardService, /learning_growth_/);
   assert.doesNotMatch(releaseDashboardService, /spawnSync/);

@@ -9,6 +9,51 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T22:28Z - Release Evidence Inventory/Dashboard Readback
+
+- Status: implemented and validated locally. This slice is
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-inventory-service` now composes
+    `releaseEvidenceService.listEvidence` alongside readiness snapshots,
+    collection runs, decisions, packages, approvals, activations, runtime
+    enablements, and release controls;
+  - release inventory now projects bounded release evidence record readback:
+    `releaseEvidenceRecordCount`, `latestReleaseEvidenceRecordId`,
+    `latestReleaseEvidenceKey`, `latestReleaseEvidenceCheckKey`, and
+    `latestReleaseEvidenceStatus`;
+  - `learning-automation-release-dashboard-service` now projects
+    `persistedEvidenceKeys` from readiness plus the inventory release evidence
+    summary into the Owner dashboard read model and artifact readback;
+  - smoke harnesses now write one release evidence record into a temporary
+    SQLite database through `npm run smoke:release-evidence` service graph and
+    prove `npm run smoke:release-inventory` /
+    `npm run smoke:release-dashboard` can read it back through service
+    boundaries.
+- Changed files:
+  - `src/services/learning-automation-release-inventory-service.js`;
+  - `src/services/learning-automation-release-dashboard-service.js`;
+  - `src/app/services.js`;
+  - release inventory/dashboard/architecture smoke tests;
+  - Growth docs and this handoff.
+- Validation passed:
+  - syntax checks for touched runtime files;
+  - focused release readback harness:
+    `node --test tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-architecture-boundary.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js`
+    (`48/48`).
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`186/186` runtime JavaScript files covered);
+  - `npm test` (`738/738`);
+  - Home AI platform contract checker for Growth:
+    `node scripts/plugin-workspace-platform-contract-check.js --plugin growth --workspace-root /Users/hermes-dev/HermesMobileDev/plugins --repo-root /Users/hermes-dev/HermesMobileDev/app --json`;
+  - AI Ops required checks: app architecture-code harness, touched-file
+    `node --check`, and `git diff --check`;
+  - AI Ops evidence ledger append id
+    `evidence-ecce9379-64f2-49da-b20d-33dd84e8cdc7`.
+
 ## 2026-06-15T22:19Z - Release Evidence Record Boundary
 
 - Status: implemented and validated locally. This slice is backend/Harness/docs

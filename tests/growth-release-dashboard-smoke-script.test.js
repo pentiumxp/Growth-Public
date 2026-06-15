@@ -116,6 +116,7 @@ test("release dashboard smoke script runs no-write read model against a temporar
     assert.equal(output.releaseReadiness.evidenceReadback.summaryOnly, true);
     assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(output.releaseInventory.summaryOnly, true);
+    assert.equal(output.releaseInventory.releaseEvidenceRecordCount, 0);
     assert.equal(output.artifactReadback.summaryOnly, true);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
@@ -146,6 +147,20 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
       "--created-by", "weixin_owner",
       "--created-at", "2026-06-15T18:10:00.000Z"
     ], env);
+    const releaseEvidence = runSmoke("smoke-growth-automation-release-evidence.js", [
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain-pack-id", "uk_hk_curriculum_foundation",
+      "--domain", "science",
+      "--subject", "science",
+      "--evidence-key", "owner_daily_ui_evidence",
+      "--evidence-json", JSON.stringify({ evidenceId: "owner_daily_ui_dashboard_1", source: "dashboard_smoke" }),
+      "--recorded-by", "weixin_owner",
+      "--observed-at", "2026-06-15T18:15:00.000Z"
+    ], env);
     const output = runSmoke("smoke-growth-release-dashboard.js", [
       "--workspace-id", "fanfan",
       "--learner-id", "fanfan",
@@ -158,8 +173,16 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
     assert.equal(output.releaseDashboard.latestReadinessSnapshotId, readiness.snapshot.readinessId);
     assert.equal(output.releaseDashboard.latestReadinessEvidencePresentCount, 0);
     assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 27);
+    assert.equal(output.releaseDashboard.releaseEvidenceRecordCount, 1);
+    assert.equal(output.releaseDashboard.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
+    assert.equal(output.releaseDashboard.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
+    assert.equal(output.releaseDashboard.latestReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
+    assert.equal(output.releaseDashboard.latestReleaseEvidenceStatus, "pass");
+    assert.equal(output.releaseInventory.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.artifactReadback.snapshots.latestId, readiness.snapshot.readinessId);
     assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 27);
+    assert.equal(output.artifactReadback.releaseEvidence.latestId, releaseEvidence.evidence.evidenceRecordId);
+    assert.equal(output.artifactReadback.releaseEvidence.latestEvidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
   } finally {

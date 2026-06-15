@@ -1647,7 +1647,11 @@ Implementation progress on 2026-06-15:
   projected into release-readiness before one-off evidence flags or bundle
   inputs are evaluated. This removes Codex hand-spliced JSON from the normal
   release evidence collection path while keeping the boundary summary-only and
-  unable to grant scheduler permission.
+  unable to grant scheduler permission. Release inventory and dashboard read
+  models must read these records only through the release evidence service and
+  project bounded count/latest id/key/status fields; they must not inspect the
+  SQLite table directly and must not treat the presence of a record as runtime
+  enablement.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection

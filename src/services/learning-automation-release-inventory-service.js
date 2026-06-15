@@ -107,6 +107,7 @@ function primaryIdKeys(kind) {
     release_decision: ["decisionId", "decision_id"],
     release_package: ["packageId", "package_id"],
     release_approval: ["approvalId", "approval_id"],
+    release_evidence: ["evidenceRecordId", "evidence_record_id"],
     release_activation: ["activationId", "activation_id"],
     runtime_enablement: ["enablementId", "enablement_id"]
   };
@@ -170,12 +171,15 @@ function recordSummary(kind, record = {}) {
   const packageSummary = objectOnly(record.packageSummary || record.package_summary);
   const activationGates = record.requestedActivationGates || record.requested_activation_gates || record.activationGates || record.activation_gates;
   const approvalKey = cleanString(record.approvalKey || record.approval_key || record.gate || record.configKey || record.config_key, 160);
+  const evidenceKey = cleanString(record.evidenceKey || record.evidence_key, 160);
+  const checkKey = cleanString(record.checkKey || record.check_key, 160);
   const id = firstAvailableId(record, primaryIdKeys(kind).concat([
     "readinessId", "readiness_id",
     "snapshotId", "snapshot_id",
     "decisionId", "decision_id",
     "packageId", "package_id",
     "approvalId", "approval_id",
+    "evidenceRecordId", "evidence_record_id",
     "activationId", "activation_id",
     "enablementId", "enablement_id",
     "collectionRunId", "collection_run_id", "runId", "run_id"
@@ -202,6 +206,13 @@ function recordSummary(kind, record = {}) {
   if (kind === "release_readiness_snapshot") {
     return Object.assign(summary, {
       evidenceReadback: evidenceReadbackSummary(record)
+    });
+  }
+  if (kind === "release_evidence") {
+    return Object.assign(summary, {
+      evidenceKey,
+      checkKey,
+      observedAt: cleanString(record.observedAt || record.observed_at, 80)
     });
   }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record));
@@ -284,6 +295,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
   const decisionService = options.decisionService || null;
   const packageService = options.packageService || null;
   const approvalService = options.approvalService || null;
+  const releaseEvidenceService = options.releaseEvidenceService || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
   const releaseControlsService = options.releaseControlsService || null;
@@ -301,6 +313,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       || requireMethod(scope, "decisions", decisionService, "listDecisions")
       || requireMethod(scope, "packages", packageService, "listPackages")
       || requireMethod(scope, "approvals", approvalService, "listApprovals")
+      || requireMethod(scope, "release_evidence", releaseEvidenceService, "listEvidence")
       || requireMethod(scope, "activations", releaseActivationService, "listActivations")
       || requireMethod(scope, "runtime_enablements", runtimeEnablementService, "listEnablements")
       || requireMethod(scope, "controls", releaseControlsService, "summarize");
@@ -315,6 +328,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       decisions: decisionService.listDecisions(request),
       packages: packageService.listPackages(request),
       approvals: approvalService.listApprovals(request),
+      releaseEvidence: releaseEvidenceService.listEvidence(request),
       activations: releaseActivationService.listActivations(request),
       runtimeEnablements: runtimeEnablementService.listEnablements(request)
     };
@@ -329,6 +343,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       listSummary("release_decision", result.decisions, "decisions"),
       listSummary("release_package", result.packages, "packages"),
       listSummary("release_approval", result.approvals, "approvals"),
+      listSummary("release_evidence", result.releaseEvidence, "evidence"),
       listSummary("release_activation", result.activations, "activations"),
       listSummary("runtime_enablement", result.runtimeEnablements, "enablements")
     ];
@@ -338,6 +353,8 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
     const latestSnapshot = objectOnly(summaries.find((summary) => summary.kind === "release_readiness_snapshot")?.latest);
     const latestSnapshotEvidenceReadback = objectOnly(latestSnapshot.evidenceReadback);
     const latestPackage = objectOnly(summaries.find((summary) => summary.kind === "release_package")?.latest);
+    const releaseEvidenceSummary = objectOnly(summaries.find((summary) => summary.kind === "release_evidence"));
+    const latestReleaseEvidence = objectOnly(releaseEvidenceSummary.latest);
 
     return Object.assign({}, scope, {
       ok: true,
@@ -369,6 +386,11 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         latestPackageDashboardNextActionKey: cleanString(latestPackage.latestPackageDashboardNextActionKey, 140),
         latestPackageDashboardRequiredActionCount: Number(latestPackage.latestPackageDashboardRequiredActionCount || 0) || 0,
         latestDecisionId: cleanString(summaries.find((summary) => summary.kind === "release_decision")?.latest?.id, 180),
+        releaseEvidenceRecordCount: Number(releaseEvidenceSummary.count || 0) || 0,
+        latestReleaseEvidenceRecordId: cleanString(latestReleaseEvidence.id, 180),
+        latestReleaseEvidenceKey: cleanString(latestReleaseEvidence.evidenceKey, 160),
+        latestReleaseEvidenceCheckKey: cleanString(latestReleaseEvidence.checkKey, 160),
+        latestReleaseEvidenceStatus: cleanString(latestReleaseEvidence.status, 120),
         latestActivationId: cleanString(summaries.find((summary) => summary.kind === "release_activation")?.latest?.id, 180),
         latestRuntimeEnablementId: cleanString(summaries.find((summary) => summary.kind === "runtime_enablement")?.latest?.id, 180),
         writefulSchedulingAllowed: false,
@@ -383,8 +405,9 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         decisions: summaries[2],
         packages: summaries[3],
         approvals: summaries[4],
-        activations: summaries[5],
-        runtimeEnablements: summaries[6],
+        releaseEvidence: summaries[5],
+        activations: summaries[6],
+        runtimeEnablements: summaries[7],
         controls
       },
       writefulSchedulingAllowed: false,

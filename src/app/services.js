@@ -341,6 +341,7 @@ function createServices(config) {
     decisionService: learningAutomationReleaseDecisionService,
     packageService: learningAutomationReleasePackageService,
     approvalService: learningAutomationReleaseApprovalService,
+    releaseEvidenceService: learningAutomationReleaseEvidenceService,
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService,
     releaseControlsService: learningAutomationReleaseControlsService

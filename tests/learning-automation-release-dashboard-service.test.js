@@ -22,6 +22,7 @@ function createService(overrides = {}, calls = []) {
             missingCheckKeys: ["central_visual_evidence"],
             missingEvidenceKeys: ["central_visual_evidence"],
             persistedApprovalKeys: ["writefulExecutionApproval"],
+            persistedEvidenceKeys: ["ownerDailyUiEvidence"],
             nextAction: {
               key: "central_visual_evidence",
               action: "run_central_visual_harness",
@@ -90,8 +91,8 @@ function createService(overrides = {}, calls = []) {
           releaseInventory: {
             summaryOnly: true,
             status: "manual_runtime_config_required",
-            artifactCount: 7,
-            readbackKinds: ["release_collection_run", "release_package", "runtime_enablement"],
+            artifactCount: 8,
+            readbackKinds: ["release_collection_run", "release_package", "release_evidence", "runtime_enablement"],
             missingRecordKinds: ["runtime_enablement"],
             blockedRecordKinds: [],
             latestReadinessSnapshotId: "lgarsnap_1",
@@ -105,6 +106,11 @@ function createService(overrides = {}, calls = []) {
             latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
             latestPackageDashboardRequiredActionCount: 1,
             latestDecisionId: "lgard_1",
+            releaseEvidenceRecordCount: 1,
+            latestReleaseEvidenceRecordId: "lgarev_1",
+            latestReleaseEvidenceKey: "ownerDailyUiEvidence",
+            latestReleaseEvidenceCheckKey: "owner_daily_ui_evidence",
+            latestReleaseEvidenceStatus: "pass",
             latestActivationId: "lgaract_1",
             latestRuntimeEnablementId: ""
           },
@@ -156,6 +162,19 @@ function createService(overrides = {}, calls = []) {
                 }
               },
               statuses: ["ready_for_release_review"]
+            },
+            releaseEvidence: {
+              ok: true,
+              status: "records_available",
+              count: 1,
+              latest: {
+                id: "lgarev_1",
+                evidenceKey: "ownerDailyUiEvidence",
+                checkKey: "owner_daily_ui_evidence",
+                status: "pass",
+                observedAt: "2026-06-16T11:13:00.000Z"
+              },
+              statuses: ["pass"]
             },
             runtimeEnablements: {
               ok: true,
@@ -209,13 +228,22 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.releaseDashboard.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.releaseDashboard.latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.releaseDashboard.releaseEvidenceRecordCount, 1);
+  assert.equal(result.releaseDashboard.latestReleaseEvidenceRecordId, "lgarev_1");
+  assert.equal(result.releaseDashboard.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
+  assert.equal(result.releaseDashboard.latestReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
+  assert.equal(result.releaseDashboard.latestReleaseEvidenceStatus, "pass");
   assert.deepEqual(result.releaseDashboard.missingRecordKinds, ["runtime_enablement"]);
   assert.deepEqual(result.releaseDashboard.persistedApprovalKeys, ["writefulExecutionApproval"]);
+  assert.deepEqual(result.releaseDashboard.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
   assert.equal(result.releaseReadiness.readyForReleaseReview, false);
+  assert.deepEqual(result.releaseReadiness.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
   assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleId, "bundle_dashboard_current");
   assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.releaseControls.auditReadbackStatus, "ready");
-  assert.equal(result.releaseInventory.artifactCount, 7);
+  assert.equal(result.releaseInventory.artifactCount, 8);
+  assert.equal(result.releaseInventory.releaseEvidenceRecordCount, 1);
+  assert.equal(result.releaseInventory.latestReleaseEvidenceRecordId, "lgarev_1");
   assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackPresentCount, 26);
   assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 1);
   assert.equal(result.artifactReadback.snapshots.latestEvidenceReadbackSourceBundleId, "bundle_dashboard_snapshot");
@@ -223,6 +251,9 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.artifactReadback.packages.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.artifactReadback.packages.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.artifactReadback.releaseEvidence.latestId, "lgarev_1");
+  assert.equal(result.artifactReadback.releaseEvidence.latestEvidenceKey, "ownerDailyUiEvidence");
+  assert.equal(result.artifactReadback.releaseEvidence.latestCheckKey, "owner_daily_ui_evidence");
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.deepEqual(calls.map((call) => call.type), ["readiness", "controls", "inventory"]);

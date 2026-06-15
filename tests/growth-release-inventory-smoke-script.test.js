@@ -94,6 +94,20 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
       "--created-by", "weixin_owner",
       "--created-at", "2026-06-15T18:10:00.000Z"
     ], env);
+    const releaseEvidence = runSmoke("smoke-growth-automation-release-evidence.js", [
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain-pack-id", "uk_hk_curriculum_foundation",
+      "--domain", "science",
+      "--subject", "science",
+      "--evidence-key", "owner_daily_ui_evidence",
+      "--evidence-json", JSON.stringify({ evidenceId: "owner_daily_ui_smoke_1", source: "inventory_smoke" }),
+      "--recorded-by", "weixin_owner",
+      "--observed-at", "2026-06-15T18:15:00.000Z"
+    ], env);
     const output = runSmoke("smoke-growth-release-inventory.js", [
       "--workspace-id", "weixin_fanfan",
       "--learner-id", "fanfan",
@@ -102,14 +116,22 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
     ], env);
 
     assert.equal(readiness.snapshot.evidenceReadback.summaryOnly, true);
+    assert.equal(releaseEvidence.evidence.evidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.operation, "inventory");
     assert.equal(output.ok, true);
     assert.equal(output.releaseInventory.latestReadinessSnapshotId, readiness.snapshot.readinessId);
     assert.equal(output.releaseInventory.latestReadinessEvidencePresentCount, 0);
     assert.equal(output.releaseInventory.latestReadinessEvidenceMissingCount, 27);
+    assert.equal(output.releaseInventory.releaseEvidenceRecordCount, 1);
+    assert.equal(output.releaseInventory.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
+    assert.equal(output.releaseInventory.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
+    assert.equal(output.releaseInventory.latestReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
+    assert.equal(output.releaseInventory.latestReleaseEvidenceStatus, "pass");
     assert.equal(output.artifactReadback.snapshots.latest.id, readiness.snapshot.readinessId);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.summaryOnly, true);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 27);
+    assert.equal(output.artifactReadback.releaseEvidence.latest.id, releaseEvidence.evidence.evidenceRecordId);
+    assert.equal(output.artifactReadback.releaseEvidence.latest.evidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
   } finally {
