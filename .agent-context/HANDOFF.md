@@ -11,9 +11,10 @@
 
 ## 2026-06-15T17:33Z - Runtime Enablement Audit/Readback Records
 
-- Status: implemented locally and validated. This slice is Growth
-  backend/Harness/docs only. It does not deploy, apply runtime config, grant
-  scheduler permission, call Gateway, publish cards, or run scheduling.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is Growth backend/Harness/docs only. It does not
+  deploy, apply runtime config, grant scheduler permission, call Gateway,
+  publish cards, or run scheduling.
 - Scope:
   - added `learning-automation-runtime-enablement-service` as the final
     Growth-local record-only audit/readback layer after release activation;
@@ -88,6 +89,10 @@
   - only after those pass, perform any explicit platform/runtime-config
     enablement outside Growth and read it back through
     `npm run smoke:runtime-enablement`.
+- Git:
+  - commit `c7ab1cd` `Add runtime enablement audit readback`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 
 ## 2026-06-15T17:09Z - Scheduler Execution Activation Readback Gate
 
