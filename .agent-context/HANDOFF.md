@@ -11,10 +11,11 @@
 
 ## 2026-06-15T18:19Z - Optional Release Controls Bundle Readback
 
-- Status: implemented and validated. This slice is Growth backend/Harness/docs
-  only. It does not deploy, apply runtime config, grant scheduler permission,
-  write release records, call Gateway, publish cards, run scheduling, or
-  deliver notifications.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is Growth backend/Harness/docs only. It does not
+  deploy, apply runtime config, grant scheduler permission, write release
+  records, call Gateway, publish cards, run scheduling, or deliver
+  notifications.
 - Scope:
   - `learning-automation-release-evidence-bundle-service` now exposes explicit
     non-default task `release_controls`;
@@ -73,6 +74,10 @@
   - only after evidence passes, perform any explicit platform/runtime-config
     enablement outside Growth and read it back through
     `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
+- Git:
+  - commit `628f828` `Add release controls bundle readback`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 
 ## 2026-06-15T18:06Z - Release Controls Persisted Audit Readback
 
