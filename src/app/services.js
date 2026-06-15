@@ -20,6 +20,7 @@ const { createLearningAutomationReleaseCollectionRunService } = require("../serv
 const { createLearningAutomationReleaseControlsService } = require("../services/learning-automation-release-controls-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
+const { createLearningAutomationReleaseInventoryService } = require("../services/learning-automation-release-inventory-service");
 const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
@@ -328,6 +329,16 @@ function createServices(config) {
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService
   });
+  const learningAutomationReleaseInventoryService = createLearningAutomationReleaseInventoryService({
+    releaseReadinessService: learningAutomationReleaseReadinessService,
+    collectionRunService: learningAutomationReleaseCollectionRunService,
+    decisionService: learningAutomationReleaseDecisionService,
+    packageService: learningAutomationReleasePackageService,
+    approvalService: learningAutomationReleaseApprovalService,
+    releaseActivationService: learningAutomationReleaseActivationService,
+    runtimeEnablementService: learningAutomationRuntimeEnablementService,
+    releaseControlsService: learningAutomationReleaseControlsService
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -442,6 +453,7 @@ function createServices(config) {
     learningAutomationReleaseControlsService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,
+    learningAutomationReleaseInventoryService,
     learningAutomationReleasePackageService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,

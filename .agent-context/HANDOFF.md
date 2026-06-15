@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T20:04Z - Release Inventory Readback Service
+
+- Status: implemented and validated locally. This slice is Growth backend /
+  route / CLI / Harness / docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway, publish cards/plans, evaluate
+  submissions, run scheduler actions, deliver notifications, activate stage
+  assessments, mutate learner state, or write production release records.
+- Scope:
+  - added `src/services/learning-automation-release-inventory-service.js`
+    as a no-write Owner/visible-target aggregate readback over release
+    readiness snapshots, collection runs, release decisions, package audit
+    records, release approvals, activation records, runtime enablement records,
+    and release controls;
+  - wired `learningAutomationReleaseInventoryService` in
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-inventory` in
+    `src/routes/growth-routes.js`;
+  - added `scripts/smoke-growth-release-inventory.js` and
+    `npm run smoke:release-inventory`;
+  - added focused service, smoke-script, route, and architecture guards;
+  - updated Growth-local docs:
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`.
+- Validation passed:
+  - `node --check` for the new service, script, routes, service graph, and
+    focused tests;
+  - `node --test tests/learning-automation-release-inventory-service.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`80` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-inventory -- --workspace-id smoke_workspace --learner-id smoke_learner --json`;
+  - `npm run check` (`181/181` runtime JavaScript files covered);
+  - `npm test` (`711` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`317` files, `4,110` nodes,
+    `15,892` edges; index up to date; CLI reports an advisory older-engine
+    reindex warning only);
+  - AI Ops evidence ledger append id
+    `evidence-23cbb039-d774-4048-8557-bf9993b87200`.
+- Remaining product work:
+  - expose release inventory/control readbacks in the embedded Owner UI;
+  - collect real production visual, Action Inbox/Web Push, scheduler, worker,
+    daily-loop, learner-cycle, and release approval evidence before any
+    runtime enablement;
+  - keep Growth automation release inventory advisory/read-only until external
+    platform runtime config and production evidence are explicitly collected
+    and read back.
+
 ## 2026-06-15T19:46Z - Release Ladder Architecture Script Map Sync
 
 - Status: implemented and validated locally. This slice is Growth docs /

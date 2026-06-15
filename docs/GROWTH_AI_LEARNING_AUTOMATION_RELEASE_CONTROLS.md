@@ -29,6 +29,22 @@ CLI:
 
 - `npm run smoke:release-controls`
 
+Companion inventory readback:
+
+- service: `src/services/learning-automation-release-inventory-service.js`
+- route: `GET /api/v1/growth/automation/release-inventory`
+- CLI: `npm run smoke:release-inventory`
+
+Release inventory is a read-only Owner/visible-target aggregate over the same
+release ladder artifacts. It composes release-readiness snapshots, collection
+runs, release decisions, package audit records, release approvals, activation
+records, runtime enablement records, and release controls through existing
+service read methods. It returns `growth.learningAutomationReleaseInventory.v1`
+with bounded artifact counts, latest artifact ids, missing/blocked record
+kinds, and nested controls state. It owns no repository/table and must not be
+treated as a release switch, deploy command, scheduler permission, runtime
+configuration writer, or Gateway/model boundary.
+
 The service composes existing Growth-owned services:
 
 - `learning-automation-release-readiness-service.evaluateReadiness`
@@ -228,6 +244,8 @@ Required focused tests:
 - `node --test tests/learning-automation-release-controls-service.test.js`
 - `node --test tests/growth-release-review-smoke-script.test.js`
 - `node --test tests/growth-release-controls-smoke-script.test.js`
+- `node --test tests/learning-automation-release-inventory-service.test.js`
+- `node --test tests/growth-release-inventory-smoke-script.test.js`
 - `node --test tests/learning-automation-release-evidence-bundle-service.test.js`
 - `node --test tests/growth-release-evidence-bundle-script.test.js`
 - `node --test tests/growth-routes.test.js`

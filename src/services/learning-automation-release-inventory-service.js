@@ -1,0 +1,333 @@
+"use strict";
+
+const RELEASE_INVENTORY_SCHEMA = "growth.learningAutomationReleaseInventory.v1";
+const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
+
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function unique(values = []) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 160)).filter(Boolean)));
+}
+
+function boundedLimit(value, fallback = 5) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return fallback;
+  return Math.max(1, Math.min(50, Math.trunc(numeric)));
+}
+
+function scopeFrom(input = {}) {
+  const workspaceId = cleanString(input.workspaceId || input.workspace_id, 120);
+  return {
+    workspaceId,
+    learnerId: cleanString(input.learnerId || input.learner_id || workspaceId, 120),
+    programId: cleanString(input.programId || input.program_id, 160),
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id, 160),
+    domain: cleanString(input.domain, 120),
+    subject: cleanString(input.subject, 120),
+    horizon: cleanString(input.horizon || "daily_plan", 80) || "daily_plan",
+    collectionRunId: cleanString(input.collectionRunId || input.collection_run_id || input.runId || input.run_id, 160),
+    displayName: cleanString(input.displayName || input.display_name, 160),
+    label: cleanString(input.label, 160)
+  };
+}
+
+function scanPrivacyKeys(value, pathName = "$", findings = []) {
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivacyKeys(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const childPath = `${pathName}.${key}`;
+    if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
+    if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+  }
+  return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
+  }
+  return findings;
+}
+
+function unavailable(error, scope = {}, extra = {}) {
+  return Object.assign({}, scope, {
+    ok: false,
+    source: "growth-learning-automation-release-inventory-service",
+    schemaVersion: RELEASE_INVENTORY_SCHEMA,
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: "blocked",
+    error: cleanString(error, 180) || "learning_automation_release_inventory_unavailable",
+    advisoryOnly: true,
+    recordOnly: true,
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  }, extra);
+}
+
+function firstAvailableId(record = {}, keys = []) {
+  for (const key of keys) {
+    const value = cleanString(record[key], 180);
+    if (value) return value;
+  }
+  return "";
+}
+
+function primaryIdKeys(kind) {
+  const byKind = {
+    release_readiness_snapshot: ["snapshotId", "snapshot_id"],
+    release_collection_run: ["collectionRunId", "collection_run_id", "runId", "run_id"],
+    release_decision: ["decisionId", "decision_id"],
+    release_package: ["packageId", "package_id"],
+    release_approval: ["approvalId", "approval_id"],
+    release_activation: ["activationId", "activation_id"],
+    runtime_enablement: ["enablementId", "enablement_id"]
+  };
+  return byKind[kind] || [];
+}
+
+function recordSummary(kind, record = {}) {
+  const packageSummary = objectOnly(record.packageSummary || record.package_summary);
+  const activationGates = record.requestedActivationGates || record.requested_activation_gates || record.activationGates || record.activation_gates;
+  const approvalKey = cleanString(record.approvalKey || record.approval_key || record.gate || record.configKey || record.config_key, 160);
+  const id = firstAvailableId(record, primaryIdKeys(kind).concat([
+    "snapshotId", "snapshot_id",
+    "decisionId", "decision_id",
+    "packageId", "package_id",
+    "approvalId", "approval_id",
+    "activationId", "activation_id",
+    "enablementId", "enablement_id",
+    "collectionRunId", "collection_run_id", "runId", "run_id"
+  ]));
+  return {
+    kind,
+    id,
+    status: cleanString(record.status || packageSummary.status, 120),
+    schemaVersion: cleanString(record.schemaVersion || record.schema_version || record.packageVersion || record.package_version, 180),
+    privacyClass: cleanString(record.privacyClass || record.privacy_class || packageSummary.privacyClass || packageSummary.privacy_class, 80),
+    collectionRunId: cleanString(record.collectionRunId || record.collection_run_id || record.runId || record.run_id || packageSummary.collectionRunId || packageSummary.collection_run_id, 180),
+    approvalKey,
+    requestedActivationGates: unique(activationGates),
+    createdAt: cleanString(record.createdAt || record.created_at || record.recordedAt || record.recorded_at || record.decidedAt || record.decided_at || record.approvedAt || record.approved_at, 80),
+    updatedAt: cleanString(record.updatedAt || record.updated_at, 80),
+    summaryOnly: true,
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  };
+}
+
+function listSummary(kind, result = {}, recordsKey) {
+  const value = objectOnly(result);
+  if (value.ok === false) {
+    return {
+      schemaVersion: "growth.learningAutomationReleaseInventory.records.v1",
+      summaryOnly: true,
+      kind,
+      ok: false,
+      status: "blocked",
+      error: cleanString(value.error || `${kind}_readback_failed`, 180),
+      count: 0,
+      statuses: [],
+      latest: null,
+      ids: [],
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    };
+  }
+  const records = asArray(value[recordsKey]);
+  const summaries = records.map((record) => recordSummary(kind, record)).filter((record) => record.id || record.status);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseInventory.records.v1",
+    summaryOnly: true,
+    kind,
+    ok: true,
+    status: summaries.length ? "records_available" : "records_missing",
+    count: Number(value.count) || summaries.length,
+    statuses: unique(summaries.map((record) => record.status)),
+    latest: summaries[0] || null,
+    ids: summaries.map((record) => record.id).filter(Boolean),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function requireMethod(scope, name, service, method) {
+  if (!service || typeof service[method] !== "function") {
+    return unavailable(`learning_automation_release_inventory_${name}_unavailable`, scope);
+  }
+  return null;
+}
+
+function controlsSummary(value = {}) {
+  const controls = objectOnly(value.releaseControls || value.release_controls);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseInventory.controls.v1",
+    summaryOnly: true,
+    ok: value.ok !== false,
+    status: cleanString(value.status || controls.status || value.error || "unknown", 120),
+    controlsSchemaVersion: cleanString(value.schemaVersion || value.schema_version, 180),
+    requiredActionCount: Number(controls.requiredActionCount || controls.required_action_count || 0) || 0,
+    nextActionKey: cleanString(objectOnly(controls.nextAction || controls.next_action).key, 160),
+    missingCheckKeys: unique(controls.missingCheckKeys || controls.missing_check_keys),
+    blockedCheckKeys: unique(controls.blockedCheckKeys || controls.blocked_check_keys),
+    missingEvidenceKeys: unique(controls.missingEvidenceKeys || controls.missing_evidence_keys),
+    missingApprovalKeys: unique(controls.missingApprovalKeys || controls.missing_approval_keys),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function inventoryStatus(controls, summaries) {
+  if (controls.ok === false || summaries.some((summary) => summary.ok === false)) return "blocked";
+  if (controls.status && controls.status !== "unknown") return controls.status;
+  return summaries.some((summary) => summary.count > 0) ? "records_available" : "records_missing";
+}
+
+function createLearningAutomationReleaseInventoryService(options = {}) {
+  const releaseReadinessService = options.releaseReadinessService || null;
+  const collectionRunService = options.collectionRunService || null;
+  const decisionService = options.decisionService || null;
+  const packageService = options.packageService || null;
+  const approvalService = options.approvalService || null;
+  const releaseActivationService = options.releaseActivationService || null;
+  const runtimeEnablementService = options.runtimeEnablementService || null;
+  const releaseControlsService = options.releaseControlsService || null;
+
+  function inventory(input = {}) {
+    const scope = scopeFrom(input);
+    if (!scope.workspaceId) return unavailable("learning_automation_release_inventory_scope_required");
+    const inputPrivacyFindings = scanPrivacyKeys(input).concat(scanPrivateValues(input)).slice(0, 16);
+    if (inputPrivacyFindings.length) {
+      return unavailable("learning_automation_release_inventory_privacy_failed", scope, { privacyFindings: inputPrivacyFindings });
+    }
+
+    const missing = requireMethod(scope, "readiness_snapshots", releaseReadinessService, "listSnapshots")
+      || requireMethod(scope, "collection_runs", collectionRunService, "listRuns")
+      || requireMethod(scope, "decisions", decisionService, "listDecisions")
+      || requireMethod(scope, "packages", packageService, "listPackages")
+      || requireMethod(scope, "approvals", approvalService, "listApprovals")
+      || requireMethod(scope, "activations", releaseActivationService, "listActivations")
+      || requireMethod(scope, "runtime_enablements", runtimeEnablementService, "listEnablements")
+      || requireMethod(scope, "controls", releaseControlsService, "summarize");
+    if (missing) return missing;
+
+    const limit = boundedLimit(input.limit || input.recordLimit || input.record_limit, 5);
+    const request = Object.assign({}, input, scope, { limit });
+    const result = {
+      controls: releaseControlsService.summarize(request),
+      snapshots: releaseReadinessService.listSnapshots(request),
+      collectionRuns: collectionRunService.listRuns(request),
+      decisions: decisionService.listDecisions(request),
+      packages: packageService.listPackages(request),
+      approvals: approvalService.listApprovals(request),
+      activations: releaseActivationService.listActivations(request),
+      runtimeEnablements: runtimeEnablementService.listEnablements(request)
+    };
+    const dependencyPrivacyFindings = scanPrivacyKeys(result).concat(scanPrivateValues(result)).slice(0, 16);
+    if (dependencyPrivacyFindings.length) {
+      return unavailable("learning_automation_release_inventory_dependency_privacy_failed", scope, { privacyFindings: dependencyPrivacyFindings });
+    }
+
+    const summaries = [
+      listSummary("release_readiness_snapshot", result.snapshots, "snapshots"),
+      listSummary("release_collection_run", result.collectionRuns, "runs"),
+      listSummary("release_decision", result.decisions, "decisions"),
+      listSummary("release_package", result.packages, "packages"),
+      listSummary("release_approval", result.approvals, "approvals"),
+      listSummary("release_activation", result.activations, "activations"),
+      listSummary("runtime_enablement", result.runtimeEnablements, "enablements")
+    ];
+    const controls = controlsSummary(objectOnly(result.controls));
+    const status = inventoryStatus(controls, summaries);
+    const artifactCount = summaries.reduce((total, summary) => total + (Number(summary.count) || 0), 0);
+
+    return Object.assign({}, scope, {
+      ok: true,
+      source: "growth-learning-automation-release-inventory-service",
+      schemaVersion: RELEASE_INVENTORY_SCHEMA,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status,
+      advisoryOnly: true,
+      recordOnly: true,
+      limit,
+      releaseInventory: {
+        schemaVersion: "growth.learningAutomationReleaseInventory.summary.v1",
+        summaryOnly: true,
+        status,
+        artifactCount,
+        controls,
+        readbackKinds: summaries.map((summary) => summary.kind),
+        missingRecordKinds: summaries.filter((summary) => summary.status === "records_missing").map((summary) => summary.kind),
+        blockedRecordKinds: summaries.filter((summary) => summary.ok === false).map((summary) => summary.kind),
+        latestCollectionRunId: cleanString(summaries.find((summary) => summary.kind === "release_collection_run")?.latest?.id, 180),
+        latestPackageId: cleanString(summaries.find((summary) => summary.kind === "release_package")?.latest?.id, 180),
+        latestDecisionId: cleanString(summaries.find((summary) => summary.kind === "release_decision")?.latest?.id, 180),
+        latestActivationId: cleanString(summaries.find((summary) => summary.kind === "release_activation")?.latest?.id, 180),
+        latestRuntimeEnablementId: cleanString(summaries.find((summary) => summary.kind === "runtime_enablement")?.latest?.id, 180),
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      artifactReadback: {
+        schemaVersion: "growth.learningAutomationReleaseInventory.artifactReadback.v1",
+        summaryOnly: true,
+        snapshots: summaries[0],
+        collectionRuns: summaries[1],
+        decisions: summaries[2],
+        packages: summaries[3],
+        approvals: summaries[4],
+        activations: summaries[5],
+        runtimeEnablements: summaries[6],
+        controls
+      },
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false,
+      runtimeConfigMutationPerformed: false
+    });
+  }
+
+  return { inventory };
+}
+
+module.exports = {
+  RELEASE_INVENTORY_SCHEMA,
+  createLearningAutomationReleaseInventoryService
+};
