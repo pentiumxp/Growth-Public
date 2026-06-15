@@ -11,10 +11,11 @@
 
 ## 2026-06-15T16:51Z - Release Activation Audit Records
 
-- Status: implemented and locally validated. This slice is backend/Harness/docs
-  only and does not require production deploy. It adds summary-only activation
-  audit records after release activation preflight; it does not apply runtime
-  config, grant scheduler permission, or run scheduling.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is backend/Harness/docs only and does not require
+  production deploy. It adds summary-only activation audit records after
+  release activation preflight; it does not apply runtime config, grant
+  scheduler permission, or run scheduling.
 - Scope:
   - added
     `src/stores/growth-learning-sqlite/automation-release-activations.js`
@@ -74,6 +75,10 @@
     `node tests/architecture-code-test-harness-map.test.js`;
   - `codegraph sync && codegraph status` (`297` files, `3,807` nodes,
     `14,534` edges; index up to date).
+- Git:
+  - commit `6b3980b` `Add release activation audit records`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 - Remaining product work:
   - run production release evidence bundle, bundle audit, release readiness,
     collection run, Owner decision, review, authorization, closure, activation
