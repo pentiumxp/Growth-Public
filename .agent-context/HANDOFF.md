@@ -11,9 +11,10 @@
 
 ## 2026-06-15T17:09Z - Scheduler Execution Activation Readback Gate
 
-- Status: implemented, validated, and committed; push pending. This slice is
-  Growth backend/Harness/docs only. It does not deploy, apply runtime config,
-  grant scheduler permission, call Gateway, or run background scheduling.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is Growth backend/Harness/docs only. It does not
+  deploy, apply runtime config, grant scheduler permission, call Gateway, or
+  run background scheduling.
 - Scope:
   - `learning-automation-scheduler-execution-service` now injects
     `releaseActivationService` and, after final release authorization passes,
@@ -71,8 +72,9 @@
     returned expected default-disabled
     `learning_automation_scheduler_execution_disabled`.
 - Git:
-  - commit message: `Require activation audit before scheduler execution`;
-  - push pending.
+  - commit `9815513` `Require activation audit before scheduler execution`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 - Remaining product work:
   - run the full production release evidence chain over real production inputs;
   - collect central Home AI visual and platform Action Inbox/Web Push evidence;
