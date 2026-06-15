@@ -9,10 +9,24 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-15T10:03Z - Learner Cycle Smoke Implemented Locally
+## 2026-06-15T10:03Z - Learner Cycle Smoke Deployed
 
-- Status: implemented and locally validated; not deployed at the time of this
-  entry.
+- Status: implemented, locally validated, pushed to both remotes, deployed to
+  Mac production, and production-smoked with a no-write audit.
+- Commit pushed to both `origin/main` and `public/main`:
+  `3ed5517` `Add Growth learner cycle smoke`.
+- Production deploy:
+  - command shape:
+    `npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file <private-local-password-file> --json`;
+  - source commit: `3ed55177e051`;
+  - production path:
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260615T094156Z-plugin-growth-manual`;
+  - restarted launchd label:
+    `com.hermesmobile.plugin.growth`;
+  - deploy validation passed: shared auth permission repair, launchd running,
+    manifest health URL, and production profile audit with `codexIssueCount=0`.
 - Scope:
   - added `src/services/learning-learner-cycle-service.js`, a service-owned
     learner daily-card cycle facade with `audit`, `submit`, `evaluate`,
@@ -72,6 +86,26 @@
   existing Fanfan production science card unless Owner explicitly supplies a
   real learner submission/reflection. Use default no-write `audit` for
   production smoke.
+- Production no-write smoke:
+  - command ran as `hermes-host` from the deployed plugin source with
+    `GROWTH_DATA_OWNER=plugin` and the production Growth SQLite path;
+  - target:
+    `workspaceId=weixin_fanfan`, `learnerId=fanfan`,
+    `taskCardId=ltask_0e08f9a1b630b0ffe9`,
+    `planDraftId=lgplan_aa609b3996102fb5b9`,
+    `targetNodeId=kg_lower_secondary_science`;
+  - result: `ok=true`, `operation=audit`,
+    `schemaVersion=growth.learningLearnerCycleSmoke.v1`,
+    `privacyClass=summary_only`, card `status=published`,
+    `laneId=today`, `primaryAction=submit`, `planDraftCount=1`,
+    `hasPublishedPlan=true`, `evidenceCount=0`, `profileDeltaCount=0`,
+    `complete=false`, `readyForAutomation=false`;
+  - missing required findings are currently `evaluation_evidence`,
+    `profile_delta_audit`, and `privacy_projection`, which is expected until a
+    real learner submission/evaluation/profile-delta cycle exists. No
+    production learner write was performed.
+- AI Ops evidence appended:
+  `evidence-2b5965f5-eb89-4852-8095-6e196646dddc`.
 
 ## 2026-06-15T09:18Z - Fanfan Science Target Provisioned And Daily Card Published
 
