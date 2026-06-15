@@ -35,9 +35,12 @@ Implemented locally:
 - Owner-only `POST /api/v1/growth/automation/action-handoffs`;
 - Owner-only
   `POST /api/v1/growth/automation/action-handoffs/:handoffId/deliver`;
+- service-owned operational smoke CLI:
+  `npm run smoke:action-handoff`;
 - `growth.automation.action_required` event mapping through
   `growth-event-service`;
-- focused repository, service, event, route, and architecture harnesses.
+- focused repository, service, smoke-script, event, route, and architecture
+  harnesses.
 
 Not implemented by this layer:
 
@@ -96,6 +99,54 @@ Public service methods:
 | `createHandoff(input)` | Creates a durable handoff from a reviewed digest after active failure-policy readiness passes. |
 | `listHandoffs(input)` | Lists scoped public handoff DTOs. |
 | `deliverHandoff(input)` | Emits bounded handoff metadata through the Growth event notification boundary and records delivery status. |
+
+## Operational Smoke CLI
+
+The service-owned smoke entry is:
+
+```bash
+npm run smoke:action-handoff -- --workspace-id <workspace> --json
+```
+
+Supported operations:
+
+| Operation | Write behavior | Required input | Service call |
+| --- | --- | --- | --- |
+| `list` | Default, read-only. | `--workspace-id`, optional filters. | `learningAutomationActionHandoffService.listHandoffs` |
+| `create` | Requires `--allow-write`. | `--workspace-id`, `--digest-id`, target scope. | `learningAutomationActionHandoffService.createHandoff` |
+| `deliver` | Requires `--allow-write`. | `--workspace-id`, `--handoff-id`. | `learningAutomationActionHandoffService.deliverHandoff` |
+
+Examples:
+
+```bash
+npm run smoke:action-handoff -- \
+  --workspace-id weixin_fanfan \
+  --learner-id fanfan \
+  --json
+
+npm run smoke:action-handoff -- \
+  --operation create \
+  --workspace-id weixin_fanfan \
+  --learner-id fanfan \
+  --digest-id <reviewed-digest-id> \
+  --allow-write \
+  --json
+
+npm run smoke:action-handoff -- \
+  --operation deliver \
+  --workspace-id weixin_fanfan \
+  --handoff-id <handoff-id> \
+  --allow-write \
+  --json
+```
+
+The CLI instantiates the normal Growth service graph. It must not import
+SQLite repositories directly, inspect `learning_growth_` tables, call Gateway,
+call scheduler dry-run, publish, generate cards, evaluate submissions,
+execute scheduler actions, run scheduler ticks, or activate stage assessments.
+Without Home AI notification credentials, `deliver` may record
+`delivery_failed`; that is still valid local evidence for Growth-side handoff
+state and does not mutate learner state.
 
 Gating semantics:
 
@@ -212,6 +263,7 @@ Focused tests:
 ```bash
 node --test tests/learning-automation-action-handoff-repository.test.js \
   tests/learning-automation-action-handoff-service.test.js \
+  tests/growth-automation-action-handoff-smoke-script.test.js \
   tests/growth-event-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-architecture-boundary.test.js
@@ -224,6 +276,9 @@ Coverage:
 - service reviewed-digest gate, active failure-policy gate, no-action gate,
   handoff persistence, event emission, missing event-service failure, and
   dropped/rejected delivery failure;
+- smoke CLI default read-only list, explicit write gate for create/deliver,
+  reviewed digest plus active policy preconditions, event-outbox delivery
+  failure visibility, invalid input, and privacy-risk rejection;
 - event mapping for `growth.automation.action_required`;
 - route Owner-only writes, visible-target reads, workspace bearer writes, and
   bounded failure responses;

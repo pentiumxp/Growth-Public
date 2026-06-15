@@ -236,6 +236,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   metadata through `growth-event-service`, and records delivered or
   `delivery_failed` status without publishing cards, recording proposal
   execution, scheduling work, calling Gateway, or mutating learner state.
+  `npm run smoke:action-handoff` now provides the service-owned operational
+  smoke for this boundary: `list` is the default read-only operation, while
+  `create` and `deliver` require explicit `--allow-write` and still delegate
+  only to `learning-automation-action-handoff-service`.
   The automation scheduler execution backend is now implemented through
   `learning-automation-scheduler-execution-service`,
   `automation-scheduler-executions.js`,

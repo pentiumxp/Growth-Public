@@ -9,6 +9,80 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T02:46Z - Growth Action Handoff Smoke CLI Slice
+
+- Status: Growth action handoff now has a service-owned operational smoke
+  entry. This slice did not deploy, enable automation config, execute
+  scheduler actions, run scheduler ticks, call Gateway, publish cards,
+  evaluate learner submissions, activate stage assessments, or mutate learner
+  state. Delivery smoke may emit a bounded Growth automation event through
+  `growth-event-service` and records delivered or visible `delivery_failed`
+  handoff status.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of deployment/architecture-doc
+  keywords; only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-automation-action-handoff.js`;
+  - added `npm run smoke:action-handoff`;
+  - wired the new runtime script into `npm run check`;
+  - added `tests/growth-automation-action-handoff-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - `list` is the default read-only operation and delegates to
+    `learningAutomationActionHandoffService.listHandoffs`;
+  - `create` requires explicit `--allow-write`, requires a reviewed digest id,
+    and delegates to `learningAutomationActionHandoffService.createHandoff`;
+  - `deliver` requires explicit `--allow-write`, requires a handoff id, and
+    delegates to `learningAutomationActionHandoffService.deliverHandoff`;
+  - the CLI must not import repositories directly, inspect
+    `learning_growth_` tables, call Gateway, call scheduler dry-run, publish,
+    generate cards, evaluate submissions, execute scheduler actions, run
+    scheduler ticks, or activate stage assessments.
+- Validation passed:
+  - `node --check scripts/smoke-growth-automation-action-handoff.js`;
+  - `node --check tests/growth-automation-action-handoff-smoke-script.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-automation-action-handoff-smoke-script.test.js
+    tests/learning-automation-action-handoff-service.test.js
+    tests/learning-automation-action-handoff-repository.test.js
+    tests/growth-architecture-boundary.test.js` (`31` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=128`, `checkedCount=128`, no missing/stale/duplicate
+    entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`449` tests);
+  - `git diff --check`.
+- Broad validation passed:
+  - `codegraph sync && codegraph status` (`212` JavaScript files, `2,554`
+    nodes, `10,245` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth backend/docs/Harness slice as `H1`
+    because of deployment/architecture-doc keywords even though this Growth
+    change did not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-242dc188-b590-4a82-ac68-8d6f45490cd9`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
 ## 2026-06-15T02:33Z - Growth Runtime Syntax Coverage Gate Slice
 
 - Status: Growth runtime syntax coverage is now a generic check gate instead

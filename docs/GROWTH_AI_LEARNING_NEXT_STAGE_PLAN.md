@@ -268,6 +268,8 @@ Use the Growth-owned release-readiness boundary:
   `npm run smoke:release-readiness -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
 - scheduler dry-run smoke CLI:
   `npm run smoke:scheduler-dry-run -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
+- action handoff smoke CLI:
+  `npm run smoke:action-handoff -- --workspace-id <workspace> --learner-id <learner> --json`.
 
 The service aggregates summary-only readiness evidence:
 
@@ -278,6 +280,8 @@ The service aggregates summary-only readiness evidence:
 - reviewed automation digest evidence;
 - active failure-policy readiness;
 - delivered action-handoff evidence;
+- Growth-side action handoff smoke evidence from
+  `npm run smoke:action-handoff` for scoped list/create/deliver checks;
 - Owner-explicit execution gate status;
 - scheduler run default-disabled status;
 - reviewed enabled worker targets for the exact learner/domain/horizon scope;
@@ -417,6 +421,7 @@ becomes future planning evidence, not a required retry loop.
 | Stage assessment | Readiness, activation, coverage, completion, cooldown, and direct daily-publish blocking. |
 | Multi-workspace target | Visible-target allow/deny, explicit provision enablement, wrong-subject blocking, target-workspace row ownership, and no actor/target mixing. |
 | Scheduler dry-run | Service tests, `tests/growth-scheduler-dry-run-smoke-script.test.js`, `npm run smoke:scheduler-dry-run`, and architecture guard for no Gateway, publication, evaluation, execution, scheduler tick, stage activation, notification, learner-state mutation, or direct repository access from the CLI. |
+| Action handoff | Repository/service/route tests, `tests/growth-automation-action-handoff-smoke-script.test.js`, `npm run smoke:action-handoff`, explicit write gate for create/deliver, event delivery failure visibility, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Release readiness | Snapshot repository/service/route tests, `tests/growth-release-readiness-smoke-script.test.js`, `npm run smoke:release-readiness`, production controlled daily-loop write-smoke evidence, scheduler dry-run evidence, and architecture guard for no Gateway, publication, evaluation, scheduler, stage, or learner-state mutation from the release-readiness boundary. |
 | UI | Progress state, visible errors, mobile scroll, dark-mode contrast, embedded sizing, and no hidden final action controls. |
 | Docs | `node scripts/check-growth-docs-locality.js` and `node --test tests/growth-docs-locality.test.js`. |
