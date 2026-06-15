@@ -349,6 +349,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         currentEnabled: Boolean(config.automationWritefulExecutionEnabled),
         writefulSchedulingAllowed: false
       }),
+      presentCheck(input, "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence", "Production scheduler execution smoke", "run_production_scheduler_execution_smoke"),
       check("scheduler_run_default_disabled", config.automationBackgroundSchedulerEnabled ? "blocked" : "pass", {
         label: "Scheduler run default-disabled status",
         currentEnabled: Boolean(config.automationBackgroundSchedulerEnabled),
@@ -357,6 +358,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_scheduler_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
+      presentCheck(input, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
       reviewedWorkerTargetCheck(scope),
       check("worker_timer_default_disabled", config.automationBackgroundWorkerEnabled ? "blocked" : "pass", {
         label: "Worker lease/timer default-disabled status",

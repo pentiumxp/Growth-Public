@@ -638,9 +638,12 @@ Required behavior:
   stage-checkpoint separation, proposal review, digest review, active failure
   policy, delivered action handoff, production action handoff smoke evidence
   from `npm run smoke:action-handoff`, Owner-explicit execution gate status,
-  scheduler run default-disabled status, reviewed enabled worker targets,
-  worker lease/timer default-disabled status, production scheduler worker smoke
-  evidence from `npm run smoke:scheduler-worker`, production planner readiness
+  production scheduler execution smoke evidence from
+  `npm run smoke:scheduler-execution`, scheduler run default-disabled status,
+  production scheduler run smoke evidence from `npm run smoke:scheduler-run`,
+  reviewed enabled worker targets, worker lease/timer default-disabled status,
+  production scheduler worker smoke evidence from
+  `npm run smoke:scheduler-worker`, production planner readiness
   smoke, production daily-loop preview smoke evidence from
   `npm run smoke:daily-loop-preview`, production controlled daily-loop
   draft/publish smoke evidence from
