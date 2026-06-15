@@ -11,10 +11,11 @@
 
 ## 2026-06-15T16:32Z - Release Activation Preflight
 
-- Status: implemented and validated. This slice is backend/Harness/docs only
-  and does not require production deploy. It is a no-write preflight for Owner
-  runtime-config decisions after release closure; it does not apply config and
-  keeps `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is backend/Harness/docs only and does not require
+  production deploy. It is a no-write preflight for Owner runtime-config
+  decisions after release closure; it does not apply config and keeps
+  `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
   `runtimeConfigChange=false`.
 - Scope:
   - added
@@ -71,6 +72,8 @@
 - AI Ops evidence:
   - test `evidence-b298c007-31e2-429d-9bb2-4934596f1bc9`;
   - test `evidence-d9c75283-1abf-47d1-8b0a-a90fb7165532`.
+- Git:
+  - commit `ba76ed9` `Add release activation preflight`.
 - Remaining product work:
   - collect a real production release evidence bundle, bundle self-audit,
     release-readiness, collection run, Owner decision, release review, release
