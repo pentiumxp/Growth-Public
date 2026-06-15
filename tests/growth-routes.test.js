@@ -2499,6 +2499,35 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseCollectionRunService: {
+      listRuns(input) {
+        calls.push({ type: "listReleaseCollectionRuns", input });
+        return {
+          ok: true,
+          count: 1,
+          runs: [{
+            runId: "lgacrn_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: "ready_for_release_review"
+          }]
+        };
+      },
+      recordRun(input) {
+        calls.push({ type: "recordReleaseCollectionRun", input });
+        return {
+          ok: true,
+          duplicate: false,
+          run: {
+            runId: "lgacrn_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            status: "ready_for_release_review",
+            summary: { writefulSchedulingAllowed: false }
+          }
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -2700,6 +2729,98 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const collectionList = await fetch(`${baseUrl}/api/v1/growth/automation/release-collection-runs?workspaceId=growth:weixin_fanfan&learnerId=fanfan&status=ready_for_release_review&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(collectionList.status, 200);
+    assert.equal((await collectionList.json()).runs[0].runId, "lgacrn_route_1");
+    assert.deepEqual(calls[5], {
+      type: "listReleaseCollectionRuns",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        status: "ready_for_release_review",
+        limit: "5"
+      }
+    });
+
+    const collectionCreated = await fetch(`${baseUrl}/api/v1/growth/automation/release-collection-runs`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        release_evidence_bundle: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+          summaryOnly: true
+        },
+        release_evidence_bundle_audit: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1",
+          summaryOnly: true
+        },
+        release_readiness: {
+          status: "ready_for_release_review"
+        },
+        release_evidence_bundle_file: "/tmp/release-bundle.json",
+        release_evidence_bundle_audit_file: "/tmp/release-audit.json",
+        release_readiness_file: "/tmp/release-readiness.json",
+        created_at: "2026-06-15T17:05:00.000Z"
+      })
+    });
+    assert.equal(collectionCreated.status, 201);
+    assert.equal((await collectionCreated.json()).run.runId, "lgacrn_route_1");
+    assert.deepEqual(calls[6], {
+      type: "recordReleaseCollectionRun",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        releaseEvidenceBundle: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+          summaryOnly: true
+        },
+        releaseEvidenceBundleAudit: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1",
+          summaryOnly: true
+        },
+        releaseReadiness: {
+          status: "ready_for_release_review"
+        },
+        releaseEvidenceBundleFile: "/tmp/release-bundle.json",
+        releaseEvidenceBundleAuditFile: "/tmp/release-audit.json",
+        releaseReadinessFile: "/tmp/release-readiness.json",
+        requestedBy: "weixin_stephen",
+        createdBy: "weixin_stephen",
+        createdAt: "2026-06-15T17:05:00.000Z"
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -2725,6 +2846,19 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedApprovalCreate.status, 403);
     assert.equal((await deniedApprovalCreate.json()).error.code, "growth_automation_release_approval_owner_required");
+
+    const deniedCollectionCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-collection-runs`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen" })
+    });
+    assert.equal(deniedCollectionCreate.status, 403);
+    assert.equal((await deniedCollectionCreate.json()).error.code, "growth_automation_release_collection_run_owner_required");
 
     const deniedRead = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness?workspaceId=weixin_fanfan`, {
       headers: {

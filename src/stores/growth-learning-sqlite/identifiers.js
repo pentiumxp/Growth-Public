@@ -234,6 +234,24 @@ function stableLearningAutomationReleaseReadinessId(input = {}) {
   return `lgarel_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
 }
 
+function stableLearningAutomationReleaseCollectionRunId(input = {}) {
+  const explicit = cleanString(input.runId || input.run_id || input.collectionRunId || input.collection_run_id || input.id);
+  if (explicit) return explicit;
+  const seed = [
+    cleanString(input.workspaceId || input.workspace_id),
+    cleanString(input.learnerId || input.learner_id),
+    cleanString(input.programId || input.program_id),
+    cleanString(input.domainPackId || input.domain_pack_id),
+    cleanString(input.domain),
+    cleanString(input.subject),
+    cleanString(input.horizon),
+    cleanString(input.status),
+    cleanString(input.createdAt || input.created_at || input.requestedAt || input.requested_at),
+    sha256Hex(JSON.stringify(input.summary || input.summary_json || {})).slice(0, 18)
+  ].join(":");
+  return `lgacrn_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
+}
+
 function stableLearningAutomationReleaseApprovalId(input = {}) {
   const explicit = cleanString(input.approvalId || input.approval_id || input.id);
   if (explicit) return explicit;
@@ -293,6 +311,7 @@ module.exports = {
   stableLearningAutomationSchedulerWorkerLeaseId,
   stableLearningAutomationSchedulerWorkerTargetId,
   stableLearningAutomationReleaseApprovalId,
+  stableLearningAutomationReleaseCollectionRunId,
   stableLearningAutomationReleaseReadinessId,
   stableLearningEvidenceId,
   stableLearningCoinLedgerEntryId,

@@ -9,6 +9,95 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T14:56Z - Release Collection Run Persistence
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  No production deploy is required for this slice because Growth only records a
+  summary-only release evidence collection run after bundle, bundle self-audit,
+  and release-readiness artifacts already exist. The boundary is advisory
+  evidence only and keeps `writefulSchedulingAllowed=false`.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `93%` complete, about `7%`
+    remaining;
+  - full product closed loop including embedded UI controls, real production
+    visual artifacts, platform receipt evidence, reviewed targets, approvals,
+    and production scheduling decisions: about `73%` complete, about `27%`
+    remaining.
+- Scope:
+  - added
+    `src/services/learning-automation-release-collection-run-service.js`;
+  - added
+    `src/stores/growth-learning-sqlite/automation-release-collection-runs.js`
+    and `learning_growth_automation_release_collection_runs`;
+  - added stable `lgacrn_` run ids through
+    `stableLearningAutomationReleaseCollectionRunId`;
+  - wired the repository through `growth-learning-sqlite-store`, the service
+    graph through `src/app/services.js`, and visible-target routes through
+    `src/routes/growth-routes.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-collection-runs`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/release-collection-runs`;
+  - added `npm run smoke:release-collection-run` through
+    `scripts/smoke-growth-release-collection-run.js`;
+  - the CLI defaults to no-write evaluation and writes only with explicit
+    `--write-record`;
+  - the service requires explicit workspace scope plus
+    `growth.learningAutomationReleaseEvidenceBundle.v1`,
+    `growth.learningAutomationReleaseEvidenceBundleAudit.v1`, and
+    summary-only release-readiness evidence;
+  - artifact paths are reduced to basenames, private path/value markers and
+    privacy-risk keys fail closed, and no Gateway/model, card publication,
+    evaluation, scheduler execution/tick, notification delivery, stage
+    activation, or learner mutation is reachable from this boundary.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-collection-run-service.test.js`;
+  - `tests/learning-automation-release-collection-run-repository.test.js`;
+  - `tests/growth-release-collection-run-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - `node --test tests/learning-automation-release-collection-run-service.test.js
+    tests/learning-automation-release-collection-run-repository.test.js
+    tests/growth-release-collection-run-smoke-script.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`78` tests);
+  - direct `npm run smoke:release-collection-run` no-write evaluation against
+    temporary summary-only bundle/audit/readiness artifacts:
+    `status=ready_for_release_review`;
+  - direct `npm run smoke:release-collection-run -- --write-record` against a
+    temporary SQLite database wrote one `lgacrn_` row with
+    `status=ready_for_release_review`, `privacy_class=summary_only`, and no
+    temporary path/private marker leaks;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`159` runtime JS files covered);
+  - `npm test` (`605` tests);
+  - `codegraph sync && codegraph status` (`273` files, `3,516` nodes,
+    `13,436` edges; index up to date with older-engine advisory).
+- Remaining product work:
+  - collect a real production default release evidence bundle, run bundle
+    self-audit, run release-readiness, and persist the corresponding real
+    collection run;
+  - collect real Home AI visual artifact and platform Action Inbox/Web Push
+    receipt evidence;
+  - complete embedded Owner release-evidence UI controls and visual
+    verification;
+  - collect reviewed enabled targets, production dry-run evidence, and explicit
+    Owner approval before enabling any writeful scheduling path.
+
 ## 2026-06-15T14:23Z - Release Evidence Bundle Self-Audit
 
 - Status: implemented and validated; commit/push follows this handoff update.

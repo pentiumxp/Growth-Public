@@ -218,6 +218,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   privacy-risk keys, and private path/value leaks, emits
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1`, and intentionally
   stays outside the bundle being audited to avoid circular release artifacts.
+  Growth now also has `npm run smoke:release-collection-run`, a service-owned
+  release collection-run boundary over bundle, bundle-audit, and
+  release-readiness artifacts. It delegates to
+  `learning-automation-release-collection-run-service`, evaluates
+  `growth.learningAutomationReleaseCollectionRun.v1` no-write by default,
+  strips artifact paths to file names, writes
+  `learning_growth_automation_release_collection_runs` only with
+  `--write-record`, and exposes visible-target scoped
+  `GET /api/v1/growth/automation/release-collection-runs` plus Owner-only
+  `POST /api/v1/growth/automation/release-collection-runs`. It is release
+  evidence, not a scheduler permission or Home AI platform release switch.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

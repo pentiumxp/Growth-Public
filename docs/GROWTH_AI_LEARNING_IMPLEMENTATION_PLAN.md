@@ -722,6 +722,17 @@ Implemented backend shape:
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1` as external
   `releaseEvidenceBundleAudit` input. It does not run smoke tasks or embed
   itself into the bundle being audited.
+- `npm run smoke:release-collection-run` delegates to
+  `learning-automation-release-collection-run-service` and records a
+  summary-only audit of one completed release evidence collection pass after a
+  bundle, bundle audit, and readiness result exist. The CLI defaults to
+  no-write evaluation, accepts explicit bundle/audit/readiness JSON or file
+  artifacts, strips artifact paths to file names, and writes
+  `learning_growth_automation_release_collection_runs` only with
+  `--write-record`. The service/repository expose
+  `growth.learningAutomationReleaseCollectionRun.v1` DTOs through
+  visible-target scoped list and Owner-only create routes. This record is
+  evidence for review, not a release switch or scheduler permission.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
@@ -793,10 +804,13 @@ Required harness:
 - `tests/learning-automation-platform-action-evidence-service.test.js`;
 - `tests/learning-automation-central-visual-evidence-service.test.js`;
 - `tests/learning-automation-release-evidence-bundle-audit-service.test.js`;
+- `tests/learning-automation-release-collection-run-repository.test.js`;
+- `tests/learning-automation-release-collection-run-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
 - `tests/growth-platform-action-evidence-smoke-script.test.js`;
 - `tests/growth-central-visual-evidence-smoke-script.test.js`;
 - `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`;
+- `tests/growth-release-collection-run-smoke-script.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;

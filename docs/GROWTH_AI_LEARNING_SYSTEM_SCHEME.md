@@ -420,7 +420,7 @@ Writeful scheduling can be considered only after:
 | Background scheduler worker target | `learning-automation-scheduler-worker-target-service`, `automation-scheduler-worker-targets.js`; Owner-reviewed summary-only target configuration for any future worker. |
 | Background scheduler worker lease | `learning-automation-scheduler-worker-service`, `automation-scheduler-worker-leases.js`; default-disabled local lease/timer mechanics over reviewed targets, delegating only to scheduler run. |
 | Platform action evidence | `learning-automation-platform-action-evidence-service`; read-only summary evidence over delivered Growth event-outbox action receipts while Home AI owns Action Inbox/Web Push internals. |
-| Release-readiness evidence | `learning-automation-release-readiness-service`, `automation-release-readiness.js`, `learning-automation-release-evidence-bundle-audit-service`; advisory summary-only release-review checks, remediation plan fields, platform action evidence, central visual evidence, release evidence bundle self-audit evidence, and snapshots. |
+| Release-readiness evidence | `learning-automation-release-readiness-service`, `automation-release-readiness.js`, `learning-automation-release-evidence-bundle-audit-service`, `learning-automation-release-collection-run-service`, `automation-release-collection-runs.js`; advisory summary-only release-review checks, remediation plan fields, platform action evidence, central visual evidence, release evidence bundle self-audit evidence, sanitized collection-run records, and snapshots. |
 | Central visual evidence | `learning-automation-central-visual-evidence-service`; read-only validation of Home AI visual harness artifacts into summary-only `centralVisualEvidence` without running visual tooling inside Growth. |
 
 Routes must remain request parsing, authorization, visible-target resolution,
@@ -605,7 +605,8 @@ Required shape:
   service;
 - production worker enablement still requires platform action evidence,
   central visual evidence, production dry-run evidence, release evidence bundle
-  self-audit evidence, and explicit release approval.
+  self-audit evidence, persisted release collection-run evidence, and explicit
+  release approval.
 
 ## Harness Contract
 

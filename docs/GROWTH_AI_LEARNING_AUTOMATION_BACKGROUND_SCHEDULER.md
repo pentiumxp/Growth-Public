@@ -83,8 +83,8 @@ later production release stage. The local worker service supplies only the
 actor, reviewed-target, lease, and timer mechanics needed for a future release; it
 does not remove the need for product evidence, central visual evidence,
 platform action evidence, production dry-run evidence, release evidence bundle
-self-audit evidence, and a separate release
-decision.
+self-audit evidence, persisted release collection-run evidence, and a separate
+release decision.
 
 `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is a local fallback and
 developer escape hatch, not the production source of truth. Production worker
@@ -483,6 +483,10 @@ Background scheduling can be considered only after all of these are complete:
 - Release evidence bundle self-audit evidence has been produced through
   `npm run smoke:release-evidence-bundle-audit` after the bundle builder wrote
   the summary-only evidence bundle.
+- Release collection-run evidence has been evaluated or persisted through
+  `npm run smoke:release-collection-run` from the bundle, bundle-audit, and
+  release-readiness artifacts; any persisted row must be summary-only and
+  path-sanitized.
 - A Growth-owned release-readiness evidence snapshot records product,
   platform, visual, reviewed-target, production dry-run, release-bundle audit,
   config, and explicit approval evidence without enabling scheduling.

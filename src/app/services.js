@@ -13,6 +13,7 @@ const { createLearningAutomationFailurePolicyService } = require("../services/le
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
+const { createLearningAutomationReleaseCollectionRunService } = require("../services/learning-automation-release-collection-run-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
@@ -281,6 +282,9 @@ function createServices(config) {
   const learningAutomationReleaseApprovalService = createLearningAutomationReleaseApprovalService({
     repository: growthLearningStore.learningAutomationReleaseApprovalRepository
   });
+  const learningAutomationReleaseCollectionRunService = createLearningAutomationReleaseCollectionRunService({
+    repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository
+  });
   const learningAutomationReleaseReadinessService = createLearningAutomationReleaseReadinessService({
     repository: growthLearningStore.learningAutomationReleaseReadinessRepository,
     releaseApprovalService: learningAutomationReleaseApprovalService,
@@ -376,6 +380,7 @@ function createServices(config) {
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
+    learningAutomationReleaseCollectionRunService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseReadinessService,
     learningAutomationSchedulerExecutionService,

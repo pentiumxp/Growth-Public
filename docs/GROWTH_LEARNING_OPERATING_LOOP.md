@@ -1635,6 +1635,14 @@ Implementation progress on 2026-06-15:
   remains input normalization only: readiness remains no-write by default,
   `--write-snapshot` is still explicit, and the boundary still cannot enable
   writeful scheduling.
+- after bundle, bundle audit, and release-readiness artifacts exist,
+  `npm run smoke:release-collection-run` can evaluate or persist one
+  sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection
+  record. It defaults to no-write, strips artifact paths to file names, and
+  writes `learning_growth_automation_release_collection_runs` only with
+  explicit `--write-record`. This gives Owner/release tooling durable evidence
+  of what was collected without running smoke tasks or changing scheduler
+  permission.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release
