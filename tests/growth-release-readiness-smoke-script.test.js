@@ -10,6 +10,7 @@ const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-readiness.js");
 
 const {
+  evidenceBundleFromArgs,
   evidenceFromArgs,
   inputFromArgs,
   releaseApprovalFromArgs,
@@ -138,6 +139,118 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
   });
 });
 
+test("release readiness smoke script accepts versioned evidence bundle files with explicit overrides", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-readiness-bundle-"));
+  const bundlePath = path.join(dir, "release-evidence-bundle.json");
+  fs.writeFileSync(bundlePath, JSON.stringify({
+    schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+    summaryOnly: true,
+    scope: {
+      workspaceId: "bundle_workspace",
+      learnerId: "bundle_learner",
+      programId: "bundle_program",
+      domainPackId: "bundle_pack",
+      domain: "science",
+      subject: "science",
+      horizon: "weekly_plan",
+      limit: 3
+    },
+    evidence: {
+      ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+      platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" }
+    },
+    releaseApproval: {
+      writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" }
+    },
+    requestedBy: "bundle_owner",
+    createdAt: "2026-06-15T18:20:00.000Z"
+  }), "utf8");
+
+  try {
+    const args = [
+      "--evidence-bundle-file", bundlePath,
+      "--evidence-bundle-json", JSON.stringify({
+        scope: {
+          subject: "biology",
+          limit: 9
+        },
+        evidence: {
+          centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
+        },
+        releaseApproval: {
+          backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" }
+        },
+        createdAt: "2026-06-15T18:21:00.000Z"
+      }),
+      "--workspace-id", "explicit_workspace",
+      "--owner-audit-ui-evidence",
+      "--background-worker-approval"
+    ];
+
+    assert.deepEqual(evidenceBundleFromArgs(args), {
+      schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+      summaryOnly: true,
+      scope: {
+        workspaceId: "bundle_workspace",
+        learnerId: "bundle_learner",
+        programId: "bundle_program",
+        domainPackId: "bundle_pack",
+        domain: "science",
+        subject: "biology",
+        horizon: "weekly_plan",
+        limit: 9
+      },
+      evidence: {
+        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+        centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
+      },
+      releaseApproval: {
+        writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
+        backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" }
+      },
+      requestedBy: "bundle_owner",
+      createdAt: "2026-06-15T18:21:00.000Z"
+    });
+    assert.deepEqual(evidenceFromArgs(args), {
+      ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+      platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+      centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
+      ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+    });
+    assert.deepEqual(releaseApprovalFromArgs(args), {
+      writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
+      backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" },
+      backgroundWorkerApproval: { approved: true, source: "release_readiness_smoke_flag" }
+    });
+    assert.deepEqual(inputFromArgs(args), {
+      workspaceId: "explicit_workspace",
+      learnerId: "bundle_learner",
+      programId: "bundle_program",
+      domainPackId: "bundle_pack",
+      domain: "science",
+      subject: "biology",
+      horizon: "weekly_plan",
+      limit: 9,
+      evidence: {
+        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+        centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
+        ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+      },
+      releaseApproval: {
+        writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
+        backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" },
+        backgroundWorkerApproval: { approved: true, source: "release_readiness_smoke_flag" }
+      },
+      requestedBy: "bundle_owner",
+      createdAt: "2026-06-15T18:21:00.000Z"
+    });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("release readiness smoke script evaluates readiness without writing a snapshot by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -195,6 +308,27 @@ test("release readiness smoke script writes summary-only snapshots only when req
     db.close();
     assert.equal(row.count, 1);
   });
+});
+
+test("release readiness smoke script fails closed for privacy-risk evidence bundle input", () => {
+  const result = runScript([
+    "--workspace-id", "weixin_fanfan",
+    "--evidence-bundle-json", JSON.stringify({
+      schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+      summaryOnly: true,
+      evidence: {
+        rawPrompt: "do not accept"
+      }
+    }),
+    "--json"
+  ]);
+
+  assert.equal(result.status, 2);
+  const output = parseStdout(result);
+  assert.equal(output.ok, false);
+  assert.equal(output.error, "release_readiness_smoke_bundle_privacy_failed");
+  assert.equal(output.option, "--evidence-bundle-json");
+  assert.equal(output.privacyFindings.includes("$.evidence.rawPrompt"), true);
 });
 
 test("release readiness smoke script fails closed for privacy-risk evidence input", () => {

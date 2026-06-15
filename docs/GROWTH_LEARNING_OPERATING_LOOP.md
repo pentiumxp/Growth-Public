@@ -1553,6 +1553,12 @@ Implementation progress on 2026-06-15:
   boundary remains default-disabled, records summary-only run state, delegates
   only to execution, and must not become a production worker without platform,
   visual, dry-run, and release evidence.
+- release-readiness production evidence can now be passed as a versioned
+  `growth.learningAutomationReleaseEvidenceBundle.v1` summary-only bundle
+  through `npm run smoke:release-readiness -- --evidence-bundle-file <path>`
+  or `--evidence-bundle-json <json>`. This is input normalization only:
+  readiness remains no-write by default, `--write-snapshot` is still explicit,
+  and the boundary still cannot enable writeful scheduling.
 
 The next product-completeness slice is embedded UI and production readiness:
 

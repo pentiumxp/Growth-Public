@@ -266,6 +266,12 @@ Use the Growth-owned release-readiness boundary:
   `POST /api/v1/growth/automation/release-readiness/snapshots`;
 - smoke/snapshot CLI:
   `npm run smoke:release-readiness -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
+  For production evidence collection, the same CLI accepts a versioned
+  `growth.learningAutomationReleaseEvidenceBundle.v1` bundle through
+  `--evidence-bundle-file <path>` or `--evidence-bundle-json <json>`. Bundle
+  scope/evidence/approval fields are summary-only defaults; explicit CLI
+  scope, `--evidence-json`, `--release-approval-json`, and evidence flags
+  override them.
 - scheduler dry-run smoke CLI:
   `npm run smoke:scheduler-dry-run -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
 - digest smoke CLI:
@@ -382,8 +388,10 @@ Snapshot persistence contract:
 - the CLI defaults to no-write readiness evaluation; it writes only when
   `--write-snapshot` is explicitly supplied;
 - CLI-supplied evidence must be structured summary evidence through
-  `--evidence-json`, `--release-approval-json`, or bounded evidence flags,
-  and it is rejected by the service if privacy-risk keys are present;
+  `--evidence-json`, `--release-approval-json`, versioned
+  `growth.learningAutomationReleaseEvidenceBundle.v1` bundles, or bounded
+  evidence flags, and it is rejected before evaluation if privacy-risk bundle
+  keys are present or by the service if privacy-risk input keys are present;
 - release approval inputs may be supplied through `releaseApproval`,
   `approvals`, top-level approval fields, or CLI flags such as
   `--writeful-execution-approval`, `--background-scheduler-approval`, and

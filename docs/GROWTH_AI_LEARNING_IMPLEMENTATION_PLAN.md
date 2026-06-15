@@ -661,7 +661,9 @@ Required behavior:
   `not_applicable`;
 - persist optional Owner-created summary-only snapshots for audit review;
 - support structured production evidence collection without Codex by accepting
-  only bounded evidence JSON, release-approval JSON, and summary evidence
+  only bounded evidence JSON, release-approval JSON, versioned
+  `growth.learningAutomationReleaseEvidenceBundle.v1` evidence bundles through
+  `--evidence-bundle-file` / `--evidence-bundle-json`, and summary evidence
   flags through the CLI;
 - keep `writefulSchedulingAllowed=false` and never flip runtime config;
 - never call Gateway, publish plans, generate cards, evaluate submissions,

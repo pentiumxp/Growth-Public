@@ -9,6 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T05:10Z - Growth Release Readiness Evidence Bundle Input Slice
+
+- Status: implemented and locally validated. This slice lets
+  `npm run smoke:release-readiness` accept versioned summary-only release
+  evidence bundles so Owner/platform/production evidence can be passed as one
+  structured artifact instead of many independent flags.
+- Change classification: H2 Growth release-readiness/Harness input boundary by
+  local scope. Home AI AI Ops classified it as H3 architecture-doc/Harness map
+  work and required architecture-map, touched-file syntax, and diff-hygiene
+  checks.
+- Scope:
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--evidence-bundle-file <path>` and `--evidence-bundle-json <json>`;
+  - supported bundle schema:
+    `growth.learningAutomationReleaseEvidenceBundle.v1`;
+  - bundle `scope`, `evidence`, `releaseApproval`, `requestedBy`, and
+    `createdAt` are summary-only defaults;
+  - explicit CLI scope, `--evidence-json`, `--release-approval-json`, and
+    evidence/approval flags override bundle values;
+  - bundle parsing rejects unsupported schema, non-summary-only class, and
+    privacy-risk keys before readiness evaluation;
+  - the CLI `--limit` helper now correctly falls back when no limit flag is
+    supplied instead of coercing an empty value to `1`;
+  - release-readiness smoke-script and architecture-boundary Harness tests now
+    cover bundle parsing, file+inline merge, explicit overrides, privacy
+    failure, and existing no-write/snapshot behavior.
+- Boundary:
+  - no release-readiness service decision logic changed;
+  - no new write path was added;
+  - readiness remains no-write by default and writes snapshots only with
+    explicit `--write-snapshot`;
+  - the boundary still keeps `writefulSchedulingAllowed=false`;
+  - no Gateway calls, plan publication, scheduler execution, scheduler ticks,
+    action handoff delivery, notification delivery, stage activation,
+    learner-state mutation, or production deploy were performed.
+- Validation passed:
+  - syntax checks for the touched Growth smoke script and tests;
+  - `node --test tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-routes.test.js` (`76` tests);
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --evidence-bundle-file <tmp> --json`,
+    which returned `owner_daily_ui_evidence` and
+    `production_scheduler_dry_run_smoke_evidence` as `pass` while readiness
+    stayed `incomplete` and `writefulSchedulingAllowed=false`;
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`483` tests);
+  - `codegraph sync && codegraph status` (`224` files, `2,751` nodes,
+    `10,802` edges; index up to date);
+  - Home AI required checks:
+    `node tests/architecture-code-test-harness-map.test.js`, absolute
+    `node --check` commands for the touched Growth files, and Growth/Home AI
+    `git diff --check`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-f043236d-636f-4f10-92b6-3f5e47ddb216`;
+  - production deploy was not executed because this was a Growth local
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T05:00Z - Growth Release Readiness Scheduler Dry-Run Smoke Evidence Gate Slice
 
 - Status: implemented and locally validated. This slice separates the external
