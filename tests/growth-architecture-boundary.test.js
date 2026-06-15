@@ -717,6 +717,28 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(automationActionHandoffService, /rawAnswer:/);
   assert.doesNotMatch(automationActionHandoffService, /rawPrompt:/);
 
+  const automationPlatformActionEvidenceService = read(path.join("src", "services", "learning-automation-platform-action-evidence-service.js"));
+  assert.match(automationPlatformActionEvidenceService, /createLearningAutomationPlatformActionEvidenceService/);
+  assert.match(automationPlatformActionEvidenceService, /evaluate/);
+  assert.match(automationPlatformActionEvidenceService, /outboxStore\.list/);
+  assert.match(automationPlatformActionEvidenceService, /growth\.automation\.action_required/);
+  assert.match(automationPlatformActionEvidenceService, /delivered_platform_action_inbox_receipt/);
+  assert.match(automationPlatformActionEvidenceService, /homeAiOwnsActionInbox/);
+  assert.match(automationPlatformActionEvidenceService, /homeAiOwnsWebPush/);
+  assert.match(automationPlatformActionEvidenceService, /summaryOnly: true/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /eventService/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /emit\(/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /fetch\(/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /publishPlanItem/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /publishAcceptedProposal/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /recordExecution/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /generateCard/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /Gateway/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /activateStageAssessment/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /learning_growth_/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /rawAnswer:/);
+  assert.doesNotMatch(automationPlatformActionEvidenceService, /rawPrompt:/);
+
   const automationProposalRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-proposals.js"));
   assert.match(automationProposalRepository, /learning_growth_automation_proposals/);
   assert.match(automationProposalRepository, /createLearningAutomationProposalRepository/);
@@ -946,6 +968,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
   assert.match(script, /--production-learner-cycle-smoke-evidence/);
   assert.match(script, /--production-scheduler-dry-run-smoke-evidence/);
+  assert.match(script, /--platform-action-evidence/);
   assert.match(script, /workspace_id_required/);
   assert.match(script, /release_readiness_smoke_invalid_json/);
   assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
@@ -988,6 +1011,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /productionLearnerCycleSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerDryRunSmokeEvidence/);
+  assert.match(scriptHarness, /platformActionEvidence/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
@@ -1053,6 +1077,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionSchedulerDryRunSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_dry_run_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_dry_run_smoke/);
+  assert.match(releaseReadinessService, /platformActionEvidence/);
+  assert.match(releaseReadinessService, /platform_action_evidence/);
+  assert.match(releaseReadinessService, /attach_platform_action_evidence/);
   assert.doesNotMatch(releaseReadinessService, /learningDailyLoopService/);
   assert.doesNotMatch(releaseReadinessService, /publishPlanItem/);
   assert.doesNotMatch(releaseReadinessService, /generateCard/);
@@ -1064,11 +1091,33 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:release-evidence-bundle"],
     "node scripts/build-growth-release-evidence-bundle.js"
   );
+  assert.equal(
+    packageJson.scripts["smoke:platform-action-evidence"],
+    "node scripts/smoke-growth-platform-action-evidence.js"
+  );
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
   );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-platform-action-evidence-service\.js/
+  );
+
+  const platformActionScript = read(path.join("scripts", "smoke-growth-platform-action-evidence.js"));
+  assert.match(platformActionScript, /readEnv/);
+  assert.match(platformActionScript, /createServices/);
+  assert.match(platformActionScript, /learningAutomationPlatformActionEvidenceService/);
+  assert.match(platformActionScript, /\.evaluate/);
+  assert.doesNotMatch(platformActionScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(platformActionScript, /emit\(/);
+  assert.doesNotMatch(platformActionScript, /deliverHandoff/);
+  assert.doesNotMatch(platformActionScript, /publishPlanItem/);
+  assert.doesNotMatch(platformActionScript, /generateCard/);
+  assert.doesNotMatch(platformActionScript, /executeOnce/);
+  assert.doesNotMatch(platformActionScript, /runOnce/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -1108,6 +1157,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /productionCycleHistorySmokeEvidence/);
   assert.match(service, /productionOwnerAuditSmokeEvidence/);
   assert.match(service, /productionDailyLoopWriteSmokeEvidence/);
+  assert.match(service, /platform_action/);
+  assert.match(service, /platformActionEvidence/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
   assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);
@@ -1140,6 +1191,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /smoke-growth-learner-cycle\.js/);
   assert.match(service, /smoke-growth-learning-loop-state\.js/);
   assert.match(service, /smoke-growth-cycle-history\.js/);
+  assert.match(service, /smoke-growth-platform-action-evidence\.js/);
   assert.match(service, /smoke-growth-stage-assessment\.js/);
   assert.match(service, /smoke-growth-automation-proposal\.js/);
   assert.match(service, /smoke-growth-scheduler-dry-run\.js/);
@@ -1168,6 +1220,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(serviceHarness, /builds summary-only bundle from no-write smoke tasks/);
   assert.match(serviceHarness, /cycle_history/);
   assert.match(serviceHarness, /owner_audit/);
+  assert.match(serviceHarness, /collects platform action evidence from read-only smoke/);
   assert.match(serviceHarness, /blocks learner-cycle write operations from bundle scope/);
   assert.match(serviceHarness, /blocks controlled daily-loop write evidence unless explicitly allowed/);
   assert.match(serviceHarness, /runs controlled daily-loop write smoke only after bundle write approval/);
@@ -1179,6 +1232,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(scriptHarness, /writes bounded cycle-history evidence from read-only history smoke/);
   assert.match(scriptHarness, /writes bounded Owner audit evidence from read-only audit smoke/);
   assert.match(scriptHarness, /writes bounded learner-cycle audit evidence from read-only learner smoke/);
+  assert.match(scriptHarness, /writes platform action evidence from delivered outbox receipt/);
   assert.match(scriptHarness, /blocks learner-cycle write operations before smoke runner/);
   assert.match(scriptHarness, /exposes controlled daily-loop write evidence only as explicit blocked task by default/);
   assert.match(scriptHarness, /fails closed before write smoke when controlled publish lacks a plan draft id/);

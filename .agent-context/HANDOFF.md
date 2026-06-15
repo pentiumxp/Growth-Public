@@ -9,6 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T13:35Z - Platform Action Release Evidence
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes a
+  read-only evidence boundary, release-bundle collection, docs, and harness.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `88%` complete, about `12%`
+    remaining;
+  - full product closed loop including embedded UI, visual evidence, real
+    production platform receipt evidence, reviewed targets, and explicit
+    release decisions: about `69%` complete, about `31%` remaining.
+- Scope:
+  - added
+    `src/services/learning-automation-platform-action-evidence-service.js`;
+  - added `npm run smoke:platform-action-evidence` through
+    `scripts/smoke-growth-platform-action-evidence.js`;
+  - wired the service through `src/app/services.js`;
+  - added default release-bundle task `platform_action`, mapped to
+    `platformActionEvidence`;
+  - the evidence reads only delivered Growth event-outbox receipts for
+    `growth.automation.action_required`, emits summary-only
+    `growth.learningAutomationPlatformActionEvidence.v1`, requires an
+    `inboxItemId` to pass, records only `clickUrlPresent`, and does not expose
+    raw click URLs or access keys;
+  - Home AI still owns Action Inbox, Web Push, platform permissions, final
+    rendering, and click routing. Growth does not read Home AI Action
+    Inbox/Web Push internals.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-platform-action-evidence-service.test.js`;
+  - `tests/growth-platform-action-evidence-smoke-script.test.js`;
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/learning-automation-platform-action-evidence-service.test.js
+    tests/growth-platform-action-evidence-smoke-script.test.js
+    tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-architecture-boundary.test.js` (`61` tests);
+  - `npm run check` (`152` runtime JS files covered);
+  - `npm test` (`579` tests);
+  - operational CLI smoke against temporary SQLite/outbox data:
+    `smokeStatus=0`, `smokeEvidenceStatus=pass`, `bundleStatus=0`,
+    `bundleEvidenceStatus=pass`, `leakedClickUrl=false`, and
+    `leakedAccessKey=false`;
+  - `git diff --check`.
+- Remaining product work:
+  - embedded Owner automation/release evidence UI still needs product-grade
+    controls and visual verification;
+  - real production platform Action Inbox/Web Push receipt evidence still needs
+    to be collected from production-delivered Growth outbox receipts;
+  - central embedded-plugin visual evidence, production dry-run evidence,
+    reviewed enabled targets, config approvals, and explicit release approvals
+    still block unattended scheduling.
+
 ## 2026-06-15T13:34Z - Release Readiness Remediation Plan
 
 - Status: implemented and locally validated; commit/push follows this handoff

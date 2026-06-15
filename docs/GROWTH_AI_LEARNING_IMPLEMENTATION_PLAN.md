@@ -649,6 +649,10 @@ Implemented backend shape:
 - `learning-automation-release-approval-service` records and lists
   summary-only approvals for individual writeful config gates and projects
   active approvals back into release-readiness input;
+- `learning-automation-platform-action-evidence-service` reads only Growth
+  event-outbox delivered `growth.automation.action_required` receipts and
+  emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`
+  release evidence; Home AI still owns Action Inbox and Web Push internals;
 - `automation-release-approvals.js` persists summary-only approval records in
   `learning_growth_automation_release_approvals`;
 - `automation-release-readiness.js` persists summary-only snapshots in
@@ -675,8 +679,9 @@ Implemented backend shape:
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
   cycle-history readback, read-only Owner audit readback, read-only
-  learner-cycle audit, stage-assessment readiness, proposal smoke, and
-  read-only release approval bag projection in the default task set. It maps
+  learner-cycle audit, stage-assessment readiness, proposal smoke, platform
+  action evidence, and read-only release approval bag projection in the
+  default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
@@ -687,6 +692,10 @@ Implemented backend shape:
   `productionLearnerCycleSmokeEvidence`; use direct
   `npm run smoke:learner-cycle` for any Owner-requested write operation
   because learner submissions/reflections must not pass through the bundle.
+  The default `platform_action` task maps
+  `npm run smoke:platform-action-evidence` output to `platformActionEvidence`
+  from delivered Growth outbox receipts without reading Home AI internal
+  Action Inbox/Web Push storage.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -734,7 +743,9 @@ Required behavior:
   release-bundle task,
   production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`, release-readiness internal
-  no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push evidence,
+  no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push
+  receipt evidence from `npm run smoke:platform-action-evidence` or the
+  default `platform_action` release-bundle task,
   central embedded visual evidence, and explicit release approval records for
   each writeful config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
@@ -759,7 +770,9 @@ Required harness:
 - `tests/learning-automation-release-readiness-repository.test.js`;
 - `tests/learning-automation-release-approval-repository.test.js`;
 - `tests/learning-automation-release-approval-service.test.js`;
+- `tests/learning-automation-platform-action-evidence-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
+- `tests/growth-platform-action-evidence-smoke-script.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
@@ -774,7 +787,8 @@ Remaining release gaps:
 
 - product UI evidence for Owner daily, audit/correction, proposal review,
   digest/action/execution/run, and worker-target views;
-- Home AI platform Action Inbox/Web Push evidence;
+- real production Home AI platform Action Inbox/Web Push receipt evidence from
+  `npm run smoke:platform-action-evidence`;
 - central embedded-plugin visual evidence for mobile scroll, dark mode,
   progress, and embedded shell;
 - production planner readiness smoke from `npm run smoke:planner-readiness`,

@@ -17,6 +17,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "learner_cycle",
   "stage_assessment",
   "proposal",
+  "platform_action",
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -93,6 +94,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionProposalSmokeEvidence",
     script: "scripts/smoke-growth-automation-proposal.js",
     commandName: "npm run smoke:proposal"
+  },
+  {
+    taskId: "platform_action",
+    evidenceKey: "platformActionEvidence",
+    script: "scripts/smoke-growth-platform-action-evidence.js",
+    commandName: "npm run smoke:platform-action-evidence"
   },
   {
     taskId: "scheduler_dry_run",

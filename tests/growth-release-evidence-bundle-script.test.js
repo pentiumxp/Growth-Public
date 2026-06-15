@@ -356,6 +356,63 @@ test("release evidence bundle script writes a summary-only bundle from a read-on
   });
 });
 
+test("release evidence bundle script writes platform action evidence from delivered outbox receipt", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const eventOutboxPath = path.join(dir, "growth-event-outbox.json");
+    fs.writeFileSync(eventOutboxPath, JSON.stringify({
+      events: [
+        {
+          id: "event_platform_action",
+          status: "delivered",
+          delivered_at: "2026-06-15T06:20:00.000Z",
+          event: {
+            event_id: "event_platform_action",
+            type: "growth.automation.action_required",
+            workspace_id: "growth:smoke_workspace",
+            action_handoff_id: "lgahand_smoke",
+            digest_id: "lgadig_smoke"
+          },
+          delivery: {
+            status: 202,
+            response: {
+              inboxItemId: "inbox_smoke",
+              clickUrl: "/?view=inbox&item=inbox_smoke"
+            }
+          }
+        }
+      ]
+    }), "utf8");
+    const bundlePath = path.join(dir, "platform-action-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "platform_action",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath,
+      GROWTH_EVENT_OUTBOX_STORE_PATH: eventOutboxPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.platformActionEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.platformActionEvidence.smoke, "npm run smoke:platform-action-evidence");
+    assert.equal(fileBundle.evidence.platformActionEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.platformActionEvidence.summary.source, "growth-learning-automation-platform-action-evidence-service");
+    assert.equal(fileBundle.evidence.platformActionEvidence.summary.status, "pass");
+    assert.equal(fileBundle.evidence.platformActionEvidence.summary.count, 1);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("/?view=inbox"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
 test("release evidence bundle script writes stage-checkpoint evidence from read-only stage smoke", () => {
   withTempDb(({ dir, dbPath }) => {
     const bundlePath = path.join(dir, "stage-bundle.json");

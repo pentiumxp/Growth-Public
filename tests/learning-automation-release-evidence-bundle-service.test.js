@@ -31,6 +31,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("cycle_history"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("owner_audit"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
@@ -259,6 +260,42 @@ test("release evidence bundle service collects release approval bag without evid
   assert.ok(calls[0].args.includes("--operation"));
   assert.ok(calls[0].args.includes("bag"));
   assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle service collects platform action evidence from read-only smoke", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-platform-action-evidence-service",
+      status: "pass",
+      count: 1,
+      latestReceipt: {
+        eventId: "event_platform_action",
+        actionHandoffId: "lgahand_1",
+        inboxItemId: "inbox_1",
+        clickUrlPresent: true
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["platform_action"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["platformActionEvidence"]);
+  assert.equal(result.bundle.evidence.platformActionEvidence.status, "pass");
+  assert.equal(result.bundle.evidence.platformActionEvidence.smoke, "npm run smoke:platform-action-evidence");
+  assert.equal(result.bundle.evidence.platformActionEvidence.summary.source, "growth-learning-automation-platform-action-evidence-service");
+  assert.equal(result.bundle.evidence.platformActionEvidence.summary.status, "pass");
+  assert.equal(result.bundle.evidence.platformActionEvidence.summary.count, 1);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-platform-action-evidence.js"));
+  assert.ok(calls[0].args.includes("--json"));
+  assert.equal(JSON.stringify(result.bundle).includes("clickUrl"), false);
 });
 
 test("release evidence bundle service blocks controlled daily-loop write evidence unless explicitly allowed", () => {

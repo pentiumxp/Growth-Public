@@ -92,6 +92,14 @@ Responsibilities:
 - record delivery success or visible delivery failure without mutating learner
   state.
 
+Platform action release evidence is a separate read-only boundary:
+`learning-automation-platform-action-evidence-service` and
+`npm run smoke:platform-action-evidence` read delivered
+`growth.automation.action_required` receipts from Growth's event outbox and
+project summary-only `growth.learningAutomationPlatformActionEvidence.v1`.
+They do not post notifications, read Home AI Action Inbox/Web Push internals,
+or mutate learner state.
+
 Public service methods:
 
 | Method | Purpose |
@@ -263,7 +271,9 @@ Focused tests:
 ```bash
 node --test tests/learning-automation-action-handoff-repository.test.js \
   tests/learning-automation-action-handoff-service.test.js \
+  tests/learning-automation-platform-action-evidence-service.test.js \
   tests/growth-automation-action-handoff-smoke-script.test.js \
+  tests/growth-platform-action-evidence-smoke-script.test.js \
   tests/growth-event-service.test.js \
   tests/growth-routes.test.js \
   tests/growth-architecture-boundary.test.js
@@ -280,6 +290,8 @@ Coverage:
   reviewed digest plus active policy preconditions, event-outbox delivery
   failure visibility, invalid input, and privacy-risk rejection;
 - event mapping for `growth.automation.action_required`;
+- platform-action evidence smoke over delivered Growth event-outbox receipts,
+  including missing evidence and privacy-risk input;
 - route Owner-only writes, visible-target reads, workspace bearer writes, and
   bounded failure responses;
 - architecture guard for no Gateway, scheduler, publication, card generation,
@@ -305,7 +317,8 @@ Future writeful scheduling still requires:
 3. Proposal review UI closure.
 4. Digest review UI closure.
 5. Active failure policy for the target scope.
-6. Action handoff UI or platform Action Inbox/Web Push contract evidence.
+6. Action handoff UI and real production platform Action Inbox/Web Push receipt
+   evidence from `npm run smoke:platform-action-evidence`.
 7. The default-disabled Owner-explicit scheduler execution backend has
    repository/service/route/architecture harness evidence and remains disabled
    until explicit release approval.

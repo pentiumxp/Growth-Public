@@ -182,7 +182,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
   includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
-  smoke, and proposal smoke in the default task set, and now also collects the
+  smoke, platform action evidence, and proposal smoke in the default task set,
+  and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
@@ -201,7 +202,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   versioned bundle `releaseApproval` field only and maps profile-feedback smoke
   into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
   `productionCycleHistorySmokeEvidence`, Owner audit smoke into
-  `productionOwnerAuditSmokeEvidence`, controlled daily-loop write smoke into
+  `productionOwnerAuditSmokeEvidence`, platform action evidence from delivered
+  Growth event-outbox receipts into `platformActionEvidence`, controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
@@ -391,9 +393,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   execution, send notifications, activate stage assessments, or inspect SQLite
   tables directly. Background writeful scheduling remains blocked until
   proposal review, audit UI, automation digest/action/execution UI,
-  rollback/failure policy, action handoff, platform Action Inbox/Web Push
-  evidence, visual evidence, and explicit release evidence are implemented and
-  covered by harness.
+  rollback/failure policy, action handoff, real production platform
+  Action Inbox/Web Push receipt evidence, visual evidence, and explicit release
+  evidence are implemented and covered by harness.
   The automation digest backend is now implemented through
   `learning-automation-digest-service`, `automation-digests.js`,
   `learning_growth_automation_digests`, and visible-target/Owner scoped
@@ -601,9 +603,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Owner-supervised daily card; production learner-cycle writes remain gated
   behind explicit Owner-provided learner evidence.
   Older-cycle selection over the implemented current-cycle drilldown, formal
-  stage-checkpoint UI, proposal/digest/action/execution UI, platform
-  Action Inbox/Web Push evidence, and full automation release review remain
-  future slices.
+  stage-checkpoint UI, proposal/digest/action/execution UI, real production
+  platform Action Inbox/Web Push receipt evidence, and full automation release
+  review remain future slices.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

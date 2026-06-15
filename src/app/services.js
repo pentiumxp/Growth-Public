@@ -8,6 +8,7 @@ const { createHermesPluginService } = require("../services/hermes-plugin-service
 const { createLearningAutomationActionHandoffService } = require("../services/learning-automation-action-handoff-service");
 const { createLearningAutomationDigestService } = require("../services/learning-automation-digest-service");
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
+const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
@@ -237,6 +238,9 @@ function createServices(config) {
     failurePolicyService: learningAutomationFailurePolicyService,
     eventService: growthEventService
   });
+  const learningAutomationPlatformActionEvidenceService = createLearningAutomationPlatformActionEvidenceService({
+    outboxStore: growthEventOutboxStore
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -359,6 +363,7 @@ function createServices(config) {
     learningAutomationActionHandoffService,
     learningAutomationDigestService,
     learningAutomationFailurePolicyService,
+    learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
     learningAutomationReleaseReadinessService,

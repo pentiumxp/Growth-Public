@@ -470,7 +470,10 @@ Background scheduling can be considered only after all of these are complete:
 - Stage-assessment controls are separate from daily plan publication.
 - Proposal review UI exists.
 - Digest, failure-policy, action-handoff, and execution UI exists.
-- Platform Action Inbox/Web Push evidence exists in the Home AI workspace.
+- Platform Action Inbox/Web Push receipt evidence has been collected through
+  `npm run smoke:platform-action-evidence`, which reads only delivered Growth
+  event-outbox receipts and does not inspect Home AI Action Inbox/Web Push
+  internals.
 - Central Home AI embedded-plugin visual evidence exists for mobile and
   embedded shell.
 - Production dry-run evidence exists for the target scope.
