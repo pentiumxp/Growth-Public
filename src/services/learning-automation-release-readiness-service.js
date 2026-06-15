@@ -359,6 +359,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         requiredActor: "owner"
       } : {}),
       presentCheck(input, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
+      presentCheck(input, "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence", "Production scheduler worker target smoke", "run_production_scheduler_worker_target_smoke"),
       reviewedWorkerTargetCheck(scope),
       check("worker_timer_default_disabled", config.automationBackgroundWorkerEnabled ? "blocked" : "pass", {
         label: "Worker lease/timer default-disabled status",

@@ -98,7 +98,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:scheduler-execution` has produced bounded default-disabled
   execution evidence, accepts `--production-scheduler-run-smoke-evidence`
   after `npm run smoke:scheduler-run` has produced bounded default-disabled
-  run evidence, accepts
+  run evidence, accepts `--production-scheduler-worker-target-smoke-evidence`
+  after `npm run smoke:scheduler-worker-target` has produced bounded reviewed
+  target evidence, accepts
   `--production-scheduler-worker-smoke-evidence` after
   `npm run smoke:scheduler-worker` has produced bounded production worker
   smoke evidence, accepts

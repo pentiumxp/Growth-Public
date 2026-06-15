@@ -833,6 +833,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-action-handoff-smoke-evidence/);
   assert.match(script, /--production-scheduler-execution-smoke-evidence/);
   assert.match(script, /--production-scheduler-run-smoke-evidence/);
+  assert.match(script, /--production-scheduler-worker-target-smoke-evidence/);
   assert.match(script, /--production-scheduler-worker-smoke-evidence/);
   assert.match(script, /--production-daily-loop-preview-smoke-evidence/);
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
@@ -858,6 +859,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionActionHandoffSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerExecutionSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerRunSmokeEvidence/);
+  assert.match(scriptHarness, /productionSchedulerWorkerTargetSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerWorkerSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
@@ -873,6 +875,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionSchedulerRunSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_run_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_run_smoke/);
+  assert.match(releaseReadinessService, /productionSchedulerWorkerTargetSmokeEvidence/);
+  assert.match(releaseReadinessService, /production_scheduler_worker_target_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_scheduler_worker_target_smoke/);
   assert.match(releaseReadinessService, /productionSchedulerWorkerSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_worker_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_worker_smoke/);

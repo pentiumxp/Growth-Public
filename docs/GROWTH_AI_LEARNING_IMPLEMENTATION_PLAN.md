@@ -641,8 +641,10 @@ Required behavior:
   production scheduler execution smoke evidence from
   `npm run smoke:scheduler-execution`, scheduler run default-disabled status,
   production scheduler run smoke evidence from `npm run smoke:scheduler-run`,
-  reviewed enabled worker targets, worker lease/timer default-disabled status,
-  production scheduler worker smoke evidence from
+  production scheduler worker target smoke evidence from
+  `npm run smoke:scheduler-worker-target`, reviewed enabled worker targets,
+  worker lease/timer default-disabled status, production scheduler worker smoke
+  evidence from
   `npm run smoke:scheduler-worker`, production planner readiness
   smoke, production daily-loop preview smoke evidence from
   `npm run smoke:daily-loop-preview`, production controlled daily-loop

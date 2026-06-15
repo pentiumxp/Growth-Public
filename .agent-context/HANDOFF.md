@@ -9,6 +9,81 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T04:36Z - Growth Release Readiness Scheduler Worker Target Smoke Evidence Slice
+
+- Status: implemented and locally validated. This slice makes production
+  scheduler worker target smoke evidence from
+  `npm run smoke:scheduler-worker-target` a required release-readiness check
+  without enabling background workers, production scheduling, scheduler run or
+  execution, action handoff delivery, Gateway calls, plan publication,
+  evaluation, stage activation, notification delivery, or learner-state
+  mutation.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of release/scheduler/worker/Gateway
+  runtime keywords; only required non-deploy checks and the plan-only deploy
+  command were run.
+- Scope:
+  - `learning-automation-release-readiness-service` now includes
+    `production_scheduler_worker_target_smoke_evidence`;
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--production-scheduler-worker-target-smoke-evidence`;
+  - release-readiness service, smoke-script, and architecture harnesses assert
+    the new evidence key and required action;
+  - Growth local implementation, next-stage, architecture, platform pointer,
+    and project-context docs now state that
+    `npm run smoke:scheduler-worker-target` evidence is required before release
+    review.
+- Boundary:
+  - the new check is summary-only evidence input, expected to be collected by
+    running the scheduler worker-target smoke separately;
+  - `npm run smoke:release-readiness` remains no-write by default and writes
+    snapshots only with explicit `--write-snapshot`;
+  - release readiness remains advisory and always returns
+    `writefulSchedulingAllowed=false`;
+  - the boundary must not call Gateway, daily-loop services, action handoff
+    delivery, publication, evaluation, scheduler execution, scheduler ticks,
+    notification delivery, stage activation, direct repositories from the CLI,
+    or learner-state mutation.
+- Validation passed:
+  - syntax checks for the touched service, smoke script, and tests;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`74` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --workspace-id smoke_workspace
+    --production-scheduler-worker-target-smoke-evidence --json`, which returned
+    the new check as `pass` while the overall readiness stayed `incomplete` and
+    `writefulSchedulingAllowed=false`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - Growth and Home AI `git diff --check`;
+  - `codegraph sync && codegraph status` (`224` files, `2,739` nodes,
+    `10,737` edges; index up to date);
+  - Home AI required checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, absolute `node
+    --check` commands for the touched Growth files, and plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-481173c4-d136-4500-8f1d-e93a3c7bd29d`;
+  - production deploy was not executed because this was a Growth local
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T04:31Z - Growth Release Readiness Scheduler Execution/Run Smoke Evidence Slice
 
 - Status: implemented and locally validated. This slice makes production
