@@ -208,6 +208,15 @@ function decisionFor(review = {}, requiredKeys = []) {
   if (!latestDecision || latestDecision.status !== "approved") {
     return { authorized: false, reason: "learning_automation_release_authorization_decision_missing" };
   }
+  if (summary.packageRecordRequired && !summary.packageRecordReadbackAvailable) {
+    return { authorized: false, reason: "learning_automation_release_authorization_package_readback_unavailable" };
+  }
+  if (summary.packageRecordRequired && !summary.packageRecordPresent) {
+    return { authorized: false, reason: "learning_automation_release_authorization_package_record_missing" };
+  }
+  if (summary.packageRecordRequired && summary.packageRecordStatus !== "ready_for_release_review") {
+    return { authorized: false, reason: "learning_automation_release_authorization_package_record_not_ready" };
+  }
   if (missingApprovalKeys.length) {
     return { authorized: false, reason: "learning_automation_release_authorization_approval_missing", missingApprovalKeys };
   }

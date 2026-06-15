@@ -822,6 +822,11 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseReviewService, /packageReadbackSummary/);
   assert.match(automationReleaseReviewService, /releaseDashboardSummary/);
   assert.match(automationReleaseReviewService, /latestPackageDashboardStatus/);
+  assert.match(automationReleaseReviewService, /package_record_required/);
+  assert.match(automationReleaseReviewService, /package_readback_unavailable/);
+  assert.match(automationReleaseReviewService, /package_record_blocked/);
+  assert.match(automationReleaseReviewService, /record_release_package/);
+  assert.match(automationReleaseReviewService, /resolve_release_package_record/);
   assert.match(automationReleaseReviewService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseReviewService, /runtimeConfigChange: false/);
   assert.match(automationReleaseReviewService, /advisoryOnly: true/);
@@ -855,6 +860,18 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseAuthorizationService, /packageReadbackSummary/);
   assert.match(automationReleaseAuthorizationService, /latestPackageDashboardStatus/);
   assert.match(automationReleaseAuthorizationService, /releaseDashboardSummary/);
+  assert.match(
+    automationReleaseAuthorizationService,
+    /learning_automation_release_authorization_package_readback_unavailable/
+  );
+  assert.match(
+    automationReleaseAuthorizationService,
+    /learning_automation_release_authorization_package_record_missing/
+  );
+  assert.match(
+    automationReleaseAuthorizationService,
+    /learning_automation_release_authorization_package_record_not_ready/
+  );
   assert.match(automationReleaseAuthorizationService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseAuthorizationService, /runtimeConfigChange: false/);
   assert.match(automationReleaseAuthorizationService, /summaryOnly: true/);

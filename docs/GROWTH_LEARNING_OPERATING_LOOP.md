@@ -1685,19 +1685,22 @@ Implementation progress on 2026-06-15:
   `GET /api/v1/growth/automation/release-review` provide the no-write readback
   that future Owner UI can use: current readiness, latest collection run,
   latest decision, latest persisted release-package audit record, approval
-  bag, status, package-record status, and next action. Package-record readback
-  is explicit advisory evidence only; missing package records surface as
-  `missing` or `readback_unavailable`, but they do not yet change release
-  authorization. It is a service-only projection and does not write tables,
-  run smoke tasks, flip runtime config, or schedule work.
+  bag, status, package-record status, and next action. After an approved
+  release decision, package-record readback is a backend release gate:
+  `packageRecordStatus=ready_for_release_review` is required before review can
+  become `approved`; missing, unreadable, blocked, or incomplete package
+  records surface package-specific remediation actions and block authorization.
+  It is a service-only projection and does not write tables, run smoke tasks,
+  flip runtime config, or schedule work.
 - `npm run smoke:release-authorization` and
   `GET /api/v1/growth/automation/release-authorization` provide the final
   no-write authorization readback consumed by scheduler execution. It requires
   approved release review, ready latest collection run, approved latest
-  decision, and active `writefulExecutionApproval`; it preserves package
-  readback and latest-package dashboard summary fields as advisory Owner/audit
-  readback only. Missing authorization makes scheduler execution record
-  `blocked` before publication.
+  decision, a matching readable package audit record with
+  `packageRecordStatus=ready_for_release_review`, and active
+  `writefulExecutionApproval`; it preserves package readback and latest-package
+  dashboard summary fields as bounded Owner/audit readback only. Missing
+  authorization makes scheduler execution record `blocked` before publication.
 - `npm run smoke:release-closure` and
   `GET /api/v1/growth/automation/release-closure` provide a single no-write
   closure readback for Owner/release tooling. It composes release-review and

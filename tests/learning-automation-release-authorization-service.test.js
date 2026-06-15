@@ -191,6 +191,71 @@ test("release authorization requires the configured approval key", () => {
   assert.deepEqual(result.missingApprovalKeys, ["writefulExecutionApproval", "backgroundSchedulerApproval"]);
 });
 
+test("release authorization requires a readable ready release package record", () => {
+  const missingPackage = serviceWith({
+    review: approvedReview({
+      status: "approved",
+      approvedForReleaseReview: true,
+      packageRecordRequired: true,
+      packageRecordReadbackAvailable: true,
+      packageRecordPresent: false,
+      latestPackage: null,
+      packageReadback: {
+        summaryOnly: true,
+        packageRecordReadbackAvailable: true,
+        packageRecordPresent: false,
+        packageRecordStatus: "missing",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      releaseReview: {
+        summaryOnly: true,
+        status: "approved",
+        packageRecordReadbackAvailable: true,
+        packageRecordRequired: true,
+        packageRecordPresent: false,
+        packageRecordStatus: "missing"
+      }
+    })
+  }).authorize({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(missingPackage.ok, true);
+  assert.equal(missingPackage.authorized, false);
+  assert.equal(missingPackage.reason, "learning_automation_release_authorization_package_record_missing");
+  assert.equal(missingPackage.packageReadback.packageRecordPresent, false);
+
+  const blockedPackage = serviceWith({
+    review: approvedReview({
+      packageRecordRequired: true,
+      packageRecordPresent: true,
+      packageReadback: {
+        summaryOnly: true,
+        packageRecordReadbackAvailable: true,
+        packageRecordPresent: true,
+        packageRecordStatus: "blocked",
+        latestPackageId: "lgapkg_blocked",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      releaseReview: {
+        summaryOnly: true,
+        status: "approved",
+        packageRecordReadbackAvailable: true,
+        packageRecordRequired: true,
+        packageRecordPresent: true,
+        packageRecordStatus: "blocked",
+        latestPackageId: "lgapkg_blocked"
+      }
+    })
+  }).authorize({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(blockedPackage.ok, true);
+  assert.equal(blockedPackage.authorized, false);
+  assert.equal(blockedPackage.reason, "learning_automation_release_authorization_package_record_not_ready");
+});
+
 test("release authorization rejects invalid review boundary and privacy-risk input", () => {
   const boundary = serviceWith({
     review: approvedReview({ writefulSchedulingAllowed: true })

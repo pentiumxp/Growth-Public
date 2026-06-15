@@ -795,11 +795,12 @@ Implemented backend shape:
   `growth.learningAutomationReleaseReview.v1` readback for Owner release
   controls. It composes current release-readiness, latest collection run,
   latest release decision, latest persisted release-package audit record, and
-  release approval bag through existing services. The package record readback
-  is explicit advisory evidence only: `packageRecordStatus` can be
-  `not_required`, `missing`, `readback_unavailable`, or the persisted package
-  status, and missing package records do not yet change the release
-  authorization decision. When the package record contains
+  release approval bag through existing services. After an approved release
+  decision, package record readback is a backend release gate:
+  `packageRecordStatus=ready_for_release_review` is required before review can
+  become `approved`; `missing`, `readback_unavailable`, `blocked`, or other
+  non-ready package statuses surface package-specific remediation actions and
+  block authorization. When the package record contains
   `releaseDashboardSummary`, review also returns `packageReadback` and
   `releaseReview.latestPackageDashboard*` summary fields for controls and UI
   readback. It does not write repositories or tables, run smoke tasks, call
@@ -812,8 +813,9 @@ Implemented backend shape:
   service, requires approved review, ready collection run, approved decision,
   and active `writefulExecutionApproval`, and now preserves bounded
   `packageReadback`, `latestPackage.stepSummary.stepCount`, and
-  `latestPackage.releaseDashboardSummary` for Owner/audit readback. Package
-  dashboard status remains advisory evidence only and is not a hard
+  `latestPackage.releaseDashboardSummary` for Owner/audit readback. A matching
+  readable package audit record must be `ready_for_release_review`; package
+  dashboard status remains readback only and is not an additional
   authorization condition. It does not write repositories or tables, run smoke
   tasks, call Gateway, publish, generate, evaluate, schedule, notify, activate
   stage assessments, mutate learner state, or flip runtime config.

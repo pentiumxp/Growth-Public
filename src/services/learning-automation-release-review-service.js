@@ -289,11 +289,17 @@ function currentReadiness(readinessService, input, scope) {
   };
 }
 
-function deriveReviewStatus(readiness, collectionRun, decision) {
+function deriveReviewStatus(readiness, collectionRun, decision, packageRecordStatus) {
   const decisionStatus = cleanString(decision?.status, 80);
-  if (decisionStatus === "approved") return "approved";
   if (decisionStatus === "blocked") return "blocked";
   if (decisionStatus === "needs_evidence") return "needs_evidence";
+  if (decisionStatus === "approved") {
+    if (packageRecordStatus === "ready_for_release_review") return "approved";
+    if (packageRecordStatus === "readback_unavailable") return "package_readback_unavailable";
+    if (packageRecordStatus === "missing") return "package_record_required";
+    if (packageRecordStatus === "blocked") return "package_record_blocked";
+    return "package_record_incomplete";
+  }
   const runStatus = cleanString(collectionRun?.status, 80);
   if (runStatus === "ready_for_release_review") return "ready_for_owner_decision";
   if (runStatus === "blocked") return "blocked";
@@ -322,6 +328,27 @@ function nextActionFor(status, readiness, collectionRun, decision) {
     return {
       key: "record_release_decision",
       action: "run_smoke_release_decision_or_owner_route",
+      requiredActor: "owner"
+    };
+  }
+  if (status === "package_record_required") {
+    return {
+      key: "record_release_package",
+      action: "run_smoke_release_package_write_record",
+      requiredActor: "owner"
+    };
+  }
+  if (status === "package_readback_unavailable") {
+    return {
+      key: "restore_release_package_readback",
+      action: "restore_release_package_service_readback",
+      requiredActor: "owner"
+    };
+  }
+  if (status === "package_record_blocked" || status === "package_record_incomplete") {
+    return {
+      key: "resolve_release_package_record",
+      action: "rebuild_or_review_release_package_record",
       requiredActor: "owner"
     };
   }
@@ -356,8 +383,6 @@ function createLearningAutomationReleaseReviewService(options = {}) {
     const approvals = approvalBag(approvalService, scope);
     if (!approvals.ok) return approvals;
 
-    const status = deriveReviewStatus(readiness, collection.run, decisionResult.decision);
-    const nextAction = nextActionFor(status, readiness, collection.run, decisionResult.decision);
     const packageRecordRequired = Boolean(collection.run);
     const packageRecordPresent = Boolean(packageResult.package);
     const packageRecordStatus = packageRecordPresent
@@ -365,6 +390,8 @@ function createLearningAutomationReleaseReviewService(options = {}) {
       : packageRecordRequired
         ? packageResult.readbackAvailable ? "missing" : "readback_unavailable"
         : "not_required";
+    const status = deriveReviewStatus(readiness, collection.run, decisionResult.decision, packageRecordStatus);
+    const nextAction = nextActionFor(status, readiness, collection.run, decisionResult.decision);
     const packageReadback = packageReadbackSummary(packageResult, packageRecordStatus);
     return Object.assign({}, scope, {
       ok: true,

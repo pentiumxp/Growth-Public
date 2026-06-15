@@ -432,8 +432,9 @@ Use the Growth-owned release-readiness boundary:
   record for the collection run and exposes
   `packageRecordStatus`/`latestPackage` plus bounded
   `packageReadback.latestPackageDashboard*` fields when the package contains
-  `releaseDashboardSummary`; this is advisory evidence at this stage and is
-  not a hard authorization gate.
+  `releaseDashboardSummary`; after an approved decision, authorization requires
+  that matching package record to be readable and
+  `ready_for_release_review`. Package dashboard fields remain readback only.
 - release closure smoke CLI:
   `npm run smoke:release-closure -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It combines

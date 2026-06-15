@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T22:42Z - Release Package Hard Authorization Gate
+
+- Status: implemented and validated locally. This slice is
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate learner submissions, run scheduler actions, deliver notifications,
+  activate stage assessments, mutate learner state, or write production release
+  records.
+- Scope:
+  - `learning-automation-release-review-service` now requires a readable
+    matching release-package audit record with
+    `packageRecordStatus=ready_for_release_review` after an approved release
+    decision before review can return `approved`;
+  - missing, unreadable, blocked, or incomplete package records now surface
+    package-specific review statuses and next actions:
+    `record_release_package`, `restore_release_package_readback`, or
+    `resolve_release_package_record`;
+  - `learning-automation-release-authorization-service` now blocks on missing
+    package readback, missing package record, or non-ready package status with
+    package-specific reason codes before approval-key checks;
+  - closure harness now proves the package gate remains visible before owner
+    activation, and architecture guards assert the hard-gate statuses/reasons;
+  - Growth docs and `PROJECT_CONTEXT.md` now distinguish the hard package
+    audit-record gate from package dashboard fields, which remain bounded
+    readback only.
+- Changed files:
+  - `src/services/learning-automation-release-review-service.js`;
+  - `src/services/learning-automation-release-authorization-service.js`;
+  - release review/authorization/closure/architecture tests;
+  - Growth release docs, `PROJECT_CONTEXT.md`, and this handoff.
+- Validation passed:
+  - touched runtime syntax checks;
+  - `node scripts/check-growth-docs-locality.js`;
+  - focused release harness:
+    `node --test tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/learning-automation-release-controls-service.test.js tests/growth-release-review-smoke-script.test.js tests/growth-release-authorization-smoke-script.test.js tests/growth-release-closure-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    (`68/68`);
+  - `npm run check` (`186/186` runtime JavaScript files covered);
+  - `npm test` (`742/742`);
+  - Home AI platform contract checker for Growth;
+  - CodeGraph status: `327` indexed files, `4268` nodes, `16661` edges;
+  - AI Ops required checks: app architecture-code harness, touched-file
+    `node --check`, and `git diff --check`;
+  - AI Ops evidence ledger append id
+    `evidence-c03cf050-ff29-4b24-9ecf-fa6139bf7582`.
+- Remaining product work:
+  - build product-visible Owner release/evidence UI so Owner can record/review
+    package, release evidence, activation, and runtime enablement records
+    without Codex;
+  - collect real production release evidence through central visual/platform
+    tooling and Growth smoke CLIs before any runtime enablement;
+  - keep writeful/background scheduling blocked until release package,
+    dashboard/readiness, Owner approval, activation, runtime enablement audit,
+    and manual config evidence are complete.
+
 ## 2026-06-15T22:28Z - Release Evidence Inventory/Dashboard Readback
 
 - Status: implemented and validated locally. This slice is
@@ -309,8 +363,9 @@
     including package dashboard status, next-action key, required-action count,
     and step count on `review`, `executionGate`, `releaseClosure`, and the
     top-level `packageReadback`;
-  - release authorization rules are unchanged: package record/dashboard presence
-    is advisory Owner/audit readback only, not a hard authorization condition;
+  - superseded by the 2026-06-16 release package gate slice: package dashboard
+    fields remain bounded Owner/audit readback, but a matching readable package
+    record is now a hard backend release-authorization prerequisite;
   - CLI delegation harnesses prove release authorization/closure smoke wrappers
     preserve the service-owned `packageReadback` fields;
   - no DB schema change was required because persisted package records already

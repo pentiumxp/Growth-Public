@@ -263,7 +263,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release review, authorization, closure, controls, inventory, and dashboard
   readbacks project that dashboard summary as latest-package dashboard status,
   next-action key, required-action count, and step count without exposing raw
-  package artifacts or changing authorization conditions. The
+  package artifacts; after an approved release decision, release review and
+  authorization require a matching readable package audit record with
+  `packageRecordStatus=ready_for_release_review`, while package dashboard
+  fields remain readback only. The
   visible-target scoped
   `GET /api/v1/growth/automation/release-packages` and Owner-only
   `POST /api/v1/growth/automation/release-packages` expose record readback and

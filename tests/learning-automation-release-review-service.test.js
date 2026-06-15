@@ -130,7 +130,7 @@ test("release review reports ready for Owner decision when run exists without de
   assert.equal(records.packageInput.collectionRunId, "lgacrn_ready");
 });
 
-test("release review reports approved advisory state from latest decision", () => {
+test("release review reports approved state from latest decision and ready package record", () => {
   const records = {
     collectionRun: {
       collectionRunId: "lgacrn_ready",
@@ -212,6 +212,79 @@ test("release review reports approved advisory state from latest decision", () =
   assert.equal(result.releaseReview.requiredActionCount, 0);
   assert.deepEqual(result.approvalSummary.approvalKeys, ["writefulExecutionApproval"]);
   assert.equal(records.packageInput.collectionRunId, "lgacrn_ready");
+});
+
+test("release review requires a ready release package record after approved decision", () => {
+  const records = {
+    collectionRun: {
+      collectionRunId: "lgacrn_ready",
+      status: "ready_for_release_review"
+    },
+    decision: {
+      decisionId: "lgard_approved",
+      collectionRunId: "lgacrn_ready",
+      status: "approved",
+      privacyClass: "summary_only"
+    },
+    approvalKeys: ["writefulExecutionApproval"]
+  };
+  const service = serviceWith(records);
+  const result = service.review({
+    workspaceId: "fanfan",
+    learnerId: "fanfan"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "package_record_required");
+  assert.equal(result.approvedForReleaseReview, false);
+  assert.equal(result.packageRecordRequired, true);
+  assert.equal(result.packageRecordPresent, false);
+  assert.equal(result.releaseReview.packageRecordStatus, "missing");
+  assert.equal(result.releaseReview.nextAction.key, "record_release_package");
+  assert.equal(result.releaseReview.nextAction.action, "run_smoke_release_package_write_record");
+  assert.equal(result.releaseReview.requiredActionCount, 1);
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(records.packageInput.collectionRunId, "lgacrn_ready");
+});
+
+test("release review blocks when the latest package record is not ready", () => {
+  const records = {
+    collectionRun: {
+      collectionRunId: "lgacrn_ready",
+      status: "ready_for_release_review"
+    },
+    decision: {
+      decisionId: "lgard_approved",
+      collectionRunId: "lgacrn_ready",
+      status: "approved",
+      privacyClass: "summary_only"
+    },
+    packageRecord: {
+      packageId: "lgapkg_blocked",
+      collectionRunId: "lgacrn_ready",
+      status: "blocked",
+      privacyClass: "summary_only",
+      stepSummary: {
+        summaryOnly: true,
+        status: "blocked",
+        stepCount: 6,
+        passingStepCount: 5,
+        blockedStepCount: 1
+      }
+    }
+  };
+  const service = serviceWith(records);
+  const result = service.review({
+    workspaceId: "fanfan",
+    learnerId: "fanfan"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "package_record_blocked");
+  assert.equal(result.approvedForReleaseReview, false);
+  assert.equal(result.releaseReview.packageRecordStatus, "blocked");
+  assert.equal(result.releaseReview.nextAction.key, "resolve_release_package_record");
+  assert.equal(result.releaseReview.requiredActionCount, 1);
 });
 
 test("release review rejects privacy-risk input and missing dependencies", () => {

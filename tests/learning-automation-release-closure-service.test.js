@@ -295,6 +295,67 @@ test("release closure reports missing approval keys after approved review", () =
   ]);
 });
 
+test("release closure surfaces release package record gate before activation", () => {
+  const result = serviceWith({
+    review: approvedReview({
+      status: "package_record_required",
+      approvedForReleaseReview: false,
+      packageRecordRequired: true,
+      packageRecordPresent: false,
+      latestPackage: null,
+      packageReadback: {
+        summaryOnly: true,
+        packageRecordReadbackAvailable: true,
+        packageRecordPresent: false,
+        packageRecordStatus: "missing",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      releaseReview: {
+        summaryOnly: true,
+        status: "package_record_required",
+        packageRecordReadbackAvailable: true,
+        packageRecordRequired: true,
+        packageRecordPresent: false,
+        packageRecordStatus: "missing",
+        nextAction: {
+          key: "record_release_package",
+          action: "run_smoke_release_package_write_record",
+          requiredActor: "owner"
+        },
+        missingCheckKeys: [],
+        blockedCheckKeys: [],
+        missingEvidenceKeys: [],
+        requiredActionCount: 1
+      }
+    }),
+    gate: authorizedGate({
+      status: "blocked",
+      authorized: false,
+      reason: "learning_automation_release_authorization_package_record_missing",
+      latestPackage: null,
+      packageReadback: {
+        summaryOnly: true,
+        packageRecordReadbackAvailable: true,
+        packageRecordPresent: false,
+        packageRecordStatus: "missing",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      }
+    })
+  }).summarize({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(result.status, "package_record_required");
+  assert.equal(result.backendEvidenceComplete, false);
+  assert.equal(result.releaseClosure.packageRecordPresent, false);
+  assert.equal(result.releaseClosure.packageRecordStatus, "missing");
+  assert.equal(result.releaseClosure.nextAction.key, "record_release_package");
+  assert.equal(result.releaseClosure.requiredActionCount, 1);
+  assert.equal(result.readyForOwnerReleaseActivation, false);
+});
+
 test("release closure rejects privacy-risk input and missing dependencies", () => {
   const privacy = serviceWith().summarize({
     workspaceId: "weixin_fanfan",
