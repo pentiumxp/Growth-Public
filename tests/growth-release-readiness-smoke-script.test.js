@@ -53,6 +53,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" }
     }),
     "--owner-audit-ui-evidence",
+    "--production-action-handoff-smoke-evidence",
     "--production-scheduler-worker-smoke-evidence",
     "--production-daily-loop-preview-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
@@ -70,6 +71,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
   assert.deepEqual(evidenceFromArgs(args), {
     ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
     ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionActionHandoffSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
@@ -91,6 +93,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     evidence: {
       ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
       ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      productionActionHandoffSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }

@@ -636,7 +636,8 @@ Required behavior:
 
 - aggregate summary-only evidence for Owner daily UI, audit/correction UI,
   stage-checkpoint separation, proposal review, digest review, active failure
-  policy, delivered action handoff, Owner-explicit execution gate status,
+  policy, delivered action handoff, production action handoff smoke evidence
+  from `npm run smoke:action-handoff`, Owner-explicit execution gate status,
   scheduler run default-disabled status, reviewed enabled worker targets,
   worker lease/timer default-disabled status, production scheduler worker smoke
   evidence from `npm run smoke:scheduler-worker`, production planner readiness

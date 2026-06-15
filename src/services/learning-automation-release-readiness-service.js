@@ -342,6 +342,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       reviewedDigestCheck(scope),
       activeFailurePolicyCheck(scope),
       deliveredHandoffCheck(scope),
+      presentCheck(input, "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence", "Production action handoff smoke", "run_production_action_handoff_smoke"),
       check("owner_explicit_execution_gate", "pass", {
         label: "Owner-explicit execution boundary",
         servicePresent: true,

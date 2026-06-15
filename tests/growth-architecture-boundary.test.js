@@ -830,6 +830,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /createSnapshot/);
   assert.match(script, /shouldWriteSnapshot/);
   assert.match(script, /--write-snapshot/);
+  assert.match(script, /--production-action-handoff-smoke-evidence/);
   assert.match(script, /--production-scheduler-worker-smoke-evidence/);
   assert.match(script, /--production-daily-loop-preview-smoke-evidence/);
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
@@ -852,12 +853,16 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   const scriptHarness = read(path.join("tests", "growth-release-readiness-smoke-script.test.js"));
   assert.match(scriptHarness, /without writing a snapshot by default/);
   assert.match(scriptHarness, /writes summary-only snapshots only when requested/);
+  assert.match(scriptHarness, /productionActionHandoffSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerWorkerSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
+  assert.match(releaseReadinessService, /productionActionHandoffSmokeEvidence/);
+  assert.match(releaseReadinessService, /production_action_handoff_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_action_handoff_smoke/);
   assert.match(releaseReadinessService, /productionSchedulerWorkerSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_worker_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_worker_smoke/);
