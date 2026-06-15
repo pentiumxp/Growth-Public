@@ -371,7 +371,7 @@ background scheduler.
 | A5: Failure policy and action handoff | Growth records active rollback/failure policy and delivers bounded action metadata. | No learning-state mutation. |
 | A6: Owner-explicit execution | Owner can execute one delivered handoff action after every gate is rechecked. | Default-disabled; when enabled, delegates only to accepted-proposal publish and records execution audit. |
 | A7: Background scheduler contract | Default-disabled supervised tick over delivered handoff actions, Owner-reviewed persistent worker targets, and default-disabled worker leases, with any future unattended worker kept separate. | Delegates only to the execution service; production worker use requires reviewed enabled targets, release evidence, and explicit config. |
-| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production cycle-history smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
+| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production cycle-history smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production dry-run, config, reviewed-target, explicit release evidence, and bounded remediation fields. | No write permission; advisory release review artifact and next-action guidance only. |
 
 Writeful scheduling can be considered only after:
 
@@ -419,7 +419,7 @@ Writeful scheduling can be considered only after:
 | Background scheduler run/tick | `learning-automation-scheduler-run-service`, `automation-scheduler-runs.js`; default-disabled and delegates delivered handoff actions only to Owner-explicit execution. |
 | Background scheduler worker target | `learning-automation-scheduler-worker-target-service`, `automation-scheduler-worker-targets.js`; Owner-reviewed summary-only target configuration for any future worker. |
 | Background scheduler worker lease | `learning-automation-scheduler-worker-service`, `automation-scheduler-worker-leases.js`; default-disabled local lease/timer mechanics over reviewed targets, delegating only to scheduler run. |
-| Release-readiness evidence | `learning-automation-release-readiness-service`, `automation-release-readiness.js`; advisory summary-only release-review checks and snapshots. |
+| Release-readiness evidence | `learning-automation-release-readiness-service`, `automation-release-readiness.js`; advisory summary-only release-review checks, remediation plan fields, and snapshots. |
 
 Routes must remain request parsing, authorization, visible-target resolution,
 service dispatch, and bounded response formatting. Browser code must not

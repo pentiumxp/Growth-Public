@@ -174,6 +174,12 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.summary.readyForReleaseReview, true);
   assert.equal(result.summary.writefulSchedulingAllowed, false);
   assert.equal(result.releaseReview.advisoryOnly, true);
+  assert.equal(result.releaseReview.requiredActionCount, 0);
+  assert.deepEqual(result.releaseReview.requiredActions, []);
+  assert.deepEqual(result.releaseReview.missingCheckKeys, []);
+  assert.deepEqual(result.releaseReview.blockedCheckKeys, []);
+  assert.deepEqual(result.releaseReview.missingEvidenceKeys, []);
+  assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.checks.find((item) => item.key === "automation_digest_ui_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_proposal_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "automation_action_handoff_ui_evidence").status, "pass");
@@ -219,6 +225,16 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.summary.readyForReleaseReview, false);
   assert.equal(result.summary.writefulSchedulingAllowed, false);
   assert.equal(result.config.writefulSchedulingAllowed, false);
+  assert.equal(result.releaseReview.requiredActionCount, result.summary.missingRequired.length);
+  assert.equal(result.releaseReview.nextAction.key, "owner_daily_ui_evidence");
+  assert.equal(result.releaseReview.nextAction.action, "complete_owner_daily_ui_visual_validation");
+  assert.equal(result.releaseReview.nextAction.requiredActor, "owner");
+  assert.equal(result.releaseReview.missingCheckKeys.includes("active_failure_policy"), true);
+  assert.equal(result.releaseReview.missingEvidenceKeys.includes("active_failure_policy"), false);
+  assert.equal(result.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
+  const activeFailurePolicyAction = result.releaseReview.requiredActions.find((item) => item.key === "active_failure_policy");
+  assert.equal(activeFailurePolicyAction.action, "activate_failure_policy");
+  assert.equal(activeFailurePolicyAction.endpoint, "/api/v1/growth/automation/failure-policies");
   assert.equal(result.checks.find((item) => item.key === "reviewed_automation_digest").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "active_failure_policy").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "automation_digest_ui_evidence").status, "missing");
@@ -273,6 +289,14 @@ test("automation release readiness service blocks unsafe dry-run/config states",
   assert.equal(result.checks.find((item) => item.key === "background_scheduler_release_approval").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "background_worker_release_approval").status, "pass");
   assert.equal(result.summary.writefulSchedulingAllowed, false);
+  assert.deepEqual(result.releaseReview.blockedCheckKeys, [
+    "scheduler_run_default_disabled",
+    "worker_timer_default_disabled",
+    "production_scheduler_dry_run"
+  ]);
+  const dryRunAction = result.releaseReview.requiredActions.find((item) => item.key === "production_scheduler_dry_run");
+  assert.equal(dryRunAction.action, "resolve_blocked_release_readiness_check");
+  assert.equal(dryRunAction.requiredActor, "owner");
 });
 
 test("automation release readiness service accepts release approval aliases but still keeps readiness advisory-only", () => {
@@ -372,6 +396,10 @@ test("automation release readiness service blocks enabled config gates when expl
   assert.equal(scheduler.requiredAction.action, "disable_or_record_release_approval");
   assert.equal(worker.status, "blocked");
   assert.equal(worker.requiredAction.action, "disable_or_record_release_approval");
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("writeful_execution_release_approval"), true);
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("background_scheduler_release_approval"), true);
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("background_worker_release_approval"), true);
+  assert.equal(result.releaseReview.requiredActions.find((item) => item.key === "writeful_execution_release_approval").action, "disable_or_record_release_approval");
   assert.equal(result.summary.writefulSchedulingAllowed, false);
 });
 
@@ -391,6 +419,8 @@ test("automation release readiness service creates summary-only snapshots and li
   assert.equal(created.snapshot.summary.writefulSchedulingAllowed, false);
   assert.equal(calls.at(-1).type, "saveSnapshot");
   assert.equal(calls.at(-1).input.privacyClass, "summary_only");
+  assert.equal(calls.at(-1).input.releaseReview.requiredActionCount, 0);
+  assert.deepEqual(calls.at(-1).input.releaseReview.requiredActions, []);
 
   const listed = service.listSnapshots(scope());
   assert.equal(listed.ok, true);

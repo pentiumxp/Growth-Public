@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T13:34Z - Release Readiness Remediation Plan
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  advisory release-readiness output, docs, and harness only.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `87%` complete, about `13%`
+    remaining;
+  - full product closed loop including embedded UI, visual evidence, platform
+    action evidence, production smokes, reviewed targets, and explicit release
+    decisions: about `68%` complete, about `32%` remaining.
+- Scope:
+  - `learning-automation-release-readiness-service` now derives bounded
+    summary-only `releaseReview` remediation fields from non-passing checks:
+    `missingCheckKeys`, `blockedCheckKeys`, `missingEvidenceKeys`,
+    `requiredActionCount`, `requiredActions`, and `nextAction`;
+  - blocked checks receive a fallback action
+    `resolve_blocked_release_readiness_check`; missing checks retain their
+    existing check-level required action where available;
+  - `releaseReview.writefulSchedulingAllowed` remains `false` and
+    `releaseReview.advisoryOnly` remains `true`; the remediation plan does not
+    flip runtime config, publish cards, schedule work, deliver notifications, or
+    mutate learner state.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-readiness-service.test.js`;
+  - `tests/growth-release-readiness-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js` (`47` tests);
+  - operational no-write release-readiness smoke against a temporary SQLite DB:
+    status was `incomplete`, `requiredActionCount=33`, `nextAction.key` was
+    `owner_daily_ui_evidence`, `missingEvidenceKeys` included
+    `production_owner_audit_smoke_evidence`, and
+    `writefulSchedulingAllowed=false`;
+  - `npm run check` (`150` runtime JS files covered);
+  - `npm test` (`569` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`255` files, `3,292` nodes,
+    `12,747` edges; index up to date with older-engine advisory).
+- Remaining product work:
+  - embedded Owner UI still needs richer historical-cycle/audit/release evidence
+    controls;
+  - central visual evidence and platform Action Inbox/Web Push evidence are
+    still required before any production scheduling decision;
+  - production smokes, reviewed enabled targets, and explicit release approvals
+    still need to be collected for real release readiness.
+
 ## 2026-06-15T13:01Z - Owner Audit Release Evidence
 
 - Status: implemented and locally validated; commit/push follows this handoff

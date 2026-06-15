@@ -965,6 +965,8 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   const scriptHarness = read(path.join("tests", "growth-release-readiness-smoke-script.test.js"));
   assert.match(scriptHarness, /without writing a snapshot by default/);
   assert.match(scriptHarness, /writes summary-only snapshots only when requested/);
+  assert.match(scriptHarness, /releaseReview\.requiredActions/);
+  assert.match(scriptHarness, /releaseReview\.nextAction/);
   assert.match(scriptHarness, /accepts versioned evidence bundle files/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence bundle input/);
   assert.match(scriptHarness, /automationDigestUiEvidence/);
@@ -989,6 +991,11 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
+  assert.match(releaseReadinessService, /buildReleaseReview/);
+  assert.match(releaseReadinessService, /requiredActions/);
+  assert.match(releaseReadinessService, /missingEvidenceKeys/);
+  assert.match(releaseReadinessService, /blockedCheckKeys/);
+  assert.match(releaseReadinessService, /resolve_blocked_release_readiness_check/);
   assert.match(releaseReadinessService, /automationDigestUiEvidence/);
   assert.match(releaseReadinessService, /automation_digest_ui_evidence/);
   assert.match(releaseReadinessService, /complete_automation_digest_ui/);

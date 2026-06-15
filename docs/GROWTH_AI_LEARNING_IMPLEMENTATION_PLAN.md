@@ -164,7 +164,7 @@ amount of code that already exists.
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
-| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
+| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
 
 Sequencing rule:
 
@@ -642,7 +642,10 @@ Implemented backend shape:
 
 - `learning-automation-release-readiness-service` evaluates the release review
   checklist from summary-only service DTOs, config flags, scheduler dry-run
-  evidence, external evidence keys, and persisted release approval records;
+  evidence, external evidence keys, and persisted release approval records; it
+  also derives a summary-only remediation plan in `releaseReview` with
+  `missingCheckKeys`, `blockedCheckKeys`, `missingEvidenceKeys`,
+  `requiredActionCount`, `requiredActions`, and `nextAction`;
 - `learning-automation-release-approval-service` records and lists
   summary-only approvals for individual writeful config gates and projects
   active approvals back into release-readiness input;
@@ -736,6 +739,9 @@ Required behavior:
   each writeful config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
+- return a bounded `releaseReview` remediation plan derived from non-passing
+  checks so Owner/release tooling can see the next required action without
+  traversing raw check details;
 - persist optional Owner-created summary-only snapshots for audit review;
 - support structured production evidence collection without Codex by accepting
   only bounded evidence JSON, release-approval JSON, versioned
@@ -759,7 +765,8 @@ Required harness:
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
 - `tests/growth-release-evidence-bundle-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
-- architecture guard in `tests/growth-architecture-boundary.test.js`;
+- architecture guard in `tests/growth-architecture-boundary.test.js`,
+  including the `releaseReview` remediation fields;
 - smoke syntax and package-script checks through `npm run check`;
 - docs-locality checks and broad local validation.
 

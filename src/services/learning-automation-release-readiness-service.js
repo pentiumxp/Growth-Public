@@ -4,6 +4,10 @@ function cleanString(value) {
   return String(value || "").trim();
 }
 
+function boundedString(value, max = 160) {
+  return cleanString(value).slice(0, max);
+}
+
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -200,6 +204,46 @@ function buildSummary(scope, checks) {
     readyForReleaseReview,
     writefulSchedulingAllowed: false,
     status: readyForReleaseReview ? "ready_for_release_review" : (blocked ? "blocked" : "incomplete")
+  };
+}
+
+function compactRequiredAction(checkItem = {}) {
+  const requiredAction = checkItem.requiredAction || {};
+  const summary = checkItem.summary || {};
+  const status = boundedString(checkItem.status, 40);
+  const fallbackAction = status === "blocked"
+    ? "resolve_blocked_release_readiness_check"
+    : "provide_release_readiness_evidence";
+  return Object.fromEntries(Object.entries({
+    key: boundedString(checkItem.key, 120),
+    status,
+    label: boundedString(summary.label || checkItem.key, 180),
+    action: boundedString(requiredAction.action || fallbackAction, 120),
+    requiredActor: boundedString(requiredAction.requiredActor || "owner", 80),
+    endpoint: boundedString(requiredAction.endpoint, 220),
+    evidencePresent: summary.evidencePresent === true ? true : (summary.evidencePresent === false ? false : undefined)
+  }).filter(([, value]) => value !== undefined && value !== ""));
+}
+
+function buildReleaseReview(summary = {}, checks = [], persistedApprovals = {}) {
+  const openChecks = checks.filter((item) => !["pass", "not_applicable"].includes(item.status));
+  const requiredActions = openChecks.map(compactRequiredAction);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseReadiness.releaseReview.v1",
+    summaryOnly: true,
+    readyForReleaseReview: summary.readyForReleaseReview === true,
+    persistedApprovalKeys: asArray(persistedApprovals.approvalKeys).map((key) => boundedString(key, 120)).filter(Boolean).sort(),
+    missingCheckKeys: checks.filter((item) => item.status === "missing").map((item) => boundedString(item.key, 120)).filter(Boolean),
+    blockedCheckKeys: checks.filter((item) => item.status === "blocked").map((item) => boundedString(item.key, 120)).filter(Boolean),
+    missingEvidenceKeys: checks
+      .filter((item) => item.status === "missing" && item.summary?.evidencePresent === false)
+      .map((item) => boundedString(item.key, 120))
+      .filter(Boolean),
+    requiredActionCount: requiredActions.length,
+    requiredActions: requiredActions.slice(0, 50),
+    nextAction: requiredActions[0] || null,
+    writefulSchedulingAllowed: false,
+    advisoryOnly: true
   };
 }
 
@@ -433,6 +477,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       configGateCheck(inputWithReleaseApproval, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")
     ];
     const summary = buildSummary(scope, checks);
+    const releaseReview = buildReleaseReview(summary, checks, persistedApprovals);
     return {
       ok: true,
       source: "growth-learning-automation-release-readiness-service",
@@ -459,14 +504,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         writefulSchedulingAllowed: false
       },
       summary,
-      releaseReview: {
-        schemaVersion: "growth.learningAutomationReleaseReadiness.releaseReview.v1",
-        summaryOnly: true,
-        readyForReleaseReview: summary.readyForReleaseReview,
-        persistedApprovalKeys: persistedApprovals.approvalKeys,
-        writefulSchedulingAllowed: false,
-        advisoryOnly: true
-      }
+      releaseReview
     };
   }
 

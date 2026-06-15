@@ -1620,6 +1620,10 @@ Implementation progress on 2026-06-15:
   remains input normalization only: readiness remains no-write by default,
   `--write-snapshot` is still explicit, and the boundary still cannot enable
   writeful scheduling.
+- release-readiness output also includes bounded summary-only remediation
+  fields: missing check keys, blocked check keys, missing evidence keys,
+  required actions, and one next action. These fields support Owner/release
+  review and do not enable scheduling or execution.
 
 The next product-completeness slice is embedded UI and production readiness:
 

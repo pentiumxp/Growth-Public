@@ -292,6 +292,10 @@ test("release readiness smoke script evaluates readiness without writing a snaps
     assert.equal(output.status, "incomplete");
     assert.equal(output.config.writefulSchedulingAllowed, false);
     assert.equal(output.releaseReview.advisoryOnly, true);
+    assert.equal(Array.isArray(output.releaseReview.requiredActions), true);
+    assert.equal(output.releaseReview.nextAction.key, "owner_daily_ui_evidence");
+    assert.equal(output.releaseReview.nextAction.action, "complete_owner_daily_ui_visual_validation");
+    assert.equal(output.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")

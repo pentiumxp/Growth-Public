@@ -108,8 +108,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GET /api/v1/growth/automation/release-approvals`, Owner-only
   `POST /api/v1/growth/automation/release-approvals`, and
   `npm run smoke:release-approval`; release-readiness can read active approval
-  records as `releaseReview.persistedApprovalKeys`, but approval records remain
-  advisory evidence and never flip runtime config. It now treats
+  records as `releaseReview.persistedApprovalKeys`; `releaseReview` now also
+  includes summary-only remediation fields `missingCheckKeys`,
+  `blockedCheckKeys`, `missingEvidenceKeys`, `requiredActionCount`,
+  `requiredActions`, and `nextAction` so Owner/release tooling can see what
+  evidence remains without walking raw checks. Approval records and remediation
+  remain advisory evidence and never flip runtime config. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle
