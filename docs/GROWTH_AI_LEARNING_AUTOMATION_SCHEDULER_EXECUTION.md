@@ -29,6 +29,7 @@ Implemented locally as a default-disabled backend slice:
   `GET /api/v1/growth/automation/scheduler/executions`;
 - Owner-only
   `POST /api/v1/growth/automation/scheduler/execute-once`;
+- service-owned operational smoke `npm run smoke:scheduler-execution`;
 - config gate: `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`.
 
 The config gate defaults to false. When the gate is false, `execute-once`
@@ -129,6 +130,44 @@ Write route:
 - returns a bounded `400` with a persisted blocked/failed execution for
   disabled config or failed gates.
 
+## Operational Smoke
+
+```bash
+npm run smoke:scheduler-execution -- --workspace-id <workspace> --learner-id <learner> --json
+```
+
+The default operation is read-only `list`. It delegates only to
+`learning-automation-scheduler-execution-service.listExecutions`, opens the
+normal service graph, and must not create the execution table when no execution
+records exist.
+
+Explicit execution evidence uses:
+
+```bash
+npm run smoke:scheduler-execution -- \
+  --operation execute \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --handoff-id <delivered-handoff-id> \
+  --proposal-id <accepted-proposal-id> \
+  --allow-write \
+  --json
+```
+
+`execute` requires explicit `--allow-write` and delegates only to
+`learning-automation-scheduler-execution-service.executeOnce`. With the default
+`GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=false`, the expected result is a
+visible blocked execution row with
+`learning_automation_scheduler_execution_disabled`. This is evidence that the
+execution boundary is fail-closed; it is not publication approval.
+
+The smoke script must not import repositories directly, inspect
+`learning_growth_` tables, call Gateway, call the scheduler dry-run service
+directly, publish plans directly, generate cards, evaluate learner
+submissions, deliver action handoffs, run scheduler ticks, activate stage
+assessments, enqueue workers, or mutate learner state outside the execution
+service boundary.
+
 ## Failure Policy
 
 Failure behavior is fail-closed:
@@ -155,6 +194,7 @@ Focused harness:
 
 - `tests/learning-automation-scheduler-execution-repository.test.js`;
 - `tests/learning-automation-scheduler-execution-service.test.js`;
+- `tests/growth-automation-scheduler-execution-smoke-script.test.js`;
 - `tests/learning-automation-scheduler-service.test.js`;
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`.
@@ -170,6 +210,9 @@ Required assertions:
 - repository migrates bounded columns, rejects privacy-risk keys, and enforces
   `summary_only`;
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
+- `npm run smoke:scheduler-execution` defaults to read-only list, requires
+  `--allow-write` for execute, records default-disabled blocked state, and
+  rejects privacy-risk input;
 - architecture guard proves no Gateway, direct card-generation, direct plan
   publish, stage-assessment activation, queue/worker, or direct table access
   from the execution service.

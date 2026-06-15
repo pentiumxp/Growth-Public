@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T03:23Z - Growth Scheduler Execution Smoke CLI Slice
+
+- Status: Growth automation scheduler execution now has a service-owned
+  operational smoke entry. This slice did not deploy, enable
+  `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED`, publish cards, call Gateway,
+  call model vendors, generate cards, evaluate learner submissions, deliver
+  action handoffs, run scheduler ticks, activate stage assessments, enqueue
+  workers, or mutate learner state outside the execution service boundary.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of execution/deployment keywords;
+  only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-automation-scheduler-execution.js`;
+  - added `npm run smoke:scheduler-execution`;
+  - wired the new runtime script into `npm run check`;
+  - added `tests/growth-automation-scheduler-execution-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - `list` is the default read-only operation and delegates to
+    `learningAutomationSchedulerExecutionService.listExecutions`;
+  - `execute` requires explicit `--allow-write`, requires a handoff id and
+    proposal id, and delegates to
+    `learningAutomationSchedulerExecutionService.executeOnce`;
+  - with writeful execution disabled, explicit execution records bounded
+    `blocked` state with
+    `learning_automation_scheduler_execution_disabled`;
+  - the CLI must not import repositories directly, inspect
+    `learning_growth_` tables, call Gateway, call scheduler dry-run directly,
+    publish directly, generate cards, evaluate submissions, run scheduler
+    ticks, deliver action handoffs, activate stage assessments, or mutate
+    learner state outside the scheduler execution service.
+- Validation passed:
+  - `node --check scripts/smoke-growth-automation-scheduler-execution.js`;
+  - `node --check tests/growth-automation-scheduler-execution-smoke-script.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-automation-scheduler-execution-smoke-script.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-execution-repository.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`74` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=131`, `checkedCount=131`, no missing/stale/duplicate
+    entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent smoke:scheduler-execution -- --workspace-id smoke_workspace --json`
+    with a temporary empty SQLite DB precreated for read-only list evidence;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`465` tests);
+  - Growth `git diff --check`.
+- AI Ops control-plane evidence:
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-2e297a63-0784-4af5-89f5-e27f57b6fab8`;
+  - production deploy was not executed because this is a local Growth
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T03:11Z - Growth Automation Digest Smoke CLI Slice
 
 - Status: Growth automation digest now has a service-owned operational smoke

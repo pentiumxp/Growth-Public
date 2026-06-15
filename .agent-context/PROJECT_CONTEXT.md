@@ -260,6 +260,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   failure-policy readiness, and scheduler dry-run before publication when
   enabled, and delegates only to accepted-proposal publish. It is not a
   background scheduler or production auto-scheduling enablement.
+  `npm run smoke:scheduler-execution` now provides the service-owned
+  operational smoke for this boundary: `list` is the default read-only
+  operation, while `execute` requires explicit `--allow-write` and still
+  delegates only to `learning-automation-scheduler-execution-service`. With
+  writeful execution disabled, explicit execution records a bounded blocked
+  row rather than publishing.
   The background scheduler contract is documented in
   `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`. Its local
   backend boundary is implemented as default-disabled
