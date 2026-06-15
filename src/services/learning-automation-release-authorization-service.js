@@ -93,13 +93,34 @@ function publicDecision(decision = null) {
   };
 }
 
+function publicPackage(record = null) {
+  if (!record) return null;
+  return {
+    packageId: cleanString(record.packageId || record.package_id, 180),
+    status: cleanString(record.status, 80),
+    packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
+    collectionRunId: cleanString(record.collectionRunId || record.collection_run_id, 180),
+    privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function reviewSummary(review = {}) {
+  const releaseReview = objectOnly(review.releaseReview || review.release_review);
   return {
     schemaVersion: cleanString(review.schemaVersion || review.schema_version, 120),
     status: cleanString(review.status, 80),
     approvedForReleaseReview: review.approvedForReleaseReview === true,
     collectionRunPresent: review.collectionRunPresent === true,
     decisionPresent: review.decisionPresent === true,
+    packageRecordReadbackAvailable: review.packageRecordReadbackAvailable === true,
+    packageRecordRequired: review.packageRecordRequired === true,
+    packageRecordPresent: review.packageRecordPresent === true,
+    packageRecordStatus: cleanString(releaseReview.packageRecordStatus || review.packageRecordStatus || review.package_record_status, 120),
+    latestPackageId: cleanString(releaseReview.latestPackageId || review.latestPackageId || review.latest_package_id, 180),
     advisoryOnly: review.advisoryOnly === true,
     writefulSchedulingAllowed: review.writefulSchedulingAllowed === true,
     runtimeConfigChange: review.runtimeConfigChange === true,
@@ -179,7 +200,8 @@ function createLearningAutomationReleaseAuthorizationService(options = {}) {
       enforcementOnly: true,
       review: reviewSummary(review),
       latestCollectionRun: publicCollectionRun(review.latestCollectionRun),
-      latestDecision: publicDecision(review.latestDecision)
+      latestDecision: publicDecision(review.latestDecision),
+      latestPackage: publicPackage(review.latestPackage)
     });
   }
 

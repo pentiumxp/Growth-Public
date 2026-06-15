@@ -100,6 +100,87 @@ function latestDecision(decisionService, scope, input, collectionRun) {
   };
 }
 
+function publicPackage(record = null) {
+  if (!record) return null;
+  const packageSummary = objectOnly(record.packageSummary || record.package_summary);
+  const stepSummary = objectOnly(record.stepSummary || record.step_summary);
+  return {
+    packageId: cleanString(record.packageId || record.package_id, 180),
+    status: cleanString(record.status || packageSummary.status, 80),
+    packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
+    collectionRunId: cleanString(record.collectionRunId || record.collection_run_id || packageSummary.collectionRunId || packageSummary.collection_run_id, 180),
+    privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    packageSummary: {
+      schemaVersion: cleanString(packageSummary.schemaVersion || packageSummary.schema_version, 180),
+      summaryOnly: packageSummary.summaryOnly === true || packageSummary.summary_only === true,
+      status: cleanString(packageSummary.status || record.status, 80),
+      ok: packageSummary.ok === true,
+      collectionRunId: cleanString(packageSummary.collectionRunId || packageSummary.collection_run_id || record.collectionRunId || record.collection_run_id, 180),
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    },
+    stepSummary: {
+      schemaVersion: cleanString(stepSummary.schemaVersion || stepSummary.schema_version, 180),
+      summaryOnly: stepSummary.summaryOnly === true || stepSummary.summary_only === true,
+      status: cleanString(stepSummary.status || record.status, 80),
+      stepCount: Number(stepSummary.stepCount || stepSummary.step_count || 0) || 0,
+      passingStepCount: Number(stepSummary.passingStepCount || stepSummary.passing_step_count || 0) || 0,
+      blockedStepCount: Number(stepSummary.blockedStepCount || stepSummary.blocked_step_count || 0) || 0,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    },
+    createdAt: cleanString(record.createdAt || record.created_at, 80),
+    updatedAt: cleanString(record.updatedAt || record.updated_at, 80),
+    summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
+function latestPackage(packageService, scope, input, collectionRun) {
+  if (!collectionRun) {
+    return {
+      ok: true,
+      readbackAvailable: Boolean(packageService && typeof packageService.listPackages === "function"),
+      count: 0,
+      package: null
+    };
+  }
+  if (!packageService || typeof packageService.listPackages !== "function") {
+    return {
+      ok: true,
+      readbackAvailable: false,
+      count: 0,
+      package: null
+    };
+  }
+  const runId = cleanString(
+    input.collectionRunId
+    || input.collection_run_id
+    || input.runId
+    || input.run_id
+    || collectionRun?.collectionRunId
+    || collectionRun?.collection_run_id
+    || collectionRun?.runId
+    || collectionRun?.run_id,
+    180
+  );
+  const result = packageService.listPackages(Object.assign({}, scope, {
+    collectionRunId: runId,
+    limit: 1
+  }));
+  if (!result?.ok) return unavailable(result?.error || "learning_automation_release_review_package_failed");
+  return {
+    ok: true,
+    readbackAvailable: true,
+    count: Number(result.count || asArray(result.packages).length || 0) || 0,
+    package: publicPackage(firstItem(result, "packages"))
+  };
+}
+
 function approvalBag(approvalService, scope) {
   if (!approvalService || typeof approvalService.approvalBag !== "function") {
     return {
@@ -189,6 +270,7 @@ function createLearningAutomationReleaseReviewService(options = {}) {
   const collectionRunService = options.collectionRunService || null;
   const decisionService = options.decisionService || null;
   const approvalService = options.approvalService || null;
+  const packageService = options.packageService || null;
 
   function review(input = {}) {
     const scope = scopeFrom(input);
@@ -202,11 +284,20 @@ function createLearningAutomationReleaseReviewService(options = {}) {
     if (!collection.ok) return collection;
     const decisionResult = latestDecision(decisionService, scope, input, collection.run);
     if (!decisionResult.ok) return decisionResult;
+    const packageResult = latestPackage(packageService, scope, input, collection.run);
+    if (!packageResult.ok) return packageResult;
     const approvals = approvalBag(approvalService, scope);
     if (!approvals.ok) return approvals;
 
     const status = deriveReviewStatus(readiness, collection.run, decisionResult.decision);
     const nextAction = nextActionFor(status, readiness, collection.run, decisionResult.decision);
+    const packageRecordRequired = Boolean(collection.run);
+    const packageRecordPresent = Boolean(packageResult.package);
+    const packageRecordStatus = packageRecordPresent
+      ? packageResult.package.status || "recorded"
+      : packageRecordRequired
+        ? packageResult.readbackAvailable ? "missing" : "readback_unavailable"
+        : "not_required";
     return Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-review-service",
@@ -218,6 +309,9 @@ function createLearningAutomationReleaseReviewService(options = {}) {
       collectionRunRequired: readiness.readyForReleaseReview && !collection.run,
       collectionRunPresent: Boolean(collection.run),
       decisionPresent: Boolean(decisionResult.decision),
+      packageRecordReadbackAvailable: packageResult.readbackAvailable === true,
+      packageRecordRequired,
+      packageRecordPresent,
       approvedForReleaseReview: status === "approved",
       advisoryOnly: true,
       writefulSchedulingAllowed: false,
@@ -225,6 +319,7 @@ function createLearningAutomationReleaseReviewService(options = {}) {
       readiness,
       latestCollectionRun: collection.run,
       latestDecision: decisionResult.decision,
+      latestPackage: packageResult.package,
       approvalSummary: {
         schemaVersion: "growth.learningAutomationReleaseReview.approvalSummary.v1",
         summaryOnly: true,
@@ -236,6 +331,11 @@ function createLearningAutomationReleaseReviewService(options = {}) {
         schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
         summaryOnly: true,
         status,
+        packageRecordReadbackAvailable: packageResult.readbackAvailable === true,
+        packageRecordRequired,
+        packageRecordPresent,
+        packageRecordStatus,
+        latestPackageId: packageResult.package?.packageId || "",
         nextAction,
         requiredActionCount: nextAction ? Math.max(1, readiness.requiredActionCount || 0) : 0,
         missingCheckKeys: readiness.missingCheckKeys,

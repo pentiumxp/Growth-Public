@@ -266,10 +266,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   permission. Growth now also has `npm run smoke:release-review` and
   visible-target scoped `GET /api/v1/growth/automation/release-review`, a
   no-write summary-only readback that composes current release-readiness,
-  latest release collection run, latest Owner decision, and release approval
-  bag through service boundaries for future Owner UI/release controls. It does
-  not write tables, call Gateway, run smoke tasks, flip runtime config, or
-  schedule work. Growth now also has
+  latest release collection run, latest Owner decision, latest persisted
+  release-package audit record, and release approval bag through service
+  boundaries for future Owner UI/release controls. Package record readback is
+  explicit advisory evidence (`packageRecordStatus`, `latestPackage`) and is
+  not a hard authorization gate in this stage. It does not write tables, call
+  Gateway, run smoke tasks, flip runtime config, or schedule work. Growth now
+  also has
   `learning-automation-release-authorization-service`,
   `npm run smoke:release-authorization`, and visible-target scoped
   `GET /api/v1/growth/automation/release-authorization`. This is the final
@@ -288,11 +291,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:release-closure`, and visible-target scoped
   `GET /api/v1/growth/automation/release-closure`. This no-write summary
   readback composes release-review plus release-authorization summaries into
-  `growth.learningAutomationReleaseClosure.v1`, including
-  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
-  check/evidence/approval keys, required actions, and one next action while
-  still keeping `writefulSchedulingAllowed=false` and
-  `runtimeConfigChange=false`. Growth now also has
+  `growth.learningAutomationReleaseClosure.v1`, including package-record
+  readback status, `latestPackage`, `backendEvidenceComplete`,
+  `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
+  required actions, and one next action while still keeping
+  `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`. Growth
+  now also has
   `learning-automation-release-activation-service`,
   `npm run smoke:release-activation`, and visible-target scoped
   `GET /api/v1/growth/automation/release-activation`. This no-write activation

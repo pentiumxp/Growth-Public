@@ -68,6 +68,16 @@ function serviceWith(records = {}) {
           approvalKeys: records.approvalKeys || []
         };
       }
+    },
+    packageService: {
+      listPackages(input) {
+        records.packageInput = input;
+        return {
+          ok: true,
+          count: records.packageRecord ? 1 : 0,
+          packages: records.packageRecord ? [records.packageRecord] : []
+        };
+      }
     }
   });
 }
@@ -111,9 +121,13 @@ test("release review reports ready for Owner decision when run exists without de
   assert.equal(result.status, "ready_for_owner_decision");
   assert.equal(result.collectionRunPresent, true);
   assert.equal(result.decisionPresent, false);
+  assert.equal(result.packageRecordRequired, true);
+  assert.equal(result.packageRecordPresent, false);
+  assert.equal(result.releaseReview.packageRecordStatus, "missing");
   assert.equal(result.latestCollectionRun.collectionRunId, "lgacrn_ready");
   assert.equal(result.releaseReview.nextAction.key, "record_release_decision");
   assert.equal(records.decisionInput.collectionRunId, "lgacrn_ready");
+  assert.equal(records.packageInput.collectionRunId, "lgacrn_ready");
 });
 
 test("release review reports approved advisory state from latest decision", () => {
@@ -128,6 +142,28 @@ test("release review reports approved advisory state from latest decision", () =
       status: "approved",
       privacyClass: "summary_only"
     },
+    packageRecord: {
+      packageId: "lgapkg_ready",
+      collectionRunId: "lgacrn_ready",
+      status: "ready_for_release_review",
+      packageVersion: "growth.learningAutomationReleasePackage.v1",
+      privacyClass: "summary_only",
+      packageSummary: {
+        schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+        summaryOnly: true,
+        ok: true,
+        status: "ready_for_release_review",
+        collectionRunId: "lgacrn_ready"
+      },
+      stepSummary: {
+        schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
+        summaryOnly: true,
+        status: "ready_for_release_review",
+        stepCount: 5,
+        passingStepCount: 5,
+        blockedStepCount: 0
+      }
+    },
     approvalKeys: ["writefulExecutionApproval"]
   };
   const service = serviceWith(records);
@@ -139,9 +175,18 @@ test("release review reports approved advisory state from latest decision", () =
   assert.equal(result.ok, true);
   assert.equal(result.status, "approved");
   assert.equal(result.approvedForReleaseReview, true);
+  assert.equal(result.packageRecordReadbackAvailable, true);
+  assert.equal(result.packageRecordRequired, true);
+  assert.equal(result.packageRecordPresent, true);
+  assert.equal(result.latestPackage.packageId, "lgapkg_ready");
+  assert.equal(result.latestPackage.packageSummary.summaryOnly, true);
+  assert.equal(result.latestPackage.stepSummary.stepCount, 5);
+  assert.equal(result.releaseReview.latestPackageId, "lgapkg_ready");
+  assert.equal(result.releaseReview.packageRecordStatus, "ready_for_release_review");
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.releaseReview.requiredActionCount, 0);
   assert.deepEqual(result.approvalSummary.approvalKeys, ["writefulExecutionApproval"]);
+  assert.equal(records.packageInput.collectionRunId, "lgacrn_ready");
 });
 
 test("release review rejects privacy-risk input and missing dependencies", () => {

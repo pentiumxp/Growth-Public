@@ -20,6 +20,9 @@ function approvedReview(overrides = {}) {
     approvedForReleaseReview: true,
     collectionRunPresent: true,
     decisionPresent: true,
+    packageRecordReadbackAvailable: true,
+    packageRecordRequired: true,
+    packageRecordPresent: true,
     advisoryOnly: true,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
@@ -35,10 +38,22 @@ function approvedReview(overrides = {}) {
       status: "approved",
       privacyClass: "summary_only"
     },
+    latestPackage: {
+      packageId: "lgapkg_ready_1",
+      collectionRunId: "lgacrn_ready_1",
+      status: "ready_for_release_review",
+      packageVersion: "growth.learningAutomationReleasePackage.v1",
+      privacyClass: "summary_only"
+    },
     releaseReview: {
       schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
       summaryOnly: true,
       status: "approved",
+      packageRecordReadbackAvailable: true,
+      packageRecordRequired: true,
+      packageRecordPresent: true,
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgapkg_ready_1",
       requiredActionCount: 0,
       nextAction: null,
       missingCheckKeys: [],
@@ -74,6 +89,13 @@ function authorizedGate(overrides = {}) {
       decisionId: "lgard_approved_1",
       collectionRunId: "lgacrn_ready_1",
       status: "approved",
+      privacyClass: "summary_only"
+    },
+    latestPackage: {
+      packageId: "lgapkg_ready_1",
+      collectionRunId: "lgacrn_ready_1",
+      status: "ready_for_release_review",
+      packageVersion: "growth.learningAutomationReleasePackage.v1",
       privacyClass: "summary_only"
     }
   }, overrides);
@@ -114,6 +136,10 @@ test("release closure summarizes ready backend evidence without enabling writefu
   assert.equal(result.runtimeConfigChange, false);
   assert.equal(result.releaseClosure.requiredActionCount, 0);
   assert.equal(result.latestCollectionRun.collectionRunId, "lgacrn_ready_1");
+  assert.equal(result.latestPackage.packageId, "lgapkg_ready_1");
+  assert.equal(result.review.packageRecordPresent, true);
+  assert.equal(result.releaseClosure.packageRecordStatus, "ready_for_release_review");
+  assert.equal(result.releaseClosure.latestPackageId, "lgapkg_ready_1");
   assert.equal(records.reviewInput.collectionRunId, "lgacrn_ready_1");
   assert.equal(records.gateInput.collectionRunId, "lgacrn_ready_1");
 });

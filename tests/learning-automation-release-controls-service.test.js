@@ -32,6 +32,9 @@ function review(overrides = {}) {
     learnerId: "fanfan",
     status: "approved",
     approvedForReleaseReview: true,
+    packageRecordReadbackAvailable: true,
+    packageRecordRequired: true,
+    packageRecordPresent: true,
     latestCollectionRun: {
       collectionRunId: "lgacrn_ready_1",
       status: "ready_for_release_review"
@@ -40,10 +43,22 @@ function review(overrides = {}) {
       decisionId: "lgard_approved_1",
       status: "approved"
     },
+    latestPackage: {
+      packageId: "lgapkg_ready_1",
+      collectionRunId: "lgacrn_ready_1",
+      status: "ready_for_release_review",
+      packageVersion: "growth.learningAutomationReleasePackage.v1",
+      privacyClass: "summary_only"
+    },
     releaseReview: {
       schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
       summaryOnly: true,
       status: "approved",
+      packageRecordReadbackAvailable: true,
+      packageRecordRequired: true,
+      packageRecordPresent: true,
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgapkg_ready_1",
       requiredActionCount: 0,
       missingCheckKeys: [],
       blockedCheckKeys: [],
@@ -252,6 +267,9 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.releaseControls.requiredActionCount, 1);
   assert.equal(result.steps.length, 7);
   assert.equal(result.steps[1].latestCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.steps[1].packageRecordPresent, true);
+  assert.equal(result.steps[1].latestPackageId, "lgapkg_ready_1");
+  assert.equal(result.steps[1].latestPackageStatus, "ready_for_release_review");
   assert.equal(result.auditReadback.activationRecords.count, 1);
   assert.equal(result.auditReadback.activationRecords.latestRecordId, "lgaact_ready_1");
   assert.equal(result.auditReadback.runtimeEnablementRecords.count, 1);

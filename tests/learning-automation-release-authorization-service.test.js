@@ -19,6 +19,9 @@ function approvedReview(overrides = {}) {
     approvedForReleaseReview: true,
     collectionRunPresent: true,
     decisionPresent: true,
+    packageRecordReadbackAvailable: true,
+    packageRecordRequired: true,
+    packageRecordPresent: true,
     advisoryOnly: true,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
@@ -32,6 +35,23 @@ function approvedReview(overrides = {}) {
       collectionRunId: "lgacrn_ready_1",
       status: "approved",
       privacyClass: "summary_only"
+    },
+    latestPackage: {
+      packageId: "lgapkg_ready_1",
+      collectionRunId: "lgacrn_ready_1",
+      status: "ready_for_release_review",
+      packageVersion: "growth.learningAutomationReleasePackage.v1",
+      privacyClass: "summary_only"
+    },
+    releaseReview: {
+      schemaVersion: "growth.learningAutomationReleaseReview.summary.v1",
+      summaryOnly: true,
+      status: "approved",
+      packageRecordReadbackAvailable: true,
+      packageRecordRequired: true,
+      packageRecordPresent: true,
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgapkg_ready_1"
     },
     approvalSummary: {
       schemaVersion: "growth.learningAutomationReleaseReview.approvalSummary.v1",
@@ -79,6 +99,10 @@ test("release authorization grants summary-only execution authorization after ap
   assert.deepEqual(result.requiredApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(result.missingApprovalKeys, []);
   assert.equal(result.latestCollectionRun.collectionRunId, "lgacrn_ready_1");
+  assert.equal(result.review.packageRecordPresent, true);
+  assert.equal(result.review.packageRecordStatus, "ready_for_release_review");
+  assert.equal(result.latestPackage.packageId, "lgapkg_ready_1");
+  assert.equal(result.latestPackage.writefulSchedulingAllowed, false);
   assert.equal(records.reviewInput.collectionRunId, "lgacrn_ready_1");
 });
 

@@ -771,20 +771,24 @@ Implemented backend shape:
   `learning-automation-release-review-service.review` and returns a no-write
   `growth.learningAutomationReleaseReview.v1` readback for Owner release
   controls. It composes current release-readiness, latest collection run,
-  latest release decision, and release approval bag through existing services;
-  it does not write repositories or tables, run smoke tasks, call Gateway,
-  publish, generate, evaluate, schedule, notify, activate stage assessments,
-  mutate learner state, or flip runtime config.
+  latest release decision, latest persisted release-package audit record, and
+  release approval bag through existing services. The package record readback
+  is explicit advisory evidence only: `packageRecordStatus` can be
+  `not_required`, `missing`, `readback_unavailable`, or the persisted package
+  status, and missing package records do not yet change the release
+  authorization decision. It does not write repositories or tables, run smoke
+  tasks, call Gateway, publish, generate, evaluate, schedule, notify, activate
+  stage assessments, mutate learner state, or flip runtime config.
 - `npm run smoke:release-closure` delegates to
   `learning-automation-release-closure-service.summarize` and returns a
   no-write `growth.learningAutomationReleaseClosure.v1` readback for Owner
   release closure. It composes release-review plus release-authorization
-  summaries, exposes `backendEvidenceComplete`,
-  `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
-  required actions, and one next action. It does not write repositories or
-  tables, run smoke tasks, call Gateway, publish, generate, evaluate,
-  schedule, notify, activate stage assessments, mutate learner state, or flip
-  runtime config.
+  summaries, exposes package-record readback status, `latestPackage`,
+  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
+  check/evidence/approval keys, required actions, and one next action. It does
+  not write repositories or tables, run smoke tasks, call Gateway, publish,
+  generate, evaluate, schedule, notify, activate stage assessments, mutate
+  learner state, or flip runtime config.
 - `npm run smoke:release-activation` delegates to
   `learning-automation-release-activation-service.preflight` by default and
   returns a no-write `growth.learningAutomationReleaseActivation.v1` preflight

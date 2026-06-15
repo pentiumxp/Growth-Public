@@ -293,7 +293,8 @@ function createServices(config) {
     readinessService: learningAutomationReleaseReadinessService,
     collectionRunService: learningAutomationReleaseCollectionRunService,
     decisionService: learningAutomationReleaseDecisionService,
-    approvalService: learningAutomationReleaseApprovalService
+    approvalService: learningAutomationReleaseApprovalService,
+    packageService: learningAutomationReleasePackageService
   });
   const learningAutomationReleaseAuthorizationService = createLearningAutomationReleaseAuthorizationService({
     releaseReviewService: learningAutomationReleaseReviewService

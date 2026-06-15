@@ -400,12 +400,16 @@ Use the Growth-owned release-readiness boundary:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes
   only after approved release review, ready latest collection run, approved
-  latest decision, and active `writefulExecutionApproval`.
+  latest decision, and active `writefulExecutionApproval`. The release review
+  also reads back the latest persisted release-package audit record for the
+  collection run and exposes `packageRecordStatus`/`latestPackage`; this is
+  advisory evidence at this stage and is not a hard authorization gate.
 - release closure smoke CLI:
   `npm run smoke:release-closure -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It combines
   release-review plus release-authorization summaries into one closure readback
-  with `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
+  with package-record readback status, `latestPackage`,
+  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
   check/evidence/approval keys, required actions, and next action. It is not a
   runtime config switch and keeps `writefulSchedulingAllowed=false`.
 - release activation preflight smoke CLI:

@@ -1668,9 +1668,12 @@ Implementation progress on 2026-06-15:
 - `npm run smoke:release-review` and
   `GET /api/v1/growth/automation/release-review` provide the no-write readback
   that future Owner UI can use: current readiness, latest collection run,
-  latest decision, approval bag, status, and next action. It is a service-only
-  projection and does not write tables, run smoke tasks, flip runtime config,
-  or schedule work.
+  latest decision, latest persisted release-package audit record, approval
+  bag, status, package-record status, and next action. Package-record readback
+  is explicit advisory evidence only; missing package records surface as
+  `missing` or `readback_unavailable`, but they do not yet change release
+  authorization. It is a service-only projection and does not write tables,
+  run smoke tasks, flip runtime config, or schedule work.
 - `npm run smoke:release-authorization` and
   `GET /api/v1/growth/automation/release-authorization` provide the final
   no-write authorization readback consumed by scheduler execution. It requires
@@ -1681,11 +1684,11 @@ Implementation progress on 2026-06-15:
   `GET /api/v1/growth/automation/release-closure` provide a single no-write
   closure readback for Owner/release tooling. It composes release-review and
   release-authorization summaries into
-  `growth.learningAutomationReleaseClosure.v1`, including
-  `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
-  check/evidence/approval keys, required actions, and one next action while
-  still keeping `writefulSchedulingAllowed=false` and
-  `runtimeConfigChange=false`.
+  `growth.learningAutomationReleaseClosure.v1`, including package-record
+  readback status, `latestPackage`, `backendEvidenceComplete`,
+  `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
+  required actions, and one next action while still keeping
+  `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
 - `npm run smoke:release-activation` and
   `GET /api/v1/growth/automation/release-activation` provide the no-write
   activation preflight after release closure. It composes the closure readback,

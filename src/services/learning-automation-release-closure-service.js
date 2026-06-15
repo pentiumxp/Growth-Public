@@ -74,6 +74,21 @@ function publicDecision(decision = null) {
   };
 }
 
+function publicPackage(record = null) {
+  if (!record) return null;
+  return {
+    packageId: cleanString(record.packageId || record.package_id, 180),
+    status: cleanString(record.status, 80),
+    packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
+    collectionRunId: cleanString(record.collectionRunId || record.collection_run_id, 180),
+    privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    summaryOnly: true,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  };
+}
+
 function publicAction(action = null) {
   if (!action || typeof action !== "object") return null;
   return {
@@ -94,6 +109,11 @@ function reviewSummary(review = {}) {
     collectionRunRequired: review.collectionRunRequired === true,
     collectionRunPresent: review.collectionRunPresent === true,
     decisionPresent: review.decisionPresent === true,
+    packageRecordReadbackAvailable: review.packageRecordReadbackAvailable === true,
+    packageRecordRequired: review.packageRecordRequired === true,
+    packageRecordPresent: review.packageRecordPresent === true,
+    packageRecordStatus: cleanString(releaseReview.packageRecordStatus || review.packageRecordStatus || review.package_record_status, 120),
+    latestPackageId: cleanString(releaseReview.latestPackageId || review.latestPackageId || review.latest_package_id, 180),
     advisoryOnly: review.advisoryOnly === true,
     privacyClass: cleanString(review.privacyClass || review.privacy_class, 80),
     summaryOnly: review.summaryOnly === true || review.summary_only === true,
@@ -121,7 +141,8 @@ function executionGateSummary(gate = {}) {
     privacyClass: cleanString(gate.privacyClass || gate.privacy_class, 80),
     summaryOnly: gate.summaryOnly === true || gate.summary_only === true,
     latestCollectionRun: publicCollectionRun(gate.latestCollectionRun),
-    latestDecision: publicDecision(gate.latestDecision)
+    latestDecision: publicDecision(gate.latestDecision),
+    latestPackage: publicPackage(gate.latestPackage)
   };
 }
 
@@ -226,10 +247,16 @@ function createLearningAutomationReleaseClosureService(options = {}) {
       executionGate: gate,
       latestCollectionRun: gate.latestCollectionRun || publicCollectionRun(reviewResult.latestCollectionRun),
       latestDecision: gate.latestDecision || publicDecision(reviewResult.latestDecision),
+      latestPackage: gate.latestPackage || publicPackage(reviewResult.latestPackage),
       releaseClosure: {
         schemaVersion: "growth.learningAutomationReleaseClosure.summary.v1",
         summaryOnly: true,
         status,
+        packageRecordReadbackAvailable: review.packageRecordReadbackAvailable,
+        packageRecordRequired: review.packageRecordRequired,
+        packageRecordPresent: review.packageRecordPresent,
+        packageRecordStatus: review.packageRecordStatus,
+        latestPackageId: review.latestPackageId,
         backendEvidenceComplete,
         readyForOwnerReleaseActivation: backendEvidenceComplete,
         requiredActionCount: requiredActions.length,

@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T19:23Z - Release Package Readback In Release Review
+
+- Status: implemented and validated locally. This slice keeps release package
+  records as no-write, summary-only advisory evidence in the release
+  review/closure/controls readback chain. It does not deploy, apply runtime
+  config, grant scheduler permission, call Gateway directly, publish
+  plans/cards, evaluate submissions, run scheduling, deliver notifications,
+  activate stage assessments, mutate learner state, or run smoke tasks inside
+  HTTP.
+- Scope:
+  - `learning-automation-release-review-service` now reads the latest persisted
+    release-package audit record through `packageService.listPackages` after a
+    collection run is present;
+  - review DTOs expose `packageRecordReadbackAvailable`,
+    `packageRecordRequired`, `packageRecordPresent`, `packageRecordStatus`, and
+    `latestPackage`;
+  - `learning-automation-release-authorization-service` preserves package
+    readback as summary output but does not use it as a hard authorization
+    gate;
+  - `learning-automation-release-closure-service` includes package readback and
+    `latestPackage` in closure summaries;
+  - `learning-automation-release-controls-service` exposes release-review step
+    fields `packageRecordPresent`, `latestPackageId`, and
+    `latestPackageStatus`;
+  - `src/app/services.js` injects
+    `learningAutomationReleasePackageService` into the release review service.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `src/services/learning-automation-release-review-service.js`;
+  - `src/services/learning-automation-release-authorization-service.js`;
+  - `src/services/learning-automation-release-closure-service.js`;
+  - `src/services/learning-automation-release-controls-service.js`;
+  - `src/app/services.js`;
+  - `tests/learning-automation-release-review-service.test.js`;
+  - `tests/learning-automation-release-authorization-service.test.js`;
+  - `tests/learning-automation-release-closure-service.test.js`;
+  - `tests/learning-automation-release-controls-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - syntax checks for modified release services and app service wiring;
+  - `node --test tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/learning-automation-release-controls-service.test.js`
+    (`19` tests);
+  - `node --test tests/growth-architecture-boundary.test.js` (`31` tests).
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-routes.test.js` (`40` tests);
+  - `npm run smoke:release-review -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+    returned `packageRecordReadbackAvailable=true` and
+    `packageRecordStatus=not_required` when no collection run exists;
+  - `npm run smoke:release-package -- --workspace-id smoke_workspace --learner-id smoke_learner --task planner_readiness --required-task planner_readiness --result-json --json`
+    returned the expected summary-only `blocked` package because local smoke
+    lacks real Gateway/planner and production release evidence;
+  - `npm run check` (`179/179` runtime JavaScript files covered);
+  - `npm test` (`701` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`313` files, `4,064` nodes,
+    `15,705` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-46288548-53f0-490f-8393-37d638e0795e`.
+
 ## 2026-06-15T19:11Z - Release Package Persistence Records
 
 - Status: implemented and validated locally. This slice is Growth

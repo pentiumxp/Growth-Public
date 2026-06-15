@@ -334,6 +334,11 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         ready: parts.review.approvedForReleaseReview === true,
         latestCollectionRunId: cleanString(objectOnly(parts.review.latestCollectionRun).collectionRunId || objectOnly(parts.review.latestCollectionRun).runId, 160),
         latestDecisionId: cleanString(objectOnly(parts.review.latestDecision).decisionId, 160),
+        packageRecordReadbackAvailable: parts.review.packageRecordReadbackAvailable === true,
+        packageRecordRequired: parts.review.packageRecordRequired === true,
+        packageRecordPresent: parts.review.packageRecordPresent === true,
+        latestPackageId: cleanString(objectOnly(parts.review.latestPackage).packageId || objectOnly(parts.review.releaseReview).latestPackageId, 180),
+        latestPackageStatus: cleanString(objectOnly(parts.review.latestPackage).status || objectOnly(parts.review.releaseReview).packageRecordStatus, 120),
         requiredActions: actionCandidates(parts.review),
         nextAction: objectOnly(parts.review.releaseReview).nextAction || null
       }),
