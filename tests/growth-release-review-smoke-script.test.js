@@ -26,8 +26,8 @@ function repositoryOpen(dbPath) {
   };
 }
 
-function seedReadyCollectionRun(repository) {
-  const saved = repository.saveRun({
+function seedReadyCollectionRun(repository, overrides = {}) {
+  const saved = repository.saveRun(Object.assign({
     workspaceId: "weixin_fanfan",
     learnerId: "fanfan",
     programId: "program_science",
@@ -86,7 +86,7 @@ function seedReadyCollectionRun(repository) {
     },
     createdBy: "weixin_owner",
     createdAt: "2026-06-16T07:30:00.000Z"
-  });
+  }, overrides));
 
   assert.equal(saved.ok, true);
   assert.equal(saved.run.status, "ready_for_release_review");
@@ -250,6 +250,10 @@ test("release review smoke script reads package audit record from the real SQLit
   try {
     const open = repositoryOpen(dbPath);
     const run = seedReadyCollectionRun(createLearningAutomationReleaseCollectionRunRepository({ open }));
+    seedReadyCollectionRun(createLearningAutomationReleaseCollectionRunRepository({ open }), {
+      runId: "lgacrn_newer_unrequested",
+      createdAt: "2026-06-16T07:32:00.000Z"
+    });
     const releasePackage = seedReleasePackage(createLearningAutomationReleasePackageRepository({ open }), run);
 
     const stdout = childProcess.execFileSync(process.execPath, [
@@ -276,6 +280,7 @@ test("release review smoke script reads package audit record from the real SQLit
     assert.equal(output.ok, true);
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseReview.v1");
     assert.equal(output.collectionRunPresent, true);
+    assert.equal(output.latestCollectionRun.runId, run.runId);
     assert.equal(output.packageRecordReadbackAvailable, true);
     assert.equal(output.packageRecordRequired, true);
     assert.equal(output.packageRecordPresent, true);

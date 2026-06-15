@@ -145,6 +145,11 @@ Supported selectors mirror activation/runtime readback:
 - `runtimeEnablementRecordLimit` / `runtime_enablement_record_limit`
 - bounded UI/evidence boolean flags already accepted by release-review
 
+When `collectionRunId` / `collection_run_id` is supplied, release review and
+release controls must read back that exact persisted collection-run record
+through the collection-run service/repository boundary. They must not silently
+fall back to the latest run for the same workspace/program/domain scope.
+
 There is intentionally no POST route. Creating release snapshots, collection
 runs, decisions, approvals, activation rows, or runtime-enablement rows remains
 owned by their existing service-specific routes and write gates.

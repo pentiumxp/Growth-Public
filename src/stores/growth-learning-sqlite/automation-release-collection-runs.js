@@ -217,6 +217,7 @@ function createLearningAutomationReleaseCollectionRunRepository({ open, now } = 
       const domain = cleanString(input.domain);
       const subject = cleanString(input.subject);
       const horizon = cleanString(input.horizon);
+      const collectionRunId = cleanString(input.collectionRunId || input.collection_run_id || input.runId || input.run_id);
       const status = cleanString(input.status);
       const where = [];
       const values = [];
@@ -247,6 +248,10 @@ function createLearningAutomationReleaseCollectionRunRepository({ open, now } = 
       if (horizon) {
         where.push("horizon = ?");
         values.push(horizon);
+      }
+      if (collectionRunId) {
+        where.push("run_id = ?");
+        values.push(collectionRunId);
       }
       if (status) {
         where.push("status = ?");

@@ -9,6 +9,46 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T19:38Z - Release Collection Run Id Readback Filtering
+
+- Status: implemented and validated locally. This slice is Growth backend /
+  repository / Harness / docs only. It does not deploy, apply runtime config,
+  grant scheduler permission, call Gateway, publish cards/plans, evaluate
+  submissions, run scheduler actions, deliver notifications, activate stage
+  assessments, mutate learner state, or write production release records.
+- Scope:
+  - `automation-release-collection-runs.js` now honors
+    `collectionRunId` / `collection_run_id` / `runId` / `run_id` in
+    `listRuns` by filtering on `run_id`;
+  - `tests/learning-automation-release-collection-run-repository.test.js`
+    covers the case where a newer same-scope collection run exists but a
+    specific older `collectionRunId` is requested;
+  - `tests/growth-release-review-smoke-script.test.js` now seeds an additional
+    newer same-scope collection run and proves the release-review CLI still
+    reads the requested collection run and matching package audit record.
+- Docs updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for `automation-release-collection-runs.js`,
+    `learning-automation-release-collection-run-repository.test.js`, and
+    `growth-release-review-smoke-script.test.js`;
+  - focused release collection-run/review/authorization/closure/controls,
+    architecture, and docs tests (`67` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-review -- --workspace-id smoke_workspace --learner-id smoke_learner --json`;
+  - `npm run check` (`179/179` runtime JavaScript files covered);
+  - `npm test` (`703` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`313` files, `4,068` nodes,
+    `15,713` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-5cb5d843-d913-423a-8e67-ec52f84fc9ec`.
+
 ## 2026-06-15T19:35Z - Release Review Package Readback E2E Harness
 
 - Status: implemented and validated locally. This slice is Growth

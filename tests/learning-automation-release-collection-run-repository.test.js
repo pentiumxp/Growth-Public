@@ -117,6 +117,48 @@ test("automation release collection run repository saves and lists summary-only 
   });
 });
 
+test("automation release collection run repository filters by collection run id", () => {
+  withRepository(({ repository }) => {
+    const first = repository.saveRun(sampleRun({
+      runId: "lgacrn_requested",
+      createdAt: "2026-06-15T19:00:00.000Z"
+    }));
+    const second = repository.saveRun(sampleRun({
+      runId: "lgacrn_newer_other",
+      createdAt: "2026-06-15T19:01:00.000Z"
+    }));
+    assert.equal(first.ok, true);
+    assert.equal(second.ok, true);
+
+    const latest = repository.listRuns({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      limit: 1
+    });
+    assert.equal(latest.length, 1);
+    assert.equal(latest[0].runId, "lgacrn_newer_other");
+
+    const requested = repository.listRuns({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      collectionRunId: "lgacrn_requested",
+      limit: 1
+    });
+    assert.equal(requested.length, 1);
+    assert.equal(requested[0].runId, "lgacrn_requested");
+  });
+});
+
 test("automation release collection run repository rejects privacy risks, invalid status, and non-summary writes", () => {
   withRepository(({ repository }) => {
     const privacyKey = repository.saveRun(sampleRun({
