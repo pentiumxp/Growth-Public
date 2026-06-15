@@ -53,7 +53,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--target-node-id", "kg_science_fair_test",
     "--target-node-ids", "kg_science_fair_test,kg_science_observation_language",
     "--task", "planner-readiness",
-    "--tasks", "daily_loop_preview,scheduler_dry_run",
+    "--tasks", "daily_loop_preview,learning_loop_state,scheduler_dry_run",
     "--requested-by", "owner",
     "--created-at", "2026-06-15T06:10:00.000Z",
     "--output-file", "/tmp/release-evidence.json"
@@ -66,6 +66,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
   assert.deepEqual(taskIds(args), [
     "planner-readiness",
     "daily_loop_preview",
+    "learning_loop_state",
     "scheduler_dry_run"
   ]);
   assert.equal(outputFileFromArgs(args), "/tmp/release-evidence.json");
@@ -82,7 +83,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     requestedBy: "owner",
     createdAt: "2026-06-15T06:10:00.000Z",
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
-    tasks: ["planner-readiness", "daily_loop_preview", "scheduler_dry_run"]
+    tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"]
   });
 });
 
@@ -107,6 +108,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.equal(output.error, "release_evidence_bundle_task_invalid");
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
+  assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
 });
 
 test("release evidence bundle script writes a summary-only bundle from a read-only smoke", () => {

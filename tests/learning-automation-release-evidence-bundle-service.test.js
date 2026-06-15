@@ -90,7 +90,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     domain: "science",
     subject: "science",
     targetNodeIds: ["kg_science_fair_test"],
-    tasks: ["planner_readiness", "daily_loop_preview"],
+    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state"],
     requestedBy: "owner"
   });
 
@@ -102,15 +102,17 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   assert.equal(result.bundle.scope.workspaceId, "weixin_fanfan");
   assert.deepEqual(Object.keys(result.bundle.evidence), [
     "productionPlannerReadinessEvidence",
-    "productionDailyLoopPreviewSmokeEvidence"
+    "productionDailyLoopPreviewSmokeEvidence",
+    "productionLearningLoopStateSmokeEvidence"
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
-  assert.equal(result.bundle.summary.taskCount, 2);
+  assert.equal(result.bundle.summary.taskCount, 3);
   assert.equal(result.bundle.summary.blockedCount, 0);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   assert.equal(calls[0].command, "/node");
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-planner-readiness.js"));
+  assert.ok(calls[2].args[0].endsWith("scripts/smoke-growth-learning-loop-state.js"));
   assert.ok(calls[0].args.includes("--json"));
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
 });

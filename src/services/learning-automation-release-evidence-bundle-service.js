@@ -8,6 +8,7 @@ const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|pro
 const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
+  "learning_loop_state",
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -28,6 +29,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionDailyLoopPreviewSmokeEvidence",
     script: "scripts/smoke-growth-daily-loop-preview.js",
     commandName: "npm run smoke:daily-loop-preview"
+  },
+  {
+    taskId: "learning_loop_state",
+    evidenceKey: "productionLearningLoopStateSmokeEvidence",
+    script: "scripts/smoke-growth-learning-loop-state.js",
+    commandName: "npm run smoke:learning-loop-state"
   },
   {
     taskId: "scheduler_dry_run",

@@ -681,7 +681,8 @@ Required behavior:
   `npm run smoke:scheduler-worker`, production planner readiness
   smoke evidence from `npm run smoke:planner-readiness`, production
   daily-loop preview smoke evidence from
-  `npm run smoke:daily-loop-preview`, production controlled daily-loop
+  `npm run smoke:daily-loop-preview`, production learning-loop state smoke
+  evidence from `npm run smoke:learning-loop-state`, production controlled daily-loop
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,
   production scheduler dry-run smoke evidence from
@@ -724,8 +725,8 @@ Remaining release gaps:
 - Home AI platform Action Inbox/Web Push evidence;
 - central embedded-plugin visual evidence for mobile scroll, dark mode,
   progress, and embedded shell;
-- production planner readiness smoke, production controlled daily-loop
-  draft/publish smoke, and production scheduler dry-run smoke evidence from
+- production planner readiness smoke, production learning-loop state smoke,
+  production controlled daily-loop draft/publish smoke, and production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`;
 - Owner-visible product UI evidence for recording/reviewing release approvals
   outside the smoke CLI.

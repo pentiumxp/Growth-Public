@@ -91,8 +91,78 @@
   - embed the new `GET /api/v1/growth/learning-loop/state` projection in the
     Owner `生成` tab as the top-level compact state/next-action surface;
   - run central embedded-plugin visual harness before any production UI deploy;
-  - production learning-loop state smoke evidence remains a future release
-    prerequisite.
+  - production learning-loop state smoke was promoted into release-readiness
+    evidence in the 2026-06-15T06:51Z slice below.
+
+## 2026-06-15T06:51Z - Growth Learning Loop State Release Evidence Gate
+
+- Status: implemented, documented, validated, and ready to commit. This slice
+  promotes the no-write learning-loop state smoke into the release-readiness
+  evidence contract and into the summary-only release evidence bundle builder.
+- Change classification: H1 by Home AI AI Ops because this changes
+  release-readiness and production deployment review evidence. No production
+  deploy was executed; the Mac deploy command was run in default plan-only
+  mode.
+- Scope:
+  - `learning-automation-release-readiness-service` now requires
+    `productionLearningLoopStateSmokeEvidence` and emits the
+    `production_learning_loop_state_smoke_evidence` check;
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--production-learning-loop-state-smoke-evidence`;
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    `learning_loop_state` default task, backed by
+    `scripts/smoke-growth-learning-loop-state.js`;
+  - release-readiness, release-evidence-bundle, smoke-script, and architecture
+    harnesses assert the new evidence key, CLI flag, task id, and no-write
+    script binding;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`, and
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`.
+- Boundary:
+  - the release-readiness service remains advisory and no-write;
+  - the release evidence bundle remains summary-only
+    `growth.learningAutomationReleaseEvidenceBundle.v1`;
+  - neither boundary calls Gateway, daily-loop draft/publish, card generation,
+    evaluation, scheduler execution, notification delivery, stage activation,
+    learner-state mutation, or production deployment.
+- Validation passed:
+  - syntax checks for the modified services, scripts, and tests;
+  - focused
+    `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`50` tests);
+  - operational bundle/readiness smoke over a temporary SQLite DB with
+    `learning_loop_state`, producing
+    `productionLearningLoopStateSmokeEvidence` and a passing
+    `production_learning_loop_state_smoke_evidence` readiness check;
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - `codegraph sync && codegraph status` (`240` files, `2,967` nodes,
+    `11,483` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI app required H1 gates:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`
+    (plan-only), and Home AI app `git diff --check`;
+  - Home AI platform pointer checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops evidence appended:
+  `evidence-d315f688-405c-4c85-8c2c-69dcec141caf`.
+- Remaining work:
+  - expose the learning-loop state readback in the Owner generation UI;
+  - continue the supervised daily-loop/release UI work without enabling
+    unattended scheduling or production writes.
 
 ## 2026-06-15T06:18Z - Growth Release Evidence Bundle Builder Slice
 

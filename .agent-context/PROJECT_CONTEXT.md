@@ -124,6 +124,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-daily-loop-preview-smoke-evidence` after
   `npm run smoke:daily-loop-preview` has produced bounded no-write production
   daily-loop readiness evidence, accepts
+  `--production-learning-loop-state-smoke-evidence` after
+  `npm run smoke:learning-loop-state` has produced bounded no-write production
+  learning-loop state evidence, accepts
   `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag,
   accepts `--production-scheduler-dry-run-smoke-evidence` after
   `npm run smoke:scheduler-dry-run` has produced bounded no-write production
@@ -135,6 +138,7 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
+  includes learning-loop state smoke in the default task set,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
   without hand-splicing JSON in Codex. The builder does not write business
   state, does not call Gateway, and does not change release-readiness or

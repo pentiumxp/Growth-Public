@@ -35,6 +35,7 @@ function allEvidence() {
     productionSchedulerWorkerSmokeEvidence: { ok: true, evidenceId: "scheduler_worker_smoke" },
     productionPlannerReadinessEvidence: { ok: true, evidenceId: "planner_smoke" },
     productionDailyLoopPreviewSmokeEvidence: { ok: true, evidenceId: "daily_loop_preview_smoke" },
+    productionLearningLoopStateSmokeEvidence: { ok: true, evidenceId: "learning_loop_state_smoke" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, evidenceId: "daily_loop_write_smoke" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, evidenceId: "scheduler_dry_run_smoke" },
     platformActionEvidence: { ok: true, evidenceId: "platform_action" },
@@ -178,6 +179,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_run_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_target_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_preview_smoke_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "production_learning_loop_state_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_planner_readiness_evidence").status, "pass");
@@ -219,6 +221,7 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_run_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_target_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_preview_smoke_evidence").status, "missing");
+  assert.equal(result.checks.find((item) => item.key === "production_learning_loop_state_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_planner_readiness_evidence").status, "missing");
