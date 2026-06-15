@@ -88,6 +88,27 @@ test("stage assessment eligibility marks a cycle eligible after enough recent or
   assert.equal(repository.saved[0].activationSource, "system");
 });
 
+test("stage assessment readiness is read-only and returns bounded eligibility state", () => {
+  const repository = fakeRepository();
+  const service = createLearningStageAssessmentService({
+    repository,
+    profileProjectionService: { profileContext: () => profile() },
+    cardGenerationService: { generateCard: async () => ({ ok: true }) },
+    now: () => new Date("2026-06-14T08:00:00.000Z")
+  });
+
+  const result = service.stageReadiness(baseInput());
+
+  assert.equal(result.ok, true);
+  assert.equal(result.eligible, true);
+  assert.equal(result.activationState, "eligible");
+  assert.equal(result.reason, "enough_recent_practice");
+  assert.equal(result.cycle, null);
+  assert.deepEqual(result.evidence.sourceCardIds, ["card_1", "card_2", "card_3", "card_4"]);
+  assert.deepEqual(repository.saved, []);
+  assert.equal(JSON.stringify(result).includes("rawAnswer"), false);
+});
+
 test("stage assessment eligibility stays dormant when recent pressure signals are present", () => {
   const repository = fakeRepository();
   const service = createLearningStageAssessmentService({

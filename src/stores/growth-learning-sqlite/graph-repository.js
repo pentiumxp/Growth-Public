@@ -15,6 +15,20 @@ function firstDomainPackId(pack) {
   return cleanString(pack?.domainPacks?.[0]?.domainPackId);
 }
 
+function lower(value) {
+  return cleanString(value).toLowerCase();
+}
+
+function domainPackIdForNode(pack = {}, node = {}) {
+  const explicit = cleanString(node.domainPackId || node.domain_pack_id);
+  if (explicit) return explicit;
+  const fallback = firstDomainPackId(pack);
+  const nodeDomain = lower(node.domain);
+  if (!nodeDomain) return fallback;
+  const matchingPack = (pack.domainPacks || []).find((domainPack) => lower(domainPack.domain) === nodeDomain);
+  return cleanString(matchingPack?.domainPackId) || fallback;
+}
+
 function sourceDocumentsForStorage(sourceDocuments = []) {
   return sourceDocuments.map((sourceDocument) => ({
     sourceRef: cleanString(sourceDocument.sourceRef),
@@ -102,7 +116,6 @@ function createLearningGraphRepository({ open } = {}) {
           );
         }
 
-        const domainPackId = firstDomainPackId(pack);
         const insertNode = db.prepare(`
           INSERT INTO learning_graph_nodes(
             node_id, import_id, domain_pack_id, domain, node_type, title, stage,
@@ -116,7 +129,7 @@ function createLearningGraphRepository({ open } = {}) {
           insertNode.run(
             cleanString(node.nodeId),
             importId,
-            cleanString(node.domainPackId) || domainPackId,
+            domainPackIdForNode(pack, node),
             cleanString(node.domain),
             cleanString(node.nodeType),
             cleanString(node.title),
@@ -184,6 +197,10 @@ function createLearningGraphRepository({ open } = {}) {
 
   function suggestNodes({ domain = "", subject = "", limit = 10 } = {}) {
     return withDb(true, (db) => suggestNodesFromDb(db, { domain, subject, limit }));
+  }
+
+  function domainPackOptions({ limit = 50 } = {}) {
+    return withDb(true, (db) => domainPackOptionsFromDb(db, { limit }));
   }
 
   function prerequisiteNodeIds({ targetNodeId } = {}) {
@@ -277,6 +294,7 @@ function createLearningGraphRepository({ open } = {}) {
 
   return {
     cardBinding,
+    domainPackOptions,
     ensureSchema,
     importPack,
     node,
@@ -287,6 +305,27 @@ function createLearningGraphRepository({ open } = {}) {
     saveCardBinding,
     savePlan,
     suggestNodes
+  };
+}
+
+function publicDomainPackOption(row) {
+  if (!row) return null;
+  return {
+    domainPackId: cleanString(row.domain_pack_id),
+    importId: cleanString(row.import_id),
+    domain: cleanString(row.domain),
+    title: cleanString(row.title),
+    sourceKind: cleanString(row.source_kind),
+    version: cleanString(row.version),
+    visibility: cleanString(row.visibility),
+    importStatus: cleanString(row.import_status),
+    nodeCount: Number(row.node_count || 0) || 0,
+    subjectCount: Number(row.subject_count || 0) || 0,
+    subjects: parseJson(row.subjects_json, [])
+      .map(cleanString)
+      .filter(Boolean)
+      .slice(0, 24),
+    updatedAt: cleanString(row.updated_at)
   };
 }
 
@@ -313,6 +352,36 @@ function publicNode(row) {
     masterySignals: parseJson(row.mastery_signals_json, []),
     experienceSignals: parseJson(row.experience_signals_json, [])
   };
+}
+
+function domainPackOptionsFromDb(db, { limit = 50 } = {}) {
+  if (!tableExists(db, "learning_graph_domain_packs") || !tableExists(db, "learning_graph_nodes")) return [];
+  const max = Math.max(1, Math.min(100, Number(limit || 50) || 50));
+  return db.prepare(`
+    SELECT
+      dp.domain_pack_id,
+      dp.import_id,
+      dp.domain,
+      dp.title,
+      dp.source_kind,
+      dp.version,
+      dp.visibility,
+      dp.import_status,
+      dp.updated_at,
+      COUNT(n.node_id) AS node_count,
+      COUNT(DISTINCT NULLIF(n.subject, '')) AS subject_count,
+      json_group_array(DISTINCT NULLIF(n.subject, '')) AS subjects_json
+    FROM learning_graph_domain_packs dp
+    LEFT JOIN learning_graph_nodes n
+      ON n.domain_pack_id = dp.domain_pack_id
+      AND n.import_id = dp.import_id
+    GROUP BY dp.domain_pack_id, dp.import_id
+    ORDER BY
+      CASE WHEN dp.import_status = 'validated_seed' THEN 0 ELSE 1 END,
+      dp.updated_at DESC,
+      dp.domain_pack_id
+    LIMIT ?
+  `).all(max).map(publicDomainPackOption).filter(Boolean);
 }
 
 function nodeFromDb(db, { nodeId } = {}) {
@@ -386,12 +455,16 @@ function planFromDb(db, { learningGraphPlanId } = {}) {
   if (!id) return null;
   const row = db.prepare("SELECT * FROM learning_graph_plans WHERE learning_graph_plan_id = ?").get(id);
   if (!row) return null;
+  const raw = parseJson(row.raw_json, {});
   return {
     ok: true,
     learningGraphPlanId: cleanString(row.learning_graph_plan_id),
     learnerId: cleanString(row.learner_id),
     workspaceId: cleanString(row.workspace_id),
     programId: cleanString(row.program_id),
+    domainPackId: cleanString(raw.domainPackId || raw.domain_pack_id),
+    domain: cleanString(raw.domain),
+    subject: cleanString(raw.subject),
     targetNodeId: cleanString(row.target_node_id),
     prerequisiteNodeIds: parseJson(row.prerequisite_node_ids_json, []),
     pathNodeIds: parseJson(row.path_node_ids_json, []),

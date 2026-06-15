@@ -9,6 +9,3607 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15 Growth Owner Audit/Correction Smoke Slice
+
+- Status: Owner audit/correction now has a service-owned operational smoke
+  entry. This slice did not deploy, change runtime config, run Gateway traffic,
+  generate cards, evaluate learner submissions, execute scheduler actions, run
+  scheduler ticks, deliver notifications, activate stage assessments, or mutate
+  production learner state.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI AI
+  Ops intake classified it as H1 because of Gateway/runtime/deploy/docs
+  keywords; only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-owner-audit.js`;
+  - added `npm run smoke:owner-audit` and `npm run check` syntax coverage;
+  - added `tests/growth-owner-audit-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated Growth-local architecture, platform pointer, system scheme,
+    closed-loop plan, roadmap, operating-loop blueprint, implementation plan,
+    next-stage plan, project context, and this handoff.
+- Boundary:
+  - default operation is read-only `audit`;
+  - read-only audit delegates through the normal Growth service graph to
+    `learningCycleAuditService.listCycleAudit`,
+    `learningAuditCompletenessService.evaluateCycleCompleteness`, and
+    `learningOwnerCorrectionService.listCorrections`;
+  - `correction` requires explicit `--allow-write` and delegates only to
+    `learningOwnerCorrectionService.recordCorrection`, then refreshes bounded
+    audit DTOs;
+  - the CLI rejects privacy-risk input and must not import repositories,
+    inspect SQLite tables, call Gateway, call daily-loop services, draft or
+    publish plans, generate cards, evaluate submissions, execute scheduler
+    actions, run scheduler ticks, deliver notifications, or activate stage
+    assessments.
+- Focused validation passed:
+  - `node --check scripts/smoke-growth-owner-audit.js`;
+  - `node --check tests/growth-owner-audit-smoke-script.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-owner-audit-smoke-script.test.js`;
+  - `node --test tests/growth-owner-audit-smoke-script.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`69` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`441` tests);
+  - `codegraph sync && codegraph status` (`209` JavaScript files, `2,514`
+    nodes, `10,155` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth backend/docs/Harness slice as `H1`
+    because of Gateway/runtime/deployment/architecture-doc keywords even though
+    this Growth change did not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-6e836671-5f00-434a-b47d-6e121f68cb3d`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
+## 2026-06-15 Growth Release-Readiness Daily-Loop Write-Smoke Evidence Slice
+
+- Status: release-readiness now treats production controlled daily-loop
+  draft/publish smoke evidence as a separate required readiness check. This
+  slice did not deploy, enable Gateway config, change runtime config, execute
+  scheduler actions, deliver notifications, activate stage assessments, run
+  production write smoke, or mutate production learner state.
+- Change classification: H2 backend/Harness evidence boundary.
+- Scope:
+  - updated `learning-automation-release-readiness-service` to emit
+    `production_daily_loop_write_smoke_evidence`;
+  - updated `scripts/smoke-growth-release-readiness.js` to accept
+    `--production-daily-loop-write-smoke-evidence`;
+  - updated release-readiness service/repository/CLI tests;
+  - updated `tests/growth-architecture-boundary.test.js` so
+    release-readiness remains evidence-only and must not call Gateway,
+    daily-loop services, plan publication, card generation, evaluation,
+    scheduler execution/ticks, notification delivery, or stage activation;
+  - updated Growth-local scheme, roadmap, next-stage, implementation,
+    architecture, platform pointer, and project context docs.
+- Boundary:
+  - the release-readiness service accepts only summary evidence for controlled
+    daily-loop write-smoke completion;
+  - actual daily-loop draft/publish evidence still comes from the controlled
+    daily-loop CLI or approved production smoke process;
+  - release-readiness itself does not execute daily-loop draft/publish,
+    generate cards, publish plans, call Gateway, schedule, notify, or alter
+    learner state;
+  - snapshots persist the new evidence through bounded `checks_json` /
+    summary DTOs in `learning_growth_automation_release_readiness`.
+- Focused validation passed:
+  - `node -c src/services/learning-automation-release-readiness-service.js`;
+  - `node -c scripts/smoke-growth-release-readiness.js`;
+  - `node -c tests/learning-automation-release-readiness-service.test.js`;
+  - `node -c tests/growth-release-readiness-smoke-script.test.js`;
+  - `node -c tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-readiness-repository.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`63` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`434` tests);
+  - `codegraph sync && codegraph status` (`207` JavaScript files, `2,476`
+    nodes, `10,046` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth backend/docs/Harness slice as `H1`
+    because of Gateway/runtime/deployment/architecture-doc keywords even though
+    this Growth change did not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-8ad7855f-c421-40a1-b2ec-881dc4f0839f`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
+## 2026-06-15 Growth Controlled Daily-Loop Draft/Publish Smoke CLI Slice
+
+- Status: controlled daily-loop smoke CLI is implemented locally and wired
+  into local Harness/check gates. This slice did not deploy, enable Gateway
+  config, change runtime config, execute scheduler actions, deliver
+  notifications, activate stage assessments, or run production write smoke.
+- Change classification: H2 backend/Harness evidence boundary.
+- Scope:
+  - added `scripts/smoke-growth-daily-loop.js`;
+  - added `npm run smoke:daily-loop`;
+  - added the script to `npm run check`;
+  - added `tests/growth-daily-loop-smoke-script.test.js`;
+  - fixed `growth-gateway-planner-client` so native `fetch`/Gateway `Response`
+    objects are read through `response.text()` before generic body handling;
+  - extended `tests/growth-architecture-boundary.test.js` so the new CLI is
+    guarded as service-owned glue over `createServices` and
+    `learningDailyLoopService.preview/draft/publish`.
+- Boundary:
+  - default operation is `preview`, which remains no-write;
+  - `draft` and `publish` require explicit `--allow-write`;
+  - `publish` additionally requires `--plan-draft-id`;
+  - the CLI instantiates the normal Growth service graph through `readEnv` and
+    `createServices`, then delegates only to `learningDailyLoopService`;
+  - it must not import SQLite repositories directly, call Gateway directly,
+    draft/publish through the plan publisher directly, call card generation
+    directly, evaluate submissions, run scheduler dry-run/execution/ticks,
+    deliver notifications, activate stage assessments, or act as a runtime
+    release/deploy switch.
+- Focused validation passed:
+  - `node -c scripts/smoke-growth-daily-loop.js`;
+  - `node -c tests/growth-daily-loop-smoke-script.test.js`;
+  - `node -c tests/growth-architecture-boundary.test.js`;
+  - `node -c src/services/growth-gateway-planner-client.js`;
+  - `node --test tests/growth-daily-loop-smoke-script.test.js` (`6` tests).
+- Focused daily-loop validation passed:
+  - `node --test tests/growth-daily-loop-smoke-script.test.js
+    tests/growth-daily-loop-preview-smoke-script.test.js
+    tests/learning-daily-loop-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-card-generation-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`93` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`434` tests);
+  - `codegraph sync && codegraph status` (`207` JavaScript files, `2,476`
+    nodes, `10,046` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth CLI/Harness slice as `H1` because of
+    Gateway/runtime/deployment keywords even though this Growth change did not
+    deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-11a06952-33b0-4b73-9b2c-fa261d84ab02`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
+## 2026-06-15 Growth Daily-Loop Preview Smoke CLI Slice
+
+- Status: daily-loop preview smoke CLI is implemented and wired into local
+  Harness. This slice does not deploy, enable Gateway config, create plan
+  drafts, publish plans, generate cards, evaluate submissions, run scheduler
+  dry-runs, execute scheduler actions, run scheduler ticks, deliver
+  notifications, activate stage assessments, mutate learner state, write
+  SQLite, or change production runtime config.
+- Change classification: H2 backend/Harness evidence boundary.
+- Scope:
+  - added `scripts/smoke-growth-daily-loop-preview.js`;
+  - added `npm run smoke:daily-loop-preview`;
+  - added the script and `learning-daily-loop-service.js` to
+    `npm run check`;
+  - added `tests/growth-daily-loop-preview-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js` so the CLI is guarded
+    as service-owned glue over `createServices` and
+    `learningDailyLoopService.preview`;
+  - updated Growth-local architecture/implementation/next-stage/platform
+    pointer docs and `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - default and only behavior is no-write preview evaluation through
+    `learningDailyLoopService.preview`;
+  - CLI input is bounded scope/filter JSON plus structured selectors for
+    workspace, learner, program, plan draft, task card, evaluation,
+    profile-delta, evidence, correction, source, graph target nodes,
+    domain pack, domain, subject, horizon, available minutes, limit, and
+    requested-by metadata;
+  - privacy-risk keys fail closed through the daily-loop service privacy scan;
+  - the CLI must not import SQLite repositories directly, call Gateway,
+    draft/publish plans, generate cards, evaluate submissions, run scheduler
+    dry-run/execution/ticks, deliver handoffs, activate stage assessments,
+    mutate learner state, or act as a runtime release switch.
+- Focused validation passed:
+  - `node -c scripts/smoke-growth-daily-loop-preview.js`;
+  - `node -c tests/growth-daily-loop-preview-smoke-script.test.js`;
+  - `node -c tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-daily-loop-preview-smoke-script.test.js
+    tests/learning-daily-loop-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`86` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`427` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`205` JavaScript files, `2,428`
+    nodes, `9,930` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth CLI/Harness slice as `H1` because of
+    Gateway/runtime/deployment keywords even though this Growth change did not
+    deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and Home AI
+    `git diff --check`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment;
+  - appended evidence record
+    `evidence-cd38f5bb-d59c-44d2-8a72-36173a8bce29` to
+    `/Users/xuxin/.homeai-qa/evidence-ledger.jsonl`.
+- Remaining product/release gaps:
+  - Owner daily UI and Owner audit/correction UI product closure;
+  - production planner readiness smoke, production daily-loop preview smoke,
+    production scheduler dry-run smoke, and production release-readiness smoke
+    evidence;
+  - proposal/digest/action/execution/run/worker-target/release-readiness UI;
+  - Home AI platform Action Inbox/Web Push evidence;
+  - central embedded-plugin visual evidence;
+  - reviewed enabled production worker targets;
+  - explicit release approvals for each writeful config gate.
+
+## 2026-06-15 Growth Scheduler Dry-Run Smoke CLI Slice
+
+- Status: scheduler dry-run smoke CLI is implemented and wired into local
+  Harness. This slice does not deploy, enable Gateway config, publish plans,
+  generate cards, evaluate submissions, execute scheduler actions, run
+  scheduler ticks, start background workers, deliver notifications, activate
+  stage assessments, mutate learner state, or change production runtime
+  config.
+- Change classification: H2 backend/Harness evidence boundary.
+- Scope:
+  - added `scripts/smoke-growth-scheduler-dry-run.js`;
+  - added `npm run smoke:scheduler-dry-run`;
+  - added the script and `learning-automation-scheduler-service.js` to
+    `npm run check`;
+  - added `tests/growth-scheduler-dry-run-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js` so the CLI is guarded
+    as service-owned glue over `createServices` and
+    `learningAutomationSchedulerService.dryRun`;
+  - updated Growth-local architecture/implementation/next-stage/platform
+    pointer docs and `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - default behavior is no-write dry-run evaluation through
+    `learningAutomationSchedulerService.dryRun`;
+  - CLI input is bounded scope/filter JSON plus structured selectors for
+    workspace, learner, program, proposal, plan draft, selected item, graph
+    target nodes, source cycle ids, domain pack, domain, subject, horizon,
+    limit, and requested-by metadata;
+  - privacy-risk keys fail closed through the scheduler service privacy scan;
+  - the CLI must not import SQLite repositories directly, call Gateway,
+    draft/publish plans, publish accepted proposals, generate cards, evaluate
+    submissions, execute scheduler actions, run scheduler ticks, deliver
+    handoffs, activate stage assessments, mutate learner state, or act as a
+    runtime release switch.
+- Focused validation passed:
+  - `node -c scripts/smoke-growth-scheduler-dry-run.js`;
+  - `node -c tests/growth-scheduler-dry-run-smoke-script.test.js`;
+  - `node -c tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-scheduler-dry-run-smoke-script.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/growth-architecture-boundary.test.js` (`22` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `node --test tests/growth-scheduler-dry-run-smoke-script.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-target-provisioning-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`72` tests);
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`422` tests);
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` (`203` JavaScript files, `2,403`
+    nodes, `9,864` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth CLI/Harness slice as `H1` because of
+    scheduler/runtime/deployment keywords even though this Growth change did
+    not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and Home AI
+    `git diff --check`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment;
+  - appended evidence record
+    `evidence-2e0248d6-a7eb-403a-8465-3197cdd9572c` to
+    `/Users/xuxin/.homeai-qa/evidence-ledger.jsonl`.
+- Remaining product/release gaps:
+  - Owner daily UI and Owner audit/correction UI product closure;
+  - proposal/digest/action/execution/run/worker-target/release-readiness UI;
+  - Home AI platform Action Inbox/Web Push evidence;
+  - central embedded-plugin visual evidence;
+  - production planner readiness smoke, production scheduler dry-run smoke, and
+    production release-readiness smoke evidence;
+  - reviewed enabled production worker targets;
+  - explicit release approvals for each writeful config gate.
+
+## 2026-06-15 Growth AI Learning Scheme Documentation Supplement
+
+- Status: documentation-only scheme supplement completed for the AI-driven
+  learning program. This slice does not change runtime code, database schema,
+  Gateway config, scheduler config, production data, learner private payloads,
+  deployment state, or Home AI platform contracts.
+- Change classification: H2 product/architecture documentation update.
+- Scope:
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md` now defines Growth as a
+    supervised learning-program engine rather than a prompt-to-card tool;
+  - the scheme records Fanfan as the first concrete operating program while
+    keeping learner workspace, domain pack, domain, subject, horizon, time
+    budget, graph nodes, and Owner policy parameterized for future targets;
+  - the scheme now separates three learning time scales: daily low-pressure
+    observation loop, formal stage-checkpoint loop, and longer program
+    evolution loop;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md` now has an L0-L7 closure
+    ladder so future work distinguishes data foundation, backend daily loop,
+    browser daily loop, audit/correction loop, checkpoint loop, generalized
+    program, supervised automation, and release-reviewable automation;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md` now records the next
+    architecture optimization target: close the browser-operable Owner daily
+    loop, learner evidence flow, Owner audit/correction flow, formal
+    checkpoint controls, and generalized target selector over existing Growth
+    services before claiming product closure;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md` now includes a time-scale roadmap for
+    daily loop, stage checkpoint loop, and program evolution loop;
+  - `docs/GROWTH_DOCS_INDEX.md` and `.agent-context/PROJECT_CONTEXT.md` point
+    future threads at these scheme additions.
+- Boundary:
+  - only three model-entered steps remain allowed: planner, authoring, and
+    evaluation, all through Growth Gateway clients;
+  - Growth services and repositories remain the durable source of truth for
+    profile, provisioning, mastery, stage eligibility, automation permission,
+    and release readiness;
+  - backend-only automation evidence must not be described as product closure
+    unless the matching browser flow and central visual evidence exist.
+- Validation passed for this docs-only slice:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+
+## 2026-06-15 Growth Release-Readiness Smoke CLI Slice
+
+- Status: release-readiness smoke/snapshot CLI is implemented and wired into
+  local Harness. This slice does not deploy, enable Gateway config, enable
+  writeful execution, enable scheduler ticks, enable the worker timer, deliver
+  notifications, activate stage assessments, or change production runtime
+  config.
+- Change classification: H2 backend/Harness evidence boundary.
+- Scope:
+  - added `scripts/smoke-growth-release-readiness.js`;
+  - added `npm run smoke:release-readiness`;
+  - added the script to `npm run check`;
+  - added `tests/growth-release-readiness-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js` so the CLI is guarded
+    as service-owned glue over `createServices` and
+    `learningAutomationReleaseReadinessService`;
+  - updated Growth-local scheme/implementation/architecture/platform-pointer
+    docs and `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - default behavior is no-write readiness evaluation through
+    `learningAutomationReleaseReadinessService.evaluateReadiness`;
+  - `--write-snapshot` explicitly delegates to
+    `learningAutomationReleaseReadinessService.createSnapshot` and writes only
+    summary-only advisory snapshots;
+  - CLI inputs are bounded scope fields plus structured summary
+    `--evidence-json`, `--release-approval-json`, and evidence/approval flags;
+  - privacy-risk keys fail closed through the existing service/repository
+    privacy scan;
+  - the CLI must not import SQLite repositories directly, call Gateway,
+    publish plans, generate cards, evaluate submissions, execute scheduler
+    actions, run scheduler ticks, deliver handoffs, activate stage assessments,
+    mutate learner state, or act as a platform release switch.
+- Focused validation passed:
+  - `node -c scripts/smoke-growth-release-readiness.js`;
+  - `node -c tests/growth-release-readiness-smoke-script.test.js`;
+  - `node -c tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-architecture-boundary.test.js` (`24` tests);
+  - `node --test tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js` (`16` tests);
+  - package script readback confirmed `smoke:release-readiness` and check
+    coverage for release-readiness service/repository.
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`417` tests);
+  - `codegraph sync && codegraph status` (`201` JavaScript files, `2,377`
+    nodes, `9,793` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this advisory CLI/Harness slice as `H1` because of
+    deployment/runtime-config keywords even though this Growth change did not
+    deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment;
+  - appended evidence record
+    `evidence-51413ee0-c065-4a0b-92e6-90225f14716e` to
+    `/Users/xuxin/.homeai-qa/evidence-ledger.jsonl`.
+- Remaining product/release gaps:
+  - Owner daily UI and Owner audit/correction UI product closure;
+  - proposal/digest/action/execution/run/worker-target/release-readiness UI;
+  - Home AI platform Action Inbox/Web Push evidence;
+  - central embedded-plugin visual evidence;
+  - production planner readiness smoke and production release-readiness smoke
+    evidence;
+  - production scheduler dry-run evidence;
+  - reviewed enabled production worker targets;
+  - explicit release approvals for each writeful config gate.
+
+## 2026-06-15 Growth AI Learning Strategic Plan Documentation Update
+
+- Status: documentation-only update completed for the next AI-driven learning
+  scheme. No runtime code, database schema, Gateway config, scheduler config,
+  deployment, production data, or learner private payload changed in this
+  slice.
+- Scope:
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md` now defines the five strategic
+    product planes: scope/graph, learner state, model drafts, learning action,
+    and audit/next step;
+  - the scheme now distinguishes `backend-capable`, `browser-operable`,
+    `release-reviewable`, and `writeful automation allowed` states so a
+    release-readiness snapshot cannot be mistaken for scheduler permission;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md` now records W1-W7
+    program-level workstreams: scope/provisioning, daily learning action,
+    audit/profile/correction, formal checkpoint, generalized targets,
+    supervised automation, and release evidence/operations;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md` now makes the current
+    execution decision explicit: complete the Owner daily loop, learner daily
+    evidence flow, Owner audit/correction loop, formal checkpoint separation,
+    and generalized target closure before treating automation as product
+    ready;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md` now records the planning rule that
+    progress is measured by closed-loop capability, not by generated-card
+    count or automation-backend count;
+  - `docs/GROWTH_DOCS_INDEX.md` and `.agent-context/PROJECT_CONTEXT.md` were
+    updated to point future threads at these clarified scheme sections.
+- Validation passed for this docs-only slice:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Remaining implementation priority after this documentation slice:
+  - product-visible Path A remains preferred: finish the Owner-supervised
+    daily browser loop over existing Growth service facades, then Owner
+    audit/correction UI, then stage-checkpoint UI, then target/domain-pack
+    generalization. Backend automation evidence remains secondary and must
+    stay non-writeful unless later release gates are explicitly satisfied.
+
+## 2026-06-15 Growth Release-Readiness Architecture Harness Closure
+
+- Status: release-readiness architecture guard is now wired into the Growth
+  focused Harness. This slice does not deploy, enable Gateway config, enable
+  writeful execution, enable scheduler ticks, enable the worker timer, deliver
+  notifications, or change production runtime config.
+- Change classification: H2 backend contract/Harness update.
+- Scope:
+  - updated `tests/growth-architecture-boundary.test.js` so the Service First
+    guard now asserts release-readiness composition root wiring, store facade
+    repository wiring, route glue, service dependencies, repository ownership,
+    summary-only persistence, and forbidden direct behavior;
+  - route guard now covers
+    `/api/v1/growth/automation/release-readiness`,
+    `/api/v1/growth/automation/release-readiness/snapshots`,
+    `normalizeAutomationReleaseReadiness*`, and
+    `learningAutomationReleaseReadinessService` delegation;
+  - service guard now proves release-readiness can use only read/list/dry-run
+    dependencies and snapshot persistence while keeping
+    `writefulSchedulingAllowed=false` and `advisoryOnly=true`;
+  - service guard blocks direct Gateway/vendor calls, direct plan publication,
+    accepted-proposal publication, card generation, evaluation, scheduler
+    execution, scheduler run, handoff delivery, event emission, stage
+    activation, raw learning table access, and raw learner/private payload
+    markers in the release-readiness service;
+  - repository guard now covers
+    `learning_growth_automation_release_readiness`,
+    `createLearningAutomationReleaseReadinessRepository`, `saveSnapshot`,
+    `listSnapshots`, `summary_only`, privacy class rejection, status
+    validation, and public DTO boundary.
+- Files changed in this slice:
+  - `tests/growth-architecture-boundary.test.js`;
+  - `.agent-context/HANDOFF.md`.
+- Focused validation passed:
+  - syntax checks:
+    `node -c src/services/learning-automation-release-readiness-service.js`,
+    `node -c src/stores/growth-learning-sqlite/automation-release-readiness.js`,
+    `node -c src/routes/growth-routes.js`, and
+    `node -c tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-readiness-repository.test.js
+    tests/learning-automation-release-readiness-service.test.js` (`8` tests);
+  - `node --test tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`47` tests);
+  - combined automation backend gate:
+    `node --test tests/learning-automation-release-readiness-repository.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/learning-automation-scheduler-worker-target-repository.test.js
+    tests/learning-automation-scheduler-worker-target-service.test.js
+    tests/learning-automation-scheduler-worker-lease-repository.test.js
+    tests/learning-automation-scheduler-worker-service.test.js
+    tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/learning-automation-scheduler-execution-repository.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/learning-automation-digest-repository.test.js
+    tests/learning-automation-digest-service.test.js
+    tests/learning-automation-failure-policy-repository.test.js
+    tests/learning-automation-failure-policy-service.test.js
+    tests/learning-automation-action-handoff-repository.test.js
+    tests/learning-automation-action-handoff-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`123` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`412` tests);
+  - `codegraph sync && codegraph status` (`199` JavaScript files, `2,351`
+    nodes, `9,720` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified the touched Growth harness/handoff slice as `H3`
+    Architecture Documentation And Harness Map; visual lane and deployment
+    were not required;
+  - Home AI required checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node --check
+    /Users/hermes-dev/HermesMobileDev/plugins/growth/tests/growth-architecture-boundary.test.js`,
+    and Home AI `git diff --check`;
+  - appended evidence record
+    `evidence-86ff29e5-3d4e-48a0-b358-4b23615c80a5` to
+    `/Users/xuxin/.homeai-qa/evidence-ledger.jsonl`.
+- Remaining gates before any production scheduling or unattended automation:
+  - Owner daily UI and audit/correction UI product closure;
+  - proposal/digest/action/execution/run/worker-target/release-readiness UI;
+  - platform Action Inbox/Web Push evidence in Home AI;
+  - central embedded-plugin visual evidence;
+  - production planner readiness smoke and production scheduler dry-run
+    evidence;
+  - reviewed enabled production worker targets;
+  - explicit release approvals for each writeful config gate.
+
+## 2026-06-15 Growth AI Learning Scheme Documentation Completion
+
+- Status: Growth-local scheme documentation has been tightened for the
+  AI-driven closed learning loop and release-readiness evidence boundary. This
+  documentation slice does not deploy, enable Gateway config, enable
+  scheduling, enable writeful execution, deliver notifications, or change
+  production runtime config.
+- Change classification: H2 product/architecture documentation update.
+- Scope:
+  - documented the end-to-end learning mechanism from view-target/provisioning
+    through knowledge graph, Profile V2, Gateway planning, validated draft,
+    daily card publication, one-shot learner evaluation, evidence ledger,
+    profile-delta audit, Owner correction, and next recommendation;
+  - clarified that daily practice is the low-pressure 10-15 minute loop and
+    stage assessment remains a separate formal checkpoint loop owned by
+    `learning-stage-assessment-service`;
+  - updated release-readiness wording from planned-only to a Growth-owned
+    advisory backend boundary:
+    `learning-automation-release-readiness-service`,
+    `automation-release-readiness.js`,
+    `learning_growth_automation_release_readiness`,
+    `GET /api/v1/growth/automation/release-readiness`,
+    `GET /api/v1/growth/automation/release-readiness/snapshots`, and
+    Owner-only `POST /api/v1/growth/automation/release-readiness/snapshots`;
+  - recorded the response contract: stable checks, summary-only evidence,
+    config booleans, `readyForOwnerLoop`, `readyForReleaseReview`,
+    `releaseReview.advisoryOnly=true`, and
+    `writefulSchedulingAllowed=false`;
+  - recorded remaining release gaps: product UI evidence, platform
+    Action Inbox/Web Push evidence, central embedded-plugin visual evidence,
+    production planner readiness smoke, production scheduler dry-run evidence,
+    reviewed target evidence, and explicit release approval records.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed for this documentation slice:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `codegraph status` (`199` JavaScript files, `2,351` nodes, `9,720`
+    edges; index up to date).
+
+## 2026-06-15 Growth AI Learning Next-Stage Plan Documentation Slice
+
+- Status: documentation-only next-stage scheme is added. No runtime code,
+  database schema, production config, deployment, Gateway config, or scheduler
+  enablement changed in this slice.
+- Change classification: H2 product/architecture documentation update.
+- Scope:
+  - added `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md` as the durable
+    next-stage execution selector;
+  - recorded the preferred next product path as Owner-supervised daily browser
+    loop closure over `learning-daily-loop-service`;
+  - recorded the backend-only alternative as a release-readiness evidence
+    boundary that may persist summary-only snapshots but must not call
+    Gateway, publish, evaluate, execute scheduling, run scheduler ticks,
+    deliver notifications, activate stage assessments, or mutate learner
+    state;
+  - documented Fanfan science daily-card sample parameters, readiness
+    semantics, release-readiness service/repository/route plan, harness matrix,
+    and definition of done;
+  - added the new doc to `scripts/check-growth-docs-locality.js` required and
+    current docs.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Remaining planned implementation choices from that slice, superseded by the
+  newer documentation-completion section above:
+  - preferred: finish Owner daily UI, then Owner audit/correction UI;
+  - backend-only alternative: the release-readiness boundary is now represented
+    in the workspace by
+    `learning-automation-release-readiness-service`,
+    `automation-release-readiness.js`, and bounded readiness/snapshot routes;
+    keep it evidence-only and validate with focused repository/service/route/
+    architecture harnesses before treating the backend slice as closed;
+  - background writeful scheduling remains blocked until product UI, audit UI,
+    proposal/digest/action/execution/run UI, platform Action Inbox/Web Push
+    evidence, central visual evidence, production dry-run evidence, reviewed
+    enabled worker targets, and explicit release approval exist.
+
+## 2026-06-15 Growth AI Learning Scheme Documentation Refresh
+
+- Status: Growth-local scheme documents are updated for the next AI-driven
+  learning-loop plan and the scheduler worker target gate. This slice is
+  documentation-only and does not enable production automation, deploy, or
+  change runtime config.
+- Change classification: H2 architecture/product documentation update.
+- Scope:
+  - clarified that the product goal is the complete supervised AI learning
+    loop, not card generation alone;
+  - kept the immediate product-visible priority as Owner-supervised daily UI,
+    then Owner audit/correction UI, then formal checkpoint UI, then generalized
+    target/domain-pack UI;
+  - documented that model-entered steps remain limited to Gateway-only
+    planning, authoring, and evaluation with draft-before-write validation;
+  - documented the reviewed worker target gate through
+    `learning-automation-scheduler-worker-target-service`,
+    `automation-scheduler-worker-targets.js`,
+    `learning_growth_automation_scheduler_worker_targets`, and
+    `/api/v1/growth/automation/scheduler/worker-targets` list/create/review
+    routes;
+  - recorded that `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` is local
+    fallback only and is not production approval;
+  - updated service, route, persistence, safety-gate, forbidden-boundary, and
+    harness expectations for worker targets.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed for this docs slice:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=34`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Remaining implementation/product gates:
+  - Owner daily UI, Owner audit/correction UI, stage-checkpoint UI, target
+    provision UI, proposal/digest/action/execution/run/worker-target UI,
+    platform Action Inbox/Web Push evidence, central visual evidence,
+    production dry-run evidence, and explicit release approval remain future
+    gates before unattended production scheduling.
+
+## 2026-06-15 Growth Scheduler Worker Target Backend Slice
+
+- Status: reviewed scheduler worker target backend is implemented and covered
+  by focused repository, service, route, worker integration, and architecture
+  harnesses. This slice does not enable production background scheduling, does
+  not deploy, and does not change production config.
+- Change classification: H2 backend workflow and persistence boundary.
+- Scope:
+  - added `learning-automation-scheduler-worker-target-service`;
+  - added `automation-scheduler-worker-targets.js` and
+    `learning_growth_automation_scheduler_worker_targets`;
+  - added `stableLearningAutomationSchedulerWorkerTargetId`;
+  - wired the repository through `growth-learning-sqlite-store`;
+  - wired the service through `src/app/services.js`;
+  - wired `learning-automation-scheduler-worker-service` to prefer reviewed
+    enabled persistent targets before local environment fallback;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/scheduler/worker-targets`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/scheduler/worker-targets`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/scheduler/worker-targets/:targetId/review`;
+  - added `tests/learning-automation-scheduler-worker-target-repository.test.js`;
+  - added `tests/learning-automation-scheduler-worker-target-service.test.js`;
+  - updated worker service, route, and architecture harnesses for reviewed
+    target precedence and forbidden boundaries.
+- Boundaries:
+  - target creation requires target/domain-pack/subject provisioning before a
+    `proposed` summary-only row is stored;
+  - review can move targets to `enabled`, `disabled`, or `archived`;
+  - enabling rechecks provisioning;
+  - archived rows cannot be re-enabled;
+  - `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` remains a local
+    fallback only and is not production approval;
+  - worker target service must not call Gateway, scheduler run/execution, plan
+    publication, card generation, notifications, stage assessment, or learner
+    state repositories.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Focused validation passed:
+  - syntax checks for worker-target service/repository, worker service, and
+    route wiring;
+  - `node --test tests/learning-automation-scheduler-worker-target-repository.test.js
+    tests/learning-automation-scheduler-worker-target-service.test.js
+    tests/learning-automation-scheduler-worker-service.test.js` (`14` tests);
+  - `node --test tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`46` tests);
+  - combined automation scheduler/worker-target gate:
+    `node --test tests/learning-automation-scheduler-worker-target-repository.test.js
+    tests/learning-automation-scheduler-worker-target-service.test.js
+    tests/learning-automation-scheduler-worker-lease-repository.test.js
+    tests/learning-automation-scheduler-worker-service.test.js
+    tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`84` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=34`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`403` tests);
+  - `codegraph sync && codegraph status` (`195` JavaScript files, `2,288`
+    nodes, `9,446` edges; index up to date).
+- Additional no-write readiness check:
+  - `npm run smoke:planner-readiness -- --workspace-id weixin_stephen
+    --learner-id fanfan --domain-pack-id uk_hk_curriculum_foundation
+    --domain science --subject science --horizon daily_plan
+    --available-minutes 15 --json` returned
+    `ok=false`, `error=gateway_endpoint_required`, with summary-only context
+    and no durable writes. This is expected in the current shell without real
+    planner Gateway config and is not production readiness evidence.
+- Remaining gates before production unattended scheduling:
+  - Owner automation UI, platform Action Inbox/Web Push evidence, central
+    visual evidence, production dry-run evidence, reviewed enabled production
+    targets, explicit scheduler/worker release config, and explicit release
+    approval remain future gates.
+
+## 2026-06-15 Growth Scheduler Worker Lease Backend Slice
+
+- Status: default-disabled scheduler worker/lease backend is now implemented
+  locally. This slice does not enable production background scheduling, does
+  not deploy, and does not change production config.
+- Change classification: H2 backend workflow, timer glue, and persistence
+  boundary.
+- Scope:
+  - added `learning-automation-scheduler-worker-service`;
+  - added `automation-scheduler-worker-leases.js` and
+    `learning_growth_automation_scheduler_worker_leases`;
+  - added `stableLearningAutomationSchedulerWorkerLeaseId`;
+  - wired the repository through `growth-learning-sqlite-store`;
+  - wired the service through `src/app/services.js`;
+  - added default-disabled env/config:
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED`,
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON`,
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_INTERVAL_MS`,
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_LEASE_MS`, and
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_ID`;
+  - added optional HTTP timer glue in `src/app/http-server.js`, gated by
+    `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED=false` by default;
+  - added `tests/learning-automation-scheduler-worker-lease-repository.test.js`;
+  - added `tests/learning-automation-scheduler-worker-service.test.js`;
+  - updated `tests/growth-routes.test.js` to prove the worker timer is inert
+    while disabled and calls only `tickTargets` when explicitly enabled;
+  - updated `tests/growth-architecture-boundary.test.js` with worker/lease
+    Service First and forbidden-boundary guards.
+- Boundaries:
+  - worker service may claim/release summary-only leases and call only
+    `learning-automation-scheduler-run-service.runOnce`;
+  - run service still enforces
+    `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`, so enabling the worker
+    alone cannot list handoffs or publish cards;
+  - worker service must not call Gateway, list handoffs, execute scheduler
+    actions directly, publish plans, generate cards, notify Action Inbox/Web
+    Push, activate stage assessments, or read/write learner state directly;
+  - the internal lease nonce is not exposed in public DTOs and is only used to
+    prevent stale-worker release races.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Focused validation passed:
+  - syntax checks for worker service/repository/tests and wiring files;
+  - `node --test tests/learning-automation-scheduler-worker-lease-repository.test.js
+    tests/learning-automation-scheduler-worker-service.test.js` (`10` tests);
+  - `node --test tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`45` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=34`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - combined automation scheduler/worker gate:
+    `node --test tests/learning-automation-scheduler-worker-lease-repository.test.js
+    tests/learning-automation-scheduler-worker-service.test.js
+    tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`75` tests);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`394` tests);
+  - `codegraph sync && codegraph status` (`191` JavaScript files,
+    `2,237` nodes, `9,209` edges; index up to date).
+- Remaining production gates:
+  - Owner automation UI, platform Action Inbox/Web Push evidence, central
+    visual evidence, production dry-run evidence, reviewed worker target
+    config, and explicit release approval remain future gates.
+
+## 2026-06-15 Growth Background Scheduler Run Backend Slice
+
+- Status: default-disabled supervised scheduler run/tick backend is now
+  implemented and covered by focused repository, service, route, and
+  architecture harnesses. This slice does not enable production background
+  scheduling, does not deploy, and does not change production config.
+- Change classification: H2 backend workflow and persistence boundary.
+- Scope:
+  - fixed `learning-automation-scheduler-run-service` so invalid mode fails
+    closed with a blocked run, disabled config records blocked state without
+    downstream calls, and started/final records for one tick reuse the same
+    stable `runId` and `createdAt`;
+  - fixed `automation-scheduler-runs.js` migration order so legacy tables add
+    bounded columns before indexes are created;
+  - added domain and horizon filters to scheduler run listing;
+  - added `tests/learning-automation-scheduler-run-repository.test.js`;
+  - added `tests/learning-automation-scheduler-run-service.test.js`;
+  - updated `tests/growth-routes.test.js` for
+    `GET /api/v1/growth/automation/scheduler/runs` and Owner-only
+    `POST /api/v1/growth/automation/scheduler/run-once`;
+  - updated `tests/growth-architecture-boundary.test.js` with scheduler-run
+    wiring and no-direct-Gateway/direct-publish/direct-card-generation/
+    stage-activation/table-access guards.
+- Boundaries:
+  - scheduler run service may list delivered handoffs through
+    `learning-automation-action-handoff-service.listHandoffs` only when
+    `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED=true`;
+  - each delivered action delegates only to
+    `learning-automation-scheduler-execution-service.executeOnce`;
+  - scheduler run service must not call Gateway, direct plan publication, card
+    generation, authoring, evaluation, Action Inbox/Web Push, queues/workers,
+    stage-assessment activation, or SQLite tables directly;
+  - production unattended scheduling remains blocked until Owner automation
+    UI, platform action evidence, central visual evidence, production dry-run
+    evidence, and explicit release approval exist.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Focused validation passed:
+  - syntax checks for scheduler-run service/repository/tests;
+  - `node --test tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js` (`10` tests);
+  - `node --test tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`54` tests).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=34`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - scheduler-run focused gate:
+    `node --test tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`64` tests);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`383` tests);
+  - `codegraph sync && codegraph status` (`187` JavaScript files,
+    `2,186` nodes, `8,991` edges; index up to date).
+- Remaining gates before production scheduling:
+  - Owner automation UI, platform Action Inbox/Web Push evidence, central
+    visual evidence, production dry-run evidence, and release approval remain
+    future product gates.
+
+## 2026-06-15 Growth Background Scheduler Scheme Documentation Slice
+
+- Status: Growth-local documentation for the background scheduler contract is
+  now added and cross-linked. This slice does not enable production background
+  scheduling, does not deploy, and does not change production config.
+- Purpose:
+  - separate four boundaries that must not be conflated: read-only scheduler
+    dry-run, default-disabled Owner `execute-once`, default-disabled supervised
+    scheduler `run-once` tick, and any future unattended worker;
+  - make `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md` the
+    owning document before changing scheduler run/tick behavior, scheduler
+    config, run persistence, or a future worker;
+  - record that scheduler ticks may coordinate delivered handoff actions only
+    by delegating to `learning-automation-scheduler-execution-service`;
+  - keep Gateway-only, Service First, summary-only, no-direct-publish, and
+    no-stage-assessment-activation constraints explicit.
+- Documentation updated:
+  - added `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`;
+  - updated `docs/GROWTH_DOCS_INDEX.md`;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - updated `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - updated `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - updated `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - updated `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - updated `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - updated `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - updated `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`;
+  - updated `scripts/check-growth-docs-locality.js`;
+  - updated `.agent-context/PROJECT_CONTEXT.md`;
+  - updated `.agent-context/HANDOFF.md`.
+- Validation target for this docs slice:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`.
+- Remaining implementation gates:
+  - scheduler-run repository/service/route/architecture harnesses are required
+    before the scheduler tick boundary is considered closed;
+  - Owner automation UI, platform Action Inbox/Web Push evidence, central
+    visual evidence, production dry-run evidence, and explicit release approval
+    are still required before any background scheduling can be enabled.
+
+## 2026-06-15 Growth Automation Scheduler Execution Documentation Closure
+
+- Status: Growth-local documentation for the default-disabled
+  Owner-explicit scheduler execution boundary is now synchronized across the
+  scheme, implementation plan, roadmap, operating-loop blueprint, architecture
+  map, platform pointer, and workspace context. This slice does not enable
+  production writeful automation or background scheduling.
+- Purpose:
+  - make `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md` the
+    owning document for `owner_explicit_once` execution changes;
+  - distinguish three separate boundaries: read-only scheduler dry-run,
+    default-disabled Owner `execute-once`, and future background scheduler;
+  - record that execution requires delivered handoff, reviewed digest, active
+    failure-policy readiness, matching read-only dry-run candidate, accepted
+    proposal, Owner role, workspace bearer, visible target, and
+    `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`;
+  - keep Service First/Gateway-only/summary-only constraints explicit:
+    execution delegates only to accepted-proposal publish and must not call
+    Gateway, direct plan publish, card generation, notifications, queues,
+    stage-assessment activation, or SQLite tables directly.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=33`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - focused scheduler-execution gate:
+    `node --test tests/learning-automation-scheduler-execution-repository.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`56` tests);
+  - `npm run --silent check`;
+  - `npm test` (`372` tests);
+  - `codegraph sync && codegraph status` (`183` JavaScript files, `2,137`
+    nodes, `8,765` edges; index up to date).
+- Remaining product gates:
+  - Owner daily UI, audit/correction UI, proposal review UI,
+    digest/action/failure-policy/execution UI, platform Action Inbox/Web Push
+    evidence, central visual evidence, production dry-run evidence, and an
+    explicit release decision are still required before enabling
+    `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`;
+  - background scheduler remains a future contract and must not be inferred
+    from the implemented `execute-once` backend.
+
+## 2026-06-15 Growth AI Learning System Scheme Documentation Slice
+
+- Status: Growth-local system scheme documentation is updated. This slice does
+  not change service code, routes, repositories, database schema, UI,
+  production config, deployment state, scheduler behavior, or model behavior.
+- Purpose:
+  - make the full AI-guided learning product scheme durable in the Growth
+    plugin workspace rather than relying on thread-local planning notes;
+  - define the product thesis, non-negotiable principles, persistent-state
+    source of truth, low-pressure daily policy, formal assessment separation,
+    Owner audit/correction responsibilities, Growth/Home AI ownership split,
+    model-entered steps, Owner modes, automation maturity ladder,
+    implementation package sequence, and harness contract;
+  - make later implementation threads start from a Growth-local scheme before
+    editing UI, services, repositories, or scheduling logic.
+- Documentation updated:
+  - added `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - updated `docs/GROWTH_DOCS_INDEX.md` reading order so the system scheme is
+    read after the platform pointer and before closed-loop implementation
+    docs;
+  - updated `scripts/check-growth-docs-locality.js` so the system scheme is a
+    required current Growth doc;
+  - updated `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - updated `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - updated `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - updated `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - updated `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - updated `docs/GROWTH_AI_CARD_LOOP.md`;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - updated `.agent-context/PROJECT_CONTEXT.md`;
+  - updated `.agent-context/HANDOFF.md`.
+- Implementation guidance:
+  - next product-visible slice should remain Owner-supervised daily UI over the
+    existing daily-loop facade;
+  - audit/correction UI should follow before broader automation trust;
+  - writeful scheduling must remain blocked until Owner UI, audit UI,
+    proposal/digest/action UI, active failure policy, platform action evidence,
+    visual evidence, and scheduler execution harnesses exist.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=32`, no
+    missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `rg -n "scheme entry point|single scheme entry" docs scripts
+    .agent-context/PROJECT_CONTEXT.md -S` returned no matches.
+
+## 2026-06-15 Growth Automation Action Handoff Backend Slice
+
+- Status: automation action handoff backend is implemented locally and
+  documented. This does not implement digest UI, proposal review UI,
+  platform Action Inbox/Web Push internals, writeful scheduling, production
+  deployment, or visual evidence.
+- Change classification: H2 backend workflow and persistence boundary. It adds
+  summary-only handoff persistence and bounded notification delivery metadata
+  for future scheduling safety, but it does not publish cards, enqueue learning
+  work, call Gateway, record proposal execution, or authorize automatic
+  execution.
+- Scope:
+  - added
+    `src/stores/growth-learning-sqlite/automation-action-handoffs.js`;
+  - added `stableLearningAutomationActionHandoffId` in
+    `src/stores/growth-learning-sqlite/identifiers.js`;
+  - exposed `learningAutomationActionHandoffRepository` from
+    `src/stores/growth-learning-sqlite-store.js`;
+  - added `src/services/learning-automation-action-handoff-service.js`;
+  - added `learningAutomationDigestService.getDigest`;
+  - wired `learningAutomationActionHandoffService` in `src/app/services.js`;
+  - added `growth.automation.action_required` event mapping in
+    `src/services/growth-event-service.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/action-handoffs`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/action-handoffs`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/action-handoffs/:handoffId/deliver`;
+  - handoff creation requires a reviewed digest and active failure-policy
+    readiness before saving a summary-only handoff row;
+  - delivery emits bounded metadata through `growth-event-service` and records
+    `delivered` or `delivery_failed`;
+  - delivery failure is visible but does not mutate learner evidence, profile,
+    rewards, card state, proposal execution, or scheduler state.
+- Boundaries:
+  - action-handoff service may read reviewed digest state through
+    `learning-automation-digest-service.getDigest`, check policy readiness
+    through `learning-automation-failure-policy-service.evaluateReadiness`,
+    save/deliver through its repository, and emit through
+    `growth-event-service`;
+  - action-handoff service must not call Gateway, model vendors, scheduler
+    dry-run, plan publication, card generation, accepted-proposal publication,
+    proposal execution recording, queues/workers, stage-assessment activation,
+    or SQLite tables directly;
+  - repository rejects privacy-risk keys and non-summary privacy classes,
+    supports idempotent stable ids, migrates bounded delivery/readiness
+    columns before indexes, returns public DTOs, and keeps duplicate delivered
+    records idempotent;
+  - route logic remains request/auth/target glue.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/automation-action-handoffs.js`;
+  - `src/stores/growth-learning-sqlite/identifiers.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `src/services/learning-automation-action-handoff-service.js`;
+  - `src/services/learning-automation-digest-service.js`;
+  - `src/services/growth-event-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-action-handoff-repository.test.js`;
+  - `tests/learning-automation-action-handoff-service.test.js`;
+  - `tests/learning-automation-digest-service.test.js`;
+  - `tests/growth-event-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `scripts/check-growth-docs-locality.js`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for touched action-handoff service/repository/digest
+    service/event/wiring/routes;
+  - focused gate:
+    `node --test tests/learning-automation-action-handoff-repository.test.js
+    tests/learning-automation-action-handoff-service.test.js
+    tests/learning-automation-digest-service.test.js
+    tests/growth-event-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`62` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=31`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`363` tests);
+  - CodeGraph status (`179` JavaScript files, `2,084` nodes, `8,498`
+    edges; no stale-file warning).
+- Remaining product gaps:
+  - Owner daily UI, audit/correction UI, proposal review UI, digest UI,
+    action handoff UI / platform Action Inbox-Web Push evidence, visual
+    evidence, and writeful scheduler remain future work.
+
+## 2026-06-15 Growth Automation Failure Policy Backend Slice
+
+- Status: automation rollback/failure-policy backend is implemented locally
+  and documented. This does not implement digest UI, proposal review UI,
+  notification/Action Inbox handoff, writeful scheduling, production
+  deployment, or visual evidence.
+- Change classification: H2 backend workflow and persistence boundary. It adds
+  summary-only policy persistence and readiness readback for future scheduling
+  safety, but it does not publish cards, enqueue work, call Gateway, or
+  authorize automatic execution.
+- Scope:
+  - added
+    `src/stores/growth-learning-sqlite/automation-failure-policies.js`;
+  - added `stableLearningAutomationFailurePolicyId` in
+    `src/stores/growth-learning-sqlite/identifiers.js`;
+  - exposed `learningAutomationFailurePolicyRepository` from
+    `src/stores/growth-learning-sqlite-store.js`;
+  - added `src/services/learning-automation-failure-policy-service.js`;
+  - wired `learningAutomationFailurePolicyService` in `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/failure-policies`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/failure-policies/readiness`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/failure-policies`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/failure-policies/:policyId/review`;
+  - policy creation stores a draft summary-only policy/rollback/failure packet;
+  - Owner review can move a draft policy to `active`, `archived`, or
+    `superseded`;
+  - readiness reports `readyForWritefulAutomationPrerequisite=true` only when
+    an active scoped policy exists, while always keeping
+    `writefulSchedulingAllowed=false`.
+- Boundaries:
+  - failure-policy service must not call Gateway, model vendors, plan
+    publication, card generation, accepted-proposal publication, scheduler
+    dry-run, notifications, Action Inbox, queues/workers, stage-assessment
+    activation, or SQLite tables directly;
+  - repository rejects privacy-risk keys and non-summary privacy classes,
+    supports idempotent stable ids, migrates bounded review/policy-version
+    columns, returns public DTOs, and rejects conflicting terminal reviews;
+  - route logic remains request/auth/target glue.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/automation-failure-policies.js`;
+  - `src/stores/growth-learning-sqlite/identifiers.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `src/services/learning-automation-failure-policy-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-failure-policy-repository.test.js`;
+  - `tests/learning-automation-failure-policy-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `scripts/check-growth-docs-locality.js`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for touched failure-policy service/repository/wiring/routes;
+  - focused gate:
+    `node --test tests/learning-automation-failure-policy-repository.test.js
+    tests/learning-automation-failure-policy-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`50` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=30`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `npm run --silent check`;
+  - `npm test` (`351` tests);
+  - `git diff --check`;
+  - CodeGraph status (`175` JavaScript files, `2,029` nodes, `8,255`
+    edges; no stale-file warning).
+- Remaining product gaps:
+  - Owner daily UI, audit/correction UI, proposal review UI, digest UI,
+    notification/Action Inbox handoff, visual evidence, and writeful scheduler
+    remain future work.
+
+## 2026-06-15 Growth AI Learning Implementation Plan Documentation Slice
+
+- Status: Growth-local implementation scheme documentation is updated. This
+  slice did not change service code, routes, repositories, database schema, UI,
+  production config, or deployment state.
+- Purpose:
+  - turn the AI-driven Growth learning direction into a single execution-plan
+    document that later Codex threads can use without relying on thread-local
+    discussion;
+  - make the target outcome, non-negotiable Service First/Gateway-only/
+    summary-only boundaries, current backend baseline, model-entered steps,
+    durable state ownership, delivery packages, immediate implementation
+    choices, and package-level definition of done explicit;
+  - keep writeful scheduling blocked until Owner UI/audit/proposal/digest,
+    rollback/failure policy, notification/Action Inbox handoff, and harness
+    evidence exist.
+- Scope:
+  - added `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - updated `docs/GROWTH_DOCS_INDEX.md` so the new implementation plan is part
+    of the current Growth docs and scheme reading order;
+  - updated `scripts/check-growth-docs-locality.js` so the implementation plan
+    is required and scanned with the current Growth docs;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_LEARNING_OPERATING_LOOP.md`,
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`, and
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` to point to the
+    execution plan;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md` with a Growth-local pointer
+    row for the implementation plan;
+  - updated `.agent-context/PROJECT_CONTEXT.md` with the new durable plan
+    entry.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=29`, no
+    missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Remaining product gaps are unchanged:
+  - Owner daily UI, audit/correction UI, proposal review UI, digest UI,
+    rollback/failure policy, notification/Action Inbox handoff, visual
+    evidence, and writeful scheduler remain future work.
+
+## 2026-06-15 Growth Automation Digest Backend Slice
+
+- Status: supervised automation digest backend is implemented locally and
+  documented. This does not implement digest UI, notifications, Action Inbox,
+  rollback policy, writeful scheduling, production deployment, or visual
+  evidence.
+- Change classification: H1/H2 backend workflow and persistence boundary. It
+  adds summary-only digest persistence over scheduler dry-run results and
+  Owner review metadata, but does not publish cards or enqueue work.
+- Scope:
+  - added `src/stores/growth-learning-sqlite/automation-digests.js`;
+  - added `stableLearningAutomationDigestId` in
+    `src/stores/growth-learning-sqlite/identifiers.js`;
+  - exposed `learningAutomationDigestRepository` from
+    `src/stores/growth-learning-sqlite-store.js`;
+  - added `src/services/learning-automation-digest-service.js`;
+  - wired `learningAutomationDigestService` in `src/app/services.js`;
+  - added visible-target scoped `GET /api/v1/growth/automation/digests`;
+  - added Owner-only `POST /api/v1/growth/automation/digests`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/digests/:digestId/review`;
+  - digest create calls only `learning-automation-scheduler-service.dryRun`,
+    verifies `dryRun=true`, `writePlanned=false`, `writesPerformed=false`,
+    and `publishPlanned=false`, then writes a summary-only digest row;
+  - digest review records bounded Owner review metadata only.
+- Boundaries:
+  - digest service must not call Gateway, model vendors, plan publication,
+    card generation, proposal publish execution, notifications, Action Inbox,
+    queues/workers, stage-assessment activation, or SQLite tables directly;
+  - digest repository rejects privacy-risk keys and non-summary privacy
+    classes, returns public DTOs, supports idempotent stable ids, and migrates
+    bounded review columns;
+  - digest route logic remains request/auth/target glue.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/automation-digests.js`;
+  - `src/stores/growth-learning-sqlite/identifiers.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `src/services/learning-automation-digest-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-digest-repository.test.js`;
+  - `tests/learning-automation-digest-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for touched digest service/repository/wiring/routes/tests;
+  - `node --test tests/learning-automation-digest-repository.test.js
+    tests/learning-automation-digest-service.test.js` (`8` tests);
+  - `node --test tests/growth-routes.test.js` (`29` tests);
+  - `node --test tests/growth-architecture-boundary.test.js` (`11` tests);
+  - expanded digest focused gate:
+    `node --test tests/learning-automation-digest-repository.test.js
+    tests/learning-automation-digest-service.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`53` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=28`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` (`341` tests);
+  - CodeGraph status (`171` JavaScript files, `1,978` nodes, `8,034`
+    edges; index up to date).
+- Remaining product gaps:
+  - Owner daily UI, audit/correction UI, proposal review UI, digest UI,
+    rollback/failure policy, notification/Action Inbox handoff, visual
+    evidence, and writeful scheduler remain future work.
+
+## 2026-06-15 Growth Automation Digest Scheme Documentation Slice
+
+- Status: documentation and docs-locality harness are updated for the
+  supervised automation digest gate. No service, route, database, UI,
+  production, or deployment behavior was changed in this slice.
+- Purpose:
+  - define the required digest layer between scheduler dry-run evidence and
+    any future writeful scheduler;
+  - prevent future scheduling work from skipping Owner-reviewable dry-run
+    packets, rollback/failure policy, notification/action handoff, or visual
+    evidence.
+- Scope:
+  - added `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`;
+  - updated `docs/GROWTH_DOCS_INDEX.md` so the new digest plan is part of the
+    Growth-local scheme reading order;
+  - updated `scripts/check-growth-docs-locality.js` so the digest plan is a
+    required current Growth doc and is scanned for forbidden app Growth doc
+    pointers;
+  - updated `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md` with the digest
+    service/repository/route boundary and scheduler block;
+  - updated `docs/GROWTH_AI_LEARNING_ROADMAP.md` so Stage 6 is
+    "supervised digest and scheduling readiness" rather than writeful
+    scheduling;
+  - updated `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` with the
+    future digest package, state-machine row, durable-record row, and harness
+    row;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md` with the digest gate in the
+    architecture backlog, extraction targets, and harness map;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` with the later
+    automation digest review panel and UI harness expectation;
+  - updated `docs/GROWTH_LEARNING_OPERATING_LOOP.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md` with the same durable boundary.
+- Digest boundary now documented:
+  - future service: `learning-automation-digest-service`;
+  - future repository/table: `automation-digests.js` and
+    `learning_growth_automation_digests`;
+  - future routes: `GET /api/v1/growth/automation/digests`,
+    `POST /api/v1/growth/automation/digests`, and
+    `POST /api/v1/growth/automation/digests/:digestId/review`;
+  - digest creation/review must not call Gateway, publish, record proposal
+    execution, notify, call Action Inbox, enqueue, or activate formal
+    assessment.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=28`, no
+    missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Next implementation priority remains Owner-supervised daily UI and
+  audit/correction UI before proposal review UI, digest backend/UI, and any
+  writeful scheduler work.
+
+## 2026-06-15 Growth Owner Daily-Loop Backend Facade Slice
+
+- Status: Owner daily-loop backend facade is implemented locally and
+  documented. This does not complete the embedded UI and does not deploy.
+- Change classification: H1/H2 backend workflow boundary. It adds Owner-only
+  daily-loop preview/draft/publish routes over existing services, but does not
+  add a new model boundary, scheduler, notification handoff, or direct SQLite
+  access.
+- Scope:
+  - added `src/services/learning-daily-loop-service.js`;
+  - wired `learningDailyLoopService` in `src/app/services.js`;
+  - added Owner-only `GET /api/v1/growth/daily-loop/preview`;
+  - added Owner-only `POST /api/v1/growth/daily-loop/draft`;
+  - added Owner-only `POST /api/v1/growth/daily-loop/publish`;
+  - routes enforce Owner role and Growth visible-target scope; write routes
+    also require workspace bearer authorization;
+  - service composes `learning-card-generation-context-service`,
+    `learning-plan-publisher-service`, `learning-cycle-audit-service`, and
+    `learning-audit-completeness-service`;
+  - preview returns bounded context/readiness/actions plus optional cycle audit
+    and completeness readback;
+  - draft delegates to `learning-plan-publisher-service.draftPlan`;
+  - publish delegates to `learning-plan-publisher-service.publishPlanItem`,
+    strips generated authoring draft internals, and refreshes bounded cycle
+    audit plus completeness DTOs even when publication fails;
+  - service rejects privacy-risk keys before downstream calls.
+- Boundaries:
+  - the daily-loop service must not call Gateway directly, create Gateway
+    clients, call card generation directly, inspect SQLite tables, send
+    notifications, call Action Inbox, activate stage assessments, or start any
+    scheduler;
+  - lower-level `learning-plans/draft` and `learning-plans/:id/publish` remain
+    available service boundaries, but the next embedded UI should prefer the
+    daily-loop facade.
+- Harness/code updated:
+  - `src/services/learning-daily-loop-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-daily-loop-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for daily-loop service, app services, routes, and touched
+    tests;
+  - focused route/service/architecture gate:
+    `node --test tests/learning-daily-loop-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`47` tests);
+  - expanded daily-loop focused gate:
+    `node --test tests/learning-daily-loop-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`72` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `npm run --silent check`;
+  - `npm test` (`333` tests);
+  - `git diff --check`.
+  - CodeGraph status (`167` JavaScript files, `1,926` nodes, `7,786`
+    edges).
+- Remaining:
+  - embedded UI consumption, frontend adapter/layout tests, central visual
+    harness, production planner readiness smoke, and deployment remain future
+    slices.
+
+## 2026-06-15 Growth Supervised Scheduler Dry-Run Slice
+
+- Status: read-only supervised scheduler dry-run is implemented locally and
+  documented. This is not a writeful scheduler and not automatic publication.
+- Change classification: H1/H2 backend workflow boundary. It adds an Owner-only
+  automation inspection route and service, but performs no durable writes,
+  publication, model calls, notifications, or stage activation.
+- Scope:
+  - added `src/services/learning-automation-scheduler-service.js`;
+  - wired `learningAutomationSchedulerService` in `src/app/services.js`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/scheduler/dry-run`;
+  - route requires workspace bearer authorization and Growth visible-target
+    scope, then delegates to the scheduler service;
+  - service lists `status=accepted` proposals through
+    `learning-automation-proposal-service.listProposals`;
+  - already-published proposal executions return `skipped_already_published`;
+  - remaining accepted proposals recheck source-cycle audit completeness
+    through `learning-audit-completeness-service`;
+  - audit failures return `blocked_audit` before provisioning is checked;
+  - provision failures return `blocked_provisioning`;
+  - passing candidates return `would_publish` with an explicit proposal publish
+    action, `dryRun=true`, `writePlanned=false`, `writesPerformed=false`, and
+    `publishPlanned=false`;
+  - the scheduler service must not call Gateway, model vendors,
+    `publishPlanItem`, `publishAcceptedProposal`, card generation, authoring,
+    evaluation, proposal execution recording, notifications, Action Inbox,
+    stage-assessment activation, or direct SQLite tables.
+- Harness/code updated:
+  - `src/services/learning-automation-scheduler-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-scheduler-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for scheduler service, app services, routes, and touched
+    tests;
+  - focused scheduler/route/architecture gate:
+    `node --test tests/learning-automation-scheduler-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`43` tests).
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - expanded scheduler focused gate:
+    `node --test tests/learning-automation-scheduler-service.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-target-provisioning-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`57` tests);
+  - `npm run --silent check`;
+  - `npm test` (`324` tests);
+  - `git diff --check`;
+  - CodeGraph status (`165` JavaScript files, `1,894` nodes, `7,588`
+    edges).
+- Remaining:
+  - writeful scheduler remains future work and must wait for rollback/failure
+    policy, Owner digest/review UI, and notification / Action Inbox handoff
+    harness;
+  - product-visible next slice remains Owner-supervised daily UI and
+    audit/correction UI.
+
+## 2026-06-15 Growth AI Learning Scheme Documentation Slice
+
+- Status: Growth-local scheme documentation is expanded for the next planning
+  and implementation phases. This was documentation-only; no service, route,
+  database, UI, production, or deployment behavior was changed in this slice.
+- Scope:
+  - `docs/GROWTH_DOCS_INDEX.md` now defines the scheme reading order and
+    requires every implementation slice to name its owning document, service
+    boundary, DTO/persistence boundary, harness, and release evidence instead
+    of relying on thread-local discussion;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md` now distinguishes current
+    direct generation/backend capability from product-complete AI learning-loop
+    capability, defines the end-state capability contract, and records the
+    next Owner-supervised daily browser-loop execution package with explicit
+    scope, non-goals, and acceptance requirements;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md` now defines a G1-G6 stage-gate map
+    and a scheduler dry-run-first rule before any writeful scheduling worker,
+    and its immediate next slice now has a ready-to-start contract for inputs,
+    backend routes, UI outputs, failure states, and harness;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` now defines the
+    implementation package contract: service boundary, DTO/persistence
+    boundary, harness boundary, documentation boundary, release evidence
+    boundary, and package closure checklist for the Owner-supervised daily
+    loop;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md` now has the architecture optimization
+    backlog for Owner daily UI, audit/correction UI, stage checkpoint UI,
+    multi-workspace/domain-pack closure, proposal review UI, and scheduler
+    dry-run;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md` now uses the same priority order
+    and explicitly keeps scheduler work behind auditability;
+  - `.agent-context/PROJECT_CONTEXT.md` now records that these Growth-local
+    documents are the durable planning source for the staged AI learning loop.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Next implementation priority remains the Owner-supervised daily browser loop
+  for one Fanfan science daily card, followed by Owner audit/correction UI.
+
+## 2026-06-15 Growth Accepted Proposal Publish Execution Slice
+
+- Status: accepted proposal publish execution is implemented locally and
+  documented. This is still not a scheduler. It adds an explicit Owner action
+  after proposal acceptance, delegates publication through the existing plan
+  publisher, and records bounded proposal execution metadata for audit/retry.
+- Change classification: H1 workflow state change because it touches accepted
+  proposal execution, publication outcome visibility, idempotency, and
+  persistent failure state.
+- Scope:
+  - `POST /api/v1/growth/automation/proposals/:proposalId/publish` is
+    Owner-only, workspace-bearer authorized, and Growth visible-target scoped;
+  - route logic delegates to
+    `learningAutomationProposalService.publishAcceptedProposal`;
+  - `publishAcceptedProposal` requires `status=accepted`;
+  - proposed, skipped, expired, and superseded proposals fail closed with
+    `learning_automation_proposal_not_accepted`;
+  - accepted proposal publication delegates only to
+    `learning-plan-publisher-service.publishPlanItem`;
+  - successful execution records bounded generated task-card / graph-plan ids
+    in `learning_growth_automation_proposals.execution_json`;
+  - successful execution is idempotent and does not call the plan publisher
+    again;
+  - failed or blocked publication records bounded execution metadata and leaves
+    the accepted proposal visible for explicit Owner retry;
+  - legacy proposal tables are migrated with `execution_json`, `executed_by`,
+    and `executed_at`;
+  - proposal execution does not call Gateway directly, model vendors, card
+    generation directly, authoring/evaluation services directly, formal
+    stage-assessment activation, or any scheduler.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/automation-proposals.js`;
+  - `src/services/learning-automation-proposal-service.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-proposal-repository.test.js`;
+  - `tests/learning-automation-proposal-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - syntax checks for updated proposal repository/service/routes/tests;
+  - focused proposal gate:
+    `node --test tests/learning-automation-proposal-repository.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-plan-publisher-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`62` tests).
+  - `npm run --silent check`;
+  - `npm test` (`319` tests);
+  - `git diff --check`;
+  - CodeGraph status (`163` JavaScript files, `1,865` nodes, `7,467`
+    edges).
+
+## 2026-06-15 Growth Supervised Automation Proposal Decision Slice
+
+- Status: documentation and focused harness coverage are updated for the
+  supervised automation proposal decision lifecycle. Repository-level
+  privacy/summary-only guards and bounded decision persistence are implemented.
+  This is the first
+  non-scheduling automation layer: Growth can propose a next learning action
+  from a completed auditable cycle and Owner can record an explicit proposal
+  decision, but proposal creation/review must not publish cards, activate stage
+  assessments, call Gateway directly, call card generation directly, or start a
+  scheduler.
+- Scope documented:
+  - source-cycle id is required before proposal creation;
+  - `learning-audit-completeness-service` must report readiness before a new
+    plan draft is requested;
+  - `learning-target-provisioning-service` must pass for the target learner,
+    domain pack, domain, subject, and requested target nodes;
+  - proposal creation may draft only through
+    `learning-plan-publisher-service.draftPlan`;
+  - proposal metadata is summary-only and belongs in
+    `learning_growth_automation_proposals`;
+  - `automation-proposals.js` rejects privacy-risk keys and non-summary
+    privacy classes even if a caller bypasses the service layer;
+  - `GET /api/v1/growth/automation/proposals` is visible-target read;
+  - `POST /api/v1/growth/automation/proposals` is Owner-only write;
+  - `POST /api/v1/growth/automation/proposals/:proposalId/decision` is
+    Owner-only write and accepts only `accepted`, `skipped`, `expired`, and
+    `superseded`;
+  - an `accepted` proposal returns the explicit Owner publish action but does
+    not publish the card;
+  - duplicate same-status terminal decisions are idempotent; conflicting
+    terminal decisions fail with
+    `learning_automation_proposal_already_decided`;
+  - legacy proposal tables are migrated with bounded decision columns;
+  - card publication remains explicit through
+    `POST /api/v1/growth/learning-plans/:planDraftId/publish`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check` for updated context/docs files;
+  - syntax checks for `learning-automation-proposal-service.js`,
+    `automation-proposals.js`, `growth-routes.js`,
+    `growth-architecture-boundary.test.js`,
+    `learning-automation-proposal-repository.test.js`, and
+    `learning-automation-proposal-service.test.js`;
+  - focused proposal gate:
+    `node --test tests/learning-automation-proposal-repository.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-plan-publisher-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`58` tests).
+  - `npm run --silent check`;
+  - `npm test` (`315` tests);
+  - `git diff --check`;
+  - CodeGraph status (`163` JavaScript files, `1,859` nodes, `7,400`
+    edges).
+- Remaining:
+  - add proposal review UI only after Owner plan/audit UI can explain the
+    source cycle;
+  - do not start scheduler work until proposal review, rollback/failure, and
+    notification/action handoff are separately designed and tested.
+
+## 2026-06-15 Growth Audit Completeness Readback Slice
+
+- Status: visible-target scoped audit-completeness readback is implemented
+  locally and documented. This slice adds a read-only service and route over
+  the existing learning-cycle audit aggregate so Owner UI and future supervised
+  automation can tell whether required bounded audit evidence exists before
+  treating a cycle as closed. It did not add embedded UI, scheduler workers,
+  production config, production data changes, deployment, or real Gateway
+  calls.
+- Change classification: H2 read API/service-composition change with
+  service-first and harness coverage.
+- Scope:
+  - added `src/services/learning-audit-completeness-service.js`;
+  - added `GET /api/v1/growth/learning-cycles/completeness`;
+  - the route uses the same Growth visible-target read boundary as
+    `learning-cycles/audit`;
+  - the route delegates to
+    `learningAuditCompletenessService.evaluateCycleCompleteness`;
+  - the service reads only the public DTO returned by
+    `learning-cycle-audit-service`;
+  - required findings cover plan publication, publish-attempt visibility,
+    evaluation evidence, profile-delta audit, downstream partial failures, and
+    privacy projection;
+  - optional findings cover Owner correction and next recommendation
+    visibility;
+  - output includes `complete`, `readyForAutomation`,
+    `summary.missingRequired`, bounded findings, and bounded cycle summary
+    data;
+  - the service is read-only: it does not inspect SQLite tables directly, call
+    Gateway, write durable state, start scheduling, or expose raw learner
+    answers, transcripts, prompts, raw model output, source-document bodies,
+    private paths, credentials, or provider configuration.
+- Harness/code updated:
+  - `src/services/learning-audit-completeness-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `package.json`;
+  - `tests/learning-audit-completeness-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=27`,
+    no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - focused audit-completeness/service/route/architecture gate:
+    `node --test tests/learning-audit-completeness-service.test.js
+    tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`45` tests);
+  - expanded operating-loop gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`108` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`305` tests);
+  - `git diff --check`;
+  - CodeGraph status (`159` JavaScript files, `1,802` nodes, `7,155`
+    edges).
+- Remaining:
+  - embedded Owner UI rendering for plan preview/provision controls,
+    profile-delta/correction/cycle/completeness audit, and planner publish;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - scheduler/automation remains future work and must not use
+    `readyForAutomation` as permission to bypass Owner policy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth Plan Publish Attempt Audit Slice
+
+- Status: bounded plan publish-attempt audit metadata is implemented locally.
+  This slice changed the plan draft SQLite repository, plan publisher service,
+  plan audit service, cycle audit service, focused harnesses, architecture
+  guard, docs, and workspace context. It did not add embedded UI, production
+  config, production data changes, deployment, or real Gateway calls.
+- Change classification: H2 persistence/API-data-contract change with
+  service-first and harness coverage.
+- Scope:
+  - `learning_growth_plan_drafts` now has compatible schema columns for
+    `last_publish_status`, `last_publish_error`, `last_publish_stage`,
+    `last_publish_item_id`, `last_publish_attempt_at`, and
+    `publish_attempt_count`;
+  - `learning-plan-drafts.js` adds `markPublishAttempt` and migrates old
+    existing plan-draft tables by adding missing columns;
+  - successful publish sets latest publish-attempt status to `published`;
+  - failed generation, missing selected item, privacy/provisioning block, and
+    stage-assessment direct-publish block write bounded latest publish-attempt
+    metadata while preserving the draft/unpublished state;
+  - stage-checkpoint direct publish remains blocked with
+    `stage_assessment_activation_required`;
+  - `learning-plan-audit-service` exposes `publishAttempt` and summary counts
+    for failed/blocked attempts;
+  - `learning-cycle-audit-service` includes `plan_publish_attempt` timeline
+    events and summary failed/blocked counts;
+  - no raw learner answers, transcripts, prompts, raw model output, source
+    bodies, private paths, credentials, or provider config are persisted or
+    projected by this metadata.
+- Harness/code updated:
+  - `src/stores/growth-learning-sqlite/learning-plan-drafts.js`;
+  - `src/services/learning-plan-publisher-service.js`;
+  - `src/services/learning-plan-audit-service.js`;
+  - `src/services/learning-cycle-audit-service.js`;
+  - `tests/learning-plan-publisher-service.test.js`;
+  - `tests/learning-plan-audit-service.test.js`;
+  - `tests/learning-cycle-audit-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed repository/services/tests;
+  - focused plan publish-attempt/audit/architecture gate:
+    `node --test tests/learning-plan-publisher-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/growth-architecture-boundary.test.js` (`24` tests).
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - expanded operating-loop focused gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`103` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`300` tests);
+  - `git diff --check`;
+  - CodeGraph status (`157` JavaScript files, `1,779` nodes, `7,049`
+    edges).
+- Remaining:
+  - embedded Owner UI rendering for failed/blocked plan publish attempts,
+    planner preview/provision controls, and profile-delta/correction audit;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth Learning Cycle Audit Aggregate Slice
+
+- Status: visible-target scoped learning-cycle audit aggregation is
+  implemented locally. This slice changed backend services, Growth routes,
+  service/route/architecture harnesses, docs, and workspace context. It did
+  not add embedded UI, schema, production config, production data changes,
+  deployment, or real Gateway calls.
+- Change classification: H2 API/data-contract change with service-first and
+  harness coverage.
+- Scope:
+  - added `src/services/learning-cycle-audit-service.js`;
+  - added `GET /api/v1/growth/learning-cycles/audit`;
+  - the route delegates to `learning-cycle-audit-service.listCycleAudit`;
+  - the route uses the same Growth visible-target read boundary as
+    `card-generation/context`, `evidence/audit`, `learning-plans/audit`,
+    `profile-delta-audits`, and `profile-corrections`;
+  - query filters include `learnerId`, `programId`, `planDraftId`,
+    `taskCardId`, `evaluationId`, `profileDeltaId`, `evidenceId`,
+    `correctionId`, `sourceId`, comma-separated `targetNodeIds`, and `limit`;
+  - the service composes public DTOs from `learning-plan-audit-service`,
+    `learning-evidence-audit-service`,
+    `learning-profile-delta-audit-service`, and
+    `learning-owner-correction-service`;
+  - public output includes bounded counts, partial-failure markers,
+    sanitized plan/evidence/profile-delta/correction sections, and a timeline;
+  - the route does not inspect SQLite tables, and the service does not project
+    raw learner answers, transcripts, prompts, raw model output, source bodies,
+    private paths, credentials, or provider configuration.
+- Harness/code updated:
+  - `src/services/learning-cycle-audit-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `package.json`;
+  - `tests/learning-cycle-audit-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed service/app/routes/tests;
+  - focused cycle-audit/service/route/architecture gate:
+    `node --test tests/learning-cycle-audit-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-owner-correction-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`48` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - expanded operating-loop gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`101` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`298` tests);
+  - `git diff --check`;
+  - CodeGraph status (`157` JavaScript files, `1,776` nodes, `7,009`
+    edges).
+- Remaining:
+  - embedded Owner UI rendering for cycle audit, plan/evidence/profile-delta/
+    correction audit, and provision controls;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth AI Learning Closed-Loop Plan Documentation
+
+- Status: the Growth AI learning scheme now has a single plugin-local entry
+  point in `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`. This slice changed
+  documentation, docs-locality harness, and workspace context only; it did not
+  add runtime code, schema, UI, production config, production data changes,
+  deployment, or real Gateway calls.
+- Change classification: H2 product/architecture contract documentation
+  change with docs-locality harness coverage.
+- Scope:
+  - documented the supervised AI learning loop from Owner target selection to
+    planner draft, card authoring, learner evidence, one-shot evaluation,
+    evidence ledger, Profile V2, profile-delta audit, correction evidence, and
+    next recommendation;
+  - documented the learner state model, including evidence freshness,
+    unknown-versus-weak distinction, daily versus formal evidence weights,
+    stale-evidence behavior, pressure signals, and Owner-reviewed corrections;
+  - documented the daily practice versus stage-assessment card families and
+    reinforced `daily_score_once` as the daily low-pressure policy;
+  - documented the three model-entered steps: planner, authoring, and
+    evaluation through Gateway only;
+  - documented service-first ownership, Owner browser workflow, audit
+    requirements, generalization rules, failure policy, staged implementation
+    plan, and harness contract;
+  - registered the next backend-only implementation slice as a planned
+    learning-cycle audit aggregate over plan, evidence, profile-delta, and
+    correction readbacks;
+  - updated docs-locality checks so the new scheme document is required and
+    checked for forbidden Home AI Growth doc pointers.
+- Documentation/harness updated:
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `scripts/check-growth-docs-locality.js`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `npm run --silent check`;
+  - `git diff --check`.
+- Next implementation slice:
+  - implement `learning-cycle-audit-service` plus
+    `GET /api/v1/growth/learning-cycles/audit`, with focused service, route,
+    architecture, docs-locality, and broad local validation.
+
+## 2026-06-15 Growth Evidence Audit Readback API Slice
+
+- Status: visible-target scoped evidence-ledger audit readback is implemented
+  and validated locally. This slice changed backend services, SQLite
+  repository filtering, Growth routes, route/service/architecture harnesses,
+  docs, and workspace context. It did not add embedded UI, production config,
+  production data changes, deployment, or real Gateway calls.
+- Change classification: H2 API/data-contract change with service-first and
+  harness coverage.
+- Scope:
+  - added `src/services/learning-evidence-audit-service.js`;
+  - added `GET /api/v1/growth/evidence/audit`;
+  - the route delegates to
+    `learning-evidence-audit-service.listEvidenceAudit`;
+  - the route uses the same Growth visible-target read boundary as
+    `card-generation/context`, `profile-delta-audits`,
+    `learning-plans/audit`, and `profile-corrections`;
+  - query filters include `learnerId`, `programId`, `evidenceId`,
+    `sourceType`, `sourceId`, `taskCardId`, `cardRole`, `status`,
+    comma-separated `targetNodeIds`, and `limit`;
+  - `learning_growth_evidence_ledger` listing now supports evidence/source/
+    task-card/card-role/status filters through the repository boundary;
+  - public DTOs strip raw/private summary fields and include only bounded
+    ids, source metadata, graph node ids, score band, status, weight,
+    confidence, timestamps, and summary-only audit fields.
+- Harness/code updated:
+  - `src/services/learning-evidence-audit-service.js`;
+  - `src/stores/growth-learning-sqlite/evidence-ledger.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-evidence-audit-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed service/repository/app/routes/tests;
+  - focused evidence/route/architecture gate:
+    `node --test tests/learning-evidence-audit-service.test.js
+    tests/learning-evidence-ledger-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`40` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - expanded operating-loop focused gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-evidence-audit-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`97` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`294` tests);
+  - `git diff --check`;
+  - CodeGraph status (`155` JavaScript files, `1,749` nodes, `6,825`
+    edges).
+- Remaining:
+  - embedded Owner UI rendering for plan/evidence/profile-delta/correction
+    audit and provision controls;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth AI Learning Scheme Playbook Documentation
+
+- Status: the AI-driven learning scheme documentation has been expanded in
+  the Growth plugin workspace. This slice changed documentation and workspace
+  context only; it did not add runtime code, schema, UI, production config,
+  production data changes, deployment, or real Gateway calls.
+- Change classification: H2 product/architecture contract documentation
+  change with docs-locality and broad local validation.
+- Scope:
+  - added an Owner workflow playbook for creating one Fanfan science daily
+    card from the Growth `生成` tab;
+  - documented the default sample selectors: Fanfan target, `fanfan`,
+    UK/HK curriculum foundation, `domain=science`, `subject=science`,
+    `horizon=daily_plan`, and `availableMinutes=15`;
+  - documented the browser-complete daily-card path from context load,
+    planner draft, explicit publish, card open, learner completion, and Owner
+    audit refresh;
+  - documented capability readiness levels from backend foundation through
+    Owner-supervised browser loop, closed audit loop, generalized target loop,
+    and supervised automation;
+  - tightened the planner-backed UI progress/error contract so drafting and
+    publishing cannot become silent no-op actions.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - operating-loop focused gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`94` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`291` tests);
+  - CodeGraph status (`153` JavaScript files, `1,729` nodes, `6,731`
+    edges).
+
+## 2026-06-15 Growth Plan Audit Read Route Slice
+
+- Status: visible-target scoped plan audit readback route is implemented and
+  focused-harness validated locally. This slice changed the Growth route layer,
+  route tests, architecture guard, docs, and workspace context. It did not add
+  embedded UI, schema, production config, production data changes, deployment,
+  or real Gateway calls.
+- Change classification: H2 API/data-contract change with service-first
+  coverage.
+- Scope:
+  - added `GET /api/v1/growth/learning-plans/audit`;
+  - the route delegates to `learning-plan-audit-service.listPlanDrafts`;
+  - the route uses the same Growth visible-target read boundary as
+    `card-generation/context`, `profile-delta-audits`, and
+    `profile-corrections`;
+  - query filters include `learnerId`, `programId`, `status`,
+    comma-separated `targetNodeIds` / `target_node_ids`, and `limit`;
+  - route code does not inspect `learning_growth_plan_drafts` or implement
+    plan-audit projection logic directly.
+- Harness/code updated:
+  - `src/routes/growth-routes.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed route/tests;
+  - `node --test tests/growth-routes.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/growth-architecture-boundary.test.js` (`36` tests).
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - operating-loop focused gate (`94` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`291` tests);
+  - CodeGraph status (`153` JavaScript files, `1,729` nodes, `6,731`
+    edges).
+
+## 2026-06-15 Growth Plan Audit Readback Backend Slice
+
+- Status: plan audit readback is implemented and validated locally. This slice
+  changed backend services, plan-draft repository filtering, Owner generation
+  context projection, focused harnesses, architecture docs, and workspace
+  context. It did not add embedded UI, production config, production data
+  changes, deployment, or real Gateway calls.
+- Change classification: H2 backend/data-contract change with service-first
+  and harness coverage.
+- Scope:
+  - new `learning-plan-audit-service` projects recent validated plan drafts
+    and publication audit links from `learning_growth_plan_drafts` through the
+    existing plan-draft repository;
+  - `learning-plan-drafts.js` now supports `programId` filtering in
+    `listDrafts`;
+  - `learning-card-generation-context-service` now injects the plan audit
+    service and exposes bounded `ownerAudit.planAudit` plus top-level
+    `planAudit`;
+  - `ownerAudit.summary` now includes plan-draft counts, published-plan counts,
+    last plan timestamp, and last published timestamp;
+  - context public DTOs include plan draft id, horizon, status, selected item,
+    generated task-card id, generated graph-plan id, bounded target nodes,
+    basis evidence ids, timestamps, and summary-only reasons while stripping
+    raw/private fields.
+- Harness/code updated:
+  - `src/services/learning-plan-audit-service.js`;
+  - `src/services/learning-card-generation-context-service.js`;
+  - `src/stores/growth-learning-sqlite/learning-plan-drafts.js`;
+  - `src/app/services.js`;
+  - `tests/learning-plan-audit-service.test.js`;
+  - `tests/learning-card-generation-context-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed service/repository/tests;
+  - `node --test tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-owner-correction-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`50` tests);
+  - operating-loop focused gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-plan-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`93` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`290` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Remaining:
+  - embedded Owner UI rendering for plan audit/provision/profile-delta/correction;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth AI Learning Scheme Documentation Update
+
+- Status: the high-level AI-driven learning scheme is now documented in the
+  Growth plugin workspace. This slice changed documentation and workspace
+  context only; it did not add runtime code, schema, UI, production config,
+  production data changes, deployment, or real Gateway calls.
+- Canonical Growth-local scheme entry:
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`.
+- Scope added to the roadmap:
+  - capability model for the complete loop from target selection to the next
+    recommendation;
+  - scientific learning policy for evidence weight, mastery claims,
+    stale-evidence handling, low-pressure planning, and stage assessment
+    separation;
+  - Owner operating modes for Generate, Audit, Assess, and Review;
+  - documentation and harness contract requiring behavior changes to update
+    durable docs plus the smallest relevant service/route/AI/UI/visual
+    harness.
+- Documentation references updated:
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+
+## 2026-06-15 Growth Non-Sample Provisioned Vertical Backend Closure
+
+- Status: backend/database/Harness progress toward the multi-workspace and
+  domain-pack generalization target is implemented and validated locally. This
+  slice changed backend graph persistence/projection, graph plan DTOs, card
+  authoring audit metadata, tests, docs, and workspace context. It did not add
+  embedded UI, production config, production data changes, deployment, or real
+  Gateway calls.
+- Change classification: H2 backend/data-contract change with service-first
+  and harness coverage.
+- Scope:
+  - `graph-repository` now infers a node's `domainPackId` from the node domain
+    when a multi-pack graph seed omits per-node `domainPackId`, before falling
+    back to the first pack;
+  - `learning-graph-plan-service` includes `domainPackId`, `domain`, and
+    `subject` in graph plan DTOs and stable plan ids;
+  - graph plan readback returns those fields from the stored raw plan JSON;
+  - `card-authoring-publisher` persists `domainPackId`, `domain`, and
+    `subject` inside generated card `raw_json.learningGraph`;
+  - `tests/learning-card-ai-loop-harness.test.js` now wires
+    `learning-target-provisioning-service` like the app composition root and
+    adds a non-sample science vertical: unprovisioned draft/direct generation
+    are blocked before planner/authoring Gateway calls, explicit
+    domain-pack/subject provision enables draft/publish/evaluate/profile, wrong
+    subject remains blocked, and plan/card/evidence/Profile V2/profile-delta
+    rows stay target-workspace scoped.
+- Harness/code updated:
+  - `tests/learning-graph-repository.test.js` covers multi-pack node
+    domain-pack inference;
+  - `tests/learning-graph-plan-binding-service.test.js` covers graph plan
+    domain-pack/domain/subject output;
+  - `tests/learning-card-ai-loop-harness.test.js` covers the provisioned
+    non-sample science vertical;
+  - `tests/growth-architecture-boundary.test.js` guards graph pack inference,
+    graph plan provenance, card raw audit provenance, and AI-loop harness
+    provisioning coverage.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Validation passed:
+  - syntax checks for changed services/repositories/tests;
+  - `node --test tests/learning-graph-repository.test.js
+    tests/learning-graph-plan-binding-service.test.js
+    tests/learning-card-generation-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-architecture-boundary.test.js` (`36` tests);
+  - operating-loop focused gate:
+    `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-graph-plan-binding-service.test.js
+    tests/learning-card-generation-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`104` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`288` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `codegraph status` (`151` JavaScript files, `1,702` nodes,
+    `6,590` edges, index up to date).
+- Remaining:
+  - embedded Owner target/domain-pack/provision UI and audit rendering;
+  - production planner readiness smoke with real Gateway config;
+  - central Home AI embedded-plugin visual harness before production UI deploy;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth AI Learning Roadmap Documentation Closure
+
+- Status: the supervised AI learning roadmap has been added to the Growth
+  plugin workspace and linked from the existing Growth design documents. This
+  slice changed documentation, the docs-locality harness list, and workspace
+  context only; it did not add runtime code, schema, UI, production config,
+  production data changes, deployment, or real Gateway calls.
+- New canonical planning entry:
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`.
+- Scope captured:
+  - product rules for low-pressure daily practice versus formal stage
+    assessments;
+  - Gateway-only model-entered steps for planning, authoring, and evaluation;
+  - closed-loop state chain from Owner target selection through profile delta,
+    Owner correction, and next recommendation;
+  - current backend capability baseline;
+  - delivery stages for Owner-supervised daily planning UI, audit/correction
+    UI, stage checkpoint loop, multi-workspace/domain-pack generalization, and
+    later supervised scheduling;
+  - data ownership, failure policy, release gates, and the immediate next
+    implementation slice.
+- Documentation updated:
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`.
+- Harness updated:
+  - `scripts/check-growth-docs-locality.js` now requires and scans
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`;
+  - `rg -n "[ \\t]$" docs/GROWTH_AI_LEARNING_ROADMAP.md
+    docs/GROWTH_LEARNING_OPERATING_LOOP.md
+    docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` returned no matches.
+- Next implementation entry:
+  - implement Stage 1 from the roadmap: the embedded Owner `生成` tab should
+    render target/scope, readiness/profile, plan/publish, and audit/next-step
+    panels using existing service DTOs and routes, then pass focused frontend
+    harness and the central Home AI embedded-plugin visual harness before
+    production deploy.
+
+## 2026-06-15 Growth Profile V2 Stale-Evidence Policy Closure
+
+- Status: expanded stale-evidence policy is implemented and focused-harness
+  validated locally. This slice changed backend/profile logic, planner-context
+  projection, docs, and tests. It did not add schema, production config,
+  production data changes, UI changes, deployment, or real Gateway calls.
+- Scope:
+  - `learning-profile-v2-service` now distinguishes daily learning evidence,
+    formal stage-assessment evidence, and Owner correction evidence for
+    evidence freshness;
+  - daily evidence uses the existing short stale window, formal assessment
+    evidence uses a longer freshness window, and Owner-reviewed corrections no
+    longer refresh learner-evidence recency;
+  - public capability states now expose bounded `evidenceFreshness`,
+    learning/formal/daily/correction timestamps, `staleReasons`, and
+    `staleEvidence` summaries;
+  - stale strengths no longer become stretch hints; Profile V2 emits a
+    low-pressure `review` planner hint so stale claims are refreshed before
+    stronger claims or formal assessment;
+  - `learning-planner-context-service` now carries bounded
+    `profileSummary.staleEvidence` into `growth.learningPlanner.input.v1`.
+- Harness/code updated:
+  - `tests/learning-profile-v2-service.test.js` covers stale strong evidence,
+    Owner correction non-refresh behavior, and longer formal assessment
+    freshness;
+  - `tests/learning-planner-context-service.test.js` proves stale evidence is
+    present in planner input;
+  - `tests/growth-architecture-boundary.test.js` guards the Profile V2 stale
+    policy and planner-context projection markers.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - syntax checks for changed service/tests;
+  - `node --test tests/learning-profile-v2-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/growth-architecture-boundary.test.js` (`17` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`88` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`285` tests);
+  - `git diff --check`;
+  - `codegraph status` (`151` JavaScript files, `1,698` nodes,
+    `6,519` edges).
+
+## 2026-06-15 Growth AI Learning Loop Plan Documentation Closure
+
+- Status: the next-stage AI-driven learning-loop plan is documented in the
+  Growth plugin workspace. This slice changed documentation and workspace
+  context only; it did not add runtime code, schema, production config,
+  production data changes, or deployment.
+- Scope:
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` now defines a staged
+    execution roadmap from current backend state through Owner-supervised daily
+    planning UI, audit/correction UI, stage-checkpoint UI,
+    multi-workspace/domain-pack rollout, and later supervised scheduling;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md` now documents the next
+    architecture optimization plan, including Owner-supervised daily loop,
+    audit-complete profile loop, stage checkpoint loop, multi-workspace
+    generalization, and supervised automation constraints;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` now documents the Owner
+    daily-loop screen contract, the four required panels, `ownerAudit` as the
+    default readback surface, correction-action behavior, and focused UI
+    harness expectations;
+  - `docs/GROWTH_DOCS_INDEX.md` and `.agent-context/PROJECT_CONTEXT.md` now
+    point to the expanded roadmap and execution blueprint.
+- Key product rules captured:
+  - daily cards remain 10-15 minute low-pressure cards with one submission,
+    one evaluation, and one optional reflection;
+  - formal stage assessments stay separate, high-weight, cooldown-aware, and
+    activated only through `learning-stage-assessment-service`;
+  - only planner, authoring, and evaluation enter Gateway; all other policy,
+    validation, audit, profile projection, and persistence stay service-owned;
+  - Owner UI must use bounded service DTOs and must not compute profile diffs,
+    assemble prompts, call Gateway directly, or mutate Profile V2 optimistically.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `git diff --check`.
+- Next implementation entry:
+  - build the embedded Owner planner/provision/audit UI slice in the existing
+    Growth `生成` tab, using the documented four-panel contract and the
+    already implemented backend context/draft/publish/provision/audit routes.
+
+## 2026-06-15 Growth Owner Profile Correction Backend Closure
+
+- Status: Owner-reviewed profile correction backend is implemented and
+  validated locally. No UI, production deploy, production config, or
+  production data change was made in this slice.
+- Scope:
+  - added `learning-owner-correction-service`, which validates
+    target-provisioning, rejects privacy-risk payloads, writes
+    `owner_reviewed_correction` evidence through
+    `learning-evidence-ledger-service`, and reads grouped public correction
+    DTOs from the same ledger;
+  - added Owner-only `POST /api/v1/growth/profile-corrections` and visible
+    target-scoped `GET /api/v1/growth/profile-corrections`;
+  - `learning-profile-v2-service` now applies
+    `owner_reviewed_correction` rows as auditable state adjustments while
+    retaining older evidence ids and source types;
+  - `src/app/services.js` wires the new service with the existing evidence
+    ledger and target-provisioning services;
+  - `npm run check` now syntax-checks the new service file.
+- Harness/code updated:
+  - `tests/learning-owner-correction-service.test.js` proves summary-only
+    ledger writes/readback, Profile V2 absorption, privacy rejection, and
+    provisioning failure behavior;
+  - `tests/growth-routes.test.js` proves profile-correction GET/POST target
+    visibility, Owner-only write, workspace-bearer, and service delegation;
+  - `tests/growth-architecture-boundary.test.js` guards that Owner correction
+    remains service-owned and routes do not touch ledger tables;
+  - `tests/learning-profile-v2-service.test.js` remains part of the focused
+    gate because Profile V2 aggregation semantics changed.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `node --test tests/learning-owner-correction-service.test.js
+    tests/learning-profile-v2-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`38` tests);
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-owner-correction-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`85` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`282` tests);
+  - `git diff --check`;
+  - `codegraph status` (`151` JavaScript files, `1,686` nodes,
+    `6,418` edges, index up to date).
+- Remaining:
+  - embedded Owner audit UI for profile-delta and profile-correction DTOs;
+  - production planner smoke and central visual harness before production UI
+    enablement;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth Planner Stage Readiness Projection Closure
+
+- Status: read-only stage-assessment readiness is now projected into planner
+  context and Owner-safe generation context locally. No UI, production deploy,
+  production config, or production data change was made in this slice.
+- Scope:
+  - added `learning-stage-assessment-service.stageReadiness()`, a read-only
+    eligibility/cooldown/active/dormant projection that does not write
+    `learning_growth_stage_assessment_cycles`;
+  - `learning-planner-context-service` now injects
+    `stageAssessmentService`, includes bounded `stageAssessment` readiness in
+    `growth.learningPlanner.input.v1`, and does not call writeful
+    `evaluateEligibility()` from planner-context reads;
+  - `learning-card-generation-context-service` exposes the same bounded
+    stage-assessment readiness inside `plannerContextPreview.stageAssessment`;
+  - `src/app/services.js` composition order now creates
+    `learningStageAssessmentService` before `learningPlannerContextService`
+    so planner context can consume the read-only stage readiness boundary.
+- Harness/code updated:
+  - `tests/learning-stage-assessment-service.test.js` proves
+    `stageReadiness()` is read-only and bounded;
+  - `tests/learning-planner-context-service.test.js` proves planner context
+    includes bounded stage readiness and coverage node ids;
+  - `tests/learning-card-generation-context-service.test.js` proves the
+    Owner-safe preview projects stage readiness without raw markers;
+  - `tests/growth-architecture-boundary.test.js` guards that planner context
+    uses `stageReadiness` and not `evaluateEligibility`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - syntax checks for changed services/tests;
+  - `node --test tests/learning-stage-assessment-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/growth-architecture-boundary.test.js` (`28` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`81` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`278` tests);
+  - `git diff --check`;
+  - `codegraph status` (`149` JavaScript files, `1,654` nodes,
+    `6,288` edges, index up to date).
+
+## 2026-06-15 Growth Planner Horizon Policy Backend Closure
+
+- Status: backend planner horizon policy is implemented and focused-harness
+  validated locally. No UI, production deploy, production config, or
+  production data change was made in this slice.
+- Scope:
+  - `learning-planner-context-service` now defaults `weekly_plan` and
+    `repair_plan` to low-pressure `daily_score_once` roles, and defaults
+    `stage_checkpoint_plan` to `formal_assessment` with
+    `stage_assessment` as the only default role;
+  - `learning-plan-validation-service` validates allowed horizons, rejects
+    weekly backlog pressure, rejects weekly formal-assessment items, rejects
+    repair plans that become high-pressure or formal, and accepts
+    `stage_checkpoint_plan` only when the draft declares
+    `learning-stage-assessment-service` activation policy and explicit
+    coverage;
+  - `learning-plan-publisher-service` refuses direct publication for
+    `stage_checkpoint_plan`, `stage_assessment`, or `formal_assessment` items
+    with `stage_assessment_activation_required`, so planner output cannot
+    bypass `learning-stage-assessment-service`;
+  - architecture guard now asserts weekly/stage checkpoint policy markers stay
+    service-owned.
+- Harness/code updated:
+  - `tests/learning-plan-orchestrator-service.test.js` covers weekly
+    low-pressure acceptance, weekly backlog/formal rejection, stage-checkpoint
+    acceptance with activation policy, and missing activation rejection;
+  - `tests/learning-plan-publisher-service.test.js` covers direct
+    stage-assessment publish blocking and proves no card generation call or
+    draft mutation happens;
+  - `tests/growth-architecture-boundary.test.js` guards the policy boundary.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - syntax checks for changed planner validation/context/publisher services
+    and focused tests;
+  - `node --test tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/growth-architecture-boundary.test.js` (`28` tests).
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`81` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`277` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `149` indexed JavaScript files, `1652` nodes, `6252` edges.
+- Remaining:
+  - embedded Owner planner/provision/audit UI and production planner smoke
+    remain future slices.
+
+## 2026-06-15 Growth Learning Loop Documentation And Audit Read Contract Refresh
+
+- Status: documentation has been refreshed for the supervised AI learning
+  operating-loop plan and the profile-delta audit read contract. No UI,
+  production deploy, production config, or production data change was made in
+  this slice.
+- Scope:
+  - clarified the staged capability milestones for the AI learning loop:
+    backend evidence loop, Owner supervised daily loop, stage checkpoint loop,
+    multi-workspace/domain-pack loop, and later supervised automation;
+  - documented `GET /api/v1/growth/profile-delta-audits` as the bounded
+    readback surface for persisted `learning_growth_profile_delta_audits`
+    rows;
+  - synchronized the blueprint, main operating-loop document, Owner generation
+    UI contract, card-level AI loop, architecture document, platform pointer,
+    and project context so future work does not infer implementation state from
+    code alone.
+- Current backend status:
+  - `learning-profile-delta-audit-service` and the read route are implemented
+    locally in the working tree;
+  - embedded Owner audit UI rendering is still pending;
+  - production planner readiness smoke and central visual harness remain
+    required before any production rollout of the planner/provision UI.
+- Validation passed:
+  - `node --test tests/learning-profile-delta-audit-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`36` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js` (`1` test);
+  - `npm run --silent check`;
+  - `git diff --check`.
+
+## 2026-06-15 Growth Profile Delta Audit Persistence Closure
+
+- Status: durable post-evaluation profile-delta audit persistence is
+  implemented and focused-harness validated locally. No UI,
+  production deploy, production config, or production data change was made in
+  this slice. The read route was added in a later working-tree continuation and
+  is documented in the section above.
+- Scope:
+  - added `src/stores/growth-learning-sqlite/profile-delta-audits.js`;
+  - added stable `stableProfileDeltaAuditId`;
+  - `growth-learning-sqlite-store` now exposes
+    `profileDeltaAuditRepository`;
+  - `src/app/services.js` injects the repository into
+    `learning-profile-delta-service`;
+  - `learning-profile-delta-service` persists successful bounded deltas after
+    computing them, reports persistence failure visibly, and does not throw
+    into evaluation completion;
+  - persisted rows live in `learning_growth_profile_delta_audits`, are
+    idempotent by `(workspace_id, evaluation_id)`, and public DTOs exclude
+    raw/private payloads;
+  - `package.json` syntax check now includes the new repository.
+- Harness/code updated:
+  - `tests/learning-profile-delta-audit-repository.test.js` covers record,
+    list, duplicate-by-evaluation, privacy-risk key rejection, and
+    non-summary privacy-class rejection;
+  - `tests/learning-profile-delta-service.test.js` covers persistence success
+    and visible persistence failure;
+  - `tests/learning-card-ai-loop-harness.test.js` asserts both daily English
+    and Fanfan science evaluation flows persist queryable profile-delta audit
+    rows without raw marker leakage;
+  - `tests/growth-architecture-boundary.test.js` guards repository wiring and
+    keeps routes out of profile-delta table internals.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - syntax checks for new/changed repository, service, store, app wiring, and
+    harness files;
+  - package JSON parse check;
+  - `node --test tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-architecture-boundary.test.js` (`27` tests).
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-profile-delta-audit-repository.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`73` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`269` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `147` indexed JavaScript files, `1633` nodes, `6193` edges.
+- Remaining next implementation checks:
+  - implement embedded Owner plan preview/provision/profile-delta audit UI in
+    the Growth `生成` tab;
+  - run `npm run smoke:planner-readiness` against real Gateway config before
+    enabling planner UI in production;
+  - run central Home AI visual harness before production publish;
+  - commit/push/deploy only after the user asks or after UI/production closure
+    is ready.
+
+## 2026-06-15 Growth AI Learning Loop Blueprint Documentation Closure
+
+- Status: documentation-only closure for the AI-driven Growth learning-loop
+  execution blueprint. No runtime code, schema, UI, deployment, production
+  config, or production data was changed in this slice.
+- Scope:
+  - added `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` as the
+    execution-ready plan for the supervised AI learning loop;
+  - the blueprint records loop state, durable record ownership, model-entered
+    steps, daily-vs-stage policy, Fanfan science operational path, next
+    implementation slices, durable profile-delta audit persistence plan, and
+    harness matrix;
+  - synchronized `docs/GROWTH_LEARNING_OPERATING_LOOP.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`, `docs/GROWTH_AI_CARD_LOOP.md`,
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_DOCS_INDEX.md`, `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `.agent-context/PROJECT_CONTEXT.md`, and
+    `scripts/check-growth-docs-locality.js`.
+- Current boundary clarified:
+  - post-evaluation `profile_delta` DTO exists and is returned by evaluation
+    processing;
+  - durable `learning_growth_profile_delta_audits` persistence/readback is the
+    next backend-hardening slice before Owner historical audit UI;
+  - embedded Owner planner/provision UI and production planner readiness smoke
+    remain later slices.
+- Required validation for this documentation slice:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`.
+
+## 2026-06-15 Growth Profile Delta Backend Closure
+
+- Status: post-evaluation profile-delta backend service, app wiring, harness,
+  and docs are implemented and validated locally. No UI, production deploy, or
+  production data change was made in this slice.
+- Scope:
+  - added `learning-profile-delta-service`, a summary-only audit projection
+    over bounded Profile V2 before/after snapshots;
+  - `growth-evaluation-service` now snapshots Profile V2 before
+    profile/ledger writes, then returns `profile_delta` after ledger/profile
+    writes;
+  - profile-delta failures are visible but non-fatal and do not duplicate or
+    roll back already-persisted evaluation, reward, ledger, stage-cycle, or
+    trajectory state;
+  - `src/app/services.js` wires `learningProfileDeltaService` after Profile V2
+    and injects it into `growthEvaluationService`;
+  - `package.json` includes the new service in `npm run check`;
+  - no route, browser UI, model boundary, or database table was added for this
+    slice.
+- Harness/code updated:
+  - `tests/learning-profile-delta-service.test.js` covers changed capability
+    projection, no-change projection, unavailable Profile V2 behavior, and raw
+    legacy profile exclusion;
+  - `tests/growth-evaluation-service.test.js` covers profile-delta
+    orchestration after ledger writes and visible non-fatal profile-delta
+    failure;
+  - `tests/learning-card-ai-loop-harness.test.js` now injects the real
+    profile-delta service and asserts daily English plus Fanfan science
+    verticals return bounded `profile_delta` without raw marker leakage;
+  - `tests/growth-architecture-boundary.test.js` guards service-first wiring
+    and keeps routes out of profile-delta internals.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - syntax checks for changed service/composition/test files;
+  - `node -e "JSON.parse(require('node:fs').readFileSync('package.json','utf8')); console.log('package-json-ok')"`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node --test tests/learning-profile-delta-service.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-architecture-boundary.test.js` (`26` tests);
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-profile-delta-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-target-provisioning-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`70` tests);
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`266` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `145` indexed JavaScript files, `1611` nodes, `6099` edges.
+- Remaining next implementation checks:
+  - implement embedded Owner plan preview/provision UI in the Growth `生成`
+    tab;
+  - expose `profile_delta` in an Owner audit/read surface when the UI audit
+    panel is implemented;
+  - run `npm run smoke:planner-readiness` against real Gateway config before
+    enabling planner UI in production;
+  - run central Home AI visual harness before production publish;
+  - commit/push/deploy only after the user asks or after the UI/production
+    closure slice is ready.
+
+## 2026-06-15 Growth AI Operating Loop Plan Documentation Closure
+
+- Status: documentation-only closure for the AI-driven Growth learning
+  operating-loop plan. No runtime code, schema, UI, deployment, or production
+  data was changed in this slice.
+- User intent captured:
+  - Growth should become a supervised AI learning loop, not a one-off card
+    generator;
+  - Fanfan remains the first sample target, but learner workspace, domain pack,
+    subject, horizon, and card role must be parameters;
+  - ordinary daily practice stays low-pressure: one submission, one
+    evaluation, one optional reflection, completion after first evaluation;
+  - formal stage assessment stays separate, higher-weight, cooldown-aware, and
+    service-activated;
+  - the loop must be auditable: Owner should see why a card was selected, what
+    evidence was used, what changed after completion, and what is recommended
+    next.
+- Documentation updated:
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md` now includes a system-level
+    implementation plan, deterministic-vs-model boundary map, acceptance
+    criteria, and a Phase 4.6 post-evaluation profile-delta slice;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md` now records profile-delta as a planned
+    service boundary and future harness target while keeping current runnable
+    harness commands intact;
+  - `docs/GROWTH_AI_CARD_LOOP.md` now includes profile-delta audit in the
+    card-level loop and harness requirements;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` now states that the Owner
+    audit panel should later consume a backend profile-delta DTO instead of
+    diffing raw profile payloads in the browser;
+  - `docs/GROWTH_DOCS_INDEX.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md` were synchronized.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`.
+- Follow-up:
+  - the planned profile-delta backend slice from this documentation closure is
+    implemented by the `2026-06-15 Growth Profile Delta Backend Closure`
+    section above.
+
+## 2026-06-15 Growth Operating Loop Provisioning Backend Closure
+
+- Status: target/domain-pack provisioning backend and harness validated
+  locally; not committed, pushed, deployed, visually tested, or
+  production-smoked in this slice.
+- Scope:
+  - clarified that Growth's future AI learning operating loop separates
+    `view-targets` visibility from learning target/domain-pack provisioning;
+  - documented `learning-target-provisioning-service`,
+    `learning_growth_domain_pack_provisions`, and Owner-only
+    `POST /api/v1/growth/domain-pack-provisions` as the planned/implemented
+    backend boundary for non-sample learner/domain-pack enablement;
+  - recorded `targetProvisioning` as a summary-only generation-context
+    projection alongside filtered `graphOptions`;
+  - `learning-card-generation-context-service`,
+    `learning-plan-publisher-service`, and
+    `learning-card-generation-service` now enforce/propagate target
+    provisioning before planner draft, plan publish, and direct generation;
+  - `growth-routes.js` exposes the Owner-only provision route as HTTP glue over
+    the service, still constrained by Growth view-target visibility;
+  - expanded the roadmap with Phase 4.5 target/domain-pack provisioning and
+    harness criteria before broad multi-workspace rollout.
+- Harness/code updated:
+  - `tests/learning-target-provisioning-service.test.js` covers Fanfan sample
+    fallback, non-sample blocking, explicit provision success, subject
+    mismatch, node mismatch, and summary-only DTOs;
+  - `tests/learning-card-generation-context-service.test.js` covers
+    provisioned non-Fanfan context and raw graph marker exclusion;
+  - `tests/learning-plan-publisher-service.test.js` covers draft/publish
+    provisioning enforcement and now initializes the draft schema before
+    asserting the blocked path writes no draft rows;
+  - `tests/learning-card-generation-service.test.js`,
+    `tests/growth-routes.test.js`, and
+    `tests/growth-architecture-boundary.test.js` guard generation, route, and
+    service-first wiring.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`.
+- Validation passed:
+  - syntax checks for target provisioning, generation context, card generation,
+    plan publisher, routes, app service wiring, and changed harness file;
+  - `node --test tests/learning-target-provisioning-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-card-generation-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`57` tests);
+  - `node --test tests/learning-target-provisioning-service.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-card-generation-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`76` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`260` tests);
+  - `git diff --check`.
+- CodeGraph status:
+  - `143` indexed JavaScript files, `1576` nodes, `5924` edges.
+- Remaining next implementation checks:
+  - add embedded Owner provision/plan preview UI and central visual harness
+    before production deploy;
+  - run `npm run smoke:planner-readiness` against real Gateway config before
+    enabling planner UI in production;
+  - commit/push/deploy only after the user asks or after the UI/production
+    closure slice is ready.
+
+## 2026-06-14 Growth Operating Loop Plan Documentation Refresh
+
+- Status: documentation refreshed and focused harness validated locally; not
+  committed, pushed, or deployed in this slice.
+- User intent captured:
+  - Growth should become a fully AI-driven, low-pressure, auditable learning
+    operating loop that starts with Fanfan and later generalizes to any
+    authorized learner workspace, subject, and knowledge/domain pack;
+  - ordinary daily practice cards stay around 10-15 minutes and complete after
+    one submission, one evaluation, and one optional reflection;
+  - formal stage-assessment cards remain separate higher-weight checkpoint
+    cards for updating profile/mastery with stronger evidence;
+  - model-entered steps are planner, authoring, and evaluation, all
+    Gateway-only draft boundaries before durable writes.
+- Documentation updated:
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md` now includes current product
+    capability, Fanfan science backend flow, domain-pack/subject selection
+    contract, model boundary map, closed-loop state transitions, phase roadmap,
+    and harness requirements;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` now includes the next
+    planner-backed Owner flow, `graphOptions` UI controls, plan draft/publish
+    routes, no-write planner smoke command, and harness plan additions;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md` now records `graphOptions`, the
+    planner readiness smoke boundary, updated next extraction targets, and the
+    expanded operating-loop harness map;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md` now states that planner-backed
+    non-English cards enter through context -> plan draft -> Owner preview ->
+    explicit publish, not through a browser free-form prompt;
+  - `docs/GROWTH_AI_CARD_LOOP.md` now distinguishes planner/authoring/
+    evaluation readiness and includes `graphOptions` in Owner observability;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`, `docs/GROWTH_DOCS_INDEX.md`, and
+    `.agent-context/PROJECT_CONTEXT.md` were synchronized.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `node --test tests/learning-plan-orchestrator-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-generation-context-service.test.js` (`19` tests);
+  - `node --test tests/learning-card-generation-context-service.test.js
+    tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/growth-planner-readiness-smoke-script.test.js
+    tests/learning-graph-repository.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`67` tests);
+  - plugin `git diff --check`.
+- CodeGraph status:
+  - `140` indexed JavaScript files, `1528` nodes, `5644` edges, index up to
+    date.
+- Remaining next slice:
+  - implement embedded Owner plan preview and explicit publish UI in the
+    Growth `生成` tab;
+  - expose existing `graphOptions` as domain-pack/subject controls in that UI;
+  - run `npm run smoke:planner-readiness` against real production Gateway
+    config before enabling planner UI in production;
+  - run central visual harness before production deploy;
+  - add provisioning policy for arbitrary learner/domain-pack combinations.
+
+## 2026-06-14 Growth Owner Context Operating Loop Backend Slice
+
+- Status: implemented locally and validated; not committed, pushed, or
+  deployed in this slice.
+- Scope:
+  - `learning-card-generation-context-service` now exposes Owner-safe
+    `profileV2`, bounded `evidenceAudit`, `plannerReadiness`, and
+    `plannerContextPreview` in the existing card-generation context response;
+  - generation context readiness now includes
+    `plannerGatewayConfigured`, `plannerContextReady`, `plannerReady`, and
+    `operatingLoopGatewayReady`, while direct card generation readiness remains
+    separate from full operating-loop readiness;
+  - context graph suggestion now honors explicit `domain` / `subject`
+    selectors before falling back to English/default graph suggestions;
+  - `GET /api/v1/growth/card-generation/context` now forwards bounded query
+    selectors (`domain`, `subject`, `domainPackId`, `horizon`,
+    `availableMinutes`, `programId`, `cardRole`, `difficultyBand`) after
+    target visibility is checked;
+  - `src/app/services.js` wires Profile V2, evidence ledger, planner context,
+    and planner Gateway readiness into the context service.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`.
+- Harness added/updated:
+  - `tests/learning-card-generation-context-service.test.js` covers planner
+    readiness, Profile V2 projection, evidence audit projection, subject
+    selector propagation, and raw-marker exclusion;
+  - `tests/growth-routes.test.js` covers visible-target-scoped context query
+    selector forwarding;
+  - `tests/growth-architecture-boundary.test.js` guards the new service
+    wiring.
+- Validation passed:
+  - syntax checks for changed service/route/test files;
+  - `node --test tests/learning-card-generation-context-service.test.js`;
+  - `node --test tests/growth-routes.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js`;
+  - operating-loop focused set including context/routes/Profile V2/planner/
+    publisher/AI-loop (`62` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`249` tests);
+  - plugin `git diff --check`;
+  - Home AI AI Ops H1 checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`, and app
+    `git diff --check`.
+- CodeGraph status after edits:
+  - `138` indexed JavaScript files, `1512` nodes, `5555` edges.
+- AI Ops evidence:
+  - `evidence-f9a3bea4-e1e1-4e65-8518-aec165e1ea3f`.
+- Remaining next slice:
+  - embedded Owner plan preview and explicit publish UI in the Growth `生成`
+    tab;
+  - production planner Gateway readiness smoke with real config;
+  - provisioned domain-pack/subject selector beyond query parameters;
+  - central visual harness before production publish.
+
+## 2026-06-14 Growth Learning Operating Loop Documentation Closure
+
+- Status: documentation/harness closure completed locally; not committed,
+  pushed, or deployed in this slice.
+- Scope:
+  - expanded `docs/GROWTH_LEARNING_OPERATING_LOOP.md` from target outline into
+    an execution-ready operating-loop plan;
+  - documented daily practice cards versus formal stage assessment cards,
+    including duration, pressure policy, evidence weight, activation boundary,
+    completion behavior, and failure meaning;
+  - documented the three model-entered steps: planner, authoring, and
+    evaluation. All three remain Gateway-only draft boundaries before durable
+    writes;
+  - documented the auditable state transition from evidence ledger -> Profile
+    V2 -> planner context -> plan draft -> card generation -> learner evidence
+    -> evaluation -> rewards -> evidence ledger/Profile V2/trajectory;
+  - updated `docs/GROWTH_CARD_GENERATION_RULES.md` with planner-role mapping
+    and model-entered step rules;
+  - updated `docs/GROWTH_AI_CARD_LOOP.md` to distinguish card-level model
+    boundaries from the broader planner boundary;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md` with Service First,
+    modularity, Gateway-only model boundary, extensibility, auditability, and
+    remaining production-completeness gaps.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-plan-publisher-service.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`53` tests);
+  - `npm run --silent check`;
+  - plugin `git diff --check`;
+  - Home AI app H1 checks:
+    `node tests/ai-operations-control-plane-service.test.js`,
+    `node tests/ai-ops-control-plane-cli.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node tests/architecture-refactor-boundary.test.js`,
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`, and app
+    `git diff --check`.
+- CodeGraph status before final handoff update:
+  - `138` indexed JavaScript files, `1501` nodes, `5435` edges, index
+    up to date.
+- AI Ops evidence:
+  - `evidence-e6558fef-5afb-45a0-b0e4-a6cfd2334746`.
+- Remaining next slice:
+  - expose planner readiness in the Owner generation context;
+  - add embedded Owner plan preview and explicit publish UI in the Growth
+    `生成` tab;
+  - run central visual harness before production deploy;
+  - generalize science/domain-pack selection beyond the harness fixture.
+
+## 2026-06-14 Growth Learning Plan Publisher Backend Slice
+
+- Status: implemented locally and validated; not committed, pushed, or
+  deployed in this slice.
+- Scope:
+  - added `learning_growth_plan_drafts` SQLite repository in
+    `src/stores/growth-learning-sqlite/learning-plan-drafts.js`;
+  - added stable plan draft ids through `stableLearningPlanDraftId`;
+  - added `learning-plan-publisher-service` to persist validated planner
+    drafts and publish one selected item through
+    `learning-card-generation-service`;
+  - wired the repository and service through `growth-learning-sqlite-store`
+    and `src/app/services.js`;
+  - added backend routes:
+    `POST /api/v1/growth/learning-plans/draft` and
+    `POST /api/v1/growth/learning-plans/:planDraftId/publish`;
+  - route authorization follows existing Growth write policy: Owner
+    cross-learner requests are constrained by `viewTargets`, and the route
+    remains HTTP glue over the publisher service.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`.
+- Harness added/updated:
+  - `tests/learning-plan-publisher-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - syntax checks for new repository/service/route/harness files;
+  - `node --test tests/learning-plan-publisher-service.test.js
+    tests/learning-plan-orchestrator-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js`;
+  - `node --test tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`247` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `138` indexed JavaScript files, `1497` nodes, `5422` edges.
+- Runtime behavior changed:
+  - validated planner output can now be persisted as summary-only plan draft
+    records and explicitly published into the existing card generation path;
+  - publish failures leave the stored plan draft in `draft` state;
+  - no embedded Owner plan-preview UI, production planner config smoke, or full
+    Fanfan science learner-evidence vertical was added in this slice.
+- AI Ops evidence:
+  - `evidence-764156c1-e5ac-44b5-b40b-63ab8c59da5b`.
+
+## 2026-06-14 Growth Learning Operating Loop Backend Foundation
+
+- Status: implemented locally and validated; not committed, pushed, or
+  deployed in this slice.
+- Scope:
+  - added summary-only evidence ledger storage and
+    `learning-evidence-ledger-service`;
+  - wired evaluation and learner experience-signal flows to record bounded
+    evidence ledger rows;
+  - added `learning-profile-v2-service` as a read projection over ledger
+    evidence plus optional legacy profile context;
+  - added `learning-planner-context-service` for
+    `growth.learningPlanner.input.v1` summary-only planner inputs;
+  - added `growth-gateway-planner-client`, `learning-plan-validation-service`,
+    and draft-only `learning-plan-orchestrator-service`;
+  - wired the new services through `src/app/services.js` and added planner
+    Gateway env fields in `src/config/env.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Harness added/updated:
+  - `tests/learning-evidence-ledger-service.test.js`;
+  - `tests/learning-profile-v2-service.test.js`;
+  - `tests/learning-planner-context-service.test.js`;
+  - `tests/learning-plan-orchestrator-service.test.js`;
+  - `tests/learning-card-ai-loop-harness.test.js`;
+  - `tests/growth-evaluation-service.test.js`;
+  - `tests/learning-experience-signal-service.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - syntax checks for new planner/Profile/evidence services and harnesses;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node --test tests/learning-evidence-ledger-service.test.js
+    tests/learning-profile-v2-service.test.js
+    tests/learning-planner-context-service.test.js
+    tests/learning-plan-orchestrator-service.test.js`;
+  - `node --test tests/learning-card-ai-loop-harness.test.js
+    tests/growth-evaluation-service.test.js
+    tests/learning-experience-signal-service.test.js
+    tests/growth-architecture-boundary.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --runInBand` (`243` tests);
+  - `git diff --check`.
+- CodeGraph status after edits:
+  - `135` indexed JavaScript files, `1455` nodes, `5215` edges.
+- Runtime behavior changed:
+  - daily/formal evaluations now attempt summary-only evidence ledger writes
+    after evaluation/profile persistence;
+  - learner experience signals now attempt summary-only evidence ledger writes;
+  - planner draft services are available in the service graph but no route,
+    card publication, Owner plan preview UI, or production planner deployment
+    is included yet.
+- AI Ops evidence:
+  - `evidence-25b75d40-be68-48c7-a980-16dfbd0bf8bf`.
+
+## 2026-06-14 Growth Learning Operating Loop Planning Doc
+
+- Status: documentation-only planning slice completed locally.
+- Scope:
+  - added `docs/GROWTH_LEARNING_OPERATING_LOOP.md` as the Growth-owned target
+    architecture for the AI-driven learning operating loop;
+  - defined the long-running loop from knowledge graph, evidence ledger,
+    Profile V2, Gateway-backed planning, card authoring, learner execution,
+    evaluation, profile update, Owner audit, and multi-workspace/domain-pack
+    generalization;
+  - specified the planned service boundaries:
+    `learning-evidence-ledger-service`, `learning-profile-v2-service`,
+    `learning-planner-context-service`,
+    `learning-plan-orchestrator-service`,
+    `learning-plan-validation-service`, and
+    `learning-plan-publisher-service`;
+  - documented the next implementation order: evidence ledger, Profile V2,
+    planner context, fake Gateway planner harness, Fanfan science daily-card
+    plan preview, then plan publication into card generation.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Harness/doc guard updated:
+  - `scripts/check-growth-docs-locality.js` now requires the new operating-loop
+    document and scans it for forbidden current Home AI Growth doc pointers.
+- Validation passed:
+  - `node --check scripts/check-growth-docs-locality.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`.
+- Runtime/code behavior changed: no.
+- Production deploy: not run for this documentation-only slice.
+
 ## 2026-06-14 Growth Stage Assessment Closed-Loop Profile Slice
 
 - Status: implemented, pushed, deployed, and production-smoked.

@@ -24,15 +24,27 @@ function startServer(config = readEnv(), serviceOverrides = null) {
   const services = serviceOverrides || createServices(config);
   const server = createServer(services);
   let evaluationTimer = null;
+  let schedulerWorkerTimer = null;
   if (config.evaluationWorkerEnabled && services.growthEvaluationService?.processEvaluationQueue) {
     const runEvaluationQueue = () => services.growthEvaluationService.processEvaluationQueue({ limit: 10 }).catch(() => null);
     evaluationTimer = setInterval(runEvaluationQueue, config.evaluationWorkerIntervalMs);
     if (typeof evaluationTimer.unref === "function") evaluationTimer.unref();
     runEvaluationQueue();
   }
+  if (config.automationBackgroundWorkerEnabled && services.learningAutomationSchedulerWorkerService?.tickTargets) {
+    const runSchedulerWorker = () => services.learningAutomationSchedulerWorkerService.tickTargets({
+      targets: config.automationBackgroundWorkerTargets,
+      workerId: config.automationBackgroundWorkerId,
+      leaseMs: config.automationBackgroundWorkerLeaseMs
+    }).catch(() => null);
+    schedulerWorkerTimer = setInterval(runSchedulerWorker, config.automationBackgroundWorkerIntervalMs);
+    if (typeof schedulerWorkerTimer.unref === "function") schedulerWorkerTimer.unref();
+    runSchedulerWorker();
+  }
   const close = server.close.bind(server);
   server.close = (callback) => {
     if (evaluationTimer) clearInterval(evaluationTimer);
+    if (schedulerWorkerTimer) clearInterval(schedulerWorkerTimer);
     return close(callback);
   };
   server.listen(config.port, "127.0.0.1", () => {

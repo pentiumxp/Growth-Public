@@ -43,6 +43,26 @@ test("maps bounded Growth events to Home AI plugin notification payloads", () =>
   assert.equal(payload.sourceRef.growthEventType, "growth.review.required");
 });
 
+test("maps automation action handoff events to Home AI notification payloads", () => {
+  const event = normalizeGrowthEvent({
+    eventId: "lgahand_1",
+    type: "growth.automation.action_required",
+    workspaceId: "growth:weixin_fanfan",
+    actionHandoffId: "lgahand_1",
+    digestId: "lgadig_1",
+    summary: "Automation digest requires Owner action."
+  }).event;
+  const payload = notificationPayloadForEvent(event);
+  assert.equal(payload.workspaceId, "weixin_fanfan");
+  assert.equal(payload.eventId, "lgahand_1");
+  assert.equal(payload.itemType, "approval");
+  assert.equal(payload.status, "open");
+  assert.equal(payload.route.pluginRoute, "automation");
+  assert.equal(payload.route.pluginItemId, "lgahand_1");
+  assert.equal(payload.sourceRef.actionHandoffId, "lgahand_1");
+  assert.equal(payload.sourceRef.digestId, "lgadig_1");
+});
+
 test("queues Growth events when Home AI delivery is not configured", async () => {
   const records = [];
   const service = createGrowthEventService({

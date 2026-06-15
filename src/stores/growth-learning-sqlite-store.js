@@ -10,15 +10,28 @@ const {
 } = require("./growth-learning-sqlite/core");
 const { createAudioRepository } = require("./growth-learning-sqlite/audio");
 const { createLearningCardAuthoringPublisherRepository } = require("./growth-learning-sqlite/card-authoring-publisher");
+const { createLearningAutomationActionHandoffRepository } = require("./growth-learning-sqlite/automation-action-handoffs");
+const { createLearningAutomationDigestRepository } = require("./growth-learning-sqlite/automation-digests");
+const { createLearningAutomationFailurePolicyRepository } = require("./growth-learning-sqlite/automation-failure-policies");
+const { createLearningAutomationProposalRepository } = require("./growth-learning-sqlite/automation-proposals");
+const { createLearningAutomationReleaseReadinessRepository } = require("./growth-learning-sqlite/automation-release-readiness");
+const { createLearningAutomationSchedulerExecutionRepository } = require("./growth-learning-sqlite/automation-scheduler-executions");
+const { createLearningAutomationSchedulerRunRepository } = require("./growth-learning-sqlite/automation-scheduler-runs");
+const { createLearningAutomationSchedulerWorkerLeaseRepository } = require("./growth-learning-sqlite/automation-scheduler-worker-leases");
+const { createLearningAutomationSchedulerWorkerTargetRepository } = require("./growth-learning-sqlite/automation-scheduler-worker-targets");
 const { createCardRetirementRepository } = require("./growth-learning-sqlite/card-retirement");
 const {
   createEvidenceWriter,
   taskCardByIdOrKanbanId
 } = require("./growth-learning-sqlite/evidence-writes");
+const { createDomainPackProvisionRepository } = require("./growth-learning-sqlite/domain-pack-provisions");
+const { createLearningEvidenceLedgerRepository } = require("./growth-learning-sqlite/evidence-ledger");
 const { createEvaluationJobRepository } = require("./growth-learning-sqlite/evaluation-jobs");
 const { createLearningGraphRepository } = require("./growth-learning-sqlite/graph-repository");
 const { createLearningHistorySummaryRepository } = require("./growth-learning-sqlite/history-summary");
+const { createLearningPlanDraftRepository } = require("./growth-learning-sqlite/learning-plan-drafts");
 const { createMasteryProfileRepository } = require("./growth-learning-sqlite/mastery-profile");
+const { createProfileDeltaAuditRepository } = require("./growth-learning-sqlite/profile-delta-audits");
 const { createRewardRepository } = require("./growth-learning-sqlite/rewards");
 const { createStageAssessmentCycleRepository } = require("./growth-learning-sqlite/stage-assessment-cycles");
 const {
@@ -46,10 +59,23 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   }
 
   const evidenceWriter = createEvidenceWriter({ open });
+  const domainPackProvisionRepository = createDomainPackProvisionRepository({ open });
+  const learningEvidenceLedgerRepository = createLearningEvidenceLedgerRepository({ open });
   const evaluationJobs = createEvaluationJobRepository({ open });
+  const learningAutomationActionHandoffRepository = createLearningAutomationActionHandoffRepository({ open });
+  const learningAutomationDigestRepository = createLearningAutomationDigestRepository({ open });
+  const learningAutomationFailurePolicyRepository = createLearningAutomationFailurePolicyRepository({ open });
+  const learningAutomationProposalRepository = createLearningAutomationProposalRepository({ open });
+  const learningAutomationReleaseReadinessRepository = createLearningAutomationReleaseReadinessRepository({ open });
+  const learningAutomationSchedulerExecutionRepository = createLearningAutomationSchedulerExecutionRepository({ open });
+  const learningAutomationSchedulerRunRepository = createLearningAutomationSchedulerRunRepository({ open });
+  const learningAutomationSchedulerWorkerLeaseRepository = createLearningAutomationSchedulerWorkerLeaseRepository({ open });
+  const learningAutomationSchedulerWorkerTargetRepository = createLearningAutomationSchedulerWorkerTargetRepository({ open });
   const learningGraphRepository = createLearningGraphRepository({ open });
   const learningHistorySummaryRepository = createLearningHistorySummaryRepository({ open });
+  const learningPlanDraftRepository = createLearningPlanDraftRepository({ open });
   const learningCardAuthoringPublisherRepository = createLearningCardAuthoringPublisherRepository({ open });
+  const profileDeltaAuditRepository = createProfileDeltaAuditRepository({ open });
   const audioRepository = createAudioRepository({ open, resolvedPath, legacyAudioRoots });
   const cardRetirementRepository = createCardRetirementRepository({ open });
   const masteryProfileRepository = createMasteryProfileRepository({ open });
@@ -125,10 +151,23 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   return {
     dbPath: resolvedPath,
     cardRetirementRepository,
+    domainPackProvisionRepository,
+    learningEvidenceLedgerRepository,
+    learningAutomationActionHandoffRepository,
+    learningAutomationDigestRepository,
+    learningAutomationFailurePolicyRepository,
+    learningAutomationProposalRepository,
+    learningAutomationReleaseReadinessRepository,
+    learningAutomationSchedulerExecutionRepository,
+    learningAutomationSchedulerRunRepository,
+    learningAutomationSchedulerWorkerLeaseRepository,
+    learningAutomationSchedulerWorkerTargetRepository,
     learningCardAuthoringPublisherRepository,
     learningGraphRepository,
     learningHistorySummaryRepository,
+    learningPlanDraftRepository,
     masteryProfileRepository,
+    profileDeltaAuditRepository,
     stageAssessmentCycleRepository,
     legacyAudioRoots: audioRepository.legacyAudioRoots,
     board,

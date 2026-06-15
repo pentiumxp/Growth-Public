@@ -3,7 +3,8 @@ const ALLOWED_EVENT_TYPES = new Set([
   "growth.card.completed",
   "growth.review.required",
   "growth.reward.requested",
-  "growth.mastery.updated"
+  "growth.mastery.updated",
+  "growth.automation.action_required"
 ]);
 
 function cleanString(value, limit = 240) {
@@ -25,6 +26,8 @@ function normalizeGrowthEvent(input = {}) {
       type,
       workspace_id: workspaceId,
       task_card_id: taskCardId,
+      action_handoff_id: cleanString(input.action_handoff_id || input.actionHandoffId),
+      digest_id: cleanString(input.digest_id || input.digestId),
       status: cleanString(input.status, 80),
       source: cleanString(input.source || "home-ai", 80),
       occurred_at: cleanString(input.occurred_at || input.occurredAt || new Date().toISOString(), 80),
@@ -58,11 +61,13 @@ function notificationTitle(event = {}) {
   if (event.type === "growth.review.required") return "Growth review required";
   if (event.type === "growth.reward.requested") return "Growth reward requested";
   if (event.type === "growth.mastery.updated") return "Growth mastery updated";
+  if (event.type === "growth.automation.action_required") return "Growth automation action review";
   if (event.type === "growth.board_snapshot_imported") return "Growth snapshot imported";
   return "Growth update";
 }
 
 function notificationItemType(event = {}) {
+  if (event.type === "growth.automation.action_required") return "approval";
   if (event.type === "growth.review.required") return "review";
   if (event.type === "growth.reward.requested") return "approval";
   if (event.type === "growth.card.completed") return "delivery";
@@ -89,12 +94,14 @@ function notificationPayloadForEvent(event = {}) {
     route: {
       name: "growth-event",
       itemId: event.task_card_id || sourceId,
-      pluginRoute: event.task_card_id ? "card" : "board",
-      pluginItemId: event.task_card_id || ""
+      pluginRoute: event.type === "growth.automation.action_required" ? "automation" : (event.task_card_id ? "card" : "board"),
+      pluginItemId: event.task_card_id || event.action_handoff_id || ""
     },
     sourceRef: {
       growthEventType: event.type,
       taskCardId: event.task_card_id || "",
+      actionHandoffId: event.action_handoff_id || "",
+      digestId: event.digest_id || "",
       source: event.source || "",
       occurredAt: event.occurred_at || ""
     }

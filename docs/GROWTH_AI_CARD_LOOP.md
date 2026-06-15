@@ -1,6 +1,6 @@
 # Growth AI Card Loop
 
-Last updated: 2026-06-14.
+Last updated: 2026-06-15.
 
 ## Purpose
 
@@ -8,6 +8,15 @@ This document defines the Growth-owned AI loop for generated learning cards.
 The durable product goal is not isolated card completion. Growth should use
 summary-only evidence from each card to update the learner profile, choose the
 next graph target, and generate the next card with an explainable reason.
+
+This is the card-level loop. The broader target architecture for long-running,
+multi-subject, multi-workspace learning planning is defined in
+`docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md` and
+`docs/GROWTH_LEARNING_OPERATING_LOOP.md`, and the implementation-ready slice
+plan is in `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`. Future
+planner, evidence-ledger, Profile V2, and profile-delta audit work should
+extend this loop without moving card authoring, evaluation, or profile updates
+out of the Growth plugin boundary.
 
 The loop is:
 
@@ -20,27 +29,33 @@ The loop is:
 6. publish the card into Growth SQLite;
 7. accept learner evidence and process one evaluation for daily cards;
 8. record summary-only evaluation evidence;
-9. update mastery state and experience signals;
-10. record a card trajectory row;
-11. project the latest trajectory recommendation as the first candidate for
+9. write summary-only evidence ledger rows for evaluation, formal assessment,
+   and later reflection/signal evidence;
+10. update mastery/Profile V2 projections and experience signals;
+11. project a bounded profile delta for Owner audit;
+12. record a card trajectory row;
+13. project the latest trajectory recommendation as the first candidate for
     the next generation, then fall back to recomputed profile strategy and graph
     suggestions;
-12. after a trajectory recommendation successfully publishes a generated card,
+14. after a trajectory recommendation successfully publishes a generated card,
     mark that recommendation `accepted` so later generations do not reuse the
     same pending recommendation.
 
 The Owner generation surface must make the loop observable. It should show the
 selected learner's bounded profile/trajectory projection, explicit
-`nextCardRecommendation`, and bounded `recommendationLifecycle` before
-generation so the Owner can see whether the next card comes from a persisted
-trajectory recommendation, recomputed profile strategy, or graph suggestion,
-and whether recent recommendations are pending, accepted, or superseded.
-It must also distinguish card-authoring Gateway readiness from card-evaluation
-Gateway readiness. Authoring Gateway readiness gates new card generation.
-Evaluation Gateway readiness is exposed as `evaluationGatewayConfigured` and
-`aiLoopGatewayReady`; when it is false, the card can still be authored, but the
-AI-driven loop is not production-complete because evaluation will use the local
-fallback boundary.
+`nextCardRecommendation`, bounded `recommendationLifecycle`,
+`targetProvisioning`, and `graphOptions` before generation so the Owner can
+see whether the next card comes from a persisted trajectory recommendation,
+recomputed profile strategy, graph suggestion, or selected provisioned domain
+pack/subject. It must also distinguish planner Gateway readiness,
+card-authoring Gateway readiness, and
+card-evaluation Gateway readiness. Authoring Gateway readiness gates direct
+card generation. Evaluation Gateway readiness is exposed as
+`evaluationGatewayConfigured` and `aiLoopGatewayReady`; when it is false, the
+card can still be authored, but the AI-driven loop is not
+production-complete because evaluation will use the local fallback boundary.
+Planner Gateway readiness is exposed separately and can be checked through the
+no-write planner readiness smoke before the embedded planner UI is enabled.
 
 ## Ownership
 
@@ -53,7 +68,7 @@ updates, trajectory, or next-card strategy.
 
 ## Model Boundaries
 
-There are two model boundaries:
+At the card level there are two model boundaries:
 
 - card authoring: `learning-card-authoring-service` calls Gateway through
   `growth-gateway-authoring-client`;
@@ -69,6 +84,15 @@ written.
 Gateway is the only model boundary for Growth card evaluation. Growth may use
 Home AI Gateway access/config, but it must not import Home AI old Growth server
 internals or call model vendors directly.
+
+The broader operating loop adds a third model boundary for planning through
+`learning-plan-orchestrator-service` and `growth-gateway-planner-client`.
+That planner boundary chooses the next objective and card role before card
+authoring starts; it is documented in
+`docs/GROWTH_LEARNING_OPERATING_LOOP.md`. Planner-backed formal checkpoint
+items remain suggestions: `learning-plan-publisher-service` must not publish a
+`stage_assessment` item directly, because formal assessment activation belongs
+to `learning-stage-assessment-service`.
 
 Production-complete AI evaluation requires `GROWTH_GATEWAY_EVALUATION_ENDPOINT`
 and its token/protocol settings in the Growth LaunchDaemon environment. The
@@ -116,6 +140,15 @@ generic graph suggestion.
     `challenge_ready`;
   - never writes raw answers, raw transcripts, raw prompts, or answer keys into
     long-lived profile rows.
+- `learning-evidence-ledger-service`
+  - writes first-class summary-only evidence rows in
+    `learning_growth_evidence_ledger`;
+  - records daily evaluation evidence with low weight and formal
+    `stage_assessment` evidence with high weight;
+  - records reflection and learner experience signal evidence through the same
+    bounded contract;
+  - rejects raw answers, transcripts, raw prompts, answer keys, raw model
+    output, private paths, secrets, tokens, cookies, and provider config.
 - `learning-experience-signal-service`
   - records learner-facing difficulty feedback (`too_easy`, `right_level`,
     `too_hard`, and `not_learned`) through the Growth-owned
@@ -190,12 +223,54 @@ The projection returns:
   and limited to bounded ids, status, strategy, target node ids, short reason,
   generated card/plan ids, supersede id, and timestamps.
 
+Profile V2 is now a separate backend projection in
+`learning-profile-v2-service`. It reads the evidence ledger and returns
+capability states, evidence weight totals, stale flags, strengths, weaknesses,
+misconceptions, pressure signals, stage readiness hints, and planner hints.
+`GET /api/v1/growth/card-generation/context` exposes an Owner-safe Profile V2
+projection plus bounded evidence audit rows, `graphOptions`, and planner
+readiness. `GET /api/v1/growth/evidence/audit` exposes the same persisted
+evidence-ledger history as bounded public audit DTOs for visible targets and
+history/drilldown screens. The existing embedded UI still primarily renders
+the older profile/trajectory projection until the plan-preview/audit UI slice
+is implemented.
+
 The projection is target-workspace scoped. When Owner is viewing another
 learner, Growth must use the selected learner workspace from
 `GET /api/v1/growth/card-generation/context`, not the Owner workspace. The
 projection is read-only and must not expose raw learner answers, transcripts,
 prompts, answer keys, raw model output, private file paths, or internal source
 refs.
+
+Post-evaluation profile delta is now a backend audit projection owned by
+`learning-profile-delta-service`. It compares bounded Profile V2 state before
+and after an evaluation/evidence-ledger write, then returns only changed
+graph-node states, evidence basis ids, planner hint changes, and bounded
+summaries as `profile_delta` from `growth-evaluation-service`. It is
+non-fatal: if the delta projection fails, Growth still keeps the
+already-persisted evaluation, reward, ledger, stage-cycle, and trajectory
+state, while exposing a bounded audit failure for Owner review.
+
+Profile-delta audit persistence is implemented through
+`profile-delta-audits.js` and `learning_growth_profile_delta_audits`.
+`GET /api/v1/growth/profile-delta-audits` exposes bounded public readback for
+visible targets. The Owner audit UI should read those persisted public
+profile-delta DTOs, not recompute diffs in the browser from raw Profile V2
+payloads.
+
+Owner-reviewed profile correction is implemented as ledger evidence, not as a
+mutable browser-side profile override. `learning-owner-correction-service`
+accepts bounded Owner actions such as `mark_needs_repair`, `mark_stable`, or
+`confirm_profile_delta`, validates target provisioning, and writes
+`sourceType=owner_reviewed_correction` rows through
+`learning-evidence-ledger-service`. `GET /api/v1/growth/profile-corrections`
+returns grouped public correction DTOs for visible targets, and
+`POST /api/v1/growth/profile-corrections` is Owner-only. Profile V2 absorbs
+those correction rows as auditable state adjustments while keeping older
+evaluation, stage-assessment, and feedback evidence visible by id/source type.
+Correction payloads must remain summary-only and must not include raw learner
+answers, transcripts, prompts, answer keys, raw model output, source-document
+bodies, private paths, credentials, or provider configuration.
 
 ## Trajectory Recommendation Lifecycle
 
@@ -441,6 +516,10 @@ Focused harnesses must cover:
   keeping graph target, role, difficulty, and completion-policy internals in
   service-owned code;
 - evaluation service writes profile and trajectory after evaluation/reward;
+- evaluation service projects a bounded profile delta after ledger/profile
+  updates and treats profile-delta failure as visible but non-fatal;
+- profile-delta durable persistence is covered by repository/service/
+  evaluation/AI-loop harness before Owner UI renders historical audit panels;
 - profile/trajectory write failure does not duplicate evaluation or reward rows;
 - card-generation context uses recommendation/strategy/profile output in its
   summary-only preview;
@@ -490,6 +569,13 @@ closed-loop service contract. The harness plants a raw-answer marker in
 historical SQLite evidence and asserts the marker does not appear in Gateway
 authoring input, Gateway evaluation input, profile projection, or trajectory
 recommendation lifecycle payloads.
+
+The same harness now includes a Fanfan science operating-loop scenario. That
+scenario seeds summary-only science weakness evidence, drafts and persists a
+planner plan, publishes the selected plan item through card generation, submits
+learner evidence, evaluates through the Gateway evaluation service, records the
+evidence ledger, and verifies Profile V2 recommends a repair strategy without
+raw marker leakage.
 
 ## Production Evidence
 

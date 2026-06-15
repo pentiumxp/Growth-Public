@@ -59,6 +59,7 @@ function normalizePlanInput(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id,
     programId: input.programId || input.program_id,
     recipeId: input.recipeId || input.recipe_id,
+    domainPackId: input.domainPackId || input.domain_pack_id,
     domain: input.domain,
     subject: input.subject,
     targetNodeId: input.targetNodeId || input.target_node_id,
@@ -116,6 +117,7 @@ function createLearningCardGenerationService(options = {}) {
   const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
   const recipePolicyService = options.recipePolicyService || null;
+  const targetProvisioningService = options.targetProvisioningService || null;
   const authoringService = options.authoringService;
 
   function normalizeGenerationInput(input = {}) {
@@ -123,6 +125,37 @@ function createLearningCardGenerationService(options = {}) {
       return { ok: true, applies: false, input };
     }
     return recipePolicyService.normalizeGenerationInput(input);
+  }
+
+  function resolveTargetProvisioning(input = {}, plan = null) {
+    if (!targetProvisioningService || typeof targetProvisioningService.resolveSelection !== "function") {
+      return { ok: true, targetEnabled: true };
+    }
+    const selection = targetProvisioningService.resolveSelection(Object.assign({}, input, {
+      workspaceId: input.workspaceId || input.workspace_id || plan?.workspaceId,
+      learnerId: input.learnerId || input.learner_id || plan?.learnerId,
+      programId: input.programId || input.program_id || plan?.programId,
+      domainPackId: input.domainPackId || input.domain_pack_id || plan?.domainPackId,
+      domain: input.domain || plan?.domain,
+      subject: input.subject || plan?.subject,
+      targetNodeIds: plan ? planTargetNodeIds(plan) : (input.targetNodeIds || input.target_node_ids)
+    }));
+    if (!selection?.ok || !selection.targetEnabled) {
+      return unavailable(selection?.error || "learning_target_not_provisioned", {
+        stage: "provisioning",
+        targetProvisioning: selection || null
+      });
+    }
+    return selection;
+  }
+
+  function inputWithProvisioning(input = {}, selection = {}) {
+    if (!selection?.ok) return input;
+    return Object.assign({}, input, {
+      domainPackId: cleanString(input.domainPackId || input.domain_pack_id) || cleanString(selection.selectedDomainPackId),
+      domain: cleanString(input.domain) || cleanString(selection.selectedDomain),
+      subject: cleanString(input.subject) || cleanString(selection.selectedSubject)
+    });
   }
 
   function planInputWithDefaultTarget(input = {}, policy = {}) {
@@ -200,10 +233,15 @@ function createLearningCardGenerationService(options = {}) {
   async function generateCard(input = {}) {
     const policy = normalizeGenerationInput(input);
     if (!policy?.ok) return unavailable(policy?.error || "learning_card_generation_recipe_policy_failed", { stage: "recipe", recipePolicy: policy || null });
-    const normalizedInput = policy.input || input;
+    const initialInput = policy.input || input;
+    const initialProvisioning = resolveTargetProvisioning(initialInput);
+    if (!initialProvisioning?.ok) return initialProvisioning;
+    const normalizedInput = inputWithProvisioning(initialInput, initialProvisioning);
     const resolvedPlan = await resolvePlan(normalizedInput, policy);
     if (!resolvedPlan?.ok) return resolvedPlan;
     const plan = resolvedPlan.plan;
+    const planProvisioning = resolveTargetProvisioning(normalizedInput, plan);
+    if (!planProvisioning?.ok) return planProvisioning;
     const targetSelection = resolvedPlan.targetSelection || null;
     const history = resolveHistory(normalizedInput, plan);
     if (!history?.ok) return history;
@@ -260,6 +298,13 @@ function createLearningCardGenerationService(options = {}) {
       ok: true,
       source: "growth-learning-card-generation-service",
       recipeId: policy.recipeId || cleanString(normalizedInput.recipeId || normalizedInput.recipe_id),
+      targetProvisioning: {
+        ok: true,
+        mode: cleanString(planProvisioning.mode || initialProvisioning.mode),
+        selectedDomainPackId: cleanString(planProvisioning.selectedDomainPackId || initialProvisioning.selectedDomainPackId),
+        selectedDomain: cleanString(planProvisioning.selectedDomain || initialProvisioning.selectedDomain),
+        selectedSubject: cleanString(planProvisioning.selectedSubject || initialProvisioning.selectedSubject)
+      },
       learningGraphPlan: plan,
       historySummary: normalizeResultHistory(history),
       nextCardStrategy,

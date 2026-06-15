@@ -405,6 +405,7 @@ function setup(options = {}) {
     nextTargetService,
     nextCardStrategyService,
     recipePolicyService,
+    targetProvisioningService: options.targetProvisioningService,
     authoringService
   });
   return { dbPath, gatewayCalls, generationService, nextTargetService, planService, store };
@@ -688,6 +689,54 @@ test("card generation fails closed before Gateway when graph planning fails", as
   assert.equal(result.stage, "plan");
   assert.equal(result.error, "missing_target_node");
   assert.equal(gatewayCalls.length, 0);
+});
+
+test("card generation enforces target provisioning before authoring", async () => {
+  const provisioningCalls = [];
+  const { gatewayCalls, generationService } = setup({
+    targetProvisioningService: {
+      resolveSelection(input) {
+        provisioningCalls.push(input);
+        if (input.workspaceId === "weixin_unprovisioned") {
+          return { ok: false, targetEnabled: false, error: "learning_target_not_provisioned" };
+        }
+        return {
+          ok: true,
+          targetEnabled: true,
+          mode: "explicit_provision",
+          selectedDomainPackId: "domain_pack_card_generation",
+          selectedDomain: "math",
+          selectedSubject: "mathematics"
+        };
+      }
+    }
+  });
+
+  const denied = await generationService.generateCard({
+    workspaceId: "weixin_unprovisioned",
+    learnerId: "learner",
+    targetNodeId: "kg_ratio_intro",
+    cardRole: "teaching"
+  });
+
+  assert.equal(denied.ok, false);
+  assert.equal(denied.stage, "provisioning");
+  assert.equal(denied.error, "learning_target_not_provisioned");
+  assert.equal(gatewayCalls.length, 0);
+
+  const allowed = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    targetNodeId: "kg_ratio_intro",
+    cardRole: "teaching",
+    generationKey: "provisioned-generation"
+  });
+
+  assert.equal(allowed.ok, true);
+  assert.equal(allowed.targetProvisioning.mode, "explicit_provision");
+  assert.equal(allowed.targetProvisioning.selectedDomainPackId, "domain_pack_card_generation");
+  assert.equal(provisioningCalls.length >= 3, true);
+  assert.deepEqual(provisioningCalls.at(-1).targetNodeIds, ["kg_ratio_intro"]);
 });
 
 test("SQLite authoring publisher rolls back the task card when graph binding fails", async () => {

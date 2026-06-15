@@ -270,6 +270,72 @@ function createLearningStageAssessmentService(options = {}) {
     };
   }
 
+  function stageReadiness(input = {}) {
+    if (!repository || typeof repository.latestCycle !== "function") {
+      return unavailable("stage_assessment_cycle_repository_unavailable");
+    }
+    const target = normalizeAssessmentTarget(input);
+    if (!target.workspaceId || !target.targetNodeId || !target.assessmentCoverageNodeIds.length) {
+      return unavailable("stage_assessment_target_required");
+    }
+    const timestamp = now().toISOString();
+    const latestCycle = repository.latestCycle(target);
+    if (cleanString(latestCycle?.status).toLowerCase() === "active") {
+      return {
+        ok: true,
+        eligible: true,
+        activationState: "active",
+        reason: "stage_assessment_already_active",
+        cycle: latestCycle,
+        evidence: { minimumRecentOrdinaryCards: minRecentOrdinaryCards }
+      };
+    }
+    const block = cooldownBlock(latestCycle, parseTime(timestamp), cooldownDays);
+    if (block) {
+      return {
+        ok: true,
+        eligible: false,
+        activationState: "cooldown",
+        reason: block.reason,
+        cooldownUntil: block.cooldownUntil,
+        cycle: block.cycle,
+        evidence: { minimumRecentOrdinaryCards: minRecentOrdinaryCards }
+      };
+    }
+    const profile = projectProfile(target);
+    if (!profile?.ok) {
+      return unavailable(profile?.error || "learning_profile_projection_unavailable", {
+        stage: "profile",
+        profile
+      });
+    }
+    const recentTrajectory = asArray(profile.recentTrajectory);
+    const recentSignals = asArray(profile.recentExperienceSignals);
+    const pressureSignals = recentSignals.filter(highPressureSignal);
+    const challengeSignals = recentSignals.filter(challengeSignal);
+    const enoughRecentPractice = recentTrajectory.length >= minRecentOrdinaryCards;
+    const eligible = (enoughRecentPractice || challengeSignals.length > 0) && pressureSignals.length === 0;
+    const reason = eligible
+      ? challengeSignals.length > 0 && !enoughRecentPractice ? "challenge_ready" : "enough_recent_practice"
+      : pressureSignals.length > 0 ? "recent_high_pressure_signal" : "insufficient_recent_practice";
+    return {
+      ok: true,
+      eligible,
+      activationState: eligible ? "eligible" : "dormant",
+      reason,
+      cycle: latestCycle || null,
+      evidence: {
+        minimumRecentOrdinaryCards: minRecentOrdinaryCards,
+        recentTrajectoryCount: recentTrajectory.length,
+        recentExperienceSignalCount: recentSignals.length,
+        highPressureSignalCount: pressureSignals.length,
+        challengeSignalCount: challengeSignals.length,
+        sourceCardIds: sourceCardIdsFromProfile(profile)
+      },
+      profileSummary: profile.summary || {}
+    };
+  }
+
   async function activateStageAssessment(input = {}) {
     if (!repository || typeof repository.cycleIdFor !== "function" || typeof repository.latestCycle !== "function" || typeof repository.saveCycle !== "function") {
       return unavailable("stage_assessment_cycle_repository_unavailable");
@@ -427,7 +493,8 @@ function createLearningStageAssessmentService(options = {}) {
     activateStageAssessment,
     evaluateEligibility,
     normalizeAssessmentTarget,
-    recordAssessmentCompletion
+    recordAssessmentCompletion,
+    stageReadiness
   };
 }
 

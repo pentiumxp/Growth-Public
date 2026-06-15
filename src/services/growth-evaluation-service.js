@@ -10,6 +10,20 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function parseJson(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch (_error) {
+    return fallback;
+  }
+}
+
+function uniqueStrings(values = []) {
+  return Array.from(new Set(asArray(values).map(cleanString).filter(Boolean)));
+}
+
 function words(text) {
   return String(text || "").match(/[A-Za-z]+(?:'[A-Za-z]+)?|[\u3400-\u9fff]/g) || [];
 }
@@ -76,7 +90,9 @@ function deterministicEvaluate(input = {}) {
 function createGrowthEvaluationService(options = {}) {
   const learningStore = options.learningStore;
   const eventService = options.eventService || null;
+  const evidenceLedgerService = options.evidenceLedgerService || null;
   const profileService = options.profileService || null;
+  const profileDeltaService = options.profileDeltaService || null;
   const nextCardStrategyService = options.nextCardStrategyService || null;
   const stageAssessmentService = options.stageAssessmentService || null;
   const trajectoryService = options.trajectoryService || null;
@@ -122,6 +138,11 @@ function createGrowthEvaluationService(options = {}) {
         evaluation: Object.assign({}, evaluation, { evaluatedAt })
       });
       if (!recorded?.ok) throw new Error(recorded?.error || "growth_evaluation_record_failed");
+      const profileDeltaContext = profileDeltaScope({
+        claimed,
+        context,
+        evaluation: recorded.evaluation
+      });
       const rewardSettlement = typeof learningStore.settleEvaluationReward === "function"
         ? learningStore.settleEvaluationReward({
           evaluation: recorded.evaluation,
@@ -131,12 +152,36 @@ function createGrowthEvaluationService(options = {}) {
           settledAt: now().toISOString()
         })
         : { ok: false, available: false, error: "growth_reward_settlement_unavailable" };
+      const profileDeltaBefore = snapshotProfileDelta({
+        profileDeltaService,
+        phase: "before",
+        scope: profileDeltaContext
+      });
       const profileUpdate = recordProfileUpdate({
         profileService,
         taskCard: context.taskCard,
         submission: context.submission,
         evaluation: recorded.evaluation,
         workspaceId: claimed.workspaceId
+      });
+      const evidenceLedger = recordEvidenceLedger({
+        evidenceLedgerService,
+        taskCard: context.taskCard,
+        submission: context.submission,
+        evaluation: recorded.evaluation,
+        profileUpdate,
+        workspaceId: claimed.workspaceId
+      });
+      const profileDelta = recordProfileDelta({
+        profileDeltaService,
+        beforeProfileSnapshot: profileDeltaBefore,
+        scope: Object.assign({}, profileDeltaContext, {
+          targetNodeIds: uniqueStrings(profileDeltaContext.targetNodeIds.concat(profileUpdate.targetNodeIds || []))
+        }),
+        taskCard: context.taskCard,
+        submission: context.submission,
+        evaluation: recorded.evaluation,
+        evidenceLedger
       });
       const nextCardStrategy = chooseNextCardStrategy({
         nextCardStrategyService,
@@ -172,8 +217,10 @@ function createGrowthEvaluationService(options = {}) {
         ok: true,
         job: completed,
         evaluation: recorded.evaluation,
+        evidence_ledger: evidenceLedger,
         reward_settlement: rewardSettlement,
         profile_update: profileUpdate,
+        profile_delta: profileDelta,
         next_card_strategy: nextCardStrategy,
         stage_assessment_cycle: stageAssessmentCycle,
         trajectory,
@@ -226,6 +273,115 @@ function createGrowthEvaluationService(options = {}) {
   };
 }
 
+function nodeIdsFromEvaluationContext(input = {}) {
+  const context = input.context || {};
+  const taskCard = context.taskCard || {};
+  const taskRaw = context.taskRaw || {};
+  const raw = Object.assign(
+    {},
+    parseJson(taskCard.raw_json, {}),
+    parseJson(taskCard.rawJson, {}),
+    taskRaw
+  );
+  return uniqueStrings(
+    asArray(taskRaw.learningGraph?.targetNodeIds)
+      .concat(taskRaw.learningGraph?.assessmentCoverageNodeIds || [])
+      .concat(taskRaw.learning_graph?.target_node_ids || [])
+      .concat(taskRaw.learning_graph?.assessment_coverage_node_ids || [])
+      .concat(raw.learningGraph?.targetNodeIds || [])
+      .concat(raw.learningGraph?.assessmentCoverageNodeIds || [])
+      .concat(raw.learning_graph?.target_node_ids || [])
+      .concat(raw.learning_graph?.assessment_coverage_node_ids || [])
+      .concat(raw.targetNodeIds || [])
+      .concat(raw.assessmentCoverageNodeIds || [])
+      .concat(parseJson(taskCard.skill_ids_json, []))
+      .concat(parseJson(taskCard.assessment_coverage_json, []))
+      .concat(asArray(input.evaluation?.skillResults).map((item) => item.nodeId || item.graphNodeId))
+      .concat(taskCard.capability_cluster_id)
+  ).slice(0, 40);
+}
+
+function profileDeltaScope(input = {}) {
+  const context = input.context || {};
+  const submission = context.submission || {};
+  const taskCard = context.taskCard || {};
+  const claimed = input.claimed || {};
+  const workspaceId = cleanString(
+    claimed.workspaceId
+      || taskCard.workspace_id
+      || taskCard.workspaceId
+      || submission.workspace_id
+      || submission.workspaceId
+  );
+  const learnerId = cleanString(
+    taskCard.learner_id
+      || taskCard.learnerId
+      || submission.learner_id
+      || submission.learnerId
+      || workspaceId
+  );
+  return {
+    workspaceId,
+    learnerId,
+    programId: cleanString(taskCard.program_id || taskCard.programId || submission.program_id || submission.programId),
+    targetNodeIds: nodeIdsFromEvaluationContext({
+      context,
+      evaluation: input.evaluation
+    }),
+    taskCardId: cleanString(claimed.taskCardId || taskCard.id),
+    submissionId: cleanString(claimed.submissionId || submission.id),
+    evaluationId: cleanString(input.evaluation?.evaluationId || input.evaluation?.id)
+  };
+}
+
+function snapshotProfileDelta(input = {}) {
+  const service = input.profileDeltaService;
+  if (!service || typeof service.snapshot !== "function") return null;
+  const scope = input.scope || {};
+  try {
+    return service.snapshot({
+      phase: input.phase,
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      programId: scope.programId,
+      targetNodeIds: scope.targetNodeIds
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      available: false,
+      phase: cleanString(input.phase),
+      error: cleanString(err.message || err) || "profile_delta_snapshot_failed"
+    };
+  }
+}
+
+function recordProfileDelta(input = {}) {
+  const service = input.profileDeltaService;
+  if (!service || typeof service.recordEvaluationProfileDelta !== "function") {
+    return { ok: true, available: false, skipped: true, reason: "profile_delta_service_unavailable" };
+  }
+  const scope = input.scope || {};
+  try {
+    return service.recordEvaluationProfileDelta({
+      beforeProfileSnapshot: input.beforeProfileSnapshot,
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      programId: scope.programId,
+      targetNodeIds: scope.targetNodeIds,
+      taskCard: input.taskCard,
+      submission: input.submission,
+      evaluation: input.evaluation,
+      evidenceLedger: input.evidenceLedger,
+      taskCardId: scope.taskCardId,
+      submissionId: scope.submissionId,
+      evaluationId: scope.evaluationId
+    });
+  } catch (err) {
+    return { ok: false, available: true, error: cleanString(err.message || err) || "profile_delta_record_failed" };
+  }
+}
+
 function recordStageAssessmentCompletion(input = {}) {
   const service = input.stageAssessmentService;
   if (!service || typeof service.recordAssessmentCompletion !== "function") {
@@ -256,6 +412,24 @@ function recordProfileUpdate(input = {}) {
     });
   } catch (err) {
     return { ok: false, error: cleanString(err.message || err) || "mastery_profile_update_failed" };
+  }
+}
+
+function recordEvidenceLedger(input = {}) {
+  const service = input.evidenceLedgerService;
+  if (!service || typeof service.recordEvaluationEvidence !== "function") {
+    return { ok: false, available: false, error: "learning_evidence_ledger_service_unavailable" };
+  }
+  try {
+    return service.recordEvaluationEvidence({
+      taskCard: input.taskCard,
+      submission: input.submission,
+      evaluation: input.evaluation,
+      profileUpdate: input.profileUpdate,
+      workspaceId: input.workspaceId
+    });
+  } catch (err) {
+    return { ok: false, error: cleanString(err.message || err) || "learning_evidence_ledger_record_failed" };
   }
 }
 

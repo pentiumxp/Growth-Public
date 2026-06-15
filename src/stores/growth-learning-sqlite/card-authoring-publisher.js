@@ -156,6 +156,9 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
     expectedTimeMinutes: expectedMinutes(draft),
     learningGraph: {
       learningGraphPlanId: cleanString(draft.learningGraphPlanId || learningGraphPlan.learningGraphPlanId),
+      domainPackId: cleanString(learningGraphPlan.domainPackId || request.domainPackId),
+      domain: cleanString(learningGraphPlan.domain || request.domain),
+      subject: cleanString(learningGraphPlan.subject || request.subject),
       targetNodeIds,
       prerequisiteNodeIds,
       assessmentCoverageNodeIds,

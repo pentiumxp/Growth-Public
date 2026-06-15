@@ -73,6 +73,7 @@ function sanitizeSignal(signal = {}) {
 
 function createLearningExperienceSignalService(options = {}) {
   const repository = options.repository;
+  const evidenceLedgerService = options.evidenceLedgerService || null;
   const now = typeof options.now === "function" ? options.now : () => new Date();
 
   function recordSignal(input = {}) {
@@ -118,6 +119,15 @@ function createLearningExperienceSignalService(options = {}) {
       if (result.duplicate) duplicateCount += 1;
       if (result.signal) signals.push(sanitizeSignal(result.signal));
     }
+    const ledgerResults = evidenceLedgerService && typeof evidenceLedgerService.recordExperienceSignalEvidence === "function"
+      ? signals.map((signal) => evidenceLedgerService.recordExperienceSignalEvidence({
+        signal,
+        taskCardId,
+        workspaceId,
+        learnerId,
+        programId
+      }))
+      : [];
     return {
       ok: true,
       source: "growth-learning-experience-signal-service",
@@ -129,7 +139,12 @@ function createLearningExperienceSignalService(options = {}) {
       targetNodeIds,
       signalCount: signals.length,
       duplicateCount,
-      signals
+      signals,
+      evidenceLedger: ledgerResults.length ? {
+        ok: ledgerResults.every((item) => item?.ok !== false),
+        evidenceCount: ledgerResults.filter((item) => item?.ok && item.evidence).length,
+        duplicateCount: ledgerResults.filter((item) => item?.duplicate).length
+      } : { ok: false, available: false, error: "learning_evidence_ledger_service_unavailable" }
     };
   }
 

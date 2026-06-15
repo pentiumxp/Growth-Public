@@ -100,8 +100,21 @@ test("evaluation service records profile, strategy, and trajectory after evaluat
       return { ok: true, trajectory: { taskCardId: "ltask_1", strategy: "stabilize" } };
     }
   };
+  const evidenceLedgerService = {
+    recordEvaluationEvidence(input) {
+      calls.push("ledger");
+      assert.equal(input.evaluation.evaluationId, "eval_1");
+      assert.equal(input.profileUpdate.targetNodeIds[0], "kg_english_evidence_answering");
+      return {
+        ok: true,
+        evidenceCount: 1,
+        entries: [{ evidenceId: "lgevd_eval_1", graphNodeId: "kg_english_evidence_answering" }]
+      };
+    }
+  };
   const service = createGrowthEvaluationService({
     learningStore,
+    evidenceLedgerService,
     profileService,
     nextCardStrategyService,
     trajectoryService,
@@ -113,9 +126,11 @@ test("evaluation service records profile, strategy, and trajectory after evaluat
 
   assert.equal(result.ok, true);
   assert.equal(result.profile_update.ok, true);
+  assert.equal(result.evidence_ledger.ok, true);
+  assert.equal(result.evidence_ledger.evidenceCount, 1);
   assert.equal(result.next_card_strategy.strategy, "stabilize");
   assert.equal(result.trajectory.ok, true);
-  assert.deepEqual(calls, ["claim", "context", "recordEvaluation", "reward", "profile", "strategy", "trajectory", "complete"]);
+  assert.deepEqual(calls, ["claim", "context", "recordEvaluation", "reward", "profile", "ledger", "strategy", "trajectory", "complete"]);
 });
 
 test("evaluation service uses injected Gateway evaluator before recording", async () => {
@@ -196,6 +211,213 @@ test("evaluation service uses injected Gateway evaluator before recording", asyn
   assert.equal(result.ok, true);
   assert.equal(result.evaluation.evaluationId, "eval_gateway");
   assert.deepEqual(calls, ["claim", "context", "gatewayEvaluator", "recordEvaluation", "reward", "complete"]);
+});
+
+test("evaluation service returns bounded profile delta after ledger update", async () => {
+  const calls = [];
+  const job = {
+    jobId: "job_delta",
+    submissionId: "submission_delta",
+    taskCardId: "ltask_delta",
+    workspaceId: "weixin_stephen",
+    attemptCount: 1,
+    status: "pending"
+  };
+  const learningStore = {
+    claimEvaluationJob() {
+      calls.push("claim");
+      return Object.assign({}, job, { status: "processing" });
+    },
+    evaluationJobContext() {
+      calls.push("context");
+      return {
+        submission: {
+          id: "submission_delta",
+          task_card_id: "ltask_delta",
+          learner_id: "fanfan",
+          workspace_id: "weixin_stephen",
+          program_id: "program_science"
+        },
+        taskCard: {
+          id: "ltask_delta",
+          learner_id: "fanfan",
+          workspace_id: "weixin_stephen",
+          program_id: "program_science",
+          title: "Science fair test",
+          raw_json: JSON.stringify({ learningGraph: { targetNodeIds: ["kg_science_fair_test"] } })
+        },
+        taskRaw: { learningGraph: { targetNodeIds: ["kg_science_fair_test"] } },
+        submissionRaw: { text: "I measured plant height because that shows what changed." }
+      };
+    },
+    recordEvaluation() {
+      calls.push("recordEvaluation");
+      return {
+        ok: true,
+        evaluation: {
+          evaluationId: "eval_delta",
+          status: "completed",
+          score: 72,
+          passed: true,
+          confidence: 0.82,
+          summary: "Measured result was present."
+        }
+      };
+    },
+    settleEvaluationReward() {
+      calls.push("reward");
+      return { ok: true, settlement: { coinAmount: 72 } };
+    },
+    completeEvaluationJob() {
+      calls.push("complete");
+      return Object.assign({}, job, { status: "done" });
+    }
+  };
+  const profileDeltaService = {
+    snapshot(input) {
+      calls.push(`profileDelta:${input.phase}`);
+      assert.equal(input.workspaceId, "weixin_stephen");
+      assert.equal(input.learnerId, "fanfan");
+      assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
+      return {
+        ok: true,
+        available: true,
+        phase: input.phase,
+        capabilityStates: [],
+        summary: { evidenceCount: 0 },
+        recommendedPlannerHints: { strategy: "stabilize" }
+      };
+    },
+    recordEvaluationProfileDelta(input) {
+      calls.push("profileDelta:record");
+      assert.equal(input.beforeProfileSnapshot.phase, "before");
+      assert.equal(input.evidenceLedger.entries[0].evidenceId, "evidence_eval_delta");
+      assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
+      return {
+        ok: true,
+        available: true,
+        profileDeltaId: "profile_delta_eval_delta",
+        privacyClass: "summary_only",
+        summary: { changedCapabilityCount: 1 },
+        changedCapabilities: [{ nodeId: "kg_science_fair_test", evidenceCountDelta: 1 }]
+      };
+    }
+  };
+  const service = createGrowthEvaluationService({
+    learningStore,
+    profileDeltaService,
+    profileService: {
+      recordEvaluationEvidence() {
+        calls.push("profile");
+        return { ok: true, targetNodeIds: ["kg_science_fair_test"], masterySummary: { masteryStates: [] } };
+      }
+    },
+    evidenceLedgerService: {
+      recordEvaluationEvidence() {
+        calls.push("ledger");
+        return { ok: true, evidenceCount: 1, entries: [{ evidenceId: "evidence_eval_delta", graphNodeId: "kg_science_fair_test" }] };
+      }
+    },
+    nextCardStrategyService: { chooseNextCardStrategy: () => ({ ok: true, strategy: "stabilize" }) },
+    trajectoryService: { recordEvaluationTrajectory: () => ({ ok: true }) },
+    eventService: { emit: async () => ({ ok: true }) },
+    now: () => new Date("2026-06-15T08:00:00.000Z")
+  });
+
+  const result = await service.processEvaluationJob(job);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.profile_delta.ok, true);
+  assert.equal(result.profile_delta.profileDeltaId, "profile_delta_eval_delta");
+  assert.deepEqual(calls, [
+    "claim",
+    "context",
+    "recordEvaluation",
+    "reward",
+    "profileDelta:before",
+    "profile",
+    "ledger",
+    "profileDelta:record",
+    "complete"
+  ]);
+});
+
+test("profile delta failure is visible and non-fatal for evaluation completion", async () => {
+  const calls = [];
+  const job = {
+    jobId: "job_delta_failure",
+    submissionId: "submission_delta_failure",
+    taskCardId: "ltask_delta_failure",
+    workspaceId: "weixin_stephen",
+    attemptCount: 1,
+    status: "pending"
+  };
+  const learningStore = {
+    claimEvaluationJob() {
+      calls.push("claim");
+      return Object.assign({}, job, { status: "processing" });
+    },
+    evaluationJobContext() {
+      calls.push("context");
+      return {
+        submission: { id: "submission_delta_failure", learner_id: "fanfan", workspace_id: "weixin_stephen" },
+        taskCard: {
+          id: "ltask_delta_failure",
+          learner_id: "fanfan",
+          workspace_id: "weixin_stephen",
+          raw_json: JSON.stringify({ learningGraph: { targetNodeIds: ["kg_science_fair_test"] } })
+        },
+        taskRaw: { learningGraph: { targetNodeIds: ["kg_science_fair_test"] } },
+        submissionRaw: { text: "I measured the height and explained the result." }
+      };
+    },
+    recordEvaluation(input) {
+      calls.push("recordEvaluation");
+      return { ok: true, evaluation: Object.assign({}, input.evaluation, { evaluationId: "eval_delta_failure" }) };
+    },
+    settleEvaluationReward() {
+      calls.push("reward");
+      return { ok: true, settlement: { coinAmount: 70 } };
+    },
+    completeEvaluationJob() {
+      calls.push("complete");
+      return Object.assign({}, job, { status: "done" });
+    }
+  };
+  const service = createGrowthEvaluationService({
+    learningStore,
+    profileDeltaService: {
+      snapshot() {
+        return { ok: true, available: true, phase: "before", summary: {}, capabilityStates: [] };
+      },
+      recordEvaluationProfileDelta() {
+        calls.push("profileDelta:record");
+        throw new Error("profile_delta_projection_failed");
+      }
+    },
+    profileService: {
+      recordEvaluationEvidence() {
+        calls.push("profile");
+        return { ok: true, targetNodeIds: ["kg_science_fair_test"], masterySummary: { masteryStates: [] } };
+      }
+    },
+    evidenceLedgerService: {
+      recordEvaluationEvidence() {
+        calls.push("ledger");
+        return { ok: true, evidenceCount: 1, entries: [{ evidenceId: "evidence_delta_failure" }] };
+      }
+    },
+    eventService: { emit: async () => ({ ok: true }) },
+    now: () => new Date("2026-06-15T08:00:00.000Z")
+  });
+
+  const result = await service.processEvaluationJob(job);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.profile_delta.ok, false);
+  assert.equal(result.profile_delta.error, "profile_delta_projection_failed");
+  assert.equal(result.job.status, "done");
+  assert.deepEqual(calls, ["claim", "context", "recordEvaluation", "reward", "profile", "ledger", "profileDelta:record", "complete"]);
 });
 
 test("evaluation service closes stage assessment cycle after formal evaluation", async () => {

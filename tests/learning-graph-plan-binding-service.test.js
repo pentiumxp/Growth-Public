@@ -113,6 +113,9 @@ test("learning graph plan service creates a focused teaching plan from native gr
   assert.equal(plan.ok, true);
   assert.match(plan.learningGraphPlanId, /^lgp_[a-f0-9]{18}$/);
   assert.equal(plan.targetNodeId, "kg_ratio_intro");
+  assert.equal(plan.domainPackId, "domain_pack_plan_test");
+  assert.equal(plan.domain, "math");
+  assert.equal(plan.subject, "mathematics");
   assert.deepEqual(plan.prerequisiteNodeIds, ["kg_fraction_meaning"]);
   assert.deepEqual(plan.pathNodeIds, ["kg_fraction_meaning", "kg_ratio_intro"]);
   assert.equal(plan.cardSequence[0].cardRole, "teaching");

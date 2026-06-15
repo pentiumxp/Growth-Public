@@ -1,6 +1,6 @@
 # Growth Card Generation Rules
 
-Last updated: 2026-06-14.
+Last updated: 2026-06-15.
 
 This document consolidates the current Growth card-generation rules from the
 migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
@@ -110,6 +110,70 @@ unanchored signal.
 
 Backend reward policy may override these defaults, but the defaults are part of
 the V1 product rule.
+
+Planner roles are broader than published card roles. Planner output may use
+strategy roles such as `repair` or `stretch` to describe why the next card was
+selected. Publication must map those roles into supported card-generation
+roles before calling `learning-card-generation-service`. V1 uses:
+
+- `repair` -> `teaching`, with lower difficulty and stronger support;
+- `stretch` -> `practice`, with higher difficulty and transfer prompts.
+
+The mapping belongs in `learning-plan-publisher-service` or a future dedicated
+policy service. Routes and browser code must not implement their own role
+mapping.
+
+## Target Provisioning Rule
+
+Owner visibility is not enough to generate a new card. Growth must pass a
+learning target provision check before planner draft, plan publish, or direct
+card generation for a learner/domain-pack/subject combination.
+
+The rule is:
+
+- `GET /api/v1/growth/view-targets` only answers whether the actor can see a
+  learner target;
+- `learning-target-provisioning-service` answers whether Growth can plan or
+  generate cards for that target's selected domain pack, domain, subject, and
+  graph nodes;
+- the Fanfan sample can use `sample_default` while V1 is being brought up;
+- non-sample learners require an active explicit provision before generation;
+- route and browser code must not bypass this by passing `domainPackId`,
+  `subject`, or `targetNodeId` directly into generation;
+- provision DTOs and context projections must remain summary-only and must not
+  expose raw graph JSON, source-document bodies, raw syllabus cache, learner
+  answers, transcripts, prompts, answer keys, model output, private paths, or
+  provider configuration.
+
+## Model-Entered Steps
+
+Growth card creation is fully AI-assisted only through Gateway. There are
+three separate model-entered steps:
+
+1. Planner: `learning-plan-orchestrator-service` sends Profile V2, graph
+   candidate summaries, recent evidence summaries, constraints, and pressure
+   policy to Gateway. It returns a plan draft, not a published card.
+2. Authoring: `learning-card-authoring-service` sends a validated
+   `learningGraphPlan` or validated planner item plus summary-only history and
+   graph source summaries to Gateway. It returns an authoring draft, not a
+   durable card.
+3. Evaluation: `learning-card-evaluation-service` sends the current submitted
+   evidence for the current card, bounded by the authenticated evaluation flow,
+   plus card policy and graph metadata. It returns an evaluation draft, not a
+   persisted grade.
+
+Only the evaluation step may include the current learner answer because that is
+the evidence being graded. Planning and authoring must not include raw
+historical answers, raw transcripts, hidden answer keys, raw prompts, raw
+model responses, private paths, secrets, or provider configuration.
+
+Every model-entered step follows the same safety shape:
+
+- assemble structured input in a Growth service;
+- call Gateway through a Growth Gateway client;
+- parse/repair the draft when policy allows;
+- validate schema, graph binding, role policy, pressure policy, and privacy;
+- write durable rows only after validation passes.
 
 ## Teaching And Practice Content
 
@@ -398,6 +462,15 @@ workspace-bearer scoped, normalizes snake_case and camelCase graph inputs, and
 delegates generation to the service layer. The route must stay HTTP glue and
 must not own recipe ids, daily completion policy, graph target selection,
 role, or difficulty defaults.
+
+Planner-backed generation can also enter through
+`POST /api/v1/growth/learning-plans/:planDraftId/publish`. That route does
+not author cards itself. It delegates to `learning-plan-publisher-service`,
+which loads a validated `learning_growth_plan_drafts` row, maps planner
+strategy roles into supported generation roles, calls
+`learning-card-generation-service`, and marks the plan draft published only
+after card generation succeeds.
+
 When the embedded UI is served through the Home AI same-origin plugin proxy,
 the host validates the Hermes workspace access and attaches the server-side
 `.hermes-growth/access-key.txt` bearer to proxied write requests. Direct calls
@@ -419,14 +492,29 @@ recommendation, graph target, role, and difficulty as a preview, but those
 preview fields are not required inputs for ordinary daily card creation.
 
 The Owner generation page may display `learningProfile`,
-`nextCardRecommendation`, and `recommendationLifecycle` before generation. That
-display is a read-only target-workspace projection and must remain
-summary-only. It is allowed to show bounded weaknesses, strengths, signals,
-recent trajectory, selection mode, recommendation mode, recommendation status,
-graph target, role, difficulty, the next-card reason, generated card/plan ids,
+`profileV2`, `evidenceAudit`, `plannerReadiness`, `plannerContextPreview`,
+`graphOptions`, `nextCardRecommendation`, and `recommendationLifecycle` before
+generation. That display is a read-only target-workspace projection and must
+remain summary-only. `GET /api/v1/growth/card-generation/context` accepts
+bounded selectors such as `domain`, `subject`, `domainPackId`, `horizon`, and
+`availableMinutes`; explicit selectors override recipe defaults for preview
+and planner context, while recipe policy still supplies safe defaults.
+`graphOptions` may show imported domain-pack ids, domains, titles, versions,
+node counts, and subject labels, but not raw graph JSON or source materials.
+The projection is allowed to show bounded weaknesses, strengths, signals,
+evidence ids, recent trajectory, candidate graph nodes, selection mode,
+recommendation mode, recommendation status, graph target, role, difficulty,
+planner privacy flags, the next-card reason, generated card/plan ids,
 superseded-by trajectory id, and lifecycle timestamps; it is not allowed to
 show raw answers, transcripts, prompts, hidden answer keys, model output,
-private file paths, or internal source refs.
+private file paths, source-document bodies, or internal source refs.
+
+Planner-backed non-English daily cards should enter through a validated plan
+draft, not by asking the browser to submit a free-form topic. The normal
+sequence is context with `graphOptions`, draft plan, Owner preview, explicit
+publish, card authoring, learner evidence, evaluation, ledger/Profile V2
+update, and next recommendation. Direct compact recipe generation remains
+valid for `daily_english_v1` while the planner UI is being added.
 
 ## Gateway Response Modes
 

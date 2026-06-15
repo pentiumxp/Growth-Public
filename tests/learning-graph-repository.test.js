@@ -120,6 +120,123 @@ test("learning graph repository creates native graph tables and imports a pack i
   assert.equal(second.source_sha256, "hash_2");
 });
 
+test("learning graph repository projects domain-pack and subject options from native graph tables", () => {
+  const dir = tempDir();
+  const dbPath = path.join(dir, "growth.sqlite3");
+  const repository = createRepository(dbPath);
+  const validation = {
+    validation: { duplicate_node_ids: 0, missing_edge_endpoints: 0, prerequisite_cycles: 0 },
+    warnings: []
+  };
+
+  repository.importPack({
+    pack: pack({
+      domainPacks: [{
+        domainPackId: "domain_pack_repo_science",
+        domain: "science",
+        title: "Science repository test pack",
+        sourceKind: "owner_manual",
+        version: "2026-06-11-test",
+        ownerWorkspaceId: "owner",
+        visibility: "private_seed",
+        importStatus: "validated_seed"
+      }],
+      nodes: [
+        Object.assign({}, pack().nodes[0], {
+          nodeId: "kg_repo_science_a",
+          domainPackId: "domain_pack_repo_science",
+          domain: "science",
+          subject: "science",
+          title: "Science A"
+        }),
+        Object.assign({}, pack().nodes[1], {
+          nodeId: "kg_repo_science_b",
+          domainPackId: "domain_pack_repo_science",
+          domain: "science",
+          subject: "physics",
+          title: "Science B"
+        })
+      ],
+      edges: []
+    }),
+    validation,
+    sourceFile: "repo-test.json",
+    sourceSha256: "hash_science"
+  });
+
+  const options = repository.domainPackOptions();
+  assert.equal(options.length, 1);
+  assert.equal(options[0].domainPackId, "domain_pack_repo_science");
+  assert.equal(options[0].domain, "science");
+  assert.equal(options[0].nodeCount, 2);
+  assert.equal(options[0].subjectCount, 2);
+  assert.deepEqual(options[0].subjects.sort(), ["physics", "science"]);
+  assert.equal(JSON.stringify(options).includes("raw_json"), false);
+});
+
+test("learning graph repository infers node domain-pack from node domain when node omits explicit pack id", () => {
+  const dir = tempDir();
+  const dbPath = path.join(dir, "growth.sqlite3");
+  const repository = createRepository(dbPath);
+  const validation = {
+    validation: { duplicate_node_ids: 0, missing_edge_endpoints: 0, prerequisite_cycles: 0 },
+    warnings: []
+  };
+
+  repository.importPack({
+    pack: pack({
+      domainPacks: [{
+        domainPackId: "domain_pack_repo_english",
+        domain: "english",
+        title: "English repository test pack",
+        sourceKind: "owner_manual",
+        version: "2026-06-11-test",
+        ownerWorkspaceId: "owner",
+        visibility: "private_seed",
+        importStatus: "validated_seed"
+      }, {
+        domainPackId: "domain_pack_repo_science",
+        domain: "science",
+        title: "Science repository test pack",
+        sourceKind: "owner_manual",
+        version: "2026-06-11-test",
+        ownerWorkspaceId: "owner",
+        visibility: "private_seed",
+        importStatus: "validated_seed"
+      }],
+      nodes: [
+        Object.assign({}, pack().nodes[0], {
+          nodeId: "kg_repo_english_inferred",
+          domain: "english",
+          subject: "english",
+          title: "English inferred pack"
+        }),
+        Object.assign({}, pack().nodes[1], {
+          nodeId: "kg_repo_science_inferred",
+          domain: "science",
+          subject: "science",
+          title: "Science inferred pack"
+        })
+      ],
+      edges: []
+    }),
+    validation,
+    sourceFile: "repo-test.json",
+    sourceSha256: "hash_multi_domain"
+  });
+
+  assert.equal(repository.node({ nodeId: "kg_repo_english_inferred" }).domainPackId, "domain_pack_repo_english");
+  assert.equal(repository.node({ nodeId: "kg_repo_science_inferred" }).domainPackId, "domain_pack_repo_science");
+  const options = repository.domainPackOptions();
+  assert.equal(options.length, 2);
+  const science = options.find((option) => option.domainPackId === "domain_pack_repo_science");
+  const english = options.find((option) => option.domainPackId === "domain_pack_repo_english");
+  assert.equal(science.nodeCount, 1);
+  assert.deepEqual(science.subjects, ["science"]);
+  assert.equal(english.nodeCount, 1);
+  assert.deepEqual(english.subjects, ["english"]);
+});
+
 test("learning graph import script writes to target DB and creates a backup", () => {
   const dir = tempDir();
   const sourcePath = path.join(dir, "pack.json");

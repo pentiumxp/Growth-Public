@@ -9,6 +9,7 @@ const { createServer } = require("../src/app/http-server");
 const { createGrowthEvaluationService } = require("../src/services/growth-evaluation-service");
 const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-gateway-authoring-client");
 const { createGrowthGatewayEvaluationClient } = require("../src/services/growth-gateway-evaluation-client");
+const { createGrowthGatewayPlannerClient } = require("../src/services/growth-gateway-planner-client");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardEvaluationService } = require("../src/services/learning-card-evaluation-service");
@@ -17,16 +18,27 @@ const { createLearningCardGenerationService } = require("../src/services/learnin
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
 const { createLearningCardTrajectoryService } = require("../src/services/learning-card-trajectory-service");
+const { createLearningEvidenceLedgerService } = require("../src/services/learning-evidence-ledger-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
 const { createLearningMasteryProfileService } = require("../src/services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
+const { createLearningProfileDeltaService } = require("../src/services/learning-profile-delta-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
+const { createLearningProfileV2Service } = require("../src/services/learning-profile-v2-service");
+const { createLearningPlanOrchestratorService } = require("../src/services/learning-plan-orchestrator-service");
+const { createLearningPlanPublisherService } = require("../src/services/learning-plan-publisher-service");
+const { createLearningPlanValidationService } = require("../src/services/learning-plan-validation-service");
+const { createLearningPlannerContextService } = require("../src/services/learning-planner-context-service");
 const { createLearningStageAssessmentService } = require("../src/services/learning-stage-assessment-service");
+const { createLearningTargetProvisioningService } = require("../src/services/learning-target-provisioning-service");
 const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
 
 const WORKSPACE_ID = "weixin_fanfan";
 const PROGRAM_ID = "program_english";
 const TARGET_NODE_ID = "kg_english_evidence_answering";
+const SCIENCE_PROGRAM_ID = "program_science";
+const SCIENCE_NODE_ID = "kg_science_fair_test";
+const SCIENCE_PREREQ_NODE_ID = "kg_science_observation_language";
 const RAW_MARKER = "RAW_FANFAN_ANSWER_MUST_NOT_LEAVE_SQLITE";
 
 function tempDir() {
@@ -52,21 +64,40 @@ function graphPack() {
     importId: "kg_import_ai_loop_harness",
     version: "2026-06-14-test",
     privacyClass: "summary_only",
-    sourceDocuments: [{
-      sourceRef: "public:english-evidence",
-      title: "English evidence-answering summary",
-      localPath: ""
-    }],
-    domainPacks: [{
-      domainPackId: "domain_pack_ai_loop_english",
-      domain: "english",
-      title: "AI loop English test pack",
-      sourceKind: "owner_manual",
-      version: "2026-06-14-test",
-      ownerWorkspaceId: "owner",
-      visibility: "private_seed",
-      importStatus: "validated_seed"
-    }],
+    sourceDocuments: [
+      {
+        sourceRef: "public:english-evidence",
+        title: "English evidence-answering summary",
+        localPath: ""
+      },
+      {
+        sourceRef: "public:science-fair-test",
+        title: "Science fair-test summary",
+        localPath: ""
+      }
+    ],
+    domainPacks: [
+      {
+        domainPackId: "domain_pack_ai_loop_english",
+        domain: "english",
+        title: "AI loop English test pack",
+        sourceKind: "owner_manual",
+        version: "2026-06-14-test",
+        ownerWorkspaceId: "owner",
+        visibility: "private_seed",
+        importStatus: "validated_seed"
+      },
+      {
+        domainPackId: "domain_pack_ai_loop_science",
+        domain: "science",
+        title: "AI loop science test pack",
+        sourceKind: "owner_manual",
+        version: "2026-06-14-test",
+        ownerWorkspaceId: "owner",
+        visibility: "private_seed",
+        importStatus: "validated_seed"
+      }
+    ],
     nodes: [
       {
         nodeId: TARGET_NODE_ID,
@@ -97,17 +128,58 @@ function graphPack() {
         privacyClass: "summary_only",
         learningOutcomes: ["Use because to connect a claim and reason."],
         evidenceRequired: ["claim", "because_reasoning"]
+      },
+      {
+        nodeId: SCIENCE_PREREQ_NODE_ID,
+        domain: "science",
+        nodeType: "skill",
+        title: "Observation language",
+        stage: "year_6_to_7",
+        subject: "science",
+        curriculum: "test",
+        sourceKind: "owner_manual",
+        sourceRef: "public:science-fair-test",
+        version: "2026-06-14-test",
+        privacyClass: "summary_only",
+        learningOutcomes: ["Describe what changed and what was measured in a fair test."],
+        evidenceRequired: ["identify_changed_variable", "identify_measured_result"]
+      },
+      {
+        nodeId: SCIENCE_NODE_ID,
+        domain: "science",
+        nodeType: "topic",
+        title: "Fair test reasoning",
+        stage: "year_6_to_7",
+        subject: "science",
+        curriculum: "test",
+        sourceKind: "owner_manual",
+        sourceRef: "public:science-fair-test",
+        version: "2026-06-14-test",
+        privacyClass: "summary_only",
+        learningOutcomes: ["Explain how one changed variable affects a measured result."],
+        evidenceRequired: ["explain_controlled_variable", "explain_measured_result"]
       }
     ],
-    edges: [{
-      edgeId: "edge_claim_reason_to_evidence",
-      fromNodeId: "kg_english_claim_reason",
-      toNodeId: TARGET_NODE_ID,
-      edgeType: "prerequisite",
-      confidence: "medium",
-      rationale: "A clear claim and reason supports exact evidence use.",
-      sourceRef: "public:english-evidence"
-    }]
+    edges: [
+      {
+        edgeId: "edge_claim_reason_to_evidence",
+        fromNodeId: "kg_english_claim_reason",
+        toNodeId: TARGET_NODE_ID,
+        edgeType: "prerequisite",
+        confidence: "medium",
+        rationale: "A clear claim and reason supports exact evidence use.",
+        sourceRef: "public:english-evidence"
+      },
+      {
+        edgeId: "edge_observation_to_fair_test",
+        fromNodeId: SCIENCE_PREREQ_NODE_ID,
+        toNodeId: SCIENCE_NODE_ID,
+        edgeType: "prerequisite",
+        confidence: "medium",
+        rationale: "Fair-test reasoning needs clear observation language.",
+        sourceRef: "public:science-fair-test"
+      }
+    ]
   };
 }
 
@@ -555,6 +627,34 @@ function validEvaluationDraftForRequest(request = {}) {
   };
 }
 
+function validSciencePlanDraftForContext(context = {}) {
+  const targetNodeId = context.knowledgeGraph?.candidateNodes?.[0]?.nodeId || SCIENCE_NODE_ID;
+  return {
+    schemaVersion: "growth.learningPlanDraft.v1",
+    horizon: "daily_plan",
+    planSummary: "Use one low-pressure science card to repair fair-test reasoning.",
+    items: [{
+      itemId: "plan_item_science_fair_test",
+      cardRole: "repair",
+      subject: "science",
+      targetNodeIds: [targetNodeId],
+      estimatedMinutes: 12,
+      difficultyBand: "foundation",
+      supportLevel: "guided",
+      evidenceRequirements: ["explain_controlled_variable", "explain_measured_result"],
+      reason: "Recent summary-only evidence shows the learner needs clearer measured-result reasoning.",
+      pressurePolicy: {
+        completionPolicy: "daily_score_once",
+        passScoreRequired: false
+      }
+    }],
+    audit: {
+      basisEvidenceIds: (context.recentEvidence || []).map((item) => item.evidenceId).filter(Boolean).slice(0, 4),
+      profileSnapshotId: "profile_v2_science_harness"
+    }
+  };
+}
+
 function createLoopHarness() {
   const root = tempDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");
@@ -596,6 +696,17 @@ function createLoopHarness() {
       };
     }
   });
+  const plannerGatewayCalls = [];
+  const plannerGatewayClient = createGrowthGatewayPlannerClient({
+    transport(payload) {
+      plannerGatewayCalls.push(payload);
+      return {
+        json: {
+          output_text: JSON.stringify(validSciencePlanDraftForContext(payload.input))
+        }
+      };
+    }
+  });
   const learningCardEvaluationService = createLearningCardEvaluationService({
     gatewayClient: evaluationGatewayClient
   });
@@ -609,9 +720,33 @@ function createLoopHarness() {
     graphRepository: store.learningGraphRepository
   });
   const nextCardStrategyService = createLearningNextCardStrategyService();
+  const evidenceLedgerService = createLearningEvidenceLedgerService({
+    repository: store.learningEvidenceLedgerRepository,
+    now: () => new Date("2026-06-14T08:10:30.000Z")
+  });
   const profileProjectionService = createLearningProfileProjectionService({
     repository: store.masteryProfileRepository,
     nextCardStrategyService
+  });
+  const profileV2Service = createLearningProfileV2Service({
+    evidenceLedgerService,
+    legacyProfileProjectionService: profileProjectionService,
+    now: () => new Date("2026-06-14T08:10:00.000Z")
+  });
+  const profileDeltaService = createLearningProfileDeltaService({
+    profileV2Service,
+    repository: store.profileDeltaAuditRepository,
+    now: () => new Date("2026-06-14T08:12:30.000Z")
+  });
+  const plannerContextService = createLearningPlannerContextService({
+    evidenceLedgerService,
+    graphRepository: store.learningGraphRepository,
+    profileV2Service
+  });
+  const planOrchestratorService = createLearningPlanOrchestratorService({
+    gatewayClient: plannerGatewayClient,
+    plannerContextService,
+    validationService: createLearningPlanValidationService()
   });
   const recommendationService = createLearningCardRecommendationService({
     repository: store.masteryProfileRepository,
@@ -624,6 +759,10 @@ function createLoopHarness() {
     profileProjectionService,
     nextCardStrategyService
   });
+  const targetProvisioningService = createLearningTargetProvisioningService({
+    repository: store.domainPackProvisionRepository,
+    graphRepository: store.learningGraphRepository
+  });
   const generationService = createLearningCardGenerationService({
     graphPlanService,
     graphRepository: store.learningGraphRepository,
@@ -631,7 +770,14 @@ function createLoopHarness() {
     nextTargetService,
     nextCardStrategyService,
     recipePolicyService: createLearningCardGenerationRecipePolicyService(),
+    targetProvisioningService,
     authoringService
+  });
+  const planPublisherService = createLearningPlanPublisherService({
+    repository: store.learningPlanDraftRepository,
+    orchestratorService: planOrchestratorService,
+    cardGenerationService: generationService,
+    targetProvisioningService
   });
   const profileService = createLearningMasteryProfileService({
     repository: store.masteryProfileRepository,
@@ -649,7 +795,9 @@ function createLoopHarness() {
   });
   const evaluationService = createGrowthEvaluationService({
     learningStore: store,
+    evidenceLedgerService,
     profileService,
+    profileDeltaService,
     nextCardStrategyService,
     trajectoryService,
     stageAssessmentService,
@@ -660,15 +808,21 @@ function createLoopHarness() {
 
   return {
     dbPath,
+    evidenceLedgerService,
     evaluationGatewayCalls,
     evaluationService,
     gatewayCalls,
     generationService,
+    planPublisherService,
+    plannerGatewayCalls,
+    profileDeltaService,
+    profileV2Service,
     profileProjectionService,
     recommendationService,
     root,
     stageAssessmentService,
-    store
+    store,
+    targetProvisioningService
   };
 }
 
@@ -701,12 +855,24 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
     assert.equal(submitted.ok, true);
     assert.equal(submitted.evaluation_job.status, "pending");
 
-    const processed = await harness.evaluationService.processEvaluationQueue({
-      workspaceId: WORKSPACE_ID,
-      limit: 1
-    });
+    const pendingJob = harness.store.listEvaluationJobs({ status: "pending", workspaceId: WORKSPACE_ID })[0];
+    const processed = await harness.evaluationService.processEvaluationJob(pendingJob);
     assert.equal(processed.ok, true);
-    assert.equal(processed.processed, 1);
+    assert.equal(processed.profile_delta.ok, true);
+    assert.equal(processed.profile_delta.persistence.ok, true);
+    assert.equal(processed.profile_delta.persistence.available, true);
+    assert.equal(processed.profile_delta.summary.changedCapabilityCount >= 1, true);
+    assert.equal(processed.profile_delta.changedCapabilities[0].nodeId, TARGET_NODE_ID);
+    assert.equal(processed.profile_delta.basis.evidenceIds.length >= 1, true);
+    assert.equal(JSON.stringify(processed.profile_delta).includes(RAW_MARKER), false);
+    const deltaAudits = harness.store.profileDeltaAuditRepository.listProfileDeltas({
+      workspaceId: WORKSPACE_ID,
+      evaluationId: processed.profile_delta.basis.evaluationId
+    });
+    assert.equal(deltaAudits.length, 1);
+    assert.equal(deltaAudits[0].profileDeltaId, processed.profile_delta.profileDeltaId);
+    assert.equal(deltaAudits[0].changedCapabilities[0].nodeId, TARGET_NODE_ID);
+    assert.equal(JSON.stringify(deltaAudits[0]).includes(RAW_MARKER), false);
     assert.equal(harness.evaluationGatewayCalls.length, 1);
     assert.equal(harness.evaluationGatewayCalls[0].kind, "growth.card_evaluation.evaluate");
     assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "daily_score_once");
@@ -763,6 +929,12 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
       assert.equal(JSON.stringify(nextRecommendation).includes(RAW_MARKER), false);
       const evaluation = db.prepare("SELECT * FROM learning_evaluations WHERE id = ?").get("eval_ai_loop_1");
       assert.equal(evaluation.score, 48);
+      const evidenceLedgerRows = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE source_id = ?").all("eval_ai_loop_1");
+      assert.equal(evidenceLedgerRows.length >= 1, true);
+      assert.equal(evidenceLedgerRows.every((row) => row.source_type === "daily_evaluation"), true);
+      assert.equal(evidenceLedgerRows.some((row) => row.graph_node_id === TARGET_NODE_ID), true);
+      assert.equal(evidenceLedgerRows.every((row) => row.evidence_weight === 0.2), true);
+      assert.equal(JSON.stringify(evidenceLedgerRows).includes(RAW_MARKER), false);
       const settlement = db.prepare("SELECT * FROM learning_reward_settlements WHERE evaluation_id = ?").get("eval_ai_loop_1");
       assert.equal(settlement.coin_amount, 48);
       const completedCard = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(firstCard.published.taskCardId);
@@ -788,6 +960,331 @@ test("AI card loop generates, evaluates, profiles, recommends, and consumes the 
     });
     assert.equal(projectedAfterConsumption.recentTrajectory[0].nextRecommendation.status, "accepted");
     assert.equal(JSON.stringify(projectedAfterConsumption).includes(RAW_MARKER), false);
+  } finally {
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  }
+});
+
+test("Fanfan science operating loop drafts, publishes, evaluates, and updates Profile V2", async () => {
+  const harness = createLoopHarness();
+  try {
+    const seededEvidence = harness.evidenceLedgerService.writeEvidence({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      graphNodeId: SCIENCE_NODE_ID,
+      graphNodeIds: [SCIENCE_NODE_ID],
+      sourceType: "backfill_summary",
+      sourceId: "science_seed_needs_repair_1",
+      evidenceWeight: 0.2,
+      confidence: 0.72,
+      scoreBand: "low",
+      status: "needs_repair",
+      summary: {
+        summaryOnly: true,
+        feedbackSummary: "Fanfan needs clearer measured-result reasoning in fair-test explanations.",
+        remainingWeaknesses: ["Explain what was measured and why it changed."]
+      },
+      recordedAt: "2026-06-14T07:45:00.000Z"
+    });
+    assert.equal(seededEvidence.ok, true);
+
+    const draft = await harness.planPublisherService.draftPlan({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      horizon: "daily_plan",
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      availableMinutes: 15
+    });
+    assert.equal(draft.ok, true);
+    assert.equal(draft.planDraft.status, "draft");
+    assert.equal(draft.planDraft.contextSummary.knowledgeGraph.candidateNodes[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(draft.planDraft.contextSummary.profileSummary.weaknesses[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(harness.plannerGatewayCalls.length, 1);
+    assert.equal(harness.plannerGatewayCalls[0].kind, "growth.learning_planner.draft");
+    assert.equal(harness.plannerGatewayCalls[0].input.schemaVersion, "growth.learningPlanner.input.v1");
+    assert.equal(JSON.stringify(harness.plannerGatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const published = await harness.planPublisherService.publishPlanItem({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      planDraftId: draft.planDraft.planDraftId,
+      itemId: "plan_item_science_fair_test"
+    });
+    assert.equal(published.ok, true);
+    assert.equal(published.planDraft.status, "published");
+    assert.equal(published.planDraft.generatedTaskCardId, published.generation.published.taskCardId);
+    assert.equal(published.generation.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(published.generation.learningGraphPlan.cardSequence[0].cardRole, "teaching");
+    assert.equal(harness.gatewayCalls.length, 1);
+    assert.equal(harness.gatewayCalls[0].kind, "growth.card_authoring.generate");
+    assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(harness.gatewayCalls[0].input.sourceSummaries[0].domain, "science");
+    assert.equal(JSON.stringify(harness.gatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const submitted = harness.store.submitEvidence({
+      workspaceId: WORKSPACE_ID,
+      taskCardId: published.generation.published.taskCardId,
+      text: "I changed the amount of water and measured how tall the plant grew. More water helped at first, but too much water might not help.",
+      submittedAt: "2026-06-14T08:05:00.000Z"
+    });
+    assert.equal(submitted.ok, true);
+    assert.equal(submitted.evaluation_job.status, "pending");
+
+    const pendingJob = harness.store.listEvaluationJobs({ status: "pending", workspaceId: WORKSPACE_ID })[0];
+    const processed = await harness.evaluationService.processEvaluationJob(pendingJob);
+    assert.equal(processed.ok, true);
+    assert.equal(processed.profile_delta.ok, true);
+    assert.equal(processed.profile_delta.persistence.ok, true);
+    assert.equal(processed.profile_delta.persistence.available, true);
+    assert.equal(processed.profile_delta.summary.changedCapabilityCount >= 1, true);
+    assert.equal(processed.profile_delta.changedCapabilities[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(processed.profile_delta.basis.evidenceIds.length >= 1, true);
+    assert.equal(JSON.stringify(processed.profile_delta).includes(RAW_MARKER), false);
+    const deltaAudits = harness.store.profileDeltaAuditRepository.listProfileDeltas({
+      workspaceId: WORKSPACE_ID,
+      evaluationId: processed.profile_delta.basis.evaluationId
+    });
+    assert.equal(deltaAudits.length, 1);
+    assert.equal(deltaAudits[0].profileDeltaId, processed.profile_delta.profileDeltaId);
+    assert.equal(deltaAudits[0].changedCapabilities[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(deltaAudits[0]).includes(RAW_MARKER), false);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls[0].kind, "growth.card_evaluation.evaluate");
+    assert.equal(harness.evaluationGatewayCalls[0].input.card.targetNodeIds[0], SCIENCE_NODE_ID);
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "daily_score_once");
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const profileV2 = harness.profileV2Service.profileV2({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(profileV2.ok, true);
+    const scienceState = profileV2.capabilityStates.find((state) => state.nodeId === SCIENCE_NODE_ID);
+    assert.ok(scienceState);
+    assert.equal(scienceState.evidenceCount >= 2, true);
+    assert.equal(scienceState.evidenceWeightTotal >= 0.4, true);
+    assert.equal(profileV2.weaknesses.some((item) => item.nodeId === SCIENCE_NODE_ID), true);
+    assert.equal(profileV2.recommendedPlannerHints.strategy, "repair");
+    assert.equal(JSON.stringify(profileV2).includes(RAW_MARKER), false);
+
+    const db = new DatabaseSync(harness.dbPath, { readOnly: true });
+    try {
+      const planRow = db.prepare("SELECT * FROM learning_growth_plan_drafts WHERE plan_draft_id = ?")
+        .get(draft.planDraft.planDraftId);
+      assert.equal(planRow.status, "published");
+      assert.equal(planRow.generated_task_card_id, published.generation.published.taskCardId);
+      assert.equal(JSON.parse(planRow.context_summary_json).knowledgeGraph.candidateNodes[0].nodeId, SCIENCE_NODE_ID);
+      assert.equal(JSON.stringify(planRow).includes(RAW_MARKER), false);
+
+      const scienceCard = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?")
+        .get(published.generation.published.taskCardId);
+      assert.equal(scienceCard.domain, "science");
+      assert.equal(scienceCard.card_role, "teaching");
+      assert.equal(JSON.parse(scienceCard.raw_json).completionPolicy.mode, "daily_score_once");
+
+      const evidenceLedgerRows = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE workspace_id = ? AND graph_node_id = ? ORDER BY created_at")
+        .all(WORKSPACE_ID, SCIENCE_NODE_ID);
+      assert.equal(evidenceLedgerRows.length >= 2, true);
+      assert.equal(evidenceLedgerRows.some((row) => row.source_type === "backfill_summary"), true);
+      assert.equal(evidenceLedgerRows.some((row) => row.source_type === "daily_evaluation"), true);
+      assert.equal(evidenceLedgerRows.filter((row) => row.source_type === "daily_evaluation").every((row) => row.evidence_weight === 0.2), true);
+      assert.equal(JSON.stringify(evidenceLedgerRows).includes(RAW_MARKER), false);
+    } finally {
+      db.close();
+    }
+  } finally {
+    fs.rmSync(harness.root, { recursive: true, force: true });
+  }
+});
+
+test("provisioned non-sample science operating loop is blocked until target provision and then stays target-scoped", async () => {
+  const harness = createLoopHarness();
+  const learnerWorkspaceId = "weixin_alice";
+  const learnerId = "alice";
+  const programId = "program_science_alice";
+  try {
+    const deniedDraft = await harness.planPublisherService.draftPlan({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      horizon: "daily_plan",
+      domainPackId: "domain_pack_ai_loop_science",
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      availableMinutes: 15
+    });
+    assert.equal(deniedDraft.ok, false);
+    assert.equal(deniedDraft.stage, "provisioning");
+    assert.equal(deniedDraft.error, "learning_target_not_provisioned");
+    assert.equal(harness.plannerGatewayCalls.length, 0);
+
+    const deniedDirectGeneration = await harness.generationService.generateCard({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      domainPackId: "domain_pack_ai_loop_science",
+      domain: "science",
+      subject: "science",
+      targetNodeId: SCIENCE_NODE_ID,
+      cardRole: "teaching",
+      generationKey: "non-sample-denied-direct-generation"
+    });
+    assert.equal(deniedDirectGeneration.ok, false);
+    assert.equal(deniedDirectGeneration.stage, "provisioning");
+    assert.equal(deniedDirectGeneration.error, "learning_target_not_provisioned");
+    assert.equal(harness.gatewayCalls.length, 0);
+
+    const provision = harness.targetProvisioningService.provisionDomainPack({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      domainPackId: "domain_pack_ai_loop_science",
+      domain: "science",
+      subject: "science",
+      requestedBy: "owner"
+    });
+    assert.equal(provision.ok, true);
+    assert.equal(provision.provision.workspaceId, learnerWorkspaceId);
+    assert.equal(provision.provision.learnerId, learnerId);
+    assert.equal(provision.provision.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(provision.provision.subject, "science");
+    assert.equal(JSON.stringify(provision).includes(RAW_MARKER), false);
+
+    const wrongSubject = await harness.planPublisherService.draftPlan({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      horizon: "daily_plan",
+      domainPackId: "domain_pack_ai_loop_science",
+      domain: "science",
+      subject: "physics",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      availableMinutes: 15
+    });
+    assert.equal(wrongSubject.ok, false);
+    assert.equal(wrongSubject.stage, "provisioning");
+    assert.equal(wrongSubject.error, "learning_domain_pack_not_provisioned");
+    assert.equal(harness.plannerGatewayCalls.length, 0);
+
+    const draft = await harness.planPublisherService.draftPlan({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      horizon: "daily_plan",
+      domainPackId: "domain_pack_ai_loop_science",
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      availableMinutes: 15
+    });
+    assert.equal(draft.ok, true);
+    assert.equal(draft.planDraft.workspaceId, learnerWorkspaceId);
+    assert.equal(draft.planDraft.learnerId, learnerId);
+    assert.equal(draft.planDraft.validation.targetProvisioning.mode, "explicit_provision");
+    assert.equal(draft.planDraft.validation.targetProvisioning.selectedDomainPackId, "domain_pack_ai_loop_science");
+    assert.equal(draft.planDraft.contextSummary.knowledgeGraph.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(draft.planDraft.contextSummary.knowledgeGraph.candidateNodes[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(harness.plannerGatewayCalls.length, 1);
+    assert.equal(harness.plannerGatewayCalls[0].input.target.workspaceId, learnerWorkspaceId);
+    assert.equal(harness.plannerGatewayCalls[0].input.target.learnerId, learnerId);
+    assert.equal(harness.plannerGatewayCalls[0].input.knowledgeGraph.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(JSON.stringify(harness.plannerGatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const published = await harness.planPublisherService.publishPlanItem({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      planDraftId: draft.planDraft.planDraftId,
+      itemId: "plan_item_science_fair_test"
+    });
+    assert.equal(published.ok, true);
+    assert.equal(published.generation.targetProvisioning.mode, "explicit_provision");
+    assert.equal(published.generation.learningGraphPlan.workspaceId, learnerWorkspaceId);
+    assert.equal(published.generation.learningGraphPlan.learnerId, learnerId);
+    assert.equal(published.generation.learningGraphPlan.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(published.generation.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(harness.gatewayCalls.length, 1);
+    assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.workspaceId, learnerWorkspaceId);
+    assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.learnerId, learnerId);
+    assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(JSON.stringify(harness.gatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const submitted = harness.store.submitEvidence({
+      workspaceId: learnerWorkspaceId,
+      taskCardId: published.generation.published.taskCardId,
+      text: "I changed the light and measured the plant height. The result changed because the plant had more light.",
+      submittedAt: "2026-06-14T08:05:00.000Z"
+    });
+    assert.equal(submitted.ok, true);
+    assert.equal(submitted.workspace_id, learnerWorkspaceId);
+    assert.equal(submitted.submission.taskCardId, published.generation.published.taskCardId);
+    assert.equal(submitted.evaluation_job.status, "pending");
+
+    const pendingJob = harness.store.listEvaluationJobs({ status: "pending", workspaceId: learnerWorkspaceId })[0];
+    const processed = await harness.evaluationService.processEvaluationJob(pendingJob);
+    assert.equal(processed.ok, true);
+    assert.equal(processed.evaluation.taskCardId, published.generation.published.taskCardId);
+    assert.equal(processed.evaluation.status, "completed");
+    assert.equal(processed.profile_delta.ok, true);
+    assert.equal(processed.profile_delta.workspaceId, learnerWorkspaceId);
+    assert.equal(processed.profile_delta.learnerId, learnerId);
+    assert.equal(processed.profile_delta.changedCapabilities[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls[0].input.workspaceId, learnerWorkspaceId);
+    assert.equal(harness.evaluationGatewayCalls[0].input.learnerId, learnerId);
+    assert.equal(harness.evaluationGatewayCalls[0].input.card.targetNodeIds[0], SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const profileV2 = harness.profileV2Service.profileV2({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(profileV2.ok, true);
+    assert.equal(profileV2.workspaceId, learnerWorkspaceId);
+    assert.equal(profileV2.learnerId, learnerId);
+    assert.equal(profileV2.capabilityStates.some((state) => state.nodeId === SCIENCE_NODE_ID), true);
+    assert.equal(JSON.stringify(profileV2).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(profileV2).includes(RAW_MARKER), false);
+
+    const db = new DatabaseSync(harness.dbPath, { readOnly: true });
+    try {
+      const provisionRows = db.prepare("SELECT * FROM learning_growth_domain_pack_provisions WHERE workspace_id = ?").all(learnerWorkspaceId);
+      assert.equal(provisionRows.length, 1);
+      assert.equal(provisionRows[0].domain_pack_id, "domain_pack_ai_loop_science");
+      assert.equal(provisionRows[0].subject, "science");
+
+      const planRow = db.prepare("SELECT * FROM learning_growth_plan_drafts WHERE plan_draft_id = ?")
+        .get(draft.planDraft.planDraftId);
+      assert.equal(planRow.workspace_id, learnerWorkspaceId);
+      assert.equal(planRow.learner_id, learnerId);
+      assert.equal(JSON.parse(planRow.validation_json).targetProvisioning.mode, "explicit_provision");
+      assert.equal(JSON.parse(planRow.context_summary_json).target.workspaceId, learnerWorkspaceId);
+
+      const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(published.generation.published.taskCardId);
+      assert.equal(card.workspace_id, learnerWorkspaceId);
+      assert.equal(card.learner_id, learnerId);
+      assert.equal(card.domain, "science");
+      assert.equal(JSON.parse(card.raw_json).learningGraph.domainPackId, "domain_pack_ai_loop_science");
+
+      const ledgerRows = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE workspace_id = ? AND graph_node_id = ?").all(learnerWorkspaceId, SCIENCE_NODE_ID);
+      assert.equal(ledgerRows.length >= 1, true);
+      assert.equal(ledgerRows.every((row) => row.learner_id === learnerId), true);
+      assert.equal(ledgerRows.some((row) => row.source_type === "daily_evaluation"), true);
+
+      const fanfanRowsForScience = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE workspace_id = ? AND graph_node_id = ?").all(WORKSPACE_ID, SCIENCE_NODE_ID);
+      assert.equal(fanfanRowsForScience.length, 0);
+      assert.equal(JSON.stringify({ provisionRows, planRow, card, ledgerRows }).includes(RAW_MARKER), false);
+    } finally {
+      db.close();
+    }
   } finally {
     fs.rmSync(harness.root, { recursive: true, force: true });
   }
