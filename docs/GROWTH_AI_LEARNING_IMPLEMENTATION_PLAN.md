@@ -802,12 +802,15 @@ Implemented backend shape:
   `GET /api/v1/growth/automation/release-controls` delegate to
   `learning-automation-release-controls-service.summarize` and return one
   no-write `growth.learningAutomationReleaseControls.v1` Owner status surface
-  over readiness, review, closure, activation, and runtime enablement. It
-  reports the first blocking ladder status, required actions, missing
-  evidence/check/approval keys, and one next action. It owns no repository or
-  table, writes no records, runs no smoke tasks, calls no Gateway, publishes
-  nothing, schedules nothing, and keeps all runtime mutation and scheduling
-  permission flags false.
+  over readiness, review, closure, activation, runtime enablement, and bounded
+  persisted activation/runtime enablement audit-record summaries. It reads
+  those records only through `releaseActivationService.listActivations` and
+  `runtimeEnablementService.listEnablements`, exposes `auditReadback` plus
+  `activation_records` / `runtime_enablement_records` steps, and reports the
+  first blocking ladder status, required actions, missing evidence/check /
+  approval keys, and one next action. It owns no repository or table, writes no
+  records, runs no smoke tasks, calls no Gateway, publishes nothing, schedules
+  nothing, and keeps all runtime mutation and scheduling permission flags false.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

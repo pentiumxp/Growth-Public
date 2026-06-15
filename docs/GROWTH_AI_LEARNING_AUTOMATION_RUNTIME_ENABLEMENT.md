@@ -44,9 +44,11 @@ Related readback aggregate:
 - `GET /api/v1/growth/automation/release-controls`
 - `npm run smoke:release-controls`
 
-The release-controls aggregate reads runtime enablement through this service
-and adds earlier readiness/review/closure/activation status. It writes no
-records and must not be treated as a config switch.
+The release-controls aggregate reads runtime enablement through this service:
+it calls `evaluate` for current config/readiness status and `listEnablements`
+for bounded persisted runtime enablement audit summaries. It adds earlier
+readiness/review/closure/activation status, writes no records, and must not be
+treated as a config switch.
 
 The service depends only on
 `learning-automation-release-activation-service.listActivations` plus injected

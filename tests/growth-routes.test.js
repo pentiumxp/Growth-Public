@@ -3518,7 +3518,8 @@ test("growth automation runtime enablement routes are Owner-write and visible-ta
         requiredApprovalKeys: undefined,
         activationGates: ["writeful_execution", "background_scheduler"],
         enablementStatus: "",
-        activationRecordLimit: "10"
+        activationRecordLimit: "10",
+        runtimeEnablementRecordLimit: ""
       }
     });
 
@@ -3557,7 +3558,8 @@ test("growth automation runtime enablement routes are Owner-write and visible-ta
         requiredApprovalKeys: undefined,
         activationGates: ["writeful_execution"],
         enablementStatus: "ready_for_manual_runtime_config_enablement",
-        activationRecordLimit: ""
+        activationRecordLimit: "",
+        runtimeEnablementRecordLimit: ""
       }
     });
 
@@ -3693,7 +3695,7 @@ test("growth automation release controls route is visible-target read only", asy
   });
   const baseUrl = await listen(server);
   try {
-    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-controls?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution,background_scheduler&requiredApprovalKey=writefulExecutionApproval&activationRecordLimit=10&automation_digest_ui_evidence=true`, {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-controls?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution,background_scheduler&requiredApprovalKey=writefulExecutionApproval&activationRecordLimit=10&runtimeEnablementRecordLimit=6&automation_digest_ui_evidence=true`, {
       headers: {
         "x-hermes-plugin-actor-role": "owner",
         "x-hermes-plugin-workspace-id": "weixin_stephen"
@@ -3726,7 +3728,8 @@ test("growth automation release controls route is visible-target read only", asy
       requiredApprovalKeys: ["writefulExecutionApproval"],
       activationGates: ["writeful_execution", "background_scheduler"],
       enablementStatus: "",
-      activationRecordLimit: "10"
+      activationRecordLimit: "10",
+      runtimeEnablementRecordLimit: "6"
     });
 
     const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-controls?workspaceId=weixin_fanfan`, {

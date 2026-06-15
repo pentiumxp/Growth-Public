@@ -24,6 +24,7 @@ test("release controls smoke script parses bounded scope and release selectors",
     "--required-approval-keys", "writefulExecutionApproval,backgroundSchedulerApproval",
     "--activation-gates", "writeful_execution,background_scheduler",
     "--activation-record-limit", "10",
+    "--runtime-enablement-record-limit", "4",
     "--automation-digest-ui-evidence", "true"
   ]);
 
@@ -33,6 +34,7 @@ test("release controls smoke script parses bounded scope and release selectors",
   assert.deepEqual(input.requiredApprovalKeys, ["writefulExecutionApproval", "backgroundSchedulerApproval"]);
   assert.deepEqual(input.activationGates, ["writeful_execution", "background_scheduler"]);
   assert.equal(input.activationRecordLimit, 10);
+  assert.equal(input.runtimeEnablementRecordLimit, 4);
   assert.equal(input.automationDigestUiEvidence, true);
 });
 
@@ -97,6 +99,9 @@ test("release controls smoke script runs no-write summary against a temporary SQ
     assert.equal(output.configChangeApplied, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
     assert.equal(output.releaseControls.summaryOnly, true);
+    assert.equal(output.auditReadback.summaryOnly, true);
+    assert.equal(output.auditReadback.activationRecords.status, "records_missing");
+    assert.equal(output.auditReadback.runtimeEnablementRecords.status, "records_missing");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

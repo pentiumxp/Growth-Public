@@ -911,7 +911,12 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseControlsService, /releaseReviewService\.review/);
   assert.match(automationReleaseControlsService, /releaseClosureService\.summarize/);
   assert.match(automationReleaseControlsService, /releaseActivationService\.preflight/);
+  assert.match(automationReleaseControlsService, /releaseActivationService\.listActivations/);
   assert.match(automationReleaseControlsService, /runtimeEnablementService\.evaluate/);
+  assert.match(automationReleaseControlsService, /runtimeEnablementService\.listEnablements/);
+  assert.match(automationReleaseControlsService, /auditReadback/);
+  assert.match(automationReleaseControlsService, /activation_records/);
+  assert.match(automationReleaseControlsService, /runtime_enablement_records/);
   assert.match(automationReleaseControlsService, /manual_runtime_config_required/);
   assert.match(automationReleaseControlsService, /activation_record_required/);
   assert.match(automationReleaseControlsService, /release_closure_required/);

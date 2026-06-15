@@ -116,8 +116,11 @@ function statusFrom(parts) {
   const closure = objectOnly(parts.closure);
   const review = objectOnly(parts.review);
   const readiness = objectOnly(parts.readiness);
+  const activationRecords = objectOnly(parts.activationRecords);
+  const runtimeEnablementRecords = objectOnly(parts.runtimeEnablementRecords);
 
-  if (!runtime.ok || !activation.ok || !closure.ok || !review.ok || !readiness.ok) return "blocked";
+  if (!runtime.ok || !activation.ok || !closure.ok || !review.ok || !readiness.ok
+    || activationRecords.ok === false || runtimeEnablementRecords.ok === false) return "blocked";
   if (readiness.readyForReleaseReview !== true) return "release_evidence_required";
   if (review.approvedForReleaseReview !== true) return "release_review_required";
   if (closure.backendEvidenceComplete !== true) return "release_closure_required";
@@ -164,6 +167,77 @@ function collectMissing(parts) {
   };
 }
 
+function boundedLimit(value, fallback = 20) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return fallback;
+  return Math.max(1, Math.min(100, Math.trunc(numeric)));
+}
+
+function publicRecordSummary(record = {}, kind) {
+  const activation = kind === "activation";
+  return {
+    recordId: cleanString(activation ? record.activationId || record.activation_id : record.enablementId || record.enablement_id, 160),
+    status: cleanString(record.status, 120),
+    version: cleanString(activation ? record.activationVersion || record.activation_version : record.enablementVersion || record.enablement_version, 160),
+    privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    collectionRunId: cleanString(record.collectionRunId || record.collection_run_id || record.runId || record.run_id, 160),
+    requestedActivationGates: asArray(record.requestedActivationGates || record.requested_activation_gates).map((gate) => cleanString(gate, 120)).filter(Boolean),
+    requiredConfigKeys: activation ? [] : asArray(record.requiredConfigKeys || record.required_config_keys).map((key) => cleanString(key, 120)).filter(Boolean),
+    recordedAt: cleanString(record.recordedAt || record.recorded_at, 80),
+    updatedAt: cleanString(record.updatedAt || record.updated_at, 80),
+    summaryOnly: true,
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  };
+}
+
+function auditRecordReadback(kind, result = {}, recordsKey) {
+  const value = objectOnly(result);
+  if (value.ok === false) {
+    return {
+      schemaVersion: "growth.learningAutomationReleaseControls.auditRecords.v1",
+      summaryOnly: true,
+      kind,
+      ok: false,
+      status: "blocked",
+      error: cleanString(value.error || "release_controls_audit_record_readback_failed", 180),
+      count: 0,
+      statuses: [],
+      latest: null,
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    };
+  }
+  const records = asArray(value[recordsKey]);
+  const summaries = records.map((record) => publicRecordSummary(record, kind)).filter((record) => record.recordId || record.status);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseControls.auditRecords.v1",
+    summaryOnly: true,
+    kind,
+    ok: true,
+    status: summaries.length ? "records_available" : "records_missing",
+    count: Number(value.count) || summaries.length,
+    statuses: unique(summaries.map((record) => record.status)),
+    latest: summaries[0] || null,
+    latestRecordId: summaries[0]?.recordId || "",
+    requestedActivationGates: unique(summaries.flatMap((record) => record.requestedActivationGates)),
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  };
+}
+
 function createLearningAutomationReleaseControlsService(options = {}) {
   const releaseReadinessService = options.releaseReadinessService || null;
   const releaseReviewService = options.releaseReviewService || null;
@@ -191,6 +265,12 @@ function createLearningAutomationReleaseControlsService(options = {}) {
     if (!runtimeEnablementService || typeof runtimeEnablementService.evaluate !== "function") {
       return unavailable("learning_automation_release_controls_runtime_unavailable");
     }
+    if (typeof releaseActivationService.listActivations !== "function") {
+      return unavailable("learning_automation_release_controls_activation_readback_unavailable");
+    }
+    if (typeof runtimeEnablementService.listEnablements !== "function") {
+      return unavailable("learning_automation_release_controls_runtime_record_readback_unavailable");
+    }
 
     const request = Object.assign({}, input, scope);
     const readiness = releaseReadinessService.evaluateReadiness(request);
@@ -198,7 +278,21 @@ function createLearningAutomationReleaseControlsService(options = {}) {
     const closure = releaseClosureService.summarize(request);
     const activation = releaseActivationService.preflight(request);
     const runtime = runtimeEnablementService.evaluate(request);
-    const dependencyPrivacyFindings = scanPrivacyKeys({ readiness, review, closure, activation, runtime }).slice(0, 16);
+    const activationRecords = releaseActivationService.listActivations(Object.assign({}, request, {
+      limit: boundedLimit(input.activationRecordLimit || input.activation_record_limit || input.limit, 20)
+    }));
+    const runtimeEnablementRecords = runtimeEnablementService.listEnablements(Object.assign({}, request, {
+      limit: boundedLimit(input.runtimeEnablementRecordLimit || input.runtime_enablement_record_limit || input.limit, 20)
+    }));
+    const dependencyPrivacyFindings = scanPrivacyKeys({
+      readiness,
+      review,
+      closure,
+      activation,
+      runtime,
+      activationRecords,
+      runtimeEnablementRecords
+    }).slice(0, 16);
     if (dependencyPrivacyFindings.length) {
       return unavailable("learning_automation_release_controls_dependency_privacy_failed", { privacyFindings: dependencyPrivacyFindings });
     }
@@ -208,11 +302,28 @@ function createLearningAutomationReleaseControlsService(options = {}) {
       review: objectOnly(review),
       closure: objectOnly(closure),
       activation: objectOnly(activation),
-      runtime: objectOnly(runtime)
+      runtime: objectOnly(runtime),
+      activationRecords: objectOnly(activationRecords),
+      runtimeEnablementRecords: objectOnly(runtimeEnablementRecords)
     };
     const missing = collectMissing(parts);
     const status = statusFrom(parts);
     const requiredActions = collectActions(parts, status);
+    const activationAuditReadback = auditRecordReadback("activation", activationRecords, "activations");
+    const runtimeEnablementAuditReadback = auditRecordReadback("runtime_enablement", runtimeEnablementRecords, "enablements");
+    const auditReadback = {
+      schemaVersion: "growth.learningAutomationReleaseControls.auditReadback.v1",
+      summaryOnly: true,
+      status: activationAuditReadback.ok === false || runtimeEnablementAuditReadback.ok === false ? "blocked" : "ready",
+      activationRecords: activationAuditReadback,
+      runtimeEnablementRecords: runtimeEnablementAuditReadback,
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    };
     const steps = [
       step("release_readiness", readiness, {
         ready: parts.readiness.readyForReleaseReview === true,
@@ -243,6 +354,30 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         requestedActivationGates: asArray(parts.runtime.requestedActivationGates),
         requiredActions: actionCandidates(parts.runtime),
         nextAction: objectOnly(parts.runtime.runtimeEnablement).nextAction || null
+      }),
+      step("activation_records", activationRecords, {
+        schemaVersion: activationAuditReadback.schemaVersion,
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        status: activationAuditReadback.status,
+        ready: activationAuditReadback.count > 0,
+        recordCount: activationAuditReadback.count,
+        latestRecordId: activationAuditReadback.latestRecordId,
+        statuses: activationAuditReadback.statuses,
+        requiredActions: [],
+        nextAction: null
+      }),
+      step("runtime_enablement_records", runtimeEnablementRecords, {
+        schemaVersion: runtimeEnablementAuditReadback.schemaVersion,
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        status: runtimeEnablementAuditReadback.status,
+        ready: runtimeEnablementAuditReadback.count > 0,
+        recordCount: runtimeEnablementAuditReadback.count,
+        latestRecordId: runtimeEnablementAuditReadback.latestRecordId,
+        statuses: runtimeEnablementAuditReadback.statuses,
+        requiredActions: [],
+        nextAction: null
       })
     ];
 
@@ -272,6 +407,7 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         blockedCheckKeys: missing.blockedCheckKeys,
         missingEvidenceKeys: missing.missingEvidenceKeys,
         missingApprovalKeys: missing.missingApprovalKeys,
+        auditReadback,
         configChangeApplied: false,
         runtimeConfigChange: false,
         runtimeConfigMutationPerformed: false,
@@ -279,6 +415,7 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         backgroundSchedulingAllowed: false,
         backgroundWorkerAllowed: false
       },
+      auditReadback,
       steps
     });
   }

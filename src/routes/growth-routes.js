@@ -602,7 +602,8 @@ function normalizeAutomationRuntimeEnablementInput(url, target) {
   const input = normalizeAutomationReleaseActivationInput(url, target);
   return Object.assign(input, {
     enablementStatus: url.searchParams.get("enablementStatus") || url.searchParams.get("enablement_status") || "",
-    activationRecordLimit: url.searchParams.get("activationRecordLimit") || url.searchParams.get("activation_record_limit") || ""
+    activationRecordLimit: url.searchParams.get("activationRecordLimit") || url.searchParams.get("activation_record_limit") || "",
+    runtimeEnablementRecordLimit: url.searchParams.get("runtimeEnablementRecordLimit") || url.searchParams.get("runtime_enablement_record_limit") || ""
   });
 }
 

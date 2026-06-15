@@ -310,13 +310,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `learning-automation-release-controls-service`, visible-target scoped
   `GET /api/v1/growth/automation/release-controls`, and
   `npm run smoke:release-controls`. It composes release readiness, release
-  review, release closure, release activation, and runtime enablement through
+  review, release closure, release activation, runtime enablement, and bounded
+  persisted activation/runtime enablement audit-record summaries through
   existing services into `growth.learningAutomationReleaseControls.v1`, reports
   the first blocking ladder status plus bounded required actions and one next
-  action, owns no repository/table, writes no records, runs no smoke tasks, and
-  still applies no runtime config, grants no scheduler permission, publishes
-  no cards, calls no Gateway, and keeps all runtime mutation/scheduling flags
-  false.
+  action, exposes `auditReadback` plus `activation_records` /
+  `runtime_enablement_records` steps, owns no repository/table, writes no
+  records, runs no smoke tasks, and still applies no runtime config, grants no
+  scheduler permission, publishes no cards, calls no Gateway, and keeps all
+  runtime mutation/scheduling flags false.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

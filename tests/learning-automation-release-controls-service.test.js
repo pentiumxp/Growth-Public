@@ -149,6 +149,33 @@ function runtime(overrides = {}) {
   }, overrides);
 }
 
+function activationRecord(overrides = {}) {
+  return Object.assign({
+    activationId: "lgaact_ready_1",
+    status: "ready_for_owner_config_enablement",
+    activationVersion: "growth.learningAutomationReleaseActivation.v1",
+    privacyClass: "summary_only",
+    collectionRunId: "lgacrn_ready_1",
+    requestedActivationGates: ["writeful_execution"],
+    recordedAt: "2026-06-15T17:00:00.000Z",
+    updatedAt: "2026-06-15T17:00:01.000Z"
+  }, overrides);
+}
+
+function enablementRecord(overrides = {}) {
+  return Object.assign({
+    enablementId: "lgarten_ready_1",
+    status: "ready_for_manual_runtime_config_enablement",
+    enablementVersion: "growth.learningAutomationRuntimeEnablement.v1",
+    privacyClass: "summary_only",
+    collectionRunId: "lgacrn_ready_1",
+    requestedActivationGates: ["writeful_execution"],
+    requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+    recordedAt: "2026-06-15T17:05:00.000Z",
+    updatedAt: "2026-06-15T17:05:01.000Z"
+  }, overrides);
+}
+
 function serviceWith(records = {}) {
   return createLearningAutomationReleaseControlsService({
     releaseReadinessService: {
@@ -173,12 +200,35 @@ function serviceWith(records = {}) {
       preflight(input) {
         records.activationInput = input;
         return records.activation || activation();
+      },
+      listActivations(input) {
+        records.activationRecordsInput = input;
+        return records.activationRecords || {
+          ok: true,
+          count: 1,
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          writefulSchedulingAllowed: false,
+          activations: [activationRecord()]
+        };
       }
     },
     runtimeEnablementService: {
       evaluate(input) {
         records.runtimeInput = input;
         return records.runtime || runtime();
+      },
+      listEnablements(input) {
+        records.runtimeEnablementRecordsInput = input;
+        return records.runtimeEnablementRecords || {
+          ok: true,
+          count: 1,
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false,
+          enablements: [enablementRecord()]
+        };
       }
     }
   });
@@ -190,7 +240,9 @@ test("release controls summarizes manual runtime config requirement without enab
     workspaceId: "weixin_fanfan",
     learnerId: "fanfan",
     collectionRunId: "lgacrn_ready_1",
-    activationGates: ["writeful_execution"]
+    activationGates: ["writeful_execution"],
+    activationRecordLimit: 7,
+    runtimeEnablementRecordLimit: 3
   });
 
   assert.equal(result.ok, true);
@@ -198,8 +250,15 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.status, "manual_runtime_config_required");
   assert.equal(result.releaseControls.nextAction.key, "enable_runtime_config_manually");
   assert.equal(result.releaseControls.requiredActionCount, 1);
-  assert.equal(result.steps.length, 5);
+  assert.equal(result.steps.length, 7);
   assert.equal(result.steps[1].latestCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.auditReadback.activationRecords.count, 1);
+  assert.equal(result.auditReadback.activationRecords.latestRecordId, "lgaact_ready_1");
+  assert.equal(result.auditReadback.runtimeEnablementRecords.count, 1);
+  assert.equal(result.auditReadback.runtimeEnablementRecords.latestRecordId, "lgarten_ready_1");
+  assert.equal(result.releaseControls.auditReadback.summaryOnly, true);
+  assert.equal(result.steps.find((item) => item.key === "activation_records").summaryOnly, true);
+  assert.equal(result.steps.find((item) => item.key === "runtime_enablement_records").summaryOnly, true);
   assert.equal(result.configChangeApplied, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
@@ -207,6 +266,8 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.backgroundSchedulingAllowed, false);
   assert.equal(result.backgroundWorkerAllowed, false);
   assert.equal(records.runtimeInput.collectionRunId, "lgacrn_ready_1");
+  assert.equal(records.activationRecordsInput.limit, 7);
+  assert.equal(records.runtimeEnablementRecordsInput.limit, 3);
 });
 
 test("release controls reports verified runtime state after external config readback", () => {
@@ -292,6 +353,22 @@ test("release controls keeps closure gaps visible before activation", () => {
   assert.equal(result.status, "release_closure_required");
   assert.deepEqual(result.releaseControls.missingApprovalKeys, ["writefulExecutionApproval"]);
   assert.equal(result.releaseControls.requiredActions.some((item) => item.action === "record_release_approval"), true);
+});
+
+test("release controls blocks when persisted audit readback fails", () => {
+  const result = serviceWith({
+    activationRecords: {
+      ok: false,
+      error: "learning_automation_release_activation_repository_unavailable"
+    }
+  }).summarize({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(result.status, "blocked");
+  assert.equal(result.auditReadback.status, "blocked");
+  assert.equal(result.auditReadback.activationRecords.ok, false);
+  assert.equal(result.auditReadback.activationRecords.error, "learning_automation_release_activation_repository_unavailable");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigMutationPerformed, false);
 });
 
 test("release controls rejects privacy-risk inputs and missing dependencies", () => {

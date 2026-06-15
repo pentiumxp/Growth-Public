@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T18:06Z - Release Controls Persisted Audit Readback
+
+- Status: implemented and validated locally. This slice is Growth
+  backend/Harness/docs only. It does not
+  deploy, apply runtime config, grant scheduler permission, write release
+  records, call Gateway, publish cards, run scheduling, or deliver
+  notifications.
+- Scope:
+  - `learning-automation-release-controls-service` now reads persisted
+    activation/runtime enablement audit rows through
+    `releaseActivationService.listActivations` and
+    `runtimeEnablementService.listEnablements`;
+  - the `growth.learningAutomationReleaseControls.v1` DTO now includes bounded
+    `auditReadback`, `activation_records`, and `runtime_enablement_records`
+    summaries with counts, statuses, latest record ids, and no-runtime-mutation
+    flags;
+  - failed persisted audit readback now blocks the top-level controls status;
+    missing rows remain visible as `records_missing`;
+  - `GET /api/v1/growth/automation/release-controls` and
+    `npm run smoke:release-controls` accept bounded
+    `runtimeEnablementRecordLimit` /
+    `runtime_enablement_record_limit` selectors in addition to
+    `activationRecordLimit`.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `src/services/learning-automation-release-controls-service.js`;
+  - `scripts/smoke-growth-release-controls.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-release-controls-service.test.js`;
+  - `tests/growth-release-controls-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-controls-service.test.js tests/growth-release-controls-smoke-script.test.js`
+    (`10` tests);
+  - `node --test tests/growth-routes.test.js` (`40` tests);
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    (`31` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-controls -- --workspace-id fanfan --learner-id fanfan --activation-gates writeful_execution --activation-record-limit 5 --runtime-enablement-record-limit 5 --json`
+    returned expected no-write `release_evidence_required` with
+    `auditReadback` and both persisted record summaries as `records_missing`;
+  - `npm run check` (`176/176` runtime JS files covered);
+  - `npm test` (`682` tests);
+  - `git diff --check`;
+  - Home AI platform contract checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`307` files, `3,953` nodes,
+    `15,173` edges; index up to date);
+  - AI Ops evidence ledger append id
+    `evidence-ad0924f4-42d7-434e-842d-c40271e4a763`.
+- Remaining product work:
+  - collect full production release evidence over real production inputs;
+  - collect central Home AI visual and Action Inbox/Web Push evidence;
+  - implement embedded Owner UI over the release-controls readback surface;
+  - only after those pass, perform any explicit platform/runtime-config
+    enablement outside Growth and read it back through
+    `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
+
 ## 2026-06-15T17:53Z - Owner Release Controls Readback Aggregate
 
 - Status: implemented, validated, committed, and pushed to `origin/main` and

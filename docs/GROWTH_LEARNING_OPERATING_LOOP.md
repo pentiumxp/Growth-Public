@@ -1709,9 +1709,11 @@ Implementation progress on 2026-06-15:
 - `GET /api/v1/growth/automation/release-controls` and
   `npm run smoke:release-controls` provide a single no-write Owner readback
   over the release ladder. The controls service composes readiness, review,
-  closure, activation, and runtime enablement through existing services,
-  returns `growth.learningAutomationReleaseControls.v1`, reports the first
-  blocking status plus bounded required actions, and owns no repository/table.
+  closure, activation, runtime enablement, and bounded persisted
+  activation/runtime enablement audit-record summaries through existing
+  services, returns `growth.learningAutomationReleaseControls.v1`, reports the
+  first blocking status plus bounded required actions, and owns no
+  repository/table.
   It does not run smoke tasks, call Gateway, publish, generate, evaluate,
   execute scheduler actions, run scheduler ticks, deliver notifications,
   activate stage assessments, mutate learner state, or flip runtime config.

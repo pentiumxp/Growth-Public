@@ -35,12 +35,16 @@ The service composes existing Growth-owned services:
 - `learning-automation-release-review-service.review`
 - `learning-automation-release-closure-service.summarize`
 - `learning-automation-release-activation-service.preflight`
+- `learning-automation-release-activation-service.listActivations`
 - `learning-automation-runtime-enablement-service.evaluate`
+- `learning-automation-runtime-enablement-service.listEnablements`
 
 It does not own a repository or table because it persists no new business
 state. Durable release evidence remains in the existing release-readiness,
 collection-run, decision, approval, activation, runtime-enablement, scheduler,
-and worker-target tables.
+and worker-target tables. It reads activation and runtime enablement audit rows
+only through their owning services and returns bounded record summaries; it must
+not inspect SQLite tables directly.
 
 ## DTO Contract
 
@@ -88,6 +92,20 @@ The `releaseControls` summary includes:
 - `blockedCheckKeys`
 - `missingEvidenceKeys`
 - `missingApprovalKeys`
+- `auditReadback`
+
+The top-level DTO also includes `auditReadback`:
+
+- schema: `growth.learningAutomationReleaseControls.auditReadback.v1`
+- `activationRecords`: bounded count, statuses, latest record id, selected
+  activation gates, and no-runtime-mutation flags from
+  `learning-automation-release-activation-service.listActivations`.
+- `runtimeEnablementRecords`: bounded count, statuses, latest record id,
+  selected activation gates, required config keys, and no-runtime-mutation
+  flags from `learning-automation-runtime-enablement-service.listEnablements`.
+- failure to read either persisted audit source returns top-level
+  `status=blocked`; missing rows remain visible as `records_missing` rather
+  than becoming an exception.
 
 The `steps` array contains bounded summaries for:
 
@@ -96,6 +114,8 @@ The `steps` array contains bounded summaries for:
 - `release_closure`
 - `release_activation`
 - `runtime_enablement`
+- `activation_records`
+- `runtime_enablement_records`
 
 ## Route Semantics
 
@@ -118,6 +138,7 @@ Supported selectors mirror activation/runtime readback:
 - `activationGate` / `activation_gate`
 - `activationGates` / `activation_gates`
 - `activationRecordLimit` / `activation_record_limit`
+- `runtimeEnablementRecordLimit` / `runtime_enablement_record_limit`
 - bounded UI/evidence boolean flags already accepted by release-review
 
 There is intentionally no POST route. Creating release snapshots, collection
@@ -133,6 +154,8 @@ npm run smoke:release-controls -- \
   --workspace-id <workspace> \
   --learner-id <learner> \
   --activation-gates writeful_execution \
+  --activation-record-limit 20 \
+  --runtime-enablement-record-limit 20 \
   --json
 ```
 

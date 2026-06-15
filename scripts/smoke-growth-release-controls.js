@@ -55,6 +55,7 @@ function inputFromArgs(args) {
     requiredApprovalKeys: requiredApprovalKeys.length ? requiredApprovalKeys : undefined,
     activationGates: activationGates.length ? activationGates : undefined,
     activationRecordLimit: Number(firstArgValue(args, ["--activation-record-limit", "--activationRecordLimit"], "20")) || 20,
+    runtimeEnablementRecordLimit: Number(firstArgValue(args, ["--runtime-enablement-record-limit", "--runtimeEnablementRecordLimit"], "20")) || 20,
     ownerDailyUiEvidence: truthy(firstArgValue(args, ["--owner-daily-ui-evidence", "--ownerDailyUiEvidence"], "")),
     ownerAuditUiEvidence: truthy(firstArgValue(args, ["--owner-audit-ui-evidence", "--ownerAuditUiEvidence"], "")),
     stageCheckpointEvidence: truthy(firstArgValue(args, ["--stage-checkpoint-evidence", "--stageCheckpointEvidence"], "")),
