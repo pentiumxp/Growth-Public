@@ -310,6 +310,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   scheduling disabled, explicit run records a bounded blocked row and must not
   list handoffs, execute actions, publish, call Gateway, run worker timers,
   activate stage assessments, or mutate learner state.
+  `npm run smoke:scheduler-worker-target` now provides the service-owned
+  operational smoke for reviewed worker target configuration: `list` is the
+  default read-only operation and delegates only to
+  `learning-automation-scheduler-worker-target-service.listTargets`;
+  `runnable` / `list-runnable` is read-only and delegates only to
+  `listRunnableTargets`; `create` and `review` require explicit
+  `--allow-write` and delegate only to
+  `learning-automation-scheduler-worker-target-service.createTarget` /
+  `reviewTarget`. The CLI keeps `productionSchedulingAllowed=false` and must
+  not start workers, claim leases, call scheduler run/execution, inspect
+  handoffs, publish, call Gateway, generate cards, activate stage assessments,
+  or mutate learner evidence/profile state. Environment JSON targets remain a
+  local fallback, not production approval.
   The Owner daily-loop backend facade is now implemented through
   `learning-daily-loop-service` and Owner-only
   `GET /api/v1/growth/daily-loop/preview`,

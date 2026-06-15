@@ -58,6 +58,8 @@ Implemented local worker/lease shape:
   Owner-only `POST /api/v1/growth/automation/scheduler/worker-targets`, and
   Owner-only
   `POST /api/v1/growth/automation/scheduler/worker-targets/:targetId/review`;
+- service-owned worker target smoke:
+  `npm run smoke:scheduler-worker-target`;
 - service: `learning-automation-scheduler-worker-service`;
 - repository: `automation-scheduler-worker-leases.js`;
 - table: `learning_growth_automation_scheduler_worker_leases`;
@@ -169,6 +171,66 @@ learner state. The CLI itself must not import repositories, inspect
 `learning_growth_*` tables, call the action-handoff service, call the execution
 service, call scheduler dry-run, call proposal publication, or bypass the run
 service.
+
+`npm run smoke:scheduler-worker-target` is the service-owned CLI harness for
+reviewed scheduler worker target evidence.
+
+Default read-only list:
+
+```bash
+npm run smoke:scheduler-worker-target -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --json
+```
+
+Read-only runnable target list:
+
+```bash
+npm run smoke:scheduler-worker-target -- \
+  --operation runnable \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --json
+```
+
+Explicit target creation and review:
+
+```bash
+npm run smoke:scheduler-worker-target -- \
+  --operation create \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --domain-pack-id <domain-pack> \
+  --domain <domain> \
+  --subject <subject> \
+  --target-node-ids <node-id>[,<node-id>] \
+  --allow-write \
+  --json
+
+npm run smoke:scheduler-worker-target -- \
+  --operation review \
+  --workspace-id <workspace> \
+  --target-id <target-id> \
+  --status enabled \
+  --allow-write \
+  --json
+```
+
+The default operation is `list`, which delegates only to
+`learningAutomationSchedulerWorkerTargetService.listTargets` and must not
+create the worker-target table in an empty SQLite database. The `runnable`
+operation delegates only to
+`learningAutomationSchedulerWorkerTargetService.listRunnableTargets`. The
+`create` and `review` operations require explicit `--allow-write`, delegate
+only to `learningAutomationSchedulerWorkerTargetService.createTarget` /
+`reviewTarget`, and still keep `productionSchedulingAllowed=false`.
+
+This smoke proves reviewed target configuration only. It must not start worker
+timers, claim leases, call scheduler run, call scheduler execution, inspect
+handoffs, publish, call Gateway, generate cards, activate stage assessments, or
+mutate learner evidence/profile state. A reviewed `enabled` target row is a
+future worker prerequisite, not production unattended scheduling permission.
 
 ## Worker Target Review Contract
 
@@ -475,6 +537,7 @@ Focused harness for this boundary:
 - `tests/learning-automation-scheduler-worker-target-repository.test.js`;
 - `tests/learning-automation-scheduler-worker-service.test.js`;
 - `tests/learning-automation-scheduler-worker-target-service.test.js`;
+- `tests/growth-automation-scheduler-worker-target-smoke-script.test.js`;
 - `tests/learning-automation-scheduler-run-repository.test.js`;
 - `tests/learning-automation-scheduler-run-service.test.js`;
 - `tests/growth-automation-scheduler-run-smoke-script.test.js`;
@@ -508,6 +571,12 @@ Required and implemented assertions:
 - worker target review supports `enabled`, `disabled`, and `archived`, and
   enabling rechecks provisioning;
 - worker target routes enforce Owner writes and visible-target reads;
+- `npm run smoke:scheduler-worker-target` defaults to read-only list, supports
+  read-only runnable listing, requires explicit `--allow-write` for
+  create/review, proves target provisioning plus Owner review through services,
+  and keeps the CLI out of repositories, Gateway, scheduler run/execution,
+  handoffs, publication, card generation, worker timers, stage activation,
+  learner-state mutation, and direct table access;
 - worker service delegates only to scheduler-run service;
 - worker service prefers reviewed enabled persistent targets before local
   environment fallback;
