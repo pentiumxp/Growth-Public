@@ -157,6 +157,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "releaseControlsSmokeEvidence",
     script: "scripts/smoke-growth-release-controls.js",
     commandName: "npm run smoke:release-controls"
+  },
+  {
+    taskId: "release_inventory",
+    evidenceKey: "releaseInventorySmokeEvidence",
+    script: "scripts/smoke-growth-release-inventory.js",
+    commandName: "npm run smoke:release-inventory"
   }
 ]);
 
@@ -438,8 +444,66 @@ function releaseControlsSummaryFromSmoke(value = {}) {
   };
 }
 
+function inventoryRecordSummary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return {
+    ok: value.ok !== false,
+    status: cleanString(value.status, 80),
+    count: Number(value.count) || 0,
+    statuses: uniqueStrings(value.statuses || []),
+    latestId: cleanString(value.latest?.id || value.latestId || value.latest_id, 120),
+    latestStatus: cleanString(value.latest?.status || value.latestStatus || value.latest_status, 80),
+    ids: uniqueStrings(value.ids || [])
+  };
+}
+
+function releaseInventorySummaryFromSmoke(value = {}) {
+  const inventory = value.releaseInventory && typeof value.releaseInventory === "object" ? value.releaseInventory : {};
+  const artifactReadback = value.artifactReadback && typeof value.artifactReadback === "object" ? value.artifactReadback : {};
+  const controls = inventory.controls && typeof inventory.controls === "object" ? inventory.controls : {};
+  return {
+    source: cleanString(value.source || "growth-learning-automation-release-inventory-service", 160),
+    status: cleanString(inventory.status || value.status, 120),
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 160),
+    artifactCount: Number(inventory.artifactCount) || 0,
+    readbackKinds: uniqueStrings(inventory.readbackKinds || inventory.readback_kinds || []),
+    missingRecordKinds: uniqueStrings(inventory.missingRecordKinds || inventory.missing_record_kinds || []),
+    blockedRecordKinds: uniqueStrings(inventory.blockedRecordKinds || inventory.blocked_record_kinds || []),
+    latestCollectionRunId: cleanString(inventory.latestCollectionRunId || inventory.latest_collection_run_id, 120),
+    latestPackageId: cleanString(inventory.latestPackageId || inventory.latest_package_id, 120),
+    latestDecisionId: cleanString(inventory.latestDecisionId || inventory.latest_decision_id, 120),
+    latestActivationId: cleanString(inventory.latestActivationId || inventory.latest_activation_id, 120),
+    latestRuntimeEnablementId: cleanString(inventory.latestRuntimeEnablementId || inventory.latest_runtime_enablement_id, 120),
+    controls: {
+      status: cleanString(controls.status, 120),
+      requiredActionCount: Number(controls.requiredActionCount || controls.required_action_count) || 0,
+      nextActionKey: cleanString(controls.nextActionKey || controls.next_action_key, 120),
+      missingCheckKeys: uniqueStrings(controls.missingCheckKeys || controls.missing_check_keys || []),
+      blockedCheckKeys: uniqueStrings(controls.blockedCheckKeys || controls.blocked_check_keys || []),
+      missingEvidenceKeys: uniqueStrings(controls.missingEvidenceKeys || controls.missing_evidence_keys || []),
+      missingApprovalKeys: uniqueStrings(controls.missingApprovalKeys || controls.missing_approval_keys || [])
+    },
+    artifactReadback: {
+      snapshots: inventoryRecordSummary(artifactReadback.snapshots),
+      collectionRuns: inventoryRecordSummary(artifactReadback.collectionRuns || artifactReadback.collection_runs),
+      decisions: inventoryRecordSummary(artifactReadback.decisions),
+      packages: inventoryRecordSummary(artifactReadback.packages),
+      approvals: inventoryRecordSummary(artifactReadback.approvals),
+      activations: inventoryRecordSummary(artifactReadback.activations),
+      runtimeEnablements: inventoryRecordSummary(artifactReadback.runtimeEnablements || artifactReadback.runtime_enablements)
+    },
+    configChangeApplied: value.configChangeApplied === true,
+    runtimeConfigChange: value.runtimeConfigChange === true,
+    runtimeConfigMutationPerformed: value.runtimeConfigMutationPerformed === true,
+    writefulSchedulingAllowed: value.writefulSchedulingAllowed === true,
+    backgroundSchedulingAllowed: value.backgroundSchedulingAllowed === true,
+    backgroundWorkerAllowed: value.backgroundWorkerAllowed === true
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
+  if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
@@ -593,7 +657,7 @@ function taskSpecificArgs(task, scope) {
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
   }
-  if (task.taskId === "release_controls") {
+  if (task.taskId === "release_controls" || task.taskId === "release_inventory") {
     if (scope.collectionRunId) args.push("--collection-run-id", scope.collectionRunId);
     if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));
     if (scope.requiredApprovalKeys.length) args.push("--required-approval-keys", scope.requiredApprovalKeys.join(","));

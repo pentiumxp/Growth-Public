@@ -35,6 +35,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_controls"), false);
+  assert.equal(DEFAULT_TASK_IDS.includes("release_inventory"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
     "scheduler_dry_run"
@@ -367,6 +368,119 @@ test("release evidence bundle service collects optional release-controls readbac
   assert.ok(calls[0].args.includes("writeful_execution"));
   assert.ok(calls[0].args.includes("--required-approval-keys"));
   assert.ok(calls[0].args.includes("writefulExecutionApproval,backgroundWorkerApproval"));
+  assert.ok(calls[0].args.includes("--activation-record-limit"));
+  assert.ok(calls[0].args.includes("7"));
+  assert.ok(calls[0].args.includes("--runtime-enablement-record-limit"));
+  assert.ok(calls[0].args.includes("6"));
+  assert.ok(calls[0].args.includes("--automation-digest-ui-evidence"));
+  assert.ok(calls[0].args.includes("true"));
+  assert.equal(calls[0].args.includes("--allow-write"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle service collects optional release-inventory readback as non-default evidence", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-release-inventory-service",
+      schemaVersion: "growth.learningAutomationReleaseInventory.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "manual_runtime_config_required",
+      releaseInventory: {
+        status: "manual_runtime_config_required",
+        artifactCount: 7,
+        readbackKinds: [
+          "release_readiness_snapshot",
+          "release_collection_run",
+          "release_decision",
+          "release_package",
+          "release_approval",
+          "release_activation",
+          "runtime_enablement"
+        ],
+        missingRecordKinds: ["runtime_enablement"],
+        blockedRecordKinds: [],
+        latestCollectionRunId: "lgacrn_release_1",
+        latestPackageId: "lgapkg_release_1",
+        latestDecisionId: "lgard_release_1",
+        latestActivationId: "lgaract_release_1",
+        latestRuntimeEnablementId: "",
+        controls: {
+          status: "manual_runtime_config_required",
+          requiredActionCount: 1,
+          nextActionKey: "enable_runtime_config",
+          missingCheckKeys: ["runtime_enablement"],
+          blockedCheckKeys: [],
+          missingEvidenceKeys: ["scheduler_worker_target_ui"],
+          missingApprovalKeys: []
+        }
+      },
+      artifactReadback: {
+        packages: {
+          ok: true,
+          status: "records_available",
+          count: 1,
+          statuses: ["ready_for_release_review"],
+          latest: { id: "lgapkg_release_1", status: "ready_for_release_review" },
+          ids: ["lgapkg_release_1"]
+        },
+        runtimeEnablements: {
+          ok: true,
+          status: "records_missing",
+          count: 0,
+          statuses: [],
+          latest: null,
+          ids: []
+        }
+      },
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    collectionRunId: "lgacrn_release_1",
+    activationGates: ["writeful_execution"],
+    requiredApprovalKeys: ["writefulExecutionApproval"],
+    activationRecordLimit: 7,
+    runtimeEnablementRecordLimit: 6,
+    automationDigestUiEvidence: true,
+    tasks: ["release_inventory"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["releaseInventorySmokeEvidence"]);
+  const evidence = result.bundle.evidence.releaseInventorySmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.smoke, "npm run smoke:release-inventory");
+  assert.equal(evidence.summary.source, "growth-learning-automation-release-inventory-service");
+  assert.equal(evidence.summary.status, "manual_runtime_config_required");
+  assert.equal(evidence.summary.artifactCount, 7);
+  assert.equal(evidence.summary.latestPackageId, "lgapkg_release_1");
+  assert.deepEqual(evidence.summary.missingRecordKinds, ["runtime_enablement"]);
+  assert.equal(evidence.summary.controls.status, "manual_runtime_config_required");
+  assert.equal(evidence.summary.controls.requiredActionCount, 1);
+  assert.equal(evidence.summary.artifactReadback.packages.status, "records_available");
+  assert.equal(evidence.summary.artifactReadback.packages.latestId, "lgapkg_release_1");
+  assert.equal(evidence.summary.artifactReadback.runtimeEnablements.status, "records_missing");
+  assert.equal(evidence.summary.configChangeApplied, false);
+  assert.equal(evidence.summary.writefulSchedulingAllowed, false);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-release-inventory.js"));
+  assert.ok(calls[0].args.includes("--collection-run-id"));
+  assert.ok(calls[0].args.includes("lgacrn_release_1"));
+  assert.ok(calls[0].args.includes("--activation-gates"));
+  assert.ok(calls[0].args.includes("writeful_execution"));
+  assert.ok(calls[0].args.includes("--required-approval-keys"));
+  assert.ok(calls[0].args.includes("writefulExecutionApproval"));
   assert.ok(calls[0].args.includes("--activation-record-limit"));
   assert.ok(calls[0].args.includes("7"));
   assert.ok(calls[0].args.includes("--runtime-enablement-record-limit"));

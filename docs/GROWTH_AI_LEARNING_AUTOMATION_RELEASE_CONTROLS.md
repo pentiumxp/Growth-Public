@@ -218,6 +218,25 @@ evidence bundle does not become circular. It should be added only as a final
 audit/readback task after the default bundle and bundle-audit flow already
 exists.
 
+The companion release inventory readback can be collected the same way:
+
+```bash
+npm run smoke:release-evidence-bundle -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --task release_inventory \
+  --activation-gates writeful_execution \
+  --required-approval-key writefulExecutionApproval \
+  --activation-record-limit 20 \
+  --runtime-enablement-record-limit 20 \
+  --json
+```
+
+This task writes `releaseInventorySmokeEvidence` inside the same bundle
+artifact. It is also non-default and no-write. A passing task proves the
+inventory readback was collected; consumers must still read the nested
+inventory and controls summaries for the actual release state.
+
 ## Forbidden Boundaries
 
 Release controls must not:

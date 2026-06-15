@@ -1972,6 +1972,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /centralVisualEvidenceFilePresent/);
   assert.match(service, /release_controls/);
   assert.match(service, /releaseControlsSmokeEvidence/);
+  assert.match(service, /release_inventory/);
+  assert.match(service, /releaseInventorySmokeEvidence/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
   assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);

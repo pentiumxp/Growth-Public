@@ -9,6 +9,61 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T20:15Z - Release Inventory Evidence Bundle Task
+
+- Status: implemented and validated locally. This slice is Growth backend /
+  Harness / docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway, publish cards/plans, evaluate
+  submissions, run scheduler actions, deliver notifications, activate stage
+  assessments, mutate learner state, or write production release records.
+- Scope:
+  - added explicit non-default `release_inventory` task to
+    `learning-automation-release-evidence-bundle-service`;
+  - the task delegates through the injected command runner to
+    `scripts/smoke-growth-release-inventory.js` /
+    `npm run smoke:release-inventory`;
+  - the task accepts the same release readback flags as `release_controls`
+    (`collectionRunId`, activation gates, required approval keys, UI evidence
+    flags, and audit-record limits);
+  - the bundle stores bounded `releaseInventorySmokeEvidence` summaries:
+    release inventory status, artifact counts, latest artifact ids,
+    missing/blocked record kinds, nested controls status, bounded artifact
+    readback summaries, and runtime/scheduling mutation flags;
+  - `DEFAULT_TASK_IDS` remains unchanged, so `release_inventory` is final
+    readback packaging only and not part of the normal bundle.
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`.
+- Validation passed:
+  - `node --check` for the changed service and focused tests;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-inventory-service.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`68` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run smoke:release-evidence-bundle -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --activation-gates writeful_execution --required-approval-key writefulExecutionApproval --task release_inventory --json`;
+  - `npm run check` (`181/181` runtime JavaScript files covered);
+  - `npm test` (`713` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`317` files, `4,112` nodes,
+    `15,926` edges; index up to date; CLI reports an advisory older-engine
+    reindex warning only);
+  - AI Ops evidence ledger append id
+    `evidence-53a28162-5ff2-48d1-9cf0-283ce17485b3`.
+- Remaining product work:
+  - expose release controls/inventory readbacks in the embedded Owner release
+    UI;
+  - collect real production visual, Action Inbox/Web Push, scheduler, worker,
+    daily-loop, learner-cycle, package, approval, activation, and runtime
+    enablement evidence before any runtime enablement;
+  - keep `release_inventory` and `release_controls` bundle tasks as explicit
+    no-write final readbacks, not approvals or release switches.
+
 ## 2026-06-15T20:04Z - Release Inventory Readback Service
 
 - Status: implemented and validated locally. This slice is Growth backend /

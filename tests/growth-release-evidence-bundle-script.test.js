@@ -181,6 +181,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
   assert.ok(output.allowedTaskIds.includes("release_controls"));
+  assert.ok(output.allowedTaskIds.includes("release_inventory"));
 });
 
 test("release evidence bundle script writes bounded cycle-history evidence from read-only history smoke", () => {
@@ -498,6 +499,41 @@ test("release evidence bundle script writes central visual evidence from central
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("/Users/xuxin/.homeai-qa"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
+test("release evidence bundle script writes bounded release-inventory readback from no-write inventory smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "release-inventory-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--activation-gates", "writeful_execution",
+      "--required-approval-key", "writefulExecutionApproval",
+      "--task", "release_inventory",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.smoke, "npm run smoke:release-inventory");
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.summary.source, "growth-learning-automation-release-inventory-service");
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.summary.schemaVersion, "growth.learningAutomationReleaseInventory.v1");
+    assert.equal(fileBundle.evidence.releaseInventorySmokeEvidence.summary.writefulSchedulingAllowed, false);
+    assert.equal(fileBundle.scope.activationGates[0], "writeful_execution");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
   });
 });
