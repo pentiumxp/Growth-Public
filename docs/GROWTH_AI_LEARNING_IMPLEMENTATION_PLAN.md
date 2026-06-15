@@ -696,6 +696,12 @@ Implemented backend shape:
   `npm run smoke:platform-action-evidence` output to `platformActionEvidence`
   from delivered Growth outbox receipts without reading Home AI internal
   Action Inbox/Web Push storage.
+  The default `central_visual` task maps
+  `npm run smoke:central-visual-evidence` output to `centralVisualEvidence`
+  from a supplied Home AI central visual harness artifact without starting
+  Appium or running `npm run ios:pwa:visual` inside Growth. The release bundle
+  records only bounded visual summary fields and file-presence metadata, not
+  raw local artifact paths.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -746,7 +752,10 @@ Required behavior:
   no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push
   receipt evidence from `npm run smoke:platform-action-evidence` or the
   default `platform_action` release-bundle task,
-  central embedded visual evidence, and explicit release approval records for
+  central embedded visual evidence from
+  `npm run smoke:central-visual-evidence` or the default `central_visual`
+  release-bundle task after the Home AI central visual harness has produced
+  a bounded artifact, and explicit release approval records for
   each writeful config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
@@ -771,8 +780,10 @@ Required harness:
 - `tests/learning-automation-release-approval-repository.test.js`;
 - `tests/learning-automation-release-approval-service.test.js`;
 - `tests/learning-automation-platform-action-evidence-service.test.js`;
+- `tests/learning-automation-central-visual-evidence-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
 - `tests/growth-platform-action-evidence-smoke-script.test.js`;
+- `tests/growth-central-visual-evidence-smoke-script.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
@@ -789,8 +800,9 @@ Remaining release gaps:
   digest/action/execution/run, and worker-target views;
 - real production Home AI platform Action Inbox/Web Push receipt evidence from
   `npm run smoke:platform-action-evidence`;
-- central embedded-plugin visual evidence for mobile scroll, dark mode,
-  progress, and embedded shell;
+- real production central embedded-plugin visual artifact for mobile scroll,
+  dark mode, progress, and embedded shell, then ingestion through
+  `npm run smoke:central-visual-evidence`;
 - production planner readiness smoke from `npm run smoke:planner-readiness`,
   production learning-loop state smoke from `npm run smoke:learning-loop-state`,
   production cycle-history smoke from `npm run smoke:cycle-history` or the

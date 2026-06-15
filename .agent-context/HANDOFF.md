@@ -9,6 +9,77 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T14:00Z - Central Visual Release Evidence
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  No production deploy is required for this slice because Growth only validates
+  a summary-only Home AI visual harness artifact. Home AI still owns Appium,
+  live-debug, simulator lanes, screenshots, and central visual artifact
+  production.
+- Progress estimate:
+  - non-UI backend closed-loop target: about `90%` complete, about `10%`
+    remaining;
+  - full product closed loop including embedded UI, real production visual
+    artifacts, production platform receipts, reviewed targets, and explicit
+    release decisions: about `70%` complete, about `30%` remaining.
+- Scope:
+  - added
+    `src/services/learning-automation-central-visual-evidence-service.js`;
+  - added `npm run smoke:central-visual-evidence` through
+    `scripts/smoke-growth-central-visual-evidence.js`;
+  - wired the service through `src/app/services.js`;
+  - added default release-bundle task `central_visual`, mapped to
+    `centralVisualEvidence`;
+  - the evidence reader accepts explicit inline JSON or an explicit evidence
+    file path from CLI input, strips artifact directories to file names, emits
+    summary-only `growth.learningAutomationCentralVisualEvidence.v1`, requires
+    matching plugin/scenario, passing assertions, and screenshot evidence, and
+    never runs Appium or Home AI visual tooling from Growth.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`.
+- Harness/code updated:
+  - `tests/learning-automation-central-visual-evidence-service.test.js`;
+  - `tests/growth-central-visual-evidence-smoke-script.test.js`;
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-central-visual-evidence-service.test.js
+    tests/growth-central-visual-evidence-smoke-script.test.js
+    tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-architecture-boundary.test.js` (`62` tests);
+  - direct central visual smoke against a temporary summary artifact:
+    `status=pass`, `readyForReleaseEvidence=true`,
+    `screenshotArtifactName=central-visual.png`;
+  - release evidence bundle with only task `central_visual`: `taskCount=1`,
+    `passedCount=1`, `blockedCount=0`;
+  - bundle leak scan found no local artifact paths, secret markers, raw prompts,
+    raw answers, transcripts, cookies, tokens, or source-document markers;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph status` (`263` files, `3,379` nodes, `12,994` edges; index up
+    to date with older-engine advisory);
+  - `npm run check` (`154` runtime JS files covered);
+  - `npm test` (`588` tests).
+- Remaining product work:
+  - real production central visual artifact still must be produced by the Home
+    AI visual toolchain and then ingested through this Growth boundary;
+  - embedded Owner release-evidence UI still needs product-grade controls and
+    visual verification;
+  - production platform Action Inbox/Web Push receipt evidence, reviewed enabled
+    targets, production dry-run evidence, and explicit release approvals still
+    block unattended scheduling.
+
 ## 2026-06-15T13:35Z - Platform Action Release Evidence
 
 - Status: implemented and locally validated; commit/push follows this handoff

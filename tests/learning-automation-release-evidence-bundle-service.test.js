@@ -32,6 +32,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("owner_audit"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
@@ -62,7 +63,10 @@ test("release evidence bundle service normalizes scope and task args", () => {
     profileDeltaId: "",
     evidenceId: "",
     correctionId: "",
-    sourceId: ""
+    sourceId: "",
+    visualPluginId: "growth",
+    visualScenario: "embedded-plugin-shell",
+    centralVisualEvidenceFile: ""
   });
   assert.deepEqual(scopeArgs({
     workspaceId: "weixin_fanfan",
@@ -296,6 +300,51 @@ test("release evidence bundle service collects platform action evidence from rea
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-platform-action-evidence.js"));
   assert.ok(calls[0].args.includes("--json"));
   assert.equal(JSON.stringify(result.bundle).includes("clickUrl"), false);
+});
+
+test("release evidence bundle service collects central visual evidence from read-only smoke", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-central-visual-evidence-service",
+      status: "pass",
+      readyForReleaseEvidence: true,
+      visualEvidence: {
+        source: "home-ai-ios-pwa-visual-harness",
+        pluginId: "growth",
+        scenario: "embedded-plugin-shell",
+        screenshotPresent: true,
+        screenshotArtifactName: "growth-embedded.png",
+        evidenceFileName: "central-visual.json",
+        assertionCount: 2,
+        failedAssertionCount: 0
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["central_visual"],
+    centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/central-visual.json"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.bundle.evidence.centralVisualEvidence.status, "pass");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.smoke, "npm run smoke:central-visual-evidence");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);
+  assert.equal(result.bundle.scope.centralVisualEvidenceFilePresent, true);
+  assert.equal(result.bundle.scope.centralVisualEvidenceFile, undefined);
+  assert.equal(JSON.stringify(result.bundle).includes("/Users/xuxin/.homeai-qa"), false);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-central-visual-evidence.js"));
+  assert.ok(calls[0].args.includes("--central-visual-evidence-file"));
+  assert.ok(calls[0].args.includes("/Users/xuxin/.homeai-qa/artifacts/central-visual.json"));
+  assert.ok(calls[0].args.includes("--plugin-id"));
+  assert.ok(calls[0].args.includes("growth"));
+  assert.ok(calls[0].args.includes("--scenario"));
+  assert.ok(calls[0].args.includes("embedded-plugin-shell"));
 });
 
 test("release evidence bundle service blocks controlled daily-loop write evidence unless explicitly allowed", () => {

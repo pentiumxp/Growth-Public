@@ -474,8 +474,10 @@ Background scheduling can be considered only after all of these are complete:
   `npm run smoke:platform-action-evidence`, which reads only delivered Growth
   event-outbox receipts and does not inspect Home AI Action Inbox/Web Push
   internals.
-- Central Home AI embedded-plugin visual evidence exists for mobile and
-  embedded shell.
+- Central Home AI embedded-plugin visual evidence for mobile and embedded shell
+  has been produced by the Home AI visual toolchain and ingested through
+  `npm run smoke:central-visual-evidence`; Growth does not run Appium or
+  `npm run ios:pwa:visual` from the release evidence boundary.
 - Production dry-run evidence exists for the target scope.
 - A Growth-owned release-readiness evidence snapshot records product,
   platform, visual, reviewed-target, production dry-run, config, and explicit

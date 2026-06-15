@@ -739,6 +739,29 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(automationPlatformActionEvidenceService, /rawAnswer:/);
   assert.doesNotMatch(automationPlatformActionEvidenceService, /rawPrompt:/);
 
+  const automationCentralVisualEvidenceService = read(path.join("src", "services", "learning-automation-central-visual-evidence-service.js"));
+  assert.match(automationCentralVisualEvidenceService, /createLearningAutomationCentralVisualEvidenceService/);
+  assert.match(automationCentralVisualEvidenceService, /evaluate/);
+  assert.match(automationCentralVisualEvidenceService, /readFile/);
+  assert.match(automationCentralVisualEvidenceService, /homeAiOwnsVisualHarness/);
+  assert.match(automationCentralVisualEvidenceService, /growthRunsNoAppium/);
+  assert.match(automationCentralVisualEvidenceService, /growthReadsOnlyCentralHarnessArtifacts/);
+  assert.match(automationCentralVisualEvidenceService, /screenshotArtifactName/);
+  assert.match(automationCentralVisualEvidenceService, /summaryOnly: true/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /spawnSync/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /execFile|exec\(/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /ios:pwa:visual/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /fetch\(/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /publishPlanItem/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /publishAcceptedProposal/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /recordExecution/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /generateCard/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /Gateway/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /activateStageAssessment/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /learning_growth_/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /rawAnswer:/);
+  assert.doesNotMatch(automationCentralVisualEvidenceService, /rawPrompt:/);
+
   const automationProposalRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-proposals.js"));
   assert.match(automationProposalRepository, /learning_growth_automation_proposals/);
   assert.match(automationProposalRepository, /createLearningAutomationProposalRepository/);
@@ -1095,8 +1118,13 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:platform-action-evidence"],
     "node scripts/smoke-growth-platform-action-evidence.js"
   );
+  assert.equal(
+    packageJson.scripts["smoke:central-visual-evidence"],
+    "node scripts/smoke-growth-central-visual-evidence.js"
+  );
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-bundle-service\.js/
@@ -1104,6 +1132,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-platform-action-evidence-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-central-visual-evidence-service\.js/
   );
 
   const platformActionScript = read(path.join("scripts", "smoke-growth-platform-action-evidence.js"));
@@ -1118,6 +1150,20 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(platformActionScript, /generateCard/);
   assert.doesNotMatch(platformActionScript, /executeOnce/);
   assert.doesNotMatch(platformActionScript, /runOnce/);
+
+  const centralVisualScript = read(path.join("scripts", "smoke-growth-central-visual-evidence.js"));
+  assert.match(centralVisualScript, /readEnv/);
+  assert.match(centralVisualScript, /createServices/);
+  assert.match(centralVisualScript, /learningAutomationCentralVisualEvidenceService/);
+  assert.match(centralVisualScript, /\.evaluate/);
+  assert.match(centralVisualScript, /--central-visual-evidence-file/);
+  assert.doesNotMatch(centralVisualScript, /spawnSync/);
+  assert.doesNotMatch(centralVisualScript, /ios:pwa:visual/);
+  assert.doesNotMatch(centralVisualScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(centralVisualScript, /publishPlanItem/);
+  assert.doesNotMatch(centralVisualScript, /generateCard/);
+  assert.doesNotMatch(centralVisualScript, /executeOnce/);
+  assert.doesNotMatch(centralVisualScript, /runOnce/);
 
   const script = read(path.join("scripts", "build-growth-release-evidence-bundle.js"));
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -1159,6 +1205,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(service, /platform_action/);
   assert.match(service, /platformActionEvidence/);
+  assert.match(service, /central_visual/);
+  assert.match(service, /centralVisualEvidence/);
+  assert.match(service, /centralVisualEvidenceFilePresent/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
   assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);
@@ -1192,6 +1241,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /smoke-growth-learning-loop-state\.js/);
   assert.match(service, /smoke-growth-cycle-history\.js/);
   assert.match(service, /smoke-growth-platform-action-evidence\.js/);
+  assert.match(service, /smoke-growth-central-visual-evidence\.js/);
   assert.match(service, /smoke-growth-stage-assessment\.js/);
   assert.match(service, /smoke-growth-automation-proposal\.js/);
   assert.match(service, /smoke-growth-scheduler-dry-run\.js/);
@@ -1221,6 +1271,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(serviceHarness, /cycle_history/);
   assert.match(serviceHarness, /owner_audit/);
   assert.match(serviceHarness, /collects platform action evidence from read-only smoke/);
+  assert.match(serviceHarness, /collects central visual evidence from read-only smoke/);
   assert.match(serviceHarness, /blocks learner-cycle write operations from bundle scope/);
   assert.match(serviceHarness, /blocks controlled daily-loop write evidence unless explicitly allowed/);
   assert.match(serviceHarness, /runs controlled daily-loop write smoke only after bundle write approval/);
@@ -1233,6 +1284,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(scriptHarness, /writes bounded Owner audit evidence from read-only audit smoke/);
   assert.match(scriptHarness, /writes bounded learner-cycle audit evidence from read-only learner smoke/);
   assert.match(scriptHarness, /writes platform action evidence from delivered outbox receipt/);
+  assert.match(scriptHarness, /writes central visual evidence from central harness artifact/);
   assert.match(scriptHarness, /blocks learner-cycle write operations before smoke runner/);
   assert.match(scriptHarness, /exposes controlled daily-loop write evidence only as explicit blocked task by default/);
   assert.match(scriptHarness, /fails closed before write smoke when controlled publish lacks a plan draft id/);

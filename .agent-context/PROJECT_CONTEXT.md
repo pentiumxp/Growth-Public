@@ -182,8 +182,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
   includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
-  smoke, platform action evidence, and proposal smoke in the default task set,
-  and now also collects the
+  smoke, platform action evidence, central visual evidence, and proposal smoke
+  in the default task set, and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
@@ -203,7 +203,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
   `productionCycleHistorySmokeEvidence`, Owner audit smoke into
   `productionOwnerAuditSmokeEvidence`, platform action evidence from delivered
-  Growth event-outbox receipts into `platformActionEvidence`, controlled daily-loop write smoke into
+  Growth event-outbox receipts into `platformActionEvidence`, central Home AI
+  visual harness artifact validation into `centralVisualEvidence`, controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
@@ -549,7 +550,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   unless `--allow-write` is present; publish also requires a selected
   `--plan-draft-id`. This complements the no-write
   `npm run smoke:daily-loop-preview` command.
-  Embedded UI consumption and central visual evidence remain future slices.
+  Embedded UI consumption remains a future slice. Central visual evidence now
+  has a Growth-owned read-only ingestion boundary through
+  `npm run smoke:central-visual-evidence`; the real production artifact still
+  must be produced by the Home AI central visual toolchain before release.
   Plan publication failure visibility is now durable: `learning_growth_plan_drafts`
   stores bounded latest publish-attempt status/error/stage, the publisher writes
   failed or policy-blocked attempts without marking drafts published, and plan

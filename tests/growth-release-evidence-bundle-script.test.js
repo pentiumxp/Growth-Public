@@ -66,6 +66,9 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--allow-write-evidence",
     "--daily-loop-write-operation", "publish",
     "--plan-draft-id", "lgpd_daily_1",
+    "--visual-plugin-id", "growth",
+    "--visual-scenario", "embedded-plugin-shell",
+    "--central-visual-evidence-file", "/tmp/central-visual.json",
     "--output-file", "/tmp/release-evidence.json"
   ];
 
@@ -103,7 +106,10 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     learnerCycleOperation: "audit",
     allowWriteEvidence: true,
     dailyLoopWriteOperation: "publish",
-    planDraftId: "lgpd_daily_1"
+    planDraftId: "lgpd_daily_1",
+    visualPluginId: "growth",
+    visualScenario: "embedded-plugin-shell",
+    centralVisualEvidenceFile: "/tmp/central-visual.json"
   });
 });
 
@@ -135,6 +141,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("learner_cycle"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
+  assert.ok(output.allowedTaskIds.includes("central_visual"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
 });
@@ -408,6 +415,51 @@ test("release evidence bundle script writes platform action evidence from delive
     assert.equal(fileBundle.evidence.platformActionEvidence.summary.count, 1);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("/?view=inbox"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
+test("release evidence bundle script writes central visual evidence from central harness artifact", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const visualEvidencePath = path.join(dir, "central-visual.json");
+    fs.writeFileSync(visualEvidencePath, JSON.stringify({
+      ok: true,
+      source: "home-ai-ios-pwa-visual-harness",
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      debugUrl: "http://127.0.0.1:19074/",
+      screenshotPath: "/Users/xuxin/.homeai-qa/artifacts/growth-embedded.png",
+      assertions: [{ name: "visible", status: "pass" }]
+    }), "utf8");
+    const bundlePath = path.join(dir, "central-visual-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "central_visual",
+      "--central-visual-evidence-file", visualEvidencePath,
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.centralVisualEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.smoke, "npm run smoke:central-visual-evidence");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.summary.status, "pass");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);
+    assert.equal(fileBundle.scope.centralVisualEvidenceFilePresent, true);
+    assert.equal(fileBundle.scope.centralVisualEvidenceFile, undefined);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/xuxin/.homeai-qa"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
   });

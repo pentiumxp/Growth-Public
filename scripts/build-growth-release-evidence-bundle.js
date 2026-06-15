@@ -98,7 +98,10 @@ function inputFromArgs(args) {
     learnerCycleOperation: firstArgValue(args, ["--learner-cycle-operation", "--learnerCycleOperation"], "audit") || "audit",
     allowWriteEvidence: hasFlag(args, "--allow-write-evidence") || hasFlag(args, "--allowWriteEvidence"),
     dailyLoopWriteOperation: firstArgValue(args, ["--daily-loop-write-operation", "--dailyLoopWriteOperation"], "draft") || "draft",
-    planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], "")
+    planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], ""),
+    visualPluginId: firstArgValue(args, ["--visual-plugin-id", "--visualPluginId", "--plugin-id", "--pluginId"], "growth") || "growth",
+    visualScenario: firstArgValue(args, ["--visual-scenario", "--visualScenario", "--scenario"], "embedded-plugin-shell") || "embedded-plugin-shell",
+    centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], "")
   };
 }
 

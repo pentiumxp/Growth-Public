@@ -1599,7 +1599,7 @@ Implementation progress on 2026-06-15:
   default-disabled smoke CLIs, includes no-write cycle-history evidence,
   read-only Owner audit evidence, no-write profile-feedback evidence, read-only
   learner-cycle audit, read-only stage-assessment readiness, proposal smoke,
-  platform action receipt evidence, and read-only release approval bag
+  platform action receipt evidence, central visual artifact evidence, and read-only release approval bag
   projection by default, and emits
   only summary evidence. The default `profile_feedback` task maps to
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
@@ -1614,7 +1614,11 @@ Implementation progress on 2026-06-15:
   `platformActionEvidence` and proves a delivered
   `growth.automation.action_required` receipt exists in Growth's event outbox;
   Home AI still owns Action Inbox/Web Push internals and the evidence stores
-  only bounded receipt metadata. The
+  only bounded receipt metadata. The default `central_visual` task maps to
+  `centralVisualEvidence` and validates a Home AI central visual harness
+  artifact without starting Appium or running visual tooling inside Growth; the
+  bundle stores only bounded visual summary fields and raw artifact paths are
+  omitted. The
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner

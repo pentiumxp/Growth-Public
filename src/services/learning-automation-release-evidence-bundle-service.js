@@ -18,6 +18,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "stage_assessment",
   "proposal",
   "platform_action",
+  "central_visual",
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -100,6 +101,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "platformActionEvidence",
     script: "scripts/smoke-growth-platform-action-evidence.js",
     commandName: "npm run smoke:platform-action-evidence"
+  },
+  {
+    taskId: "central_visual",
+    evidenceKey: "centralVisualEvidence",
+    script: "scripts/smoke-growth-central-visual-evidence.js",
+    commandName: "npm run smoke:central-visual-evidence"
   },
   {
     taskId: "scheduler_dry_run",
@@ -276,8 +283,19 @@ function publicScope(input = {}) {
     profileDeltaId: cleanString(input.profileDeltaId || input.profile_delta_id, 120),
     evidenceId: cleanString(input.evidenceId || input.evidence_id, 120),
     correctionId: cleanString(input.correctionId || input.correction_id, 120),
-    sourceId: cleanString(input.sourceId || input.source_id, 120)
+    sourceId: cleanString(input.sourceId || input.source_id, 120),
+    visualPluginId: cleanString(input.visualPluginId || input.visual_plugin_id || input.pluginId || input.plugin_id || "growth", 80) || "growth",
+    visualScenario: cleanString(input.visualScenario || input.visual_scenario || input.scenario || "embedded-plugin-shell", 120) || "embedded-plugin-shell",
+    centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500)
   };
+}
+
+function publicBundleScope(scope = {}) {
+  const output = Object.assign({}, scope, {
+    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile)
+  });
+  delete output.centralVisualEvidenceFile;
+  return output;
 }
 
 function summaryFromSmoke(value = {}) {
@@ -290,6 +308,7 @@ function summaryFromSmoke(value = {}) {
     "complete",
     "readyForAutomation",
     "readyForNextPlan",
+    "readyForReleaseEvidence",
     "activationState",
     "reason",
     "status",
@@ -481,6 +500,11 @@ function taskSpecificArgs(task, scope) {
     args.push("--operation", scope.dailyLoopWriteOperation, "--allow-write");
     if (scope.planDraftId) args.push("--plan-draft-id", scope.planDraftId);
   }
+  if (task.taskId === "central_visual") {
+    args.push("--plugin-id", scope.visualPluginId || "growth");
+    args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
+    if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
+  }
   return args;
 }
 
@@ -574,7 +598,7 @@ function createLearningAutomationReleaseEvidenceBundleService(options = {}) {
       summaryOnly: true,
       createdAt: generatedAt,
       requestedBy: cleanString(input.requestedBy || input.requested_by, 120),
-      scope,
+      scope: publicBundleScope(scope),
       evidence,
       releaseApproval,
       summary: {

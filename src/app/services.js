@@ -1,3 +1,4 @@
+const fs = require("node:fs");
 const { createGrowthService } = require("../services/growth-service");
 const { createGrowthEvaluationService } = require("../services/growth-evaluation-service");
 const { createGrowthEventService } = require("../services/growth-event-service");
@@ -6,6 +7,7 @@ const { createGrowthGatewayEvaluationClient } = require("../services/growth-gate
 const { createGrowthGatewayPlannerClient } = require("../services/growth-gateway-planner-client");
 const { createHermesPluginService } = require("../services/hermes-plugin-service");
 const { createLearningAutomationActionHandoffService } = require("../services/learning-automation-action-handoff-service");
+const { createLearningAutomationCentralVisualEvidenceService } = require("../services/learning-automation-central-visual-evidence-service");
 const { createLearningAutomationDigestService } = require("../services/learning-automation-digest-service");
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
@@ -241,6 +243,9 @@ function createServices(config) {
   const learningAutomationPlatformActionEvidenceService = createLearningAutomationPlatformActionEvidenceService({
     outboxStore: growthEventOutboxStore
   });
+  const learningAutomationCentralVisualEvidenceService = createLearningAutomationCentralVisualEvidenceService({
+    readFile: fs.readFileSync
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -361,6 +366,7 @@ function createServices(config) {
     learningCardTrajectoryService,
     learningAuditCompletenessService,
     learningAutomationActionHandoffService,
+    learningAutomationCentralVisualEvidenceService,
     learningAutomationDigestService,
     learningAutomationFailurePolicyService,
     learningAutomationPlatformActionEvidenceService,
