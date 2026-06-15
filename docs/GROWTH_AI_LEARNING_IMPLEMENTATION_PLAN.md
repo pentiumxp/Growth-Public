@@ -135,7 +135,8 @@ AI-driven loop:
   Owner-created snapshots. This boundary is advisory, keeps
   `writefulSchedulingAllowed=false`, and is not a runtime release switch;
 - release package backend/CLI/API for composing bundle, bundle audit,
-  release-readiness, collection-run, and release-controls readback into one
+  release-readiness, collection-run, release-controls, and release-dashboard
+  readback into one
   summary-only artifact, then optionally recording a bounded package audit row
   in Growth SQLite for Owner/release review without enabling scheduling,
   runtime config, deployment, or card publication.
@@ -742,16 +743,19 @@ Implemented backend shape:
   `learning-automation-release-package-service` and creates one summary-only
   `growth.learningAutomationReleasePackage.v1` release review artifact. It
   composes the release evidence bundle builder, bundle audit, release-readiness
-  evaluation, collection-run evaluation, and release-controls readback through
-  injected services. It defaults to no-write. The only write it can request is
+  evaluation, collection-run evaluation, release-controls readback, and
+  release-dashboard readback through injected services. It defaults to
+  no-write. The only write it can request is
   the existing collection-run audit record with both `--write-collection-run`
   and `--allow-write`, or a summarized package audit record with both
   `--write-package-record` and `--allow-write`; if a requested record boundary
   is not available, the package fails closed. Package records are stored in
   `learning_growth_automation_release_packages` through
   `automation-release-packages.js` and contain only bounded package, step,
-  bundle/audit/readiness/collection-run/controls summaries. Visible-target
-  scoped `GET /api/v1/growth/automation/release-packages` lists those records;
+  bundle/audit/readiness/collection-run/controls/dashboard summaries. The
+  repository migrates `release_dashboard_summary_json` for persisted dashboard
+  readback. Visible-target scoped
+  `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an
   existing summary-only package artifact only and does not run smoke tasks. The
   package is not release approval, runtime config enablement, scheduler

@@ -243,11 +243,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `scripts/build-growth-release-package.js`. It composes the release evidence
   bundle builder, bundle self-audit, release-readiness evaluation,
   collection-run evaluation or explicit `--write-collection-run --allow-write`
-  persistence, and release-controls readback into one summary-only
-  `growth.learningAutomationReleasePackage.v1` artifact. The package may also
-  write a summarized package audit record through `automation-release-packages.js`
-  into `learning_growth_automation_release_packages` only with
-  `--write-package-record --allow-write`; the visible-target scoped
+  persistence, release-controls readback, and release-dashboard readback into
+  one summary-only `growth.learningAutomationReleasePackage.v1` artifact. The
+  package may also write a summarized package audit record through
+  `automation-release-packages.js` into
+  `learning_growth_automation_release_packages` only with
+  `--write-package-record --allow-write`; package records include bounded
+  `releaseDashboardSummary` in `release_dashboard_summary_json`. The
+  visible-target scoped
   `GET /api/v1/growth/automation/release-packages` and Owner-only
   `POST /api/v1/growth/automation/release-packages` expose record readback and
   recording for existing package artifacts only. The package boundary never

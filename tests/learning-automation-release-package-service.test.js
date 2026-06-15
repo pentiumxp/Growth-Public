@@ -149,12 +149,50 @@ function controls(overrides = {}) {
   }, overrides);
 }
 
+function dashboard(overrides = {}) {
+  return Object.assign(scope(), {
+    ok: true,
+    source: "growth-learning-automation-release-dashboard-service",
+    schemaVersion: "growth.learningAutomationReleaseDashboard.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: "manual_runtime_config_required",
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false,
+    releaseDashboard: {
+      schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+      summaryOnly: true,
+      status: "manual_runtime_config_required",
+      readinessStatus: "ready_for_release_review",
+      controlsStatus: "manual_runtime_config_required",
+      inventoryStatus: "manual_runtime_config_required",
+      requiredActionCount: 1,
+      nextAction: {
+        key: "enable_runtime_config_manually",
+        action: "perform_platform_runtime_config_enablement",
+        requiredActor: "owner"
+      },
+      latestCollectionRunId: "lgacrn_ready_1",
+      latestPackageId: "lgapkg_ready_1",
+      missingRecordKinds: ["runtime_enablement"],
+      missingCheckKeys: ["runtime_enablement"],
+      missingEvidenceKeys: ["scheduler_worker_target_ui"],
+      persistedApprovalKeys: ["writefulExecutionApproval"],
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    }
+  }, overrides);
+}
+
 function serviceWith(records = {}) {
   const bundleValue = records.bundle || bundle();
   const auditValue = records.audit || audit();
   const readinessValue = records.readiness || readiness();
   const collectionValue = records.collectionRun || collectionRun();
   const controlsValue = records.controls || controls();
+  const dashboardValue = records.dashboard || dashboard();
   const releaseCollectionRunService = {
     evaluateRun(input) {
       records.collectionInput = input;
@@ -201,11 +239,17 @@ function serviceWith(records = {}) {
         records.controlsInput = input;
         return controlsValue;
       }
+    },
+    releaseDashboardService: {
+      dashboard(input) {
+        records.dashboardInput = input;
+        return dashboardValue;
+      }
     }
   });
 }
 
-test("release package service composes bundle, audit, readiness, collection run, and controls", () => {
+test("release package service composes bundle, audit, readiness, collection run, controls, and dashboard", () => {
   const records = {};
   const result = serviceWith(records).buildPackage(Object.assign(scope(), {
     tasks: ["planner_readiness", "scheduler_dry_run"],
@@ -228,9 +272,10 @@ test("release package service composes bundle, audit, readiness, collection run,
     "release_evidence_bundle_audit",
     "release_readiness",
     "release_collection_run",
-    "release_controls"
+    "release_controls",
+    "release_dashboard"
   ]);
-  assert.equal(result.package.summary.stepCount, 5);
+  assert.equal(result.package.summary.stepCount, 6);
   assert.equal(result.package.summary.collectionRunId, "lgacrn_ready_1");
   assert.equal(records.auditInput.bundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
   assert.equal(records.readinessInput.evidence.releaseEvidenceBundleAudit.schemaVersion, "growth.learningAutomationReleaseEvidenceBundleAudit.v1");
@@ -239,6 +284,11 @@ test("release package service composes bundle, audit, readiness, collection run,
   assert.equal(records.collectionInput.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
   assert.equal(records.controlsInput.collectionRunId, "lgacrn_ready_1");
   assert.deepEqual(records.controlsInput.activationGates, ["writeful_execution"]);
+  assert.equal(records.dashboardInput.collectionRunId, "lgacrn_ready_1");
+  assert.deepEqual(records.dashboardInput.activationGates, ["writeful_execution"]);
+  assert.equal(result.package.artifacts.releaseDashboard.schemaVersion, "growth.learningAutomationReleaseDashboard.v1");
+  assert.equal(result.package.steps[5].requiredActionCount, 1);
+  assert.equal(result.package.steps[5].nextActionKey, "enable_runtime_config_manually");
   assert.equal(JSON.stringify(result.package).includes("stdout"), false);
 });
 
@@ -312,6 +362,7 @@ test("release package service keeps blocked release evidence explicit without op
   assert.equal(result.package.summary.blockedCount >= 1, true);
   assert.equal(result.package.writefulSchedulingAllowed, false);
   assert.equal(result.package.artifacts.releaseControls.status, "release_evidence_required");
+  assert.equal(result.package.artifacts.releaseDashboard.status, "manual_runtime_config_required");
 });
 
 test("release package service rejects private paths in generated artifacts", () => {
@@ -408,8 +459,10 @@ test("release package service records summary-only package records behind explic
   assert.equal(calls.saved.privacyClass, "summary_only");
   assert.equal(calls.saved.summaryOnly, true);
   assert.equal(calls.saved.packageSummary.writefulSchedulingAllowed, false);
-  assert.equal(calls.saved.stepSummary.stepCount, 5);
+  assert.equal(calls.saved.stepSummary.stepCount, 6);
   assert.equal(calls.saved.releaseControlsSummary.runtimeConfigChange, false);
+  assert.equal(calls.saved.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(calls.saved.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
   assert.equal(JSON.stringify(calls.saved).includes("artifacts"), false);
   assert.equal(JSON.stringify(calls.saved).includes("productionPlannerReadinessEvidence"), false);
 

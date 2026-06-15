@@ -115,7 +115,8 @@ async function main() {
     evidenceBundleAuditService: services.learningAutomationReleaseEvidenceBundleAuditService,
     releaseReadinessService: services.learningAutomationReleaseReadinessService,
     releaseCollectionRunService: services.learningAutomationReleaseCollectionRunService,
-    releaseControlsService: services.learningAutomationReleaseControlsService
+    releaseControlsService: services.learningAutomationReleaseControlsService,
+    releaseDashboardService: services.learningAutomationReleaseDashboardService
   });
   const result = service.buildPackage(input);
   const recordResult = input.writePackageRecord && result.package

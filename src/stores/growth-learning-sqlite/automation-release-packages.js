@@ -66,6 +66,7 @@ function ensureLearningAutomationReleasePackageSchema(db) {
       release_readiness_summary_json TEXT NOT NULL DEFAULT '{}',
       release_collection_run_summary_json TEXT NOT NULL DEFAULT '{}',
       release_controls_summary_json TEXT NOT NULL DEFAULT '{}',
+      release_dashboard_summary_json TEXT NOT NULL DEFAULT '{}',
       release_review_json TEXT NOT NULL DEFAULT '{}',
       created_by TEXT NOT NULL DEFAULT '',
       privacy_class TEXT NOT NULL DEFAULT 'summary_only',
@@ -89,6 +90,7 @@ function ensureLearningAutomationReleasePackageSchema(db) {
     ["release_readiness_summary_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["release_collection_run_summary_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["release_controls_summary_json", "TEXT NOT NULL DEFAULT '{}'"],
+    ["release_dashboard_summary_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["release_review_json", "TEXT NOT NULL DEFAULT '{}'"],
     ["created_by", "TEXT NOT NULL DEFAULT ''"]
   ].forEach(([name, definition]) => {
@@ -125,6 +127,7 @@ function publicAutomationReleasePackage(row) {
     releaseReadinessSummary: parseJson(row.release_readiness_summary_json, {}) || {},
     releaseCollectionRunSummary: parseJson(row.release_collection_run_summary_json, {}) || {},
     releaseControlsSummary: parseJson(row.release_controls_summary_json, {}) || {},
+    releaseDashboardSummary: parseJson(row.release_dashboard_summary_json, {}) || {},
     releaseReview: parseJson(row.release_review_json, {}) || {},
     createdBy: cleanString(row.created_by),
     privacyClass: cleanString(row.privacy_class),
@@ -208,6 +211,7 @@ function createLearningAutomationReleasePackageRepository({ open, now } = {}) {
         release_readiness_summary_json: jsonText(input.releaseReadinessSummary || input.release_readiness_summary || input.readinessSummary || input.readiness_summary || {}),
         release_collection_run_summary_json: jsonText(input.releaseCollectionRunSummary || input.release_collection_run_summary || input.collectionRunSummary || input.collection_run_summary || {}),
         release_controls_summary_json: jsonText(input.releaseControlsSummary || input.release_controls_summary || input.controlsSummary || input.controls_summary || {}),
+        release_dashboard_summary_json: jsonText(input.releaseDashboardSummary || input.release_dashboard_summary || input.dashboardSummary || input.dashboard_summary || {}),
         release_review_json: jsonText(input.releaseReview || input.release_review || {}),
         created_by: cleanString(input.createdBy || input.created_by || input.requestedBy || input.requested_by),
         privacy_class: privacyClass,

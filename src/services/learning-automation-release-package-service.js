@@ -117,6 +117,7 @@ function publicStep(key, label, value = {}, resultOk = false) {
   const status = stepStatusFor(key, value, resultOk);
   const summary = objectOnly(value.summary);
   const releaseControls = objectOnly(value.releaseControls || value.release_controls);
+  const releaseDashboard = objectOnly(value.releaseDashboard || value.release_dashboard);
   const releaseReview = objectOnly(value.releaseReview || value.release_review);
   return {
     key,
@@ -128,9 +129,9 @@ function publicStep(key, label, value = {}, resultOk = false) {
     privacyClass: cleanString(value.privacyClass || value.privacy_class || "summary_only", 80),
     summaryOnly: value.summaryOnly === undefined ? true : value.summaryOnly === true,
     error: cleanString(value.error, 180),
-    requiredActionCount: Number(releaseControls.requiredActionCount || releaseReview.requiredActionCount || summary.requiredActionCount || 0) || 0,
+    requiredActionCount: Number(releaseDashboard.requiredActionCount || releaseControls.requiredActionCount || releaseReview.requiredActionCount || summary.requiredActionCount || 0) || 0,
     nextActionKey: cleanString(
-      objectOnly(releaseControls.nextAction || releaseControls.next_action || releaseReview.nextAction || releaseReview.next_action).key,
+      objectOnly(releaseDashboard.nextAction || releaseDashboard.next_action || releaseControls.nextAction || releaseControls.next_action || releaseReview.nextAction || releaseReview.next_action).key,
       120
     ),
     readyForReleaseEvidence: value.readyForReleaseEvidence === true,
@@ -171,6 +172,10 @@ function controlsInput(scope, input, options, collectionRun) {
     activationRecordLimit: options.activationRecordLimit,
     runtimeEnablementRecordLimit: options.runtimeEnablementRecordLimit
   });
+}
+
+function dashboardInput(scope, input, options, collectionRun) {
+  return controlsInput(scope, input, options, collectionRun);
 }
 
 function derivePackageStatus(steps = [], collectionRun = {}) {
@@ -283,6 +288,37 @@ function controlsSummaryFromPackage(controls = {}) {
   });
 }
 
+function dashboardSummaryFromPackage(dashboard = {}) {
+  const releaseDashboard = objectOnly(dashboard.releaseDashboard || dashboard.release_dashboard || dashboard.summary);
+  const nextAction = objectOnly(releaseDashboard.nextAction || releaseDashboard.next_action);
+  return Object.assign(artifactSummary(dashboard, releaseDashboard), {
+    readinessStatus: cleanString(releaseDashboard.readinessStatus || releaseDashboard.readiness_status, 120),
+    controlsStatus: cleanString(releaseDashboard.controlsStatus || releaseDashboard.controls_status, 120),
+    inventoryStatus: cleanString(releaseDashboard.inventoryStatus || releaseDashboard.inventory_status, 120),
+    requiredActionCount: Number(releaseDashboard.requiredActionCount || releaseDashboard.required_action_count || 0) || 0,
+    nextAction: nextAction.key ? {
+      key: cleanString(nextAction.key, 120),
+      action: cleanString(nextAction.action, 180),
+      requiredActor: cleanString(nextAction.requiredActor || nextAction.required_actor, 80)
+    } : null,
+    latestCollectionRunId: cleanString(releaseDashboard.latestCollectionRunId || releaseDashboard.latest_collection_run_id, 160),
+    latestPackageId: cleanString(releaseDashboard.latestPackageId || releaseDashboard.latest_package_id, 160),
+    latestDecisionId: cleanString(releaseDashboard.latestDecisionId || releaseDashboard.latest_decision_id, 160),
+    latestActivationId: cleanString(releaseDashboard.latestActivationId || releaseDashboard.latest_activation_id, 160),
+    latestRuntimeEnablementId: cleanString(releaseDashboard.latestRuntimeEnablementId || releaseDashboard.latest_runtime_enablement_id, 160),
+    missingRecordKinds: uniqueStrings(releaseDashboard.missingRecordKinds || releaseDashboard.missing_record_kinds || []),
+    blockedRecordKinds: uniqueStrings(releaseDashboard.blockedRecordKinds || releaseDashboard.blocked_record_kinds || []),
+    missingCheckKeys: uniqueStrings(releaseDashboard.missingCheckKeys || releaseDashboard.missing_check_keys || []),
+    blockedCheckKeys: uniqueStrings(releaseDashboard.blockedCheckKeys || releaseDashboard.blocked_check_keys || []),
+    missingEvidenceKeys: uniqueStrings(releaseDashboard.missingEvidenceKeys || releaseDashboard.missing_evidence_keys || []),
+    missingApprovalKeys: uniqueStrings(releaseDashboard.missingApprovalKeys || releaseDashboard.missing_approval_keys || []),
+    persistedApprovalKeys: uniqueStrings(releaseDashboard.persistedApprovalKeys || releaseDashboard.persisted_approval_keys || []),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  });
+}
+
 function collectionRunIdFromPackage(releasePackage = {}) {
   const artifacts = objectOnly(releasePackage.artifacts);
   const collectionRun = objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run);
@@ -319,6 +355,7 @@ function packageRecordFromArtifact(input = {}, releasePackage = {}) {
     releaseReadinessSummary: artifactSummary(objectOnly(artifacts.releaseReadiness || artifacts.release_readiness)),
     releaseCollectionRunSummary: artifactSummary(objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run)),
     releaseControlsSummary: controlsSummaryFromPackage(objectOnly(artifacts.releaseControls || artifacts.release_controls)),
+    releaseDashboardSummary: dashboardSummaryFromPackage(objectOnly(artifacts.releaseDashboard || artifacts.release_dashboard)),
     releaseReview: artifactSummary(objectOnly(objectOnly(artifacts.releaseReadiness || artifacts.release_readiness).releaseReview || objectOnly(artifacts.releaseReadiness || artifacts.release_readiness).release_review)),
     createdBy: cleanString(input.createdBy || input.created_by || input.requestedBy || input.requested_by || releasePackage.requestedBy || releasePackage.requested_by, 120),
     createdAt: cleanString(input.createdAt || input.created_at || releasePackage.createdAt || releasePackage.created_at, 80),
@@ -332,6 +369,7 @@ function createLearningAutomationReleasePackageService(options = {}) {
   const releaseReadinessService = options.releaseReadinessService || null;
   const releaseCollectionRunService = options.releaseCollectionRunService || null;
   const releaseControlsService = options.releaseControlsService || null;
+  const releaseDashboardService = options.releaseDashboardService || null;
   const repository = options.repository || null;
   const now = options.now || (() => new Date());
 
@@ -373,6 +411,9 @@ function createLearningAutomationReleasePackageService(options = {}) {
     if (!releaseControlsService || typeof releaseControlsService.summarize !== "function") {
       return unavailable("release_package_controls_service_unavailable", scope);
     }
+    if (!releaseDashboardService || typeof releaseDashboardService.dashboard !== "function") {
+      return unavailable("release_package_dashboard_service_unavailable", scope);
+    }
 
     const createdAt = cleanString(input.createdAt || input.created_at, 80) || nowIso(now);
     const bundleResult = evidenceBundleService.buildBundle(Object.assign({}, input, scope, { createdAt }));
@@ -402,12 +443,14 @@ function createLearningAutomationReleasePackageService(options = {}) {
       : unavailable("release_package_collection_run_skipped", scope);
     const collectionRun = collectionRunArtifact(collectionResult);
     const controls = releaseControlsService.summarize(controlsInput(scope, input, optionBag, collectionRun));
+    const dashboard = releaseDashboardService.dashboard(dashboardInput(scope, input, optionBag, collectionRun));
     const steps = [
       publicStep("release_evidence_bundle", "Release evidence bundle", bundle || bundleResult, bundleResult.ok === true),
       publicStep("release_evidence_bundle_audit", "Release evidence bundle audit", audit, audit.ok === true),
       publicStep("release_readiness", "Release readiness", readiness, readiness.ok === true),
       publicStep("release_collection_run", "Release collection run", collectionRun, collectionRun.ok === true),
-      publicStep("release_controls", "Release controls readback", controls, controls.ok === true)
+      publicStep("release_controls", "Release controls readback", controls, controls.ok === true),
+      publicStep("release_dashboard", "Release dashboard readback", dashboard, dashboard.ok === true)
     ];
     const status = derivePackageStatus(steps, collectionRun);
     const releasePackage = Object.assign({}, scope, {
@@ -432,7 +475,8 @@ function createLearningAutomationReleasePackageService(options = {}) {
         releaseEvidenceBundleAudit: audit,
         releaseReadiness: readiness,
         releaseCollectionRun: collectionRun,
-        releaseControls: controls
+        releaseControls: controls,
+        releaseDashboard: dashboard
       }
     });
     const privacyFindings = scanPrivacyKeys(releasePackage).slice(0, 16);

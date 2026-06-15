@@ -1266,6 +1266,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleasePackageRepository, /scanPrivateValues/);
   assert.match(automationReleasePackageRepository, /savePackage/);
   assert.match(automationReleasePackageRepository, /listPackages/);
+  assert.match(automationReleasePackageRepository, /release_dashboard_summary_json/);
+  assert.match(automationReleasePackageRepository, /releaseDashboardSummary/);
   assert.match(automationReleasePackageRepository, /learning_automation_release_package_privacy_class_required/);
   assert.match(automationReleasePackageRepository, /learning_automation_release_package_status_invalid/);
   assert.doesNotMatch(automationReleasePackageRepository, /openai\.com/);
@@ -2160,6 +2162,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(script, /learningAutomationReleaseReadinessService/);
   assert.match(script, /learningAutomationReleaseCollectionRunService/);
   assert.match(script, /learningAutomationReleaseControlsService/);
+  assert.match(script, /learningAutomationReleaseDashboardService/);
   assert.match(script, /learningAutomationReleasePackageService\.recordPackage/);
   assert.match(script, /--write-collection-run/);
   assert.match(script, /--write-package-record/);
@@ -2189,9 +2192,13 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(service, /releaseCollectionRunService\.evaluateRun/);
   assert.match(service, /releaseCollectionRunService\.recordRun/);
   assert.match(service, /releaseControlsService\.summarize/);
+  assert.match(service, /releaseDashboardService\.dashboard/);
+  assert.match(service, /release_dashboard/);
+  assert.match(service, /releaseDashboardSummary/);
   assert.match(service, /repository\.savePackage/);
   assert.match(service, /repository\.listPackages/);
   assert.match(service, /release_package_write_not_allowed/);
+  assert.match(service, /release_package_dashboard_service_unavailable/);
   assert.match(service, /release_package_privacy_failed/);
   assert.match(service, /writefulSchedulingAllowed: false/);
   assert.match(service, /runtimeConfigChange: false/);
@@ -2211,7 +2218,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
   const serviceHarness = read(path.join("tests", "learning-automation-release-package-service.test.js"));
-  assert.match(serviceHarness, /composes bundle, audit, readiness, collection run, and controls/);
+  assert.match(serviceHarness, /composes bundle, audit, readiness, collection run, controls, and dashboard/);
   assert.match(serviceHarness, /keeps blocked release evidence explicit/);
   assert.match(serviceHarness, /rejects private paths/);
   assert.match(serviceHarness, /requires explicit allow-write/);

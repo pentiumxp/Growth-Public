@@ -49,8 +49,8 @@ function samplePackage(overrides = {}) {
     stepSummary: {
       schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
       summaryOnly: true,
-      stepCount: 5,
-      passedCount: 5,
+      stepCount: 6,
+      passedCount: 6,
       blockedCount: 0
     },
     releaseEvidenceBundleSummary: {
@@ -84,6 +84,27 @@ function samplePackage(overrides = {}) {
       runtimeConfigChange: false,
       configChangeApplied: false
     },
+    releaseDashboardSummary: {
+      schemaVersion: "growth.learningAutomationReleaseDashboard.v1",
+      summaryOnly: true,
+      status: "manual_runtime_config_required",
+      readinessStatus: "ready_for_release_review",
+      controlsStatus: "manual_runtime_config_required",
+      inventoryStatus: "manual_runtime_config_required",
+      requiredActionCount: 1,
+      nextAction: {
+        key: "enable_runtime_config_manually",
+        action: "perform_platform_runtime_config_enablement",
+        requiredActor: "owner"
+      },
+      latestCollectionRunId: "lgacrn_ready_1",
+      missingRecordKinds: ["runtime_enablement"],
+      missingCheckKeys: ["runtime_enablement"],
+      persistedApprovalKeys: ["writefulExecutionApproval"],
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false
+    },
     releaseReview: {
       schemaVersion: "growth.learningAutomationReleaseReadiness.releaseReview.v1",
       summaryOnly: true,
@@ -104,6 +125,8 @@ test("automation release package repository saves and lists summary-only package
     assert.equal(saved.package.collectionRunId, "lgacrn_ready_1");
     assert.equal(saved.package.packageSummary.writefulSchedulingAllowed, false);
     assert.equal(saved.package.releaseControlsSummary.runtimeConfigChange, false);
+    assert.equal(saved.package.releaseDashboardSummary.runtimeConfigChange, false);
+    assert.equal(saved.package.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
     assert.equal(JSON.stringify(saved.package).includes("/Users/"), false);
 
     const duplicate = repository.savePackage(samplePackage());
@@ -125,7 +148,8 @@ test("automation release package repository saves and lists summary-only package
     });
     assert.equal(listed.length, 1);
     assert.equal(listed[0].packageId, saved.package.packageId);
-    assert.equal(listed[0].stepSummary.stepCount, 5);
+    assert.equal(listed[0].stepSummary.stepCount, 6);
+    assert.equal(listed[0].releaseDashboardSummary.status, "manual_runtime_config_required");
   });
 });
 
@@ -183,5 +207,6 @@ test("automation release package repository migrates bounded columns on existing
     assert.equal(saved.package.packageId, "lgapkg_migrated_1");
     assert.equal(saved.package.packageVersion, "growth.learningAutomationReleasePackage.v1");
     assert.equal(saved.package.releaseControlsSummary.runtimeConfigChange, false);
+    assert.equal(saved.package.releaseDashboardSummary.runtimeConfigChange, false);
   });
 });

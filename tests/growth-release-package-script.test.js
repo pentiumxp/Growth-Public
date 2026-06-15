@@ -133,6 +133,9 @@ test("release package script writes summary-only package output from selected no
     assert.equal(output.artifacts.releaseReadiness.summary.schemaVersion, "growth.learningAutomationReleaseReadiness.summary.v1");
     assert.equal(output.artifacts.releaseCollectionRun.schemaVersion, "growth.learningAutomationReleaseCollectionRun.v1");
     assert.equal(output.artifacts.releaseControls.schemaVersion, "growth.learningAutomationReleaseControls.v1");
+    assert.equal(output.artifacts.releaseDashboard.schemaVersion, "growth.learningAutomationReleaseDashboard.v1");
+    assert.equal(output.steps.map((step) => step.key).includes("release_dashboard"), true);
+    assert.equal(output.summary.stepCount, 6);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(JSON.stringify(output).includes("stdout"), false);
@@ -167,13 +170,18 @@ test("release package script can write a summary-only package record to Growth S
     assert.equal(output.record.package.workspaceId, "smoke_workspace");
     assert.equal(output.record.package.privacyClass, "summary_only");
     assert.equal(output.record.package.releaseControlsSummary.runtimeConfigChange, false);
+    assert.equal(output.record.package.releaseDashboardSummary.runtimeConfigChange, false);
+    assert.equal(output.record.package.releaseDashboardSummary.summaryOnly, true);
+    assert.equal(output.record.package.releaseDashboardSummary.status.length > 0, true);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {
       const row = db.prepare("SELECT * FROM learning_growth_automation_release_packages WHERE workspace_id = ?").get("smoke_workspace");
       assert.equal(row.privacy_class, "summary_only");
       assert.equal(JSON.parse(row.package_summary_json).writefulSchedulingAllowed, false);
-      assert.equal(JSON.parse(row.step_summary_json).stepCount, 5);
+      assert.equal(JSON.parse(row.step_summary_json).stepCount, 6);
+      assert.equal(JSON.parse(row.release_dashboard_summary_json).runtimeConfigChange, false);
+      assert.equal(JSON.parse(row.release_dashboard_summary_json).summaryOnly, true);
     } finally {
       db.close();
     }

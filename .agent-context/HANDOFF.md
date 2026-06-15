@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T20:54Z - Release Package Dashboard Readback Artifact
+
+- Status: implemented and validated locally. This slice is Growth
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-package-service` now requires and composes
+    `releaseDashboardService.dashboard` after release-controls readback;
+  - release package artifacts now include a sixth ordered step,
+    `release_dashboard`, plus nested `artifacts.releaseDashboard`;
+  - package-record projection now extracts bounded `releaseDashboardSummary`
+    from the dashboard artifact and keeps runtime/scheduling mutation flags
+    false;
+  - `automation-release-packages.js` now creates and migrates
+    `release_dashboard_summary_json`, and public DTOs expose
+    `releaseDashboardSummary`;
+  - `scripts/build-growth-release-package.js` injects
+    `learningAutomationReleaseDashboardService` for real CLI package builds;
+  - docs now describe package composition as
+    bundle/audit/readiness/collection-run/controls/dashboard readback.
+- Changed files:
+  - `src/services/learning-automation-release-package-service.js`;
+  - `src/stores/growth-learning-sqlite/automation-release-packages.js`;
+  - `scripts/build-growth-release-package.js`;
+  - `tests/learning-automation-release-package-service.test.js`;
+  - `tests/learning-automation-release-package-repository.test.js`;
+  - `tests/growth-release-package-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - syntax checks for the changed service/store/script/tests;
+  - `node --test tests/learning-automation-release-package-service.test.js tests/learning-automation-release-package-repository.test.js tests/growth-release-package-script.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`48` tests);
+  - `npm run smoke:release-package -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --task planner_readiness --required-task planner_readiness --json`
+    returned a summary-only six-step package with `release_dashboard`; status
+    is expected `blocked` because local smoke lacks Gateway/planner and
+    production UI/visual/action evidence;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`724` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync && codegraph status` (`321` files, `4,163` nodes,
+    `16,184` edges; index up to date; CLI reports an advisory older-engine
+    reindex warning only);
+  - AI Ops evidence ledger append id
+    `evidence-f22d55ed-91b7-4ed8-bfff-4cb3d8027f52`.
+- Remaining product work:
+  - build embedded Owner UI over release package/readiness/controls/dashboard
+    readbacks if the next release slice is UI-facing;
+  - collect real production visual, Action Inbox/Web Push, scheduler, worker,
+    daily-loop, learner-cycle, package, approval, activation, dashboard,
+    inventory, controls, and runtime enablement evidence before any runtime
+    enablement;
+  - keep package/dashboard evidence advisory until Owner release activation and
+    runtime enablement gates are separately recorded.
+
 ## 2026-06-15T20:41Z - Release Dashboard Evidence Bundle Task
 
 - Status: implemented and validated locally. This slice is Growth backend /

@@ -235,7 +235,7 @@ npm run smoke:release-evidence-bundle -- \
 This task writes `releaseInventorySmokeEvidence` inside the same bundle
 artifact. It is also non-default and no-write. A passing task proves the
 inventory readback was collected; consumers must still read the nested
-inventory and controls summaries for the actual release state.
+inventory, controls, and dashboard summaries for the actual release state.
 
 The companion release dashboard read model can also be collected as a final
 non-default bundle task:
