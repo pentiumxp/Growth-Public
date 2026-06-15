@@ -9,6 +9,92 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T04:02Z - Growth Scheduler Worker Smoke CLI Slice
+
+- Status: Growth automation scheduler worker/lease boundary now has a
+  service-owned operational smoke entry. This slice did not deploy, enable
+  `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`, enable
+  `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED`, start worker timers outside
+  the service, execute scheduler actions directly, inspect delivered handoffs,
+  publish cards, call Gateway, call model vendors, generate cards, evaluate
+  learner submissions, deliver action handoffs, activate stage assessments,
+  enqueue work, or mutate learner evidence/profile state.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of scheduler/deployment keywords;
+  only non-deploy checks were run.
+- Scope:
+  - added `scripts/smoke-growth-automation-scheduler-worker.js`;
+  - added `npm run smoke:scheduler-worker`;
+  - wired the new runtime script into `npm run check`;
+  - added `tests/growth-automation-scheduler-worker-smoke-script.test.js`;
+  - updated `tests/growth-architecture-boundary.test.js`;
+  - updated `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - `status` is the default operation and delegates to
+    `learningAutomationSchedulerWorkerService.tickTargets`;
+  - while `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED=false`, the expected
+    disabled result is wrapped as no-write smoke evidence and must not create
+    worker lease or scheduler run tables in an empty SQLite database;
+  - when the worker is enabled, `tick` and `tick-targets` require explicit
+    `--allow-write` and still delegate only to
+    `learningAutomationSchedulerWorkerService.tick` / `tickTargets`;
+  - with `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED=false`, write-gated
+    worker evidence records blocked lease/run state rather than publication;
+  - the CLI must not import repositories directly, inspect
+    `learning_growth_` tables, call Gateway, call scheduler dry-run directly,
+    call scheduler run/execution services directly, list or deliver handoffs
+    directly, publish directly, generate cards, evaluate submissions, activate
+    stage assessments, or mutate learner state outside the worker service.
+- Validation passed:
+  - `node --check scripts/smoke-growth-automation-scheduler-worker.js`;
+  - `node --check tests/growth-automation-scheduler-worker-smoke-script.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-automation-scheduler-worker-smoke-script.test.js
+    tests/learning-automation-scheduler-worker-service.test.js
+    tests/learning-automation-scheduler-worker-lease-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/growth-architecture-boundary.test.js` (`47` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`, no missing/stale/duplicate
+    entries);
+  - `node scripts/check-growth-docs-locality.js`
+    (`requiredCount=35`, no missing docs, no forbidden pointers);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent smoke:scheduler-worker -- --workspace-id smoke_workspace --json`
+    with a temporary empty SQLite DB precreated for disabled no-write status
+    evidence;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`224` JavaScript files, `2,739`
+    nodes, `10,725` edges; index up to date).
+- AI Ops control-plane evidence:
+  - Home AI required docs from the intake packet had been read in this turn,
+    including Gateway/runtime, deployment, production closure, and
+    architecture/harness maps;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - Growth platform pointer changes were also checked with
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - AI Ops evidence ledger id:
+    `evidence-15318d39-26ed-4a24-8650-1a0b716fb285`;
+  - `npm run --silent deploy:macos -- --target home-ai --json` and production
+    deploy were not executed because this is a local Growth Harness/docs slice
+    and the user did not request deployment.
+
 ## 2026-06-15T03:52Z - Growth Scheduler Worker Target Smoke CLI Slice
 
 - Status: Growth automation scheduler worker target configuration now has a

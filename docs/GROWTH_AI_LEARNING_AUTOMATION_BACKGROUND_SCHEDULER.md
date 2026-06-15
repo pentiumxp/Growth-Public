@@ -63,6 +63,7 @@ Implemented local worker/lease shape:
 - service: `learning-automation-scheduler-worker-service`;
 - repository: `automation-scheduler-worker-leases.js`;
 - table: `learning_growth_automation_scheduler_worker_leases`;
+- service-owned worker smoke: `npm run smoke:scheduler-worker`;
 - timer glue: `src/app/http-server.js`;
 - config gate: `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED`;
 - config target list:
@@ -231,6 +232,46 @@ timers, claim leases, call scheduler run, call scheduler execution, inspect
 handoffs, publish, call Gateway, generate cards, activate stage assessments, or
 mutate learner evidence/profile state. A reviewed `enabled` target row is a
 future worker prerequisite, not production unattended scheduling permission.
+
+`npm run smoke:scheduler-worker` is the service-owned CLI harness for the
+default-disabled worker/lease boundary.
+
+Default disabled status:
+
+```bash
+npm run smoke:scheduler-worker -- \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --json
+```
+
+The default operation is `status`, which delegates to
+`learningAutomationSchedulerWorkerService.tickTargets`. With
+`GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED=false`, the service returns
+`learning_automation_scheduler_worker_disabled`; the CLI wraps that expected
+disabled state as no-write smoke evidence and must not create worker lease or
+scheduler run tables in an empty SQLite database.
+
+Explicit worker tick evidence:
+
+```bash
+npm run smoke:scheduler-worker -- \
+  --operation tick-targets \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --allow-write \
+  --json
+```
+
+`tick` and `tick-targets` can claim leases and call the scheduler run service
+only when the worker is enabled, so the CLI rejects an enabled-worker operation
+unless `--allow-write` is present. The worker still delegates only to
+`learningAutomationSchedulerWorkerService.tick` / `tickTargets`, and the run
+service still enforces `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`. With
+the scheduler disabled, the expected write-gated worker result is a blocked
+lease plus a blocked scheduler run; it must not inspect handoffs itself,
+execute scheduler actions directly, publish, call Gateway, generate cards,
+activate stage assessments, or mutate learner evidence/profile state.
 
 ## Worker Target Review Contract
 
@@ -538,6 +579,7 @@ Focused harness for this boundary:
 - `tests/learning-automation-scheduler-worker-service.test.js`;
 - `tests/learning-automation-scheduler-worker-target-service.test.js`;
 - `tests/growth-automation-scheduler-worker-target-smoke-script.test.js`;
+- `tests/growth-automation-scheduler-worker-smoke-script.test.js`;
 - `tests/learning-automation-scheduler-run-repository.test.js`;
 - `tests/learning-automation-scheduler-run-service.test.js`;
 - `tests/growth-automation-scheduler-run-smoke-script.test.js`;
@@ -576,6 +618,13 @@ Required and implemented assertions:
   create/review, proves target provisioning plus Owner review through services,
   and keeps the CLI out of repositories, Gateway, scheduler run/execution,
   handoffs, publication, card generation, worker timers, stage activation,
+  learner-state mutation, and direct table access;
+- `npm run smoke:scheduler-worker` defaults to disabled no-write status,
+  rejects enabled-worker operations without explicit `--allow-write`, delegates
+  only to `learning-automation-scheduler-worker-service.tick` / `tickTargets`,
+  proves blocked lease/run behavior while the scheduler gate remains disabled,
+  and keeps the CLI out of repositories, Gateway, scheduler run/execution
+  bypasses, handoffs, publication, card generation, stage activation,
   learner-state mutation, and direct table access;
 - worker service delegates only to scheduler-run service;
 - worker service prefers reviewed enabled persistent targets before local
