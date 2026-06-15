@@ -9,6 +9,120 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T09:18Z - Fanfan Science Target Provisioned And Daily Card Published
+
+- Status: deployed to Mac production, smoke validated, and one Fanfan science
+  daily card generated through the Growth-owned Gateway/daily-loop path. This
+  remains an Owner-supervised manual loop; writeful scheduling is still
+  disabled.
+- Commits pushed to both `origin/main` and `public/main`:
+  - `08fdfb5` `Add Growth target provisioning smoke`;
+  - `23e9e10` `Enforce Growth daily card duration bounds`.
+- Production deploys:
+  - `08fdfb590721` deployed to
+    `/Users/hermes-host/HermesMobile/plugins/growth`, backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260615T090602Z-plugin-growth-manual`;
+  - `23e9e10c1ec3` deployed to
+    `/Users/hermes-host/HermesMobile/plugins/growth`, backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260615T091433Z-plugin-growth-manual`;
+  - both deploys used the central Home AI Mac deploy script with plugin
+    `data/` and `runtime/` excluded, restarted
+    `com.hermesmobile.plugin.growth`, passed manifest health, and had
+    `codexIssueCount=0` in the production profile audit.
+- Production writes and bounded ids:
+  - target provision:
+    `lgprov_19071e825cc7130393` for
+    `workspaceId=weixin_fanfan`, `learnerId=fanfan`,
+    `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`,
+    `domain=science`, `subject=science`, `status=active`;
+  - controlled daily-loop draft:
+    `planDraftId=lgplan_aa609b3996102fb5b9`,
+    `itemId=daily_science_stabilize_kg_lower_secondary_science_001`;
+  - controlled daily-loop publish generated
+    `taskCardId=ltask_0e08f9a1b630b0ffe9` and
+    `learningGraphPlanId=lgp_1d019cf16ca5e5bf1d`, bound to
+    `targetNodeId=kg_lower_secondary_science`;
+  - no raw card body, learner answer, prompt, raw model output, answer key, or
+    source-document body was recorded in handoff/docs.
+- Production data repair:
+  - the first generated science card exposed a publisher bug: model
+    `expectedTimeMinutes=12` was persisted as expected range `12-17`;
+  - code now validates ordinary generated daily cards at 10-15 minutes and
+    persists `expected_duration_minutes_min=10` /
+    `expected_duration_minutes_max=15`; stage assessment cards validate and
+    persist 25-30 minutes;
+  - bounded one-row production repair updated only
+    `ltask_0e08f9a1b630b0ffe9` from `12-17` to `10-15`, preserving
+    `planned_minutes=12`;
+  - repair backup:
+    `/Users/hermes-host/HermesMobile/backups/data-repair/growth-duration-20260615T091535Z.sqlite3`;
+  - `PRAGMA quick_check` returned `ok` before and after, and the repair update
+    changed exactly one row.
+- Validation passed:
+  - Growth focused:
+    `node --test tests/learning-target-provisioning-service.test.js
+    tests/growth-target-provisioning-smoke-script.test.js
+    tests/growth-daily-loop-smoke-script.test.js
+    tests/learning-card-generation-context-service.test.js
+    tests/growth-routes.test.js` (`60` tests);
+  - Growth duration focused:
+    `node --test tests/learning-card-authoring-service.test.js
+    tests/learning-card-generation-service.test.js
+    tests/growth-daily-loop-smoke-script.test.js
+    tests/learning-card-ai-loop-harness.test.js
+    tests/growth-architecture-boundary.test.js` (`61` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=143`, `checkedCount=143`);
+  - `npm test -- --test-reporter=spec` (`526` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`242` files, `3,065` nodes,
+    `11,871` edges; index up to date);
+  - Home AI H1 checks:
+    `node tests/hermes-plugin-service.test.js`,
+    `node tests/hermes-plugin-authorization-service.test.js`,
+    `node tests/plugin-capability-activation-service.test.js`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    Home AI `git diff --check`.
+- Production smoke passed:
+  - `npm run smoke:target-provisioning` readback returned
+    `mode=explicit_provision`, selected `science`, and selected
+    `kg_lower_secondary_science`;
+  - `npm run smoke:daily-loop` draft and publish both ran as the production
+    service user with Gateway Responses protocol and explicit `--allow-write`;
+  - SQLite readback showed the card row as
+    `workspace_id=weixin_fanfan`, `learner_id=fanfan`, `domain=science`,
+    `task_card_type=practice`, `status=published`, `card_role=practice`,
+    `planned_minutes=12`, expected duration `10-15`, and graph binding to
+    `kg_lower_secondary_science`;
+  - `GET /api/v1/growth/status?workspace_id=weixin_fanfan` returned
+    `ok=true`, `quick_check=ok`, `foreign_key_issues=0`,
+    `learning_plan_drafts=1`, and `learning_task_cards=1`;
+  - `npm run smoke:learning-loop-state` returned `ok=true`,
+    `status=audit_incomplete`, target provisioned, one published plan, and
+    `nextAction=complete_cycle_audit` because the card has not yet been
+    submitted/evaluated/profile-delta audited;
+  - `npm run smoke:release-readiness` with Owner UI, Owner audit UI, central
+    visual, production planner, daily-loop preview, learning-loop state, and
+    production daily-loop write evidence returned `ok=true`,
+    `readyForOwnerLoop=true`, `readyForReleaseReview=false`, and
+    `writefulSchedulingAllowed=false`.
+- AI Ops evidence appended:
+  `evidence-436a13f0-d15e-419d-b57e-74613885f517`.
+- Boundary notes:
+  - the browser still does not call Gateway, compute learning policy, mutate
+    Profile V2, or publish automatically;
+  - `smoke:target-provisioning` and `smoke:daily-loop` delegate only through
+    Growth services and require explicit write flags for writes;
+  - release-readiness remains advisory and no-write by default;
+  - full automation release review remains incomplete because proposal,
+    digest, action handoff, scheduler execution/run/worker-target UI, platform
+    Action Inbox/Web Push, active failure policy, and explicit writeful
+    approvals are not complete.
+
 ## 2026-06-15T08:49Z - Growth Owner Target Provision Controls Deployed
 
 - Status: deployed to Mac production and smoke validated. This is an Owner-loop

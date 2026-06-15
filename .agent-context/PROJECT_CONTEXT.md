@@ -35,8 +35,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   from graph plans plus historical SQLite summaries. New generated daily cards
   use `daily_score_once`: one submission stage, one evaluation stage, one
   reflection stage, completion after the first evaluation, and
-  score-proportional rewards without a pass-line gate. The generated-card
-  learner UI may expose at most one active text submission box per stage.
+  score-proportional rewards without a pass-line gate. Ordinary generated daily
+  cards validate `expectedTimeMinutes` within 10-15 minutes and persist
+  `expected_duration_minutes_min=10` /
+  `expected_duration_minutes_max=15`; stage assessment cards validate and
+  persist the 25-30 minute formal-assessment range. The generated-card learner
+  UI may expose at most one active text submission box per stage.
   Stage assessment cards are separate formal cards: activation is owned by
   `learning-stage-assessment-service`, formal evaluation writes higher-weight
   mastery evidence across declared assessment coverage nodes, and completed
@@ -186,7 +190,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   That CLI still delegates only through `learning-daily-loop-service` and the
   normal service graph; it does not import repositories, call Gateway directly,
   call the plan publisher or card generator directly, run schedulers, deliver
-  notifications, or activate stage assessments. Formal checkpoint operational
+  notifications, or activate stage assessments. Target provisioning smoke
+  evidence is available through `npm run smoke:target-provisioning`; it
+  delegates only to `learning-target-provisioning-service`, defaults to
+  read-only resolve, requires explicit `--allow-write` for provision writes,
+  and covers cross-subject domain-pack plus subject-domain selection such as
+  `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science`. Formal checkpoint operational
   evidence is now available through `npm run smoke:stage-assessment`; it
   defaults to read-only `learning-stage-assessment-service.stageReadiness`,
   while `eligibility`, `activate`, and `complete` require explicit
