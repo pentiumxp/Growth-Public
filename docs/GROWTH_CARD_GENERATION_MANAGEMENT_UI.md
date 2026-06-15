@@ -17,8 +17,12 @@ evaluation / optional-reflection UI, stage-assessment controls, and focused
 harness are implemented in the plugin workspace. The backend operating-loop
 slice also exposes planner readiness, Profile V2, evidence audit,
 `graphOptions`, plan draft/publish services, Owner-only daily-loop
-preview/draft/publish backend facade routes, and a no-write planner readiness
-smoke. The operating-loop target also requires a separate
+preview/draft/publish backend facade routes, compact learning-loop state
+readback through `GET /api/v1/growth/learning-loop/state`, no-write
+learning-loop state smoke, and a no-write planner readiness smoke. The Owner
+`生成` tab now reads that state after loading generation context and renders a
+summary-only status/next-action panel. The operating-loop target also requires
+a separate
 target/domain-pack provisioning policy so visible learners are not treated as
 automatically enabled for every subject. The embedded UI still needs the
 planner preview/publish panel, domain-pack/subject selector, and provision
@@ -95,10 +99,14 @@ selected learner target, not the iframe's Owner workspace.
    provisioned Fanfan workspace id `weixin_stephen` and then render the target
    returned by the Growth context endpoint.
 4. Growth loads card generation context for the selected target learner.
-5. Owner can switch back to the Fanfan sample learner if a future navigation
+5. Growth reads compact learning-loop state for the selected target through
+   `GET /api/v1/growth/learning-loop/state` and shows the current status, next
+   action, weakness count, audit-gap count, and stage-checkpoint state. This
+   panel is read-only UI glue over the backend state service.
+6. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
-6. Owner selects the `日常英语卡` recipe.
-7. Growth shows readiness:
+7. Owner selects the `日常英语卡` recipe.
+8. Growth shows readiness:
    - learner workspace is provisioned;
    - learning graph is imported;
    - mastery/history summary is available;
@@ -106,26 +114,26 @@ selected learner target, not the iframe's Owner workspace.
    - Gateway evaluation boundary is shown separately so Owner can see whether
      the post-submit AI loop is model-backed;
    - there is no blocking open generation job.
-8. Owner reviews the structured plan preview:
+9. Owner reviews the structured plan preview:
    - learning graph plan;
    - learner/mastery summary;
    - recent experience signals;
    - card role, difficulty, and evidence requirements;
    - `daily_score_once` completion policy.
-9. Owner presses `生成卡片`.
-10. Growth immediately renders a visible progress box with four bounded stages:
+10. Owner presses `生成卡片`.
+11. Growth immediately renders a visible progress box with four bounded stages:
    `prepare`, `gateway`, `validation`, and `publish`. The progress box is
    shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
    and must remain visible on mobile embedded viewports without relying on the
    user scrolling back to the generate button.
-11. Growth calls `POST /api/v1/growth/cards/generate`.
-12. Gateway output is converted to an authoring draft.
-13. Validation passes or returns a visible authoring error.
-14. A validated card is transactionally published to Growth SQLite, including
+12. Growth calls `POST /api/v1/growth/cards/generate`.
+13. Gateway output is converted to an authoring draft.
+14. Validation passes or returns a visible authoring error.
+15. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
-15. Owner sees the generated card preview and can open the card on the learner
+16. Owner sees the generated card preview and can open the card on the learner
     board.
-16. The learner can submit the generated card from the plugin card detail,
+17. The learner can submit the generated card from the plugin card detail,
     optionally attach a recording, see one-shot evaluation feedback, and submit
     one optional reflection without Codex involvement. The detailed learner
     flow is defined in `docs/GROWTH_CARD_INTERACTION_FLOW.md`.

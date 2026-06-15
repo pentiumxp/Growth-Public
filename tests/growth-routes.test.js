@@ -4260,7 +4260,7 @@ test("growth daily loop preview is Owner-only and limited to visible targets", a
       subject: "science",
       horizon: "daily_plan",
       availableMinutes: "15",
-      targetNodeIds: "kg_science_fair_test",
+	      targetNodeIds: ["kg_science_fair_test"],
       planDraftId: "lgplan_route_1",
       itemId: "",
       taskCardId: "ltask_route_1",
@@ -4332,7 +4332,7 @@ test("growth learning loop state is Owner-only and limited to visible targets", 
   });
   const baseUrl = await listen(server);
   try {
-    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/learning-loop/state?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_fair_test&planDraftId=lgplan_route_1&itemId=plan_item_route_1&taskCardId=ltask_route_1&limit=5`, {
+	    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/learning-loop/state?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_fair_test,kg_science_variables&planDraftId=lgplan_route_1&itemId=plan_item_route_1&taskCardId=ltask_route_1&limit=5`, {
       headers: {
         "x-hermes-plugin-actor-role": "owner",
         "x-hermes-plugin-workspace-id": "weixin_stephen"
@@ -4354,7 +4354,7 @@ test("growth learning loop state is Owner-only and limited to visible targets", 
       subject: "science",
       horizon: "daily_plan",
       availableMinutes: "15",
-      targetNodeIds: "kg_science_fair_test",
+	      targetNodeIds: ["kg_science_fair_test", "kg_science_variables"],
       planDraftId: "lgplan_route_1",
       itemId: "plan_item_route_1",
       taskCardId: "ltask_route_1",

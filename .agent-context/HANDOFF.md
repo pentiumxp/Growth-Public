@@ -9,6 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T07:18Z - Growth Owner Generation Learning-Loop State UI Slice
+
+- Status: implemented, documented, and locally validated. This slice connects
+  the existing Owner-only `GET /api/v1/growth/learning-loop/state` backend
+  readback to the embedded Owner `生成` tab as a compact read-only
+  status/next-action panel.
+- Change classification: Home AI AI Ops intake classified the task as H3
+  Architecture Documentation And Harness Map. Because the actual change touches
+  embedded UI code, Growth also ran focused frontend/layout/route/architecture
+  harnesses. No production deploy was executed.
+- Scope:
+  - `public/growth-api-client.js` now exposes `fetchLearningLoopState` and uses
+    direct `workspaceId` vs Home AI proxy `targetWorkspaceId` consistently with
+    card-generation context;
+  - `public/app.js` loads learning-loop state after card-generation context,
+    keeps failures visible in the generation state panel, and refreshes the
+    state after daily or stage card publication without clearing the generated
+    preview;
+  - `public/growth-card-generation-ui.js` renders
+    `data-learning-loop-state-panel` with status, next action, weakness count,
+    audit-gap count, and stage-checkpoint state;
+  - `public/growth-homeai-legacy.css` adds mobile-safe and dark/system theme
+    styling for the compact panel;
+  - `public/index.html` static query version bumped to
+    `20260615-learning-loop-state-ui-v1`;
+  - `src/routes/growth-routes.js` now parses daily-loop/learning-loop
+    `targetNodeIds` query values as bounded CSV arrays before delegating to the
+    service boundary;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`, and
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`.
+- Boundary:
+  - this is read-only UI glue over existing Growth service routes;
+  - the browser does not compute learning policy, call Gateway, draft/publish
+    plans, generate cards outside the existing generation route, evaluate,
+    schedule, deliver notifications, activate stage assessments, or mutate
+    learner state from the state panel.
+- Validation passed:
+  - syntax checks for touched public JS, route, and tests;
+  - focused
+    `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`101` tests).
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - `codegraph sync && codegraph status` (`240` files, `2,976` nodes,
+    `11,509` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI app required H3 gate:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `git diff --check`;
+  - local Playwright mobile dark Owner generation visual check using the Home
+    AI workspace Playwright dependency against `http://127.0.0.1:4882/` with
+    Owner headers injected. Evidence screenshots:
+    `tmp/visual/growth-owner-generation-loop-state-mobile-dark-panel.png`
+    (`141254` bytes) and
+    `tmp/visual/growth-owner-generation-loop-state-mobile-dark-button.png`
+    (`160037` bytes). The Browser plugin `iab` instance was unavailable in
+    this Codex session, so Browser-specific evidence was not claimed.
+- AI Ops evidence appended:
+  `evidence-c49fc35c-cf7a-45a1-aa73-080289332a62`.
+- Remaining product work:
+  - full planner draft/publish UI and provision controls are still pending;
+  - central Home AI embedded-plugin visual harness is still required before
+    production UI deployment.
+
 ## 2026-06-15T06:38Z - Growth Learning Loop State Slice
 
 - Status: implemented, documented, and locally validated. This slice adds a

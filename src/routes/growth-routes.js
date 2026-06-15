@@ -233,7 +233,7 @@ function normalizeDailyLoopQueryInput(url, target, request) {
     subject: url.searchParams.get("subject") || "",
     horizon: url.searchParams.get("horizon") || "daily_plan",
     availableMinutes: url.searchParams.get("availableMinutes") || url.searchParams.get("available_minutes") || "",
-    targetNodeIds: url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || "",
+    targetNodeIds: csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || ""),
     planDraftId: url.searchParams.get("planDraftId") || url.searchParams.get("plan_draft_id") || "",
     itemId: url.searchParams.get("itemId") || url.searchParams.get("item_id") || url.searchParams.get("selectedItemId") || url.searchParams.get("selected_item_id") || "",
     taskCardId: url.searchParams.get("taskCardId") || url.searchParams.get("task_card_id") || "",

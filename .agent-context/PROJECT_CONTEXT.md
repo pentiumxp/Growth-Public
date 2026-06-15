@@ -162,7 +162,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   next Owner action from daily-loop preview plus stage-assessment readiness,
   without Gateway calls, plan publication, card generation, evaluation,
   scheduling, stage activation, direct repository access, SQLite writes, or
-  learner-state mutation. Controlled daily-loop draft/publish smoke evidence is
+  learner-state mutation. The Owner `生成` tab now reads the same
+  `GET /api/v1/growth/learning-loop/state` route after generation context load
+  and renders a read-only compact state/next-action panel without adding any
+  browser-side learning policy or write path. Controlled daily-loop
+  draft/publish smoke evidence is
   now available through `npm run smoke:daily-loop`; it defaults to preview, and
   `draft` or `publish` operations require the explicit `--allow-write` flag.
   That CLI still delegates only through `learning-daily-loop-service` and the

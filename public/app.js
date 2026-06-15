@@ -4,6 +4,30 @@
   let currentWorkspaceId = params.get("workspaceId") || params.get("workspace_id") || "";
   const pluginRoute = (params.get("pluginRoute") || params.get("route") || params.get("pluginActionId") || "").trim().toLowerCase();
   const pluginItemId = (params.get("pluginItemId") || params.get("itemId") || params.get("taskCardId") || "").trim();
+
+  function initialCardGenerationState() {
+    return {
+      status: "idle",
+      selectedWorkspaceId: "",
+      context: null,
+      learningLoopState: {
+        status: "idle",
+        data: null,
+        error: ""
+      },
+      generatedResult: null,
+      error: "",
+      progressStep: "",
+      progressMessage: "",
+      stageAssessment: {
+        status: "idle",
+        eligibility: null,
+        result: null,
+        error: ""
+      }
+    };
+  }
+
   const pageState = {
     auth: { isOwner: false },
     learningGrowthActiveTab: "overview",
@@ -24,21 +48,7 @@
     learningGrowthReflectionDrafts: {},
     learningGrowthRecordings: {},
     learningGrowthStageAssessmentActivating: {},
-    cardGeneration: {
-      status: "idle",
-      selectedWorkspaceId: "",
-      context: null,
-      generatedResult: null,
-      error: "",
-      progressStep: "",
-      progressMessage: "",
-      stageAssessment: {
-        status: "idle",
-        eligibility: null,
-        result: null,
-        error: ""
-      }
-    },
+    cardGeneration: initialCardGenerationState(),
   };
   const model = { status: null, board: null, overview: null, detailCache: new Map(), viewTargets: [], viewer: null };
   let cardGenerationProgressTimers = [];
@@ -551,6 +561,11 @@
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
     pageState.cardGeneration.progressMessage = "";
+    pageState.cardGeneration.learningLoopState = {
+      status: "loading",
+      data: null,
+      error: ""
+    };
     renderShell();
     const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
     pageState.cardGeneration.context = context;
@@ -566,6 +581,34 @@
       error: ""
     };
     renderShell();
+    await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+    renderShell();
+  }
+
+  async function refreshLearningLoopState(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    pageState.cardGeneration.learningLoopState = {
+      status: "loading",
+      data: pageState.cardGeneration.learningLoopState?.data || null,
+      error: ""
+    };
+    try {
+      const result = await api.fetchLearningLoopState(requestedTargetWorkspaceId, context);
+      pageState.cardGeneration.learningLoopState = {
+        status: "ready",
+        data: result,
+        error: ""
+      };
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.learningLoopState = {
+        status: "failed",
+        data: null,
+        error: error.message || String(error)
+      };
+      return null;
+    }
   }
 
   async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId()) {
@@ -575,6 +618,7 @@
       const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId);
       pageState.cardGeneration.context = context;
       pageState.cardGeneration.selectedWorkspaceId = clean(context?.target?.workspaceId || requestedTargetWorkspaceId);
+      await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
       const message = refreshError.message || String(refreshError);
@@ -719,21 +763,7 @@
     model.viewTargets = model.viewTargets.map((target) => Object.assign({}, target, {
       current: clean(target.workspaceId) === clean(currentWorkspaceId),
     }));
-    pageState.cardGeneration = {
-      status: "idle",
-      selectedWorkspaceId: "",
-      context: null,
-      generatedResult: null,
-      error: "",
-      progressStep: "",
-      progressMessage: "",
-      stageAssessment: {
-        status: "idle",
-        eligibility: null,
-        result: null,
-        error: ""
-      }
-    };
+    pageState.cardGeneration = initialCardGenerationState();
     root.innerHTML = `<div class="learning-growth-view"><div class="learning-coin-empty">正在加载成长数据...</div></div>`;
     await loadCurrentWorkspace();
     renderShell();

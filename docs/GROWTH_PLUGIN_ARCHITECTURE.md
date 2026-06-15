@@ -106,6 +106,12 @@ full operating loop:
   daily-loop preview plus stage-assessment readiness without writing,
   publishing, generating, evaluating, scheduling, notifying, or activating
   stage assessments;
+- the embedded Owner `生成` tab now reads
+  `GET /api/v1/growth/learning-loop/state` after generation context load and
+  renders the compact status/next-action, weakness, audit-gap, and
+  stage-checkpoint summary. This is UI glue over the service route only; it
+  does not draft, publish, call Gateway, evaluate, schedule, or mutate learner
+  state;
 - controlled daily-loop smoke CLI is implemented locally through
   `npm run smoke:daily-loop`; it defaults to no-write preview, requires
   explicit `--allow-write` for `draft` and `publish`, requires
@@ -162,7 +168,7 @@ unbounded automation. Priority order:
 1. Owner-supervised daily UI closure:
    - backend facade is implemented through `learning-daily-loop-service` and
      Owner-only daily-loop preview/draft/publish routes;
-   - the top-level daily workbench should consume
+   - the top-level generation workbench consumes
      `GET /api/v1/growth/learning-loop/state` for compact status and next
      action instead of recomputing readiness in browser code;
    - keep the `生成` tab as UI glue over existing service routes;

@@ -13575,6 +13575,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-target-list,
 .learning-card-generation-recipes,
 .learning-card-generation-readiness,
+.learning-card-generation-loop-state,
 .learning-card-generation-profile,
 .learning-card-generation-lifecycle,
 .learning-card-generation-stage-assessment,
@@ -13590,6 +13591,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-target,
 .learning-card-generation-recipe,
 .learning-card-generation-readiness-row,
+.learning-card-generation-loop-state,
+.learning-card-generation-loop-grid span,
 .learning-card-generation-profile,
 .learning-card-generation-profile-row,
 .learning-card-generation-profile-reason,
@@ -13631,6 +13634,7 @@ body.task-markdown-preview-open {
 
 .learning-card-generation-target span,
 .learning-card-generation-readiness-row span,
+.learning-card-generation-loop-head span,
 .learning-card-generation-profile-head span,
 .learning-card-generation-profile-row span,
 .learning-card-generation-lifecycle-head span,
@@ -13647,6 +13651,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-target strong,
 .learning-card-generation-recipe strong,
 .learning-card-generation-readiness-row strong,
+.learning-card-generation-loop-head strong,
+.learning-card-generation-loop-grid strong,
 .learning-card-generation-profile-head strong,
 .learning-card-generation-profile-row strong,
 .learning-card-generation-lifecycle-head strong,
@@ -13667,6 +13673,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-target small,
 .learning-card-generation-recipe small,
 .learning-card-generation-readiness-row small,
+.learning-card-generation-loop-head small,
+.learning-card-generation-loop-grid small,
 .learning-card-generation-profile-head small,
 .learning-card-generation-profile-row small,
 .learning-card-generation-profile-reason small,
@@ -13689,6 +13697,7 @@ body.task-markdown-preview-open {
 
 .learning-card-generation-target em,
 .learning-card-generation-readiness-row em,
+.learning-card-generation-loop-head em,
 .learning-card-generation-profile-head em,
 .learning-card-generation-profile-row em,
 .learning-card-generation-lifecycle-head em,
@@ -13724,6 +13733,7 @@ body.task-markdown-preview-open {
 }
 
 .learning-card-generation-readiness-row,
+.learning-card-generation-loop-head,
 .learning-card-generation-profile-head,
 .learning-card-generation-profile-row,
 .learning-card-generation-lifecycle-head,
@@ -13745,6 +13755,26 @@ body.task-markdown-preview-open {
 .learning-card-generation-field-list > div {
   min-height: 52px;
   padding: 9px 11px;
+}
+
+.learning-card-generation-loop-state {
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 252, 0.70);
+}
+
+.learning-card-generation-loop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-card-generation-loop-grid span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  background: var(--ui-card-surface);
 }
 
 .learning-card-generation-profile {
@@ -14177,6 +14207,7 @@ body.task-markdown-preview-open {
 
 :root[data-theme="dark"] .learning-card-generation-structured,
 :root[data-theme="dark"] .learning-card-generation-preview-card,
+:root[data-theme="dark"] .learning-card-generation-loop-state,
 :root[data-theme="dark"] .learning-card-generation-profile,
 :root[data-theme="dark"] .learning-card-generation-stage-assessment,
 :root[data-theme="dark"] .learning-card-generation-progress {
@@ -14194,6 +14225,7 @@ body.task-markdown-preview-open {
 
 :root[data-theme="dark"] .learning-card-generation-target em,
 :root[data-theme="dark"] .learning-card-generation-readiness-row em,
+:root[data-theme="dark"] .learning-card-generation-loop-head em,
 :root[data-theme="dark"] .learning-card-generation-profile-head em,
 :root[data-theme="dark"] .learning-card-generation-profile-row em,
 :root[data-theme="dark"] .learning-card-generation-lifecycle-head em,
@@ -14241,6 +14273,7 @@ body.task-markdown-preview-open {
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] .learning-card-generation-structured,
   :root[data-theme="system"] .learning-card-generation-preview-card,
+  :root[data-theme="system"] .learning-card-generation-loop-state,
   :root[data-theme="system"] .learning-card-generation-profile,
   :root[data-theme="system"] .learning-card-generation-stage-assessment,
   :root[data-theme="system"] .learning-card-generation-progress {
@@ -14258,6 +14291,7 @@ body.task-markdown-preview-open {
 
   :root[data-theme="system"] .learning-card-generation-target em,
   :root[data-theme="system"] .learning-card-generation-readiness-row em,
+  :root[data-theme="system"] .learning-card-generation-loop-head em,
   :root[data-theme="system"] .learning-card-generation-profile-head em,
   :root[data-theme="system"] .learning-card-generation-profile-row em,
   :root[data-theme="system"] .learning-card-generation-lifecycle-head em,
@@ -14322,6 +14356,7 @@ body.task-markdown-preview-open {
   .learning-card-generation-profile-columns,
   .learning-card-generation-profile-metrics,
   .learning-card-generation-recommendation-grid,
+  .learning-card-generation-loop-grid,
   .learning-card-generation-stage-grid {
     grid-template-columns: 1fr;
   }

@@ -159,6 +159,15 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
 
   await client.fetchCardGenerationContext("weixin_fanfan");
+  await client.fetchLearningLoopState("weixin_fanfan", {
+    target: { learnerId: "fanfan" },
+    suggestedPlan: {
+      domain: "english",
+      subject: "english",
+      targetNodeIds: ["kg_main_idea", "kg_evidence"]
+    },
+    generationDefaults: { availableMinutes: 15 }
+  });
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_fanfan");
   await client.fetchGrowthCard("ltask_daily_1", "weixin_fanfan");
   await client.submitGrowthCardEvidence("ltask_daily_1", {
@@ -173,43 +182,44 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.retryGrowthEvaluation({ task_card_id: "ltask_daily_1", reason: "owner retry" }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
-  assert.equal(calls[1].path, "/api/v1/growth/cards/generate");
-  assert.equal(calls[1].options.method, "POST");
-  assert.deepEqual(JSON.parse(calls[1].options.body), {
+  assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
+  assert.equal(calls[2].path, "/api/v1/growth/cards/generate");
+  assert.equal(calls[2].options.method, "POST");
+  assert.deepEqual(JSON.parse(calls[2].options.body), {
     workspace_id: "weixin_fanfan",
     target_node_id: "kg_english_main_idea"
   });
-  assert.equal(calls[2].path, "/api/v1/growth/cards/ltask_daily_1?workspaceId=weixin_fanfan");
-  assert.equal(calls[3].path, "/api/v1/growth/cards/ltask_daily_1/submissions");
-  assert.deepEqual(JSON.parse(calls[3].options.body), {
+  assert.equal(calls[3].path, "/api/v1/growth/cards/ltask_daily_1?workspaceId=weixin_fanfan");
+  assert.equal(calls[4].path, "/api/v1/growth/cards/ltask_daily_1/submissions");
+  assert.deepEqual(JSON.parse(calls[4].options.body), {
     workspace_id: "weixin_fanfan",
     text: "I found the main idea.",
     audio: { dataBase64: "YXVkaW8=", name: "answer.webm", mime: "audio/webm" }
   });
-  assert.equal(calls[4].path, "/api/v1/growth/cards/ltask_daily_1/reflections");
-  assert.equal(calls[5].path, "/api/v1/growth/cards/ltask_daily_1/experience-signals");
-  assert.deepEqual(JSON.parse(calls[5].options.body), {
+  assert.equal(calls[5].path, "/api/v1/growth/cards/ltask_daily_1/reflections");
+  assert.equal(calls[6].path, "/api/v1/growth/cards/ltask_daily_1/experience-signals");
+  assert.deepEqual(JSON.parse(calls[6].options.body), {
     workspace_id: "weixin_fanfan",
     signalType: "too_hard",
     targetNodeIds: ["kg_main_idea"]
   });
-  assert.equal(calls[6].path, "/api/v1/growth/stage-assessments/eligibility");
-  assert.deepEqual(JSON.parse(calls[6].options.body), {
+  assert.equal(calls[7].path, "/api/v1/growth/stage-assessments/eligibility");
+  assert.deepEqual(JSON.parse(calls[7].options.body), {
     workspace_id: "weixin_fanfan",
     target_node_id: "kg_main_idea",
     assessment_coverage_node_ids: ["kg_main_idea"]
   });
-  assert.equal(calls[7].path, "/api/v1/growth/stage-assessments/activate");
-  assert.deepEqual(JSON.parse(calls[7].options.body), {
+  assert.equal(calls[8].path, "/api/v1/growth/stage-assessments/activate");
+  assert.deepEqual(JSON.parse(calls[8].options.body), {
     workspace_id: "weixin_fanfan",
     target_node_id: "kg_main_idea",
     assessment_coverage_node_ids: ["kg_main_idea"],
     activation_source: "owner_manual"
   });
-  assert.equal(calls[8].path, "/api/v1/growth/evaluations/process");
-  assert.deepEqual(JSON.parse(calls[8].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
-  assert.equal(calls[9].path, "/api/v1/growth/evaluations/owner-review");
-  assert.deepEqual(JSON.parse(calls[9].options.body), {
+  assert.equal(calls[9].path, "/api/v1/growth/evaluations/process");
+  assert.deepEqual(JSON.parse(calls[9].options.body), { workspace_id: "weixin_fanfan", limit: 3 });
+  assert.equal(calls[10].path, "/api/v1/growth/evaluations/owner-review");
+  assert.deepEqual(JSON.parse(calls[10].options.body), {
     workspace_id: "weixin_fanfan",
     action: "retry",
     task_card_id: "ltask_daily_1",
@@ -235,11 +245,13 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   });
 
   await client.fetchCardGenerationContext("weixin_stephen");
+  await client.fetchLearningLoopState("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
-  assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
+  assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/state?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&availableMinutes=15");
+  assert.equal(calls[2].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -495,7 +507,27 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   };
 
   const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
-    state: { cardGeneration: { status: "ready", context } },
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context,
+        learningLoopState: {
+          status: "ready",
+          data: {
+            schemaVersion: "growth.learningLoopState.v1",
+            status: "ready_to_draft",
+            summary: { weaknessCount: 1, missingRequired: [] },
+            profile: { weaknessCount: 1 },
+            audit: { missingRequired: [] },
+            stageAssessment: { eligible: false, status: "dormant" },
+            nextAction: {
+              action: "draft_daily_plan",
+              reason: "next_strategy:repair"
+            }
+          }
+        }
+      }
+    },
     viewTargets: [
       { workspaceId: "weixin_fanfan", label: "凡凡" },
       { workspaceId: "weixin_stephen", label: "Stephen" }
@@ -506,6 +538,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /日常英语卡/);
   assert.match(html, /data-card-generation-submit/);
   assert.match(html, /Gateway evaluation/);
+  assert.match(html, /data-learning-loop-state-panel/);
+  assert.match(html, /data-learning-loop-state-status="ready_to_draft"/);
+  assert.match(html, /学习闭环/);
+  assert.match(html, /起草日常计划/);
+  assert.match(html, /下一张策略：repair/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
   assert.match(html, /data-card-generation-lifecycle/);
@@ -1230,7 +1267,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260614-post-publish-context-v1";
+  const staticVersion = "20260615-learning-loop-state-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1244,6 +1281,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.ok(order.every((index) => index >= 0));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.equal((html.match(new RegExp(staticVersion, "g")) || []).length, 13);
+  assert.doesNotMatch(html, /20260614-post-publish-context-v1/);
   assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
   assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);
   assert.doesNotMatch(html, /20260614-evaluation-failure-ui-v1/);
@@ -1258,9 +1296,12 @@ test("Growth index loads frontend adapters before app boot", () => {
 test("Growth app refreshes card generation context after publish without clearing preview", () => {
   const source = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
 
+  assert.match(source, /function refreshLearningLoopState/);
   assert.match(source, /function refreshCardGenerationContextAfterPublish/);
   assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /pageState\.cardGeneration\.context = context/);
+  assert.match(source, /await refreshLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /pageState\.cardGeneration\.status = "published";[\s\S]*pageState\.cardGeneration\.generatedResult = result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
   assert.match(source, /pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
   assert.doesNotMatch(source, /await loadCardGenerationContext\(targetWorkspaceId\)/);

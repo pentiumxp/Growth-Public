@@ -440,6 +440,9 @@ Required shape:
 
 - select visible target, learner id, domain pack, domain, subject, horizon,
   and available minutes;
+- show the compact `growth.learningLoopState.v1` state from
+  `GET /api/v1/growth/learning-loop/state` as the top-level status/next-action
+  readback instead of recomputing readiness in browser code;
 - render target provisioning, graph options, Profile V2, evidence audit,
   plan audit, planner readiness, authoring readiness, and evaluation readiness;
 - draft through `POST /api/v1/growth/daily-loop/draft`;
@@ -602,9 +605,10 @@ Owner daily-loop facade, supervised proposals, scheduler dry-run, automation
 digests, failure policy, action handoff, and default-disabled Owner-explicit
 scheduler execution.
 
-The product is not complete because the browser Owner loop still lacks full
-planner/provision UI, audit/correction UI, proposal/digest/action UI, central
-visual evidence, production planner readiness smoke, platform action evidence,
+The browser Owner loop now shows the compact learning-loop state/next-action
+readback in the `生成` tab, but the product is not complete because it still
+lacks full planner draft/publish UI, provision controls, audit/correction UI,
+proposal/digest/action UI, central visual evidence, platform action evidence,
 and execution enablement evidence.
 
 Therefore the recommended next product-visible slice is still:

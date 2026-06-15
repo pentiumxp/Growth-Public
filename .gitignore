@@ -2,6 +2,7 @@ node_modules/
 data/
 runtime/
 logs/
+tmp/
 .codegraph/
 .env
 .DS_Store

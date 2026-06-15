@@ -65,6 +65,34 @@
       return `?${key}=${encodeURIComponent(targetWorkspaceId)}`;
     }
 
+    function appendQueryParam(params, key, value) {
+      const cleaned = clean(value);
+      if (cleaned) params.set(key, cleaned);
+    }
+
+    function learningLoopStateQuery(targetWorkspaceId = getWorkspaceId(), context = {}) {
+      const workspaceId = clean(targetWorkspaceId);
+      const params = new URLSearchParams();
+      const target = context.target || {};
+      const plan = context.suggestedPlan || {};
+      const defaults = context.generationDefaults || {};
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", target.learnerId || workspaceId);
+      appendQueryParam(params, "programId", context.programId || plan.programId);
+      appendQueryParam(params, "domainPackId", context.domainPackId || plan.domainPackId);
+      appendQueryParam(params, "domain", plan.domain || context.domain || defaults.domain);
+      appendQueryParam(params, "subject", plan.subject || context.subject || defaults.subject || plan.domain || context.domain);
+      appendQueryParam(params, "horizon", context.horizon || defaults.horizon || "daily_plan");
+      appendQueryParam(params, "availableMinutes", defaults.availableMinutes || context.availableMinutes || 15);
+      const targetNodeIds = Array.isArray(plan.targetNodeIds) && plan.targetNodeIds.length
+        ? plan.targetNodeIds
+        : [plan.targetNodeId].filter(Boolean);
+      appendQueryParam(params, "targetNodeIds", targetNodeIds.join(","));
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function updateWorkspaceUrl() {
       const currentWorkspaceId = clean(getWorkspaceId());
       if (!currentWorkspaceId || typeof historyRef?.replaceState !== "function") return;
@@ -95,6 +123,10 @@
 
     function fetchCardGenerationContext(targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("card-generation", "context")}${cardGenerationContextQuery(targetWorkspaceId)}`);
+    }
+
+    function fetchLearningLoopState(targetWorkspaceId = getWorkspaceId(), context = {}) {
+      return fetchJson(`${growthApiPath("learning-loop", "state")}${learningLoopStateQuery(targetWorkspaceId, context)}`);
     }
 
     function fetchGrowthCard(taskCardId, targetWorkspaceId = getWorkspaceId()) {
@@ -166,6 +198,7 @@
       fetchCardGenerationContext,
       fetchGrowthCard,
       fetchJson,
+      fetchLearningLoopState,
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,

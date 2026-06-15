@@ -1711,6 +1711,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /HermesGrowthCardInteractionController/);
   assert.match(app, /ensureCardGenerationTargetSelected/);
   assert.match(app, /preferredCardGenerationWorkspaceId/);
+  assert.match(app, /refreshLearningLoopState/);
+  assert.match(app, /fetchLearningLoopState/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
   assert.match(app, /data-learning-growth-evaluation-retry/);
   assert.match(app, /retryEvaluation/);
@@ -1731,4 +1733,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   ]) {
     assert.match(index, new RegExp(`/${asset}`));
   }
+
+  const generationUi = read(path.join("public", "growth-card-generation-ui.js"));
+  assert.match(generationUi, /data-learning-loop-state-panel/);
+  assert.match(generationUi, /learningLoopStatePanel/);
 });
