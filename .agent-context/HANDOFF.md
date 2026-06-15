@@ -11,10 +11,10 @@
 
 ## 2026-06-15T17:53Z - Owner Release Controls Readback Aggregate
 
-- Status: implemented and locally validated. Commit/push is pending in this
-  turn. This slice is Growth backend/Harness/docs only. It does not deploy,
-  apply runtime config, grant scheduler permission, call Gateway, publish
-  cards, run scheduling, or write release records.
+- Status: implemented, validated, committed, and pushed to `origin/main` and
+  `public/main`. This slice is Growth backend/Harness/docs only. It does not
+  deploy, apply runtime config, grant scheduler permission, call Gateway,
+  publish cards, run scheduling, or write release records.
 - Scope:
   - added `learning-automation-release-controls-service` as a no-write Owner
     readback aggregate over release readiness, release review, release
@@ -91,6 +91,10 @@
   - only after those pass, perform any explicit platform/runtime-config
     enablement outside Growth and read it back through
     `npm run smoke:runtime-enablement` / `npm run smoke:release-controls`.
+- Git:
+  - commit `f3c5e4f` `Add automation release controls readback`;
+  - pushed `main` to `origin` (`Growth.git`) and `public`
+    (`Growth-Public.git`).
 
 ## 2026-06-15T17:33Z - Runtime Enablement Audit/Readback Records
 
