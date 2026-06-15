@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T19:46Z - Release Ladder Architecture Script Map Sync
+
+- Status: implemented and validated locally. This slice is Growth docs /
+  Harness guardrail only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway, publish plans/cards, evaluate
+  submissions, run scheduler actions, deliver notifications, activate stage
+  assessments, mutate learner state, or write production release records.
+- Scope:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md` now keeps the runtime-layer
+    `Operational smoke scripts` row aligned with the current release ladder:
+    release evidence bundle audit, evidence bundle builder, release package
+    builder, readiness, collection run, decision, review, authorization,
+    closure, activation, runtime enablement, and release controls are all
+    explicitly listed;
+  - the release package builder row now records both gated write paths:
+    `--write-collection-run --allow-write` for collection-run audit rows and
+    `--write-package-record --allow-write` for package audit records;
+  - the architecture doc now has dedicated release activation, runtime
+    enablement, and release controls smoke-script rows that state their
+    service-owned, summary-only, no-runtime-mutation boundaries;
+  - `tests/growth-architecture-boundary.test.js` now asserts the architecture
+    operational script row includes the current release ladder scripts so the
+    doc cannot silently drift behind implementation again.
+- Validation passed:
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`32` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`179/179` runtime JavaScript files covered);
+  - `npm test` (`703` tests);
+  - `git diff --check`;
+  - Home AI platform checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`,
+    `node tests/plugin-workspace-platform-contract-check.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - `codegraph sync`, then `codegraph status` (`313` files, `4,069` nodes,
+    `15,714` edges; index up to date; CLI reports an advisory older-engine
+    reindex warning only);
+  - AI Ops evidence ledger append id
+    `evidence-436ea102-17e5-4132-8514-7d06ded7bd7e`.
+- AI Ops intake classified the phrase "release ladder" conservatively as H1 /
+  deployment context. This slice remained docs/Harness-only, so no production
+  deploy plan or runtime production smoke was executed.
+- Remaining product work:
+  - continue from backend release evidence into embedded Owner release/control
+    UI and production release evidence collection;
+  - keep Growth automation release controls advisory until external platform
+    runtime config and visual/Action Inbox/Web Push production evidence are
+    explicitly collected and read back.
+
 ## 2026-06-15T19:38Z - Release Collection Run Id Readback Filtering
 
 - Status: implemented and validated locally. This slice is Growth backend /

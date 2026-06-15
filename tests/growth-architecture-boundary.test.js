@@ -10,6 +10,10 @@ function read(relPath) {
   return fs.readFileSync(path.join(repoRoot, relPath), "utf8");
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 test("Growth check gate covers every runtime JavaScript file", () => {
   const result = checkGrowthSyntaxCoverage();
   assert.equal(result.error, undefined);
@@ -1591,6 +1595,26 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     packageJson.scripts["smoke:release-controls"],
     "node scripts/smoke-growth-release-controls.js"
   );
+  const architectureDoc = read(path.join("docs", "GROWTH_PLUGIN_ARCHITECTURE.md"));
+  const operationalRowMatch = architectureDoc.match(/\| Operational smoke scripts \|.+?\| CLI-only evidence collectors/s);
+  assert.ok(operationalRowMatch, "architecture doc must keep the operational smoke scripts row");
+  const operationalRow = operationalRowMatch[0];
+  for (const scriptName of [
+    "scripts/smoke-growth-release-evidence-bundle-audit.js",
+    "scripts/build-growth-release-evidence-bundle.js",
+    "scripts/build-growth-release-package.js",
+    "scripts/smoke-growth-release-readiness.js",
+    "scripts/smoke-growth-release-collection-run.js",
+    "scripts/smoke-growth-release-decision.js",
+    "scripts/smoke-growth-release-review.js",
+    "scripts/smoke-growth-release-authorization.js",
+    "scripts/smoke-growth-release-closure.js",
+    "scripts/smoke-growth-release-activation.js",
+    "scripts/smoke-growth-runtime-enablement.js",
+    "scripts/smoke-growth-release-controls.js"
+  ]) {
+    assert.match(operationalRow, new RegExp(escapeRegExp(scriptName)));
+  }
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
