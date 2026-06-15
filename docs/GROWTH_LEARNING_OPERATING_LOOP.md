@@ -1650,6 +1650,12 @@ Implementation progress on 2026-06-15:
   `--allow-write` / `--write-record`, and requires a ready collection run for
   `approved`. This is review evidence only and does not flip runtime config,
   enable writeful scheduling, or grant scheduler permission.
+- `npm run smoke:release-review` and
+  `GET /api/v1/growth/automation/release-review` provide the no-write readback
+  that future Owner UI can use: current readiness, latest collection run,
+  latest decision, approval bag, status, and next action. It is a service-only
+  projection and does not write tables, run smoke tasks, flip runtime config,
+  or schedule work.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
   required actions, and one next action. These fields support Owner/release

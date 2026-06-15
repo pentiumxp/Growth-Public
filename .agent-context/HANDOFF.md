@@ -9,6 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T15:31Z - Release Review Readback
+
+- Status: implemented and validated; commit/push follows this handoff update.
+  No production deploy is required for this slice because Growth only adds a
+  no-write summary readback for release controls. The boundary is advisory
+  evidence only and keeps `writefulSchedulingAllowed=false` and
+  `runtimeConfigChange=false`.
+- Scope:
+  - added
+    `src/services/learning-automation-release-review-service.js`;
+  - added `npm run smoke:release-review` through
+    `scripts/smoke-growth-release-review.js`;
+  - wired `learningAutomationReleaseReviewService` through
+    `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-review`;
+  - the service composes current release-readiness, latest release collection
+    run, latest release decision, and release approval bag through existing
+    services only;
+  - it returns `growth.learningAutomationReleaseReview.v1` with summary-only
+    status, latest artifacts, approval summary, next action, and advisory
+    flags;
+  - it does not write repositories or tables, run smoke tasks, call Gateway,
+    publish/generate/evaluate cards, execute or tick schedulers, deliver
+    notifications, activate stage assessments, mutate learner state, or flip
+    runtime config.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness/code updated:
+  - `tests/learning-automation-release-review-service.test.js`;
+  - `tests/growth-release-review-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` runtime syntax coverage.
+- Validation passed:
+  - `node --test tests/learning-automation-release-review-service.test.js
+    tests/growth-release-review-smoke-script.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`76` tests);
+  - direct `npm run smoke:release-review` no-write review against a temporary
+    SQLite database returned `growth.learningAutomationReleaseReview.v1`,
+    `status=incomplete`, `writefulSchedulingAllowed=false`, and
+    `runtimeConfigChange=false`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`164` runtime JS files covered);
+  - `npm test` (`624` tests);
+  - `codegraph sync && codegraph status` (`283` files, `3,641` nodes,
+    `13,885` edges; index up to date).
+- Remaining product work:
+  - collect a real production default release evidence bundle, run bundle
+    self-audit, run release-readiness, persist the real collection run, and
+    record the corresponding real Owner decision;
+  - collect real Home AI visual artifact and platform Action Inbox/Web Push
+    receipt evidence;
+  - complete embedded Owner release controls and visual verification using the
+    new release-review DTO;
+  - collect reviewed enabled targets, production dry-run evidence, and explicit
+    Owner approval before enabling any writeful scheduling path.
+
 ## 2026-06-15T15:18Z - Release Decision Persistence
 
 - Status: implemented and validated; commit/push follows this handoff update.

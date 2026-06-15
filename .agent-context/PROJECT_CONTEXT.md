@@ -239,7 +239,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `POST /api/v1/growth/automation/release-decisions`. Approved decisions
   require a ready summary-only collection run and remain advisory:
   `writefulSchedulingAllowed=false`, no runtime config flip, and no scheduler
-  permission.
+  permission. Growth now also has `npm run smoke:release-review` and
+  visible-target scoped `GET /api/v1/growth/automation/release-review`, a
+  no-write summary-only readback that composes current release-readiness,
+  latest release collection run, latest Owner decision, and release approval
+  bag through service boundaries for future Owner UI/release controls. It does
+  not write tables, call Gateway, run smoke tasks, flip runtime config, or
+  schedule work.
   Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI
   that delegates to `learning-automation-scheduler-service.dryRun` through the

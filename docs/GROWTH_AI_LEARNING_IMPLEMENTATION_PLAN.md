@@ -744,6 +744,14 @@ Implemented backend shape:
   state. The decision remains advisory evidence only:
   `advisoryOnly=true`, `runtimeConfigChange=false`, and
   `writefulSchedulingAllowed=false`.
+- `npm run smoke:release-review` delegates to
+  `learning-automation-release-review-service.review` and returns a no-write
+  `growth.learningAutomationReleaseReview.v1` readback for Owner release
+  controls. It composes current release-readiness, latest collection run,
+  latest release decision, and release approval bag through existing services;
+  it does not write repositories or tables, run smoke tasks, call Gateway,
+  publish, generate, evaluate, schedule, notify, activate stage assessments,
+  mutate learner state, or flip runtime config.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

@@ -17,6 +17,7 @@ const { createLearningAutomationReleaseCollectionRunService } = require("../serv
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
+const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
 const { createLearningAutomationSchedulerRunService } = require("../services/learning-automation-scheduler-run-service");
 const { createLearningAutomationSchedulerService } = require("../services/learning-automation-scheduler-service");
@@ -303,6 +304,12 @@ function createServices(config) {
       automationBackgroundWorkerEnabled: config.automationBackgroundWorkerEnabled
     }
   });
+  const learningAutomationReleaseReviewService = createLearningAutomationReleaseReviewService({
+    readinessService: learningAutomationReleaseReadinessService,
+    collectionRunService: learningAutomationReleaseCollectionRunService,
+    decisionService: learningAutomationReleaseDecisionService,
+    approvalService: learningAutomationReleaseApprovalService
+  });
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
@@ -388,6 +395,7 @@ function createServices(config) {
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseReadinessService,
+    learningAutomationReleaseReviewService,
     learningAutomationSchedulerExecutionService,
     learningAutomationSchedulerRunService,
     learningAutomationSchedulerService,

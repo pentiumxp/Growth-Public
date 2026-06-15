@@ -511,6 +511,20 @@ function normalizeAutomationReleaseDecisionListInput(url, target) {
   };
 }
 
+function normalizeAutomationReleaseReviewInput(url, target) {
+  return Object.assign(normalizeAutomationReleaseDecisionListInput(url, target), {
+    ownerDailyUiEvidence: truthy(url.searchParams.get("ownerDailyUiEvidence") || url.searchParams.get("owner_daily_ui_evidence")),
+    ownerAuditUiEvidence: truthy(url.searchParams.get("ownerAuditUiEvidence") || url.searchParams.get("owner_audit_ui_evidence")),
+    stageCheckpointEvidence: truthy(url.searchParams.get("stageCheckpointEvidence") || url.searchParams.get("stage_checkpoint_evidence")),
+    proposalReviewUiEvidence: truthy(url.searchParams.get("proposalReviewUiEvidence") || url.searchParams.get("proposal_review_ui_evidence")),
+    automationDigestUiEvidence: truthy(url.searchParams.get("automationDigestUiEvidence") || url.searchParams.get("automation_digest_ui_evidence")),
+    automationActionHandoffUiEvidence: truthy(url.searchParams.get("automationActionHandoffUiEvidence") || url.searchParams.get("automation_action_handoff_ui_evidence")),
+    schedulerExecutionUiEvidence: truthy(url.searchParams.get("schedulerExecutionUiEvidence") || url.searchParams.get("scheduler_execution_ui_evidence")),
+    schedulerRunUiEvidence: truthy(url.searchParams.get("schedulerRunUiEvidence") || url.searchParams.get("scheduler_run_ui_evidence")),
+    schedulerWorkerTargetUiEvidence: truthy(url.searchParams.get("schedulerWorkerTargetUiEvidence") || url.searchParams.get("scheduler_worker_target_ui_evidence"))
+  });
+}
+
 function readinessEvidenceFromBody(body = {}) {
   const evidence = body.evidence || body.evidenceSummary || body.evidence_summary || {};
   return Object.assign({}, evidence, {
@@ -1191,6 +1205,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-decisions") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseDecisionService.listDecisions(normalizeAutomationReleaseDecisionListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-review") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseReviewService.review(normalizeAutomationReleaseReviewInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

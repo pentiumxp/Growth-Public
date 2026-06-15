@@ -2561,6 +2561,20 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseReviewService: {
+      review(input) {
+        calls.push({ type: "releaseReview", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseReview.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "ready_for_owner_decision",
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -2938,6 +2952,41 @@ test("growth automation release readiness routes are visible-target scoped and s
         decidedBy: "weixin_stephen",
         decidedAt: "2026-06-15T17:15:00.000Z",
         createdAt: undefined
+      }
+    });
+
+    const releaseReview = await fetch(`${baseUrl}/api/v1/growth/automation/release-review?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&owner_daily_ui_evidence=true&scheduler_run_ui_evidence=true`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(releaseReview.status, 200);
+    assert.equal((await releaseReview.json()).schemaVersion, "growth.learningAutomationReleaseReview.v1");
+    assert.deepEqual(calls[9], {
+      type: "releaseReview",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        collectionRunId: "lgacrn_route_1",
+        status: "",
+        limit: "",
+        ownerDailyUiEvidence: true,
+        ownerAuditUiEvidence: false,
+        stageCheckpointEvidence: false,
+        proposalReviewUiEvidence: false,
+        automationDigestUiEvidence: false,
+        automationActionHandoffUiEvidence: false,
+        schedulerExecutionUiEvidence: false,
+        schedulerRunUiEvidence: true,
+        schedulerWorkerTargetUiEvidence: false
       }
     });
 
