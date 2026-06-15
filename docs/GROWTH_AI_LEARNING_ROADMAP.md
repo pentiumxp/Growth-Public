@@ -599,10 +599,16 @@ Service contract:
 - `learning-stage-assessment-service` owns readiness, eligibility,
   activation, completion, and cooldown;
 - stage coverage nodes are graph-bound and explicit.
+- `npm run smoke:stage-assessment` provides the service-owned operational
+  evidence path: default read-only readiness, explicit `--allow-write` for
+  eligibility, activation, and completion, and no direct repository, Gateway,
+  plan publication, evaluation, automation, or learner-state bypass from the
+  CLI.
 
 Harness gate:
 
 - `tests/learning-stage-assessment-service.test.js`;
+- `tests/growth-stage-assessment-smoke-script.test.js`;
 - `tests/learning-planner-context-service.test.js`;
 - `tests/learning-plan-validation-service.test.js` or the equivalent
   orchestrator/publisher tests;

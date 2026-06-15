@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T05:47Z - Growth Stage Assessment Smoke Harness Slice
+
+- Status: implemented and locally validated. This slice adds a service-owned
+  operational smoke for the formal checkpoint boundary so stage-assessment
+  readiness/eligibility/activation/completion can be exercised without Codex
+  ad hoc calls.
+- Change classification: H1 by Home AI AI Ops because this adds operational
+  smoke/release evidence for a persistence and workflow boundary. No
+  production deploy was executed.
+- Scope:
+  - new CLI: `npm run smoke:stage-assessment`;
+  - new script: `scripts/smoke-growth-stage-assessment.js`;
+  - new harness: `tests/growth-stage-assessment-smoke-script.test.js`;
+  - `package.json` `check` now syntax-checks the new runtime script;
+  - `tests/growth-architecture-boundary.test.js` now guards the CLI as
+    service-owned and write-gated;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`, and
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`.
+- Boundary:
+  - default operation is read-only `readiness` through
+    `learningStageAssessmentService.stageReadiness`;
+  - `eligibility`, `activate`, and `complete` require explicit
+    `--allow-write`;
+  - `activate` also requires an explicit `activationSource`;
+  - `complete` requires a cycle id and task-card id;
+  - the CLI delegates only to `learning-stage-assessment-service` through the
+    normal service graph;
+  - the CLI must not import repositories, call Gateway directly, call plan
+    publication, generate through plan services, evaluate submissions, run
+    automation, deliver notifications, or mutate learner state outside the
+    stage-assessment service.
+- Validation passed:
+  - syntax checks for the new script and harness;
+  - focused
+    `node --test tests/learning-stage-assessment-service.test.js
+    tests/learning-stage-assessment-cycles-repository.test.js
+    tests/growth-stage-assessment-smoke-script.test.js
+    tests/learning-card-generation-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`84` tests);
+  - operational read-only
+    `npm run --silent smoke:stage-assessment -- --workspace-id smoke_workspace
+    --target-node-id smoke_node --json`, returning dormant readiness without
+    writing a stage cycle;
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=138`, `checkedCount=138`);
+  - `npm test -- --test-reporter=spec` (`501` tests);
+  - `codegraph sync && codegraph status` (`232` files, `2,859` nodes,
+    `11,141` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI required checks:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI `git diff --check`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-6b073cbb-25b6-4a2a-89e5-56806f07ca57`.
+
 ## 2026-06-15T05:32Z - Growth Persisted Release Approval Records Slice
 
 - Status: implemented and locally validated. This slice closes the previous

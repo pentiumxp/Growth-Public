@@ -1493,6 +1493,52 @@ test("Growth stage assessment activation stays service-owned", () => {
   assert.doesNotMatch(routes, /generateCard\(Object\.assign/);
 });
 
+test("Growth stage-assessment smoke CLI stays service-owned and write-gated", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:stage-assessment/);
+  assert.match(packageJson, /smoke-growth-stage-assessment\.js/);
+  assert.match(packageJson, /learning-stage-assessment-service\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-stage-assessment.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningStageAssessmentService/);
+  assert.match(script, /stageReadiness/);
+  assert.match(script, /evaluateEligibility/);
+  assert.match(script, /activateStageAssessment/);
+  assert.match(script, /recordAssessmentCompletion/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /stage_assessment_smoke_write_not_allowed/);
+  assert.match(script, /stage_assessment_smoke_invalid_json/);
+  assert.match(script, /stage_assessment_smoke_operation_invalid/);
+  assert.match(script, /stage_assessment_smoke_privacy_failed/);
+  assert.match(script, /workspace_id_required/);
+  assert.match(script, /stage_assessment_target_required/);
+  assert.match(script, /stage_assessment_activation_source_required/);
+  assert.match(script, /stage_assessment_task_card_id_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /learningAutomation/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /dryRun/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+
+  const scriptHarness = read(path.join("tests", "growth-stage-assessment-smoke-script.test.js"));
+  assert.match(scriptHarness, /parses bounded stage checkpoint selectors/);
+  assert.match(scriptHarness, /write-gates mutating operations/);
+  assert.match(scriptHarness, /delegates operations to stage assessment service only/);
+  assert.match(scriptHarness, /temporary SQLite db without creating stage cycles/);
+  assert.match(scriptHarness, /fails closed for missing input, invalid JSON, privacy risk, and missing write prerequisites/);
+});
+
 test("Growth frontend app remains boot wiring over adapter modules", () => {
   const app = read(path.join("public", "app.js"));
   assert.match(app, /HermesGrowthAppearance/);

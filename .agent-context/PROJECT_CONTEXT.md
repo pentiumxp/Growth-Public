@@ -150,7 +150,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   That CLI still delegates only through `learning-daily-loop-service` and the
   normal service graph; it does not import repositories, call Gateway directly,
   call the plan publisher or card generator directly, run schedulers, deliver
-  notifications, or activate stage assessments. The broad local `npm run check`
+  notifications, or activate stage assessments. Formal checkpoint operational
+  evidence is now available through `npm run smoke:stage-assessment`; it
+  defaults to read-only `learning-stage-assessment-service.stageReadiness`,
+  while `eligibility`, `activate`, and `complete` require explicit
+  `--allow-write` and delegate only to `learning-stage-assessment-service`
+  through the normal service graph. It does not import repositories, call
+  Gateway directly, publish through plan services, evaluate submissions, run
+  automation, or mutate learner state outside the stage-assessment service.
+  The broad local `npm run check`
   gate now syntax-checks every Growth runtime JavaScript file under `scripts/`,
   `src/`, and `public/`, with `scripts/check-growth-syntax-coverage.js` and
   `tests/growth-architecture-boundary.test.js` enforcing no missing, stale, or
