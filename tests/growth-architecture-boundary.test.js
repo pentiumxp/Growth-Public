@@ -840,6 +840,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-scheduler-run-smoke-evidence/);
   assert.match(script, /--production-scheduler-worker-target-smoke-evidence/);
   assert.match(script, /--production-scheduler-worker-smoke-evidence/);
+  assert.match(script, /--production-planner-readiness-evidence/);
   assert.match(script, /--production-daily-loop-preview-smoke-evidence/);
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
   assert.match(script, /workspace_id_required/);
@@ -871,6 +872,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionSchedulerRunSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerWorkerTargetSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerWorkerSmokeEvidence/);
+  assert.match(scriptHarness, /productionPlannerReadinessEvidence/);
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
@@ -906,6 +908,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionSchedulerWorkerSmokeEvidence/);
   assert.match(releaseReadinessService, /production_scheduler_worker_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_scheduler_worker_smoke/);
+  assert.match(releaseReadinessService, /productionPlannerReadinessEvidence/);
+  assert.match(releaseReadinessService, /production_planner_readiness_evidence/);
+  assert.match(releaseReadinessService, /run_production_planner_readiness_smoke/);
   assert.match(releaseReadinessService, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(releaseReadinessService, /production_daily_loop_preview_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_daily_loop_preview_smoke/);

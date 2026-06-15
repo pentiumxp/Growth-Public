@@ -648,7 +648,8 @@ Required behavior:
   worker lease/timer default-disabled status, production scheduler worker smoke
   evidence from
   `npm run smoke:scheduler-worker`, production planner readiness
-  smoke, production daily-loop preview smoke evidence from
+  smoke evidence from `npm run smoke:planner-readiness`, production
+  daily-loop preview smoke evidence from
   `npm run smoke:daily-loop-preview`, production controlled daily-loop
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,

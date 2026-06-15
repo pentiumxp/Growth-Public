@@ -63,6 +63,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-scheduler-run-smoke-evidence",
     "--production-scheduler-worker-target-smoke-evidence",
     "--production-scheduler-worker-smoke-evidence",
+    "--production-planner-readiness-evidence",
     "--production-daily-loop-preview-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
     "--release-approval-json", JSON.stringify({
@@ -89,6 +90,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionSchedulerRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerWorkerTargetSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
   });
@@ -119,6 +121,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       productionSchedulerRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerWorkerTargetSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
     },

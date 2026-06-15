@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T04:50Z - Growth Release Readiness Planner Evidence Harness Coverage Slice
+
+- Status: implemented and locally validated. This slice closes a coverage gap
+  where `learning-automation-release-readiness-service` and
+  `scripts/smoke-growth-release-readiness.js` already supported
+  `productionPlannerReadinessEvidence` /
+  `--production-planner-readiness-evidence`, but the release-readiness
+  smoke-script harness, service pass/missing assertions, architecture guard,
+  and Growth docs did not all name that evidence flag explicitly.
+- Change classification: H3 docs/Harness contract coverage by code surface;
+  Home AI AI Ops classified it as H1 because the task included production and
+  deployment keywords, so the required Mac production docs, deployment
+  harnesses, and plan-only deploy check were run.
+- Scope:
+  - release-readiness smoke-script tests now parse and project
+    `--production-planner-readiness-evidence`;
+  - release-readiness service tests now assert
+    `production_planner_readiness_evidence` in both all-pass and missing
+    evidence paths;
+  - the architecture boundary test now guards the CLI flag, smoke-script
+    harness coverage, service key, and required action
+    `run_production_planner_readiness_smoke`;
+  - Growth project context, implementation plan, next-stage plan, architecture
+    doc, and platform pointer now state that this evidence comes from
+    `npm run smoke:planner-readiness`.
+- Boundary:
+  - no runtime service behavior changed;
+  - no production planner smoke was run in production during this slice;
+  - release readiness remains advisory and always returns
+    `writefulSchedulingAllowed=false`;
+  - no Gateway calls, plan publication, scheduler execution, scheduler ticks,
+    notification delivery, stage activation, learner-state mutation, or
+    production deploy were performed.
+- Validation passed:
+  - syntax checks for the touched Growth tests;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`74` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --workspace-id smoke_workspace
+    --production-planner-readiness-evidence --json`, which returned
+    `production_planner_readiness_evidence` as `pass` while the overall
+    readiness stayed `incomplete` and `writefulSchedulingAllowed=false`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - `codegraph sync && codegraph status` (`224` files, `2,739` nodes,
+    `10,747` edges; index up to date);
+  - Home AI required checks:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, absolute
+    `node --check` commands for the touched Growth test files, plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`, and Growth
+    and Home AI `git diff --check`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-be79b2eb-0b58-4e45-bd72-c84431d1ecaa`;
+  - production deploy was not executed because this was a Growth local
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T04:45Z - Growth Release Readiness Automation UI Evidence Gate Slice
 
 - Status: implemented and locally validated. This slice makes automation

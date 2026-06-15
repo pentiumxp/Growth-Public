@@ -109,6 +109,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-scheduler-worker-smoke-evidence` after
   `npm run smoke:scheduler-worker` has produced bounded production worker
   smoke evidence, accepts
+  `--production-planner-readiness-evidence` after
+  `npm run smoke:planner-readiness` has produced bounded no-write production
+  planner readiness evidence, accepts
   `--production-daily-loop-preview-smoke-evidence` after
   `npm run smoke:daily-loop-preview` has produced bounded no-write production
   daily-loop readiness evidence, accepts
