@@ -151,6 +151,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   graph and provides local or production daily-loop context/readiness evidence
   without Gateway calls, plan draft/publish, card generation, scheduling,
   notifications, stage activation, direct repository access, SQLite writes, or
+  learner-state mutation. Learning-loop state now also has
+  `npm run smoke:learning-loop-state`, a service-owned no-write CLI that
+  delegates to `learning-loop-state-service` through the normal service graph.
+  It projects compact `growth.learningLoopState.v1` summary-only state and the
+  next Owner action from daily-loop preview plus stage-assessment readiness,
+  without Gateway calls, plan publication, card generation, evaluation,
+  scheduling, stage activation, direct repository access, SQLite writes, or
   learner-state mutation. Controlled daily-loop draft/publish smoke evidence is
   now available through `npm run smoke:daily-loop`; it defaults to preview, and
   `draft` or `publish` operations require the explicit `--allow-write` flag.
@@ -399,6 +406,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   authoring draft internals and refresh bounded audit/completeness state. It
   does not call Gateway directly, card generation directly, SQLite tables,
   notifications, Action Inbox, stage-assessment activation, or scheduling.
+  The Owner learning-loop state read is now implemented through
+  `learning-loop-state-service` and Owner-only
+  `GET /api/v1/growth/learning-loop/state`. It composes the existing
+  daily-loop preview DTO and read-only `learning-stage-assessment-service`
+  readiness into compact `growth.learningLoopState.v1` state/next-action
+  output for UI/harness use. It is no-write, summary-only, and does not call
+  Gateway, publish plans, generate cards, evaluate submissions, run schedulers,
+  deliver notifications, activate stage assessments, or inspect SQLite tables.
   `npm run smoke:daily-loop` now provides a controlled local/production smoke
   entry for the same service boundary: preview is the default no-write
   operation, while `--operation draft` and `--operation publish` are rejected

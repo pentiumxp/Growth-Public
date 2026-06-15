@@ -372,6 +372,11 @@ As of 2026-06-15, Growth owns these implemented or documented boundaries:
   `POST /api/v1/growth/daily-loop/draft`, and
   `POST /api/v1/growth/daily-loop/publish`, composing context, draft/publish,
   cycle audit, and completeness without a new model or scheduler boundary;
+- Owner learning-loop state readback through `learning-loop-state-service` and
+  Owner-only `GET /api/v1/growth/learning-loop/state`, composing daily-loop
+  preview and read-only stage-assessment readiness into
+  `growth.learningLoopState.v1` without writes, Gateway calls, publication,
+  generation, evaluation, scheduling, notifications, or stage activation;
 - bounded plan/evidence/profile-delta/correction audit aggregation through
   `learning-cycle-audit-service` and
   `GET /api/v1/growth/learning-cycles/audit`;
@@ -756,6 +761,32 @@ Routes:
 The service must not call Gateway directly, call card generation directly,
 read or write SQLite tables directly, start scheduling, notify Action Inbox,
 activate stage assessments, or expose generated authoring draft internals.
+
+### `learning-loop-state-service`
+
+Owns compact Owner-loop state readback for UI and harness use.
+
+Implementation status: implemented. The service composes
+`learning-daily-loop-service.preview` and read-only
+`learning-stage-assessment-service.stageReadiness` into
+`growth.learningLoopState.v1`.
+
+It returns:
+
+- target, scope, readiness, profile, audit, stage-assessment, and
+  recommendation summaries;
+- one `status` value for the current loop;
+- one `nextAction` for Owner review, draft, publish, audit completion,
+  target provisioning, graph selection, or planner configuration.
+
+Routes and smoke:
+
+- Owner-only `GET /api/v1/growth/learning-loop/state`;
+- no-write `npm run smoke:learning-loop-state`.
+
+The service must not call Gateway, import repositories, publish plans,
+generate cards, evaluate submissions, start schedulers, deliver notifications
+or handoffs, activate stage assessments, or mutate learner state.
 
 ### `learning-plan-audit-service`
 

@@ -305,8 +305,14 @@ Required behavior:
 - render target provisioning, graph options, Profile V2, evidence audit,
   planner readiness, authoring readiness, evaluation readiness, and recent
   Owner audit summaries;
+- render compact `growth.learningLoopState.v1` status and next action from
+  `GET /api/v1/growth/learning-loop/state` instead of recomputing loop state
+  in browser code;
 - verify the same backend context through
   `npm run smoke:daily-loop-preview` as a no-write service-graph check before
+  product or production review;
+- verify compact state through
+  `npm run smoke:learning-loop-state` as a no-write service-graph check before
   product or production review;
 - verify controlled backend draft/publish through
   `npm run smoke:daily-loop -- --operation draft --allow-write ...` and
@@ -325,7 +331,9 @@ Required behavior:
 Required harness:
 
 - `tests/learning-daily-loop-service.test.js`;
+- `tests/learning-loop-state-service.test.js`;
 - `tests/growth-daily-loop-preview-smoke-script.test.js`;
+- `tests/growth-learning-loop-state-smoke-script.test.js`;
 - `tests/growth-daily-loop-smoke-script.test.js`;
 - `tests/learning-card-generation-context-service.test.js`;
 - `tests/learning-plan-publisher-service.test.js`;
@@ -334,6 +342,7 @@ Required harness:
 - `tests/growth-frontend-adapter.test.js`;
 - `tests/growth-embedded-layout.test.js`;
 - `npm run smoke:daily-loop-preview -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
+- `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation draft --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <planDraftId> --item-id <itemId> --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - central Home AI embedded-plugin visual harness before production release.

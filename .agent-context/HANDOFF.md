@@ -9,6 +9,91 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T06:38Z - Growth Learning Loop State Slice
+
+- Status: implemented, documented, and locally validated. This slice adds a
+  compact summary-only Owner learning-loop state readback so the embedded
+  daily workbench can read one status and one next action before using the
+  existing daily-loop draft/publish execution boundary.
+- Change classification: AI Ops intake classified the task as H3 Architecture
+  Documentation And Harness Map. Because the slice also touches service,
+  route, smoke, and docs, the Growth focused/broad gates and Home AI required
+  contract gates were run. No production deploy was executed.
+- Scope:
+  - new service:
+    `src/services/learning-loop-state-service.js`;
+  - new Owner-only route:
+    `GET /api/v1/growth/learning-loop/state`;
+  - new no-write CLI:
+    `npm run smoke:learning-loop-state`;
+  - new script:
+    `scripts/smoke-growth-learning-loop-state.js`;
+  - new harnesses:
+    `tests/learning-loop-state-service.test.js` and
+    `tests/growth-learning-loop-state-smoke-script.test.js`;
+  - route and architecture harness coverage added in
+    `tests/growth-routes.test.js` and
+    `tests/growth-architecture-boundary.test.js`;
+  - `package.json` `check` now syntax-checks the new service and smoke
+    script;
+  - Growth docs updated:
+    `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`,
+    `docs/GROWTH_LEARNING_OPERATING_LOOP.md`,
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`, and
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`.
+- Boundary:
+  - output schema is `growth.learningLoopState.v1`;
+  - output is `privacyClass=summary_only` and `summaryOnly=true`;
+  - the service composes `learning-daily-loop-service.preview` and read-only
+    `learning-stage-assessment-service.stageReadiness`;
+  - next-action output can point Owner to target provisioning, graph/context
+    repair, planner config, audit completion, stage-checkpoint review, daily
+    draft, daily publish, or manual review;
+  - the service and smoke CLI do not import repositories, call Gateway, call
+    model vendors, publish plans, generate cards, evaluate submissions, run
+    schedulers, deliver notifications or handoffs, activate stage assessments,
+    or mutate learner state.
+- Validation passed:
+  - syntax checks for the new service, script, tests, app services, routes,
+    and architecture test;
+  - focused
+    `node --test tests/learning-loop-state-service.test.js
+    tests/growth-learning-loop-state-smoke-script.test.js
+    tests/learning-daily-loop-service.test.js
+    tests/learning-stage-assessment-service.test.js tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`88` tests);
+  - operational smoke:
+    `npm run --silent smoke:learning-loop-state -- --workspace-id
+    weixin_fanfan --learner-id fanfan --domain science --subject science
+    --json` over a temporary empty SQLite DB;
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - `codegraph sync && codegraph status` (`240` files, `2,967` nodes,
+    `11,483` edges; index up to date);
+  - Growth `git diff --check`;
+  - Home AI app required gate:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI platform pointer checks:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI app `git diff --check`.
+- AI Ops evidence appended:
+  `evidence-4bcb9170-a7a9-4517-872c-71a5587a3402`.
+- Remaining work:
+  - embed the new `GET /api/v1/growth/learning-loop/state` projection in the
+    Owner `生成` tab as the top-level compact state/next-action surface;
+  - run central embedded-plugin visual harness before any production UI deploy;
+  - production learning-loop state smoke evidence remains a future release
+    prerequisite.
+
 ## 2026-06-15T06:18Z - Growth Release Evidence Bundle Builder Slice
 
 - Status: implemented and locally validated. This slice adds a service-owned

@@ -994,6 +994,15 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-loop/state") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_learning_loop_state_owner_required", "Learning loop state requires Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningLoopStateService.state(normalizeDailyLoopQueryInput(url, target, request));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/profile-delta-audits") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningProfileDeltaAuditService.listProfileDeltas(normalizeProfileDeltaAuditInput(url, target));

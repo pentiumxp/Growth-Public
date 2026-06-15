@@ -4295,6 +4295,100 @@ test("growth daily loop preview is Owner-only and limited to visible targets", a
   }
 });
 
+test("growth learning loop state is Owner-only and limited to visible targets", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningLoopStateService: {
+      state(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-loop-state-service",
+          schemaVersion: "growth.learningLoopState.v1",
+          target: { workspaceId: input.workspaceId, learnerId: input.learnerId },
+          scope: { subject: input.subject },
+          status: "ready_to_draft",
+          nextAction: { action: "draft_daily_plan" }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/learning-loop/state?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_fair_test&planDraftId=lgplan_route_1&itemId=plan_item_route_1&taskCardId=ltask_route_1&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(ownerResponse.status, 200);
+    const ownerBody = await ownerResponse.json();
+    assert.equal(ownerBody.schemaVersion, "growth.learningLoopState.v1");
+    assert.equal(ownerBody.status, "ready_to_draft");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      growthWorkspaceId: undefined,
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      availableMinutes: "15",
+      targetNodeIds: "kg_science_fair_test",
+      planDraftId: "lgplan_route_1",
+      itemId: "plan_item_route_1",
+      taskCardId: "ltask_route_1",
+      evaluationId: "",
+      profileDeltaId: "",
+      evidenceId: "",
+      correctionId: "",
+      sourceId: "",
+      limit: "5",
+      requestedBy: "weixin_stephen"
+    });
+
+    const memberDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/state?workspaceId=weixin_stephen`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberDenied.status, 403);
+    assert.equal((await memberDenied.json()).error.code, "growth_learning_loop_state_owner_required");
+
+    const invisibleDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/state?workspaceId=weixin_missing`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(invisibleDenied.status, 403);
+    assert.equal((await invisibleDenied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth daily loop draft and publish delegate through service with Owner write authorization", async () => {
   const calls = [];
   const server = createServer({

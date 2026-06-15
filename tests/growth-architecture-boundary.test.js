@@ -170,6 +170,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAuditCompletenessService/);
   assert.match(services, /createLearningDailyLoopService/);
   assert.match(services, /learningDailyLoopService/);
+  assert.match(services, /createLearningLoopStateService/);
+  assert.match(services, /learningLoopStateService/);
   assert.match(services, /createLearningAutomationActionHandoffService/);
   assert.match(services, /learningAutomationActionHandoffService/);
   assert.match(services, /createLearningAutomationDigestService/);
@@ -205,6 +207,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /contextService: learningCardGenerationContextService/);
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
+  assert.match(services, /dailyLoopService: learningDailyLoopService/);
+  assert.match(services, /stageAssessmentService: learningStageAssessmentService/);
   assert.match(services, /repository: growthLearningStore\.learningAutomationProposalRepository/);
   assert.match(services, /repository: growthLearningStore\.learningAutomationActionHandoffRepository/);
   assert.match(services, /repository: growthLearningStore\.learningAutomationDigestRepository/);
@@ -242,9 +246,11 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /learning-cycles\/audit/);
   assert.match(routes, /learning-cycles\/completeness/);
   assert.match(routes, /daily-loop\/preview/);
+  assert.match(routes, /learning-loop\/state/);
   assert.match(routes, /daily-loop\/draft/);
   assert.match(routes, /daily-loop\/publish/);
   assert.match(routes, /learningDailyLoopService\.preview/);
+  assert.match(routes, /learningLoopStateService\.state/);
   assert.match(routes, /learningDailyLoopService\.draft/);
   assert.match(routes, /learningDailyLoopService\.publish/);
   assert.match(routes, /normalizeDailyLoopQueryInput/);
@@ -1466,6 +1472,70 @@ test("Growth daily-loop preview smoke CLI stays service-owned and no-write", () 
 
   const scriptHarness = read(path.join("tests", "growth-daily-loop-preview-smoke-script.test.js"));
   assert.match(scriptHarness, /delegates to service without writing by default/);
+  assert.match(scriptHarness, /fails closed for privacy-risk input/);
+  assert.match(scriptHarness, /fails closed for missing workspace and invalid JSON/);
+});
+
+test("Growth learning-loop state smoke CLI stays service-owned, summary-only, and no-write", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:learning-loop-state/);
+  assert.match(packageJson, /smoke-growth-learning-loop-state\.js/);
+  assert.match(packageJson, /learning-loop-state-service\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-learning-loop-state.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningLoopStateService\.state/);
+  assert.match(script, /workspace_id_required/);
+  assert.match(script, /learning_loop_state_smoke_invalid_json/);
+  assert.match(script, /--input-json/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService\.preview/);
+  assert.doesNotMatch(script, /learningDailyLoopService\.draft/);
+  assert.doesNotMatch(script, /learningDailyLoopService\.publish/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /dryRun/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const service = read(path.join("src", "services", "learning-loop-state-service.js"));
+  assert.match(service, /growth\.learningLoopState\.v1/);
+  assert.match(service, /privacyClass: "summary_only"/);
+  assert.match(service, /summaryOnly: true/);
+  assert.match(service, /dailyLoopService\.preview/);
+  assert.match(service, /stageAssessmentService\.stageReadiness/);
+  assert.match(service, /draft_daily_plan/);
+  assert.match(service, /publish_selected_plan_item/);
+  assert.match(service, /complete_cycle_audit/);
+  assert.match(service, /review_stage_assessment/);
+  assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(service, /publishPlanItem/);
+  assert.doesNotMatch(service, /generateCard/);
+  assert.doesNotMatch(service, /evaluateSubmission/);
+  assert.doesNotMatch(service, /executeOnce/);
+  assert.doesNotMatch(service, /runOnce/);
+  assert.doesNotMatch(service, /deliverHandoff/);
+  assert.doesNotMatch(service, /activateStageAssessment/);
+
+  const serviceHarness = read(path.join("tests", "learning-loop-state-service.test.js"));
+  assert.match(serviceHarness, /projects a summary-only ready-to-draft state/);
+  assert.match(serviceHarness, /prefers publish when a selected plan is ready/);
+  assert.match(serviceHarness, /surfaces incomplete audit before drafting more work/);
+  assert.match(serviceHarness, /surfaces stage checkpoint readiness/);
+  assert.match(serviceHarness, /fails closed for privacy-risk input and missing dependencies/);
+
+  const scriptHarness = read(path.join("tests", "growth-learning-loop-state-smoke-script.test.js"));
+  assert.match(scriptHarness, /delegates to service without writing/);
   assert.match(scriptHarness, /fails closed for privacy-risk input/);
   assert.match(scriptHarness, /fails closed for missing workspace and invalid JSON/);
 });

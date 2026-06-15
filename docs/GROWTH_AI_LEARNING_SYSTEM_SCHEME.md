@@ -111,6 +111,11 @@ These planes must stay separable. Browser code can render and submit Owner
 intent, but it must not rebuild Profile V2, compute mastery, assemble prompts,
 inspect SQLite tables, or call Gateway. Routes can authorize, normalize, and
 delegate, but learning policy belongs in services and repositories.
+The compact Owner state surface for the daily workbench is
+`GET /api/v1/growth/learning-loop/state`, backed by
+`learning-loop-state-service`. It returns `growth.learningLoopState.v1` from
+daily-loop preview plus stage-assessment readiness and is summary-only,
+no-write, and non-model.
 
 The current product state should therefore be described precisely:
 

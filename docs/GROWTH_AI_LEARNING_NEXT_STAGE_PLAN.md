@@ -97,6 +97,10 @@ Growth already has substantial backend foundation:
   correction, cycle audit, and audit-completeness readback;
 - plan draft, validation, audit, and publish bridge;
 - Owner daily-loop backend facade for preview, draft, and publish;
+- Owner learning-loop state readback through `learning-loop-state-service`,
+  Owner-only `GET /api/v1/growth/learning-loop/state`, and
+  `npm run smoke:learning-loop-state`, projecting compact summary-only status
+  and next action without writes or model calls;
 - Owner audit/correction smoke CLI for read-only cycle audit/completeness/
   evidence audit/profile-delta audit/correction readback and explicit
   `--allow-write` correction recording through the normal service graph;
@@ -172,7 +176,7 @@ The missing product capability is the browser-operable learning loop:
 
 | Slice | Objective | Required boundary | Non-goal |
 | --- | --- | --- | --- |
-| A1: Owner daily planning UI | Owner can create one Fanfan science daily card from persisted context. | Use `learning-daily-loop-service` preview/draft/publish; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no new scheduler, no automatic publish. |
+| A1: Owner daily planning UI | Owner can create one Fanfan science daily card from persisted context. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
 | A2: Learner daily evidence UI | Learner can finish the generated card with one submit, one evaluation, and one optional reflection. | Reuse generated-card detail flow, audio evidence, one-box-per-stage state, and visible failed-evaluation recovery. | No pass-line retry gate and no extra competing submission boxes. |
 | A3: Owner audit/correction UI | Owner can see why the card happened, what changed, and how to correct future profile evidence. | Render plan/evidence/profile-delta/cycle/completeness/correction DTOs and write corrections through `learning-owner-correction-service`. | No browser-side Profile V2 computation and no raw transcript/prompt viewer. |
 | A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher. |
@@ -501,6 +505,7 @@ becomes future planning evidence, not a required retry loop.
 | --- | --- |
 | Planner/author/evaluator Gateway clients | Fake valid stream, valid JSON, empty output, invalid JSON, timeout, repair failure, and privacy-risk output. |
 | Daily loop service | Preview, draft, publish, failed publish, audit refresh, `tests/growth-daily-loop-preview-smoke-script.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, `npm run smoke:daily-loop-preview`, controlled `npm run smoke:daily-loop` with explicit `--allow-write` for draft/publish, and no direct Gateway/card-generation calls from routes or the CLI. |
+| Learning loop state | `tests/learning-loop-state-service.test.js`, `tests/growth-learning-loop-state-smoke-script.test.js`, route visible-target/Owner tests, `npm run smoke:learning-loop-state`, summary-only `growth.learningLoopState.v1`, and architecture guard for no Gateway, publication, generation, evaluation, scheduler, notification, stage activation, learner-state mutation, or direct repository access. |
 | Learner daily interaction | One submission box, one evaluation, one optional reflection, audio record/playback, visible failed-evaluation retry path, and no pass-line loop. |
 | Evidence/profile/audit | Evidence ledger, evidence audit, Profile V2, profile-delta audit, correction, cycle audit, completeness, stale evidence, privacy tests, `tests/growth-owner-audit-smoke-script.test.js`, and `npm run smoke:owner-audit`; the smoke now returns cycle audit, completeness, evidence audit, profile-delta audit, and correction DTOs by default, while correction writes remain explicitly gated. |
 | Stage assessment | Readiness, activation, coverage, completion, cooldown, direct daily-publish blocking, `tests/growth-stage-assessment-smoke-script.test.js`, and `npm run smoke:stage-assessment`; the CLI defaults to read-only readiness and requires explicit `--allow-write` for eligibility, activation, or completion evidence. |

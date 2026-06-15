@@ -887,7 +887,8 @@ cards and failed/blocked publish attempts:
 
 1. Add the planner-backed panels to the Owner `生成` tab:
    target/scope, readiness/profile, plan/publish, audit/next step.
-2. Wire preview, draft, and publish actions to the Owner-only daily-loop
+2. Wire `GET /api/v1/growth/learning-loop/state` for compact status/next
+   action, then wire draft and publish actions to the Owner-only daily-loop
    backend facade.
 3. Render context-provided `graphOptions`, `targetProvisioning`, Profile V2,
    evidence audit, `ownerAudit`, and Gateway readiness.
@@ -905,15 +906,16 @@ Ready-to-start contract for this slice:
 | Item | Required shape |
 | --- | --- |
 | Inputs | Owner actor role, selected target workspace, `learnerId`, `domainPackId`, `domain`, `subject`, `horizon`, `availableMinutes`, and optional target nodes. |
-| Existing backend routes | `GET /api/v1/growth/daily-loop/preview`, `POST /api/v1/growth/daily-loop/draft`, `POST /api/v1/growth/daily-loop/publish`, plus drilldown routes `GET /api/v1/growth/card-generation/context`, `GET /api/v1/growth/learning-plans/audit`, `GET /api/v1/growth/evidence/audit`, `GET /api/v1/growth/profile-delta-audits`, `GET /api/v1/growth/profile-corrections`, `GET /api/v1/growth/learning-cycles/audit`, and `GET /api/v1/growth/learning-cycles/completeness`. |
-| UI outputs | Readiness summary, validated plan preview, explicit publish action, generated card link, latest publish-attempt state, audit refresh state, and bounded next-step recommendation. |
+| Existing backend routes | `GET /api/v1/growth/learning-loop/state`, `GET /api/v1/growth/daily-loop/preview`, `POST /api/v1/growth/daily-loop/draft`, `POST /api/v1/growth/daily-loop/publish`, plus drilldown routes `GET /api/v1/growth/card-generation/context`, `GET /api/v1/growth/learning-plans/audit`, `GET /api/v1/growth/evidence/audit`, `GET /api/v1/growth/profile-delta-audits`, `GET /api/v1/growth/profile-corrections`, `GET /api/v1/growth/learning-cycles/audit`, and `GET /api/v1/growth/learning-cycles/completeness`. |
+| UI outputs | Compact loop status, one next action, readiness summary, validated plan preview, explicit publish action, generated card link, latest publish-attempt state, audit refresh state, and bounded next-step recommendation. |
 | Failure states | Authorization failure, target not visible, target not provisioned, no graph options, Gateway not ready, invalid plan draft, blocked formal-assessment direct publish, authoring failure, DB rollback, publish-attempt failure, and audit-completeness missing evidence. |
-| Harness | `tests/learning-daily-loop-service.test.js`, service/route tests for touched behavior, `tests/growth-frontend-adapter.test.js`, `tests/growth-embedded-layout.test.js`, docs-locality checks, broad local gate, and central embedded-plugin visual harness before deployment. |
+| Harness | `tests/learning-loop-state-service.test.js`, `tests/growth-learning-loop-state-smoke-script.test.js`, `tests/learning-daily-loop-service.test.js`, service/route tests for touched behavior, `tests/growth-frontend-adapter.test.js`, `tests/growth-embedded-layout.test.js`, docs-locality checks, broad local gate, and central embedded-plugin visual harness before deployment. |
 
-Backend status: the daily-loop preview/draft/publish facade is implemented and
-covered by service, route, and architecture harnesses. The remaining Stage 1
-work is embedded UI consumption, frontend adapter/layout coverage, and central
-visual evidence before deployment.
+Backend status: the learning-loop state readback and daily-loop
+preview/draft/publish facade are implemented and covered by service, smoke,
+route, and architecture harnesses. The remaining Stage 1 work is embedded UI
+consumption, frontend adapter/layout coverage, and central visual evidence
+before deployment.
 
 After Stage 1 and Stage 2 are implemented, the remaining automation work is
 Stage 5 proposal review UI, Stage 6 digest/action review UI, platform
