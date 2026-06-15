@@ -850,6 +850,48 @@ function normalizeAutomationReleaseApprovalInput(body, workspaceId, target, requ
   };
 }
 
+function normalizeAutomationReleaseEvidenceListInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "",
+    evidenceKey: url.searchParams.get("evidenceKey") || url.searchParams.get("evidence_key") || url.searchParams.get("checkKey") || url.searchParams.get("check_key") || "",
+    checkKey: url.searchParams.get("checkKey") || url.searchParams.get("check_key") || "",
+    status: url.searchParams.get("status") || "",
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
+function normalizeAutomationReleaseEvidenceInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    evidenceKey: body.evidenceKey || body.evidence_key || body.checkKey || body.check_key || body.key,
+    checkKey: body.checkKey || body.check_key,
+    status: body.status,
+    evidenceVersion: body.evidenceVersion || body.evidence_version,
+    evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
+    note: body.note || body.reason || body.summary,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    recordedBy: body.recordedBy || body.recorded_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    observedAt: body.observedAt || body.observed_at || body.recordedAt || body.recorded_at,
+    createdAt: body.createdAt || body.created_at
+  };
+}
+
 function normalizeAutomationSchedulerDryRunInput(body, workspaceId, target, request, url) {
   return {
     workspaceId,
@@ -1353,6 +1395,12 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-evidence") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseEvidenceService.listEvidence(normalizeAutomationReleaseEvidenceListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-readiness") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseReadinessService.evaluateReadiness(normalizeAutomationReleaseReadinessQueryInput(url, target));
@@ -1715,6 +1763,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseApprovalService.recordApproval(
       normalizeAutomationReleaseApprovalInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-evidence") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_evidence_owner_required", "Automation release evidence records require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleaseEvidenceService.recordEvidence(
+      normalizeAutomationReleaseEvidenceInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

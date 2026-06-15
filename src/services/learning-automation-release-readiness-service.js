@@ -57,6 +57,19 @@ function evidenceBag(input = {}) {
   return input.evidence || input.evidenceSummary || input.evidence_summary || {};
 }
 
+function mergeEvidenceBags(input = {}, persisted = {}) {
+  const merged = Object.assign({}, persisted);
+  Object.entries(evidenceBag(input) || {}).forEach(([key, value]) => {
+    if (value !== undefined) merged[key] = value;
+  });
+  Object.entries(input || {}).forEach(([key, value]) => {
+    if (key.endsWith("Evidence") || key === "releaseEvidenceBundleAudit") {
+      if (value !== undefined) merged[key] = value;
+    }
+  });
+  return merged;
+}
+
 function releaseApprovalBag(input = {}) {
   return input.releaseApproval || input.release_approval || input.approvals || {};
 }
@@ -233,7 +246,7 @@ function compactRequiredAction(checkItem = {}) {
   }).filter(([, value]) => value !== undefined && value !== ""));
 }
 
-function buildReleaseReview(summary = {}, checks = [], persistedApprovals = {}) {
+function buildReleaseReview(summary = {}, checks = [], persistedApprovals = {}, persistedEvidence = {}) {
   const openChecks = checks.filter((item) => !["pass", "not_applicable"].includes(item.status));
   const requiredActions = openChecks.map(compactRequiredAction);
   return {
@@ -241,6 +254,7 @@ function buildReleaseReview(summary = {}, checks = [], persistedApprovals = {}) 
     summaryOnly: true,
     readyForReleaseReview: summary.readyForReleaseReview === true,
     persistedApprovalKeys: asArray(persistedApprovals.approvalKeys).map((key) => boundedString(key, 120)).filter(Boolean).sort(),
+    persistedEvidenceKeys: asArray(persistedEvidence.evidenceKeys).map((key) => boundedString(key, 120)).filter(Boolean).sort(),
     missingCheckKeys: checks.filter((item) => item.status === "missing").map((item) => boundedString(item.key, 120)).filter(Boolean),
     blockedCheckKeys: checks.filter((item) => item.status === "blocked").map((item) => boundedString(item.key, 120)).filter(Boolean),
     missingEvidenceKeys: checks
@@ -321,6 +335,7 @@ function buildEvidenceReadback(input = {}, checks = []) {
 function createLearningAutomationReleaseReadinessService(options = {}) {
   const repository = options.repository || null;
   const releaseApprovalService = options.releaseApprovalService || null;
+  const releaseEvidenceService = options.releaseEvidenceService || null;
   const schedulerService = options.schedulerService || null;
   const digestService = options.digestService || null;
   const failurePolicyService = options.failurePolicyService || null;
@@ -343,6 +358,24 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       ok: true,
       releaseApproval: result.releaseApproval || {},
       approvalKeys: Array.isArray(result.approvalKeys) ? result.approvalKeys : Object.keys(result.releaseApproval || {}).sort()
+    };
+  }
+
+  function persistedReleaseEvidence(scope = {}) {
+    if (!releaseEvidenceService || typeof releaseEvidenceService.evidenceBag !== "function") {
+      return { ok: true, evidence: {}, evidenceKeys: [] };
+    }
+    const result = releaseEvidenceService.evidenceBag(Object.assign({}, scope, {
+      status: "pass",
+      limit: 100
+    }));
+    if (!result?.ok) {
+      return unavailable(result?.error || "learning_automation_release_readiness_release_evidence_unavailable");
+    }
+    return {
+      ok: true,
+      evidence: result.evidence || {},
+      evidenceKeys: Array.isArray(result.evidenceKeys) ? result.evidenceKeys : Object.keys(result.evidence || {}).sort()
     };
   }
 
@@ -485,30 +518,35 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
     if (privacyFindings.length) return unavailable("learning_automation_release_readiness_privacy_failed", { privacyFindings });
     const persistedApprovals = persistedReleaseApprovals(scope);
     if (!persistedApprovals.ok) return persistedApprovals;
+    const persistedEvidence = persistedReleaseEvidence(scope);
+    if (!persistedEvidence.ok) return persistedEvidence;
+    const inputWithReleaseEvidence = Object.assign({}, input, {
+      evidence: mergeEvidenceBags(input, persistedEvidence.evidence)
+    });
     const inputWithReleaseApproval = Object.assign({}, input, {
       releaseApproval: mergeReleaseApprovals(input, persistedApprovals.releaseApproval)
     });
 
     const checks = [
-      presentCheck(input, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
-      presentCheck(input, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
-      presentCheck(input, "stageCheckpointEvidence", "stage_checkpoint_evidence", "Stage-checkpoint separation evidence", "validate_stage_checkpoint_separation"),
-      presentCheck(input, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
-      presentCheck(input, "productionProposalSmokeEvidence", "production_proposal_smoke_evidence", "Production automation proposal smoke", "run_production_proposal_smoke"),
-      presentCheck(input, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),
+      presentCheck(inputWithReleaseEvidence, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
+      presentCheck(inputWithReleaseEvidence, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
+      presentCheck(inputWithReleaseEvidence, "stageCheckpointEvidence", "stage_checkpoint_evidence", "Stage-checkpoint separation evidence", "validate_stage_checkpoint_separation"),
+      presentCheck(inputWithReleaseEvidence, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
+      presentCheck(inputWithReleaseEvidence, "productionProposalSmokeEvidence", "production_proposal_smoke_evidence", "Production automation proposal smoke", "run_production_proposal_smoke"),
+      presentCheck(inputWithReleaseEvidence, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),
       reviewedDigestCheck(scope),
       activeFailurePolicyCheck(scope),
       deliveredHandoffCheck(scope),
-      presentCheck(input, "automationActionHandoffUiEvidence", "automation_action_handoff_ui_evidence", "Automation action handoff UI evidence", "complete_automation_action_handoff_ui"),
-      presentCheck(input, "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence", "Production action handoff smoke", "run_production_action_handoff_smoke"),
+      presentCheck(inputWithReleaseEvidence, "automationActionHandoffUiEvidence", "automation_action_handoff_ui_evidence", "Automation action handoff UI evidence", "complete_automation_action_handoff_ui"),
+      presentCheck(inputWithReleaseEvidence, "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence", "Production action handoff smoke", "run_production_action_handoff_smoke"),
       check("owner_explicit_execution_gate", "pass", {
         label: "Owner-explicit execution boundary",
         servicePresent: true,
         currentEnabled: Boolean(config.automationWritefulExecutionEnabled),
         writefulSchedulingAllowed: false
       }),
-      presentCheck(input, "schedulerExecutionUiEvidence", "scheduler_execution_ui_evidence", "Scheduler execution UI evidence", "complete_scheduler_execution_ui"),
-      presentCheck(input, "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence", "Production scheduler execution smoke", "run_production_scheduler_execution_smoke"),
+      presentCheck(inputWithReleaseEvidence, "schedulerExecutionUiEvidence", "scheduler_execution_ui_evidence", "Scheduler execution UI evidence", "complete_scheduler_execution_ui"),
+      presentCheck(inputWithReleaseEvidence, "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence", "Production scheduler execution smoke", "run_production_scheduler_execution_smoke"),
       check("scheduler_run_default_disabled", config.automationBackgroundSchedulerEnabled ? "blocked" : "pass", {
         label: "Scheduler run default-disabled status",
         currentEnabled: Boolean(config.automationBackgroundSchedulerEnabled),
@@ -517,10 +555,10 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_scheduler_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
-      presentCheck(input, "schedulerRunUiEvidence", "scheduler_run_ui_evidence", "Scheduler run UI evidence", "complete_scheduler_run_ui"),
-      presentCheck(input, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
-      presentCheck(input, "schedulerWorkerTargetUiEvidence", "scheduler_worker_target_ui_evidence", "Scheduler worker target UI evidence", "complete_scheduler_worker_target_ui"),
-      presentCheck(input, "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence", "Production scheduler worker target smoke", "run_production_scheduler_worker_target_smoke"),
+      presentCheck(inputWithReleaseEvidence, "schedulerRunUiEvidence", "scheduler_run_ui_evidence", "Scheduler run UI evidence", "complete_scheduler_run_ui"),
+      presentCheck(inputWithReleaseEvidence, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
+      presentCheck(inputWithReleaseEvidence, "schedulerWorkerTargetUiEvidence", "scheduler_worker_target_ui_evidence", "Scheduler worker target UI evidence", "complete_scheduler_worker_target_ui"),
+      presentCheck(inputWithReleaseEvidence, "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence", "Production scheduler worker target smoke", "run_production_scheduler_worker_target_smoke"),
       reviewedWorkerTargetCheck(scope),
       check("worker_timer_default_disabled", config.automationBackgroundWorkerEnabled ? "blocked" : "pass", {
         label: "Worker lease/timer default-disabled status",
@@ -530,27 +568,27 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_worker_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
-      presentCheck(input, "productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence", "Production scheduler worker smoke", "run_production_scheduler_worker_smoke"),
-      presentCheck(input, "productionPlannerReadinessEvidence", "production_planner_readiness_evidence", "Production planner readiness smoke", "run_production_planner_readiness_smoke"),
-      presentCheck(input, "productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence", "Production daily-loop preview smoke", "run_production_daily_loop_preview_smoke"),
-      presentCheck(input, "productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence", "Production learning-loop state smoke", "run_production_learning_loop_state_smoke"),
-      presentCheck(input, "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence", "Production cycle-history smoke", "run_production_cycle_history_smoke"),
-      presentCheck(input, "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence", "Production Owner audit smoke", "run_production_owner_audit_smoke"),
-      presentCheck(input, "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence", "Production profile-feedback smoke", "run_production_profile_feedback_smoke"),
-      presentCheck(input, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish smoke", "run_controlled_daily_loop_write_smoke"),
-      presentCheck(input, "productionLearnerCycleSmokeEvidence", "production_learner_cycle_smoke_evidence", "Production learner daily-cycle smoke", "run_production_learner_cycle_smoke"),
-      presentCheck(input, "productionSchedulerDryRunSmokeEvidence", "production_scheduler_dry_run_smoke_evidence", "Production scheduler dry-run smoke", "run_production_scheduler_dry_run_smoke"),
-      presentCheck(input, "releaseEvidenceBundleAudit", "release_evidence_bundle_audit", "Release evidence bundle self-audit", "run_release_evidence_bundle_audit"),
+      presentCheck(inputWithReleaseEvidence, "productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence", "Production scheduler worker smoke", "run_production_scheduler_worker_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionPlannerReadinessEvidence", "production_planner_readiness_evidence", "Production planner readiness smoke", "run_production_planner_readiness_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence", "Production daily-loop preview smoke", "run_production_daily_loop_preview_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence", "Production learning-loop state smoke", "run_production_learning_loop_state_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence", "Production cycle-history smoke", "run_production_cycle_history_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence", "Production Owner audit smoke", "run_production_owner_audit_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence", "Production profile-feedback smoke", "run_production_profile_feedback_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish smoke", "run_controlled_daily_loop_write_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionLearnerCycleSmokeEvidence", "production_learner_cycle_smoke_evidence", "Production learner daily-cycle smoke", "run_production_learner_cycle_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionSchedulerDryRunSmokeEvidence", "production_scheduler_dry_run_smoke_evidence", "Production scheduler dry-run smoke", "run_production_scheduler_dry_run_smoke"),
+      presentCheck(inputWithReleaseEvidence, "releaseEvidenceBundleAudit", "release_evidence_bundle_audit", "Release evidence bundle self-audit", "run_release_evidence_bundle_audit"),
       schedulerDryRunCheck(scope, input),
-      presentCheck(input, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
-      presentCheck(input, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
+      presentCheck(inputWithReleaseEvidence, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
+      presentCheck(inputWithReleaseEvidence, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
       configGateCheck(inputWithReleaseApproval, config, "writeful_execution_release_approval", "automationWritefulExecutionEnabled", "writefulExecutionApproval", "Writeful execution release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_scheduler_release_approval", "automationBackgroundSchedulerEnabled", "backgroundSchedulerApproval", "Background scheduler release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")
     ];
     const summary = buildSummary(scope, checks);
-    const releaseReview = buildReleaseReview(summary, checks, persistedApprovals);
-    const evidenceReadback = buildEvidenceReadback(input, checks);
+    const releaseReview = buildReleaseReview(summary, checks, persistedApprovals, persistedEvidence);
+    const evidenceReadback = buildEvidenceReadback(inputWithReleaseEvidence, checks);
     return {
       ok: true,
       source: "growth-learning-automation-release-readiness-service",
@@ -566,7 +604,8 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       evidence: {
         schemaVersion: "growth.learningAutomationReleaseReadiness.evidence.v1",
         summaryOnly: true,
-        externalEvidenceKeys: Object.keys(evidenceBag(input)).filter((key) => !PRIVATE_KEY_PATTERN.test(key)).sort()
+        externalEvidenceKeys: Object.keys(evidenceBag(inputWithReleaseEvidence)).filter((key) => !PRIVATE_KEY_PATTERN.test(key)).sort(),
+        persistedEvidenceKeys: persistedEvidence.evidenceKeys || []
       },
       evidenceReadback,
       config: {

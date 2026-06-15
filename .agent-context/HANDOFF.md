@@ -9,6 +9,63 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T22:19Z - Release Evidence Record Boundary
+
+- Status: implemented and validated locally. This slice is backend/Harness/docs
+  only. It does not deploy, apply runtime config, grant scheduler permission,
+  call Gateway/model vendors, publish cards/plans, evaluate submissions, run
+  scheduler actions, deliver notifications, activate stage assessments, mutate
+  learner state, or write production release records.
+- Scope:
+  - added `learning-automation-release-evidence-service` as the Growth-owned
+    summary-only persistence boundary for canonical release-readiness evidence
+    keys;
+  - added `automation-release-evidence.js` and
+    `learning_growth_automation_release_evidence` for bounded release evidence
+    records with privacy-key/private-value scanning, status validation,
+    stable ids, public DTO readback, and `summary_only` enforcement;
+  - added `scripts/smoke-growth-automation-release-evidence.js` as a
+    service-graph CLI with read-only `list`/`bag` defaults and explicit
+    `--allow-write` for `record`;
+  - wired the service through `src/app/services.js`, the SQLite store facade,
+    and visible-target scoped `GET /api/v1/growth/automation/release-evidence`
+    plus Owner-only `POST /api/v1/growth/automation/release-evidence`;
+  - `learning-automation-release-readiness-service` now merges active persisted
+    `pass` release evidence records into readiness evidence before one-off
+    request evidence, and exposes `persistedEvidenceKeys` in release review and
+    evidence readback.
+- Changed files:
+  - `src/services/learning-automation-release-evidence-service.js`;
+  - `src/stores/growth-learning-sqlite/automation-release-evidence.js`;
+  - `scripts/smoke-growth-automation-release-evidence.js`;
+  - `src/services/learning-automation-release-readiness-service.js`;
+  - `src/routes/growth-routes.js`;
+  - `src/app/services.js`;
+  - `src/stores/growth-learning-sqlite-store.js`;
+  - `src/stores/growth-learning-sqlite/identifiers.js`;
+  - release evidence/readiness/route/architecture tests;
+  - Growth docs and this handoff.
+- Validation passed:
+  - focused/architecture harness:
+    `node --test tests/growth-architecture-boundary.test.js tests/learning-automation-release-evidence-repository.test.js tests/learning-automation-release-evidence-service.test.js tests/growth-automation-release-evidence-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-routes.test.js`
+    (`92/92`);
+  - `npm run check` (`186/186` runtime JavaScript files covered);
+  - `npm test` (`738/738`);
+  - Home AI platform contract checker for Growth:
+    `node scripts/plugin-workspace-platform-contract-check.js --plugin growth --workspace-root /Users/hermes-dev/HermesMobileDev/plugins --repo-root /Users/hermes-dev/HermesMobileDev/app --json`;
+  - AI Ops required checks: app architecture-code harness, touched-file
+    `node --check`, and `git diff --check`;
+  - AI Ops evidence ledger append id
+    `evidence-0d7fe3ee-8ac2-40cd-ac47-7e5b9ef83707`.
+- Remaining product work:
+  - build product-visible Owner release/evidence UI so Owner can record/review
+    these records without Codex;
+  - collect real production release evidence through central visual/platform
+    tooling and Growth smoke CLIs before any runtime enablement;
+  - keep writeful/background scheduling blocked until release package,
+    dashboard, Owner approval, runtime enablement audit, and manual config
+    evidence are complete.
+
 ## 2026-06-15T21:55Z - Release Inventory Readiness Snapshot Readback Harness
 
 - Status: implemented and validated locally. This slice is backend/Harness/docs

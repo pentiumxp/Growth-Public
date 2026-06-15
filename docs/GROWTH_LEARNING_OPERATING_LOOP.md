@@ -1636,6 +1636,18 @@ Implementation progress on 2026-06-15:
   remains input normalization only: readiness remains no-write by default,
   `--write-snapshot` is still explicit, and the boundary still cannot enable
   writeful scheduling.
+- release-readiness production evidence can also be persisted one record at a
+  time through `learning-automation-release-evidence-service`,
+  `automation-release-evidence.js`,
+  `learning_growth_automation_release_evidence`, visible-target scoped
+  `GET /api/v1/growth/automation/release-evidence`, Owner-only
+  `POST /api/v1/growth/automation/release-evidence`, and
+  `npm run smoke:release-evidence`. The CLI defaults to read-only list/bag and
+  requires explicit `--allow-write` for record. Active `pass` records are
+  projected into release-readiness before one-off evidence flags or bundle
+  inputs are evaluated. This removes Codex hand-spliced JSON from the normal
+  release evidence collection path while keeping the boundary summary-only and
+  unable to grant scheduler permission.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection
@@ -1743,8 +1755,9 @@ Implementation progress on 2026-06-15:
   only as a readback artifact.
 - release-readiness output also includes bounded summary-only remediation
   fields: missing check keys, blocked check keys, missing evidence keys,
-  required actions, and one next action. These fields support Owner/release
-  review and do not enable scheduling or execution. The same output now includes
+  required actions, one next action, and persisted approval/evidence key
+  readback. These fields support Owner/release review and do not enable
+  scheduling or execution. The same output now includes
   summary-only `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
   bundle readback, present/missing counts, missing check keys, and bounded

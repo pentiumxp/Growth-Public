@@ -13,6 +13,7 @@ const { createLearningAutomationFailurePolicyService } = require("../services/le
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
+const { createLearningAutomationReleaseEvidenceService } = require("../services/learning-automation-release-evidence-service");
 const { createLearningAutomationReleaseActivationService } = require("../services/learning-automation-release-activation-service");
 const { createLearningAutomationReleaseAuthorizationService } = require("../services/learning-automation-release-authorization-service");
 const { createLearningAutomationReleaseClosureService } = require("../services/learning-automation-release-closure-service");
@@ -268,6 +269,9 @@ function createServices(config) {
   const learningAutomationReleaseApprovalService = createLearningAutomationReleaseApprovalService({
     repository: growthLearningStore.learningAutomationReleaseApprovalRepository
   });
+  const learningAutomationReleaseEvidenceService = createLearningAutomationReleaseEvidenceService({
+    repository: growthLearningStore.learningAutomationReleaseEvidenceRepository
+  });
   const learningAutomationReleaseCollectionRunService = createLearningAutomationReleaseCollectionRunService({
     repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository
   });
@@ -280,6 +284,7 @@ function createServices(config) {
   const learningAutomationReleaseReadinessService = createLearningAutomationReleaseReadinessService({
     repository: growthLearningStore.learningAutomationReleaseReadinessRepository,
     releaseApprovalService: learningAutomationReleaseApprovalService,
+    releaseEvidenceService: learningAutomationReleaseEvidenceService,
     schedulerService: learningAutomationSchedulerService,
     digestService: learningAutomationDigestService,
     failurePolicyService: learningAutomationFailurePolicyService,
@@ -459,6 +464,7 @@ function createServices(config) {
     learningAutomationReleaseControlsService,
     learningAutomationReleaseDashboardService,
     learningAutomationReleaseDecisionService,
+    learningAutomationReleaseEvidenceService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseInventoryService,
     learningAutomationReleasePackageService,

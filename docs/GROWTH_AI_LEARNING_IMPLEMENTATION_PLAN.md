@@ -658,12 +658,18 @@ Implemented backend shape:
 - `learning-automation-release-approval-service` records and lists
   summary-only approvals for individual writeful config gates and projects
   active approvals back into release-readiness input;
+- `learning-automation-release-evidence-service` records and lists
+  summary-only release evidence records for canonical release-readiness evidence
+  keys and projects active pass records back into release-readiness input before
+  one-off CLI/query evidence is evaluated;
 - `learning-automation-platform-action-evidence-service` reads only Growth
   event-outbox delivered `growth.automation.action_required` receipts and
   emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`
   release evidence; Home AI still owns Action Inbox and Web Push internals;
 - `automation-release-approvals.js` persists summary-only approval records in
   `learning_growth_automation_release_approvals`;
+- `automation-release-evidence.js` persists summary-only release evidence
+  records in `learning_growth_automation_release_evidence`;
 - `automation-release-readiness.js` persists summary-only snapshots in
   `learning_growth_automation_release_readiness`;
 - visible-target scoped `GET /api/v1/growth/automation/release-readiness`
@@ -680,9 +686,16 @@ Implemented backend shape:
 - Owner-only
   `POST /api/v1/growth/automation/release-approvals` records one summary-only
   approval for a canonical writeful config gate;
+- visible-target scoped `GET /api/v1/growth/automation/release-evidence`
+  lists public release evidence DTOs;
+- Owner-only `POST /api/v1/growth/automation/release-evidence` records one
+  summary-only evidence record for a canonical readiness evidence/check key;
 - `npm run smoke:release-readiness` evaluates the same service from the CLI.
   It is no-write by default and creates a snapshot only when
   `--write-snapshot` is supplied.
+- `npm run smoke:release-evidence` defaults to read-only list/bag, requires
+  explicit `--allow-write` for record, and delegates only to
+  `learning-automation-release-evidence-service`.
 - `npm run smoke:release-evidence-bundle` delegates to
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
@@ -937,6 +950,8 @@ Required harness:
 - `tests/learning-automation-release-readiness-repository.test.js`;
 - `tests/learning-automation-release-approval-repository.test.js`;
 - `tests/learning-automation-release-approval-service.test.js`;
+- `tests/learning-automation-release-evidence-repository.test.js`;
+- `tests/learning-automation-release-evidence-service.test.js`;
 - `tests/learning-automation-platform-action-evidence-service.test.js`;
 - `tests/learning-automation-central-visual-evidence-service.test.js`;
 - `tests/learning-automation-release-evidence-bundle-audit-service.test.js`;
@@ -948,6 +963,7 @@ Required harness:
 - `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`;
 - `tests/growth-release-collection-run-smoke-script.test.js`;
 - `tests/growth-automation-release-approval-smoke-script.test.js`;
+- `tests/growth-automation-release-evidence-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js`;
 - `tests/growth-release-evidence-bundle-script.test.js`;

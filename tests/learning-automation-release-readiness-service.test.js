@@ -140,6 +140,7 @@ function createService(options = {}) {
       }
     },
     releaseApprovalService: options.releaseApprovalService || null,
+    releaseEvidenceService: options.releaseEvidenceService || null,
     repository: options.repository || {
       saveSnapshot(input) {
         calls.push({ type: "saveSnapshot", input });
@@ -390,6 +391,46 @@ test("automation release readiness service can use persisted release approval re
   assert.deepEqual(result.releaseReview.persistedApprovalKeys, ["backgroundSchedulerApproval", "backgroundWorkerApproval", "writefulExecutionApproval"]);
   assert.equal(result.summary.writefulSchedulingAllowed, false);
   assert.equal(calls[0].type, "approvalBag");
+});
+
+test("automation release readiness service can use persisted release evidence records", () => {
+  const { calls, service } = createService({
+    releaseEvidenceService: {
+      evidenceBag(input) {
+        calls.push({ type: "evidenceBag", input });
+        return {
+          ok: true,
+          evidence: {
+            ownerDailyUiEvidence: {
+              ok: true,
+              status: "pass",
+              evidenceId: "lgarev_owner_daily_1",
+              evidenceRecordId: "lgarev_owner_daily_1",
+              observedAt: "2026-06-16T10:45:00.000Z",
+              source: "growth_release_evidence_record"
+            }
+          },
+          evidenceKeys: ["ownerDailyUiEvidence"]
+        };
+      }
+    }
+  });
+
+  const result = service.evaluateReadiness(scope());
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "incomplete");
+  assert.equal(result.checks.find((item) => item.key === "owner_daily_ui_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "owner_audit_ui_evidence").status, "missing");
+  assert.deepEqual(result.releaseReview.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
+  assert.deepEqual(result.evidence.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
+  assert.equal(result.evidenceReadback.presentEvidenceKeys.includes("ownerDailyUiEvidence"), true);
+  const ownerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
+  assert.equal(ownerDailyEvidence.evidencePresent, true);
+  assert.equal(ownerDailyEvidence.evidenceId, "lgarev_owner_daily_1");
+  assert.equal(ownerDailyEvidence.source, "growth_release_evidence_record");
+  assert.equal(calls[0].type, "evidenceBag");
+  assert.equal(calls[0].input.status, "pass");
 });
 
 test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {

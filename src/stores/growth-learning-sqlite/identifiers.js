@@ -306,6 +306,25 @@ function stableLearningAutomationReleaseApprovalId(input = {}) {
   return `lgarap_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
 }
 
+function stableLearningAutomationReleaseEvidenceRecordId(input = {}) {
+  const explicit = cleanString(input.evidenceRecordId || input.evidence_record_id || input.recordId || input.record_id || input.id);
+  if (explicit) return explicit;
+  const seed = [
+    cleanString(input.workspaceId || input.workspace_id),
+    cleanString(input.learnerId || input.learner_id),
+    cleanString(input.programId || input.program_id),
+    cleanString(input.domainPackId || input.domain_pack_id),
+    cleanString(input.domain),
+    cleanString(input.subject),
+    cleanString(input.horizon),
+    cleanString(input.evidenceKey || input.evidence_key || input.key),
+    cleanString(input.status),
+    cleanString(input.observedAt || input.observed_at || input.createdAt || input.created_at || input.requestedAt || input.requested_at),
+    sha256Hex(JSON.stringify(input.evidence || input.evidenceSummary || input.evidence_summary || {})).slice(0, 18)
+  ].join(":");
+  return `lgarev_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
+}
+
 function stableLearningAutomationReleaseActivationId(input = {}) {
   const explicit = cleanString(input.activationId || input.activation_id || input.releaseActivationId || input.release_activation_id || input.id);
   if (explicit) return explicit;
@@ -389,6 +408,7 @@ module.exports = {
   stableLearningAutomationReleaseActivationId,
   stableLearningAutomationReleaseCollectionRunId,
   stableLearningAutomationReleaseDecisionId,
+  stableLearningAutomationReleaseEvidenceRecordId,
   stableLearningAutomationReleasePackageId,
   stableLearningAutomationReleaseReadinessId,
   stableLearningAutomationRuntimeEnablementId,

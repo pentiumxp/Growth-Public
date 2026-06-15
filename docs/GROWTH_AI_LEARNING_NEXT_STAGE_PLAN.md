@@ -112,8 +112,8 @@ Growth already has substantial backend foundation:
 - Fanfan science vertical and non-sample provisioned vertical harnesses;
 - supervised automation proposal, scheduler dry-run, digest, failure policy,
   action handoff, Owner-explicit execution, scheduler run, reviewed worker
-  target, default-disabled worker lease, and release-readiness evidence
-  backend slices.
+  target, default-disabled worker lease, release-readiness evidence, persisted
+  release approval records, and persisted release evidence records.
 
 The product is not complete because the browser history controls and release
 evidence are not closed:
@@ -125,7 +125,7 @@ evidence are not closed:
   evidence and production Owner-loop smoke exist for the Growth plugin shell;
   backend historical-cycle readback exists, while browser richer older-cycle
   selection controls, formal checkpoint UI, and full automation release
-  evidence remain incomplete;
+  evidence UI/production collection remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
