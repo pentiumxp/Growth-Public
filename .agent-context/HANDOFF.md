@@ -9,6 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T04:12Z - Growth Release Readiness Worker Smoke Evidence Slice
+
+- Status: implemented and locally validated. This slice makes production
+  scheduler worker smoke evidence a required release-readiness check without
+  enabling writeful scheduling, background worker timers, scheduler execution,
+  publication, Gateway calls, notification delivery, stage activation, or
+  learner-state mutation.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI
+  AI Ops intake classified it as H1 because of release/deployment/scheduler
+  keywords; only non-deploy checks were run.
+- Scope:
+  - `learning-automation-release-readiness-service` now includes
+    `production_scheduler_worker_smoke_evidence`;
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--production-scheduler-worker-smoke-evidence`;
+  - release-readiness service, smoke-script, and architecture harnesses assert
+    the new evidence key and required action;
+  - Growth local implementation, next-stage, architecture, platform pointer,
+    and project-context docs now state that `npm run smoke:scheduler-worker`
+    evidence is required before release review.
+- Boundary:
+  - the new check is summary-only evidence input;
+  - `npm run smoke:release-readiness` remains no-write by default and writes
+    snapshots only with explicit `--write-snapshot`;
+  - release readiness remains advisory and always returns
+    `writefulSchedulingAllowed=false`;
+  - the boundary must not call Gateway, daily-loop services, publication,
+    evaluation, scheduler execution, scheduler ticks, notification delivery,
+    stage activation, direct repositories from the CLI, or learner-state
+    mutation.
+- Validation passed:
+  - syntax checks for the touched service, smoke script, and tests;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-routes.test.js
+    tests/growth-architecture-boundary.test.js` (`74` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --workspace-id smoke_workspace
+    --production-scheduler-worker-smoke-evidence --json`, which returned the
+    new check as `pass` while the overall readiness stayed `incomplete` and
+    `writefulSchedulingAllowed=false`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - Growth and Home AI `git diff --check`;
+  - `codegraph sync && codegraph status` (`224` files, `2,739` nodes,
+    `10,727` edges; index up to date);
+  - Home AI required non-deploy checks:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, and
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-32f78212-c42d-4cf6-9b56-9af5078d28f1`;
+  - `npm run --silent deploy:macos -- --target home-ai --json` and production
+    deploy were not executed because this was a Growth local Harness/docs
+    slice and the user did not request deployment.
+
 ## 2026-06-15T04:02Z - Growth Scheduler Worker Smoke CLI Slice
 
 - Status: Growth automation scheduler worker/lease boundary now has a

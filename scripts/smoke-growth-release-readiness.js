@@ -56,6 +56,7 @@ function evidenceFromArgs(args) {
   if (evidenceFlag(args, "--owner-audit-ui-evidence")) evidence.ownerAuditUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--stage-checkpoint-evidence")) evidence.stageCheckpointEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--proposal-review-ui-evidence")) evidence.proposalReviewUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--production-scheduler-worker-smoke-evidence")) evidence.productionSchedulerWorkerSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-planner-readiness-evidence")) evidence.productionPlannerReadinessEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-daily-loop-write-smoke-evidence")) evidence.productionDailyLoopWriteSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--platform-action-evidence")) evidence.platformActionEvidence = { ok: true, source: "release_readiness_smoke_flag" };

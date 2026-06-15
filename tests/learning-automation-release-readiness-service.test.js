@@ -23,6 +23,7 @@ function allEvidence() {
     ownerAuditUiEvidence: { ok: true, evidenceId: "ui_audit" },
     stageCheckpointEvidence: { ok: true, evidenceId: "stage_sep" },
     proposalReviewUiEvidence: { ok: true, evidenceId: "proposal_ui" },
+    productionSchedulerWorkerSmokeEvidence: { ok: true, evidenceId: "scheduler_worker_smoke" },
     productionPlannerReadinessEvidence: { ok: true, evidenceId: "planner_smoke" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, evidenceId: "daily_loop_write_smoke" },
     platformActionEvidence: { ok: true, evidenceId: "platform_action" },
@@ -156,6 +157,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.summary.writefulSchedulingAllowed, false);
   assert.equal(result.releaseReview.advisoryOnly, true);
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run").status, "pass");
   assert.deepEqual(calls.map((call) => call.type), [
     "listDigests",
@@ -184,6 +186,7 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.checks.find((item) => item.key === "reviewed_automation_digest").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "active_failure_policy").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "missing");
+  assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "writeful_execution_release_approval").status, "missing");
 });
 

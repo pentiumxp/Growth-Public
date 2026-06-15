@@ -365,6 +365,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_worker_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
+      presentCheck(input, "productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence", "Production scheduler worker smoke", "run_production_scheduler_worker_smoke"),
       presentCheck(input, "productionPlannerReadinessEvidence", "production_planner_readiness_evidence", "Production planner readiness smoke", "run_production_planner_readiness_smoke"),
       presentCheck(input, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish smoke", "run_controlled_daily_loop_write_smoke"),
       schedulerDryRunCheck(scope, input),

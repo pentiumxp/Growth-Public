@@ -638,7 +638,8 @@ Required behavior:
   stage-checkpoint separation, proposal review, digest review, active failure
   policy, delivered action handoff, Owner-explicit execution gate status,
   scheduler run default-disabled status, reviewed enabled worker targets,
-  worker lease/timer default-disabled status, production planner readiness
+  worker lease/timer default-disabled status, production scheduler worker smoke
+  evidence from `npm run smoke:scheduler-worker`, production planner readiness
   smoke, production controlled daily-loop draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,
   production scheduler dry-run evidence from
