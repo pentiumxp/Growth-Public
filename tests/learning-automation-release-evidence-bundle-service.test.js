@@ -27,6 +27,7 @@ function createServiceWithRunner(runner) {
 
 test("release evidence bundle service normalizes scope and task args", () => {
   assert.deepEqual(normalizeTaskIds({}), Array.from(DEFAULT_TASK_IDS));
+  assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.deepEqual(normalizeTaskIds({ tasks: ["planner-readiness", "scheduler_dry_run"] }), [
     "planner_readiness",
@@ -50,6 +51,8 @@ test("release evidence bundle service normalizes scope and task args", () => {
     targetNodeIds: ["kg_science_fair_test"],
     allowWriteEvidence: false,
     dailyLoopWriteOperation: "draft",
+    learnerCycleOperation: "audit",
+    taskCardId: "",
     planDraftId: ""
   });
   assert.deepEqual(scopeArgs({
@@ -94,7 +97,8 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     domain: "science",
     subject: "science",
     targetNodeIds: ["kg_science_fair_test"],
-    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "stage_assessment", "proposal"],
+    taskCardId: "ltask_science_daily_1",
+    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "learner_cycle", "stage_assessment", "proposal"],
     requestedBy: "owner"
   });
 
@@ -108,23 +112,54 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     "productionPlannerReadinessEvidence",
     "productionDailyLoopPreviewSmokeEvidence",
     "productionLearningLoopStateSmokeEvidence",
+    "productionLearnerCycleSmokeEvidence",
     "stageCheckpointEvidence",
     "productionProposalSmokeEvidence"
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
-  assert.equal(result.bundle.summary.taskCount, 5);
+  assert.equal(result.bundle.summary.taskCount, 6);
   assert.equal(result.bundle.summary.blockedCount, 0);
-  assert.equal(calls.length, 5);
+  assert.equal(calls.length, 6);
   assert.equal(calls[0].command, "/node");
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-planner-readiness.js"));
   assert.ok(calls[2].args[0].endsWith("scripts/smoke-growth-learning-loop-state.js"));
-  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
-  assert.ok(calls[3].args.includes("--target-node-id"));
-  assert.ok(calls[3].args.includes("kg_science_fair_test"));
-  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
+  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));
+  assert.ok(calls[3].args.includes("--operation"));
+  assert.ok(calls[3].args.includes("audit"));
+  assert.ok(calls[3].args.includes("--task-card-id"));
+  assert.ok(calls[3].args.includes("ltask_science_daily_1"));
+  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
+  assert.ok(calls[4].args.includes("--target-node-id"));
+  assert.ok(calls[4].args.includes("kg_science_fair_test"));
+  assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
   assert.ok(calls[0].args.includes("--json"));
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
+});
+
+test("release evidence bundle service blocks learner-cycle write operations from bundle scope", () => {
+  const { calls, service } = createServiceWithRunner(() => {
+    throw new Error("runner should not be called for learner-cycle write scope");
+  });
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    learnerCycleOperation: "full",
+    taskCardId: "ltask_science_daily_1",
+    tasks: ["learner_cycle"]
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(calls.length, 0);
+  assert.deepEqual(result.bundle.summary.failedTaskIds, ["learner_cycle"]);
+  const evidence = result.bundle.evidence.productionLearnerCycleSmokeEvidence;
+  assert.equal(evidence.status, "blocked");
+  assert.equal(evidence.error, "release_evidence_bundle_learner_cycle_operation_invalid");
+  assert.deepEqual(evidence.allowedOperations, ["audit"]);
+  assert.equal(evidence.summary.operation, "full");
+  assert.equal(evidence.summary.useDirectSmoke, "npm run smoke:learner-cycle");
+  assert.equal(JSON.stringify(result.bundle).includes("learner answer"), false);
 });
 
 test("release evidence bundle service keeps blocked smoke as bounded evidence", () => {
@@ -302,6 +337,7 @@ test("release evidence bundle service fails closed for missing workspace, invali
   assert.equal(invalidTask.ok, false);
   assert.equal(invalidTask.error, "release_evidence_bundle_task_invalid");
   assert.deepEqual(invalidTask.invalidTaskIds, ["unknown_task"]);
+  assert.ok(invalidTask.allowedTaskIds.includes("learner_cycle"));
   assert.ok(invalidTask.allowedTaskIds.includes("daily_loop_write"));
 
   const privacy = createServiceWithRunner(() => ({

@@ -5,11 +5,13 @@ const path = require("node:path");
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
 const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish"]);
+const LEARNER_CYCLE_BUNDLE_OPERATIONS = new Set(["audit"]);
 
 const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
   "learning_loop_state",
+  "learner_cycle",
   "stage_assessment",
   "proposal",
   "scheduler_dry_run",
@@ -45,6 +47,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "learner_cycle",
+    evidenceKey: "productionLearnerCycleSmokeEvidence",
+    script: "scripts/smoke-growth-learner-cycle.js",
+    commandName: "npm run smoke:learner-cycle"
   },
   {
     taskId: "daily_loop_write",
@@ -212,6 +220,7 @@ function publicScope(input = {}) {
   const workspaceId = cleanString(input.workspaceId || input.workspace_id, 120);
   const targetNodeIds = uniqueStrings(input.targetNodeIds || input.target_node_ids || []);
   const dailyLoopWriteOperation = cleanString(input.dailyLoopWriteOperation || input.daily_loop_write_operation || "draft", 40).toLowerCase() || "draft";
+  const learnerCycleOperation = cleanString(input.learnerCycleOperation || input.learner_cycle_operation || "audit", 40).toLowerCase() || "audit";
   return {
     workspaceId,
     learnerId: cleanString(input.learnerId || input.learner_id || workspaceId, 120),
@@ -225,6 +234,8 @@ function publicScope(input = {}) {
     targetNodeIds,
     allowWriteEvidence: booleanFlag(input.allowWriteEvidence || input.allow_write_evidence),
     dailyLoopWriteOperation,
+    learnerCycleOperation,
+    taskCardId: cleanString(input.taskCardId || input.task_card_id, 120),
     planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120)
   };
 }
@@ -291,7 +302,9 @@ function releaseApprovalTaskResult(task, taskResult, generatedAt) {
     ? parsed.error
     : privacyFindings.length
       ? "release_evidence_bundle_smoke_privacy_failed"
-      : cleanString(parsedValue.error || taskResult.error || "");
+      : parsedValue.ok === false
+        ? cleanString(parsedValue.error || "release_evidence_bundle_smoke_reported_not_ok")
+        : cleanString(parsedValue.error || taskResult.error || "");
   const pass = parsed.ok && privacyFindings.length === 0 && taskResult.exitCode === 0 && parsedValue.ok === true;
   const releaseApproval = pass ? releaseApprovalFromSmoke(parsedValue) : {};
   const taskSummary = {
@@ -326,7 +339,9 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
     ? parsed.error
     : privacyFindings.length
       ? "release_evidence_bundle_smoke_privacy_failed"
-      : cleanString(parsedValue.error || taskResult.error || "");
+      : parsedValue.ok === false
+        ? cleanString(parsedValue.error || "release_evidence_bundle_smoke_reported_not_ok")
+        : cleanString(parsedValue.error || taskResult.error || "");
   const pass = parsed.ok && privacyFindings.length === 0 && taskResult.exitCode === 0 && parsedValue.ok === true;
   const evidence = {
     ok: pass,
@@ -370,6 +385,16 @@ function blockedEvidenceFromTask(task, generatedAt, error, details = {}) {
 }
 
 function preflightTaskEvidence(task, scope, generatedAt) {
+  if (task.taskId === "learner_cycle" && !LEARNER_CYCLE_BUNDLE_OPERATIONS.has(scope.learnerCycleOperation)) {
+    return blockedEvidenceFromTask(task, generatedAt, "release_evidence_bundle_learner_cycle_operation_invalid", {
+      allowedOperations: Array.from(LEARNER_CYCLE_BUNDLE_OPERATIONS),
+      summary: {
+        operation: scope.learnerCycleOperation,
+        allowedOperations: Array.from(LEARNER_CYCLE_BUNDLE_OPERATIONS),
+        useDirectSmoke: "npm run smoke:learner-cycle"
+      }
+    });
+  }
   if (!task.writeEvidence) return null;
   if (!scope.allowWriteEvidence) {
     return blockedEvidenceFromTask(task, generatedAt, "release_evidence_bundle_write_evidence_not_allowed", {
@@ -406,6 +431,10 @@ function preflightTaskEvidence(task, scope, generatedAt) {
 
 function taskSpecificArgs(task, scope) {
   const args = Array.from(task.extraArgs || []);
+  if (task.taskId === "learner_cycle") {
+    args.push("--operation", scope.learnerCycleOperation);
+    if (scope.taskCardId) args.push("--task-card-id", scope.taskCardId);
+  }
   if (task.taskId === "daily_loop_write") {
     args.push("--operation", scope.dailyLoopWriteOperation, "--allow-write");
     if (scope.planDraftId) args.push("--plan-draft-id", scope.planDraftId);

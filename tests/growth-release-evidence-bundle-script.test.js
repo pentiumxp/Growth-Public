@@ -57,6 +57,8 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--tasks", "daily_loop_preview,learning_loop_state,scheduler_dry_run",
     "--requested-by", "owner",
     "--created-at", "2026-06-15T06:10:00.000Z",
+    "--task-card-id", "ltask_science_daily_1",
+    "--learner-cycle-operation", "audit",
     "--allow-write-evidence",
     "--daily-loop-write-operation", "publish",
     "--plan-draft-id", "lgpd_daily_1",
@@ -88,6 +90,8 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     createdAt: "2026-06-15T06:10:00.000Z",
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
     tasks: ["planner-readiness", "daily_loop_preview", "learning_loop_state", "scheduler_dry_run"],
+    taskCardId: "ltask_science_daily_1",
+    learnerCycleOperation: "audit",
     allowWriteEvidence: true,
     dailyLoopWriteOperation: "publish",
     planDraftId: "lgpd_daily_1"
@@ -116,10 +120,65 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("learner_cycle"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
+});
+
+test("release evidence bundle script writes bounded learner-cycle audit evidence from read-only learner smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "learner-cycle-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task-card-id", "ltask_smoke_daily_1",
+      "--task", "learner_cycle",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.productionLearnerCycleSmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.productionLearnerCycleSmokeEvidence.smoke, "npm run smoke:learner-cycle");
+    assert.equal(fileBundle.evidence.productionLearnerCycleSmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.productionLearnerCycleSmokeEvidence.summary.source, "growth-learning-learner-cycle-service");
+    assert.equal(fileBundle.evidence.productionLearnerCycleSmokeEvidence.summary.operation, "audit");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(fileBundle.scope.learnerCycleOperation, "audit");
+    assert.equal(fileBundle.scope.taskCardId, "ltask_smoke_daily_1");
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script blocks learner-cycle write operations before smoke runner", () => {
+  const result = runScript([
+    "--workspace-id", "smoke_workspace",
+    "--learner-id", "smoke_learner",
+    "--task-card-id", "ltask_smoke_daily_1",
+    "--task", "learner_cycle",
+    "--learner-cycle-operation", "full",
+    "--json"
+  ]);
+
+  assert.equal(result.status, 0);
+  const bundle = parseStdout(result);
+  assert.equal(bundle.summary.blockedCount, 1);
+  assert.deepEqual(bundle.summary.failedTaskIds, ["learner_cycle"]);
+  assert.equal(bundle.evidence.productionLearnerCycleSmokeEvidence.status, "blocked");
+  assert.equal(bundle.evidence.productionLearnerCycleSmokeEvidence.error, "release_evidence_bundle_learner_cycle_operation_invalid");
+  assert.deepEqual(bundle.evidence.productionLearnerCycleSmokeEvidence.allowedOperations, ["audit"]);
+  assert.equal(bundle.evidence.productionLearnerCycleSmokeEvidence.summary.useDirectSmoke, "npm run smoke:learner-cycle");
+  assert.equal(JSON.stringify(bundle).includes("stdout"), false);
 });
 
 test("release evidence bundle script exposes controlled daily-loop write evidence only as explicit blocked task by default", () => {

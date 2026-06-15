@@ -412,8 +412,11 @@ Backend shape:
   under `/api/v1/growth/automation/release-readiness/snapshots`.
 - `npm run smoke:release-evidence-bundle` for summary-only evidence bundle
   assembly from selected no-write/default-disabled smoke CLIs, including
-  read-only stage-assessment readiness, proposal smoke, and release-approval
-  bag projection by default. The controlled daily-loop draft/publish evidence
+  learner-cycle audit, read-only stage-assessment readiness, proposal smoke,
+  and release-approval bag projection by default. The learner-cycle bundle
+  path is audit-only and maps to `productionLearnerCycleSmokeEvidence`; write
+  operations must use direct `npm run smoke:learner-cycle` with explicit
+  Owner-requested evidence. The controlled daily-loop draft/publish evidence
   path is the explicit non-default `daily_loop_write` task, gated by
   `--allow-write-evidence` and delegated to `scripts/smoke-growth-daily-loop.js`.
 
@@ -423,8 +426,8 @@ Required behavior:
   `npm run smoke:stage-assessment`, proposal review, production proposal smoke,
   digest, active failure-policy, delivered handoff, execution gate, scheduler
   run, reviewed worker target, worker lease, planner smoke, controlled
-  daily-loop write smoke, production dry-run, platform Action Inbox/Web Push,
-  visual, and release approval evidence;
+  daily-loop write smoke, learner-cycle audit smoke, production dry-run,
+  platform Action Inbox/Web Push, visual, and release approval evidence;
 - return bounded `pass`, `missing`, `blocked`, or `not_applicable` check
   states;
 - persist optional summary-only readiness snapshots for Owner/release review;
@@ -432,12 +435,15 @@ Required behavior:
   artifacts produced by the bundle builder without trusting raw smoke output,
   including bounded `releaseApproval` fields collected from
   `npm run smoke:release-approval -- --operation bag` and bounded
+  `productionLearnerCycleSmokeEvidence` collected only from no-write audit,
+  plus bounded
   `productionDailyLoopWriteSmokeEvidence` only when the explicit
   `daily_loop_write` task passes;
 - keep `writefulSchedulingAllowed=false`;
 - never call Gateway, plan publication, card generation, evaluation,
-  proposal execution, scheduler execution, scheduler run, Action Inbox/Web
-  Push delivery, stage-assessment activation, or learner-state writes.
+  learner-cycle services, proposal execution, scheduler execution, scheduler
+  run, Action Inbox/Web Push delivery, stage-assessment activation, or
+  learner-state writes.
 
 Minimum package harness:
 

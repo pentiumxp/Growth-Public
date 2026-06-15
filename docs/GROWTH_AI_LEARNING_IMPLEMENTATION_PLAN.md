@@ -163,7 +163,7 @@ amount of code that already exists.
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
-| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production controlled daily-loop write smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
+| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
 
 Sequencing rule:
 
@@ -656,12 +656,17 @@ Implemented backend shape:
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
-  stage-assessment readiness, proposal smoke, and read-only release approval
-  bag projection in the default task set. It maps
+  learner-cycle audit, stage-assessment readiness, proposal smoke, and
+  read-only release approval bag projection in the default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
-  collecting stage-checkpoint evidence. Use `--task daily_loop_write
+  collecting stage-checkpoint evidence. The default `learner_cycle` task
+  allows only no-write `audit` and maps to
+  `productionLearnerCycleSmokeEvidence`; use direct
+  `npm run smoke:learner-cycle` for any Owner-requested write operation
+  because learner submissions/reflections must not pass through the bundle.
+  Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
   the task is outside the default bundle, fails closed without that explicit
@@ -699,6 +704,9 @@ Required behavior:
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`
   or the explicit write-gated `daily_loop_write` release-bundle task,
+  production learner-cycle audit smoke evidence from
+  `npm run smoke:learner-cycle` or the default `learner_cycle`
+  release-bundle task,
   production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`, release-readiness internal
   no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push evidence,
@@ -743,6 +751,8 @@ Remaining release gaps:
   production learning-loop state smoke from `npm run smoke:learning-loop-state`,
   production controlled daily-loop draft/publish smoke from
   `npm run smoke:daily-loop` or the explicit `daily_loop_write`
+  release-bundle task, production learner-cycle audit smoke from
+  `npm run smoke:learner-cycle` or the default `learner_cycle`
   release-bundle task, and production scheduler dry-run smoke from
   `npm run smoke:scheduler-dry-run`;
 - Owner-visible product UI evidence for recording/reviewing release approvals

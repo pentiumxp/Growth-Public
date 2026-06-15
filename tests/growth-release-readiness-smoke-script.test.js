@@ -69,6 +69,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-daily-loop-preview-smoke-evidence",
     "--production-learning-loop-state-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
+    "--production-learner-cycle-smoke-evidence",
     "--production-scheduler-dry-run-smoke-evidence",
     "--release-approval-json", JSON.stringify({
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" }
@@ -99,6 +100,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
   });
   assert.deepEqual(releaseApprovalFromArgs(args), {
@@ -133,6 +135,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" }
     },
     releaseApproval: {

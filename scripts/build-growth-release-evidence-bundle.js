@@ -89,6 +89,8 @@ function inputFromArgs(args) {
     createdAt: firstArgValue(args, ["--created-at", "--createdAt"], ""),
     targetNodeIds: targetNodeIds(args),
     tasks: taskIds(args),
+    taskCardId: firstArgValue(args, ["--task-card-id", "--taskCardId"], ""),
+    learnerCycleOperation: firstArgValue(args, ["--learner-cycle-operation", "--learnerCycleOperation"], "audit") || "audit",
     allowWriteEvidence: hasFlag(args, "--allow-write-evidence") || hasFlag(args, "--allowWriteEvidence"),
     dailyLoopWriteOperation: firstArgValue(args, ["--daily-loop-write-operation", "--dailyLoopWriteOperation"], "draft") || "draft",
     planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], "")

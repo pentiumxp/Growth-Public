@@ -124,11 +124,13 @@ The current product state should therefore be described precisely:
 - browser-operable means Owner and learner can complete the loop from the
   embedded plugin without Codex or database-console work;
 - release-reviewable means product, platform, visual, production controlled
-  daily-loop write smoke, production dry-run, and harness evidence can be
+  daily-loop write smoke, production learner-cycle audit smoke, production
+  dry-run, and harness evidence can be
   inspected by a human release decision; controlled daily-loop write smoke may
   be collected through the explicit non-default `daily_loop_write`
-  release-bundle task, but that collection is evidence only and not an
-  automation permission;
+  release-bundle task, while learner-cycle audit smoke is collected through
+  the default audit-only `learner_cycle` bundle task. Both collections are
+  evidence only and not automation permission;
 - writeful automation allowed means a later, explicit release-management
   boundary has approved runtime config after all previous evidence exists.
 
@@ -368,7 +370,7 @@ background scheduler.
 | A5: Failure policy and action handoff | Growth records active rollback/failure policy and delivers bounded action metadata. | No learning-state mutation. |
 | A6: Owner-explicit execution | Owner can execute one delivered handoff action after every gate is rechecked. | Default-disabled; when enabled, delegates only to accepted-proposal publish and records execution audit. |
 | A7: Background scheduler contract | Default-disabled supervised tick over delivered handoff actions, Owner-reviewed persistent worker targets, and default-disabled worker leases, with any future unattended worker kept separate. | Delegates only to the execution service; production worker use requires reviewed enabled targets, release evidence, and explicit config. |
-| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production controlled daily-loop write smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
+| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
 
 Writeful scheduling can be considered only after:
 

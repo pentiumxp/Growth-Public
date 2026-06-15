@@ -1589,9 +1589,13 @@ Implementation progress on 2026-06-15:
   through `npm run smoke:release-readiness -- --evidence-bundle-file <path>`
   or `--evidence-bundle-json <json>`. The bundle can be built by
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
-  default-disabled smoke CLIs, includes read-only stage-assessment readiness
-  proposal smoke, and read-only release approval bag projection by default,
-  and emits only summary evidence. Controlled daily-loop draft/publish smoke
+  default-disabled smoke CLIs, includes read-only learner-cycle audit,
+  read-only stage-assessment readiness, proposal smoke, and read-only release
+  approval bag projection by default, and emits only summary evidence. The
+  default `learner_cycle` task is audit-only and maps to
+  `productionLearnerCycleSmokeEvidence`; write operations still require direct
+  `npm run smoke:learner-cycle` with explicit Owner-requested learner
+  evidence. Controlled daily-loop draft/publish smoke
   can be added only with the explicit non-default `daily_loop_write` task plus
   `--allow-write-evidence`, and the builder then delegates to the existing
   daily-loop smoke write gate instead of importing daily-loop services. This

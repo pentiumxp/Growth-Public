@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T12:05Z - Release Evidence Bundle Adds Learner-Cycle Audit Evidence
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production deploy is required for this slice because it changes
+  release-evidence collection, docs, and harness only.
+- Scope:
+  - `learning-automation-release-readiness-service` now treats
+    `productionLearnerCycleSmokeEvidence` as a required advisory release check
+    with key `production_learner_cycle_smoke_evidence` and action
+    `run_production_learner_cycle_smoke`;
+  - `scripts/smoke-growth-release-readiness.js` accepts
+    `--production-learner-cycle-smoke-evidence`;
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    default `learner_cycle` task, runs
+    `scripts/smoke-growth-learner-cycle.js --operation audit`, and maps the
+    bounded result into `productionLearnerCycleSmokeEvidence`;
+  - release bundle `learner_cycle` is audit-only. Non-audit learner-cycle
+    operations are blocked with
+    `release_evidence_bundle_learner_cycle_operation_invalid` and point to
+    direct `npm run smoke:learner-cycle`, because write operations require
+    explicit Owner-requested learner evidence and raw learner text/reflection
+    must not pass through the release bundle;
+  - the bundle remains summary-only, has no route/repository/service-graph
+    import, does not call Gateway, daily-loop services, learner-cycle services,
+    publication, generation, evaluation, scheduler execution/ticks,
+    notification delivery, stage activation, or learner-state mutation.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_ROADMAP.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Validation passed:
+  - operational no-write bundle/readiness chain against a temporary SQLite DB:
+    pre-create empty DB, run `node scripts/build-growth-release-evidence-bundle.js
+    --task learner_cycle --task-card-id ltask_smoke_daily_1 --output-file
+    <bundle> --result-json --json`, then run
+    `node scripts/smoke-growth-release-readiness.js --evidence-bundle-file
+    <bundle> --json`; bundle produced
+    `productionLearnerCycleSmokeEvidence.status=pass`, and readiness projected
+    `production_learner_cycle_smoke_evidence=pass` while overall readiness
+    remained `incomplete` because other release evidence was absent;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-learner-cycle-smoke-script.test.js` (`67` tests).
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `npm test -- --test-reporter=spec` (`550` tests);
+  - `codegraph sync && codegraph status` (`247` files, `3,183` nodes,
+    `12,306` edges, index up to date).
+
 ## 2026-06-15T11:14Z - Release Evidence Bundle Opt-In Daily Loop Write Task
 
 - Status: implemented and locally validated; commit/push follows this handoff
