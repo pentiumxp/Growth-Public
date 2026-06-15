@@ -130,6 +130,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
   assert.ok(output.allowedTaskIds.includes("cycle_history"));
+  assert.ok(output.allowedTaskIds.includes("owner_audit"));
   assert.ok(output.allowedTaskIds.includes("profile_feedback"));
   assert.ok(output.allowedTaskIds.includes("learner_cycle"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
@@ -161,6 +162,36 @@ test("release evidence bundle script writes bounded cycle-history evidence from 
     assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.smoke, "npm run smoke:cycle-history");
     assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.status, "pass");
     assert.equal(fileBundle.evidence.productionCycleHistorySmokeEvidence.summary.source, "growth-learning-cycle-history-service");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script writes bounded Owner audit evidence from read-only audit smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "owner-audit-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "owner_audit",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.productionOwnerAuditSmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.productionOwnerAuditSmokeEvidence.smoke, "npm run smoke:owner-audit");
+    assert.equal(fileBundle.evidence.productionOwnerAuditSmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.productionOwnerAuditSmokeEvidence.summary.source, "growth-owner-audit-smoke");
+    assert.equal(fileBundle.evidence.productionOwnerAuditSmokeEvidence.summary.operation, "audit");
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);

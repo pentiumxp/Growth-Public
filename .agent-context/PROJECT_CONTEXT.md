@@ -154,6 +154,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-cycle-history-smoke-evidence` after
   `npm run smoke:cycle-history` has produced bounded no-write production
   cycle-history readback evidence, accepts
+  `--production-owner-audit-smoke-evidence` after
+  `npm run smoke:owner-audit` has produced bounded no-write Owner audit
+  readback evidence, accepts
   `--production-profile-feedback-smoke-evidence` after
   `npm run smoke:profile-feedback` has produced bounded no-write completed-cycle
   profile-feedback evidence, accepts
@@ -173,10 +176,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
-  includes learning-loop state smoke, cycle-history smoke, profile-feedback
-  smoke, learner-cycle audit smoke, stage-assessment readiness smoke, and
-  proposal smoke in the default task set, and now also collects the read-only
-  release approval bag through
+  includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
+  profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
+  smoke, and proposal smoke in the default task set, and now also collects the
+  read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
   without hand-splicing JSON in Codex. It also exposes an opt-in
@@ -193,7 +196,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   daily-loop services directly. The builder maps persisted approvals into the
   versioned bundle `releaseApproval` field only and maps profile-feedback smoke
   into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
-  `productionCycleHistorySmokeEvidence`, controlled daily-loop write smoke into
+  `productionCycleHistorySmokeEvidence`, Owner audit smoke into
+  `productionOwnerAuditSmokeEvidence`, controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change

@@ -1597,16 +1597,19 @@ Implementation progress on 2026-06-15:
   or `--evidence-bundle-json <json>`. The bundle can be built by
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
   default-disabled smoke CLIs, includes no-write cycle-history evidence,
-  no-write profile-feedback evidence, read-only learner-cycle audit, read-only
-  stage-assessment readiness, proposal smoke, and read-only release approval bag
-  projection by default, and emits
+  read-only Owner audit evidence, no-write profile-feedback evidence, read-only
+  learner-cycle audit, read-only stage-assessment readiness, proposal smoke,
+  and read-only release approval bag projection by default, and emits
   only summary evidence. The default `profile_feedback` task maps to
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
   completed-cycle selector can read back audit completeness, persisted evidence,
   persisted profile delta, Profile V2, recommendation, and next loop state. The
   default `cycle_history` task maps to
   `productionCycleHistorySmokeEvidence` and proves bounded historical-cycle
-  selection through the read-only cycle-history service. The
+  selection through the read-only cycle-history service. The default
+  `owner_audit` task maps to `productionOwnerAuditSmokeEvidence` and proves
+  bounded Owner audit/completeness/correction readback through the read-only
+  Owner audit smoke. The
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner

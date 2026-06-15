@@ -124,12 +124,13 @@ The current product state should therefore be described precisely:
 - browser-operable means Owner and learner can complete the loop from the
   embedded plugin without Codex or database-console work;
 - release-reviewable means product, platform, visual, production controlled
-  daily-loop write smoke, production cycle-history smoke, production
-  learner-cycle audit smoke, production dry-run, and harness evidence can be
+  daily-loop write smoke, production cycle-history smoke, production Owner
+  audit smoke, production learner-cycle audit smoke, production dry-run, and harness evidence can be
   inspected by a human release decision; controlled daily-loop write smoke may
   be collected through the explicit non-default `daily_loop_write`
-  release-bundle task, while learner-cycle audit smoke is collected through
-  the default audit-only `learner_cycle` bundle task. Both collections are
+  release-bundle task, while Owner audit smoke is collected through the default
+  `owner_audit` bundle task and learner-cycle audit smoke is collected through
+  the default audit-only `learner_cycle` bundle task. These collections are
   evidence only and not automation permission;
 - writeful automation allowed means a later, explicit release-management
   boundary has approved runtime config after all previous evidence exists.
@@ -370,7 +371,7 @@ background scheduler.
 | A5: Failure policy and action handoff | Growth records active rollback/failure policy and delivers bounded action metadata. | No learning-state mutation. |
 | A6: Owner-explicit execution | Owner can execute one delivered handoff action after every gate is rechecked. | Default-disabled; when enabled, delegates only to accepted-proposal publish and records execution audit. |
 | A7: Background scheduler contract | Default-disabled supervised tick over delivered handoff actions, Owner-reviewed persistent worker targets, and default-disabled worker leases, with any future unattended worker kept separate. | Delegates only to the execution service; production worker use requires reviewed enabled targets, release evidence, and explicit config. |
-| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production cycle-history smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
+| A8: Release-readiness evidence | Growth summarizes product, platform, visual, stage-checkpoint smoke, production proposal smoke, production cycle-history smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production dry-run, config, reviewed-target, and explicit release evidence. | No write permission; advisory release review artifact only. |
 
 Writeful scheduling can be considered only after:
 
@@ -621,7 +622,7 @@ Minimum harness by boundary:
 | Profile feedback evidence | `tests/learning-profile-feedback-evidence-service.test.js`, `tests/growth-profile-feedback-smoke-script.test.js`, the Fanfan science post-cycle assertion in `tests/learning-card-ai-loop-harness.test.js`, and `npm run smoke:profile-feedback` prove completed-cycle audit/evidence/profile-delta/Profile V2/recommendation/next-state readback without Gateway calls or writes. |
 | Cycle history readback | `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, route/architecture guards, and `npm run smoke:cycle-history` prove selectable historical-cycle readback from public audit services without Gateway calls, writes, direct repository access, publication, generation, evaluation, scheduling, notification, stage activation, or learner-state mutation. |
 | Learner daily-cycle smoke | `tests/growth-learner-cycle-smoke-script.test.js` and `npm run smoke:learner-cycle` prove the service-owned submit -> evaluate -> reflect -> audit path. The CLI defaults to no-write audit, requires `--allow-write` for learner-state writes, and returns summary-only ids/status/counts/findings without learner text, transcripts, raw prompts, answer keys, raw model output, credentials, or provider config. |
-| Owner audit/correction | `tests/growth-owner-audit-smoke-script.test.js` and `npm run smoke:owner-audit` prove read-only cycle audit/completeness/correction readback by default, explicit `--allow-write` before correction writes, privacy-risk input rejection, and no direct repository, Gateway, generation, evaluation, scheduler, notification, or stage-activation calls from the CLI. |
+| Owner audit/correction | `tests/growth-owner-audit-smoke-script.test.js` and `npm run smoke:owner-audit` prove read-only cycle audit/completeness/correction readback by default, explicit `--allow-write` before correction writes, privacy-risk input rejection, default release-bundle `owner_audit` collection into `productionOwnerAuditSmokeEvidence`, and no direct repository, Gateway, generation, evaluation, scheduler, notification, or stage-activation calls from the CLI. |
 | Non-sample loop | Visible but unprovisioned target blocks before model calls; explicit provision enables; wrong subject blocks; target workspace owns rows. |
 | UI boundary | Progress states, visible errors, mobile scroll, dark-mode contrast, no hidden controls, and no silent generate action. |
 | Automation boundary | Proposal, scheduler dry-run, digest, failure policy, action handoff, Owner-explicit scheduler execution, and future background scheduling prove no forbidden direct Gateway/card-generation/stage-activation/table access. |

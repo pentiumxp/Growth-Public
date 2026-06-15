@@ -172,6 +172,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--production-daily-loop-preview-smoke-evidence")) evidence.productionDailyLoopPreviewSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-learning-loop-state-smoke-evidence")) evidence.productionLearningLoopStateSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-cycle-history-smoke-evidence")) evidence.productionCycleHistorySmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--production-owner-audit-smoke-evidence")) evidence.productionOwnerAuditSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-profile-feedback-smoke-evidence")) evidence.productionProfileFeedbackSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-daily-loop-write-smoke-evidence")) evidence.productionDailyLoopWriteSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-learner-cycle-smoke-evidence")) evidence.productionLearnerCycleSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };

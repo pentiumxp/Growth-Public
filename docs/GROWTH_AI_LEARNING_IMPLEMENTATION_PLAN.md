@@ -671,13 +671,15 @@ Implemented backend shape:
   `learning-automation-release-evidence-bundle-service` and builds a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
-  cycle-history readback, read-only learner-cycle audit, stage-assessment
-  readiness, proposal smoke, and read-only release approval bag projection in
-  the default task set. It maps
+  cycle-history readback, read-only Owner audit readback, read-only
+  learner-cycle audit, stage-assessment readiness, proposal smoke, and
+  read-only release approval bag projection in the default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
-  collecting stage-checkpoint evidence. The default `learner_cycle` task
+  collecting stage-checkpoint evidence. The default `owner_audit` task maps
+  no-write `npm run smoke:owner-audit` output to
+  `productionOwnerAuditSmokeEvidence`. The default `learner_cycle` task
   allows only no-write `audit` and maps to
   `productionLearnerCycleSmokeEvidence`; use direct
   `npm run smoke:learner-cycle` for any Owner-requested write operation
@@ -718,7 +720,9 @@ Required behavior:
   `npm run smoke:daily-loop-preview`, production learning-loop state smoke
   evidence from `npm run smoke:learning-loop-state`, production cycle-history
   smoke evidence from `npm run smoke:cycle-history` or the default
-  `cycle_history` release-bundle task, production controlled daily-loop
+  `cycle_history` release-bundle task, production Owner audit smoke evidence
+  from `npm run smoke:owner-audit` or the default `owner_audit`
+  release-bundle task, production controlled daily-loop
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`
   or the explicit write-gated `daily_loop_write` release-bundle task,
@@ -739,9 +743,10 @@ Required behavior:
   `--evidence-bundle-file` / `--evidence-bundle-json`, and summary evidence
   flags through the CLI;
 - keep `writefulSchedulingAllowed=false` and never flip runtime config;
-- never call Gateway, publish plans, generate cards, evaluate submissions,
-  record proposal execution, run scheduler execution, start scheduler ticks,
-  deliver notifications, activate stage assessments, or mutate learner state.
+- never call Gateway, Owner audit services directly, publish plans, generate
+  cards, evaluate submissions, record proposal execution, run scheduler
+  execution, start scheduler ticks, deliver notifications, activate stage
+  assessments, or mutate learner state.
 
 Required harness:
 
@@ -769,6 +774,8 @@ Remaining release gaps:
   production learning-loop state smoke from `npm run smoke:learning-loop-state`,
   production cycle-history smoke from `npm run smoke:cycle-history` or the
   default `cycle_history` release-bundle task,
+  production Owner audit smoke from `npm run smoke:owner-audit` or the default
+  `owner_audit` release-bundle task,
   production controlled daily-loop draft/publish smoke from
   `npm run smoke:daily-loop` or the explicit `daily_loop_write`
   release-bundle task, production learner-cycle audit smoke from

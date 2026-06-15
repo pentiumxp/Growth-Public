@@ -12,6 +12,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "daily_loop_preview",
   "learning_loop_state",
   "cycle_history",
+  "owner_audit",
   "profile_feedback",
   "learner_cycle",
   "stage_assessment",
@@ -55,6 +56,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionCycleHistorySmokeEvidence",
     script: "scripts/smoke-growth-cycle-history.js",
     commandName: "npm run smoke:cycle-history"
+  },
+  {
+    taskId: "owner_audit",
+    evidenceKey: "productionOwnerAuditSmokeEvidence",
+    script: "scripts/smoke-growth-owner-audit.js",
+    commandName: "npm run smoke:owner-audit"
   },
   {
     taskId: "profile_feedback",

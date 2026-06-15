@@ -982,6 +982,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionLearningLoopStateSmokeEvidence/);
   assert.match(scriptHarness, /productionCycleHistorySmokeEvidence/);
+  assert.match(scriptHarness, /productionOwnerAuditSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /productionLearnerCycleSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerDryRunSmokeEvidence/);
@@ -1033,6 +1034,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionCycleHistorySmokeEvidence/);
   assert.match(releaseReadinessService, /production_cycle_history_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_cycle_history_smoke/);
+  assert.match(releaseReadinessService, /productionOwnerAuditSmokeEvidence/);
+  assert.match(releaseReadinessService, /production_owner_audit_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_owner_audit_smoke/);
   assert.match(releaseReadinessService, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(releaseReadinessService, /production_daily_loop_write_smoke_evidence/);
   assert.match(releaseReadinessService, /run_controlled_daily_loop_write_smoke/);
@@ -1095,6 +1099,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /daily_loop_write/);
   assert.match(service, /productionLearnerCycleSmokeEvidence/);
   assert.match(service, /productionCycleHistorySmokeEvidence/);
+  assert.match(service, /productionOwnerAuditSmokeEvidence/);
   assert.match(service, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
@@ -1110,6 +1115,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(service, /productionLearningLoopStateSmokeEvidence/);
   assert.match(service, /smoke-growth-cycle-history\.js/);
+  assert.match(service, /smoke-growth-owner-audit\.js/);
   assert.match(service, /stageCheckpointEvidence/);
   assert.match(service, /productionProposalSmokeEvidence/);
   assert.match(service, /productionSchedulerDryRunSmokeEvidence/);
@@ -1154,6 +1160,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   const serviceHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
   assert.match(serviceHarness, /builds summary-only bundle from no-write smoke tasks/);
   assert.match(serviceHarness, /cycle_history/);
+  assert.match(serviceHarness, /owner_audit/);
   assert.match(serviceHarness, /blocks learner-cycle write operations from bundle scope/);
   assert.match(serviceHarness, /blocks controlled daily-loop write evidence unless explicitly allowed/);
   assert.match(serviceHarness, /runs controlled daily-loop write smoke only after bundle write approval/);
@@ -1163,6 +1170,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   const scriptHarness = read(path.join("tests", "growth-release-evidence-bundle-script.test.js"));
   assert.match(scriptHarness, /writes a summary-only bundle from a read-only smoke/);
   assert.match(scriptHarness, /writes bounded cycle-history evidence from read-only history smoke/);
+  assert.match(scriptHarness, /writes bounded Owner audit evidence from read-only audit smoke/);
   assert.match(scriptHarness, /writes bounded learner-cycle audit evidence from read-only learner smoke/);
   assert.match(scriptHarness, /blocks learner-cycle write operations before smoke runner/);
   assert.match(scriptHarness, /exposes controlled daily-loop write evidence only as explicit blocked task by default/);
