@@ -1754,7 +1754,12 @@ Implementation progress on 2026-06-15:
   publication, evaluation, or learner state. Release controls, inventory, and
   dashboard project only bounded summaries of that catalog, such as present/
   missing counts and source bundle ids, so Owner surfaces can inspect release
-  evidence completeness without expanding full evidence items.
+  evidence completeness without expanding full evidence items. Persisted
+  release-readiness snapshot readback uses the repository public `readinessId`
+  as the canonical snapshot identifier; release inventory and dashboard must
+  preserve that id in `latestReadinessSnapshotId` instead of requiring a
+  separate `snapshotId`. The controls, inventory, and dashboard smoke harnesses
+  cover this bounded readback path with temporary SQLite scenarios.
 
 The next product-completeness slice is embedded UI and production readiness:
 

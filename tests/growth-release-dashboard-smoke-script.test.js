@@ -14,6 +14,21 @@ const {
   validateInput
 } = require("../scripts/smoke-growth-release-dashboard");
 
+const repoRoot = path.join(__dirname, "..");
+
+function runSmoke(scriptName, args, env = {}) {
+  const stdout = childProcess.execFileSync(process.execPath, [
+    path.join(repoRoot, "scripts", scriptName),
+    ...args,
+    "--json"
+  ], {
+    cwd: repoRoot,
+    env: Object.assign({}, process.env, { NODE_NO_WARNINGS: "1" }, env),
+    encoding: "utf8"
+  });
+  return JSON.parse(stdout);
+}
+
 test("release dashboard smoke script parses bounded scope and release selectors", () => {
   const input = inputFromArgs([
     "--workspace-id", "fanfan",
@@ -96,11 +111,56 @@ test("release dashboard smoke script runs no-write read model against a temporar
     assert.equal(output.status, "release_evidence_required");
     assert.equal(output.releaseDashboard.summaryOnly, true);
     assert.equal(output.releaseDashboard.status, "release_evidence_required");
+    assert.equal(output.releaseDashboard.readinessEvidencePresentCount, 0);
+    assert.equal(output.releaseDashboard.readinessEvidenceMissingCount, 27);
+    assert.equal(output.releaseReadiness.evidenceReadback.summaryOnly, true);
+    assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(output.releaseInventory.summaryOnly, true);
     assert.equal(output.artifactReadback.summaryOnly, true);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
+    assert.equal(output.runtimeConfigMutationPerformed, false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("release dashboard smoke script reads persisted readiness snapshot evidence from SQLite", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-dashboard-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const env = {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    };
+    const readiness = runSmoke("smoke-growth-release-readiness.js", [
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain-pack-id", "uk_hk_curriculum_foundation",
+      "--domain", "science",
+      "--subject", "science",
+      "--write-snapshot",
+      "--created-by", "weixin_owner",
+      "--created-at", "2026-06-15T18:10:00.000Z"
+    ], env);
+    const output = runSmoke("smoke-growth-release-dashboard.js", [
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--domain", "science",
+      "--subject", "science"
+    ], env);
+
+    assert.equal(readiness.snapshot.evidenceReadback.summaryOnly, true);
+    assert.equal(output.operation, "dashboard");
+    assert.equal(output.releaseDashboard.latestReadinessSnapshotId, readiness.snapshot.readinessId);
+    assert.equal(output.releaseDashboard.latestReadinessEvidencePresentCount, 0);
+    assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 27);
+    assert.equal(output.artifactReadback.snapshots.latestId, readiness.snapshot.readinessId);
+    assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 27);
+    assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

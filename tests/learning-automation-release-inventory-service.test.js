@@ -14,7 +14,7 @@ function createService(overrides = {}, calls = []) {
           ok: true,
           count: 1,
           snapshots: [{
-            snapshotId: "lgarsnap_1",
+            readinessId: "lgar_ready_1",
             status: "ready_for_release_review",
             privacyClass: "summary_only",
             evidenceReadback: {
@@ -199,7 +199,7 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.schemaVersion, RELEASE_INVENTORY_SCHEMA);
   assert.equal(result.status, "manual_runtime_config_required");
   assert.equal(result.releaseInventory.artifactCount, 7);
-  assert.equal(result.releaseInventory.latestReadinessSnapshotId, "lgarsnap_1");
+  assert.equal(result.releaseInventory.latestReadinessSnapshotId, "lgar_ready_1");
   assert.equal(result.releaseInventory.latestReadinessEvidencePresentCount, 26);
   assert.equal(result.releaseInventory.latestReadinessEvidenceMissingCount, 1);
   assert.equal(result.releaseInventory.latestReadinessEvidenceSourceBundleId, "bundle_inventory_1");

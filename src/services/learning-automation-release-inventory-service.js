@@ -102,7 +102,7 @@ function firstAvailableId(record = {}, keys = []) {
 
 function primaryIdKeys(kind) {
   const byKind = {
-    release_readiness_snapshot: ["snapshotId", "snapshot_id"],
+    release_readiness_snapshot: ["readinessId", "readiness_id", "snapshotId", "snapshot_id"],
     release_collection_run: ["collectionRunId", "collection_run_id", "runId", "run_id"],
     release_decision: ["decisionId", "decision_id"],
     release_package: ["packageId", "package_id"],
@@ -171,6 +171,7 @@ function recordSummary(kind, record = {}) {
   const activationGates = record.requestedActivationGates || record.requested_activation_gates || record.activationGates || record.activation_gates;
   const approvalKey = cleanString(record.approvalKey || record.approval_key || record.gate || record.configKey || record.config_key, 160);
   const id = firstAvailableId(record, primaryIdKeys(kind).concat([
+    "readinessId", "readiness_id",
     "snapshotId", "snapshot_id",
     "decisionId", "decision_id",
     "packageId", "package_id",

@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T21:55Z - Release Inventory Readiness Snapshot Readback Harness
+
+- Status: implemented and validated locally. This slice is backend/Harness/docs
+  only. It does not deploy, apply runtime config, grant scheduler permission,
+  call Gateway/model vendors, publish cards/plans, evaluate submissions, run
+  scheduler actions, deliver notifications, activate stage assessments, mutate
+  learner state, or write production release records.
+- Scope:
+  - `learning-automation-release-inventory-service` now treats the persisted
+    release-readiness repository public `readinessId` as the canonical
+    readiness snapshot id, while still accepting legacy `snapshotId`;
+  - release inventory and release dashboard now preserve real SQLite
+    readiness snapshot ids in `latestReadinessSnapshotId` and keep bounded
+    `evidenceReadback` count projection intact;
+  - release controls, inventory, and dashboard smoke harnesses now assert the
+    bounded readiness evidence-readback path; inventory/dashboard also seed a
+    temporary SQLite readiness snapshot via the public readiness smoke CLI and
+    prove downstream readback by id.
+- Changed files:
+  - `src/services/learning-automation-release-inventory-service.js`;
+  - `tests/learning-automation-release-inventory-service.test.js`;
+  - `tests/growth-release-controls-smoke-script.test.js`;
+  - `tests/growth-release-dashboard-smoke-script.test.js`;
+  - `tests/growth-release-inventory-smoke-script.test.js`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Validation passed:
+  - focused release readback harness:
+    `node --test tests/learning-automation-release-inventory-service.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-release-controls-smoke-script.test.js`
+    (`17/17`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`183/183` runtime JavaScript files covered);
+  - `npm test` (`727/727`);
+  - Home AI platform contract checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json`;
+  - AI Ops required checks:
+    `node tests/architecture-code-test-harness-map.test.js`, touched-file
+    `node --check`, and `git diff --check`;
+  - AI Ops evidence ledger append id
+    `evidence-3754f757-7779-4c00-904f-b21f94ecf1e8`.
+- Remaining product work:
+  - continue toward product-visible Owner release/evidence UI and real
+    production release evidence collection;
+  - no runtime enablement should be attempted until platform, visual, action,
+    scheduler, package/dashboard, Owner approval, and manual config evidence are
+    complete.
+
 ## 2026-06-15T21:47Z - Release Readiness Evidence Readback Downstream Projection
 
 - Status: implemented and validated locally. This slice is

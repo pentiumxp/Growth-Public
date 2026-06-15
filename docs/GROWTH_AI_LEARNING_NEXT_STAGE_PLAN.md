@@ -357,7 +357,10 @@ Use the Growth-owned release-readiness boundary:
   both tasks are non-default, no-write, accept the same release readback flags,
   and map bounded outputs to `releaseInventorySmokeEvidence` and
   `releaseDashboardSmokeEvidence` respectively. Passing these tasks means the
-  read models were collected, not that release state changed.
+  read models were collected, not that release state changed. The final readback
+  smoke harnesses must also prove persisted release-readiness snapshots can be
+  read from SQLite by `readinessId` and projected as `latestReadinessSnapshotId`
+  with bounded evidenceReadback counts in inventory and dashboard outputs.
 - release evidence bundle audit CLI:
   `npm run smoke:release-evidence-bundle-audit -- --workspace-id <workspace> --release-evidence-bundle-file <bundle.json> --json`.
   This audit delegates to

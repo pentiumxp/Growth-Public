@@ -106,8 +106,11 @@ backend boundaries:
   expand raw package artifacts. Controls, inventory, and dashboard readbacks
   also project only bounded release-readiness `evidenceReadback` summaries:
   present/missing counts, source bundle id/status/counts, and missing check
-  keys. They do not expose full evidence item payloads and they cannot change
-  readiness, release, scheduler, or runtime-config state.
+  keys. Persisted release-readiness snapshot readback uses `readinessId` as the
+  canonical public id; inventory/dashboard summaries must preserve it in
+  `latestReadinessSnapshotId` even when legacy callers still provide
+  `snapshotId`. They do not expose full evidence item payloads and they cannot
+  change readiness, release, scheduler, or runtime-config state.
 
 Known gaps before the architecture can be called production-complete for the
 full operating loop:
