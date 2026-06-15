@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T05:32Z - Growth Persisted Release Approval Records Slice
+
+- Status: implemented and locally validated. This slice closes the previous
+  backend gap where release-readiness accepted temporary approval input but did
+  not persist explicit approval records for each writeful config gate.
+- Change classification: H2 by Growth local scope because it adds SQLite
+  persistence, Owner write routes, readiness input fallback, and smoke harness
+  for release evidence. Home AI AI Ops intake classified the slice as H3
+  architecture-doc/Harness map work and required
+  `node tests/architecture-code-test-harness-map.test.js` plus diff hygiene.
+- Scope:
+  - new repository:
+    `src/stores/growth-learning-sqlite/automation-release-approvals.js`;
+  - new table:
+    `learning_growth_automation_release_approvals`;
+  - new service:
+    `src/services/learning-automation-release-approval-service.js`;
+  - new routes:
+    visible-target scoped
+    `GET /api/v1/growth/automation/release-approvals` and Owner-only
+    `POST /api/v1/growth/automation/release-approvals`;
+  - new smoke CLI:
+    `npm run smoke:release-approval`;
+  - `learning-automation-release-readiness-service` now reads active persisted
+    approval records through the approval service and projects
+    `releaseReview.persistedApprovalKeys`;
+  - release-readiness query approval parsing no longer treats absent approval
+    query params as explicit false, so persisted approvals are not accidentally
+    hidden by omitted parameters;
+  - Growth docs and platform pointer now document the approval boundary.
+- Boundary:
+  - persisted approvals are summary-only evidence records for canonical gates:
+    `writefulExecutionApproval`, `backgroundSchedulerApproval`, and
+    `backgroundWorkerApproval`;
+  - approval records do not flip runtime config and readiness still always
+    returns `writefulSchedulingAllowed=false`;
+  - the release approval CLI defaults to read-only list, supports read-only bag
+    projection, and requires explicit `--allow-write` for record;
+  - no Gateway calls, plan publication, card generation, evaluation, scheduler
+    execution, scheduler ticks, notification delivery, stage activation,
+    learner-state mutation, production deploy, or direct repository access from
+    smoke CLIs were added.
+- Validation passed:
+  - syntax checks for touched runtime files, tests, and `package.json`;
+  - focused
+    `node --test tests/learning-automation-release-approval-repository.test.js
+    tests/learning-automation-release-approval-service.test.js
+    tests/growth-automation-release-approval-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`89` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=137`, `checkedCount=137`);
+  - operational read-only
+    `npm run smoke:release-approval -- --workspace-id smoke_workspace
+    --learner-id smoke_learner --json`;
+  - `npm test -- --test-reporter=spec` (`495` tests);
+  - `codegraph sync && codegraph status` (`230` files, `2,824` nodes,
+    `11,037` edges; index up to date);
+  - Home AI required check:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Growth and Home AI `git diff --check`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-a060610d-dc9c-43f4-8e8a-602e7930133b`;
+  - production deploy was not executed because this was a Growth local
+    backend/Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T05:10Z - Growth Release Readiness Evidence Bundle Input Slice
 
 - Status: implemented and locally validated. This slice lets

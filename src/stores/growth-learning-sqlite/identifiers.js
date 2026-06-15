@@ -234,6 +234,23 @@ function stableLearningAutomationReleaseReadinessId(input = {}) {
   return `lgarel_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
 }
 
+function stableLearningAutomationReleaseApprovalId(input = {}) {
+  const explicit = cleanString(input.approvalId || input.approval_id || input.id);
+  if (explicit) return explicit;
+  const seed = [
+    cleanString(input.workspaceId || input.workspace_id),
+    cleanString(input.learnerId || input.learner_id),
+    cleanString(input.programId || input.program_id),
+    cleanString(input.domainPackId || input.domain_pack_id),
+    cleanString(input.domain),
+    cleanString(input.subject),
+    cleanString(input.horizon),
+    cleanString(input.approvalKey || input.approval_key || input.configGate || input.config_gate),
+    cleanString(input.approvalVersion || input.approval_version || "growth.learningAutomationReleaseApproval.v1")
+  ].join(":");
+  return `lgarap_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
+}
+
 function stableDomainPackProvisionId(input = {}) {
   const explicit = cleanString(input.provisionId || input.provision_id || input.id);
   if (explicit) return explicit;
@@ -275,6 +292,7 @@ module.exports = {
   stableLearningAutomationSchedulerRunId,
   stableLearningAutomationSchedulerWorkerLeaseId,
   stableLearningAutomationSchedulerWorkerTargetId,
+  stableLearningAutomationReleaseApprovalId,
   stableLearningAutomationReleaseReadinessId,
   stableLearningEvidenceId,
   stableLearningCoinLedgerEntryId,

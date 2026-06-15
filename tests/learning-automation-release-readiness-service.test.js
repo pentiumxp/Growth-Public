@@ -132,6 +132,7 @@ function createService(options = {}) {
         };
       }
     },
+    releaseApprovalService: options.releaseApprovalService || null,
     repository: options.repository || {
       saveSnapshot(input) {
         calls.push({ type: "saveSnapshot", input });
@@ -281,6 +282,53 @@ test("automation release readiness service accepts release approval aliases but 
   assert.equal(approvalAlias.ok, true);
   assert.equal(approvalAlias.status, "ready_for_release_review");
   assert.equal(approvalAlias.config.writefulSchedulingAllowed, false);
+});
+
+test("automation release readiness service can use persisted release approval records", () => {
+  const { calls, service } = createService({
+    releaseApprovalService: {
+      approvalBag(input) {
+        calls.push({ type: "approvalBag", input });
+        return {
+          ok: true,
+          releaseApproval: {
+            writefulExecutionApproval: {
+              approved: true,
+              status: "approved",
+              approvalId: "lgarap_writeful_1",
+              source: "growth_release_approval_record"
+            },
+            backgroundSchedulerApproval: {
+              approved: true,
+              status: "approved",
+              approvalId: "lgarap_scheduler_1",
+              source: "growth_release_approval_record"
+            },
+            backgroundWorkerApproval: {
+              approved: true,
+              status: "approved",
+              approvalId: "lgarap_worker_1",
+              source: "growth_release_approval_record"
+            }
+          },
+          approvalKeys: ["backgroundSchedulerApproval", "backgroundWorkerApproval", "writefulExecutionApproval"]
+        };
+      }
+    }
+  });
+
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: allEvidence()
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "ready_for_release_review");
+  assert.equal(result.checks.find((item) => item.key === "writeful_execution_release_approval").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "background_scheduler_release_approval").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "background_worker_release_approval").status, "pass");
+  assert.deepEqual(result.releaseReview.persistedApprovalKeys, ["backgroundSchedulerApproval", "backgroundWorkerApproval", "writefulExecutionApproval"]);
+  assert.equal(result.summary.writefulSchedulingAllowed, false);
+  assert.equal(calls[0].type, "approvalBag");
 });
 
 test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {

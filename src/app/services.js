@@ -9,6 +9,7 @@ const { createLearningAutomationActionHandoffService } = require("../services/le
 const { createLearningAutomationDigestService } = require("../services/learning-automation-digest-service");
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
+const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
 const { createLearningAutomationSchedulerRunService } = require("../services/learning-automation-scheduler-run-service");
@@ -253,8 +254,12 @@ function createServices(config) {
     leaseMs: config.automationBackgroundWorkerLeaseMs,
     defaultTargets: config.automationBackgroundWorkerTargets
   });
+  const learningAutomationReleaseApprovalService = createLearningAutomationReleaseApprovalService({
+    repository: growthLearningStore.learningAutomationReleaseApprovalRepository
+  });
   const learningAutomationReleaseReadinessService = createLearningAutomationReleaseReadinessService({
     repository: growthLearningStore.learningAutomationReleaseReadinessRepository,
+    releaseApprovalService: learningAutomationReleaseApprovalService,
     schedulerService: learningAutomationSchedulerService,
     digestService: learningAutomationDigestService,
     failurePolicyService: learningAutomationFailurePolicyService,
@@ -326,6 +331,7 @@ function createServices(config) {
     learningAutomationDigestService,
     learningAutomationFailurePolicyService,
     learningAutomationProposalService,
+    learningAutomationReleaseApprovalService,
     learningAutomationReleaseReadinessService,
     learningAutomationSchedulerExecutionService,
     learningAutomationSchedulerRunService,

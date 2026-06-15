@@ -503,11 +503,18 @@ function releaseApprovalFromBody(body = {}) {
   });
 }
 
+function queryBoolean(url, camelName, snakeName) {
+  const value = url.searchParams.has(camelName) ? url.searchParams.get(camelName)
+    : url.searchParams.has(snakeName) ? url.searchParams.get(snakeName)
+      : undefined;
+  return value === undefined ? undefined : truthy(value);
+}
+
 function releaseApprovalFromQuery(url) {
   return {
-    writefulExecutionApproval: truthy(url.searchParams.get("writefulExecutionApproval") || url.searchParams.get("writeful_execution_approval")),
-    backgroundSchedulerApproval: truthy(url.searchParams.get("backgroundSchedulerApproval") || url.searchParams.get("background_scheduler_approval")),
-    backgroundWorkerApproval: truthy(url.searchParams.get("backgroundWorkerApproval") || url.searchParams.get("background_worker_approval"))
+    writefulExecutionApproval: queryBoolean(url, "writefulExecutionApproval", "writeful_execution_approval"),
+    backgroundSchedulerApproval: queryBoolean(url, "backgroundSchedulerApproval", "background_scheduler_approval"),
+    backgroundWorkerApproval: queryBoolean(url, "backgroundWorkerApproval", "background_worker_approval")
   };
 }
 
@@ -533,6 +540,46 @@ function normalizeAutomationReleaseReadinessSnapshotInput(body, workspaceId, tar
     releaseApproval: releaseApprovalFromBody(body),
     limit: body.limit,
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    createdAt: body.createdAt || body.created_at
+  };
+}
+
+function normalizeAutomationReleaseApprovalListInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "",
+    approvalKey: url.searchParams.get("approvalKey") || url.searchParams.get("approval_key") || url.searchParams.get("configGate") || url.searchParams.get("config_gate") || "",
+    status: url.searchParams.get("status") || "",
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
+function normalizeAutomationReleaseApprovalInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    approvalKey: body.approvalKey || body.approval_key || body.configGate || body.config_gate || body.gate || body.key,
+    approvalVersion: body.approvalVersion || body.approval_version,
+    approval: body.approval || body.approvalSummary || body.approval_summary,
+    evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
+    note: body.note || body.reason || body.summary,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    approvedBy: body.approvedBy || body.approved_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    approvedAt: body.approvedAt || body.approved_at,
     createdAt: body.createdAt || body.created_at
   };
 }
@@ -1013,6 +1060,12 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-approvals") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseApprovalService.listApprovals(normalizeAutomationReleaseApprovalListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-readiness") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseReadinessService.evaluateReadiness(normalizeAutomationReleaseReadinessQueryInput(url, target));
@@ -1245,6 +1298,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseReadinessService.createSnapshot(
       normalizeAutomationReleaseReadinessSnapshotInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-approvals") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_approval_owner_required", "Automation release approvals require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleaseApprovalService.recordApproval(
+      normalizeAutomationReleaseApprovalInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

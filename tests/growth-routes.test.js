@@ -2372,6 +2372,37 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseApprovalService: {
+      listApprovals(input) {
+        calls.push({ type: "listReleaseApprovals", input });
+        return {
+          ok: true,
+          count: 1,
+          approvals: [{
+            approvalId: "lgarap_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            approvalKey: input.approvalKey || "writefulExecutionApproval",
+            status: "approved"
+          }]
+        };
+      },
+      recordApproval(input) {
+        calls.push({ type: "recordReleaseApproval", input });
+        return {
+          ok: true,
+          duplicate: false,
+          approval: {
+            approvalId: "lgarap_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            approvalKey: input.approvalKey,
+            status: "approved",
+            writefulSchedulingAllowed: false
+          }
+        };
+      }
+    },
     growthService: {}
   });
   const baseUrl = await listen(server);
@@ -2409,9 +2440,35 @@ test("growth automation release readiness routes are visible-target scoped and s
         },
         releaseApproval: {
           writefulExecutionApproval: true,
-          backgroundSchedulerApproval: false,
-          backgroundWorkerApproval: false
+          backgroundSchedulerApproval: undefined,
+          backgroundWorkerApproval: undefined
         }
+      }
+    });
+
+    const approvalList = await fetch(`${baseUrl}/api/v1/growth/automation/release-approvals?workspaceId=growth:weixin_fanfan&learnerId=fanfan&approvalKey=writeful_execution&status=approved&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(approvalList.status, 200);
+    assert.equal((await approvalList.json()).approvals[0].approvalId, "lgarap_route_1");
+    assert.deepEqual(calls[1], {
+      type: "listReleaseApprovals",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "",
+        domainPackId: "",
+        domain: "",
+        subject: "",
+        horizon: "",
+        approvalKey: "writeful_execution",
+        status: "approved",
+        limit: "5"
       }
     });
 
@@ -2423,7 +2480,7 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(snapshotList.status, 200);
     assert.equal((await snapshotList.json()).snapshots[0].readinessId, "lgarel_route_1");
-    assert.deepEqual(calls[1], {
+    assert.deepEqual(calls[2], {
       type: "listReadinessSnapshots",
       input: {
         workspaceId: "weixin_fanfan",
@@ -2467,7 +2524,7 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(created.status, 201);
     assert.equal((await created.json()).snapshot.readinessId, "lgarel_route_1");
-    assert.deepEqual(calls[2], {
+    assert.deepEqual(calls[3], {
       type: "createReadinessSnapshot",
       input: {
         workspaceId: "weixin_fanfan",
@@ -2500,6 +2557,53 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const approvalCreated = await fetch(`${baseUrl}/api/v1/growth/automation/release-approvals`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        approval_key: "writeful_execution",
+        evidence: { evidenceId: "release_evidence_1" },
+        approved_at: "2026-06-15T16:55:00.000Z"
+      })
+    });
+    assert.equal(approvalCreated.status, 201);
+    assert.equal((await approvalCreated.json()).approval.approvalId, "lgarap_route_1");
+    assert.deepEqual(calls[4], {
+      type: "recordReleaseApproval",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        approvalKey: "writeful_execution",
+        approvalVersion: undefined,
+        approval: undefined,
+        evidence: { evidenceId: "release_evidence_1" },
+        note: undefined,
+        requestedBy: "weixin_stephen",
+        approvedBy: "weixin_stephen",
+        approvedAt: "2026-06-15T16:55:00.000Z",
+        createdAt: undefined
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -2512,6 +2616,19 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedCreate.status, 403);
     assert.equal((await deniedCreate.json()).error.code, "growth_automation_release_readiness_owner_required");
+
+    const deniedApprovalCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-approvals`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen", approval_key: "writeful_execution" })
+    });
+    assert.equal(deniedApprovalCreate.status, 403);
+    assert.equal((await deniedApprovalCreate.json()).error.code, "growth_automation_release_approval_owner_required");
 
     const deniedRead = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness?workspaceId=weixin_fanfan`, {
       headers: {

@@ -617,7 +617,12 @@ Implemented backend shape:
 
 - `learning-automation-release-readiness-service` evaluates the release review
   checklist from summary-only service DTOs, config flags, scheduler dry-run
-  evidence, and external evidence keys;
+  evidence, external evidence keys, and persisted release approval records;
+- `learning-automation-release-approval-service` records and lists
+  summary-only approvals for individual writeful config gates and projects
+  active approvals back into release-readiness input;
+- `automation-release-approvals.js` persists summary-only approval records in
+  `learning_growth_automation_release_approvals`;
 - `automation-release-readiness.js` persists summary-only snapshots in
   `learning_growth_automation_release_readiness`;
 - visible-target scoped `GET /api/v1/growth/automation/release-readiness`
@@ -628,9 +633,18 @@ Implemented backend shape:
 - Owner-only
   `POST /api/v1/growth/automation/release-readiness/snapshots` creates
   summary-only review snapshots;
+- visible-target scoped
+  `GET /api/v1/growth/automation/release-approvals` lists public approval
+  DTOs;
+- Owner-only
+  `POST /api/v1/growth/automation/release-approvals` records one summary-only
+  approval for a canonical writeful config gate;
 - `npm run smoke:release-readiness` evaluates the same service from the CLI.
   It is no-write by default and creates a snapshot only when
   `--write-snapshot` is supplied.
+- `npm run smoke:release-approval` delegates to the approval service. It
+  defaults to read-only list, supports read-only approval bag projection, and
+  requires explicit `--allow-write` for `record`.
 
 Required behavior:
 
@@ -656,7 +670,8 @@ Required behavior:
   production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`, release-readiness internal
   no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push evidence,
-  central embedded visual evidence, and explicit release approval;
+  central embedded visual evidence, and explicit release approval records for
+  each writeful config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
 - persist optional Owner-created summary-only snapshots for audit review;
@@ -673,7 +688,10 @@ Required behavior:
 Required harness:
 
 - `tests/learning-automation-release-readiness-repository.test.js`;
+- `tests/learning-automation-release-approval-repository.test.js`;
+- `tests/learning-automation-release-approval-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
+- `tests/growth-automation-release-approval-smoke-script.test.js`;
 - `tests/growth-release-readiness-smoke-script.test.js`;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`;
@@ -690,7 +708,8 @@ Remaining release gaps:
 - production planner readiness smoke, production controlled daily-loop
   draft/publish smoke, and production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`;
-- explicit release approval records for each writeful config gate.
+- Owner-visible product UI evidence for recording/reviewing release approvals
+  outside the smoke CLI.
 
 ## Immediate Execution Guidance
 

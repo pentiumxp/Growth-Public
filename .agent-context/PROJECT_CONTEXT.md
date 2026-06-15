@@ -85,7 +85,16 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `automation-release-readiness.js`,
   `learning_growth_automation_release_readiness`, visible-target readiness
   read/list routes, and Owner-only snapshot creation; it is advisory evidence
-  only and always keeps `writefulSchedulingAllowed=false`. It now treats
+  only and always keeps `writefulSchedulingAllowed=false`. Explicit approval
+  records for writeful config gates are now Growth-owned as
+  `learning-automation-release-approval-service`,
+  `automation-release-approvals.js`, and
+  `learning_growth_automation_release_approvals`, with visible-target scoped
+  `GET /api/v1/growth/automation/release-approvals`, Owner-only
+  `POST /api/v1/growth/automation/release-approvals`, and
+  `npm run smoke:release-approval`; release-readiness can read active approval
+  records as `releaseReview.persistedApprovalKeys`, but approval records remain
+  advisory evidence and never flip runtime config. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check while still never calling daily-loop services from
   the release-readiness boundary. It now also has
@@ -325,7 +334,7 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   candidates only to the execution service, and must not become production
   unattended scheduling without platform action evidence, central visual
   evidence, production dry-run evidence, reviewed enabled worker targets,
-  focused harnesses, and explicit release approval. Focused repository/service/
+  focused harnesses, and persisted explicit release approval. Focused repository/service/
   route/HTTP-glue/architecture harnesses cover disabled config, invalid mode,
   no delivered actions, execution delegation, partial downstream execution,
   domain/horizon filters, worker target create/review/list, active/stale

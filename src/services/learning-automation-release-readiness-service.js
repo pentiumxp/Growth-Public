@@ -55,6 +55,22 @@ function releaseApprovalBag(input = {}) {
   return input.releaseApproval || input.release_approval || input.approvals || {};
 }
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
+function mergeReleaseApprovals(input = {}, persisted = {}) {
+  const approvalBag = releaseApprovalBag(input);
+  const merged = Object.assign({}, persisted);
+  Object.entries(approvalBag || {}).forEach(([key, value]) => {
+    if (value !== undefined) merged[key] = value;
+  });
+  ["writefulExecutionApproval", "backgroundSchedulerApproval", "backgroundWorkerApproval"].forEach((key) => {
+    if (hasOwn(input, key)) merged[key] = input[key];
+  });
+  return merged;
+}
+
 function evidenceOk(input = {}, key) {
   const bag = evidenceBag(input);
   const value = input[key] ?? bag[key];
@@ -77,7 +93,7 @@ function evidenceRef(input = {}, key) {
 
 function releaseApproved(input = {}, key) {
   const approvals = releaseApprovalBag(input);
-  const value = input[key] ?? approvals[key];
+  const value = hasOwn(input, key) ? input[key] : approvals[key];
   if (value === true) return true;
   if (value && typeof value === "object") return value.approved === true || value.ok === true || value.status === "approved";
   return false;
@@ -189,12 +205,31 @@ function buildSummary(scope, checks) {
 
 function createLearningAutomationReleaseReadinessService(options = {}) {
   const repository = options.repository || null;
+  const releaseApprovalService = options.releaseApprovalService || null;
   const schedulerService = options.schedulerService || null;
   const digestService = options.digestService || null;
   const failurePolicyService = options.failurePolicyService || null;
   const actionHandoffService = options.actionHandoffService || null;
   const schedulerWorkerTargetService = options.schedulerWorkerTargetService || null;
   const config = options.config || {};
+
+  function persistedReleaseApprovals(scope = {}) {
+    if (!releaseApprovalService || typeof releaseApprovalService.approvalBag !== "function") {
+      return { ok: true, releaseApproval: {}, approvalKeys: [] };
+    }
+    const result = releaseApprovalService.approvalBag(Object.assign({}, scope, {
+      status: "approved",
+      limit: 50
+    }));
+    if (!result?.ok) {
+      return unavailable(result?.error || "learning_automation_release_readiness_release_approval_unavailable");
+    }
+    return {
+      ok: true,
+      releaseApproval: result.releaseApproval || {},
+      approvalKeys: Array.isArray(result.approvalKeys) ? result.approvalKeys : Object.keys(result.releaseApproval || {}).sort()
+    };
+  }
 
   function schedulerDryRunCheck(scope, input) {
     if (!schedulerService || typeof schedulerService.dryRun !== "function") {
@@ -333,6 +368,11 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
     if (!scope.workspaceId) return unavailable("learning_automation_release_readiness_scope_required");
     const privacyFindings = scanPrivacy(input);
     if (privacyFindings.length) return unavailable("learning_automation_release_readiness_privacy_failed", { privacyFindings });
+    const persistedApprovals = persistedReleaseApprovals(scope);
+    if (!persistedApprovals.ok) return persistedApprovals;
+    const inputWithReleaseApproval = Object.assign({}, input, {
+      releaseApproval: mergeReleaseApprovals(input, persistedApprovals.releaseApproval)
+    });
 
     const checks = [
       presentCheck(input, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
@@ -382,9 +422,9 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       schedulerDryRunCheck(scope, input),
       presentCheck(input, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
       presentCheck(input, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
-      configGateCheck(input, config, "writeful_execution_release_approval", "automationWritefulExecutionEnabled", "writefulExecutionApproval", "Writeful execution release approval"),
-      configGateCheck(input, config, "background_scheduler_release_approval", "automationBackgroundSchedulerEnabled", "backgroundSchedulerApproval", "Background scheduler release approval"),
-      configGateCheck(input, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")
+      configGateCheck(inputWithReleaseApproval, config, "writeful_execution_release_approval", "automationWritefulExecutionEnabled", "writefulExecutionApproval", "Writeful execution release approval"),
+      configGateCheck(inputWithReleaseApproval, config, "background_scheduler_release_approval", "automationBackgroundSchedulerEnabled", "backgroundSchedulerApproval", "Background scheduler release approval"),
+      configGateCheck(inputWithReleaseApproval, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")
     ];
     const summary = buildSummary(scope, checks);
     return {
@@ -417,6 +457,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         schemaVersion: "growth.learningAutomationReleaseReadiness.releaseReview.v1",
         summaryOnly: true,
         readyForReleaseReview: summary.readyForReleaseReview,
+        persistedApprovalKeys: persistedApprovals.approvalKeys,
         writefulSchedulingAllowed: false,
         advisoryOnly: true
       }
