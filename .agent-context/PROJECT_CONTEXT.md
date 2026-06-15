@@ -252,6 +252,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   manual-runtime-config follow-up hints without applying config. It owns no
   repository/table, calls no Gateway/model provider, writes no business state,
   and keeps all runtime mutation and scheduling permission flags false.
+  Growth now also has `npm run smoke:release-workbench-action`,
+  `learning-automation-release-workbench-action-service`, and Owner-only
+  `POST /api/v1/growth/automation/release-workbench/actions` as the write-gated
+  action facade over that workbench. The facade reads the workbench first,
+  requires the requested endpoint to be advertised, then delegates only to
+  existing release evidence, release approval, release package-record, release
+  activation, or runtime enablement record services. It stores/passes only
+  summary-only bounded action/evidence/approval/decision data and does not
+  build packages, create readiness snapshots, record collection runs, record
+  release decisions, call Gateway/model providers, publish, schedule, mutate
+  runtime config, grant scheduler permission, or mutate learner state.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only

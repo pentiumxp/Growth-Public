@@ -4339,6 +4339,140 @@ test("growth automation release workbench route returns visible-target Owner act
   }
 });
 
+test("growth automation release workbench action route is Owner-write and visible-target scoped", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "weixin_fanfan") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspaceId };
+      },
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationReleaseWorkbenchActionService: {
+      recordAction(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "recorded",
+          endpointKey: input.endpointKey,
+          actionRecord: {
+            summaryOnly: true,
+            endpointKey: input.endpointKey,
+            recordId: "lgarev_route_1",
+            recordStatus: "pass"
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        endpoint_key: "release_evidence",
+        evidence_key: "owner_daily_ui_evidence",
+        evidence: { evidenceId: "owner_daily_ui_1" },
+        requested_by: "weixin_owner"
+      })
+    });
+    assert.equal(response.status, 201);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningAutomationReleaseWorkbenchAction.v1");
+    assert.equal(body.actionRecord.recordId, "lgarev_route_1");
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      domainPackId: undefined,
+      domain: undefined,
+      subject: undefined,
+      horizon: "daily_plan",
+      collectionRunId: undefined,
+      endpointKey: "release_evidence",
+      actionKey: undefined,
+      action: undefined,
+      evidenceKey: "owner_daily_ui_evidence",
+      approvalKey: undefined,
+      activationGate: undefined,
+      activationGates: undefined,
+      releasePackage: undefined,
+      activationDecision: undefined,
+      enablementDecision: undefined,
+      approval: undefined,
+      evidence: { evidenceId: "owner_daily_ui_1" },
+      note: undefined,
+      requestedBy: "weixin_owner",
+      recordedBy: "weixin_owner",
+      approvedBy: "weixin_owner",
+      recordedAt: undefined,
+      approvedAt: undefined,
+      createdAt: undefined,
+      ownerAuthorizedWrite: true
+    });
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_fanfan", endpoint_key: "release_evidence" })
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_automation_release_workbench_action_owner_required");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth profile correction routes are Owner-only and limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

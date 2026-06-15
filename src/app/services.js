@@ -26,6 +26,7 @@ const { createLearningAutomationReleaseInventoryService } = require("../services
 const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
+const { createLearningAutomationReleaseWorkbenchActionService } = require("../services/learning-automation-release-workbench-action-service");
 const { createLearningAutomationReleaseWorkbenchService } = require("../services/learning-automation-release-workbench-service");
 const { createLearningAutomationRuntimeEnablementService } = require("../services/learning-automation-runtime-enablement-service");
 const { createLearningAutomationSchedulerExecutionService } = require("../services/learning-automation-scheduler-execution-service");
@@ -358,6 +359,14 @@ function createServices(config) {
     releaseInventoryService: learningAutomationReleaseInventoryService,
     releaseDashboardService: learningAutomationReleaseDashboardService
   });
+  const learningAutomationReleaseWorkbenchActionService = createLearningAutomationReleaseWorkbenchActionService({
+    releaseWorkbenchService: learningAutomationReleaseWorkbenchService,
+    releaseEvidenceService: learningAutomationReleaseEvidenceService,
+    releaseApprovalService: learningAutomationReleaseApprovalService,
+    releasePackageService: learningAutomationReleasePackageService,
+    releaseActivationService: learningAutomationReleaseActivationService,
+    runtimeEnablementService: learningAutomationRuntimeEnablementService
+  });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({
     repository: growthLearningStore.learningAutomationSchedulerExecutionRepository,
     actionHandoffService: learningAutomationActionHandoffService,
@@ -479,6 +488,7 @@ function createServices(config) {
     learningAutomationReleasePackageService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,
+    learningAutomationReleaseWorkbenchActionService,
     learningAutomationReleaseWorkbenchService,
     learningAutomationRuntimeEnablementService,
     learningAutomationSchedulerExecutionService,

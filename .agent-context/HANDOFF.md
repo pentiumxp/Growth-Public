@@ -9,13 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-15T23:18Z - Release Workbench Read Model
+## 2026-06-15T23:31Z - Release Workbench Action Facade
 
 - Status: implemented and validated locally. This slice is backend/Harness/docs
-  only. It does not deploy, apply runtime config, grant scheduler permission,
-  call Gateway/model vendors, publish cards/plans, evaluate submissions, run
-  scheduler actions, deliver notifications, activate stage assessments, mutate
-  learner state, or write production release records.
+  only; final commit and remote refs should be verified through git history
+  after push rather than by a self-referential hash in this entry. It does not
+  deploy, apply runtime config, grant scheduler permission, call Gateway/model
+  vendors, publish cards/plans, evaluate submissions, run scheduler actions,
+  deliver notifications, activate stage assessments, mutate learner state, or
+  write production release records except through explicit Owner-only release
+  record facades.
+- Scope:
+  - added `learning-automation-release-workbench-action-service` as the
+    Owner-only write facade over `learning-automation-release-workbench-service`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/release-workbench/actions`, which requires
+    workspace bearer authorization and Growth visible-target scope before
+    delegating to the action service;
+  - added `npm run smoke:release-workbench-action`, gated by `--allow-write`,
+    to record only through existing release evidence, release approval,
+    package-record, release activation, or runtime enablement services;
+  - the service first reads the workbench record routes and fails closed if the
+    requested `endpointKey` is not advertised; it also rejects privacy-risk keys
+    or private values and keeps all runtime mutation/scheduling permission
+    flags false.
+- Changed files:
+  - `src/services/learning-automation-release-workbench-action-service.js`;
+  - `scripts/smoke-growth-release-workbench-action.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-automation-release-workbench-action-service.test.js`;
+  - `tests/growth-release-workbench-action-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`;
+  - Growth architecture/next-stage/platform pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - focused workbench action/service/route/architecture Harness:
+    `node --test tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`83/83`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run check` (`190/190` runtime JavaScript files covered);
+  - `npm test` (`761/761`);
+  - Home AI platform contract checker for Growth;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - plugin `git diff --check`;
+  - CodeGraph status: `335` indexed files, `4378` nodes, `17168` edges;
+  - AI Ops required checks: no visual lane and no deployment required;
+  - AI Ops evidence ledger append id
+    `evidence-0c054f01-777c-4878-acba-fdab057844fc`.
+- Remaining product work:
+  - build the embedded Owner UI over release workbench actions so Owner can
+    record release evidence, approvals, package audit records, activation
+    records, and runtime enablement audit rows without Codex/CLI;
+  - collect real production release evidence through central visual/platform
+    tooling and Growth smoke CLIs before any runtime enablement;
+  - keep writeful/background scheduling blocked until release package,
+    dashboard/readiness, Owner approval, activation, runtime enablement audit,
+    and manual config evidence are complete.
+
+## 2026-06-15T23:18Z - Release Workbench Read Model
+
+- Status: implemented, validated locally, committed, and pushed to both
+  `origin/main` and `public/main` as
+  `c2a4c9a9401981745f4fae8ddc7e5fc0ea3fad2a`. This slice is
+  backend/Harness/docs only. It does not deploy, apply runtime config, grant
+  scheduler permission, call Gateway/model vendors, publish cards/plans,
+  evaluate submissions, run scheduler actions, deliver notifications, activate
+  stage assessments, mutate learner state, or write production release records.
 - Scope:
   - added `learning-automation-release-workbench-service` as a no-write
     Owner/visible-target read model over release-readiness, release-controls,

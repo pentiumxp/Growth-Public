@@ -640,6 +640,43 @@ function normalizeAutomationReleaseWorkbenchInput(url, target) {
   return normalizeAutomationReleaseDashboardInput(url, target);
 }
 
+function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, target, request, url) {
+  const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {};
+  const merged = Object.assign({}, payload, body);
+  return {
+    workspaceId,
+    learnerId: merged.learnerId || merged.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || merged.displayName || merged.display_name,
+    label: target?.label || merged.label,
+    programId: merged.programId || merged.program_id,
+    domainPackId: merged.domainPackId || merged.domain_pack_id,
+    domain: merged.domain,
+    subject: merged.subject,
+    horizon: merged.horizon || "daily_plan",
+    collectionRunId: merged.collectionRunId || merged.collection_run_id || merged.runId || merged.run_id,
+    endpointKey: merged.endpointKey || merged.endpoint_key,
+    actionKey: merged.actionKey || merged.action_key || merged.key,
+    action: merged.action || merged.ownerAction || merged.owner_action,
+    evidenceKey: merged.evidenceKey || merged.evidence_key || merged.checkKey || merged.check_key,
+    approvalKey: merged.approvalKey || merged.approval_key || merged.configGate || merged.config_gate,
+    activationGate: merged.activationGate || merged.activation_gate,
+    activationGates: merged.activationGates || merged.activation_gates || merged.requestedActivationGates || merged.requested_activation_gates,
+    releasePackage: merged.releasePackage || merged.release_package || merged.package,
+    activationDecision: merged.activationDecision || merged.activation_decision || merged.ownerActivationDecision || merged.owner_activation_decision,
+    enablementDecision: merged.enablementDecision || merged.enablement_decision || merged.ownerEnablementDecision || merged.owner_enablement_decision,
+    approval: merged.approval || merged.approvalSummary || merged.approval_summary,
+    evidence: merged.evidence || merged.evidenceSummary || merged.evidence_summary,
+    note: merged.note || merged.reason || merged.summary,
+    requestedBy: merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    recordedBy: merged.recordedBy || merged.recorded_by || merged.approvedBy || merged.approved_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    approvedBy: merged.approvedBy || merged.approved_by || merged.recordedBy || merged.recorded_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    recordedAt: merged.recordedAt || merged.recorded_at || merged.approvedAt || merged.approved_at,
+    approvedAt: merged.approvedAt || merged.approved_at || merged.recordedAt || merged.recorded_at,
+    createdAt: merged.createdAt || merged.created_at,
+    ownerAuthorizedWrite: true
+  };
+}
+
 function normalizeAutomationRuntimeEnablementRecordInput(body, workspaceId, target, request, url) {
   const activationGate = body.activationGate || body.activation_gate;
   const activationGates = body.activationGates || body.activation_gates || body.requestedActivationGates || body.requested_activation_gates;
@@ -1786,6 +1823,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = services.learningAutomationReleaseEvidenceService.recordEvidence(
       normalizeAutomationReleaseEvidenceInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-workbench/actions") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_workbench_action_owner_required", "Automation release workbench actions require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleaseWorkbenchActionService.recordAction(
+      normalizeAutomationReleaseWorkbenchActionInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

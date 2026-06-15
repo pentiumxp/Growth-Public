@@ -1,0 +1,193 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+
+const {
+  RELEASE_WORKBENCH_ACTION_SCHEMA,
+  createLearningAutomationReleaseWorkbenchActionService
+} = require("../src/services/learning-automation-release-workbench-action-service");
+
+function workbenchResult(status = "release_evidence_required") {
+  return {
+    ok: true,
+    status,
+    releaseWorkbench: {
+      summaryOnly: true,
+      status,
+      recordRoutes: [
+        { key: "release_evidence" },
+        { key: "release_approval" },
+        { key: "release_package" },
+        { key: "release_activation" },
+        { key: "runtime_enablement" }
+      ]
+    }
+  };
+}
+
+function serviceWith(overrides = {}) {
+  const calls = [];
+  const service = createLearningAutomationReleaseWorkbenchActionService({
+    releaseWorkbenchService: overrides.releaseWorkbenchService || {
+      workbench(input) {
+        calls.push(["workbench", input]);
+        return workbenchResult();
+      }
+    },
+    releaseEvidenceService: overrides.releaseEvidenceService || {
+      recordEvidence(input) {
+        calls.push(["release_evidence", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          evidence: {
+            evidenceRecordId: "lgarev_1",
+            status: "pass",
+            evidenceKey: input.evidenceKey
+          }
+        };
+      }
+    },
+    releaseApprovalService: overrides.releaseApprovalService || {
+      recordApproval(input) {
+        calls.push(["release_approval", input]);
+        return {
+          ok: true,
+          approval: {
+            approvalId: "lgaapp_1",
+            status: "approved",
+            approvalKey: input.approvalKey
+          }
+        };
+      }
+    },
+    releasePackageService: overrides.releasePackageService || {
+      recordPackage(input) {
+        calls.push(["release_package", input]);
+        return {
+          ok: true,
+          package: {
+            packageId: "lgapkg_1",
+            status: "ready_for_release_review"
+          }
+        };
+      }
+    },
+    releaseActivationService: overrides.releaseActivationService || {
+      recordActivation(input) {
+        calls.push(["release_activation", input]);
+        return {
+          ok: true,
+          activation: {
+            activationId: "lgaact_1",
+            status: "ready_for_owner_config_enablement"
+          },
+          evaluated: { status: "ready_for_owner_config_enablement" }
+        };
+      }
+    },
+    runtimeEnablementService: overrides.runtimeEnablementService || {
+      recordEnablement(input) {
+        calls.push(["runtime_enablement", input]);
+        return {
+          ok: true,
+          enablement: {
+            enablementId: "lgarte_1",
+            status: "verified_enabled"
+          },
+          evaluated: { status: "verified_enabled" }
+        };
+      }
+    }
+  });
+  return { service, calls };
+}
+
+test("release workbench action records evidence through the existing evidence service", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: { evidenceId: "ui_evidence_1" },
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.schemaVersion, RELEASE_WORKBENCH_ACTION_SCHEMA);
+  assert.equal(result.status, "recorded");
+  assert.equal(result.endpointKey, "release_evidence");
+  assert.equal(result.actionRecord.recordId, "lgarev_1");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigChange, false);
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence"]);
+  assert.equal(calls[1][1].workspaceId, "fanfan");
+  assert.equal(calls[1][1].evidenceKey, "owner_daily_ui_evidence");
+  assert.equal(calls[1][1].evidence.summaryOnly, true);
+});
+
+test("release workbench action records package artifacts only through package record service", () => {
+  const { service, calls } = serviceWith();
+  const releasePackage = {
+    schemaVersion: "growth.learningAutomationReleasePackage.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    workspaceId: "fanfan",
+    status: "ready_for_release_review"
+  };
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_package",
+    releasePackage
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.actionRecord.recordId, "lgapkg_1");
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_package"]);
+  assert.equal(calls[1][1].releasePackage, releasePackage);
+  assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action records runtime enablement audit without config mutation", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "runtime_enablement",
+    activationGates: ["writeful_execution"],
+    enablementDecision: { decision: "runtime_config_verified" }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.actionRecord.recordId, "lgarte_1");
+  assert.equal(result.runtimeConfigMutationPerformed, false);
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "runtime_enablement"]);
+  assert.deepEqual(calls[1][1].activationGates, ["writeful_execution"]);
+  assert.equal(calls[1][1].enablementDecision.summaryOnly, true);
+});
+
+test("release workbench action fails closed for missing endpoint, blocked workbench, and privacy risk", () => {
+  const missing = serviceWith().service.recordAction({ workspaceId: "fanfan" });
+  assert.equal(missing.ok, false);
+  assert.equal(missing.error, "release_workbench_action_endpoint_required");
+
+  const blocked = serviceWith({
+    releaseWorkbenchService: {
+      workbench() {
+        return { ok: false, status: "blocked", error: "release_workbench_unavailable" };
+      }
+    }
+  }).service.recordAction({ workspaceId: "fanfan", endpointKey: "release_evidence", evidenceKey: "owner_daily_ui_evidence" });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, "release_workbench_unavailable");
+
+  const privacy = serviceWith().service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence",
+    rawPrompt: "do not store"
+  });
+  assert.equal(privacy.ok, false);
+  assert.equal(privacy.error, "release_workbench_action_privacy_failed");
+});
