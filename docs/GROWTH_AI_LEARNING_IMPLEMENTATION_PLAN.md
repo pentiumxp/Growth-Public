@@ -740,8 +740,13 @@ The next implementation slice should be chosen by product goal:
   complete the Owner daily browser loop over the existing daily-loop facade,
   with `npm run smoke:daily-loop-preview` as the no-write backend readiness
   evidence before visual or production review.
-- If the goal is backend automation safety before more UI, implement the
-  missing UI/evidence around P5-P10 next: proposal review UI, digest/action/
+- If the goal is backend automation safety before more UI, the service-level
+  P5-P6 completed-cycle path is now covered by
+  `tests/learning-card-ai-loop-harness.test.js`: a completed Fanfan science
+  cycle can produce a summary-only accepted proposal, a read-only scheduler
+  `would_publish` candidate, and a pending digest required action without
+  automatic publication. Implement the remaining UI/evidence around P5-P10
+  next: proposal review UI, digest/action/
   failure-policy UI, execution UI, scheduler run audit UI, platform Action
   Inbox/Web Push evidence, production dry-run evidence through
   `npm run smoke:scheduler-dry-run`, central visual evidence, and a

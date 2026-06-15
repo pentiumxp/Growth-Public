@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T10:24Z - Completed Cycle To Automation Review Packet Harness
+
+- Status: implemented and locally validated; commit/push follows this handoff
+  update. No production
+  deploy is required because this slice changes harness, docs, and workspace
+  context only.
+- Scope:
+  - expanded `tests/learning-card-ai-loop-harness.test.js` so the existing
+    Fanfan science vertical continues after `growth.learningLoopState.v1`
+    `ready_to_draft` into `learning-automation-proposal-service`,
+    `learning-automation-scheduler-service`, and
+    `learning-automation-digest-service`;
+  - the harness now requires a summary-only proposed automation record,
+    Owner acceptance, one read-only scheduler `would_publish` candidate, one
+    pending digest required Owner action, and no automatic publish, writeful
+    scheduler execution, or extra card-authoring/evaluation Gateway calls after
+    the source card completes;
+  - SQLite readback checks the accepted proposal row and pending digest row
+    while keeping raw learner/model content out of public DTOs and stored
+    summary projections.
+- Docs updated:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/learning-card-ai-loop-harness.test.js` passed.
+  - `node --test tests/learning-card-ai-loop-harness.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/learning-automation-scheduler-service.test.js
+    tests/learning-automation-digest-service.test.js
+    tests/growth-architecture-boundary.test.js` passed.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `npm run --silent check` passed.
+  - `git diff --check` passed.
+  - `npm test -- --test-reporter=spec` passed (`534` tests).
+  - `codegraph sync && codegraph status` reported index up to date (`245`
+    files, `3,139` nodes, `12,155` edges).
+
 ## 2026-06-15T10:45Z - Learner Cycle To Loop-State Smoke Chain
 
 - Status: implemented and locally validated; commit/push follows this handoff

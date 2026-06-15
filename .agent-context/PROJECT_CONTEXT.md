@@ -81,7 +81,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   card generation, learner evidence, Gateway evaluation, evidence ledger, and
   Profile V2 feedback; it also projects the completed cycle through
   `learning-loop-state-service` as `ready_to_draft` with a `draft_daily_plan`
-  next action from persisted profile-delta/trajectory evidence. The staged
+  next action from persisted profile-delta/trajectory evidence. That same
+  harness now continues the completed Fanfan science cycle into a
+  summary-only automation proposal, Owner acceptance, read-only scheduler
+  `would_publish`, and a pending digest required action without automatic
+  publish, writeful scheduler execution, or extra authoring/evaluation Gateway
+  calls after the completed source card. The staged
   delivery roadmap for the supervised AI learning system is now summarized first in
   `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`; the closed-loop contract is in
   `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`, with staged delivery captured

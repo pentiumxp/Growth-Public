@@ -11,6 +11,9 @@ const { createGrowthGatewayAuthoringClient } = require("../src/services/growth-g
 const { createGrowthGatewayEvaluationClient } = require("../src/services/growth-gateway-evaluation-client");
 const { createGrowthGatewayPlannerClient } = require("../src/services/growth-gateway-planner-client");
 const { createLearningAuditCompletenessService } = require("../src/services/learning-audit-completeness-service");
+const { createLearningAutomationDigestService } = require("../src/services/learning-automation-digest-service");
+const { createLearningAutomationProposalService } = require("../src/services/learning-automation-proposal-service");
+const { createLearningAutomationSchedulerService } = require("../src/services/learning-automation-scheduler-service");
 const { createLearningCardAuthoringService } = require("../src/services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../src/services/learning-card-authoring-validation-service");
 const { createLearningCardEvaluationService } = require("../src/services/learning-card-evaluation-service");
@@ -811,6 +814,21 @@ function createLoopHarness() {
   const auditCompletenessService = createLearningAuditCompletenessService({
     cycleAuditService
   });
+  const automationProposalService = createLearningAutomationProposalService({
+    repository: store.learningAutomationProposalRepository,
+    auditCompletenessService,
+    planPublisherService,
+    targetProvisioningService
+  });
+  const automationSchedulerService = createLearningAutomationSchedulerService({
+    automationProposalService,
+    auditCompletenessService,
+    targetProvisioningService
+  });
+  const automationDigestService = createLearningAutomationDigestService({
+    repository: store.learningAutomationDigestRepository,
+    schedulerService: automationSchedulerService
+  });
   const contextService = createLearningCardGenerationContextService({
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
@@ -868,6 +886,9 @@ function createLoopHarness() {
   });
 
   return {
+    automationDigestService,
+    automationProposalService,
+    automationSchedulerService,
     dbPath,
     auditCompletenessService,
     contextService,
@@ -1167,6 +1188,114 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
     assert.equal(JSON.stringify(nextLoopState).includes("rawPrompt"), false);
     assert.equal(JSON.stringify(nextLoopState).includes("answerKey"), false);
 
+    const proposal = await harness.automationProposalService.createProposal({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      horizon: "daily_plan",
+      domain: "science",
+      subject: "science",
+      sourcePlanDraftId: draft.planDraft.planDraftId,
+      sourceTaskCardId: published.generation.published.taskCardId,
+      sourceEvaluationId: processed.profile_delta.basis.evaluationId,
+      profileDeltaId: processed.profile_delta.profileDeltaId,
+      evidenceId: processed.profile_delta.basis.evidenceIds[0],
+      targetNodeIds: [SCIENCE_NODE_ID],
+      availableMinutes: 15,
+      requestedBy: "weixin_owner"
+    });
+    assert.equal(proposal.ok, true);
+    assert.equal(proposal.source, "growth-learning-automation-proposal-service");
+    assert.equal(proposal.proposal.status, "proposed");
+    assert.equal(proposal.proposal.privacyClass, "summary_only");
+    assert.equal(proposal.proposal.sourceCycle.readyForAutomation, true);
+    assert.equal(proposal.proposal.sourceTaskCardId, published.generation.published.taskCardId);
+    assert.equal(proposal.proposal.sourceEvaluationId, processed.profile_delta.basis.evaluationId);
+    assert.equal(proposal.proposal.policy.ownerReviewRequired, true);
+    assert.equal(proposal.proposal.policy.autoPublish, false);
+    assert.equal(proposal.proposal.policy.dryRunOnly, true);
+    assert.equal(proposal.proposal.targetNodeIds[0], SCIENCE_NODE_ID);
+    assert.equal(proposal.publishAction.requiredActor, "owner");
+    assert.match(proposal.publishAction.endpoint, /^\/api\/v1\/growth\/learning-plans\/.+\/publish$/);
+    assert.equal(harness.plannerGatewayCalls.length, 2);
+    assert.equal(harness.gatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+    assert.equal(JSON.stringify(proposal).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(harness.plannerGatewayCalls[1]).includes(RAW_MARKER), false);
+
+    const accepted = harness.automationProposalService.reviewProposal({
+      workspaceId: WORKSPACE_ID,
+      proposalId: proposal.proposal.proposalId,
+      status: "accepted",
+      requestedBy: "weixin_owner",
+      reason: "Owner accepts the next low-pressure science repair card."
+    });
+    assert.equal(accepted.ok, true);
+    assert.equal(accepted.proposal.status, "accepted");
+    assert.equal(accepted.proposal.decision.summaryOnly, true);
+    assert.equal(accepted.publishAction.requiredActor, "owner");
+    assert.equal(JSON.stringify(accepted).includes(RAW_MARKER), false);
+
+    const schedulerDryRun = harness.automationSchedulerService.dryRun({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      limit: 5,
+      requestedBy: "weixin_owner"
+    });
+    assert.equal(schedulerDryRun.ok, true);
+    assert.equal(schedulerDryRun.source, "growth-learning-automation-scheduler-service");
+    assert.equal(schedulerDryRun.dryRun, true);
+    assert.equal(schedulerDryRun.writePlanned, false);
+    assert.equal(schedulerDryRun.writesPerformed, false);
+    assert.equal(schedulerDryRun.publishPlanned, false);
+    assert.equal(schedulerDryRun.summary.wouldPublish, 1);
+    assert.equal(schedulerDryRun.candidates[0].proposalId, proposal.proposal.proposalId);
+    assert.equal(schedulerDryRun.candidates[0].decision, "would_publish");
+    assert.equal(schedulerDryRun.candidates[0].safeToPublish, true);
+    assert.equal(schedulerDryRun.candidates[0].publishAction.requiredActor, "owner");
+    assert.equal(
+      schedulerDryRun.candidates[0].publishAction.endpoint,
+      `/api/v1/growth/automation/proposals/${encodeURIComponent(proposal.proposal.proposalId)}/publish`
+    );
+    assert.equal(JSON.stringify(schedulerDryRun).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(schedulerDryRun).includes("rawPrompt"), false);
+    assert.equal(JSON.stringify(schedulerDryRun).includes("answerKey"), false);
+
+    const digest = harness.automationDigestService.createDigest({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: SCIENCE_PROGRAM_ID,
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      requestedBy: "weixin_owner",
+      limit: 5
+    });
+    assert.equal(digest.ok, true);
+    assert.equal(digest.source, "growth-learning-automation-digest-service");
+    assert.equal(digest.dryRun, true);
+    assert.equal(digest.writePlanned, false);
+    assert.equal(digest.writesPerformed, false);
+    assert.equal(digest.publishPlanned, false);
+    assert.equal(digest.publishRequiresOwnerAction, true);
+    assert.equal(digest.digest.status, "pending");
+    assert.equal(digest.digest.privacyClass, "summary_only");
+    assert.equal(digest.digest.summary.wouldPublish, 1);
+    assert.equal(digest.digest.summary.requiredActions, 1);
+    assert.equal(digest.digest.candidates[0].proposalId, proposal.proposal.proposalId);
+    assert.equal(digest.digest.candidates[0].decision, "would_publish");
+    assert.equal(digest.digest.requiredActions[0].requiredActor, "owner");
+    assert.equal(digest.digest.requiredActions[0].proposalId, proposal.proposal.proposalId);
+    assert.equal(JSON.stringify(digest).includes(RAW_MARKER), false);
+    assert.equal(JSON.stringify(digest).includes("rawPrompt"), false);
+    assert.equal(JSON.stringify(digest).includes("answerKey"), false);
+    assert.equal(harness.gatewayCalls.length, 1);
+    assert.equal(harness.evaluationGatewayCalls.length, 1);
+
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
     try {
       const planRow = db.prepare("SELECT * FROM learning_growth_plan_drafts WHERE plan_draft_id = ?")
@@ -1189,6 +1318,22 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
       assert.equal(evidenceLedgerRows.some((row) => row.source_type === "daily_evaluation"), true);
       assert.equal(evidenceLedgerRows.filter((row) => row.source_type === "daily_evaluation").every((row) => row.evidence_weight === 0.2), true);
       assert.equal(JSON.stringify(evidenceLedgerRows).includes(RAW_MARKER), false);
+
+      const proposalRow = db.prepare("SELECT * FROM learning_growth_automation_proposals WHERE proposal_id = ?")
+        .get(proposal.proposal.proposalId);
+      assert.equal(proposalRow.status, "accepted");
+      assert.equal(proposalRow.source_task_card_id, published.generation.published.taskCardId);
+      assert.equal(proposalRow.source_evaluation_id, processed.profile_delta.basis.evaluationId);
+      assert.equal(JSON.parse(proposalRow.policy_json).autoPublish, false);
+      assert.equal(JSON.parse(proposalRow.policy_json).ownerReviewRequired, true);
+      assert.equal(JSON.stringify(proposalRow).includes(RAW_MARKER), false);
+
+      const digestRow = db.prepare("SELECT * FROM learning_growth_automation_digests WHERE digest_id = ?")
+        .get(digest.digest.digestId);
+      assert.equal(digestRow.status, "pending");
+      assert.equal(JSON.parse(digestRow.summary_json).wouldPublish, 1);
+      assert.equal(JSON.parse(digestRow.required_actions_json)[0].proposalId, proposal.proposal.proposalId);
+      assert.equal(JSON.stringify(digestRow).includes(RAW_MARKER), false);
     } finally {
       db.close();
     }
