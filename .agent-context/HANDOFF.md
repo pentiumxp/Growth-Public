@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T02:33Z - Growth Runtime Syntax Coverage Gate Slice
+
+- Status: Growth runtime syntax coverage is now a generic check gate instead
+  of a manually audited subset. This slice did not change runtime behavior,
+  deploy, enable automation config, execute scheduler actions, run scheduler
+  ticks, call Gateway, publish cards, evaluate learner submissions, deliver
+  notifications, activate stage assessments, or mutate learner state.
+- Change classification: H2 backend/Harness/docs evidence boundary. Home AI AI
+  Ops intake classified it as H1 because of Gateway/runtime/deploy/docs
+  keywords; only non-deploy checks were run.
+- Scope:
+  - added `scripts/check-growth-syntax-coverage.js`;
+  - wired `node --check scripts/check-growth-syntax-coverage.js` and
+    `node scripts/check-growth-syntax-coverage.js` into `npm run check`;
+  - changed `tests/growth-architecture-boundary.test.js` so the check gate
+    covers every runtime JavaScript file under `scripts/`, `src/`, and
+    `public/`, not only automation/audit backend files;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - the checker only reads `package.json` and local file names;
+  - it fails on missing runtime JS check coverage, stale check entries, or
+    duplicate check entries;
+  - it does not read private learner content, connect to SQLite, call Gateway,
+    start servers, alter config, or execute workflow actions.
+- Validation passed:
+  - `node --check scripts/check-growth-syntax-coverage.js`;
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=127`, `checkedCount=127`, no missing/stale/duplicate
+    entries);
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js` (`17` tests);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`444` tests);
+  - `git diff --check`.
+- Broad validation passed:
+  - `codegraph sync && codegraph status` (`210` JavaScript files, `2,524`
+    nodes, `10,171` edges; index up to date).
+- AI Ops control-plane evidence:
+  - intake classified this local Growth backend/docs/Harness slice as `H1`
+    because of Gateway/runtime/deployment/architecture-doc keywords even though
+    this Growth change did not deploy or change runtime config;
+  - Home AI non-deploy required checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`, and Home AI
+    `git diff --check`;
+  - AI Ops evidence ledger id:
+    `evidence-d11b2c7f-67a9-4973-8b7d-b1ccd81bbd64`;
+  - the AI Ops suggested `npm run --silent deploy:macos -- --target home-ai
+    --json` was not executed because this slice is not a production deploy and
+    the user did not request deployment.
+
 ## 2026-06-15T02:27Z - Growth Backend Check Gate Completion Slice
 
 - Status: Growth backend Harness syntax coverage is hardened. This slice did

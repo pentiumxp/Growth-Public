@@ -111,7 +111,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   That CLI still delegates only through `learning-daily-loop-service` and the
   normal service graph; it does not import repositories, call Gateway directly,
   call the plan publisher or card generator directly, run schedulers, deliver
-  notifications, or activate stage assessments. The system scheme,
+  notifications, or activate stage assessments. The broad local `npm run check`
+  gate now syntax-checks every Growth runtime JavaScript file under `scripts/`,
+  `src/`, and `public/`, with `scripts/check-growth-syntax-coverage.js` and
+  `tests/growth-architecture-boundary.test.js` enforcing no missing, stale, or
+  duplicate check entries. The system scheme,
   plan, roadmap, and
   next-stage plan are the implementation-planning entry points for product
   thesis,

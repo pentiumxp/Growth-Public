@@ -156,12 +156,11 @@ npm run check
 npm test
 ```
 
-`npm run check` must syntax-check all implemented Growth automation and audit
-backend boundaries. `tests/growth-architecture-boundary.test.js` enforces that
-the check script covers `src/services/learning-automation-*.js`,
-`src/services/learning-evidence-audit-service.js`,
-`src/services/learning-plan-audit-service.js`, and
-`src/stores/growth-learning-sqlite/automation-*.js`.
+`npm run check` must syntax-check every Growth runtime JavaScript file under
+`scripts/`, `src/`, and `public/`.
+`scripts/check-growth-syntax-coverage.js` and
+`tests/growth-architecture-boundary.test.js` enforce that the check script has
+no missing runtime files, stale check entries, or duplicate check entries.
 
 For core SQLite helper and identifier refactors, also run:
 
