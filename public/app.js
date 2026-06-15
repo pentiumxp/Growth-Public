@@ -15,6 +15,8 @@
         data: null,
         error: ""
       },
+      dailyLoopDraftResult: null,
+      dailyLoopPublishResult: null,
       generatedResult: null,
       error: "",
       progressStep: "",
@@ -203,19 +205,25 @@
   }
 
   function setCardGenerationProgress(progressStep, progressMessage) {
-    if (pageState.cardGeneration.status !== "generating") return;
+    if (!["generating", "drafting", "publishing"].includes(pageState.cardGeneration.status)) return;
     pageState.cardGeneration.progressStep = progressStep;
     pageState.cardGeneration.progressMessage = progressMessage;
     renderShell();
   }
 
-  function scheduleCardGenerationProgress() {
+  function scheduleCardGenerationProgress(mode = "publish") {
     clearCardGenerationProgressTimers();
-    [
-      [700, "gateway", "正在调用 Gateway 生成 authoring draft。"],
-      [3200, "validation", "正在校验 teachingFlow、图谱绑定和隐私边界。"],
-      [7600, "publish", "正在等待发布结果，成功后会写入 Growth SQLite。"]
-    ].forEach(([delayMs, progressStep, progressMessage]) => {
+    const steps = mode === "draft"
+      ? [
+        [700, "planner", "正在通过 Gateway 起草下一张 plan draft。"],
+        [2600, "validation", "正在校验计划项、图谱绑定和证据要求。"]
+      ]
+      : [
+        [700, "authoring", "正在通过 Gateway 生成 authoring draft。"],
+        [3200, "validation", "正在校验 teachingFlow、图谱绑定和隐私边界。"],
+        [7600, "publish", "正在等待发布结果，成功后会写入 Growth SQLite。"]
+      ];
+    steps.forEach(([delayMs, progressStep, progressMessage]) => {
       cardGenerationProgressTimers.push(window.setTimeout(() => {
         setCardGenerationProgress(progressStep, progressMessage);
       }, delayMs));
@@ -472,7 +480,7 @@
         });
       });
     });
-    root.querySelectorAll("[data-card-generation-submit]").forEach((button) => {
+    root.querySelectorAll("[data-card-generation-draft], [data-card-generation-publish]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
         const blockedReason = clean(button.dataset.cardGenerationBlockedReason);
@@ -486,7 +494,10 @@
           return;
         }
         if (button.disabled) return;
-        generateCardFromUi().catch((error) => {
+        const action = button.hasAttribute("data-card-generation-publish")
+          ? publishDailyLoopFromUi
+          : draftDailyLoopFromUi;
+        action().catch((error) => {
           pageState.cardGeneration.status = "failed";
           pageState.cardGeneration.error = error.message || String(error);
           renderShell();
@@ -561,6 +572,9 @@
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.progressStep = "";
     pageState.cardGeneration.progressMessage = "";
+    pageState.cardGeneration.dailyLoopDraftResult = null;
+    pageState.cardGeneration.dailyLoopPublishResult = null;
+    pageState.cardGeneration.generatedResult = null;
     pageState.cardGeneration.learningLoopState = {
       status: "loading",
       data: null,
@@ -660,29 +674,92 @@
     renderShell();
   }
 
-  async function generateCardFromUi() {
+  function createDailyLoopDraftPayload() {
     const ui = window.HermesGrowthCardGenerationUi;
-    if (!ui || typeof ui.createDailyEnglishGeneratePayload !== "function") {
+    if (!ui || typeof ui.createDailyLoopDraftPayload !== "function") {
       throw new Error("card_generation_ui_unavailable");
     }
     const context = pageState.cardGeneration.context;
     const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
-    const payload = ui.createDailyEnglishGeneratePayload({ context, workspaceId: targetWorkspaceId });
-    pageState.cardGeneration.status = "generating";
+    return {
+      payload: ui.createDailyLoopDraftPayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
+  function createDailyLoopPublishPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createDailyLoopPublishPayload !== "function") {
+      throw new Error("card_generation_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createDailyLoopPublishPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        draftResult: pageState.cardGeneration.dailyLoopDraftResult || {}
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  async function draftDailyLoopFromUi() {
+    const { payload, targetWorkspaceId } = createDailyLoopDraftPayload();
+    pageState.cardGeneration.status = "drafting";
     pageState.cardGeneration.error = "";
+    pageState.cardGeneration.dailyLoopDraftResult = null;
+    pageState.cardGeneration.dailyLoopPublishResult = null;
     pageState.cardGeneration.generatedResult = null;
-    pageState.cardGeneration.progressStep = "prepare";
-    pageState.cardGeneration.progressMessage = "正在整理学习图谱、历史摘要和生成策略。";
+    pageState.cardGeneration.progressStep = "context";
+    pageState.cardGeneration.progressMessage = "正在整理学习图谱、画像摘要和近期信号。";
     renderShell();
-    scheduleCardGenerationProgress();
+    scheduleCardGenerationProgress("draft");
     try {
-      const result = await api.generateGrowthCard(payload, targetWorkspaceId);
+      const result = await api.draftGrowthDailyLoop(payload, targetWorkspaceId);
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "drafted";
+      pageState.cardGeneration.dailyLoopDraftResult = result;
+      pageState.cardGeneration.context = result.context || pageState.cardGeneration.context;
+      pageState.cardGeneration.selectedWorkspaceId = clean(result.target?.workspaceId || targetWorkspaceId);
+      pageState.cardGeneration.error = "";
+      pageState.cardGeneration.progressStep = "validation";
+      pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
+      await refreshLearningLoopState(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "failed";
+      pageState.cardGeneration.error = error.message || String(error);
+      pageState.cardGeneration.progressStep = "failed";
+      pageState.cardGeneration.progressMessage = "规划失败。";
+      renderShell();
+    }
+  }
+
+  async function publishDailyLoopFromUi() {
+    const { payload, targetWorkspaceId } = createDailyLoopPublishPayload();
+    pageState.cardGeneration.status = "publishing";
+    pageState.cardGeneration.error = "";
+    pageState.cardGeneration.dailyLoopPublishResult = null;
+    pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.progressStep = "authoring";
+    pageState.cardGeneration.progressMessage = "正在根据已验证计划项生成卡片。";
+    renderShell();
+    scheduleCardGenerationProgress("publish");
+    try {
+      const result = await api.publishGrowthDailyLoop(payload, targetWorkspaceId);
       clearCardGenerationProgressTimers();
       pageState.cardGeneration.status = "published";
-      pageState.cardGeneration.generatedResult = result;
+      pageState.cardGeneration.dailyLoopPublishResult = result;
+      pageState.cardGeneration.dailyLoopDraftResult = result.planDraft
+        ? Object.assign({}, pageState.cardGeneration.dailyLoopDraftResult || {}, { planDraft: result.planDraft })
+        : pageState.cardGeneration.dailyLoopDraftResult;
+      pageState.cardGeneration.generatedResult = result.generation || result;
+      pageState.cardGeneration.context = result.context || pageState.cardGeneration.context;
       pageState.cardGeneration.error = "";
       pageState.cardGeneration.progressStep = "done";
-      pageState.cardGeneration.progressMessage = "卡片已发布。";
+      pageState.cardGeneration.progressMessage = "卡片已发布，正在刷新学习闭环状态。";
       model.detailCache.clear();
       try {
         await loadCurrentWorkspace();
@@ -696,7 +773,7 @@
       pageState.cardGeneration.status = "failed";
       pageState.cardGeneration.error = error.message || String(error);
       pageState.cardGeneration.progressStep = "failed";
-      pageState.cardGeneration.progressMessage = "生成失败。";
+      pageState.cardGeneration.progressMessage = "发布失败。";
       renderShell();
     }
   }
@@ -706,14 +783,14 @@
     pageState.cardGeneration.status = "generating";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.generatedResult = null;
-    pageState.cardGeneration.progressStep = "prepare";
+    pageState.cardGeneration.progressStep = "context";
     pageState.cardGeneration.progressMessage = "正在整理阶段测评覆盖点和学习画像。";
     pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
       status: "activating",
       error: ""
     });
     renderShell();
-    scheduleCardGenerationProgress();
+    scheduleCardGenerationProgress("publish");
     try {
       const result = await api.activateGrowthStageAssessment(payload, targetWorkspaceId);
       clearCardGenerationProgressTimers();

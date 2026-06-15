@@ -141,6 +141,18 @@
       }, payload));
     }
 
+    function draftGrowthDailyLoop(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("daily-loop", "draft"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function publishGrowthDailyLoop(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("daily-loop", "publish"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function evaluateGrowthStageAssessment(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("stage-assessments", "eligibility"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -194,6 +206,7 @@
     return {
       appendWorkspaceQuery,
       activateGrowthStageAssessment,
+      draftGrowthDailyLoop,
       evaluateGrowthStageAssessment,
       fetchCardGenerationContext,
       fetchGrowthCard,
@@ -202,6 +215,7 @@
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,
+      publishGrowthDailyLoop,
       retryGrowthEvaluation,
       resolveGrowthApiPath,
       submitGrowthCardEvidence,

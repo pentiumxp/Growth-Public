@@ -164,8 +164,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   scheduling, stage activation, direct repository access, SQLite writes, or
   learner-state mutation. The Owner `生成` tab now reads the same
   `GET /api/v1/growth/learning-loop/state` route after generation context load
-  and renders a read-only compact state/next-action panel without adding any
-  browser-side learning policy or write path. Controlled daily-loop
+  and exposes a minimal supervised daily-loop operation path: `规划下一张`
+  calls `POST /api/v1/growth/daily-loop/draft`, renders a bounded plan draft
+  preview, and `发布为卡片` calls
+  `POST /api/v1/growth/daily-loop/publish` before refreshing board,
+  card-generation context, and learning-loop state. The browser still does not
+  call Gateway directly, compute learning policy, or publish automatically.
+  Controlled daily-loop
   draft/publish smoke evidence is
   now available through `npm run smoke:daily-loop`; it defaults to preview, and
   `draft` or `publish` operations require the explicit `--allow-write` flag.

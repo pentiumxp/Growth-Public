@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T07:36Z - Growth Owner Daily-Loop Draft/Publish UI Slice
+
+- Status: implemented, documented, and locally validated. Not deployed in this
+  slice.
+- Change classification: Home AI AI Ops intake returned H3 Architecture
+  Documentation And Harness Map, but Growth treated the browser action path as
+  higher risk because Owner clicks can draft/publish learning cards.
+- Scope:
+  - `public/growth-api-client.js` now exposes `draftGrowthDailyLoop` and
+    `publishGrowthDailyLoop` over the existing Owner-only daily-loop facade;
+  - `public/app.js` changed Owner `生成` from legacy direct
+    `cards/generate` submission to two explicit actions:
+    `draftDailyLoopFromUi` and `publishDailyLoopFromUi`;
+  - `public/growth-card-generation-ui.js` renders separate `规划下一张` and
+    `发布为卡片` buttons, bounded plan draft preview, publish-attempt state,
+    five-step progress, and blocked/error feedback;
+  - `public/growth-homeai-legacy.css` covers the new plan preview, mobile
+    scroll, five-step progress layout, and dark/system contrast;
+  - `public/index.html` static version bumped to
+    `20260615-daily-loop-draft-publish-ui-v1`;
+  - docs updated in Growth workspace:
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`,
+    `docs/GROWTH_AI_LEARNING_ROADMAP.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_DOCS_INDEX.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - browser code still does not call Gateway directly, import old Home AI
+    Growth server logic, compute Profile V2 or learning policy locally,
+    evaluate submissions, schedule, notify, activate stage assessments, or
+    auto-publish;
+  - legacy `generateGrowthCard` remains in the API client only as a
+    compatibility helper for the existing direct generation route.
+- Validation passed:
+  - syntax checks for touched public/test files;
+  - focused
+    `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js tests/learning-daily-loop-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`108` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`240` files, `2,988` nodes,
+    `11,517` edges; index up to date);
+  - Home AI app required H3 gate:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `git diff --check`;
+  - local Playwright visual check using system Chrome because the Playwright
+    package browser cache was missing. Mobile dark evidence:
+    `tmp/visual/growth-owner-daily-loop-draft-publish-mobile-dark.png`
+    (`157811` bytes) and
+    `tmp/visual/growth-owner-daily-loop-publishing-progress-mobile-dark.png`
+    (`130117` bytes). Verified `.growth-shell` scrollHeight `3829` vs
+    clientHeight `844`, visible `发布为卡片` button, and visible progress panel.
+- AI Ops evidence appended:
+  `evidence-2b9892d3-a6e9-4dfb-93d1-2f145c1a1142`.
+- Remaining product work:
+  - richer scope/domain-pack/subject selection and explicit provisioning
+    controls in the Owner UI;
+  - Owner audit/correction drilldown after completion;
+  - central Home AI embedded-plugin visual harness and production release
+    evidence before deployment.
+
 ## 2026-06-15T07:18Z - Growth Owner Generation Learning-Loop State UI Slice
 
 - Status: implemented, documented, and locally validated. This slice connects

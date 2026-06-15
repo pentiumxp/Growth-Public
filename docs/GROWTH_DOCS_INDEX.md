@@ -63,8 +63,8 @@ For the AI-driven learning scheme, use this reading order before implementation:
    capability readiness levels, release gates, and the immediate next slice.
 6. `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md` for the current next-stage
    choice and architecture optimization target: product-visible Owner daily
-   loop first, or a backend-only release-readiness evidence gate that cannot
-   enable scheduling.
+   loop first, current minimal draft/publish UI status, or a backend-only
+   release-readiness evidence gate that cannot enable scheduling.
 7. `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md` for execution-ready
    service packages, durable records, state machine, proposal/scheduler
    contracts, and exact harness matrix.

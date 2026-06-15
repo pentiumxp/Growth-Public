@@ -454,6 +454,13 @@ Required shape:
 - pass frontend adapter/layout tests and central visual evidence before
   production deployment.
 
+Current status: the minimal browser operation path is implemented for Fanfan
+sample targets. Owner can load context, inspect learning-loop state, draft one
+daily plan, preview the selected plan item, publish it, and refresh the board
+and loop state from the plugin UI. The remaining Package 1 work is richer
+scope selection, explicit provision controls, Owner audit/correction drilldown,
+and central visual/release evidence before production deployment.
+
 ### Package 2: Owner Audit And Correction UI
 
 Goal: Owner can explain and correct the completed card cycle.
@@ -606,16 +613,26 @@ digests, failure policy, action handoff, and default-disabled Owner-explicit
 scheduler execution.
 
 The browser Owner loop now shows the compact learning-loop state/next-action
-readback in the `生成` tab, but the product is not complete because it still
-lacks full planner draft/publish UI, provision controls, audit/correction UI,
-proposal/digest/action UI, central visual evidence, platform action evidence,
-and execution enablement evidence.
+readback in the `生成` tab and exposes a minimal supervised daily-loop
+draft/publish path:
+
+- `规划下一张` calls `POST /api/v1/growth/daily-loop/draft`;
+- the UI renders a bounded plan draft preview with selected item, target
+  nodes, role, difficulty, evidence requirements, and publish-attempt state;
+- `发布为卡片` calls `POST /api/v1/growth/daily-loop/publish`;
+- after publication the browser refreshes the board, card-generation context,
+  and `growth.learningLoopState.v1` readback.
+
+The product is not complete because it still lacks full scope/provision
+controls, audit/correction UI, proposal/digest/action UI, central visual
+evidence, platform action evidence, and execution enablement evidence.
 
 Therefore the recommended next product-visible slice is still:
 
-1. finish Owner-supervised daily UI over the existing daily-loop facade;
+1. finish Owner-supervised daily UI details over the existing daily-loop
+   facade, especially scope/provision controls and production visual evidence;
 2. then finish Owner audit/correction UI;
-3. then expose formal checkpoint controls;
+3. then harden formal checkpoint controls;
 4. then generalize target/domain-pack UI;
 5. then move to proposal/digest/action/execution UI;
 6. only after those gates consider background writeful scheduling.

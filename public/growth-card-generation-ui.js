@@ -30,6 +30,9 @@
   function statusText(status = "") {
     const value = clean(status);
     if (value === "loading_context") return "加载中";
+    if (value === "drafting") return "规划中";
+    if (value === "drafted") return "已规划";
+    if (value === "publishing") return "发布中";
     if (value === "generating") return "生成中";
     if (value === "published") return "已发布";
     if (value === "failed") return "失败";
@@ -43,6 +46,8 @@
       ["学习者已开通", readiness.workspaceProvisioned, context.target?.enabled ? "凡凡 sample 已启用" : "当前只开放凡凡 sample"],
       ["学习图谱", readiness.learningGraphReady, `${Number(graph.nodeCount || 0)} 节点 / ${Number(graph.edgeCount || 0)} 关系`],
       ["历史摘要", readiness.historySummaryReady, "只读取卡片、评价、反思和掌握度摘要"],
+      ["Planner context", readiness.plannerContextReady ?? readiness.learningGraphReady, "图谱、画像和近期信号摘要"],
+      ["Planner Gateway", readiness.plannerGatewayConfigured ?? readiness.gatewayConfigured, "只通过 Gateway 起草学习计划"],
       ["Gateway authoring", readiness.authoringGatewayConfigured ?? readiness.gatewayConfigured, "SSE / JSON 输出进入 draft 校验"],
       ["Gateway evaluation", readiness.evaluationGatewayConfigured, "批改 draft 先校验再写入画像"]
     ];
@@ -453,6 +458,65 @@
     </article>`;
   }
 
+  function selectedPlanItem(planDraft = {}) {
+    if (!planDraft || typeof planDraft !== "object") return {};
+    const selectedItemId = clean(planDraft.selectedItemId);
+    if (planDraft.selectedItem && clean(planDraft.selectedItem.itemId)) return planDraft.selectedItem;
+    return asArray(planDraft.items).find((item) => clean(item.itemId) === selectedItemId) || asArray(planDraft.items)[0] || {};
+  }
+
+  function dailyLoopPlanPreview({ draftResult = {}, publishResult = {} } = {}, escapeHtml = defaultEscapeHtml) {
+    const planDraft = publishResult.planDraft || draftResult.planDraft || {};
+    const publishAttempt = publishResult.publishAttempt || planDraft.publishAttempt || {};
+    const generation = publishResult.generation || {};
+    const item = selectedPlanItem(planDraft);
+    if (!clean(planDraft.planDraftId)) {
+      return `<section class="learning-card-generation-plan-preview" data-card-generation-plan-preview>
+        <div class="learning-card-generation-plan-head">
+          <span>
+            <strong>下一张计划</strong>
+            <small>先规划，再由 Owner 明确发布。</small>
+          </span>
+          <em>未规划</em>
+        </div>
+        <div class="learning-coin-empty">点击“规划下一张”后会显示 plan draft 和候选计划项。</div>
+      </section>`;
+    }
+    const itemTargetNodeIds = asArray(item.targetNodeIds).map(clean).filter(Boolean);
+    const draftTargetNodeIds = asArray(planDraft.targetNodeIds).map(clean).filter(Boolean);
+    const targets = itemTargetNodeIds.length ? itemTargetNodeIds : draftTargetNodeIds;
+    const evidence = asArray(item.evidenceRequirements).map(clean).filter(Boolean);
+    const publishedTaskCardId = clean(generation.published?.taskCardId || planDraft.generatedTaskCardId);
+    const attemptStatus = clean(publishAttempt.status || (publishedTaskCardId ? "published" : planDraft.status));
+    return `<section class="learning-card-generation-plan-preview" data-card-generation-plan-preview data-plan-draft-id="${escapeHtml(planDraft.planDraftId)}">
+      <div class="learning-card-generation-plan-head">
+        <span>
+          <strong>下一张计划</strong>
+          <small>${escapeHtml(planDraft.planSummary || item.reason || "summary-only plan draft")}</small>
+        </span>
+        <em>${escapeHtml(attemptStatus || "drafted")}</em>
+      </div>
+      <div class="learning-card-generation-plan-grid">
+        <span><small>Plan draft</small><strong>${escapeHtml(planDraft.planDraftId)}</strong></span>
+        <span><small>候选项</small><strong>${escapeHtml(String(Number(planDraft.itemCount || asArray(planDraft.items).length || 0) || 0))}</strong></span>
+        <span><small>已发布</small><strong>${escapeHtml(publishedTaskCardId || "未发布")}</strong></span>
+      </div>
+      <div class="learning-card-generation-plan-row">
+        <span>
+          <strong>${escapeHtml(clean(item.itemId || planDraft.selectedItemId || "默认计划项"))}</strong>
+          <small>${escapeHtml(item.reason || "根据学习闭环选择一张低压力日常卡。")}</small>
+        </span>
+        <em>${escapeHtml(clean(item.cardRole || "practice"))}</em>
+      </div>
+      <div class="learning-card-generation-plan-grid">
+        <span><small>节点</small><strong>${escapeHtml(targets.join(" · ") || "未指定")}</strong></span>
+        <span><small>难度</small><strong>${escapeHtml(clean(item.difficultyBand || "foundation"))}</strong></span>
+        <span><small>证据</small><strong>${escapeHtml(evidence.join(" · ") || "short_answer")}</strong></span>
+      </div>
+      ${publishAttempt.error ? `<div class="learning-card-generation-plan-attempt">${escapeHtml(`发布尝试失败：${publishAttempt.error}`)}</div>` : ""}
+    </section>`;
+  }
+
   function errorPanel(state = {}, escapeHtml = defaultEscapeHtml) {
     const error = clean(state.error);
     if (!error) return "";
@@ -471,11 +535,36 @@
     return "";
   }
 
+  function dailyLoopDraftBlockedReason({ state = {}, context = {}, readiness = {}, plan = {} } = {}) {
+    if (state.status === "loading_context") return "正在加载生成上下文，请稍候。";
+    if (!context || !Object.keys(context).length) return "生成上下文还没加载完成，请先刷新状态。";
+    if (!readiness.targetEnabled || context.target?.enabled === false) return "请先在左侧选择凡凡，再生成卡片。";
+    if (!readiness.workspaceProvisioned) return "学习者 workspace 尚未开通，暂不能规划卡片。";
+    if (!readiness.learningGraphReady || !clean(plan.targetNodeId)) return "学习图谱目标尚未就绪，暂不能规划卡片。";
+    if (!readiness.historySummaryReady) return "历史摘要尚未就绪，暂不能规划卡片。";
+    if (!(readiness.plannerContextReady ?? true)) return "Planner context 尚未就绪，暂不能规划卡片。";
+    if (!(readiness.plannerGatewayConfigured ?? readiness.gatewayConfigured)) return "Planner Gateway 尚未配置，暂不能规划卡片。";
+    if (readiness.blockingOpenGeneration) return "已有生成任务正在处理，请稍后再试。";
+    return "";
+  }
+
+  function dailyLoopPublishBlockedReason({ state = {}, context = {}, readiness = {}, draftResult = {} } = {}) {
+    const planDraft = draftResult.planDraft || {};
+    if (state.status === "loading_context") return "正在加载生成上下文，请稍候。";
+    if (!context || !Object.keys(context).length) return "生成上下文还没加载完成，请先刷新状态。";
+    if (!clean(planDraft.planDraftId)) return "请先规划下一张，再发布卡片。";
+    if (!clean(planDraft.selectedItemId || selectedPlanItem(planDraft).itemId)) return "计划草稿没有可发布的计划项。";
+    if (!(readiness.authoringGatewayConfigured ?? readiness.gatewayConfigured)) return "Gateway authoring 尚未配置，暂不能发布卡片。";
+    if (readiness.blockingOpenGeneration) return "已有生成任务正在处理，请稍后再试。";
+    return "";
+  }
+
   function progressStepRows(activeStep = "prepare", escapeHtml = defaultEscapeHtml) {
     const steps = [
-      ["prepare", "准备输入", "学习图谱、掌握度、近期信号"],
-      ["gateway", "调用 Gateway", "等待模型返回 authoring draft"],
+      ["context", "整理上下文", "图谱、画像、近期信号"],
+      ["planner", "起草计划", "Gateway 返回 plan draft"],
       ["validation", "校验草稿", "teachingFlow、图谱绑定、隐私扫描"],
+      ["authoring", "生成卡片", "Gateway 返回 authoring draft"],
       ["publish", "发布卡片", "事务写入 Growth SQLite"]
     ];
     const activeIndex = Math.max(0, steps.findIndex(([id]) => id === clean(activeStep)));
@@ -490,13 +579,19 @@
   }
 
   function progressPanel(state = {}, escapeHtml = defaultEscapeHtml) {
-    if (state.status !== "generating") return "";
-    const step = clean(state.progressStep || "prepare") || "prepare";
-    const message = clean(state.progressMessage || "正在生成卡片，请稍等。");
+    const visible = state.status === "generating" || state.status === "drafting" || state.status === "publishing";
+    if (!visible) return "";
+    const step = clean(state.progressStep || "context") || "context";
+    const message = clean(state.progressMessage || "正在处理学习闭环，请稍等。");
+    const title = state.status === "drafting"
+      ? "正在规划下一张"
+      : state.status === "publishing"
+        ? "正在发布卡片"
+        : "正在生成卡片";
     return `<section class="learning-card-generation-progress" data-card-generation-progress role="status" aria-live="polite">
       <div class="learning-card-generation-progress-head">
         <span>
-          <strong>正在生成卡片</strong>
+          <strong>${escapeHtml(title)}</strong>
           <small>${escapeHtml(message)}</small>
         </span>
         <em>${escapeHtml(statusText(state.status))}</em>
@@ -515,6 +610,52 @@
       recipe_id: clean(context.selectedRecipeId || "daily_english_v1"),
       card_schema_version: clean(generationDefaults.cardSchemaVersion || "growth.card.authoring.v1")
     };
+  }
+
+  function dailyLoopScopeFromContext(context = {}, workspaceId = "") {
+    const plan = context.suggestedPlan || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const defaults = context.generationDefaults || {};
+    const targetNodeIds = asArray(recommendation.targetNodeIds).length
+      ? asArray(recommendation.targetNodeIds)
+      : asArray(plan.targetNodeIds).length
+        ? asArray(plan.targetNodeIds)
+        : [recommendation.targetNodeId || plan.targetNodeId].filter(Boolean);
+    return {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      program_id: clean(context.programId || plan.programId || defaults.programId),
+      domain_pack_id: clean(context.domainPackId || plan.domainPackId || defaults.domainPackId),
+      domain: clean(recommendation.domain || plan.domain || context.domain || defaults.domain || "english"),
+      subject: clean(recommendation.subject || plan.subject || context.subject || defaults.subject || plan.domain || context.domain || "english"),
+      horizon: clean(context.horizon || defaults.horizon || "daily_plan"),
+      available_minutes: Number(defaults.availableMinutes || context.availableMinutes || 15) || 15,
+      target_node_ids: targetNodeIds.map(clean).filter(Boolean).slice(0, 12),
+      card_schema_version: clean(defaults.cardSchemaVersion || "growth.card.authoring.v1")
+    };
+  }
+
+  function createDailyLoopDraftPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(scope).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
+  function createDailyLoopPublishPayload({ context = {}, workspaceId = "", draftResult = {} } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId);
+    const planDraft = draftResult.planDraft || {};
+    const item = selectedPlanItem(planDraft);
+    const targetNodeIds = asArray(item.targetNodeIds).length ? asArray(item.targetNodeIds) : asArray(planDraft.targetNodeIds);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      plan_draft_id: clean(planDraft.planDraftId),
+      selected_item_id: clean(planDraft.selectedItemId || item.itemId),
+      target_node_ids: targetNodeIds.map(clean).filter(Boolean).slice(0, 12)
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
   }
 
   function createStageAssessmentPayload({ context = {}, workspaceId = "", activationSource = "owner_manual" } = {}) {
@@ -547,15 +688,22 @@
     const plan = context.suggestedPlan || {};
     const generated = state.generatedResult || {};
     const loading = state.status === "loading_context";
-    const generating = state.status === "generating";
-    const blockedReason = generating ? "" : generationBlockedReason({ state, context, readiness, plan });
-    const canGenerate = Boolean(readiness.ready && plan.targetNodeId && !generating && !blockedReason);
-    const submitBlocked = Boolean(!generating && !canGenerate);
-    const submitClass = `primary${submitBlocked ? " disabled" : ""}`;
-    const submitBlockedAttrs = submitBlocked
-      ? `data-card-generation-blocked-reason="${escapeHtml(blockedReason)}" aria-disabled="true"`
+    const busy = state.status === "generating" || state.status === "drafting" || state.status === "publishing";
+    const draftResult = state.dailyLoopDraftResult || {};
+    const publishResult = state.dailyLoopPublishResult || {};
+    const draftBlockedReason = busy ? "" : dailyLoopDraftBlockedReason({ state, context, readiness, plan });
+    const publishBlockedReason = busy ? "" : dailyLoopPublishBlockedReason({ state, context, readiness, draftResult });
+    const canDraft = Boolean(!busy && !draftBlockedReason);
+    const canPublish = Boolean(!busy && !publishBlockedReason);
+    const draftClass = `${canDraft ? "" : "disabled"}`;
+    const publishClass = `primary${canPublish ? "" : " disabled"}`;
+    const draftBlockedAttrs = !canDraft
+      ? `data-card-generation-blocked-reason="${escapeHtml(draftBlockedReason)}" aria-disabled="true"`
       : "";
-    return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}" aria-busy="${generating ? "true" : "false"}">
+    const publishBlockedAttrs = !canPublish
+      ? `data-card-generation-blocked-reason="${escapeHtml(publishBlockedReason)}" aria-disabled="true"`
+      : "";
+    return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}" aria-busy="${busy ? "true" : "false"}">
       <section class="learning-coin-panel learning-card-generation-intro">
         <div class="learning-section-heading">
           <h3>卡片生成</h3>
@@ -602,15 +750,17 @@
           <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
           <div class="learning-card-generation-actions">
             <button type="button" data-card-generation-refresh>刷新状态</button>
-            <button type="button" class="${submitClass}" data-card-generation-submit ${submitBlockedAttrs} ${generating ? "disabled" : ""}>${generating ? "正在生成" : "生成卡片"}</button>
+            <button type="button" class="${draftClass}" data-card-generation-draft ${draftBlockedAttrs} ${state.status === "drafting" ? "disabled" : ""}>${state.status === "drafting" ? "正在规划" : "规划下一张"}</button>
+            <button type="button" class="${publishClass}" data-card-generation-publish ${publishBlockedAttrs} ${state.status === "publishing" ? "disabled" : ""}>${state.status === "publishing" ? "正在发布" : "发布为卡片"}</button>
           </div>
         </section>
 
         <section class="learning-coin-panel learning-card-generation-preview">
           <div class="learning-section-heading">
-            <h3>卡片预览</h3>
+            <h3>规划与发布</h3>
             <span>${generated.published?.taskCardId ? "已发布" : "等待生成"}</span>
           </div>
+          ${dailyLoopPlanPreview({ draftResult, publishResult }, escapeHtml)}
           ${generatedCardPreview(generated, escapeHtml)}
           <div class="learning-card-generation-audit">
             <span>teachingFlow contract <em></em></span>
@@ -625,6 +775,8 @@
 
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
+    createDailyLoopDraftPayload,
+    createDailyLoopPublishPayload,
     createStageAssessmentPayload,
     isFanfanSampleTarget,
     renderOwnerCardGenerationPanel

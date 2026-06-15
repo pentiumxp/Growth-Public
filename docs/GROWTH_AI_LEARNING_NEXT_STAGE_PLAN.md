@@ -135,11 +135,13 @@ operate and audit it from the embedded plugin.
 
 The next implementation slices should be:
 
-1. **Owner daily loop closure**: complete the `生成` tab over the existing
-   daily-loop and plan-publish facades so Owner can create one Fanfan science
-   daily card without Codex. The UI must show selected target, provisioning,
-   graph options, Profile V2, planner/author/evaluator readiness, draft
-   progress, publish progress, card link/open state, and bounded errors.
+1. **Owner daily loop closure**: the minimal `生成` tab operation path now
+   runs over the existing daily-loop facade. Owner can load context, inspect
+   compact learning-loop state, draft one plan, preview the selected plan
+   item, explicitly publish one card, and refresh board/context/loop state
+   without Codex. The remaining closure is product-grade scope selection,
+   target provisioning controls, richer audit summaries, central visual
+   evidence, and production release evidence.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
    record/playback, and score-proportional completion. No pass-line retry loop
@@ -176,7 +178,7 @@ The missing product capability is the browser-operable learning loop:
 
 | Slice | Objective | Required boundary | Non-goal |
 | --- | --- | --- | --- |
-| A1: Owner daily planning UI | Owner can create one Fanfan science daily card from persisted context. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
+| A1: Owner daily planning UI | Owner can create one Fanfan sample daily card from persisted context through the plugin UI. Minimal draft/publish operation is implemented; scope/provision/audit polish and release evidence remain. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
 | A2: Learner daily evidence UI | Learner can finish the generated card with one submit, one evaluation, and one optional reflection. | Reuse generated-card detail flow, audio evidence, one-box-per-stage state, and visible failed-evaluation recovery. | No pass-line retry gate and no extra competing submission boxes. |
 | A3: Owner audit/correction UI | Owner can see why the card happened, what changed, and how to correct future profile evidence. | Render plan/evidence/profile-delta/cycle/completeness/correction DTOs and write corrections through `learning-owner-correction-service`. | No browser-side Profile V2 computation and no raw transcript/prompt viewer. |
 | A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher. |
@@ -227,16 +229,17 @@ without Codex.
 
 Scope:
 
-1. Finish the Owner `生成` tab over `learning-daily-loop-service`.
-2. Render selected visible target, learner id, domain pack, domain, subject,
+1. Keep the Owner `生成` tab on `learning-daily-loop-service`; the minimal
+   browser draft/publish path is implemented.
+2. Complete selected visible target, learner id, domain pack, domain, subject,
    horizon, available minutes, target provisioning, graph options, Profile V2,
    evidence audit, planner readiness, authoring readiness, evaluation
    readiness, and recent audit summaries.
-3. Draft through `POST /api/v1/growth/daily-loop/draft`.
+3. Draft through `POST /api/v1/growth/daily-loop/draft` from the UI.
 4. Preview one validated daily plan item with target nodes, role, difficulty,
    support level, evidence requirements, estimated minutes, rationale, and
    basis evidence ids.
-5. Publish through `POST /api/v1/growth/daily-loop/publish`.
+5. Publish through `POST /api/v1/growth/daily-loop/publish` from the UI.
 6. Show visible pending, success, blocked, and failure states. No generate,
    draft, publish, or audit refresh action may fail silently.
 7. Preserve mobile scroll, dark-mode contrast, and embedded sizing.
@@ -545,10 +548,12 @@ A next-stage package is complete only when:
 
 ## Immediate Recommendation
 
-The preferred next product slice is Path A: close the Owner-supervised daily
-browser loop for one Fanfan science card over the existing daily-loop facade.
-That makes the AI loop observable and avoids adding automation before Owner can
-inspect why a card was selected and what changed after completion.
+The preferred next product slice remains Path A, but the immediate focus has
+shifted from basic draft/publish operation to product-grade closure: complete
+scope/provision controls, Owner audit/correction drilldown, central embedded
+visual evidence, and production release evidence over the existing daily-loop
+facade. That keeps the AI loop observable and avoids adding automation before
+Owner can inspect why a card was selected and what changed after completion.
 
 If the next slice must be backend-only, choose Path B and keep it strictly as
 release-readiness evidence. That boundary should make missing release evidence

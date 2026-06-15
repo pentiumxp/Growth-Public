@@ -90,8 +90,10 @@ backend boundaries:
 Known gaps before the architecture can be called production-complete for the
 full operating loop:
 
-- embedded Owner UI for plan draft preview and explicit publish is still
-  pending;
+- embedded Owner UI has a minimal plan draft preview and explicit publish path
+  through the daily-loop facade, but production-complete scope/provision
+  controls, audit/correction drilldown, central visual evidence, and release
+  evidence are still pending;
 - no-write planner Gateway readiness smoke is implemented locally; production
   execution against real Gateway config is pending before planner UI deploy;
 - no-write daily-loop preview smoke CLI is implemented locally through
@@ -107,11 +109,13 @@ full operating loop:
   publishing, generating, evaluating, scheduling, notifying, or activating
   stage assessments;
 - the embedded Owner `生成` tab now reads
-  `GET /api/v1/growth/learning-loop/state` after generation context load and
+  `GET /api/v1/growth/learning-loop/state` after generation context load,
   renders the compact status/next-action, weakness, audit-gap, and
-  stage-checkpoint summary. This is UI glue over the service route only; it
-  does not draft, publish, call Gateway, evaluate, schedule, or mutate learner
-  state;
+  stage-checkpoint summary, drafts through
+  `POST /api/v1/growth/daily-loop/draft`, previews one selected plan item, and
+  publishes through `POST /api/v1/growth/daily-loop/publish`. Browser code
+  still does not call Gateway directly, compute learning policy, evaluate,
+  schedule, activate stage assessments, or publish automatically;
 - controlled daily-loop smoke CLI is implemented locally through
   `npm run smoke:daily-loop`; it defaults to no-write preview, requires
   explicit `--allow-write` for `draft` and `publish`, requires
@@ -688,6 +692,7 @@ be feature-driven:
 | Owner audit readback context | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-card-generation-context-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner daily-loop backend facade | `node --test tests/growth-daily-loop-smoke-script.test.js tests/growth-daily-loop-preview-smoke-script.test.js tests/learning-daily-loop-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner learning-loop state readback | `node --test tests/learning-loop-state-service.test.js tests/growth-learning-loop-state-smoke-script.test.js tests/learning-daily-loop-service.test.js tests/learning-stage-assessment-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` plus `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json` for default no-write state evidence. |
+| Owner daily-loop browser UI | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js` proves API client draft/publish helpers, Home AI proxy path handling, separate draft/publish buttons, bounded plan preview, visible publish progress, dark-mode contrast, and mobile scroll/layout guards. |
 | Learning-cycle audit aggregate | `node --test tests/learning-cycle-audit-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Learning audit completeness readback | `node --test tests/learning-audit-completeness-service.test.js tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Supervised automation proposal dry-run | `node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-proposal-service.test.js tests/learning-audit-completeness-service.test.js tests/learning-plan-publisher-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |

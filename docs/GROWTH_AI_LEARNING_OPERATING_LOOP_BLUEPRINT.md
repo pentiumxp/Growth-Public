@@ -266,10 +266,17 @@ The current next-stage selector is
 product-visible path, the backend-only release-readiness path, and the rule
 that readiness evidence must not become execution permission.
 
-### Next Package: Owner-Supervised Daily Loop
+### Current Package: Owner-Supervised Daily Loop
 
-The next product-visible package should close the first browser loop for a
-Fanfan science daily card:
+The first browser operation path is now minimally closed for a Fanfan daily
+card. The Owner `生成` tab can load context, show the compact
+`growth.learningLoopState.v1` state, draft a daily-loop plan, preview the
+selected item, explicitly publish one item, and refresh the board and loop
+state. The remaining product-visible work for this package is to make the
+scope/provision/audit controls complete and to produce central visual release
+evidence.
+
+Required shape:
 
 - render target/domain-pack/subject scope, `targetProvisioning`,
   `graphOptions`, Profile V2, evidence audit, planner/authoring/evaluation

@@ -872,14 +872,24 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
    - `GET /api/v1/growth/card-generation/context`.
 3. Add frontend API helpers:
    - `fetchCardGenerationContext(targetWorkspaceId)`;
-   - `generateGrowthCard(payload, targetWorkspaceId)`.
+   - `fetchLearningLoopState(targetWorkspaceId, context)`;
+   - `draftGrowthDailyLoop(payload, targetWorkspaceId)`;
+   - `publishGrowthDailyLoop(payload, targetWorkspaceId)`;
+   - `generateGrowthCard(payload, targetWorkspaceId)` remains only as a
+     compatibility helper for the legacy direct card-generation route.
 4. Add Owner UI:
    - `growth-card-generation-ui.js`;
-   - render inside Owner `生成` tab.
+   - render inside Owner `生成` tab;
+   - expose separate `规划下一张` and `发布为卡片` actions.
 5. Add controller:
    - load context when Owner opens the tab or changes target;
-   - submit generation;
-   - refresh board or open generated card after publish.
+   - draft one daily plan through
+     `POST /api/v1/growth/daily-loop/draft`;
+   - show bounded plan preview before publication;
+   - publish one selected item through
+     `POST /api/v1/growth/daily-loop/publish`;
+   - refresh board, card-generation context, and learning-loop state after
+     publish.
 6. Keep existing card renderer:
    - published card appears in board lanes using the existing DTO path.
 
@@ -921,10 +931,10 @@ Add focused tests before broad regression runs:
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context and POST generate with workspace query/header handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning profile/trajectory projection |
+| API client | GET context, GET learning-loop state, legacy POST generate compatibility, and daily-loop draft/publish POST helpers with workspace query/proxy handling |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders learning-loop state, learning profile/trajectory projection, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI target state | Fanfan enabled, disabled targets do not generate |
-| UI plan preview | next UI slice should render `graphOptions`, call draft route, show validated plan item, and publish only after explicit Owner action |
+| UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | next UI slice should render `targetProvisioning`, prevent silent no-op generation when blocked, and call the provision route only after explicit Owner action |
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
 | UI proposal review | lists and creates supervised proposals from a selected complete cycle, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision |

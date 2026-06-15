@@ -180,6 +180,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.activateGrowthStageAssessment({ target_node_id: "kg_main_idea", assessment_coverage_node_ids: ["kg_main_idea"], activation_source: "owner_manual" }, "weixin_fanfan");
   await client.processGrowthEvaluations("weixin_fanfan", 3);
   await client.retryGrowthEvaluation({ task_card_id: "ltask_daily_1", reason: "owner retry" }, "weixin_fanfan");
+  await client.draftGrowthDailyLoop({ target_node_ids: ["kg_main_idea"] }, "weixin_fanfan");
+  await client.publishGrowthDailyLoop({ plan_draft_id: "lgplan_1", selected_item_id: "plan_item_1" }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -225,6 +227,17 @@ test("Growth API client exposes card generation context and write helpers", asyn
     task_card_id: "ltask_daily_1",
     reason: "owner retry"
   });
+  assert.equal(calls[11].path, "/api/v1/growth/daily-loop/draft");
+  assert.deepEqual(JSON.parse(calls[11].options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_ids: ["kg_main_idea"]
+  });
+  assert.equal(calls[12].path, "/api/v1/growth/daily-loop/publish");
+  assert.deepEqual(JSON.parse(calls[12].options.body), {
+    workspace_id: "weixin_fanfan",
+    plan_draft_id: "lgplan_1",
+    selected_item_id: "plan_item_1"
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -247,11 +260,15 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchCardGenerationContext("weixin_stephen");
   await client.fetchLearningLoopState("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
+  await client.draftGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
+  await client.publishGrowthDailyLoop({ plan_draft_id: "lgplan_1", selected_item_id: "plan_item_1" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
   assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/state?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&availableMinutes=15");
   assert.equal(calls[2].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
+  assert.equal(calls[3].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/draft");
+  assert.equal(calls[4].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/publish");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -431,7 +448,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       gatewayConfigured: true,
       authoringGatewayConfigured: true,
       evaluationGatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      plannerContextReady: true,
+      plannerReady: true,
       aiLoopGatewayReady: true,
+      operatingLoopGatewayReady: true,
       blockingOpenGeneration: false
     },
     graph: { nodeCount: 294, edgeCount: 329 },
@@ -511,6 +532,28 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       cardGeneration: {
         status: "ready",
         context,
+        dailyLoopDraftResult: {
+          ok: true,
+          planDraft: {
+            planDraftId: "lgplan_1",
+            workspaceId: "weixin_fanfan",
+            learnerId: "fanfan",
+            status: "drafted",
+            planSummary: "One short evidence repair card.",
+            selectedItemId: "plan_item_1",
+            itemCount: 1,
+            targetNodeIds: ["kg_english_evidence_answering"],
+            items: [{
+              itemId: "plan_item_1",
+              cardRole: "teaching",
+              difficultyBand: "repair",
+              supportLevel: "guided",
+              targetNodeIds: ["kg_english_evidence_answering"],
+              evidenceRequirements: ["short_answer"],
+              reason: "Repair exact evidence."
+            }]
+          }
+        },
         learningLoopState: {
           status: "ready",
           data: {
@@ -536,8 +579,15 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.match(html, /data-card-generation-manager/);
   assert.match(html, /日常英语卡/);
-  assert.match(html, /data-card-generation-submit/);
+  assert.match(html, /data-card-generation-draft/);
+  assert.match(html, /data-card-generation-publish/);
+  assert.match(html, /规划下一张/);
+  assert.match(html, /发布为卡片/);
+  assert.match(html, /data-card-generation-plan-preview/);
+  assert.match(html, /lgplan_1/);
+  assert.match(html, /plan_item_1/);
   assert.match(html, /Gateway evaluation/);
+  assert.match(html, /Planner Gateway/);
   assert.match(html, /data-learning-loop-state-panel/);
   assert.match(html, /data-learning-loop-state-status="ready_to_draft"/);
   assert.match(html, /学习闭环/);
@@ -579,6 +629,32 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(payload, "completion_policy"), false);
   assert.equal(Object.hasOwn(payload, "generation_key"), false);
 
+  const draftPayload = windowRef.HermesGrowthCardGenerationUi.createDailyLoopDraftPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.equal(draftPayload.workspace_id, "weixin_fanfan");
+  assert.equal(draftPayload.learner_id, "fanfan");
+  assert.equal(draftPayload.domain, "english");
+  assert.equal(draftPayload.horizon, "daily_plan");
+  assert.deepEqual(draftPayload.target_node_ids, ["kg_english_evidence_answering"]);
+
+  const publishPayload = windowRef.HermesGrowthCardGenerationUi.createDailyLoopPublishPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    draftResult: {
+      planDraft: {
+        planDraftId: "lgplan_1",
+        selectedItemId: "plan_item_1",
+        items: [{ itemId: "plan_item_1", targetNodeIds: ["kg_english_evidence_answering"] }]
+      }
+    }
+  });
+  assert.equal(publishPayload.workspace_id, "weixin_fanfan");
+  assert.equal(publishPayload.plan_draft_id, "lgplan_1");
+  assert.equal(publishPayload.selected_item_id, "plan_item_1");
+  assert.deepEqual(publishPayload.target_node_ids, ["kg_english_evidence_answering"]);
+
   const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
     context,
     workspaceId: "weixin_fanfan",
@@ -605,6 +681,8 @@ test("Growth card generation UI renders stage assessment eligibility and activat
       learningGraphReady: true,
       historySummaryReady: true,
       gatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      plannerContextReady: true,
       blockingOpenGeneration: false
     },
     graph: { nodeCount: 294, edgeCount: 329 },
@@ -971,7 +1049,10 @@ test("Growth card generation UI renders visible progress while generating", () =
       workspaceProvisioned: true,
       learningGraphReady: true,
       historySummaryReady: true,
-      gatewayConfigured: true
+      gatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      plannerContextReady: true,
+      authoringGatewayConfigured: true
     },
     graph: { nodeCount: 294, edgeCount: 329 },
     suggestedPlan: {
@@ -986,10 +1067,17 @@ test("Growth card generation UI renders visible progress while generating", () =
   const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
     state: {
       cardGeneration: {
-        status: "generating",
+        status: "publishing",
         context,
-        progressStep: "validation",
-        progressMessage: "正在校验 teachingFlow、图谱绑定和隐私边界。"
+        dailyLoopDraftResult: {
+          planDraft: {
+            planDraftId: "lgplan_1",
+            selectedItemId: "plan_item_1",
+            items: [{ itemId: "plan_item_1", targetNodeIds: ["kg_english_main_idea"] }]
+          }
+        },
+        progressStep: "authoring",
+        progressMessage: "正在根据已验证计划项生成卡片。"
       }
     },
     viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
@@ -999,10 +1087,10 @@ test("Growth card generation UI renders visible progress while generating", () =
   assert.match(html, /aria-busy="true"/);
   assert.match(html, /data-card-generation-progress/);
   assert.match(html, /role="status"/);
-  assert.match(html, /正在生成卡片/);
-  assert.match(html, /data-progress-step="validation" data-progress-state="active"/);
-  assert.match(html, /正在校验 teachingFlow、图谱绑定和隐私边界。/);
-  assert.match(html, />正在生成<\/button>/);
+  assert.match(html, /正在发布卡片/);
+  assert.match(html, /data-progress-step="authoring" data-progress-state="active"/);
+  assert.match(html, /正在根据已验证计划项生成卡片。/);
+  assert.match(html, />正在发布<\/button>/);
 });
 
 test("Growth card generation UI renders the context target even when host targets omit it", () => {
@@ -1075,9 +1163,9 @@ test("Growth card generation UI keeps Owner workspace separate from selected gen
   assert.match(activeTargets[0], /weixin_stephen · sample/);
   assert.doesNotMatch(activeTargets[0], /owner · 稍后开放/);
 
-  const submitTag = html.match(/<button[^>]+data-card-generation-submit[^>]*>/)?.[0] || "";
-  assert.doesNotMatch(submitTag, /data-card-generation-blocked-reason=/);
-  assert.doesNotMatch(submitTag, /aria-disabled="true"/);
+  const draftTag = html.match(/<button[^>]+data-card-generation-draft[^>]*>/)?.[0] || "";
+  assert.doesNotMatch(draftTag, /data-card-generation-blocked-reason=/);
+  assert.doesNotMatch(draftTag, /aria-disabled="true"/);
 });
 
 test("Growth card generation UI gives feedback for blocked readiness instead of silent disabled", () => {
@@ -1115,10 +1203,10 @@ test("Growth card generation UI gives feedback for blocked readiness instead of 
     workspaceId: "owner"
   });
 
-  const submitTag = html.match(/<button[^>]+data-card-generation-submit[^>]*>/)?.[0] || "";
-  assert.match(submitTag, /data-card-generation-blocked-reason="请先在左侧选择凡凡，再生成卡片。"/);
-  assert.match(submitTag, /aria-disabled="true"/);
-  assert.doesNotMatch(submitTag, /\sdisabled(=|\s|>)/);
+  const draftTag = html.match(/<button[^>]+data-card-generation-draft[^>]*>/)?.[0] || "";
+  assert.match(draftTag, /data-card-generation-blocked-reason="请先在左侧选择凡凡，再生成卡片。"/);
+  assert.match(draftTag, /aria-disabled="true"/);
+  assert.doesNotMatch(draftTag, /\sdisabled(=|\s|>)/);
 });
 
 test("Growth view-model adapter normalizes cards, lanes, and overview metrics", () => {
@@ -1267,7 +1355,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260615-learning-loop-state-ui-v1";
+  const staticVersion = "20260615-daily-loop-draft-publish-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1302,7 +1390,13 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /pageState\.cardGeneration\.context = context/);
   assert.match(source, /await refreshLearningLoopState\(requestedTargetWorkspaceId, context\)/);
-  assert.match(source, /pageState\.cardGeneration\.status = "published";[\s\S]*pageState\.cardGeneration\.generatedResult = result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
+  assert.match(source, /function draftDailyLoopFromUi/);
+  assert.match(source, /api\.draftGrowthDailyLoop\(payload, targetWorkspaceId\)/);
+  assert.match(source, /pageState\.cardGeneration\.status = "drafted";[\s\S]*pageState\.cardGeneration\.dailyLoopDraftResult = result;[\s\S]*await refreshLearningLoopState\(targetWorkspaceId, pageState\.cardGeneration\.context\)/);
+  assert.match(source, /function publishDailyLoopFromUi/);
+  assert.match(source, /api\.publishGrowthDailyLoop\(payload, targetWorkspaceId\)/);
+  assert.match(source, /pageState\.cardGeneration\.status = "published";[\s\S]*pageState\.cardGeneration\.dailyLoopPublishResult = result;[\s\S]*pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
   assert.match(source, /pageState\.cardGeneration\.generatedResult = result\.generation \|\| result;[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*renderShell\(\);/);
+  assert.doesNotMatch(source, /api\.generateGrowthCard/);
   assert.doesNotMatch(source, /await loadCardGenerationContext\(targetWorkspaceId\)/);
 });

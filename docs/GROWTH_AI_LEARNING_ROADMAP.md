@@ -339,7 +339,7 @@ automation switch.
 
 | Gate | Question | Must be true before moving on |
 | --- | --- | --- |
-| G1: Owner daily card | Can Owner create one low-pressure card without Codex? | UI can load context, show readiness, draft or directly generate through Growth service routes, publish one daily card, show progress, and show bounded failures on mobile and dark mode. |
+| G1: Owner daily card | Can Owner create one low-pressure card without Codex? | UI can load context, show readiness, draft through the daily-loop facade, preview one selected plan item, explicitly publish one daily card, show progress, and show bounded failures on mobile and dark mode. |
 | G2: Owner audit | Can Owner explain the card after completion? | Cycle audit, evidence audit, profile-delta audit, corrections, next recommendation, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs without raw private payloads. |
 | G3: Formal checkpoint separation | Are formal checks separate from daily practice? | Stage readiness, cooldown, and coverage are visible; direct formal publication from daily plan remains blocked; activation goes only through `learning-stage-assessment-service`. |
 | G4: Generalized target | Can the same loop run outside the Fanfan sample? | Visible non-sample learners remain blocked until provisioned; explicit provision enables a selected domain pack/subject; actor and target workspaces never mix. |
@@ -913,8 +913,10 @@ Ready-to-start contract for this slice:
 
 Backend status: the learning-loop state readback and daily-loop
 preview/draft/publish facade are implemented and covered by service, smoke,
-route, and architecture harnesses. The remaining Stage 1 work is embedded UI
-consumption, frontend adapter/layout coverage, and central visual evidence
+route, and architecture harnesses. Browser status: minimal embedded UI
+consumption is implemented with frontend adapter/layout coverage for draft,
+plan preview, publish, progress, mobile scroll, and dark mode. The remaining
+Stage 1 work is richer scope/provision/audit UI plus central visual evidence
 before deployment.
 
 After Stage 1 and Stage 2 are implemented, the remaining automation work is
