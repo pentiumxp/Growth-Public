@@ -543,6 +543,201 @@
     </section>`;
   }
 
+  function firstCleanValue(...values) {
+    for (const value of values) {
+      const cleaned = clean(value);
+      if (cleaned) return cleaned;
+    }
+    return "";
+  }
+
+  function firstCleanArray(...values) {
+    for (const value of values) {
+      const cleaned = asArray(value).map(clean).filter(Boolean);
+      if (cleaned.length) return Array.from(new Set(cleaned)).slice(0, 12);
+    }
+    return [];
+  }
+
+  function createCycleAuditQueryPayload({ context = {}, workspaceId = "", draftResult = {}, publishResult = {}, generatedResult = {} } = {}) {
+    const ownerAudit = context.ownerAudit || {};
+    const latestPlan = ownerAuditItems(ownerAudit, "planAudit")[0] || {};
+    const firstDelta = ownerAuditItems(ownerAudit, "profileDeltaAudit")[0] || {};
+    const firstCorrection = ownerAuditItems(ownerAudit, "profileCorrections")[0] || {};
+    const plan = context.suggestedPlan || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const defaults = context.generationDefaults || {};
+    const planDraft = publishResult.planDraft || draftResult.planDraft || {};
+    const generation = publishResult.generation || generatedResult || {};
+    const published = generation.published || {};
+    const selectedItem = selectedPlanItem(planDraft);
+    const targetNodeIds = firstCleanArray(
+      firstDelta.targetNodeIds,
+      firstCorrection.targetNodeIds,
+      selectedItem.targetNodeIds,
+      planDraft.targetNodeIds,
+      recommendation.targetNodeIds,
+      plan.targetNodeIds,
+      [recommendation.targetNodeId || plan.targetNodeId]
+    );
+    const payload = {
+      workspace_id: firstCleanValue(workspaceId, context.target?.workspaceId),
+      learner_id: firstCleanValue(context.target?.learnerId, workspaceId),
+      program_id: firstCleanValue(context.programId, firstDelta.programId, latestPlan.programId, plan.programId, defaults.programId),
+      plan_draft_id: firstCleanValue(planDraft.planDraftId, latestPlan.planDraftId),
+      task_card_id: firstCleanValue(published.taskCardId, generation.taskCardId, generatedResult.taskCardId, planDraft.generatedTaskCardId, latestPlan.generatedTaskCardId, firstDelta.taskCardId, firstCorrection.taskCardId),
+      evaluation_id: firstCleanValue(firstDelta.evaluationId, firstCorrection.evaluationId),
+      profile_delta_id: firstCleanValue(firstDelta.profileDeltaId, firstCorrection.profileDeltaId),
+      evidence_id: firstCleanValue(firstCleanArray(firstDelta.evidenceIds, firstCorrection.evidenceIds)[0]),
+      correction_id: firstCleanValue(firstCorrection.correctionId),
+      source_id: firstCleanValue(firstDelta.evaluationId, firstCorrection.evaluationId),
+      target_node_ids: targetNodeIds,
+      limit: 20
+    };
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
+  function cycleAuditHasAnchor(payload = {}) {
+    return [
+      payload.plan_draft_id,
+      payload.task_card_id,
+      payload.evaluation_id,
+      payload.profile_delta_id,
+      payload.evidence_id,
+      payload.correction_id,
+      payload.source_id
+    ].some((value) => clean(value));
+  }
+
+  function cycleDrilldownStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "ready") return "已读取";
+    if (value === "failed") return "失败";
+    return "待读取";
+  }
+
+  function cycleTimelineTypeText(type = "") {
+    const value = clean(type).toLowerCase();
+    if (value === "plan") return "计划";
+    if (value === "plan_publish_attempt") return "发布尝试";
+    if (value === "evidence") return "评价证据";
+    if (value === "profile_delta") return "画像变化";
+    if (value === "correction") return "Owner 纠偏";
+    return value || "记录";
+  }
+
+  function cycleFindingText(code = "") {
+    const value = clean(code);
+    const map = {
+      plan_publication: "计划发布",
+      publish_attempt_visibility: "发布尝试可见",
+      evaluation_evidence: "评价证据",
+      profile_delta_audit: "画像变化审计",
+      partial_failures: "下游审计服务",
+      privacy_projection: "隐私投影",
+      owner_correction_optional: "Owner 纠偏",
+      next_recommendation_optional: "下一张建议"
+    };
+    return map[value] || value || "检查项";
+  }
+
+  function cycleDrilldownTimelineRows(timeline = [], escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(timeline).slice(0, 6);
+    if (!rows.length) return `<div class="learning-card-generation-cycle-empty">暂无单卡 timeline。完成提交和批改后再刷新。</div>`;
+    return rows.map((entry) => {
+      const label = cycleTimelineTypeText(entry.type);
+      const id = clean(entry.id || entry.planDraftId || entry.taskCardId || entry.evaluationId || entry.profileDeltaId || entry.correctionId);
+      const detail = clean(entry.summary || entry.error || entry.status || entry.at || "summary-only");
+      const meta = clean(entry.status || entry.at || "记录");
+      return `<div class="learning-card-generation-cycle-row" data-cycle-timeline-type="${escapeHtml(clean(entry.type))}">
+        <span>
+          <strong>${escapeHtml(label)}${id ? ` · ${escapeHtml(id)}` : ""}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(meta)}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function cycleDrilldownFindingRows(findings = [], escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(findings).slice(0, 8);
+    if (!rows.length) return `<div class="learning-card-generation-cycle-empty">暂无完整性检查结果。</div>`;
+    return rows.map((item) => {
+      const ok = item.ok !== false;
+      return `<div class="learning-card-generation-cycle-finding" data-cycle-finding-ok="${ok ? "true" : "false"}">
+        <span>
+          <strong>${escapeHtml(cycleFindingText(item.code))}</strong>
+          <small>${escapeHtml(item.remediation || item.code || "summary-only")}</small>
+        </span>
+        <em>${escapeHtml(ok ? "通过" : "待补齐")}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function cycleDrilldownPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const drilldown = state.cycleDrilldown || {};
+    const payload = createCycleAuditQueryPayload({
+      context,
+      workspaceId: state.selectedWorkspaceId || context.target?.workspaceId,
+      draftResult: state.dailyLoopDraftResult || {},
+      publishResult: state.dailyLoopPublishResult || {},
+      generatedResult: state.generatedResult || {}
+    });
+    const status = clean(drilldown.status || "idle");
+    const audit = drilldown.audit || {};
+    const completeness = drilldown.completeness || {};
+    const summary = audit.summary || completeness.cycleAudit?.summary || {};
+    const completenessSummary = completeness.summary || {};
+    const missingRequired = asArray(completenessSummary.missingRequired);
+    const timeline = asArray(audit.timeline).length ? audit.timeline : completeness.cycleAudit?.timeline;
+    const anchor = firstCleanValue(payload.task_card_id, payload.evaluation_id, payload.plan_draft_id, payload.profile_delta_id, payload.evidence_id, payload.correction_id);
+    const hasAnchor = cycleAuditHasAnchor(payload);
+    const loading = status === "loading";
+    const disabled = loading || !hasAnchor;
+    const completenessLabel = completeness.complete === true
+      ? "完整"
+      : completeness.ok === true
+        ? "待补齐"
+        : "未确认";
+    const reason = clean(drilldown.error)
+      || (loading ? "正在读取 Growth 单卡审计和完整性检查。"
+        : hasAnchor ? "读取某张卡从计划、评价到画像变化的 summary-only 证据。"
+          : "等待已发布卡片或评价证据后读取。");
+    return `<section class="learning-card-generation-cycle-drilldown" data-card-generation-cycle-drilldown data-cycle-drilldown-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-cycle-head">
+        <span>
+          <strong>单卡闭环审计</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <em>${escapeHtml(cycleDrilldownStatusText(status))}</em>
+      </div>
+      <div class="learning-card-generation-cycle-grid">
+        <span><small>卡片</small><strong>${escapeHtml(anchor || "等待卡片")}</strong></span>
+        <span><small>计划</small><strong>${escapeHtml(String(Number(summary.planDraftCount || 0) || 0))}</strong></span>
+        <span><small>评价</small><strong>${escapeHtml(String(Number(summary.evidenceCount || 0) || 0))}</strong></span>
+        <span><small>缺口</small><strong>${escapeHtml(String(missingRequired.length))}</strong></span>
+      </div>
+      <div class="learning-card-generation-cycle-actions">
+        <span>${escapeHtml(completeness.readyForAutomation ? "审计完整，可作为后续自动化证据" : `完整性：${completenessLabel}`)}</span>
+        <button type="button" class="primary" data-card-generation-cycle-audit-refresh ${disabled ? `disabled aria-disabled="true" data-card-generation-blocked-reason="${escapeHtml(hasAnchor ? "正在读取审计，请稍候。" : "还没有可读取的单卡 cycle anchor。")}"` : ""}>${loading ? "读取中" : "读取单卡审计"}</button>
+      </div>
+      <div class="learning-card-generation-cycle-columns">
+        <div>
+          <b>Timeline</b>
+          ${cycleDrilldownTimelineRows(timeline, escapeHtml)}
+        </div>
+        <div>
+          <b>Completeness</b>
+          ${cycleDrilldownFindingRows(completeness.findings, escapeHtml)}
+        </div>
+      </div>
+    </section>`;
+  }
+
   function stageAssessmentPanel({ context = {}, state = {}, readiness = {}, plan = {}, escapeHtml = defaultEscapeHtml } = {}) {
     const stage = state.stageAssessment || {};
     const result = stage.result || stage.eligibility || {};
@@ -942,6 +1137,7 @@
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${learningProfilePanel(context, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
+          ${cycleDrilldownPanel(context, state, escapeHtml)}
           ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
           <div class="learning-card-generation-field-list">
             <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
@@ -978,8 +1174,10 @@
     createDailyEnglishGeneratePayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
+    createCycleAuditQueryPayload,
     createOwnerCorrectionPayload,
     createStageAssessmentPayload,
+    cycleAuditHasAnchor,
     isFanfanSampleTarget,
     renderOwnerCardGenerationPanel
   };

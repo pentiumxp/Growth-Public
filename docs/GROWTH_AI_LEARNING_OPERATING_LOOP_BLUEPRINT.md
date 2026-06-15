@@ -179,9 +179,11 @@ Implemented backend foundation:
 
 Important gaps:
 
-- embedded Owner UI does not yet expose planner draft preview, explicit plan
-  publish, domain-pack/subject selection, provision controls, or the
-  already-implemented `ownerAudit` profile-delta/correction readback;
+- embedded Owner UI now exposes planner draft preview, explicit plan publish,
+  `growth.learningLoopState.v1`, context-level `ownerAudit`, Owner correction
+  writes, and current-card cycle audit/completeness drilldown. It still lacks
+  product-grade domain-pack/subject selection, provision controls, older-cycle
+  selection, and central production visual release evidence;
 - production planner readiness smoke has not yet been run against real
   Gateway config for this planner UI rollout;
 - embedded weekly and stage-checkpoint UI remains future work, but the backend
@@ -272,9 +274,10 @@ The first browser operation path is now minimally closed for a Fanfan daily
 card. The Owner `生成` tab can load context, show the compact
 `growth.learningLoopState.v1` state, draft a daily-loop plan, preview the
 selected item, explicitly publish one item, and refresh the board and loop
-state. The remaining product-visible work for this package is to make the
-scope/provision/audit controls complete and to produce central visual release
-evidence.
+state. It can also inspect the current generated/completed card through
+summary-only cycle audit/completeness drilldown. The remaining product-visible
+work for this package is to make the scope/provision controls and older-cycle
+selection complete and to produce central visual release evidence.
 
 Required shape:
 
@@ -290,8 +293,9 @@ Required shape:
   `learning-plan-publisher-service.publishPlanItem`;
 - preserve the generated card preview and render failed/blocked
   `publishAttempt` metadata when publication does not create a card;
-- after learner completion, refresh Owner audit from service DTOs rather than
-  recomputing profile changes in browser code.
+- after learner completion, refresh Owner audit and current-cycle
+  completeness from service DTOs rather than recomputing profile changes or
+  audit state in browser code.
 
 Backend facade status:
 
@@ -300,8 +304,8 @@ Backend facade status:
 - The service composes existing context, plan-publisher, cycle-audit, and
   audit-completeness services. It is not a new model boundary and not a
   scheduler.
-- UI work should consume this facade first, then fall back to lower-level audit
-  routes only for drilldown.
+- UI work should consume this facade first, then use lower-level audit routes
+  only for explicit single-card drilldown.
 
 Minimum package harness:
 
@@ -327,8 +331,8 @@ Package closure checklist:
 
 After the daily browser loop can publish a card, the next package should make
 the result explainable. Current status: the Owner `生成` tab already renders
-the context-level `ownerAudit` panel and can write bounded Owner correction
-evidence through the profile-correction route; the remaining work is explicit
+the context-level `ownerAudit` panel, can write bounded Owner correction
+evidence through the profile-correction route, and can read current-card
 single-cycle drilldown and completeness readback:
 
 - render cycle audit, evidence audit, persisted profile-delta audit,
@@ -337,6 +341,8 @@ single-cycle drilldown and completeness readback:
   `learning-owner-correction-service`;
 - show whether `learning-audit-completeness-service` considers the source
   cycle ready for trusted follow-up;
+- keep `readyForAutomation` as audit evidence only; it is not browser
+  permission to schedule, publish, notify, or run workers;
 - keep raw learner answers, transcripts, prompts, raw model output, hidden
   answer keys, source-document bodies, private paths, credentials, and provider
   configuration out of UI DTOs and screenshots.

@@ -472,9 +472,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--operation correction --allow-write` through
   `learning-owner-correction-service.recordCorrection`. The embedded Owner
   `生成` tab now consumes the same context-level audit/correction DTOs and can
-  write bounded correction evidence; explicit single-cycle
-  `learning-cycles/audit` and `learning-cycles/completeness` drilldown remains
-  a separate product closure item.
+  write bounded correction evidence. It also renders current-card
+  single-cycle `learning-cycles/audit` and `learning-cycles/completeness`
+  drilldown through the browser API client, using only bounded ids, summary
+  counts, timeline rows, findings, and missing-required state.
   Profile V2 now includes expanded stale-evidence freshness: daily evidence and
   formal stage-assessment evidence use separate freshness windows,
   Owner-reviewed corrections do not refresh learner-evidence recency, stale

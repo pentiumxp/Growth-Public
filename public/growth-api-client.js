@@ -70,6 +70,14 @@
       if (cleaned) params.set(key, cleaned);
     }
 
+    function appendQueryArrayParam(params, key, value) {
+      const values = Array.isArray(value)
+        ? value
+        : String(value || "").split(",");
+      const cleaned = Array.from(new Set(values.map(clean).filter(Boolean)));
+      if (cleaned.length) params.set(key, cleaned.slice(0, 12).join(","));
+    }
+
     function learningLoopStateQuery(targetWorkspaceId = getWorkspaceId(), context = {}) {
       const workspaceId = clean(targetWorkspaceId);
       const params = new URLSearchParams();
@@ -89,6 +97,26 @@
         ? plan.targetNodeIds
         : [plan.targetNodeId].filter(Boolean);
       appendQueryParam(params, "targetNodeIds", targetNodeIds.join(","));
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
+    function cycleAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const params = new URLSearchParams();
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "planDraftId", payload.planDraftId || payload.plan_draft_id);
+      appendQueryParam(params, "taskCardId", payload.taskCardId || payload.task_card_id);
+      appendQueryParam(params, "evaluationId", payload.evaluationId || payload.evaluation_id);
+      appendQueryParam(params, "profileDeltaId", payload.profileDeltaId || payload.profile_delta_id);
+      appendQueryParam(params, "evidenceId", payload.evidenceId || payload.evidence_id);
+      appendQueryParam(params, "correctionId", payload.correctionId || payload.correction_id);
+      appendQueryParam(params, "sourceId", payload.sourceId || payload.source_id);
+      appendQueryArrayParam(params, "targetNodeIds", payload.targetNodeIds || payload.target_node_ids || payload.nodeIds || payload.node_ids);
+      appendQueryParam(params, "limit", payload.limit || 20);
       const query = params.toString();
       return query ? `?${query}` : "";
     }
@@ -159,6 +187,14 @@
       }, payload));
     }
 
+    function fetchGrowthCycleAudit(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("learning-cycles", "audit")}${cycleAuditQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function fetchGrowthCycleCompleteness(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("learning-cycles", "completeness")}${cycleAuditQuery(targetWorkspaceId, payload)}`);
+    }
+
     function evaluateGrowthStageAssessment(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("stage-assessments", "eligibility"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -215,6 +251,8 @@
       draftGrowthDailyLoop,
       evaluateGrowthStageAssessment,
       fetchCardGenerationContext,
+      fetchGrowthCycleAudit,
+      fetchGrowthCycleCompleteness,
       fetchGrowthCard,
       fetchJson,
       fetchLearningLoopState,

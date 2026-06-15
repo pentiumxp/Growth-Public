@@ -457,9 +457,10 @@ Required shape:
 Current status: the minimal browser operation path is implemented for Fanfan
 sample targets. Owner can load context, inspect learning-loop state, draft one
 daily plan, preview the selected plan item, publish it, and refresh the board
-and loop state from the plugin UI. The remaining Package 1 work is richer
-scope selection, explicit provision controls, Owner audit/correction drilldown,
-and central visual/release evidence before production deployment.
+and loop state from the plugin UI. The tab now also exposes Owner audit and
+single-card audit/completeness drilldown over the Growth service facades. The
+remaining Package 1 work is richer scope selection, explicit provision
+controls, and central visual/release evidence before production deployment.
 
 ### Package 2: Owner Audit And Correction UI
 
@@ -471,7 +472,12 @@ the Owner `生成` tab. It renders `ownerAudit` from
 profile-delta summaries, correction history, and writes bounded Owner
 corrections through `POST /api/v1/growth/profile-corrections`. The UI refreshes
 context and `growth.learningLoopState.v1` after a successful correction and
-does not mutate Profile V2 locally.
+does not mutate Profile V2 locally. The same tab now also derives a bounded
+single-cycle query and calls
+`GET /api/v1/growth/learning-cycles/audit` plus
+`GET /api/v1/growth/learning-cycles/completeness` through the browser API
+client. It renders only summary counts, timeline rows, completeness findings,
+and missing-required state.
 
 Required shape:
 
@@ -482,10 +488,9 @@ Required shape:
 - UI privacy tests reject raw answers, transcripts, prompts, model output,
   source bodies, private paths, credentials, and provider configuration.
 
-Remaining Package 2 work: add explicit single-cycle drilldown over
-`GET /api/v1/growth/learning-cycles/audit` and
-`GET /api/v1/growth/learning-cycles/completeness`, plus central embedded
-visual evidence before production release.
+Remaining Package 2 work: central embedded visual evidence before production
+release, plus richer selection/history controls for choosing older cycles after
+the current generated-card cycle is no longer the primary context.
 
 ### Package 3: Stage Checkpoint UI
 
@@ -638,18 +643,22 @@ draft/publish path:
 - the same `生成` tab now renders the `ownerAudit` context DTO as an
   audit/correction panel and writes bounded Owner correction evidence through
   `POST /api/v1/growth/profile-corrections` before refreshing context and loop
-  state.
+  state;
+- the same `生成` tab now renders single-card cycle audit/completeness
+  drilldown over `learning-cycles/audit` and `learning-cycles/completeness`,
+  using summary-only timeline/findings and keeping `readyForAutomation` as
+  evidence only, not an automation permission.
 
 The product is not complete because it still lacks full scope/provision
-controls, cycle/completeness drilldown UI, proposal/digest/action UI, central
-visual evidence, platform action evidence, and execution enablement evidence.
+controls, older-cycle selection UI, proposal/digest/action UI, central visual
+evidence, platform action evidence, and execution enablement evidence.
 
 Therefore the recommended next product-visible slice is still:
 
 1. finish Owner-supervised daily UI details over the existing daily-loop
    facade, especially scope/provision controls and production visual evidence;
-2. then finish Owner cycle/completeness drilldown over the existing
-   audit/correction UI;
+2. then add older-cycle selection/history controls over the implemented
+   current-card cycle/completeness drilldown;
 3. then harden formal checkpoint controls;
 4. then generalize target/domain-pack UI;
 5. then move to proposal/digest/action/execution UI;

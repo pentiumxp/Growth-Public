@@ -25,6 +25,12 @@
         result: null,
         error: ""
       },
+      cycleDrilldown: {
+        status: "idle",
+        audit: null,
+        completeness: null,
+        error: ""
+      },
       error: "",
       progressStep: "",
       progressMessage: "",
@@ -516,6 +522,32 @@
         pageState.cardGeneration.ownerCorrectionDraft = textarea.value || "";
       });
     });
+    root.querySelectorAll("[data-card-generation-cycle-audit-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const blockedReason = clean(button.dataset.cardGenerationBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.cycleDrilldown = {
+            status: "failed",
+            audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+            completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+            error: blockedReason
+          };
+          renderShell();
+          return;
+        }
+        if (button.disabled) return;
+        refreshOwnerCycleDrilldownFromUi().catch((error) => {
+          pageState.cardGeneration.cycleDrilldown = {
+            status: "failed",
+            audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+            completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+            error: error.message || String(error)
+          };
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-card-generation-correction-action]").forEach((select) => {
       select.addEventListener("change", () => {
         pageState.cardGeneration.ownerCorrectionAction = clean(select.value) || "confirm_profile_delta";
@@ -610,6 +642,12 @@
     pageState.cardGeneration.ownerCorrection = {
       status: "idle",
       result: null,
+      error: ""
+    };
+    pageState.cardGeneration.cycleDrilldown = {
+      status: "idle",
+      audit: null,
+      completeness: null,
       error: ""
     };
     pageState.cardGeneration.learningLoopState = {
@@ -762,6 +800,68 @@
     };
   }
 
+  function createCycleAuditQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createCycleAuditQueryPayload !== "function") {
+      throw new Error("cycle_audit_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const payload = ui.createCycleAuditQueryPayload({
+      context,
+      workspaceId: targetWorkspaceId,
+      draftResult: pageState.cardGeneration.dailyLoopDraftResult || {},
+      publishResult: pageState.cardGeneration.dailyLoopPublishResult || {},
+      generatedResult: pageState.cardGeneration.generatedResult || {}
+    });
+    return { payload, targetWorkspaceId };
+  }
+
+  async function refreshOwnerCycleDrilldownFromUi(options = {}) {
+    const { payload, targetWorkspaceId } = createCycleAuditQueryPayload();
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.cycleAuditHasAnchor !== "function" || !ui.cycleAuditHasAnchor(payload)) {
+      pageState.cardGeneration.cycleDrilldown = {
+        status: "failed",
+        audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+        completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+        error: "还没有可读取的单卡 cycle anchor。"
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+    pageState.cardGeneration.cycleDrilldown = {
+      status: "loading",
+      audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+      completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+      error: ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const [audit, completeness] = await Promise.all([
+        api.fetchGrowthCycleAudit(payload, targetWorkspaceId),
+        api.fetchGrowthCycleCompleteness(payload, targetWorkspaceId)
+      ]);
+      pageState.cardGeneration.cycleDrilldown = {
+        status: "ready",
+        audit,
+        completeness,
+        error: ""
+      };
+      if (!options.silent) renderShell();
+      return { audit, completeness };
+    } catch (error) {
+      pageState.cardGeneration.cycleDrilldown = {
+        status: "failed",
+        audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+        completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+        error: error.message || String(error)
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
   async function draftDailyLoopFromUi() {
     const { payload, targetWorkspaceId } = createDailyLoopDraftPayload();
     pageState.cardGeneration.status = "drafting";
@@ -769,6 +869,12 @@
     pageState.cardGeneration.dailyLoopDraftResult = null;
     pageState.cardGeneration.dailyLoopPublishResult = null;
     pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.cycleDrilldown = {
+      status: "idle",
+      audit: null,
+      completeness: null,
+      error: ""
+    };
     pageState.cardGeneration.progressStep = "context";
     pageState.cardGeneration.progressMessage = "正在整理学习图谱、画像摘要和近期信号。";
     renderShell();
@@ -801,6 +907,12 @@
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.dailyLoopPublishResult = null;
     pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.cycleDrilldown = {
+      status: "idle",
+      audit: null,
+      completeness: null,
+      error: ""
+    };
     pageState.cardGeneration.progressStep = "authoring";
     pageState.cardGeneration.progressMessage = "正在根据已验证计划项生成卡片。";
     renderShell();
@@ -825,6 +937,7 @@
         pageState.cardGeneration.error = `卡片已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
       }
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -878,6 +991,12 @@
     pageState.cardGeneration.status = "generating";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.generatedResult = null;
+    pageState.cardGeneration.cycleDrilldown = {
+      status: "idle",
+      audit: null,
+      completeness: null,
+      error: ""
+    };
     pageState.cardGeneration.progressStep = "context";
     pageState.cardGeneration.progressMessage = "正在整理阶段测评覆盖点和学习画像。";
     pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
@@ -907,6 +1026,7 @@
         pageState.cardGeneration.error = `阶段测评已发布，但刷新列表失败：${refreshError.message || String(refreshError)}`;
       }
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();

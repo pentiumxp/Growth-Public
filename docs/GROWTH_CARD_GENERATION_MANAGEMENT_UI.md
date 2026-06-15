@@ -291,9 +291,17 @@ form calls `POST /api/v1/growth/profile-corrections` through
 reason over selected graph node ids, then refreshes the same context and
 `growth.learningLoopState.v1` readback. Browser code does not mutate Profile
 V2 optimistically and does not call Gateway, repositories, or Profile V2
-projection logic directly. The remaining audit UI work is the explicit
-single-cycle drilldown over `learning-cycles/audit` and
-`learning-cycles/completeness`.
+projection logic directly. The Owner `生成` tab now also renders a single-card
+cycle drilldown panel. The panel derives a bounded query from the current
+context, latest plan draft/publish result, generated card id, and `ownerAudit`
+DTO; it then calls `GET /api/v1/growth/learning-cycles/audit` and
+`GET /api/v1/growth/learning-cycles/completeness` through
+`growth-api-client.js`. It shows only summary counts, a bounded timeline,
+`missingRequired`, and finding/remediation labels. It must not join audit
+tables in browser code, read repositories, display raw answers/transcripts,
+prompts, source bodies, raw model output, private paths, credentials, or
+provider configuration, and must not treat `readyForAutomation` as scheduling
+permission.
 
 For a compact "can this cycle be trusted for closure" badge, the UI should call
 `GET /api/v1/growth/learning-cycles/completeness`. That route is read-only,
@@ -892,6 +900,8 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
    - `fetchLearningLoopState(targetWorkspaceId, context)`;
    - `draftGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `publishGrowthDailyLoop(payload, targetWorkspaceId)`;
+   - `fetchGrowthCycleAudit(payload, targetWorkspaceId)`;
+   - `fetchGrowthCycleCompleteness(payload, targetWorkspaceId)`;
    - `generateGrowthCard(payload, targetWorkspaceId)` remains only as a
      compatibility helper for the legacy direct card-generation route.
 4. Add Owner UI:
@@ -906,7 +916,10 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
    - publish one selected item through
      `POST /api/v1/growth/daily-loop/publish`;
    - refresh board, card-generation context, and learning-loop state after
-     publish.
+     publish;
+   - refresh single-card cycle audit/completeness after publish when a cycle
+     anchor is available, while keeping failures visible only inside the audit
+     drilldown panel.
 6. Keep existing card renderer:
    - published card appears in board lanes using the existing DTO path.
 
@@ -954,6 +967,7 @@ Add focused tests before broad regression runs:
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | next UI slice should render `targetProvisioning`, prevent silent no-op generation when blocked, and call the provision route only after explicit Owner action |
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
+| UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
 | UI proposal review | lists and creates supervised proposals from a selected complete cycle, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision |
 | UI automation digest review | later panel lists persisted dry-run digests, shows would-publish/blocked/skipped counts, keeps explicit publish manual, records digest review/archive/supersede state, and never publishes or notifies during digest creation or review |
 | UI correction action | calls `POST /api/v1/growth/profile-corrections`, refreshes context after success, and does not mutate Profile V2 optimistically in browser state |

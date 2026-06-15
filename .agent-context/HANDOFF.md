@@ -9,6 +9,93 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T08:17Z - Growth Owner Cycle Audit Drilldown UI Slice
+
+- Status: implemented, documented, and locally validated. Not deployed in this
+  slice.
+- Change classification: Home AI AI Ops intake returned H3 Architecture
+  Documentation And Harness Map; Growth treated the actual browser projection
+  as H2 because it changes Owner-visible audit/completeness status.
+- Scope:
+  - `public/growth-api-client.js` now exposes `fetchGrowthCycleAudit` and
+    `fetchGrowthCycleCompleteness` over the existing read-only
+    `GET /api/v1/growth/learning-cycles/audit` and
+    `GET /api/v1/growth/learning-cycles/completeness` facades, preserving
+    direct `workspaceId` vs Home AI proxy `targetWorkspaceId` handling;
+  - `public/growth-card-generation-ui.js` now derives a bounded
+    `createCycleAuditQueryPayload` from card-generation context, latest
+    draft/publish result, generated card id, and `ownerAudit`, renders
+    `data-card-generation-cycle-drilldown`, timeline rows, completeness
+    findings, missing-required count, and a manual `读取单卡审计` action;
+  - `public/app.js` owns `cycleDrilldown` UI state, binds
+    `data-card-generation-cycle-audit-refresh`, calls both read facades, shows
+    visible loading/error/ready state, clears stale drilldown state when a new
+    draft/publish/stage activation starts, and attempts a silent drilldown
+    refresh after daily or stage publication;
+  - `public/growth-homeai-legacy.css` covers the cycle drilldown, timeline,
+    findings, mobile single-column layout, 44px action button, and dark/system
+    contrast;
+  - `public/index.html` static version bumped to
+    `20260615-cycle-audit-drilldown-ui-v1`;
+  - docs updated in Growth workspace:
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Boundary:
+  - this slice did not change backend service policy or route behavior;
+  - browser code still does not call Gateway directly, import Home AI old
+    Growth server logic, read repositories/SQLite tables, compute learning
+    policy, compute Profile V2 diffs, join audit data itself, evaluate
+    submissions, schedule, notify, activate stage assessments, or publish
+    automatically;
+  - cycle query payloads are bounded ids only. Raw answers, transcripts,
+    prompts, raw model output, answer keys, source-document bodies, private
+    paths, credentials, and provider config remain excluded.
+- Validation passed:
+  - syntax checks for touched public JS;
+  - focused
+    `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/learning-cycle-audit-service.test.js
+    tests/learning-audit-completeness-service.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` (`109` tests);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `npm run --silent check` (`runtimeCount=142`, `checkedCount=142`);
+  - `npm test -- --test-reporter=spec` (`521` tests);
+  - Growth `git diff --check`;
+  - `codegraph sync && codegraph status` (`240` files, `3,018` nodes,
+    `11,689` edges; index up to date);
+  - Home AI app required H3 gate:
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `git diff --check`.
+- Visual evidence:
+  - local browser-mode Playwright mobile dark check used the Home AI workspace
+    Playwright dependency and system Chrome against `http://127.0.0.1:4882/`
+    with Owner headers injected;
+  - screenshots:
+    `tmp/visual/growth-owner-cycle-drilldown-mobile-dark.png` and
+    `tmp/visual/growth-owner-cycle-drilldown-fanfan-mobile-dark.png`;
+  - verified `data-card-generation-cycle-drilldown` visible, manual audit
+    button visible with 44px height, active settings panel scrollHeight `4907`
+    vs clientHeight `725`, dark panel background `rgba(22, 26, 29, 0.98)`,
+    text color `rgb(245, 247, 246)`, and primary button color contrast. Local
+    dev data had no current published cycle anchor, so the audit button was
+    correctly disabled while layout reachability was verified.
+- AI Ops evidence appended:
+  `evidence-643d18c0-342f-4ae4-b19a-260538efaf7b`.
+- Remaining product work:
+  - product-grade learner/domain-pack/subject provision controls in Owner UI;
+  - richer older-cycle selection/history controls over the implemented
+    current-card cycle drilldown;
+  - central Home AI embedded-plugin visual harness and production release
+    evidence before deployment;
+  - proposal/digest/action/execution UI after Owner audit and target
+    provisioning controls are product-complete.
+
 ## 2026-06-15T07:52Z - Growth Owner Audit/Correction UI Slice
 
 - Status: implemented, documented, and locally validated. Not deployed in this

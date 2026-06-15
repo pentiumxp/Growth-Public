@@ -187,6 +187,23 @@ test("Growth API client exposes card generation context and write helpers", asyn
     review_action: "mark_needs_repair",
     reason: "Owner bounded note."
   }, "weixin_fanfan");
+  await client.fetchGrowthCycleAudit({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    plan_draft_id: "lgplan_1",
+    task_card_id: "ltask_daily_1",
+    evaluation_id: "eval_daily_1",
+    profile_delta_id: "lgpdelta_1",
+    evidence_id: "lgevd_1",
+    correction_id: "lgcorr_1",
+    source_id: "eval_daily_1",
+    target_node_ids: ["kg_main_idea", "kg_evidence"],
+    limit: 5
+  }, "weixin_fanfan");
+  await client.fetchGrowthCycleCompleteness({
+    task_card_id: "ltask_daily_1",
+    target_node_ids: ["kg_main_idea"]
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -250,6 +267,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     review_action: "mark_needs_repair",
     reason: "Owner bounded note."
   });
+  assert.equal(calls[14].path, "/api/v1/growth/learning-cycles/audit?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&planDraftId=lgplan_1&taskCardId=ltask_daily_1&evaluationId=eval_daily_1&profileDeltaId=lgpdelta_1&evidenceId=lgevd_1&correctionId=lgcorr_1&sourceId=eval_daily_1&targetNodeIds=kg_main_idea%2Ckg_evidence&limit=5");
+  assert.equal(calls[15].path, "/api/v1/growth/learning-cycles/completeness?workspaceId=weixin_fanfan&taskCardId=ltask_daily_1&targetNodeIds=kg_main_idea&limit=20");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -275,6 +294,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.draftGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.publishGrowthDailyLoop({ plan_draft_id: "lgplan_1", selected_item_id: "plan_item_1" }, "weixin_stephen");
   await client.submitGrowthProfileCorrection({ target_node_ids: ["kg_english_main_idea"], reason: "bounded" }, "weixin_stephen");
+  await client.fetchGrowthCycleAudit({ task_card_id: "ltask_daily_1", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
+  await client.fetchGrowthCycleCompleteness({ task_card_id: "ltask_daily_1" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -283,6 +304,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(calls[3].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/draft");
   assert.equal(calls[4].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/publish");
   assert.equal(calls[5].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/profile-corrections");
+  assert.equal(calls[6].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/audit?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&targetNodeIds=kg_english_main_idea&limit=20");
+  assert.equal(calls[7].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/completeness?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&limit=20");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -638,6 +661,51 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
               reason: "next_strategy:repair"
             }
           }
+        },
+        cycleDrilldown: {
+          status: "ready",
+          audit: {
+            ok: true,
+            summary: {
+              planDraftCount: 1,
+              evidenceCount: 1,
+              profileDeltaCount: 0,
+              correctionCount: 1
+            },
+            timeline: [{
+              type: "evidence",
+              id: "lgevidence_science_1",
+              status: "observed",
+              taskCardId: "ltask_science_1",
+              evaluationId: "eval_science_1",
+              summary: "One-shot evaluation evidence."
+            }, {
+              type: "plan",
+              id: "lgplan_science_1",
+              status: "published",
+              taskCardId: "ltask_science_1",
+              summary: "Plan published a repair card."
+            }]
+          },
+          completeness: {
+            ok: true,
+            complete: false,
+            readyForAutomation: false,
+            summary: {
+              missingRequired: ["profile_delta_audit"]
+            },
+            findings: [{
+              code: "evaluation_evidence",
+              ok: true,
+              severity: "required",
+              remediation: "Evaluation evidence is present."
+            }, {
+              code: "profile_delta_audit",
+              ok: false,
+              severity: "required",
+              remediation: "Persist profile-delta audit after evaluation."
+            }]
+          }
         }
       }
     },
@@ -678,6 +746,12 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-correction-action/);
   assert.match(html, /保存纠偏/);
   assert.match(html, /纠偏已写入证据账本：lgcorr_new_1/);
+  assert.match(html, /data-card-generation-cycle-drilldown/);
+  assert.match(html, /单卡闭环审计/);
+  assert.match(html, /data-card-generation-cycle-audit-refresh/);
+  assert.match(html, /评价证据 · lgevidence_science_1/);
+  assert.match(html, /画像变化审计/);
+  assert.match(html, /待补齐/);
   assert.match(html, /推荐闭环/);
   assert.match(html, /已生成/);
   assert.match(html, /已替换/);
@@ -761,6 +835,31 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(correctionPayload, "raw_answer"), false);
   assert.equal(Object.hasOwn(correctionPayload, "transcript"), false);
   assert.equal(Object.hasOwn(correctionPayload, "raw_prompt"), false);
+
+  const cyclePayload = windowRef.HermesGrowthCardGenerationUi.createCycleAuditQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    draftResult: {
+      planDraft: {
+        planDraftId: "lgplan_1",
+        selectedItemId: "plan_item_1",
+        items: [{ itemId: "plan_item_1", targetNodeIds: ["kg_english_evidence_answering"] }]
+      }
+    }
+  });
+  assert.equal(cyclePayload.workspace_id, "weixin_fanfan");
+  assert.equal(cyclePayload.learner_id, "fanfan");
+  assert.equal(cyclePayload.plan_draft_id, "lgplan_1");
+  assert.equal(cyclePayload.task_card_id, "ltask_science_1");
+  assert.equal(cyclePayload.evaluation_id, "eval_science_1");
+  assert.equal(cyclePayload.profile_delta_id, "lgpdelta_science_1");
+  assert.equal(cyclePayload.evidence_id, "lgevidence_science_1");
+  assert.equal(cyclePayload.correction_id, "lgcorr_science_1");
+  assert.deepEqual(JSON.parse(JSON.stringify(cyclePayload.target_node_ids)), ["kg_english_evidence_answering"]);
+  assert.equal(windowRef.HermesGrowthCardGenerationUi.cycleAuditHasAnchor(cyclePayload), true);
+  assert.equal(Object.hasOwn(cyclePayload, "raw_answer"), false);
+  assert.equal(Object.hasOwn(cyclePayload, "transcript"), false);
+  assert.equal(Object.hasOwn(cyclePayload, "raw_prompt"), false);
 
   const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
     context,
@@ -1462,7 +1561,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260615-owner-audit-correction-ui-v1";
+  const staticVersion = "20260615-cycle-audit-drilldown-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -1487,6 +1586,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260614-recipe-policy-v1/);
   assert.doesNotMatch(html, /20260614-recommendation-lifecycle-v1/);
   assert.doesNotMatch(html, /20260615-daily-loop-draft-publish-ui-v1/);
+  assert.doesNotMatch(html, /20260615-owner-audit-correction-ui-v1/);
 });
 
 test("Growth app refreshes card generation context after publish without clearing preview", () => {
@@ -1508,9 +1608,15 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-card-generation-correction-note/);
   assert.match(source, /data-card-generation-correction-action/);
   assert.match(source, /data-card-generation-correction-form/);
+  assert.match(source, /data-card-generation-cycle-audit-refresh/);
   assert.match(source, /function createOwnerCorrectionPayload/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
+  assert.match(source, /function createCycleAuditQueryPayload/);
+  assert.match(source, /function refreshOwnerCycleDrilldownFromUi/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthCycleAudit\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthCycleCompleteness\(payload, targetWorkspaceId\)/);
+  assert.match(source, /await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*await refreshOwnerCycleDrilldownFromUi\(\{ silent: true \}\);[\s\S]*renderShell\(\);/);
   assert.match(source, /pageState\.cardGeneration\.ownerCorrectionDraft = "";\s*[\s\S]*pageState\.cardGeneration\.ownerCorrection = \{\s*status: "submitted"/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\);[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId, \{ errorPrefix: "纠偏已保存，但" \}\);[\s\S]*renderShell\(\);/);
   assert.doesNotMatch(source, /api\.generateGrowthCard/);

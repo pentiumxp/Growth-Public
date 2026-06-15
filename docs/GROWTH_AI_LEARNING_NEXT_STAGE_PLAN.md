@@ -140,8 +140,8 @@ The next implementation slices should be:
    compact learning-loop state, draft one plan, preview the selected plan
    item, explicitly publish one card, and refresh board/context/loop state
    without Codex. The remaining closure is product-grade scope selection,
-   target provisioning controls, cycle drilldown, central visual evidence, and
-   production release evidence.
+   target provisioning controls, older-cycle selection, central visual
+   evidence, and production release evidence.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
    record/playback, and score-proportional completion. No pass-line retry loop
@@ -149,9 +149,11 @@ The next implementation slices should be:
 3. **Owner audit/correction closure**: the Owner `生成` tab now renders
    `ownerAudit` from context, including plan audit, persisted profile-delta
    summaries, correction history, and bounded correction writes through the
-   Owner correction service. Remaining closure is explicit
-   `learning-cycles/audit` and `learning-cycles/completeness` drilldown after
-   a selected completed card cycle.
+   Owner correction service. It also renders explicit
+   `learning-cycles/audit` and `learning-cycles/completeness` drilldown for
+   the current generated/completed card cycle, showing summary-only timeline,
+   findings, and missing-required evidence. Remaining closure is richer
+   older-cycle selection plus central visual/release evidence.
 4. **Formal checkpoint separation**: expose readiness and activation for
    stage assessments as a separate Owner path. Daily plan publish must still
    block direct formal assessment publication.
@@ -552,11 +554,11 @@ A next-stage package is complete only when:
 
 The preferred next product slice remains Path A, but the immediate focus has
 shifted from basic draft/publish operation to product-grade closure: complete
-scope/provision controls, Owner cycle/completeness drilldown over the current
-audit/correction panel, central embedded visual evidence, and production
-release evidence over the existing daily-loop facade. That keeps the AI loop
-observable and avoids adding automation before Owner can inspect why a card
-was selected and what changed after completion.
+scope/provision controls, older-cycle selection over the implemented current
+cycle audit/completeness panel, central embedded visual evidence, and
+production release evidence over the existing daily-loop facade. That keeps
+the AI loop observable and avoids adding automation before Owner can inspect
+why a card was selected and what changed after completion.
 
 If the next slice must be backend-only, choose Path B and keep it strictly as
 release-readiness evidence. That boundary should make missing release evidence
