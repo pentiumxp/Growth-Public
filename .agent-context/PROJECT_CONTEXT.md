@@ -116,6 +116,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `npm run smoke:daily-loop-preview` has produced bounded no-write production
   daily-loop readiness evidence, accepts
   `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag,
+  accepts `--production-scheduler-dry-run-smoke-evidence` after
+  `npm run smoke:scheduler-dry-run` has produced bounded no-write production
+  scheduler dry-run evidence, and also performs an internal no-write scheduler
+  dry-run safety check from the release-readiness service,
   and writes a summary-only advisory snapshot only when `--write-snapshot` is
   explicitly supplied. Scheduler dry-run now
   also has `npm run smoke:scheduler-dry-run`, a service-owned no-write CLI

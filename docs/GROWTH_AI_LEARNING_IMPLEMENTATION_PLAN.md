@@ -653,8 +653,9 @@ Required behavior:
   `npm run smoke:daily-loop-preview`, production controlled daily-loop
   draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,
-  production scheduler dry-run evidence from
-  `npm run smoke:scheduler-dry-run`, platform Action Inbox/Web Push evidence,
+  production scheduler dry-run smoke evidence from
+  `npm run smoke:scheduler-dry-run`, release-readiness internal
+  no-write scheduler dry-run safety evidence, platform Action Inbox/Web Push evidence,
   central embedded visual evidence, and explicit release approval;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
@@ -685,7 +686,7 @@ Remaining release gaps:
 - central embedded-plugin visual evidence for mobile scroll, dark mode,
   progress, and embedded shell;
 - production planner readiness smoke, production controlled daily-loop
-  draft/publish smoke, and production scheduler dry-run evidence from
+  draft/publish smoke, and production scheduler dry-run smoke evidence from
   `npm run smoke:scheduler-dry-run`;
 - explicit release approval records for each writeful config gate.
 

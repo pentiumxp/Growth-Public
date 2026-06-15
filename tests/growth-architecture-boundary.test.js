@@ -843,6 +843,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-planner-readiness-evidence/);
   assert.match(script, /--production-daily-loop-preview-smoke-evidence/);
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
+  assert.match(script, /--production-scheduler-dry-run-smoke-evidence/);
   assert.match(script, /workspace_id_required/);
   assert.match(script, /release_readiness_smoke_invalid_json/);
   assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
@@ -875,6 +876,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionPlannerReadinessEvidence/);
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
+  assert.match(scriptHarness, /productionSchedulerDryRunSmokeEvidence/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
@@ -917,6 +919,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(releaseReadinessService, /production_daily_loop_write_smoke_evidence/);
   assert.match(releaseReadinessService, /run_controlled_daily_loop_write_smoke/);
+  assert.match(releaseReadinessService, /productionSchedulerDryRunSmokeEvidence/);
+  assert.match(releaseReadinessService, /production_scheduler_dry_run_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_scheduler_dry_run_smoke/);
   assert.doesNotMatch(releaseReadinessService, /learningDailyLoopService/);
   assert.doesNotMatch(releaseReadinessService, /publishPlanItem/);
   assert.doesNotMatch(releaseReadinessService, /generateCard/);

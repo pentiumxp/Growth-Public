@@ -9,6 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-15T05:00Z - Growth Release Readiness Scheduler Dry-Run Smoke Evidence Gate Slice
+
+- Status: implemented and locally validated. This slice separates the external
+  production scheduler dry-run smoke evidence from the release-readiness
+  service's internal no-write scheduler dry-run safety check.
+- Change classification: H2 backend/Harness/docs evidence boundary by Growth
+  scope. Home AI AI Ops classified it as H1 because the task included
+  release-readiness, production, scheduler, and deployment terms, so the
+  required Mac production docs, deployment harnesses, and plan-only deploy check
+  were run.
+- Scope:
+  - `learning-automation-release-readiness-service` now requires
+    `production_scheduler_dry_run_smoke_evidence` before release review;
+  - `scripts/smoke-growth-release-readiness.js` now accepts
+    `--production-scheduler-dry-run-smoke-evidence`;
+  - release-readiness service, smoke-script, and architecture harnesses assert
+    the new evidence key, CLI flag, and required action
+    `run_production_scheduler_dry_run_smoke`;
+  - Growth project context, implementation plan, next-stage plan, architecture
+    doc, and platform pointer now distinguish production scheduler dry-run
+    smoke evidence from `npm run smoke:scheduler-dry-run` and the internal
+    release-readiness no-write scheduler dry-run safety check.
+- Boundary:
+  - the new check is summary-only external evidence input;
+  - the existing internal scheduler dry-run safety check remains
+    `production_scheduler_dry_run` and calls only no-write dry-run behavior;
+  - release readiness remains advisory and always returns
+    `writefulSchedulingAllowed=false`;
+  - no Gateway calls, plan publication, scheduler execution, scheduler ticks,
+    action handoff delivery, notification delivery, stage activation,
+    learner-state mutation, or production deploy were performed.
+- Validation passed:
+  - syntax checks for the touched Growth service, smoke script, and tests;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-repository.test.js
+    tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`74` tests);
+  - `node scripts/check-growth-syntax-coverage.js`
+    (`runtimeCount=134`, `checkedCount=134`);
+  - `node scripts/check-growth-docs-locality.js` (`requiredCount=35`);
+  - `node --test tests/growth-docs-locality.test.js`;
+  - operational temporary-SQLite
+    `npm run smoke:release-readiness -- --workspace-id smoke_workspace
+    --production-scheduler-dry-run-smoke-evidence --json`, which returned
+    `production_scheduler_dry_run_smoke_evidence` and
+    `production_scheduler_dry_run` as `pass` while the overall readiness stayed
+    `incomplete` and `writefulSchedulingAllowed=false`;
+  - `npm run --silent check`;
+  - `npm test -- --test-reporter=spec` (`481` tests);
+  - `codegraph sync && codegraph status` (`224` files, `2,739` nodes,
+    `10,749` edges; index up to date);
+  - Home AI required checks:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`, absolute
+    `node --check` commands for the touched Growth files, plan-only
+    `npm run --silent deploy:macos -- --target home-ai --json`, and Growth
+    and Home AI `git diff --check`;
+  - Home AI platform pointer checker:
+    `node scripts/plugin-workspace-platform-contract-check.js --json` and
+    `node tests/plugin-workspace-platform-contract-check.test.js`.
+- AI Ops control-plane evidence:
+  - evidence ledger id:
+    `evidence-d019ee22-2ec2-40ba-add1-98f67163e4f4`;
+  - production deploy was not executed because this was a Growth local
+    Harness/docs slice and the user did not request deployment.
+
 ## 2026-06-15T04:50Z - Growth Release Readiness Planner Evidence Harness Coverage Slice
 
 - Status: implemented and locally validated. This slice closes a coverage gap
