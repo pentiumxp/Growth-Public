@@ -640,7 +640,9 @@ Required behavior:
   scheduler run default-disabled status, reviewed enabled worker targets,
   worker lease/timer default-disabled status, production scheduler worker smoke
   evidence from `npm run smoke:scheduler-worker`, production planner readiness
-  smoke, production controlled daily-loop draft/publish smoke evidence from
+  smoke, production daily-loop preview smoke evidence from
+  `npm run smoke:daily-loop-preview`, production controlled daily-loop
+  draft/publish smoke evidence from
   `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`,
   production scheduler dry-run evidence from
   `npm run smoke:scheduler-dry-run`, platform Action Inbox/Web Push evidence,

@@ -94,6 +94,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--production-scheduler-worker-smoke-evidence` after
   `npm run smoke:scheduler-worker` has produced bounded production worker
   smoke evidence, accepts
+  `--production-daily-loop-preview-smoke-evidence` after
+  `npm run smoke:daily-loop-preview` has produced bounded no-write production
+  daily-loop readiness evidence, accepts
   `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag,
   and writes a summary-only advisory snapshot only when `--write-snapshot` is
   explicitly supplied. Scheduler dry-run now
