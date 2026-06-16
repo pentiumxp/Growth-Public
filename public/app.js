@@ -23,6 +23,14 @@
         actionResult: null,
         actionError: ""
       },
+      automationProposals: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       targetProvisionDraft: {
         domainPackId: "",
         domain: "",
@@ -733,6 +741,45 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshAutomationProposals().catch((error) => {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-proposal-review]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        reviewAutomationProposalFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-proposal-publish]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        publishAutomationProposalFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-stage-assessment-check]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -848,6 +895,14 @@
       actionResult: null,
       actionError: ""
     };
+    pageState.cardGeneration.automationProposals = {
+      status: "loading",
+      data: pageState.cardGeneration.automationProposals?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     renderShell();
     const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId, requestedSelection);
     pageState.cardGeneration.context = context;
@@ -874,6 +929,7 @@
     await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
     await refreshCycleHistoryFromUi({ silent: true });
+    await refreshAutomationProposals(requestedTargetWorkspaceId, context);
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
@@ -943,6 +999,165 @@
     }
   }
 
+  function createAutomationProposalQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationProposalQueryPayload !== "function") {
+      throw new Error("automation_proposal_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationProposalQueryPayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
+  async function refreshAutomationProposals(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.automationProposals || {};
+    pageState.cardGeneration.automationProposals = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createAutomationProposalQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthAutomationProposals(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.automationProposals = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.automationProposals = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  function automationProposalItems() {
+    const holder = pageState.cardGeneration.automationProposals || {};
+    const data = holder.data || {};
+    return Array.isArray(data.proposals) ? data.proposals : [];
+  }
+
+  function findAutomationProposal(proposalId = "") {
+    const id = clean(proposalId);
+    return automationProposalItems().find((proposal = {}) => clean(proposal.proposalId || proposal.proposal_id) === id) || null;
+  }
+
+  function createAutomationProposalDecisionPayload(proposal = {}, status = "") {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationProposalDecisionPayload !== "function") {
+      throw new Error("automation_proposal_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationProposalDecisionPayload({ context, workspaceId: targetWorkspaceId, proposal, status }),
+      targetWorkspaceId
+    };
+  }
+
+  function createAutomationProposalPublishPayload(proposal = {}) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationProposalPublishPayload !== "function") {
+      throw new Error("automation_proposal_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationProposalPublishPayload({ context, workspaceId: targetWorkspaceId, proposal }),
+      targetWorkspaceId
+    };
+  }
+
+  async function reviewAutomationProposalFromUi(button) {
+    const proposalId = clean(button.dataset.automationProposalId);
+    const status = clean(button.dataset.automationProposalStatus);
+    const proposal = findAutomationProposal(proposalId);
+    if (!proposal) throw new Error("automation_proposal_not_found");
+    const { payload, targetWorkspaceId } = createAutomationProposalDecisionPayload(proposal, status);
+    pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationProposals?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.reviewGrowthAutomationProposal(proposalId, payload, targetWorkspaceId);
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "reviewed",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function publishAutomationProposalFromUi(button) {
+    const proposalId = clean(button.dataset.automationProposalId);
+    const proposal = findAutomationProposal(proposalId);
+    if (!proposal) throw new Error("automation_proposal_not_found");
+    const { payload, targetWorkspaceId } = createAutomationProposalPublishPayload(proposal);
+    pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationProposals?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.publishGrowthAutomationProposal(proposalId, payload, targetWorkspaceId);
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: result.ok ? "published" : "failed",
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "automation_proposal_publish_failed")
+      });
+      model.detailCache.clear();
+      try {
+        await loadCurrentWorkspace();
+      } catch (refreshError) {
+        pageState.cardGeneration.automationProposals.actionError = `建议已处理，但刷新列表失败：${refreshError.message || String(refreshError)}`;
+      }
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "建议已处理，但" });
+      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
   async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId(), options = {}) {
     if (!pageState.auth.isOwner) return null;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
@@ -959,6 +1174,7 @@
       await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshAutomationProposals(requestedTargetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
@@ -1316,8 +1532,17 @@
         selectedCycle: null,
         error: ""
       };
+      pageState.cardGeneration.automationProposals = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       await refreshLearningLoopState(targetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {
@@ -1363,6 +1588,7 @@
       pageState.cardGeneration.progressStep = "validation";
       pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
       await refreshLearningLoopState(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {

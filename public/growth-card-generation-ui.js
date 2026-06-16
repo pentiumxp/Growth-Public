@@ -665,6 +665,154 @@
     </section>`;
   }
 
+  function automationProposalScopeFromContext(context = {}, workspaceId = "") {
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const provisioning = context.targetProvisioning || {};
+    const graphOptions = graphOptionsForContext(context);
+    return {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      program_id: clean(context.programId || plan.programId || defaults.programId),
+      domain_pack_id: clean(provisioning.selectedDomainPackId || graphOptions.selectedDomainPackId || context.domainPackId || plan.domainPackId || defaults.domainPackId),
+      domain: clean(provisioning.selectedDomain || graphOptions.selectedDomain || plan.domain || context.domain || defaults.domain),
+      subject: clean(provisioning.selectedSubject || graphOptions.selectedSubject || plan.subject || context.subject || defaults.subject || plan.domain || context.domain),
+      horizon: clean(context.horizon || defaults.horizon || "daily_plan")
+    };
+  }
+
+  function createAutomationProposalQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationProposalDecisionPayload({ context = {}, workspaceId = "", proposal = {}, status = "", reason = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      status: clean(status),
+      reason: clean(reason) || (clean(status) === "accepted" ? "Owner accepted supervised next-card proposal." : "Owner skipped supervised next-card proposal."),
+      reviewed_by: "owner",
+      proposal_id: clean(proposal.proposalId || proposal.proposal_id)
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationProposalPublishPayload({ context = {}, workspaceId = "", proposal = {} } = {}) {
+    const defaults = context.generationDefaults || {};
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      proposal_id: clean(proposal.proposalId || proposal.proposal_id),
+      generation_key: ["automation_proposal", clean(proposal.proposalId || proposal.proposal_id), clean(proposal.planDraftId || proposal.plan_draft_id)].filter(Boolean).join(":"),
+      card_schema_version: clean(defaults.cardSchemaVersion || "growth.card.authoring.v1"),
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function automationProposalStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "proposed") return "待复核";
+    if (value === "accepted") return "已接受";
+    if (value === "skipped") return "已跳过";
+    if (value === "expired") return "已过期";
+    if (value === "superseded") return "已替代";
+    if (value === "publishing") return "发布中";
+    if (value === "published") return "已发布";
+    if (value === "failed") return "失败";
+    return value || "待建议";
+  }
+
+  function automationProposalStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const proposal = result.proposal || {};
+    if (!status || status === "idle") return "";
+    const execution = proposal.execution || {};
+    const detail = status === "published"
+      ? `建议已发布${clean(execution.generatedTaskCardId) ? `：${clean(execution.generatedTaskCardId)}` : "。"}`
+      : status === "reviewed"
+        ? `建议已记录为 ${automationProposalStatusText(proposal.status)}。`
+        : status === "submitting"
+          ? "正在通过 Growth automation proposal service 写入。"
+          : error || "建议操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-proposal-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationProposalStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationProposalRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const proposals = asArray(data.proposals).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取自动化建议。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">自动化建议读取失败：${escapeHtml(clean(holder.error) || "automation_proposals_failed")}</div>`;
+    if (!proposals.length) return `<div class="learning-card-generation-proposal-empty">暂无可复核的自动化建议。完成一张卡并生成 proposal 后会显示在这里。</div>`;
+    return proposals.map((proposal) => {
+      const proposalId = clean(proposal.proposalId || proposal.proposal_id);
+      const execution = proposal.execution || {};
+      const executionStatus = clean(execution.status);
+      const isProposed = clean(proposal.status) === "proposed";
+      const isAccepted = clean(proposal.status) === "accepted";
+      const canPublish = isAccepted && executionStatus !== "published";
+      const targetNodes = asArray(proposal.targetNodeIds || proposal.target_node_ids).map(clean).filter(Boolean);
+      const title = clean(proposal.proposalSummary || proposalId || "下一张建议");
+      const detail = clean(proposal.rationale?.plan?.reason || proposal.rationale?.plan?.selectedItemId || proposal.planDraftId || "summary-only proposal");
+      const meta = [clean(proposal.status), executionStatus, clean(proposal.planDraftId)].filter(Boolean).join(" · ") || "proposal";
+      return `<div class="learning-card-generation-proposal-row" data-automation-proposal-row data-automation-proposal-id="${escapeHtml(proposalId)}">
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+          <small>${escapeHtml(targetNodes.join(" · ") || "bounded graph target")}</small>
+        </span>
+        <em>${escapeHtml(meta)}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="accepted" ${busy || !isProposed ? "disabled" : ""}>接受</button>
+          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="skipped" ${busy || !isProposed ? "disabled" : ""}>跳过</button>
+          <button type="button" class="primary" data-automation-proposal-publish data-automation-proposal-id="${escapeHtml(proposalId)}" ${busy || !canPublish ? "disabled" : ""}>${busy && canPublish ? "发布中" : executionStatus === "published" ? "已发布" : "发布"}</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationProposalPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationProposals || {};
+    const data = holder.data || {};
+    const proposals = asArray(data.proposals);
+    const proposedCount = proposals.filter((item) => clean(item.status) === "proposed").length;
+    const acceptedCount = proposals.filter((item) => clean(item.status) === "accepted").length;
+    const publishedCount = proposals.filter((item) => clean(item.execution?.status) === "published").length;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const reason = status === "loading"
+      ? "正在读取 Owner 可复核的下一张建议。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_proposals_failed"
+        : proposedCount
+          ? "Owner 需要复核 AI 建议后再发布。"
+          : "没有待复核建议；后续 proposal 由完成周期生成。";
+    return `<section class="learning-card-generation-proposals" data-automation-proposal-panel data-automation-proposal-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>自动化建议</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <button type="button" data-automation-proposal-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新建议"}</button>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>待复核</small><strong>${escapeHtml(String(proposedCount))}</strong></span>
+        <span><small>已接受</small><strong>${escapeHtml(String(acceptedCount))}</strong></span>
+        <span><small>已发布</small><strong>${escapeHtml(String(publishedCount))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationProposalRows(holder, escapeHtml)}
+      </div>
+      ${automationProposalStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
   function ownerAuditItems(ownerAudit = {}, key = "") {
     const bucket = ownerAudit[key] || {};
     return asArray(bucket.items || bucket.profileDeltas || bucket.corrections || bucket.planDrafts);
@@ -1594,6 +1742,7 @@
           </div>
           ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
+          ${automationProposalPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -1632,6 +1781,9 @@
 
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
+    createAutomationProposalDecisionPayload,
+    createAutomationProposalPublishPayload,
+    createAutomationProposalQueryPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,

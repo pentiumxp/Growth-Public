@@ -13577,6 +13577,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness,
 .learning-card-generation-provisioning,
 .learning-card-generation-loop-state,
+.learning-card-generation-proposals,
+.learning-card-generation-proposal-list,
 .learning-card-generation-release-workbench,
 .learning-card-generation-release-actions,
 .learning-card-generation-profile,
@@ -13605,6 +13607,11 @@ body.task-markdown-preview-open {
 .learning-card-generation-provisioning-grid label,
 .learning-card-generation-loop-state,
 .learning-card-generation-loop-grid span,
+.learning-card-generation-proposals,
+.learning-card-generation-proposal-grid span,
+.learning-card-generation-proposal-row,
+.learning-card-generation-proposal-empty,
+.learning-card-generation-proposal-status,
 .learning-card-generation-release-workbench,
 .learning-card-generation-release-grid span,
 .learning-card-generation-release-row,
@@ -13668,6 +13675,9 @@ body.task-markdown-preview-open {
 .learning-card-generation-provisioning-head span,
 .learning-card-generation-provisioning-actions span,
 .learning-card-generation-loop-head span,
+.learning-card-generation-proposal-head span,
+.learning-card-generation-proposal-row span,
+.learning-card-generation-proposal-status span,
 .learning-card-generation-release-head span,
 .learning-card-generation-release-row span,
 .learning-card-generation-release-status span,
@@ -13699,6 +13709,9 @@ body.task-markdown-preview-open {
 .learning-card-generation-provisioning-head strong,
 .learning-card-generation-loop-head strong,
 .learning-card-generation-loop-grid strong,
+.learning-card-generation-proposal-head strong,
+.learning-card-generation-proposal-grid strong,
+.learning-card-generation-proposal-row strong,
 .learning-card-generation-release-head strong,
 .learning-card-generation-release-grid strong,
 .learning-card-generation-release-row strong,
@@ -13735,6 +13748,9 @@ body.task-markdown-preview-open {
 .learning-card-generation-provisioning-head small,
 .learning-card-generation-loop-head small,
 .learning-card-generation-loop-grid small,
+.learning-card-generation-proposal-head small,
+.learning-card-generation-proposal-grid small,
+.learning-card-generation-proposal-row small,
 .learning-card-generation-release-head small,
 .learning-card-generation-release-grid small,
 .learning-card-generation-release-row small,
@@ -13772,6 +13788,7 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row em,
 .learning-card-generation-provisioning-head em,
 .learning-card-generation-loop-head em,
+.learning-card-generation-proposal-status em,
 .learning-card-generation-release-head em,
 .learning-card-generation-release-status em,
 .learning-card-generation-profile-head em,
@@ -13820,6 +13837,9 @@ body.task-markdown-preview-open {
 .learning-card-generation-readiness-row,
 .learning-card-generation-provisioning-head,
 .learning-card-generation-loop-head,
+.learning-card-generation-proposal-head,
+.learning-card-generation-proposal-row,
+.learning-card-generation-proposal-status,
 .learning-card-generation-release-head,
 .learning-card-generation-release-row,
 .learning-card-generation-release-status,
@@ -13864,6 +13884,60 @@ body.task-markdown-preview-open {
   gap: 8px;
   padding: 10px;
   background: rgba(255, 255, 252, 0.70);
+}
+
+.learning-card-generation-proposals {
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 252, 0.70);
+}
+
+.learning-card-generation-proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-card-generation-proposal-grid span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  background: var(--ui-card-surface);
+}
+
+.learning-card-generation-proposal-list {
+  gap: 6px;
+}
+
+.learning-card-generation-proposal-row {
+  min-height: 58px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 9px 11px;
+}
+
+.learning-card-generation-proposal-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.learning-card-generation-proposal-empty {
+  min-height: 52px;
+  display: grid;
+  align-items: center;
+  padding: 9px 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.learning-card-generation-proposal-status {
+  min-height: 40px;
+  padding: 8px 10px;
+  background: var(--ui-card-surface);
 }
 
 .learning-card-generation-release-grid {
@@ -14526,6 +14600,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-correction-controls button,
 .learning-card-generation-cycle-actions button,
 .learning-card-generation-provisioning-actions button,
+.learning-card-generation-proposal-head button,
+.learning-card-generation-proposal-actions button,
 .learning-card-generation-release-row button,
 .learning-card-generation-open-card {
   min-height: 44px;
@@ -14542,7 +14618,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-stage-actions button.primary,
 .learning-card-generation-correction-controls button.primary,
 .learning-card-generation-cycle-actions button.primary,
-.learning-card-generation-provisioning-actions button.primary {
+.learning-card-generation-provisioning-actions button.primary,
+.learning-card-generation-proposal-actions button.primary {
   border-color: rgba(24, 97, 106, 0.46);
   background: #2f7781;
   color: #f8ffff;
@@ -14554,6 +14631,8 @@ body.task-markdown-preview-open {
 .learning-card-generation-correction-controls button:disabled,
 .learning-card-generation-cycle-actions button:disabled,
 .learning-card-generation-provisioning-actions button:disabled,
+.learning-card-generation-proposal-head button:disabled,
+.learning-card-generation-proposal-actions button:disabled,
 .learning-card-generation-release-row button:disabled {
   opacity: 0.54;
 }
@@ -14768,6 +14847,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-preview-card,
 :root[data-theme="dark"] .learning-card-generation-provisioning,
 :root[data-theme="dark"] .learning-card-generation-loop-state,
+:root[data-theme="dark"] .learning-card-generation-proposals,
 :root[data-theme="dark"] .learning-card-generation-release-workbench,
 :root[data-theme="dark"] .learning-card-generation-profile,
 :root[data-theme="dark"] .learning-card-generation-owner-audit,
@@ -14791,6 +14871,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-readiness-row em,
 :root[data-theme="dark"] .learning-card-generation-provisioning-head em,
 :root[data-theme="dark"] .learning-card-generation-loop-head em,
+:root[data-theme="dark"] .learning-card-generation-proposal-status em,
 :root[data-theme="dark"] .learning-card-generation-release-head em,
 :root[data-theme="dark"] .learning-card-generation-release-status em,
 :root[data-theme="dark"] .learning-card-generation-profile-head em,
@@ -14856,6 +14937,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-correction-controls button.primary,
 :root[data-theme="dark"] .learning-card-generation-provisioning-actions button.primary,
 :root[data-theme="dark"] .learning-card-generation-cycle-actions button.primary,
+:root[data-theme="dark"] .learning-card-generation-proposal-actions button.primary,
 :root[data-theme="dark"] .learning-card-generation-progress-steps span[data-progress-state="active"] em,
 :root[data-theme="dark"] .learning-card-generation-progress-steps span[data-progress-state="done"] em {
   border-color: rgba(184, 211, 216, 0.36);
@@ -14873,6 +14955,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-preview-card,
   :root[data-theme="system"] .learning-card-generation-provisioning,
   :root[data-theme="system"] .learning-card-generation-loop-state,
+  :root[data-theme="system"] .learning-card-generation-proposals,
   :root[data-theme="system"] .learning-card-generation-release-workbench,
   :root[data-theme="system"] .learning-card-generation-profile,
   :root[data-theme="system"] .learning-card-generation-owner-audit,
@@ -14896,6 +14979,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-readiness-row em,
   :root[data-theme="system"] .learning-card-generation-provisioning-head em,
   :root[data-theme="system"] .learning-card-generation-loop-head em,
+  :root[data-theme="system"] .learning-card-generation-proposal-status em,
   :root[data-theme="system"] .learning-card-generation-release-head em,
   :root[data-theme="system"] .learning-card-generation-release-status em,
   :root[data-theme="system"] .learning-card-generation-profile-head em,
@@ -14949,6 +15033,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-correction-controls button.primary,
   :root[data-theme="system"] .learning-card-generation-provisioning-actions button.primary,
   :root[data-theme="system"] .learning-card-generation-cycle-actions button.primary,
+  :root[data-theme="system"] .learning-card-generation-proposal-actions button.primary,
   :root[data-theme="system"] .learning-card-generation-progress-steps span[data-progress-state="active"] em,
   :root[data-theme="system"] .learning-card-generation-progress-steps span[data-progress-state="done"] em {
     border-color: rgba(184, 211, 216, 0.36);
@@ -14986,6 +15071,7 @@ body.task-markdown-preview-open {
   .learning-card-generation-recommendation-grid,
   .learning-card-generation-plan-grid,
   .learning-card-generation-loop-grid,
+  .learning-card-generation-proposal-grid,
   .learning-card-generation-release-grid,
   .learning-card-generation-owner-grid,
   .learning-card-generation-cycle-grid,

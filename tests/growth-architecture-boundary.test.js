@@ -138,6 +138,9 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(ui, /data-card-generation-lifecycle/);
   assert.match(ui, /data-release-workbench-panel/);
   assert.match(ui, /createReleaseWorkbenchActionPayload/);
+  assert.match(ui, /data-automation-proposal-panel/);
+  assert.match(ui, /createAutomationProposalDecisionPayload/);
+  assert.match(ui, /createAutomationProposalPublishPayload/);
   assert.match(ui, /recommendationLifecycle/);
   assert.match(ui, /recipe_id/);
   assert.doesNotMatch(ui, /target_node_id: clean\(plan\.targetNodeId\)/);
@@ -3582,6 +3585,12 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /refreshCycleHistoryFromUi/);
   assert.match(app, /fetchGrowthCycleHistory/);
   assert.match(app, /data-card-generation-cycle-history-select/);
+  assert.match(app, /refreshAutomationProposals/);
+  assert.match(app, /fetchGrowthAutomationProposals/);
+  assert.match(app, /reviewGrowthAutomationProposal/);
+  assert.match(app, /publishGrowthAutomationProposal/);
+  assert.match(app, /data-automation-proposal-review/);
+  assert.match(app, /data-automation-proposal-publish/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
   assert.match(app, /data-learning-growth-evaluation-retry/);
   assert.match(app, /retryEvaluation/);
@@ -3612,10 +3621,18 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /selectedCycle/);
   assert.match(generationUi, /data-release-workbench-panel/);
   assert.match(generationUi, /releaseWorkbenchPanel/);
+  assert.match(generationUi, /data-automation-proposal-panel/);
+  assert.match(generationUi, /automationProposalPanel/);
+  assert.match(generationUi, /data-automation-proposal-review/);
+  assert.match(generationUi, /data-automation-proposal-publish/);
 
   const apiClient = read(path.join("public", "growth-api-client.js"));
   assert.match(apiClient, /fetchGrowthCycleHistory/);
   assert.match(apiClient, /learning-cycles", "history"/);
+  assert.match(apiClient, /fetchGrowthAutomationProposals/);
+  assert.match(apiClient, /reviewGrowthAutomationProposal/);
+  assert.match(apiClient, /publishGrowthAutomationProposal/);
+  assert.match(apiClient, /automation", "proposals"/);
   assert.doesNotMatch(generationUi, /learning_growth_/);
   assert.doesNotMatch(generationUi, /raw_answer|raw_prompt|raw_model|source_document_body/);
 });

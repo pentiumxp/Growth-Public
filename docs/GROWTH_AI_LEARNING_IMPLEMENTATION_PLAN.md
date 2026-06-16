@@ -150,7 +150,8 @@ surfaces are still missing:
 
 - Owner planner/provision UI is not fully product-closed;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs;
-- proposal review UI and digest review UI remain future work;
+- proposal review/publish UI has a first embedded panel over existing proposal
+  routes, but proposal creation UI and digest review UI remain future work;
 - rollback/failure policy backend is implemented as a scheduling-readiness
   prerequisite; Growth-owned automation action handoff backend is implemented,
   and the default-disabled Owner-explicit scheduler execution backend is
@@ -466,7 +467,8 @@ Required harness:
 - `tests/learning-automation-proposal-service.test.js`;
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`;
-- UI proposal review tests before product rollout.
+- UI proposal review tests for list/decision/accepted-publish before product
+  rollout; proposal creation UI requires a separate selected-cycle harness.
 
 ### P6: Automation Digest, Rollback, And Failure Policy
 
@@ -1068,10 +1070,12 @@ Required harness:
 
 Remaining release gaps:
 
-- product UI evidence for Owner daily, audit/correction, proposal review,
+- product UI evidence for Owner daily, audit/correction, proposal creation,
   digest/action/execution/run, and worker-target views. Backend Owner review
   evidence now exists through `npm run smoke:owner-review-evidence`, but it
-  does not replace product UI or central visual evidence;
+  does not replace product UI or central visual evidence. The current proposal
+  review/publish panel still needs central visual/release evidence before it is
+  treated as production-complete;
 - real production Home AI platform Action Inbox/Web Push receipt evidence from
   `npm run smoke:platform-action-evidence`;
 - real production central embedded-plugin visual artifact for mobile scroll,
@@ -1109,9 +1113,9 @@ The next implementation slice should be chosen by product goal:
   automatic publication. Proposal operational smoke is also available through
   `npm run smoke:proposal`, which defaults to read-only list and gates
   create/review/publish with explicit `--allow-write`. Implement the remaining
-  UI/evidence around P5-P10 next: proposal review UI, digest/action/
-  failure-policy UI, execution UI, scheduler run audit UI, platform Action
-  Inbox/Web Push evidence, production dry-run evidence through
+  UI/evidence around P5-P10 next: proposal creation UI over selected complete
+  cycles, digest/action/failure-policy UI, execution UI, scheduler run audit
+  UI, platform Action Inbox/Web Push evidence, production dry-run evidence through
   `npm run smoke:scheduler-dry-run`, central visual evidence, and a
   release-readiness evidence snapshot. The P8 and P9 backend boundaries are
   implemented locally and remain default-disabled; the P10 backend boundary is

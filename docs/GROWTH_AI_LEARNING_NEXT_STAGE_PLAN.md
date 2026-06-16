@@ -141,7 +141,9 @@ automation surfaces are not closed:
   remains summary-only through `learning-stage-checkpoint-controls-service` and
   Owner-only `GET /api/v1/growth/stage-assessments/controls`; production visual
   evidence for the new controls surface is still required before UI release;
-- proposal/digest/action/execution/run/worker-target UI remains future work;
+- proposal list/review/accepted-publish UI now has a minimal Owner panel over
+  existing proposal routes, while proposal creation, digest/action/execution/
+  run/worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual evidence exists for the Growth plugin shell;
   product-specific mobile/dark checks remain covered locally until the

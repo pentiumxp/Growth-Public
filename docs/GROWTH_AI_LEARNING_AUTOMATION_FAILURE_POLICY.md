@@ -18,9 +18,10 @@ The policy layer answers:
 
 It does not authorize automatic publication. Even when an active policy exists,
 `writefulSchedulingAllowed` remains `false` until Owner UI, audit/correction UI,
-proposal review UI, digest UI, Growth action handoff, platform Action
+proposal creation/review UI, digest UI, Growth action handoff, platform Action
 Inbox/Web Push evidence, visual evidence, and a separate writeful scheduler
-contract all exist.
+contract all exist. The current minimal proposal review/publish panel is not
+enough to enable writeful scheduling.
 
 ## Current Backend Status
 

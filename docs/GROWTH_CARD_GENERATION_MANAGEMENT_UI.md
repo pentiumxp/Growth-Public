@@ -634,7 +634,13 @@ schedule any work.
 and publishes only an already accepted proposal. It delegates to the same
 backend plan publisher as `POST /api/v1/growth/learning-plans/:planDraftId/publish`,
 records bounded proposal execution metadata, returns a visible failure when
-publication fails, and does not schedule future work.
+publication fails, and does not schedule future work. The current embedded
+Owner panel implements the read/review/accepted-publish half of this boundary:
+it lists proposals for the selected visible target and scoped
+learner/domain-pack/subject, records `accepted` or `skipped`, and calls the
+accepted proposal publish route only after explicit Owner action. It does not
+create proposals from a selected source cycle yet; that remains the next
+proposal UI slice.
 The daily generation screen should prefer the scoped context DTO for its first
 refresh, while history/drilldown views can call the direct audit routes. The
 cycle audit route is the preferred drilldown API when the UI has a
@@ -1041,7 +1047,7 @@ Add focused tests before broad regression runs:
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
 | UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
-| UI proposal review | lists and creates supervised proposals from a selected complete cycle, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision |
+| UI proposal review | current slice lists supervised proposals, shows bounded rationale and required Owner publish action, records `accepted`/`skipped` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision. A later selected-cycle creation slice must add `POST /api/v1/growth/automation/proposals` from a complete source cycle and cover `expired`/`superseded` decisions. |
 | UI automation digest review | later panel lists persisted dry-run digests, shows would-publish/blocked/skipped counts, keeps explicit publish manual, records digest review/archive/supersede state, and never publishes or notifies during digest creation or review |
 | UI correction action | calls `POST /api/v1/growth/profile-corrections`, refreshes context after success, and does not mutate Profile V2 optimistically in browser state |
 | UI evidence audit | renders evidence history from context or `GET /api/v1/growth/evidence/audit`; never displays raw answers, transcripts, prompts, model output, source bodies, private paths, or provider config |
