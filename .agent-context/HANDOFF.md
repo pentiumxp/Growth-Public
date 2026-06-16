@@ -11,9 +11,9 @@
 
 ## 2026-06-16T23:52+08:00 - Automation Digest Owner Create UI Controls
 
-- Status: implemented and locally validated in the working tree. Commit/push is
-  pending; not deployed per Owner instruction to deploy only after the broader
-  slice is complete.
+- Status: implemented, locally validated, and committed/pushed as
+  `02ded3c Add automation digest Owner create UI`; not deployed per Owner
+  instruction to deploy only after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI can now explicitly create one persisted
     dry-run automation digest from the selected bounded learner/domain scope;
