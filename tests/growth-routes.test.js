@@ -1,6 +1,9 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { createServer, startServer } = require("../src/app/http-server");
+const {
+  createLearningAutomationReleaseEvidenceArtifactManifestService
+} = require("../src/services/learning-automation-release-evidence-artifact-manifest-service");
 
 function listen(server) {
   return new Promise((resolve) => {
@@ -5251,6 +5254,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      targetNodeIds: [],
 	      tasks: [],
 	      requiredTaskIds: [],
+	      artifactTaskIds: [],
 	      requiredApprovalKeys: [],
 	      collectionRunId: undefined,
 	      autoSelectLatestReadyCollectionRun: false,
@@ -5271,6 +5275,8 @@ test("growth automation release workbench action route is Owner-write and visibl
       releaseEvidenceBundleAuditFile: undefined,
 	      releaseReadinessFile: undefined,
 	      releaseCollectionRunFile: undefined,
+	      releaseEvidenceArtifactManifestFile: undefined,
+	      releaseEvidenceArtifactManifest: undefined,
 	      centralVisualEvidenceFile: undefined,
 	      ownerDailyUiEvidenceFile: undefined,
 	      ownerAuditUiEvidenceFile: undefined,
@@ -5347,6 +5353,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      targetNodeIds: [],
 	      tasks: ["learning_loop_state"],
 	      requiredTaskIds: ["learning_loop_state"],
+	      artifactTaskIds: [],
 	      requiredApprovalKeys: [],
 	      collectionRunId: undefined,
 	      autoSelectLatestReadyCollectionRun: false,
@@ -5367,6 +5374,8 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      releaseEvidenceBundleAuditFile: undefined,
 	      releaseReadinessFile: undefined,
 	      releaseCollectionRunFile: undefined,
+	      releaseEvidenceArtifactManifestFile: undefined,
+	      releaseEvidenceArtifactManifest: undefined,
 	      centralVisualEvidenceFile: undefined,
 	      ownerDailyUiEvidenceFile: undefined,
 	      ownerAuditUiEvidenceFile: undefined,
@@ -5429,6 +5438,128 @@ test("growth automation release workbench action route is Owner-write and visibl
     });
     assert.equal(denied.status, 403);
     assert.equal((await denied.json()).error.code, "growth_automation_release_workbench_action_owner_required");
+  } finally {
+    await close(server);
+  }
+});
+
+test("growth automation release workbench action route applies inline artifact manifests", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "weixin_fanfan") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspaceId };
+      },
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationReleaseEvidenceArtifactManifestService: createLearningAutomationReleaseEvidenceArtifactManifestService(),
+    learningAutomationReleaseWorkbenchActionService: {
+      recordAction(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          endpointKey: input.endpointKey,
+          status: "recorded",
+          actionRecord: {
+            summaryOnly: true,
+            endpointKey: input.endpointKey,
+            recordId: "lgacol_route_manifest_1",
+            recordStatus: "incomplete"
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        endpoint_key: "release_evidence_collection",
+        tasks: ["learning_loop_state"],
+        required_task_ids: ["learning_loop_state"],
+        artifactManifest: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          centralVisualEvidenceFile: "/tmp/central-visual.json",
+          uiEvidenceFiles: {
+            schedulerRunUiEvidence: "/tmp/scheduler-run-ui.json"
+          }
+        },
+        write_collection_run: true,
+        write_release_evidence_records: true,
+        requested_by: "weixin_owner"
+      })
+    });
+    assert.equal(response.status, 201);
+    assert.equal((await response.json()).actionRecord.recordId, "lgacol_route_manifest_1");
+    assert.equal(calls[0].centralVisualEvidenceFile, "/tmp/central-visual.json");
+    assert.equal(calls[0].schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
+    assert.deepEqual(calls[0].artifactTaskIds, ["central_visual", "scheduler_run_ui"]);
+    assert.deepEqual(calls[0].tasks, ["learning_loop_state", "central_visual", "scheduler_run_ui"]);
+    assert.deepEqual(calls[0].requiredTaskIds, ["learning_loop_state", "central_visual", "scheduler_run_ui"]);
+    assert.equal(calls[0].releaseEvidenceArtifactManifest, undefined);
+    assert.equal(calls[0].releaseEvidenceArtifactManifestFile, undefined);
+
+    const invalid = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        endpoint_key: "release_evidence_collection",
+        artifactManifest: {
+          artifacts: [{ evidenceKey: "rawScreenshotArchive", file: "/tmp/raw.zip" }]
+        },
+        requested_by: "weixin_owner"
+      })
+    });
+    assert.equal(invalid.status, 400);
+    assert.equal((await invalid.json()).error.code, "release_evidence_artifact_manifest_invalid");
+    assert.equal(calls.length, 1);
   } finally {
     await close(server);
   }

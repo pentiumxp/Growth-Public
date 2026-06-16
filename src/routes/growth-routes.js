@@ -745,6 +745,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     targetNodeIds: listFromBodyValue(merged.targetNodeIds || merged.target_node_ids || merged.nodeIds || merged.node_ids),
     tasks: listFromBodyValue(merged.tasks || merged.taskIds || merged.task_ids),
     requiredTaskIds: listFromBodyValue(merged.requiredTaskIds || merged.required_task_ids || merged.requiredTasks || merged.required_tasks),
+    artifactTaskIds: listFromBodyValue(merged.artifactTaskIds || merged.artifact_task_ids),
     requiredApprovalKeys: listFromBodyValue(merged.requiredApprovalKeys || merged.required_approval_keys),
     collectionRunId: merged.collectionRunId || merged.collection_run_id || merged.runId || merged.run_id,
     autoSelectLatestReadyCollectionRun: merged.autoSelectLatestReadyCollectionRun === true || merged.auto_select_latest_ready_collection_run === true,
@@ -765,6 +766,8 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     releaseEvidenceBundleAuditFile: merged.releaseEvidenceBundleAuditFile || merged.release_evidence_bundle_audit_file || merged.evidenceBundleAuditFile || merged.evidence_bundle_audit_file || merged.auditFile || merged.audit_file,
     releaseReadinessFile: merged.releaseReadinessFile || merged.release_readiness_file || merged.readinessFile || merged.readiness_file,
     releaseCollectionRunFile: merged.releaseCollectionRunFile || merged.release_collection_run_file || merged.collectionRunFile || merged.collection_run_file || merged.runFile || merged.run_file,
+    releaseEvidenceArtifactManifestFile: merged.releaseEvidenceArtifactManifestFile || merged.release_evidence_artifact_manifest_file || merged.evidenceArtifactManifestFile || merged.evidence_artifact_manifest_file || merged.uiEvidenceManifestFile || merged.ui_evidence_manifest_file || merged.artifactManifestFile || merged.artifact_manifest_file,
+    releaseEvidenceArtifactManifest: merged.releaseEvidenceArtifactManifest || merged.release_evidence_artifact_manifest || merged.evidenceArtifactManifest || merged.evidence_artifact_manifest || merged.uiEvidenceManifest || merged.ui_evidence_manifest || merged.artifactManifest || merged.artifact_manifest,
     centralVisualEvidenceFile: merged.centralVisualEvidenceFile || merged.central_visual_evidence_file,
     releasePackage: merged.releasePackage || merged.release_package || merged.package,
     activationDecision: merged.activationDecision || merged.activation_decision || merged.ownerActivationDecision || merged.owner_activation_decision,
@@ -1326,6 +1329,18 @@ function uiEvidenceFileInputFromBody(body = {}) {
     output[task.fileField] = body[task.fileField] || body[task.fileBodyField];
   }
   return output;
+}
+
+function applyReleaseEvidenceArtifactManifestInput(input, services) {
+  const service = services.learningAutomationReleaseEvidenceArtifactManifestService;
+  if (!service || typeof service.applyToCollectionInput !== "function") return input;
+  const result = service.applyToCollectionInput(input);
+  if (result.ok) return result.input || input;
+  throw routeError(
+    result.error || "release_evidence_artifact_manifest_invalid",
+    "Release evidence artifact manifest is invalid",
+    400
+  );
 }
 
 function normalizeProfileCorrectionListInput(url, target) {
@@ -2116,8 +2131,12 @@ async function handleGrowthRoute(request, response, url, services) {
     }
     const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const input = applyReleaseEvidenceArtifactManifestInput(
+      normalizeAutomationReleaseWorkbenchActionInput(body, serviceWorkspaceId, target, request, url),
+      services
+    );
     const result = services.learningAutomationReleaseWorkbenchActionService.recordAction(
-      normalizeAutomationReleaseWorkbenchActionInput(body, serviceWorkspaceId, target, request, url)
+      input
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }

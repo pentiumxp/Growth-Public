@@ -65,6 +65,31 @@ test("release evidence artifact manifest supports map-shaped UI artifact files",
   assert.deepEqual(result.input.artifactTaskIds, ["owner_daily_ui", "automation_digest_ui"]);
 });
 
+test("release evidence artifact manifest can merge artifact tasks into collection selectors", () => {
+  const service = createLearningAutomationReleaseEvidenceArtifactManifestService();
+  const result = service.applyToCollectionInput({
+    tasks: ["learning_loop_state"],
+    requiredTaskIds: ["learning_loop_state"],
+    artifactManifest: {
+      schemaVersion: RELEASE_EVIDENCE_ARTIFACT_MANIFEST_SCHEMA,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      centralVisualEvidenceFile: "/tmp/central-visual.json",
+      uiEvidenceFiles: {
+        schedulerRunUiEvidence: "/tmp/scheduler-run-ui.json"
+      }
+    }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.input.centralVisualEvidenceFile, "/tmp/central-visual.json");
+  assert.equal(result.input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
+  assert.deepEqual(result.input.artifactTaskIds, ["central_visual", "scheduler_run_ui"]);
+  assert.deepEqual(result.input.tasks, ["learning_loop_state", "central_visual", "scheduler_run_ui"]);
+  assert.deepEqual(result.input.requiredTaskIds, ["learning_loop_state", "central_visual", "scheduler_run_ui"]);
+  assert.equal(result.input.artifactManifest, undefined);
+});
+
 test("release evidence artifact manifest fails closed for unknown artifact keys", () => {
   const result = applyManifestToInput({}, {
     artifacts: [{

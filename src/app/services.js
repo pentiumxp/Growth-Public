@@ -25,6 +25,7 @@ const { createLearningAutomationReleaseControlsService } = require("../services/
 const { createLearningAutomationReleaseDashboardService } = require("../services/learning-automation-release-dashboard-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
 const { createLearningAutomationReleaseEvidenceCollectionService } = require("../services/learning-automation-release-evidence-collection-service");
+const { createLearningAutomationReleaseEvidenceArtifactManifestService } = require("../services/learning-automation-release-evidence-artifact-manifest-service");
 const { createLearningAutomationReleaseEvidenceArtifactTemplateService } = require("../services/learning-automation-release-evidence-artifact-template-service");
 const { createLearningAutomationReleaseEvidenceBundleService } = require("../services/learning-automation-release-evidence-bundle-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
@@ -409,6 +410,7 @@ function createServices(config) {
     releaseInventoryService: learningAutomationReleaseInventoryService,
     releaseDashboardService: learningAutomationReleaseDashboardService
   });
+  const learningAutomationReleaseEvidenceArtifactManifestService = createLearningAutomationReleaseEvidenceArtifactManifestService();
   const learningAutomationReleaseEvidenceArtifactTemplateService = createLearningAutomationReleaseEvidenceArtifactTemplateService({
     releaseWorkbenchService: learningAutomationReleaseWorkbenchService
   });
@@ -553,6 +555,7 @@ function createServices(config) {
     learningAutomationReleaseDashboardService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceCollectionService,
+    learningAutomationReleaseEvidenceArtifactManifestService,
     learningAutomationReleaseEvidenceArtifactTemplateService,
     learningAutomationReleaseEvidenceService,
     learningAutomationReleaseEvidenceBundleService,

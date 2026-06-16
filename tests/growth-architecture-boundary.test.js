@@ -226,6 +226,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /createLearningAutomationReleaseEvidenceCollectionService/);
   assert.match(services, /learningAutomationReleaseEvidenceCollectionService/);
   assert.match(services, /releaseEvidenceCollectionService: learningAutomationReleaseEvidenceCollectionService/);
+  assert.match(services, /createLearningAutomationReleaseEvidenceArtifactManifestService/);
+  assert.match(services, /learningAutomationReleaseEvidenceArtifactManifestService/);
   assert.match(services, /createLearningAutomationReleaseEvidenceArtifactTemplateService/);
   assert.match(services, /learningAutomationReleaseEvidenceArtifactTemplateService/);
   assert.match(services, /releaseWorkbenchService: learningAutomationReleaseWorkbenchService/);
@@ -372,6 +374,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /learningAutomationOwnerReviewEvidenceService\.evaluate/);
   assert.match(routes, /automation\/release-workbench\/actions/);
   assert.match(routes, /normalizeAutomationReleaseWorkbenchActionInput/);
+  assert.match(routes, /applyReleaseEvidenceArtifactManifestInput/);
   assert.match(routes, /learningAutomationReleaseWorkbenchActionService\.recordAction/);
   assert.match(routes, /automation\/release-inventory/);
   assert.match(routes, /normalizeAutomationReleaseInventoryInput/);
@@ -2516,6 +2519,20 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseArtifactTemplateService, /deliverHandoff/);
   assert.doesNotMatch(releaseArtifactTemplateService, /activateStageAssessment/);
   assert.doesNotMatch(releaseArtifactTemplateService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
+  const releaseArtifactManifestService = read(path.join("src", "services", "learning-automation-release-evidence-artifact-manifest-service.js"));
+  assert.match(releaseArtifactManifestService, /applyToCollectionInput/);
+  assert.match(releaseArtifactManifestService, /mergeArtifactTaskIdsIntoCollectionTasks/);
+  assert.doesNotMatch(releaseArtifactManifestService, /spawnSync/);
+  assert.doesNotMatch(releaseArtifactManifestService, /recordEvidence/);
+  assert.doesNotMatch(releaseArtifactManifestService, /publishPlanItem/);
+  assert.doesNotMatch(releaseArtifactManifestService, /generateCard/);
+  assert.doesNotMatch(releaseArtifactManifestService, /evaluateSubmission/);
+  assert.doesNotMatch(releaseArtifactManifestService, /executeOnce/);
+  assert.doesNotMatch(releaseArtifactManifestService, /runOnce/);
+  assert.doesNotMatch(releaseArtifactManifestService, /deliverHandoff/);
+  assert.doesNotMatch(releaseArtifactManifestService, /activateStageAssessment/);
+  assert.doesNotMatch(releaseArtifactManifestService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
   const releaseWorkbenchActionService = read(path.join("src", "services", "learning-automation-release-workbench-action-service.js"));
   assert.match(releaseWorkbenchActionService, /RELEASE_WORKBENCH_ACTION_SCHEMA/);

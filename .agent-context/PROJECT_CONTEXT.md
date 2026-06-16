@@ -51,7 +51,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Home AI central visual-toolchain summary artifacts. The route performs only
   visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or
-  widen to default UI tasks when no visual/UI evidence is missing.
+  widen to default UI tasks when no visual/UI evidence is missing. The normal
+  service graph also wires
+  `learning-automation-release-evidence-artifact-manifest-service` for the
+  Owner workbench action route: HTTP callers may provide an inline
+  `artifactManifest` / `releaseEvidenceArtifactManifest` summary body, which is
+  stripped after parsing and expands only whitelisted central visual/UI
+  artifact slots into transient file fields plus collection task selectors. The
+  HTTP route does not read server-local manifest file paths, run visual
+  tooling, persist evidence by itself, or call Gateway.
 - Current implementation owns plugin SQLite read projections, migrated audio
   playback, historical audio BLOB backfill tooling, workspace-bound read-only
   MCP tools, workspace-bearer submission/reflection evidence write endpoints,

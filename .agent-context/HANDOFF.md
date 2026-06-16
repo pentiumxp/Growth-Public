@@ -9,10 +9,65 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:45+08:00 - Inline Artifact Manifest Workbench Action
+
+- Status: implemented, documented, and full-Harness validated locally;
+  commit/push follows this handoff update. Not deployed in this slice.
+- Change intent:
+  - let product/Owner tooling use the generated release artifact manifest
+    template without returning to Codex or a CLI-only file path flow;
+  - keep Growth as a summary-only consumer of Home AI central visual/UI
+    artifact summaries while preserving service-first boundaries.
+- Scope:
+  - extended
+    `learning-automation-release-evidence-artifact-manifest-service` with
+    `applyToCollectionInput`, which applies an inline manifest, strips manifest
+    fields, and merges mapped `artifactTaskIds` into `tasks` and
+    `requiredTaskIds`;
+  - wired
+    `learningAutomationReleaseEvidenceArtifactManifestService` into the normal
+    Growth service graph without a file reader, so HTTP cannot read
+    server-local manifest file paths;
+  - updated
+    `POST /api/v1/growth/automation/release-workbench/actions` normalization to
+    accept inline `artifactManifest` / `releaseEvidenceArtifactManifest` aliases
+    before delegating to the existing workbench action service;
+  - added route/service/architecture Harness coverage for inline manifest
+    success, task-selector merging, field stripping, and bounded unknown-key
+    failure;
+  - updated Growth-local platform, architecture, implementation-plan,
+    next-stage-plan, project-context, and this handoff documentation.
+- Boundary notes:
+  - no Home AI visual harness, Appium, browser, live UI visual tooling, or
+    central visual lane runs inside Growth;
+  - HTTP manifest application reads no server-local manifest files and accepts
+    only inline summary JSON;
+  - unknown manifest artifact keys fail closed with a bounded 400;
+  - no Gateway/model-vendor calls, smoke command spawning, direct SQLite
+    inspection, release package recording, release decision recording,
+    scheduler execution, notification delivery, runtime config mutation,
+    deployment, or learner-state mutation is introduced by this route helper.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=205` and
+    `checkedCount=205`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-evidence-artifact-manifest-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-release-evidence-collection-smoke-script.test.js`
+    passed `100/100`;
+  - `git diff --check`;
+  - `npm test` passed `890/890`.
+- Remaining gates:
+  - real Home AI central visual/UI summary artifacts still need to be collected
+    through the central Home AI visual toolchain before release readiness can be
+    final;
+  - production deployment remains separate and should happen only after the
+    user explicitly asks for deployment.
+
 ## 2026-06-17T10:05+08:00 - Release Artifact Template Read API
 
-- Status: implemented, locally validated, committed/push pending; not deployed
-  in this slice.
+- Status: implemented, locally validated, committed, and pushed to
+  `origin/main` and `public/main` as `0f8b70d`; not deployed in this slice.
 - Change intent:
   - expose the existing release artifact-template service through a
     product-consumable Growth HTTP read model so Owner/UI tooling no longer

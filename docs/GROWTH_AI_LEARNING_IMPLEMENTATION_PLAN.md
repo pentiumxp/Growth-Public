@@ -833,7 +833,11 @@ Implemented backend shape:
   the service; the template service does not run visual tooling, widen to default
   collection tasks when no visual/UI evidence is missing, persist release
   evidence, call Gateway, inspect SQLite directly, or expose local artifact
-  paths.
+  paths. The Owner workbench action HTTP route accepts an inline
+  `artifactManifest` / `releaseEvidenceArtifactManifest` summary body for the
+  same artifact slots, strips it after parsing, expands only whitelisted central
+  visual/UI task selectors into transient collection inputs, and deliberately
+  keeps server-local manifest file reads as CLI/operator glue only.
   The explicit non-default `release_workbench` task maps
   `npm run smoke:release-workbench` output into
   `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final

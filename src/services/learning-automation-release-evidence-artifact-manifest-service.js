@@ -267,6 +267,21 @@ function applyManifestToInput(input = {}, manifest = {}) {
   };
 }
 
+function mergeArtifactTaskIdsIntoCollectionTasks(input = {}) {
+  const artifactTaskIds = uniqueStrings(input.artifactTaskIds || input.artifact_task_ids || []);
+  if (!artifactTaskIds.length) return input;
+  return Object.assign({}, input, {
+    tasks: uniqueStrings([
+      ...asArray(input.tasks || input.taskIds || input.task_ids),
+      ...artifactTaskIds
+    ]),
+    requiredTaskIds: uniqueStrings([
+      ...asArray(input.requiredTaskIds || input.required_task_ids || input.requiredTasks || input.required_tasks),
+      ...artifactTaskIds
+    ])
+  });
+}
+
 function createLearningAutomationReleaseEvidenceArtifactManifestService(options = {}) {
   const readFile = options.readFile;
 
@@ -312,7 +327,16 @@ function createLearningAutomationReleaseEvidenceArtifactManifestService(options 
     }, { ok: true, input });
   }
 
+  function applyToCollectionInput(input = {}) {
+    const result = applyToInput(input);
+    if (!result.ok) return result;
+    return Object.assign({}, result, {
+      input: mergeArtifactTaskIdsIntoCollectionTasks(result.input)
+    });
+  }
+
   return {
+    applyToCollectionInput,
     applyToInput
   };
 }
@@ -323,5 +347,6 @@ module.exports = {
   createLearningAutomationReleaseEvidenceArtifactManifestService,
   manifestFileFromInput,
   manifestArtifacts,
+  mergeArtifactTaskIdsIntoCollectionTasks,
   stripManifestInputFields
 };
