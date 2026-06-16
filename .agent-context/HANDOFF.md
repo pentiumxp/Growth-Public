@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T14:08+08:00 - Owner Review Evidence Downstream Stage Counts
+
+- Status: implemented, documented, and validated. This backend-only slice
+  extends the Owner automation review evidence release-bundle projection beyond
+  proposal lifecycle counts into downstream automation-stage counts. Overall
+  Growth closed-loop MVP progress is about `80%`: backend release evidence is
+  stronger, but product-specific Owner automation UI, central visual evidence,
+  production release evidence collection, and broader rollout remain open.
+- Scope:
+  - `learning-automation-owner-review-evidence-service` now includes compact
+    Owner summary counts for digest pending/required-action/blocked-candidate
+    state, action-handoff delivered/pending/blocked/action counts, scheduler
+    execution published/blocked/failed counts, scheduler run
+    completed/blocked/skipped counts, worker-target reviewed/pending/disabled
+    counts, and failure-policy status;
+  - `learning-automation-release-evidence-bundle-service` carries those fields
+    into `ownerReviewEvidence.summary` while still storing only bounded
+    summary counters;
+  - release-bundle tests now prove raw proposal/digest/handoff/execution/run/
+    worker-target ids in smoke output are not copied into the bundle artifact;
+  - no scheduling permission, Gateway call, card generation, evaluation,
+    accepted-proposal publication, runtime config, notification delivery, or
+    learner-state mutation was added.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness updated:
+  - `tests/learning-automation-owner-review-evidence-service.test.js`;
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-owner-review-evidence-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-architecture-boundary.test.js` (`76/76`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - targeted `node --check` for changed runtime/test files;
+  - `git diff --check`;
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `npm test` (`803/803`);
+  - `codegraph sync && codegraph status` reported up-to-date index with
+    `347` JavaScript files, `4,641` nodes, and `18,589` edges;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - Intake for this slice classified it as H1 and did not require the visual
+    lane because this is backend service/docs/harness evidence only.
+  - AI Ops evidence record:
+    `evidence-ec587bbc-8cdc-4de2-8204-f14e06d4a684`.
+
 ## 2026-06-16T13:56+08:00 - Owner Review Evidence Proposal Lifecycle Counts
 
 - Status: implemented, documented, and validated. This backend slice hardens

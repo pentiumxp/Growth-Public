@@ -839,6 +839,13 @@ test("release evidence bundle script writes bounded owner-review evidence from n
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.proposedProposalCount, 0);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.acceptedProposalCount, 0);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.proposalExecutionCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.digestCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.reviewedDigestCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.deliveredHandoffCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.schedulerExecutionCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.schedulerRunCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.reviewedWorkerTargetCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.failurePolicyReady, false);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.missingGateKeys.includes("proposal_record_present"), true);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.writefulSchedulingAllowed, false);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.runtimeConfigChange, false);

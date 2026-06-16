@@ -2884,9 +2884,18 @@ test("Growth automation owner review evidence smoke CLI stays service-owned and 
   assert.match(bundleService, /proposedProposalCount/);
   assert.match(bundleService, /supersededProposalCount/);
   assert.match(bundleService, /failedProposalExecutionCount/);
+  assert.match(bundleService, /reviewedDigestCount/);
+  assert.match(bundleService, /deliveredHandoffCount/);
+  assert.match(bundleService, /publishedSchedulerExecutionCount/);
+  assert.match(bundleService, /completedSchedulerRunCount/);
+  assert.match(bundleService, /pendingWorkerTargetReviewCount/);
+  assert.match(bundleService, /failurePolicyStatus/);
 
   const bundleHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
-  assert.match(bundleHarness, /preserves owner-review proposal lifecycle counts/);
+  assert.match(bundleHarness, /preserves owner-review proposal lifecycle and stage counts/);
+  assert.match(bundleHarness, /digestRequiredActionCount/);
+  assert.match(bundleHarness, /blockedActionHandoffCount/);
+  assert.match(bundleHarness, /skippedSchedulerRunCount/);
 });
 
 test("Growth automation release approval smoke CLI stays service-owned and write-gated", () => {

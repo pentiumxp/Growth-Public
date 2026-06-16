@@ -71,14 +71,25 @@ proposals satisfy the publishable proposal gate. `skipped`, `expired`, and
 `superseded` records are audit evidence only and must not become scheduler or
 publish permission.
 
+The same compact Owner summary also reports downstream automation-stage counts
+needed for release review: digest totals, reviewed/pending digest counts,
+required-action and blocked-candidate counts, action-handoff totals,
+delivered/pending/blocked handoff counts, scheduler execution totals and
+`published`/`blocked`/`failed` counts, scheduler run totals and
+`completed`/`blocked`/`skipped` counts, reviewed/pending/disabled worker-target
+counts, and failure-policy readiness/status. These are summary counters only;
+they do not expose raw proposal, digest, handoff, execution, run, target, or
+policy rows.
+
 ## Release Evidence Integration
 
 `owner_review_evidence` is now part of the default release evidence bundle.
 The bundle builder runs `npm run smoke:owner-review-evidence` through its
 injected command runner, parses the summary-only result, privacy-scans it, and
 stores a bounded `ownerReviewEvidence` item. The bundle stores status, gate
-counts, release-readiness status, missing gate/check keys, and next-action key;
-it never stores smoke stdout, raw dependency DTOs, private paths, or learner
+counts, release-readiness status, missing gate/check keys, next-action key,
+proposal lifecycle counts, and downstream automation-stage counts; it never
+stores smoke stdout, raw dependency DTOs, raw row ids, private paths, or learner
 content.
 
 Release-readiness treats `ownerReviewEvidence` as a required backend evidence
@@ -135,6 +146,11 @@ The service harness must cover repository-native proposal lifecycle states.
 In particular, `proposed` counts as pending review evidence, while `skipped`,
 `expired`, and `superseded` remain owner-decision audit counts and do not pass
 the accepted-proposal gate.
+
+The release-evidence bundle harness must also prove the bounded
+`ownerReviewEvidence.summary` projection preserves digest, action-handoff,
+scheduler execution, scheduler run, worker-target, and failure-policy counts
+without carrying raw dependency ids.
 
 ## Current Product Gap
 

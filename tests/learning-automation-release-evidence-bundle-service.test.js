@@ -193,7 +193,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
 });
 
-test("release evidence bundle service preserves owner-review proposal lifecycle counts", () => {
+test("release evidence bundle service preserves owner-review proposal lifecycle and stage counts", () => {
   const { calls, service } = createServiceWithRunner(() => ({
     status: 0,
     stdout: JSON.stringify({
@@ -201,6 +201,14 @@ test("release evidence bundle service preserves owner-review proposal lifecycle 
       source: "growth-learning-automation-owner-review-evidence-service",
       schemaVersion: "growth.learningAutomationOwnerReviewEvidence.v1",
       status: "owner_review_pipeline_ready",
+      dependencyIds: [
+        "lgaprop_internal_1",
+        "lgadig_internal_1",
+        "lgahand_internal_1",
+        "lgaexec_internal_1",
+        "lgarun_internal_1",
+        "lgawt_internal_1"
+      ],
       automationOwnerReviewEvidence: {
         status: "owner_review_pipeline_ready",
         passedGateCount: 9,
@@ -216,6 +224,29 @@ test("release evidence bundle service preserves owner-review proposal lifecycle 
         publishedProposalExecutionCount: 1,
         blockedProposalExecutionCount: 1,
         failedProposalExecutionCount: 1,
+        digestCount: 2,
+        reviewedDigestCount: 1,
+        pendingDigestCount: 1,
+        digestRequiredActionCount: 1,
+        digestBlockedCandidateCount: 1,
+        actionHandoffCount: 2,
+        deliveredHandoffCount: 1,
+        pendingHandoffDeliveryCount: 1,
+        actionHandoffActionCount: 1,
+        blockedActionHandoffCount: 1,
+        schedulerExecutionCount: 3,
+        publishedSchedulerExecutionCount: 1,
+        blockedSchedulerExecutionCount: 1,
+        failedSchedulerExecutionCount: 1,
+        schedulerRunCount: 3,
+        completedSchedulerRunCount: 1,
+        blockedSchedulerRunCount: 1,
+        skippedSchedulerRunCount: 1,
+        reviewedWorkerTargetCount: 1,
+        pendingWorkerTargetReviewCount: 1,
+        disabledWorkerTargetCount: 1,
+        failurePolicyReady: true,
+        failurePolicyStatus: "ready",
         missingGateKeys: []
       },
       writefulSchedulingAllowed: false,
@@ -243,7 +274,35 @@ test("release evidence bundle service preserves owner-review proposal lifecycle 
   assert.equal(summary.publishedProposalExecutionCount, 1);
   assert.equal(summary.blockedProposalExecutionCount, 1);
   assert.equal(summary.failedProposalExecutionCount, 1);
+  assert.equal(summary.digestCount, 2);
+  assert.equal(summary.reviewedDigestCount, 1);
+  assert.equal(summary.pendingDigestCount, 1);
+  assert.equal(summary.digestRequiredActionCount, 1);
+  assert.equal(summary.digestBlockedCandidateCount, 1);
+  assert.equal(summary.actionHandoffCount, 2);
+  assert.equal(summary.deliveredHandoffCount, 1);
+  assert.equal(summary.pendingHandoffDeliveryCount, 1);
+  assert.equal(summary.actionHandoffActionCount, 1);
+  assert.equal(summary.blockedActionHandoffCount, 1);
+  assert.equal(summary.schedulerExecutionCount, 3);
+  assert.equal(summary.publishedSchedulerExecutionCount, 1);
+  assert.equal(summary.blockedSchedulerExecutionCount, 1);
+  assert.equal(summary.failedSchedulerExecutionCount, 1);
+  assert.equal(summary.schedulerRunCount, 3);
+  assert.equal(summary.completedSchedulerRunCount, 1);
+  assert.equal(summary.blockedSchedulerRunCount, 1);
+  assert.equal(summary.skippedSchedulerRunCount, 1);
+  assert.equal(summary.reviewedWorkerTargetCount, 1);
+  assert.equal(summary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(summary.disabledWorkerTargetCount, 1);
+  assert.equal(summary.failurePolicyReady, true);
+  assert.equal(summary.failurePolicyStatus, "ready");
   assert.equal(JSON.stringify(result.bundle).includes("lgaprop_"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("lgadig_"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("lgahand_"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("lgaexec_"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("lgarun_"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("lgawt_"), false);
 });
 
 test("release evidence bundle service blocks learner-cycle write operations from bundle scope", () => {

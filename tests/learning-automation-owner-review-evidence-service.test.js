@@ -28,14 +28,15 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "digests", input });
         return {
           ok: true,
-          count: 1,
+          count: 2,
           digests: [
             {
               digestId: "lgadig_reviewed_1",
               status: "reviewed",
               requiredActions: [{ proposalId: "lgaprop_accepted_1" }],
               blocked: [{ proposalId: "lgaprop_blocked_1" }]
-            }
+            },
+            { digestId: "lgadig_pending_1", status: "pending" }
           ]
         };
       }
@@ -58,7 +59,7 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "handoffs", input });
         return {
           ok: true,
-          count: 1,
+          count: 2,
           handoffs: [
             {
               handoffId: "lgahand_delivered_1",
@@ -66,6 +67,13 @@ function createService(overrides = {}, calls = []) {
               deliveryStatus: "delivered",
               actions: [{ proposalId: "lgaprop_accepted_1" }],
               blocked: []
+            },
+            {
+              handoffId: "lgahand_pending_1",
+              status: "pending_delivery",
+              deliveryStatus: "not_delivered",
+              actions: [],
+              blocked: [{ proposalId: "lgaprop_blocked_1" }]
             }
           ]
         };
@@ -76,8 +84,12 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "executions", input });
         return {
           ok: true,
-          count: 1,
-          executions: [{ executionId: "lgaexec_blocked_1", status: "blocked" }]
+          count: 3,
+          executions: [
+            { executionId: "lgaexec_blocked_1", status: "blocked" },
+            { executionId: "lgaexec_published_1", status: "published" },
+            { executionId: "lgaexec_failed_1", status: "failed" }
+          ]
         };
       }
     },
@@ -86,8 +98,12 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "runs", input });
         return {
           ok: true,
-          count: 1,
-          runs: [{ runId: "lgarun_blocked_1", status: "blocked" }]
+          count: 3,
+          runs: [
+            { runId: "lgarun_blocked_1", status: "blocked" },
+            { runId: "lgarun_completed_1", status: "completed" },
+            { runId: "lgarun_skipped_1", status: "skipped" }
+          ]
         };
       }
     },
@@ -96,8 +112,12 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "targets", input });
         return {
           ok: true,
-          count: 1,
-          targets: [{ targetId: "lgawt_enabled_1", status: "enabled" }]
+          count: 3,
+          targets: [
+            { targetId: "lgawt_enabled_1", status: "enabled" },
+            { targetId: "lgawt_pending_1", status: "pending" },
+            { targetId: "lgawt_archived_1", status: "archived" }
+          ]
         };
       }
     },
@@ -152,12 +172,29 @@ test("owner review evidence composes summary-only automation state from existing
   assert.equal(result.automationOwnerReviewEvidence.publishedProposalExecutionCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.blockedProposalExecutionCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.failedProposalExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.digestCount, 2);
   assert.equal(result.automationOwnerReviewEvidence.reviewedDigestCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.pendingDigestCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.digestRequiredActionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.digestBlockedCandidateCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.actionHandoffCount, 2);
   assert.equal(result.automationOwnerReviewEvidence.deliveredHandoffCount, 1);
-  assert.equal(result.automationOwnerReviewEvidence.schedulerExecutionCount, 1);
-  assert.equal(result.automationOwnerReviewEvidence.schedulerRunCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.pendingHandoffDeliveryCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.actionHandoffActionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.blockedActionHandoffCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.schedulerExecutionCount, 3);
+  assert.equal(result.automationOwnerReviewEvidence.publishedSchedulerExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.blockedSchedulerExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.failedSchedulerExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.schedulerRunCount, 3);
+  assert.equal(result.automationOwnerReviewEvidence.completedSchedulerRunCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.blockedSchedulerRunCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.skippedSchedulerRunCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.reviewedWorkerTargetCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.pendingWorkerTargetReviewCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.disabledWorkerTargetCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.failurePolicyReady, true);
+  assert.equal(result.automationOwnerReviewEvidence.failurePolicyStatus, "ready");
   assert.equal(result.automationOwnerReviewEvidence.requiredActionCount, 2);
   assert.equal(result.automationOwnerReviewEvidence.nextAction.key, "owner_daily_ui_evidence");
   assert.deepEqual(result.automationOwnerReviewEvidence.missingGateKeys, []);
@@ -172,7 +209,12 @@ test("owner review evidence composes summary-only automation state from existing
   assert.equal(result.proposals.executionCount, 3);
   assert.deepEqual(result.proposals.executionStatuses, { blocked: 1, failed: 1, published: 1 });
   assert.equal(result.digests.requiredActionCount, 1);
+  assert.equal(result.digests.pendingCount, 1);
   assert.equal(result.actionHandoffs.deliveredCount, 1);
+  assert.equal(result.actionHandoffs.pendingDeliveryCount, 1);
+  assert.equal(result.schedulerExecutions.publishedCount, 1);
+  assert.equal(result.schedulerRuns.completedCount, 1);
+  assert.equal(result.workerTargets.pendingReviewCount, 1);
   assert.equal(result.failurePolicy.policyId, "lgafpol_active_1");
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.backgroundSchedulingAllowed, false);

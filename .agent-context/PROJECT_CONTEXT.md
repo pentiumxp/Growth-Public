@@ -158,7 +158,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   evidence. Owner review evidence now also projects bounded proposal lifecycle
   counts for `proposed`, `accepted`, `skipped`, `expired`, `superseded`,
   owner-decision, and proposal execution statuses; only `accepted` proposals
-  satisfy the accepted-proposal gate. The supervised automation P5-P9 SQLite
+  satisfy the accepted-proposal gate. Its release evidence bundle summary also
+  projects downstream digest, action-handoff, scheduler execution, scheduler
+  run, worker-target, and failure-policy stage counts without raw dependency
+  rows or ids. The supervised automation P5-P9 SQLite
   repository chain now
   applies repository-level privacy scanning for privacy-risk keys, private
   path/token-looking string values, and non-summary privacy classes before any
@@ -245,7 +248,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
   smoke, stage-checkpoint controls readback smoke, platform action evidence,
   central visual evidence, proposal smoke, and backend Owner automation review
-  evidence with proposal lifecycle counts in the default task set, and now also collects the
+  evidence with proposal lifecycle plus downstream automation-stage counts in
+  the default task set, and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
