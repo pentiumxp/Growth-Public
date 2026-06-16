@@ -135,6 +135,14 @@ Growth already has substantial backend foundation:
   return `activationState=dormant` and `insufficient_recent_practice`, and the
   Owner activation action remains disabled until enough recent ordinary
   practice exists.
+  As of 2026-06-16, production Fanfan science also has 20 persisted
+  summary-only release evidence keys plus one active failure policy
+  (`lgafpol_4b530ed66506435f61`) created and activated through
+  `npm run smoke:failure-policy` with explicit `--allow-write`. The policy is
+  summary-only, keeps manual Owner retry, sets automatic retries to zero, and
+  keeps `writefulSchedulingAllowed=false`. The active-policy check now passes
+  in `npm run smoke:release-readiness`; release-readiness remains incomplete
+  with `pass=25` and `missing=18`.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:
@@ -171,8 +179,17 @@ automation surfaces are not closed:
 - central embedded-plugin visual evidence exists for the Growth plugin shell;
   product-specific mobile/dark checks remain covered locally until the
   production release smoke is run;
-- production planner readiness smoke and production dry-run evidence are still
-  required before release;
+- production backend read-only/default-disabled evidence now covers planner
+  readiness, daily-loop preview, learning-loop state, cycle history, Owner
+  audit, learner-cycle audit, target provisioning, stage checkpoint evidence,
+  stage checkpoint controls, scheduler dry-run, recommendation lifecycle,
+  proposal/action/execution/run/worker/worker-target readback, release
+  workbench readback, Owner review readback, and active failure-policy
+  readiness. Remaining release gates are product UI/visual evidence, reviewed
+  digest/action/worker-target workflow state, profile feedback from a real
+  completed cycle, controlled daily-loop write evidence, platform action
+  receipt evidence, central visual release evidence, and explicit release
+  approvals;
 - background writeful scheduling remains blocked.
 
 ## Current Execution Decision

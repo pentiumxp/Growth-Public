@@ -14439,3 +14439,118 @@
     policy/action handoff/worker target, profile-feedback from a real completed
     cycle, controlled daily-loop write evidence, release workbench evidence,
     Owner review evidence, and explicit release approvals.
+
+## 2026-06-16T08:48Z - Next read-only release evidence persisted
+
+- Status:
+  - Continued the same release-readiness evidence slice after the production
+    canonical key fix.
+  - No learner evidence was fabricated, no scheduler was enabled, and no
+    runtime config or writeful scheduling permission changed.
+- Production actions:
+  - ran a read-only/default-disabled release evidence bundle for:
+    `proposal`, `action_handoff`, `scheduler_execution`, `scheduler_run`,
+    `scheduler_worker_target`, `scheduler_worker`, `release_workbench`, and
+    `owner_review_evidence`;
+  - bundle result: `taskCount=8`, `passedCount=8`, `blockedCount=0`;
+  - persisted 8 additional summary-only release evidence records:
+    `productionProposalSmokeEvidence`,
+    `productionActionHandoffSmokeEvidence`,
+    `productionSchedulerExecutionSmokeEvidence`,
+    `productionSchedulerRunSmokeEvidence`,
+    `productionSchedulerWorkerTargetSmokeEvidence`,
+    `productionSchedulerWorkerSmokeEvidence`,
+    `releaseWorkbenchSmokeEvidence`,
+    `ownerReviewEvidence`.
+- Production readback:
+  - release evidence bag now has 20 persisted keys for
+    `workspaceId=weixin_stephen`, `learnerId=fanfan`,
+    `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
+    `subject=science`, `horizon=daily_plan`;
+  - release-readiness remains `incomplete`, but improved to `pass=24`,
+    `missing=19`, `writefulSchedulingAllowed=false`.
+- Remaining missing checks:
+  - Owner daily UI evidence;
+  - Owner audit UI evidence;
+  - proposal review UI evidence;
+  - automation digest UI evidence;
+  - reviewed automation digest;
+  - active failure policy;
+  - delivered action handoff;
+  - automation action handoff UI evidence;
+  - scheduler execution UI evidence;
+  - scheduler run UI evidence;
+  - scheduler worker-target UI evidence;
+  - reviewed enabled worker target;
+  - production profile-feedback smoke from a real completed learning cycle;
+  - controlled daily-loop write smoke;
+  - platform action evidence;
+  - central visual evidence;
+  - writeful execution release approval;
+  - background scheduler release approval;
+  - background worker release approval.
+
+## 2026-06-16T09:02Z - Active failure policy production readiness closed
+
+- Status:
+  - Continued the same release-readiness evidence closure for the Fanfan
+    science scope without fabricating learner evidence, enabling schedulers,
+    or changing runtime config.
+  - This was a production data operation through the Growth service-owned
+    `npm run smoke:failure-policy` boundary, not a direct SQLite edit.
+- Scope:
+  - `workspaceId=weixin_stephen`;
+  - `learnerId=fanfan`;
+  - `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`;
+  - `domain=science`;
+  - `subject=science`;
+  - `horizon=daily_plan`.
+- Production evidence:
+  - before write, `smoke:failure-policy --operation readiness` returned
+    `status=missing_active_failure_policy`,
+    `readyForWritefulAutomationPrerequisite=false`, and
+    `writefulSchedulingAllowed=false`;
+  - before write, `smoke:failure-policy --operation list` returned
+    `count=0`;
+  - created policy `lgafpol_4b530ed66506435f61` with explicit
+    `--allow-write`;
+  - reviewed the same policy to `active` with explicit `--allow-write`;
+  - the created/reviewed policy is `privacyClass=summary_only`, keeps
+    `policy.writefulSchedulingAllowed=false`,
+    `failurePolicy.writefulSchedulingAllowed=false`, and
+    `maxAutomaticRetries=0`;
+  - post-write `smoke:failure-policy --operation readiness` returned
+    `status=failure_policy_ready`,
+    `readyForWritefulAutomationPrerequisite=true`, and
+    `writefulSchedulingAllowed=false`.
+- Release-readiness readback after policy activation:
+  - `active_failure_policy` is now `pass` with policy id
+    `lgafpol_4b530ed66506435f61`;
+  - release-readiness remains `incomplete`;
+  - summary counts are now `pass=25`, `missing=18`;
+  - persisted release evidence key count remains `20`;
+  - `writefulSchedulingAllowed=false`.
+- Remaining missing checks:
+  - Owner daily UI evidence;
+  - Owner audit UI evidence;
+  - proposal review UI evidence;
+  - automation digest UI evidence;
+  - reviewed automation digest;
+  - delivered action handoff;
+  - automation action handoff UI evidence;
+  - scheduler execution UI evidence;
+  - scheduler run UI evidence;
+  - scheduler worker-target UI evidence;
+  - reviewed enabled worker target;
+  - production profile-feedback smoke from a real completed learning cycle;
+  - controlled daily-loop write smoke;
+  - platform action evidence;
+  - central visual evidence;
+  - writeful execution release approval;
+  - background scheduler release approval;
+  - background worker release approval.
+- Important boundary:
+  - Do not record release approvals, controlled daily-loop write evidence,
+    reviewed digest/action handoff/worker-target evidence, profile-feedback
+    evidence, platform action evidence, or central visual evidence unless the
+    corresponding real product workflow or Owner approval exists.
