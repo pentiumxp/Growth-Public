@@ -2,6 +2,7 @@
 
 const RELEASE_REVIEW_SCHEMA = "growth.learningAutomationReleaseReview.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -26,6 +27,22 @@ function scanPrivacyKeys(value, pathName = "$", findings = []) {
     const childPath = `${pathName}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+  }
+  return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
   }
   return findings;
 }
@@ -384,7 +401,13 @@ function createLearningAutomationReleaseReviewService(options = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_review_scope_required");
     const privacyFindings = scanPrivacyKeys(input).slice(0, 16);
-    if (privacyFindings.length) return unavailable("learning_automation_release_review_privacy_failed", { privacyFindings });
+    const privateValueFindings = scanPrivateValues(input).slice(0, 16);
+    if (privacyFindings.length || privateValueFindings.length) {
+      return unavailable("learning_automation_release_review_privacy_failed", {
+        privacyFindings,
+        privateValueFindings
+      });
+    }
 
     const readiness = currentReadiness(readinessService, input, scope);
     if (!readiness.ok) return readiness;
@@ -407,7 +430,15 @@ function createLearningAutomationReleaseReviewService(options = {}) {
     const status = deriveReviewStatus(readiness, collection.run, decisionResult.decision, packageRecordStatus);
     const nextAction = nextActionFor(status, readiness, collection.run, decisionResult.decision);
     const packageReadback = packageReadbackSummary(packageResult, packageRecordStatus);
-    return Object.assign({}, scope, {
+    const dependencyPrivacyFindings = scanPrivacyKeys({ readiness, collection, decisionResult, packageResult, approvals }).slice(0, 16);
+    const dependencyPrivateValueFindings = scanPrivateValues({ readiness, collection, decisionResult, packageResult, approvals }).slice(0, 16);
+    if (dependencyPrivacyFindings.length || dependencyPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_review_dependency_privacy_failed", {
+        privacyFindings: dependencyPrivacyFindings,
+        privateValueFindings: dependencyPrivateValueFindings
+      });
+    }
+    const result = Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-review-service",
       schemaVersion: RELEASE_REVIEW_SCHEMA,
@@ -469,6 +500,15 @@ function createLearningAutomationReleaseReviewService(options = {}) {
         runtimeConfigChange: false
       }
     });
+    const outputPrivacyFindings = scanPrivacyKeys(result).slice(0, 16);
+    const outputPrivateValueFindings = scanPrivateValues(result).slice(0, 16);
+    if (outputPrivacyFindings.length || outputPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_review_privacy_failed", {
+        privacyFindings: outputPrivacyFindings,
+        privateValueFindings: outputPrivateValueFindings
+      });
+    }
+    return result;
   }
 
   return { review };

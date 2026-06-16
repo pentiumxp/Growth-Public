@@ -855,6 +855,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   for deriving basenames/booleans; public scope and projected public visual
   summaries are scanned for private path/token-looking values, and failed DTOs
   are redacted before release-bundle or readiness consumers see them.
+  Release ladder public readbacks are now consistently privacy guarded:
+  `learning-automation-release-review-service`,
+  `learning-automation-release-authorization-service`,
+  `learning-automation-release-closure-service`, and
+  `learning-automation-release-activation-service` scan public inputs,
+  dependency outputs, and final public DTOs for private path/token-looking
+  values in addition to privacy-risk keys. Activation also scans saved
+  activation output and list readback before returning repository rows.
+  Failures return bounded finding paths only and do not echo private values.
   Plan publication failure visibility is now durable: `learning_growth_plan_drafts`
   stores bounded latest publish-attempt status/error/stage, the publisher writes
   failed or policy-blocked attempts without marking drafts published, and plan

@@ -124,6 +124,35 @@ test("release activation smoke script runs no-write preflight against a temporar
   }
 });
 
+test("release activation smoke script rejects private values from parsed public scope", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-activation-private-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const stdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-activation.js"),
+      "--workspace-id", "fanfan",
+      "--domain", "Bearer local-token",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    const output = JSON.parse(stdout);
+    assert.equal(output.operation, "preflight");
+    assert.equal(output.ok, false);
+    assert.equal(output.error, "learning_automation_release_activation_privacy_failed");
+    assert.deepEqual(output.privateValueFindings, ["$.domain"]);
+    assert.equal(JSON.stringify(output).includes("local-token"), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("release activation smoke script records summary-only audit rows against a temporary SQLite db when explicitly allowed", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-activation-record-smoke-"));
   const dbPath = path.join(dir, "growth-learning.sqlite3");

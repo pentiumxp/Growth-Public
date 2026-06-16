@@ -930,6 +930,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseClosureService, /packageReadbackSummary/);
   assert.match(automationReleaseClosureService, /latestPackageDashboardStatus/);
   assert.match(automationReleaseClosureService, /releaseDashboardSummary/);
+  assert.match(automationReleaseClosureService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(automationReleaseClosureService, /scanPrivateValues/);
   assert.match(automationReleaseClosureService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseClosureService, /runtimeConfigChange: false/);
   assert.match(automationReleaseClosureService, /summaryOnly: true/);
@@ -962,6 +964,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseActivationService, /listActivations/);
   assert.match(automationReleaseActivationService, /repository\.saveActivation/);
   assert.match(automationReleaseActivationService, /repository\.listActivations/);
+  assert.match(automationReleaseActivationService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(automationReleaseActivationService, /scanPrivateValues/);
   assert.match(automationReleaseActivationService, /configChangeApplied: false/);
   assert.match(automationReleaseActivationService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseActivationService, /runtimeConfigChange: false/);
@@ -2537,14 +2541,21 @@ test("Growth release package builder stays summary-only orchestration over relea
   const reviewService = read(path.join("src", "services", "learning-automation-release-review-service.js"));
   assert.match(reviewService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(reviewService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(reviewService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(reviewService, /scanPrivateValues/);
+  assert.match(reviewService, /learning_automation_release_review_dependency_privacy_failed/);
 
   const authorizationService = read(path.join("src", "services", "learning-automation-release-authorization-service.js"));
   assert.match(authorizationService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(authorizationService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(authorizationService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(authorizationService, /scanPrivateValues/);
 
   const closureService = read(path.join("src", "services", "learning-automation-release-closure-service.js"));
   assert.match(closureService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(closureService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(closureService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(closureService, /scanPrivateValues/);
 
   const serviceHarness = read(path.join("tests", "learning-automation-release-package-service.test.js"));
   assert.match(serviceHarness, /composes bundle, audit, readiness, collection run, controls, and dashboard/);

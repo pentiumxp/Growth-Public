@@ -295,6 +295,28 @@ test("release authorization rejects invalid review boundary and privacy-risk inp
   });
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_authorization_privacy_failed");
+
+  const privateInputValue = serviceWith().authorize({
+    workspaceId: "weixin_fanfan",
+    domain: "Bearer local-token"
+  });
+  assert.equal(privateInputValue.ok, false);
+  assert.equal(privateInputValue.error, "learning_automation_release_authorization_privacy_failed");
+  assert.deepEqual(privateInputValue.privateValueFindings, ["$.domain"]);
+
+  const privateReviewValue = serviceWith({
+    review: approvedReview({
+      latestPackage: Object.assign({}, approvedReview().latestPackage, {
+        releaseDashboardSummary: Object.assign({}, approvedReview().latestPackage.releaseDashboardSummary, {
+          latestReadinessEvidenceSourceBundleId: "/Users/example/.homeai-qa/readiness.json"
+        })
+      })
+    })
+  }).authorize({ workspaceId: "weixin_fanfan" });
+  assert.equal(privateReviewValue.ok, false);
+  assert.equal(privateReviewValue.error, "learning_automation_release_authorization_review_privacy_failed");
+  assert.equal(privateReviewValue.privateValueFindings.includes("$.latestPackage.releaseDashboardSummary.latestReadinessEvidenceSourceBundleId"), true);
+  assert.equal(JSON.stringify(privateReviewValue).includes("/Users/example"), false);
 });
 
 test("release authorization fails closed when review service is missing or returns an error", () => {

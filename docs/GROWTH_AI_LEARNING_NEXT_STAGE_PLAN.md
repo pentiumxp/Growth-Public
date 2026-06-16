@@ -892,6 +892,13 @@ scope and projected public visual summary must reject private path or
 token-looking values, and failed DTOs must be redacted before release-bundle or
 release-readiness consumers see them.
 
+Release ladder privacy sub-contract: release review, authorization, closure,
+and activation readbacks are public release-control DTOs, so they must scan
+public inputs, dependency outputs, and final public DTOs for private path or
+token-looking values. Activation must apply the same rule to saved activation
+output and list readback. Harness coverage must include service-level failures
+and smoke-script failures that return only finding paths, not private values.
+
 ## Definition Of Done
 
 A next-stage package is complete only when:

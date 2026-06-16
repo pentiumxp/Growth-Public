@@ -313,6 +313,43 @@ test("release review rejects privacy-risk input and missing dependencies", () =>
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_review_privacy_failed");
 
+  const privateInputValue = service.review({
+    workspaceId: "fanfan",
+    domain: "Bearer local-token"
+  });
+  assert.equal(privateInputValue.ok, false);
+  assert.equal(privateInputValue.error, "learning_automation_release_review_privacy_failed");
+  assert.deepEqual(privateInputValue.privateValueFindings, ["$.domain"]);
+
+  const privateDependencyValue = serviceWith({
+    collectionRun: {
+      collectionRunId: "lgacrn_ready",
+      status: "ready_for_release_review"
+    },
+    decision: {
+      decisionId: "lgard_approved",
+      collectionRunId: "lgacrn_ready",
+      status: "approved",
+      privacyClass: "summary_only"
+    },
+    packageRecord: {
+      packageId: "lgapkg_private",
+      collectionRunId: "lgacrn_ready",
+      status: "ready_for_release_review",
+      privacyClass: "summary_only",
+      releaseDashboardSummary: {
+        schemaVersion: "growth.learningAutomationReleaseDashboard.summary.v1",
+        summaryOnly: true,
+        status: "manual_runtime_config_required",
+        readinessEvidenceSourceBundleId: "/Users/example/.homeai-qa/release-bundle.json"
+      }
+    }
+  }).review({ workspaceId: "fanfan" });
+  assert.equal(privateDependencyValue.ok, false);
+  assert.equal(privateDependencyValue.error, "learning_automation_release_review_dependency_privacy_failed");
+  assert.equal(privateDependencyValue.privateValueFindings.includes("$.packageResult.package.releaseDashboardSummary.readinessEvidenceSourceBundleId"), true);
+  assert.equal(JSON.stringify(privateDependencyValue).includes("/Users/example"), false);
+
   const missing = createLearningAutomationReleaseReviewService({}).review({ workspaceId: "fanfan" });
   assert.equal(missing.ok, false);
   assert.equal(missing.error, "learning_automation_release_review_readiness_unavailable");

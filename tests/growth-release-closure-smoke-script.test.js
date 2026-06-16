@@ -94,3 +94,32 @@ test("release closure smoke script runs no-write closure against a temporary SQL
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("release closure smoke script rejects private values from parsed public scope", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-closure-private-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const stdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-closure.js"),
+      "--workspace-id", "fanfan",
+      "--domain", "Bearer local-token",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    const output = JSON.parse(stdout);
+    assert.equal(output.operation, "summarize");
+    assert.equal(output.ok, false);
+    assert.equal(output.error, "learning_automation_release_closure_privacy_failed");
+    assert.deepEqual(output.privateValueFindings, ["$.domain"]);
+    assert.equal(JSON.stringify(output).includes("local-token"), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

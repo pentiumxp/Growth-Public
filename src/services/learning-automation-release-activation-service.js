@@ -3,6 +3,7 @@
 const RELEASE_ACTIVATION_SCHEMA = "growth.learningAutomationReleaseActivation.v1";
 const RELEASE_CLOSURE_SCHEMA = "growth.learningAutomationReleaseClosure.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 const ACTIVATION_GATES = Object.freeze([
   Object.freeze({
@@ -63,6 +64,22 @@ function scanPrivacyKeys(value, pathName = "$", findings = []) {
     const childPath = `${pathName}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+  }
+  return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
   }
   return findings;
 }
@@ -285,7 +302,13 @@ function createLearningAutomationReleaseActivationService(options = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_activation_scope_required");
     const privacyFindings = scanPrivacyKeys(input).slice(0, 16);
-    if (privacyFindings.length) return unavailable("learning_automation_release_activation_privacy_failed", { privacyFindings });
+    const privateValueFindings = scanPrivateValues(input).slice(0, 16);
+    if (privacyFindings.length || privateValueFindings.length) {
+      return unavailable("learning_automation_release_activation_privacy_failed", {
+        privacyFindings,
+        privateValueFindings
+      });
+    }
     if (!releaseClosureService || typeof releaseClosureService.summarize !== "function") {
       return unavailable("learning_automation_release_activation_closure_unavailable");
     }
@@ -305,11 +328,13 @@ function createLearningAutomationReleaseActivationService(options = {}) {
       });
     }
     const closurePrivacyFindings = scanPrivacyKeys(closureResult).slice(0, 16);
-    if (closurePrivacyFindings.length) {
+    const closurePrivateValueFindings = scanPrivateValues(closureResult).slice(0, 16);
+    if (closurePrivacyFindings.length || closurePrivateValueFindings.length) {
       return unavailable("learning_automation_release_activation_closure_privacy_failed", {
         status: "blocked",
         preflightPassed: false,
-        privacyFindings: closurePrivacyFindings
+        privacyFindings: closurePrivacyFindings,
+        privateValueFindings: closurePrivateValueFindings
       });
     }
 
@@ -320,7 +345,7 @@ function createLearningAutomationReleaseActivationService(options = {}) {
     const preflightPassed = status === "ready_for_owner_config_enablement" || status === "already_enabled";
     const readyForOwnerRuntimeConfigDecision = status === "ready_for_owner_config_enablement";
 
-    return Object.assign({}, scope, {
+    const result = Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-activation-service",
       schemaVersion: RELEASE_ACTIVATION_SCHEMA,
@@ -356,6 +381,17 @@ function createLearningAutomationReleaseActivationService(options = {}) {
         nextAction: actions[0] || null
       }
     });
+    const outputPrivacyFindings = scanPrivacyKeys(result).slice(0, 16);
+    const outputPrivateValueFindings = scanPrivateValues(result).slice(0, 16);
+    if (outputPrivacyFindings.length || outputPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_activation_privacy_failed", {
+        status: "blocked",
+        preflightPassed: false,
+        privacyFindings: outputPrivacyFindings,
+        privateValueFindings: outputPrivateValueFindings
+      });
+    }
+    return result;
   }
 
   function recordActivation(input = {}) {
@@ -375,7 +411,7 @@ function createLearningAutomationReleaseActivationService(options = {}) {
       createdAt: cleanString(input.createdAt || input.created_at, 80)
     }));
     if (!saveResult?.ok) return saveResult || unavailable("learning_automation_release_activation_save_failed");
-    return {
+    const result = {
       ok: true,
       source: "growth-learning-automation-release-activation-service",
       duplicate: Boolean(saveResult.duplicate),
@@ -385,6 +421,17 @@ function createLearningAutomationReleaseActivationService(options = {}) {
       activation: saveResult.activation,
       evaluated
     };
+    const outputPrivacyFindings = scanPrivacyKeys(result).slice(0, 16);
+    const outputPrivateValueFindings = scanPrivateValues(result).slice(0, 16);
+    if (outputPrivacyFindings.length || outputPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_activation_privacy_failed", {
+        status: "blocked",
+        preflightPassed: false,
+        privacyFindings: outputPrivacyFindings,
+        privateValueFindings: outputPrivateValueFindings
+      });
+    }
+    return result;
   }
 
   function listActivations(input = {}) {
@@ -393,10 +440,18 @@ function createLearningAutomationReleaseActivationService(options = {}) {
     }
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_activation_scope_required");
+    const privacyFindings = scanPrivacyKeys(input).slice(0, 16);
+    const privateValueFindings = scanPrivateValues(input).slice(0, 16);
+    if (privacyFindings.length || privateValueFindings.length) {
+      return unavailable("learning_automation_release_activation_privacy_failed", {
+        privacyFindings,
+        privateValueFindings
+      });
+    }
     const activations = repository.listActivations(Object.assign({}, input, scope, {
       status: cleanString(input.status || input.activationStatus || input.activation_status, 120)
     }));
-    return {
+    const result = {
       ok: true,
       source: "growth-learning-automation-release-activation-service",
       workspaceId: scope.workspaceId,
@@ -407,6 +462,15 @@ function createLearningAutomationReleaseActivationService(options = {}) {
       runtimeConfigChange: false,
       activations
     };
+    const outputPrivacyFindings = scanPrivacyKeys(result).slice(0, 16);
+    const outputPrivateValueFindings = scanPrivateValues(result).slice(0, 16);
+    if (outputPrivacyFindings.length || outputPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_activation_privacy_failed", {
+        privacyFindings: outputPrivacyFindings,
+        privateValueFindings: outputPrivateValueFindings
+      });
+    }
+    return result;
   }
 
   return {

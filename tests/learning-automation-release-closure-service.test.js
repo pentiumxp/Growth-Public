@@ -404,6 +404,40 @@ test("release closure rejects privacy-risk input and missing dependencies", () =
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_closure_privacy_failed");
 
+  const privateInputValue = serviceWith().summarize({
+    workspaceId: "weixin_fanfan",
+    domain: "Bearer local-token"
+  });
+  assert.equal(privateInputValue.ok, false);
+  assert.equal(privateInputValue.error, "learning_automation_release_closure_privacy_failed");
+  assert.deepEqual(privateInputValue.privateValueFindings, ["$.domain"]);
+
+  const privateReviewValue = serviceWith({
+    review: approvedReview({
+      latestPackage: Object.assign({}, approvedReview().latestPackage, {
+        releaseDashboardSummary: Object.assign({}, approvedReview().latestPackage.releaseDashboardSummary, {
+          readinessEvidenceSourceBundleId: "/Users/example/.homeai-qa/review-bundle.json"
+        })
+      })
+    })
+  }).summarize({ workspaceId: "weixin_fanfan" });
+  assert.equal(privateReviewValue.ok, false);
+  assert.equal(privateReviewValue.error, "learning_automation_release_closure_review_privacy_failed");
+  assert.equal(privateReviewValue.privateValueFindings.includes("$.latestPackage.releaseDashboardSummary.readinessEvidenceSourceBundleId"), true);
+  assert.equal(JSON.stringify(privateReviewValue).includes("/Users/example"), false);
+
+  const privateAuthorizationValue = serviceWith({
+    gate: authorizedGate({
+      packageReadback: Object.assign({}, authorizedGate().packageReadback, {
+        latestPackageDashboardReadinessEvidenceSourceBundleId: "/Users/example/.homeai-qa/gate-bundle.json"
+      })
+    })
+  }).summarize({ workspaceId: "weixin_fanfan" });
+  assert.equal(privateAuthorizationValue.ok, false);
+  assert.equal(privateAuthorizationValue.error, "learning_automation_release_closure_authorization_privacy_failed");
+  assert.equal(privateAuthorizationValue.privateValueFindings.includes("$.packageReadback.latestPackageDashboardReadinessEvidenceSourceBundleId"), true);
+  assert.equal(JSON.stringify(privateAuthorizationValue).includes("/Users/example"), false);
+
   const missingReview = createLearningAutomationReleaseClosureService({}).summarize({ workspaceId: "weixin_fanfan" });
   assert.equal(missingReview.ok, false);
   assert.equal(missingReview.error, "learning_automation_release_closure_review_unavailable");

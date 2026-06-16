@@ -569,6 +569,13 @@ service tests.
 | Embedded card interaction UI | `public/growth-legacy-task-ui.js`, `public/growth-card-interaction-controller.js`, `public/growth-card-generation-ui.js`, `public/app.js`, `public/growth-api-client.js` | Generated card learner interaction and Owner generation surfaces. Learner daily cards support one submission, visible evaluation refresh, one reflection stage that can be submitted once, and text/audio evidence routed through plugin APIs. Owner generation supports daily cards, visible next-card recommendation rationale, read-only recommendation lifecycle history, post-publish context refresh that preserves the published preview, and stage-assessment eligibility/Owner manual activation controls. Controllers own ephemeral UI state while service/store rules remain backend-owned. |
 | Migrated UI baseline | `public/growth-legacy-*.js`, `public/growth-homeai-legacy.css` | Plugin-owned copy of the migrated Growth UI baseline. Future Growth UI changes happen here, not in Home AI host files. |
 
+Release ladder privacy sub-contract: release review, authorization, closure,
+and activation services must scan public inputs, dependency readbacks, and
+returned public DTOs for private path/token-looking values in addition to
+privacy-risk keys. Activation must also scan saved activation output and list
+readback before returning repository rows. Failures return bounded finding
+paths only and must not echo the private value.
+
 ## Current Refactor Boundary
 
 The first core-module split is behavior-preserving:

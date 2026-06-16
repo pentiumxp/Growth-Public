@@ -4,6 +4,7 @@ const RELEASE_AUTHORIZATION_SCHEMA = "growth.learningAutomationReleaseAuthorizat
 const RELEASE_REVIEW_SCHEMA = "growth.learningAutomationReleaseReview.v1";
 const DEFAULT_REQUIRED_APPROVAL_KEYS = Object.freeze(["writefulExecutionApproval"]);
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -28,6 +29,22 @@ function scanPrivacyKeys(value, pathName = "$", findings = []) {
     const childPath = `${pathName}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+  }
+  return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
   }
   return findings;
 }
@@ -250,7 +267,13 @@ function createLearningAutomationReleaseAuthorizationService(options = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_authorization_scope_required");
     const privacyFindings = scanPrivacyKeys(input).slice(0, 16);
-    if (privacyFindings.length) return unavailable("learning_automation_release_authorization_privacy_failed", { privacyFindings });
+    const privateValueFindings = scanPrivateValues(input).slice(0, 16);
+    if (privacyFindings.length || privateValueFindings.length) {
+      return unavailable("learning_automation_release_authorization_privacy_failed", {
+        privacyFindings,
+        privateValueFindings
+      });
+    }
     if (!releaseReviewService || typeof releaseReviewService.review !== "function") {
       return unavailable("learning_automation_release_authorization_review_unavailable");
     }
@@ -262,17 +285,19 @@ function createLearningAutomationReleaseAuthorizationService(options = {}) {
       });
     }
     const reviewPrivacyFindings = scanPrivacyKeys(review).slice(0, 16);
-    if (reviewPrivacyFindings.length) {
+    const reviewPrivateValueFindings = scanPrivateValues(review).slice(0, 16);
+    if (reviewPrivacyFindings.length || reviewPrivateValueFindings.length) {
       return unavailable("learning_automation_release_authorization_review_privacy_failed", {
         authorized: false,
         status: "blocked",
-        privacyFindings: reviewPrivacyFindings
+        privacyFindings: reviewPrivacyFindings,
+        privateValueFindings: reviewPrivateValueFindings
       });
     }
     const keys = requiredApprovalKeys(input);
     const decision = decisionFor(review, keys);
     const authorized = decision.authorized === true;
-    return Object.assign({}, scope, {
+    const result = Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-authorization-service",
       schemaVersion: RELEASE_AUTHORIZATION_SCHEMA,
@@ -294,6 +319,17 @@ function createLearningAutomationReleaseAuthorizationService(options = {}) {
       latestDecision: publicDecision(review.latestDecision),
       latestPackage: publicPackage(review.latestPackage)
     });
+    const outputPrivacyFindings = scanPrivacyKeys(result).slice(0, 16);
+    const outputPrivateValueFindings = scanPrivateValues(result).slice(0, 16);
+    if (outputPrivacyFindings.length || outputPrivateValueFindings.length) {
+      return unavailable("learning_automation_release_authorization_privacy_failed", {
+        authorized: false,
+        status: "blocked",
+        privacyFindings: outputPrivacyFindings,
+        privateValueFindings: outputPrivateValueFindings
+      });
+    }
+    return result;
   }
 
   return { authorize };

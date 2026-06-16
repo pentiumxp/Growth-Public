@@ -879,6 +879,11 @@ Implemented backend shape:
   but when writeful execution is separately enabled the scheduler execution
   service must read back a valid summary-only `writeful_execution` activation
   record before it can delegate publication.
+  Release review, authorization, closure, and activation readbacks must scan
+  public inputs, dependency outputs, and final public DTOs for private
+  path/token-looking values as well as privacy-risk keys. Activation must also
+  scan saved activation output and list readback before returning repository
+  rows. Failures return finding paths only and must not echo private values.
 - `npm run smoke:runtime-enablement` delegates to
   `learning-automation-runtime-enablement-service.evaluate` by default and
   returns a no-write `growth.learningAutomationRuntimeEnablement.v1` readback

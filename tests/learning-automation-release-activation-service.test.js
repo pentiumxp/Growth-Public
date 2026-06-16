@@ -148,6 +148,29 @@ test("release activation preflight rejects privacy-risk input, invalid gates, an
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_activation_privacy_failed");
 
+  const privateInputValue = serviceWith().preflight({
+    workspaceId: "weixin_fanfan",
+    domain: "Bearer local-token"
+  });
+  assert.equal(privateInputValue.ok, false);
+  assert.equal(privateInputValue.error, "learning_automation_release_activation_privacy_failed");
+  assert.deepEqual(privateInputValue.privateValueFindings, ["$.domain"]);
+
+  const privateClosureValue = serviceWith({
+    closure: readyClosure({
+      releaseClosure: Object.assign({}, readyClosure().releaseClosure, {
+        latestPackageDashboardReadinessEvidenceSourceBundleId: "/Users/example/.homeai-qa/closure.json"
+      })
+    })
+  }).preflight({
+    workspaceId: "weixin_fanfan",
+    activationGate: "writeful_execution"
+  });
+  assert.equal(privateClosureValue.ok, false);
+  assert.equal(privateClosureValue.error, "learning_automation_release_activation_closure_privacy_failed");
+  assert.equal(privateClosureValue.privateValueFindings.includes("$.releaseClosure.latestPackageDashboardReadinessEvidenceSourceBundleId"), true);
+  assert.equal(JSON.stringify(privateClosureValue).includes("/Users/example"), false);
+
   const invalidGate = serviceWith().preflight({
     workspaceId: "weixin_fanfan",
     activationGate: "unknown_gate"
@@ -219,6 +242,69 @@ test("release activation service records summary-only activation audit records t
   assert.equal(listed.ok, true);
   assert.equal(listed.count, 1);
   assert.equal(listed.activations[0].workspaceId, "weixin_fanfan");
+});
+
+test("release activation service rejects private values returned from repository boundaries", () => {
+  let listCalled = false;
+  const privateListInput = serviceWith({}, {
+    automationWritefulExecutionEnabled: false
+  }, {
+    saveActivation() {
+      return { ok: false };
+    },
+    listActivations() {
+      listCalled = true;
+      return [];
+    }
+  }).listActivations({
+    workspaceId: "weixin_fanfan",
+    status: "Bearer local-token"
+  });
+  assert.equal(privateListInput.ok, false);
+  assert.equal(privateListInput.error, "learning_automation_release_activation_privacy_failed");
+  assert.deepEqual(privateListInput.privateValueFindings, ["$.status"]);
+  assert.equal(JSON.stringify(privateListInput).includes("local-token"), false);
+  assert.equal(listCalled, false);
+
+  const service = serviceWith({}, {
+    automationWritefulExecutionEnabled: false
+  }, {
+    saveActivation(input) {
+      return {
+        ok: true,
+        duplicate: false,
+        activation: Object.assign({}, input, {
+          activationId: "lgaract_private",
+          note: "/Users/example/.homeai-qa/activation.json"
+        })
+      };
+    },
+    listActivations() {
+      return [{
+        activationId: "lgaract_private",
+        workspaceId: "weixin_fanfan",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        note: "/Users/example/.homeai-qa/list.json"
+      }];
+    }
+  });
+
+  const recorded = service.recordActivation({
+    workspaceId: "weixin_fanfan",
+    activationGate: "writeful_execution",
+    requestedBy: "weixin_owner"
+  });
+  assert.equal(recorded.ok, false);
+  assert.equal(recorded.error, "learning_automation_release_activation_privacy_failed");
+  assert.equal(recorded.privateValueFindings.includes("$.activation.note"), true);
+  assert.equal(JSON.stringify(recorded).includes("/Users/example"), false);
+
+  const listed = service.listActivations({ workspaceId: "weixin_fanfan" });
+  assert.equal(listed.ok, false);
+  assert.equal(listed.error, "learning_automation_release_activation_privacy_failed");
+  assert.equal(listed.privateValueFindings.includes("$.activations[0].note"), true);
+  assert.equal(JSON.stringify(listed).includes("/Users/example"), false);
 });
 
 test("release activation service requires repository for record and list operations", () => {

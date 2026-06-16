@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T12:05+08:00 - Release Ladder Private Value Guard Consistency
+
+- Status: implemented, documented, and full-Harness validated locally. This
+  slice hardens the release review/authorization/closure/activation public
+  readback ladder. It does not change UI, deploy, call Gateway/model vendors,
+  publish plans/cards, generate cards, evaluate submissions, execute scheduler
+  actions, run scheduler ticks, deliver notifications, emit platform events,
+  activate stage assessments, mutate learner state, flip runtime config, grant
+  scheduler permission, or write production data.
+- Scope:
+  - `learning-automation-release-review-service` now scans public input,
+    dependency outputs, and final public DTOs for private path/token-looking
+    values in addition to privacy-risk keys;
+  - `learning-automation-release-authorization-service` scans public input,
+    release-review output, and final public DTOs;
+  - `learning-automation-release-closure-service` scans public input,
+    release-review output, release-authorization output, and final public DTOs;
+  - `learning-automation-release-activation-service` scans public input,
+    release-closure output, final public DTOs, saved activation output, and
+    list readback before returning repository rows;
+  - failures return bounded finding paths only and do not echo private values.
+- Harness added/updated:
+  - service tests for release review, authorization, closure, and activation
+    cover private-value input/dependency/readback failures;
+  - release closure and release activation smoke-script tests now prove parsed
+    private public-scope values fail through the real CLI boundary;
+  - architecture boundary tests now require `PRIVATE_VALUE_PATTERN` and
+    `scanPrivateValues` coverage for the touched release ladder services.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-review-service.js src/services/learning-automation-release-authorization-service.js src/services/learning-automation-release-closure-service.js src/services/learning-automation-release-activation-service.js tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/learning-automation-release-activation-service.test.js tests/growth-release-closure-smoke-script.test.js tests/growth-release-activation-smoke-script.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/learning-automation-release-activation-service.test.js tests/growth-release-closure-smoke-script.test.js tests/growth-release-activation-smoke-script.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`69/69`);
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`;
+  - `npm test` (`790/790`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release ladder private-value guard consistency; backend release review authorization closure activation services docs and harness only; no UI deploy" --json`
+    classified this release/readback boundary slice as H1.
+  - AI Ops evidence ledger appended
+    `evidence-470ba7b7-772e-4fa5-9ec2-370dd3024d6d`.
+  - The Home AI app deploy plan still reported unrelated dirty app files from
+    another workspace state. They were not modified by this Growth slice.
+  - CodeGraph status after edits reported 343 JavaScript files indexed, 4541
+    nodes, and 18104 edges.
+- Progress calibration:
+  - Card-generation/daily-card user flow remains about 80-85% complete.
+  - Full AI-driven Growth closed-loop MVP progress is now about 74-76%:
+    release/readback privacy is tighter, while richer Owner UI, real central
+    visual artifacts, production release evidence, and multi-workspace/domain
+    product rollout remain unfinished.
+
 ## 2026-06-16T11:46+08:00 - Central Visual Evidence Private Value Guard
 
 - Status: implemented and full-Harness validated locally. This slice hardens
