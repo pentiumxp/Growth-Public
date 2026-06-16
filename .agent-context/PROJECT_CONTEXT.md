@@ -417,7 +417,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `stage_checkpoint_controls` are collected with a real science coverage node
   such as `kg_ls_science_scientific_enquiry_plan_investigative_work`; the
   controls may still report `insufficient_recent_practice`, which is expected
-  low-pressure behavior and keeps formal activation disabled.
+  low-pressure behavior and keeps formal activation disabled. The bundled
+  evidence precedence fix for default false CLI fields is deployed in Growth
+  commit `0daee3afded5`.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

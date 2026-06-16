@@ -11,11 +11,13 @@
 
 ## 2026-06-16T16:00+08:00 - Stage Checkpoint Release Evidence Mapping Closure
 
-- Status: implemented locally; production redeploy and post-deploy smoke are
-  required before treating the production gap as closed. This H1 backend slice
-  fixes release-readiness evidence merging so bundled release evidence is not
-  shadowed by default `false` CLI flag fields, and documents the production
-  Fanfan science stage-checkpoint evidence selector.
+- Status: implemented, deployed, production-verified, and documented. This H1
+  backend slice closes the production backend release-evidence gap for
+  stage-checkpoint separation/controls. Overall Growth closed-loop MVP progress
+  is about `88%` after this slice: target-provisioning and stage-checkpoint
+  backend release evidence are closed, while product UI/visual evidence,
+  platform action evidence, completed-cycle/profile-feedback production
+  evidence, and broader release-readiness closure remain open.
 - Diagnosis:
   - production no-write release evidence collection for
     `stage_assessment + stage_checkpoint_controls` was first blocked because
@@ -42,7 +44,26 @@
     low-pressure backend evidence, not a forced activation.
 - Validation so far:
   - focused release-readiness / release-evidence-collection / bundle tests:
-    `59/59` passing.
+    `59/59` passing;
+  - Growth focused docs/architecture/release evidence gate: `93/93` passing;
+  - Growth `npm run check`;
+  - full Growth regression: `npm test` (`815/815` passing);
+  - Home AI central H1 required checks from AI Ops intake, including plugin
+    platform tests, Gateway runtime tests, Mac deploy-script checks,
+    architecture-code-test-harness-map, and plan-mode
+    `deploy:macos -- --target home-ai`;
+  - deployed Growth commit `0daee3afded5` through the central Home AI Mac
+    deploy script with `target=plugin:growth`, `sourceRef.dirty=false`,
+    backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T080226Z-plugin-growth-manual`,
+    restart label `com.hermesmobile.plugin.growth`, and manifest health pass;
+  - production no-write release-evidence-collection subset with
+    `--task stage_assessment --task stage_checkpoint_controls` and
+    `--target-node-id kg_ls_science_scientific_enquiry_plan_investigative_work`
+    now returns bundle `passedCount=2`, `blockedCount=0`, bundle-audit
+    `status=pass`, readiness checks `stage_checkpoint_evidence=pass` and
+    `stage_checkpoint_controls_evidence=pass`, `collectionRunWritten=false`,
+    and `writefulSchedulingAllowed=false`.
 
 ## 2026-06-16T16:05+08:00 - Target Provisioning Release Evidence Parameter Closure
 
