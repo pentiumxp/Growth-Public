@@ -9,6 +9,91 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T23:18+08:00 - Automation Scheduler Run Owner UI Controls
+
+- Status: implemented and locally validated in working tree; commit and push
+  are still in progress. Not deployed per Owner instruction to deploy only
+  after the broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now lists persisted automation scheduler
+    run/tick rows for the selected Growth target;
+  - Owner can explicitly request one summary-only
+    `background_supervised_tick` through the existing
+    `POST /api/v1/growth/automation/scheduler/run-once` route;
+  - default-disabled background scheduling remains visible as a bounded
+    `blocked` run row. It does not inspect handoffs, execute actions, publish
+    cards, call Gateway, evaluate submissions, deliver handoffs, start workers,
+    create/review worker targets, activate stage assessments, mutate learner
+    state, or grant release permission.
+- Code/UI changes in progress:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationSchedulerRuns()` and
+    `runGrowthAutomationSchedulerOnce()`, including Home AI plugin proxy
+    routing;
+  - `public/growth-card-generation-ui.js` adds summary-only scheduler run
+    query/run-once payload builders, persisted run rows, status counts,
+    default-disabled blocked wording, and `Scheduler Run` Owner controls;
+  - `public/app.js` loads scheduler run readbacks with Owner generation
+    context, wires refresh/run-once buttons, and refreshes scheduler run,
+    scheduler execution, and release-workbench readbacks after explicit run
+    attempts;
+  - `public/index.html` static asset version is bumped to
+    `20260616-scheduler-run-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers API helpers, proxy paths,
+    Owner panel rendering, payload privacy, static version, and app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for scheduler run list/run-once helpers;
+  - updated `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - syntax checks passed for `public/growth-api-client.js`,
+    `public/growth-card-generation-ui.js`, `public/app.js`,
+    `tests/growth-frontend-adapter.test.js`, and
+    `tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-scheduler-run-repository.test.js
+    tests/learning-automation-scheduler-run-service.test.js
+    tests/growth-automation-scheduler-run-smoke-script.test.js
+    tests/growth-routes.test.js` passed `61/61`.
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - static cache key check passed for `20260616-scheduler-run-ui-v1` with 13
+    references and no stale action-handoff/scheduler-execution keys in
+    `public/index.html`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI changed-file required-checks returned H3, no deployment required;
+  - Home AI H2 checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/task-list-ui.test.js`, and
+    `node tests/static-cache-version-harness.test.js`;
+  - central iOS PWA visual harness passed:
+    `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url
+    http://127.0.0.1:19075/ --artifact-dir
+    /tmp/homeai-growth-scheduler-run-visual --timeout-ms 45000 --wait-ms
+    900`, screenshot
+    `/tmp/homeai-growth-scheduler-run-visual/ios-pwa-visual-dark-growth-surfaces-20260616T152238Z.png`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,898 nodes, 19,869 edges, index
+    up to date.
+- AI Ops evidence:
+  - changed-file required-checks returned H3, no deployment required; this was
+    still treated with central visual validation because it is Owner-visible UI;
+  - visual lane allocated and released:
+    `ios-pwa-3` / `http://127.0.0.1:19075/`;
+  - test evidence ledger record:
+    `evidence-38eb30a3-5f09-4003-a9b0-824b2a559daa`;
+  - visual evidence ledger record:
+    `evidence-9f72f4d3-71c3-416f-838a-4971d7af1029`.
+
 ## 2026-06-16T23:06+08:00 - Automation Scheduler Execution Owner UI Controls
 
 - Status: implemented, locally validated, and committed/pushed as

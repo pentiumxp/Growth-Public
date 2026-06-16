@@ -3859,6 +3859,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createAutomationSchedulerExecutionQueryPayload/);
   assert.match(generationUi, /createAutomationSchedulerExecutionPayload/);
   assert.match(generationUi, /data-automation-scheduler-execution-execute/);
+  assert.match(generationUi, /data-automation-scheduler-run-panel/);
+  assert.match(generationUi, /createAutomationSchedulerRunQueryPayload/);
+  assert.match(generationUi, /createAutomationSchedulerRunPayload/);
+  assert.match(generationUi, /data-automation-scheduler-run-once/);
 
   const apiClient = read(path.join("public", "growth-api-client.js"));
   assert.match(apiClient, /fetchGrowthCycleHistory/);
@@ -3874,11 +3878,15 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /deliverGrowthAutomationActionHandoff/);
   assert.match(apiClient, /fetchGrowthAutomationSchedulerExecutions/);
   assert.match(apiClient, /executeGrowthAutomationSchedulerOnce/);
+  assert.match(apiClient, /fetchGrowthAutomationSchedulerRuns/);
+  assert.match(apiClient, /runGrowthAutomationSchedulerOnce/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
   assert.match(apiClient, /automation", "action-handoffs"/);
   assert.match(apiClient, /automation", "scheduler", "executions"/);
   assert.match(apiClient, /automation", "scheduler", "execute-once"/);
+  assert.match(apiClient, /automation", "scheduler", "runs"/);
+  assert.match(apiClient, /automation", "scheduler", "run-once"/);
   assert.doesNotMatch(generationUi, /learning_growth_/);
   assert.doesNotMatch(generationUi, /raw_answer|raw_prompt|raw_model|source_document_body/);
 });

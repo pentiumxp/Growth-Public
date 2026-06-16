@@ -43,6 +43,8 @@ Implemented local shape:
 - read route: `GET /api/v1/growth/automation/scheduler/runs`;
 - controlled tick route: `POST /api/v1/growth/automation/scheduler/run-once`;
 - service-owned operational smoke: `npm run smoke:scheduler-run`;
+- embedded Owner UI: the Growth `生成` tab can list persisted scheduler run
+  rows and call `run-once` for one explicit supervised tick;
 - config gate: `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`;
 - downstream writeful gate:
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED` plus final
@@ -482,6 +484,20 @@ Write route:
 - must not call execution, publication, Gateway, or repository code directly
   from the route.
 
+Scheduler run UI controls:
+
+- may call only `GET /api/v1/growth/automation/scheduler/runs` and
+  `POST /api/v1/growth/automation/scheduler/run-once` through the Growth API
+  client;
+- must send a summary-only `background_supervised_tick` payload with bounded
+  learner/program/domain/subject/horizon selectors;
+- must render default-disabled `blocked` rows as audit evidence, not as a
+  runtime failure to be retried automatically;
+- must not enable background scheduler config, start worker timers, create or
+  review worker targets, claim leases, deliver handoffs, call Gateway, publish
+  cards, evaluate submissions, activate stage assessments, or infer release
+  permission from UI state.
+
 Worker target routes:
 
 - list route is visible-target scoped and returns only public summary DTOs;
@@ -501,7 +517,8 @@ Background scheduling can be considered only after all of these are complete:
 - Owner audit/correction UI is product-usable and privacy-tested.
 - Stage-assessment controls are separate from daily plan publication.
 - Proposal review UI exists.
-- Digest, failure-policy, action-handoff, and execution UI exists.
+- Digest, failure-policy, action-handoff, execution, and scheduler-run UI
+  exists.
 - Platform Action Inbox/Web Push receipt evidence has been collected through
   `npm run smoke:platform-action-evidence`, which reads only delivered Growth
   event-outbox receipts and does not inspect Home AI Action Inbox/Web Push
@@ -636,6 +653,7 @@ Focused harness for this boundary:
 - `tests/growth-automation-scheduler-run-smoke-script.test.js`;
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`;
+- `tests/growth-frontend-adapter.test.js`;
 - `tests/growth-docs-locality.test.js`.
 
 Required and implemented assertions:
@@ -652,6 +670,11 @@ Required and implemented assertions:
   rejects privacy-risk keys and private path/token-looking values, and enforces
   `summary_only`;
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
+- the embedded Owner UI lists persisted scheduler run rows, builds only
+  summary-only run query/run-once payloads, sends explicit
+  `background_supervised_tick` requests through the route, shows
+  default-disabled blocked rows, and treats the panel as Owner glue rather than
+  background scheduler enablement;
 - `npm run smoke:scheduler-run` defaults to read-only list, requires explicit
   `--allow-write` for run/tick, records default-disabled blocked state, and
   keeps the CLI out of repositories, Gateway, execution, publication, card

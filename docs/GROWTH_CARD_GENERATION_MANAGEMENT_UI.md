@@ -39,8 +39,8 @@ deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
 Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
-proposal/digest/action-handoff/scheduler-execution production evidence,
-scheduler run/worker-target UI, real package review UI, and production release
+proposal/digest/action-handoff/scheduler-execution/scheduler-run production
+evidence, worker-target UI, real package review UI, and production release
 evidence collection.
 
 ## Objective
@@ -396,7 +396,8 @@ can be visually simple, but each panel has a service-backed responsibility:
 | Proposal review | Show a stored supervised next-learning proposal for a completed auditable cycle, let Owner record `accepted`/`skipped`/`expired`/`superseded`, and keep actual card publication on an explicit publish action. | `automation/proposals`, `automation/proposals/:proposalId/decision`, `automation/proposals/:proposalId/publish`, `learning-cycles/completeness`, existing plan publish route. |
 | Automation digest review | Scheduling-adjacent panel that lists persisted dry-run digest packets, shows would-publish/blocked/skipped/manual-action counts, and lets Owner mark a pending digest `reviewed`, `archived`, or `superseded` without executing it. | Implemented backend `automation/digests`, `automation/digests/:digestId/review`, `automation/failure-policies`, `automation/failure-policies/readiness`, scheduler dry-run DTOs, proposal readback, audit completeness. The embedded UI currently supports read/refresh/review only; digest creation remains backend/CLI or a later explicit Owner UI action. |
 | Automation action handoff | Lists persisted handoff records, lets Owner create a handoff from a reviewed digest, and lets Owner deliver bounded platform action metadata. Delivery records `delivered` or `delivery_failed`; it must not publish cards, run scheduler actions, call Gateway, evaluate submissions, or mutate learner state. | Implemented backend `automation/action-handoffs`, `automation/action-handoffs/:handoffId/deliver`, reviewed digest gate, active failure-policy readiness, and Growth event boundary. Platform Action Inbox/Web Push product evidence remains a separate release gate. |
-| Scheduler execution | Lists persisted scheduler execution attempts, lets Owner explicitly attempt one execution from a delivered handoff, and shows `published`, `blocked`, or `failed` outcomes. With default config disabled, the service records a bounded blocked execution row and does not publish. | Implemented backend `automation/scheduler/executions` and `automation/scheduler/execute-once`, release authorization, release activation audit, runtime enablement readback, delivered handoff/digest/failure-policy rechecks, and accepted-proposal publish delegation. The embedded UI is explicit Owner glue only; scheduler run/worker-target UI and production scheduler-execution UI evidence remain separate gates. |
+| Scheduler execution | Lists persisted scheduler execution attempts, lets Owner explicitly attempt one execution from a delivered handoff, and shows `published`, `blocked`, or `failed` outcomes. With default config disabled, the service records a bounded blocked execution row and does not publish. | Implemented backend `automation/scheduler/executions` and `automation/scheduler/execute-once`, release authorization, release activation audit, runtime enablement readback, delivered handoff/digest/failure-policy rechecks, and accepted-proposal publish delegation. The embedded UI is explicit Owner glue only; worker-target UI and production scheduler-execution evidence remain separate gates. |
+| Scheduler run | Lists persisted scheduler run/tick rows, lets Owner explicitly request one supervised `background_supervised_tick`, and shows `completed`, `partial`, `skipped`, `blocked`, or `failed` outcomes. With default background config disabled, the service records a bounded blocked run and does not inspect handoffs or execute actions. | Implemented backend `automation/scheduler/runs` and `automation/scheduler/run-once`, delivered action-handoff scan only behind `GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED`, and delegation only to `learning-automation-scheduler-execution-service.executeOnce`. The embedded UI is explicit Owner glue only; it does not enable a background worker, mutate runtime config, call Gateway, publish cards, evaluate submissions, deliver handoffs, or create/review worker targets. Worker-target UI and production scheduler-run UI evidence remain separate gates. |
 | Cycle drilldown | Explain one generated card or evaluation as a bounded timeline. | `learning-cycles/audit` aggregate DTO. |
 
 The screen must keep child pressure low:
@@ -680,14 +681,15 @@ literals inside JavaScript can therefore be rewritten into the wrong query
 shape. Growth JS and CSS URLs in `public/index.html` should carry a version
 query for card-generation releases so mobile WebViews fetch the current API
 client and UI state code. The current frontend cache key is
-`20260616-scheduler-execution-ui-v1`; the frontend adapter harness asserts that
+`20260616-scheduler-run-ui-v1`; the frontend adapter harness asserts that
 older `20260614-growth-navigation-v1`, `20260614-stage-assessment-ui-v1`, and
 `20260614-evaluation-failure-ui-v1`, and
 `20260614-owner-evaluation-retry-v1`, and
 `20260614-owner-evaluation-retry-ui-v1`, and
 `20260614-owner-evaluation-status-ui-v1`,
 `20260614-recommendation-rationale-ui-v1`, and
-`20260616-action-handoff-ui-v1` keys are no longer present.
+`20260616-action-handoff-ui-v1`, and
+`20260616-scheduler-execution-ui-v1` keys are no longer present.
 
 Recommended context response:
 

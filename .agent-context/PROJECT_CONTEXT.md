@@ -878,6 +878,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   scheduling disabled, explicit run records a bounded blocked row and must not
   list handoffs, execute actions, publish, call Gateway, run worker timers,
   activate stage assessments, or mutate learner state.
+  The embedded Owner `生成` tab now lists scheduler run rows and can call
+  `run-once` for one explicit summary-only `background_supervised_tick` through
+  the Growth API client. This UI is glue only: it does not enable background
+  scheduler config, start worker timers, claim leases, create/review worker
+  targets, call Gateway, publish, evaluate, deliver handoffs, or grant release
+  permission.
   `npm run smoke:scheduler-worker-target` now provides the service-owned
   operational smoke for reviewed worker target configuration: `list` is the
   default read-only operation and delegates only to

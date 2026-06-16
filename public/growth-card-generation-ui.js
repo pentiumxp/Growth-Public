@@ -857,6 +857,25 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function createAutomationSchedulerRunQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationSchedulerRunPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const defaults = context.generationDefaults || {};
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      run_mode: "background_supervised_tick",
+      limit: 5,
+      generation_key: ["scheduler_run", clean(scope.workspace_id), clean(scope.domain), clean(scope.subject), clean(scope.horizon)].filter(Boolean).join(":"),
+      card_schema_version: clean(defaults.cardSchemaVersion || "growth.card.authoring.v1"),
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
     const plan = context.suggestedPlan || {};
     const defaults = context.generationDefaults || {};
@@ -1399,6 +1418,104 @@
         ${automationSchedulerExecutionRows(holder, escapeHtml)}
       </div>
       ${automationSchedulerExecutionActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationSchedulerRunStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "submitting") return "运行中";
+    if (value === "started") return "已开始";
+    if (value === "completed") return "已完成";
+    if (value === "partial") return "部分完成";
+    if (value === "blocked") return "已拦截";
+    if (value === "failed") return "失败";
+    if (value === "skipped") return "已跳过";
+    if (value === "ran") return "已记录";
+    return value || "待处理";
+  }
+
+  function automationSchedulerRunActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const run = result.run || {};
+    if (!status || status === "idle") return "";
+    const resultStatus = clean(run.status || result.status || status);
+    const detail = status === "submitting"
+      ? "正在通过 Growth scheduler run service 记录一次监督 tick。"
+      : resultStatus === "completed"
+        ? `Scheduler run 已完成：${clean(run.runId || run.run_id) || "run"}。`
+        : resultStatus === "blocked"
+          ? `Scheduler run 被门禁拦截：${clean(run.reason || result.error || error) || "blocked"}。`
+          : status === "ran"
+            ? `Scheduler run 已记录：${clean(run.runId || run.run_id) || "run"}。`
+            : error || clean(result.error) || "Scheduler run 操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-scheduler-run-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationSchedulerRunStatusText(resultStatus))}</em>
+    </div>`;
+  }
+
+  function automationSchedulerRunRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const runs = asArray(data.runs).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取 scheduler run。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">Scheduler run 读取失败：${escapeHtml(clean(holder.error) || "automation_scheduler_runs_failed")}</div>`;
+    if (!runs.length) return `<div class="learning-card-generation-proposal-empty">暂无 scheduler run。可以显式运行一次默认禁用的监督 tick。</div>`;
+    return runs.map((run) => {
+      const runId = clean(run.runId || run.run_id);
+      const statusText = automationSchedulerRunStatusText(run.status);
+      const summary = run.summary || {};
+      const attempted = Number(summary.attemptedExecutions || summary.attempted_executions || asArray(run.executions).length || 0) || 0;
+      const inspectedHandoffs = Number(summary.inspectedHandoffs || summary.inspected_handoffs || asArray(run.candidates).length || 0) || 0;
+      const reason = clean(run.reason || run.error);
+      return `<div class="learning-card-generation-proposal-row" data-automation-scheduler-run-row data-automation-scheduler-run-id="${escapeHtml(runId)}">
+        <span>
+          <strong>${escapeHtml(runId || "scheduler run")}</strong>
+          <small>${escapeHtml(`handoffs ${inspectedHandoffs} · executions ${attempted}`)}</small>
+          <small>${escapeHtml(reason || "默认禁用时会记录 blocked run，不会启动后台调度。")}</small>
+        </span>
+        <em>${escapeHtml(statusText)}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function automationSchedulerRunPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationSchedulerRuns || {};
+    const data = holder.data || {};
+    const runs = asArray(data.runs);
+    const completed = runs.filter((item) => clean(item.status) === "completed").length;
+    const blocked = runs.filter((item) => clean(item.status) === "blocked").length;
+    const failed = runs.filter((item) => clean(item.status) === "failed").length;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    const reason = status === "loading"
+      ? "正在读取 scheduler run。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_scheduler_runs_failed"
+        : "Scheduler run 是默认禁用的监督 tick；Owner 点击只会走服务门禁和审计记录。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-scheduler-runs" data-automation-scheduler-run-panel data-automation-scheduler-run-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>Scheduler Run</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-scheduler-run-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新 Run"}</button>
+          <button type="button" data-automation-scheduler-run-once ${busy ? "disabled" : ""}>${busy ? "运行中" : "运行一次"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>已完成</small><strong>${escapeHtml(String(completed))}</strong></span>
+        <span><small>已拦截</small><strong>${escapeHtml(String(blocked))}</strong></span>
+        <span><small>失败</small><strong>${escapeHtml(String(failed))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationSchedulerRunRows(holder, escapeHtml)}
+      </div>
+      ${automationSchedulerRunActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -2335,6 +2452,7 @@
           ${automationDigestPanel(context, state, escapeHtml)}
           ${automationActionHandoffPanel(context, state, escapeHtml)}
           ${automationSchedulerExecutionPanel(context, state, escapeHtml)}
+          ${automationSchedulerRunPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -2384,6 +2502,8 @@
     createAutomationActionHandoffDeliverPayload,
     createAutomationSchedulerExecutionQueryPayload,
     createAutomationSchedulerExecutionPayload,
+    createAutomationSchedulerRunQueryPayload,
+    createAutomationSchedulerRunPayload,
     createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
