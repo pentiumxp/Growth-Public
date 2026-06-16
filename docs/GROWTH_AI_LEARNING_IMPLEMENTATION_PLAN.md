@@ -159,6 +159,11 @@ AI-driven loop:
   bundle-audit without writing or activating an assessment. The resulting
   controls can still report `insufficient_recent_practice`, which is expected
   low-pressure behavior and not a release-evidence failure;
+- release evidence bundle privacy normalization allows only explicit negative
+  privacy assertions such as `noFullTranscripts=true` and `noRawPrompts=true`
+  from bounded smoke DTOs, while real transcript, raw prompt, answer-key,
+  token, provider-config, or private-path fields still fail closed before
+  release-readiness sees the bundle;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one

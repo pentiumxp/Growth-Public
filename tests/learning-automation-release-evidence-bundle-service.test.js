@@ -944,6 +944,45 @@ test("release evidence bundle service runs controlled daily-loop write smoke onl
   assert.equal(evidence.summary.operation, "publish");
 });
 
+test("release evidence bundle service allows explicit negative privacy assertions from daily-loop preview", () => {
+  const { service } = createServiceWithRunner(() => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-daily-loop-service",
+      context: {
+        plannerContextPreview: {
+          privacy: {
+            noFullChildAnswers: true,
+            noFullTranscripts: true,
+            noRawPrompts: true,
+            useRefsInsteadOfRawFiles: true,
+            privacyClass: "summary_only"
+          }
+        }
+      },
+      summary: {
+        status: "preview_ready",
+        missingRequired: []
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["daily_loop_preview"]
+  });
+
+  assert.equal(result.ok, true);
+  const evidence = result.bundle.evidence.productionDailyLoopPreviewSmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.ok, true);
+  assert.equal(evidence.privacyFindingCount, undefined);
+  assert.equal(JSON.stringify(result.bundle).includes("noFullTranscripts"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("noRawPrompts"), false);
+});
+
 test("release evidence bundle service blocks unsafe daily-loop write task scope before runner execution", () => {
   const { calls, service } = createServiceWithRunner(() => {
     throw new Error("runner should not be called for invalid write scope");

@@ -4,6 +4,10 @@ const path = require("node:path");
 
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+const SAFE_PRIVACY_ASSERTION_KEYS = new Set([
+  "noFullTranscripts",
+  "noRawPrompts"
+]);
 const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish"]);
 const LEARNER_CYCLE_BUNDLE_OPERATIONS = new Set(["audit"]);
 
@@ -250,7 +254,7 @@ function scanPrivacy(value, pathName = "$", findings = []) {
   }
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${pathName}.${key}`;
-    if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
+    if (PRIVATE_KEY_PATTERN.test(key) && !SAFE_PRIVACY_ASSERTION_KEYS.has(key)) findings.push(childPath);
     if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
   }
   return findings;

@@ -1610,7 +1610,13 @@ Implementation progress on 2026-06-15:
   stage-assessment readiness, proposal smoke, platform action receipt evidence,
   central visual artifact evidence, and read-only release approval bag
   projection by default, and emits
-  only summary evidence. The default `profile_feedback` task maps to
+  only summary evidence.
+  The bundle privacy scanner allows only explicit negative privacy assertions
+  such as `noFullTranscripts=true` and `noRawPrompts=true` from bounded smoke
+  DTOs; real `transcript`, raw prompt, answer-key, token, provider-config, or
+  private-path fields still fail closed and are not transformed into release
+  evidence.
+  The default `profile_feedback` task maps to
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
   completed-cycle selector can read back audit completeness, persisted evidence,
   persisted profile delta, Profile V2, recommendation, and next loop state.
