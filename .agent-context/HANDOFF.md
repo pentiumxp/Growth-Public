@@ -9,6 +9,40 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T17:41+08:00 - Growth Plugin Redeploy at Current Head
+
+- Status: deployed through the canonical Home AI Mac plugin deployment path.
+  This was a deployment-only slice for the already committed Growth state; no
+  Growth business logic changed in this step.
+- Source:
+  - development workspace:
+    `/Users/hermes-dev/HermesMobileDev/plugins/growth`;
+  - source ref: `283e73c779cf`;
+  - source dirty state: `false`;
+  - latest committed source change at deploy time was
+    `.agent-context/HANDOFF.md`, and the central deploy script excludes
+    `.agent-context/` from production sync.
+- Deployment command shape:
+  - from `/Users/hermes-dev/HermesMobileDev/app`;
+  - `npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file <local password file> --json`.
+- Production result:
+  - target: `plugin:growth`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T094101Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - health URL: `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`;
+  - manifest health check passed on attempt 2.
+- Validation notes:
+  - launchd print passed and showed the Growth plugin running from
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - manifest readback returned `id=growth`, `title=成长`,
+    `kind=embedded_app`, `entry_url=/?embed=hermes`, six manifest actions,
+    and `mcp_toolset=growth`;
+  - codex shared-auth permission repair passed;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+
 ## 2026-06-16T17:29+08:00 - UI Evidence Validator Harness Slice
 
 - Status: implemented, tested, pushed, deployed, and production-smoked. This
