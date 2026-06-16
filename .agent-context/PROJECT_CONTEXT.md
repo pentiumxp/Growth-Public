@@ -42,12 +42,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   fail closed, mapped task ids are carried as `artifactTaskIds`, and the
   existing central visual/UI validators and release-evidence service remain
   the only acceptance/persistence path. Growth now also has a no-write
+  `GET /api/v1/growth/automation/release-artifact-template` API plus
   `npm run smoke:release-artifact-template` helper backed by
-  `learning-automation-release-evidence-artifact-template-service`; it reads
-  release-workbench summary through the normal service graph and emits only
+  `learning-automation-release-evidence-artifact-template-service`; both read
+  release-workbench summary through the normal service graph and emit only
   missing central-visual/UI artifact slots plus a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
-  Home AI central visual-toolchain summary artifacts. It does not run visual
+  Home AI central visual-toolchain summary artifacts. The route performs only
+  visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or
   widen to default UI tasks when no visual/UI evidence is missing.
 - Current implementation owns plugin SQLite read projections, migrated audio

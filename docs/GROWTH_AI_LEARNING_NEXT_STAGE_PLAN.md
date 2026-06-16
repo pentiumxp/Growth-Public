@@ -647,11 +647,13 @@ Use the Growth-owned release-readiness boundary:
   one summary-only approval record for one config gate.
 - release artifact-template smoke CLI:
   `npm run smoke:release-artifact-template -- --workspace-id <workspace> --learner-id <learner> --json`.
-  The CLI is no-write and reads only through the release workbench service. It
-  emits a bounded `growth.learningAutomationReleaseEvidenceArtifactTemplate.v1`
-  DTO with missing central-visual/UI artifact slots and a blank
+  The matching visible-target scoped read API is
+  `GET /api/v1/growth/automation/release-artifact-template`. Both entrypoints
+  are no-write and read only through the release workbench service. They emit a
+  bounded `growth.learningAutomationReleaseEvidenceArtifactTemplate.v1` DTO with
+  missing central-visual/UI artifact slots and a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
-  Home AI central visual/UI summary artifact files. It does not run visual
+  Home AI central visual/UI summary artifact files. They do not run visual
   tooling, call Gateway, persist release evidence, write collection runs, apply
   runtime config, or widen to default UI tasks when no visual/UI evidence is
   missing.

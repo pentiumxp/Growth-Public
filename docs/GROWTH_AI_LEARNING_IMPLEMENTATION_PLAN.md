@@ -821,14 +821,16 @@ Implemented backend shape:
   raw artifact path is exposed in public bundle/collection/action output. This
   is an operator convenience over Home AI-produced summary artifacts; it does
   not start visual tooling, bypass UI validation, or persist release evidence.
-  Growth also exposes a no-write artifact-template smoke,
-  `npm run smoke:release-artifact-template`, backed by
+  Growth also exposes a visible-target scoped no-write artifact-template API,
+  `GET /api/v1/growth/automation/release-artifact-template`, plus
+  `npm run smoke:release-artifact-template`, both backed by
   `learning-automation-release-evidence-artifact-template-service`. It reads the
   release workbench summary through the normal service graph and emits only the
   missing central-visual/UI artifact slots plus a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template that
   Owner/release tooling can fill with Home AI central visual-toolchain summary
-  artifacts. The template service does not run visual tooling, widen to default
+  artifacts. The route performs only target-scope normalization and delegates to
+  the service; the template service does not run visual tooling, widen to default
   collection tasks when no visual/UI evidence is missing, persist release
   evidence, call Gateway, inspect SQLite directly, or expose local artifact
   paths.

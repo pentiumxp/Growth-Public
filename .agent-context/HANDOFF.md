@@ -9,6 +9,44 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:05+08:00 - Release Artifact Template Read API
+
+- Status: implemented, locally validated, committed/push pending; not deployed
+  in this slice.
+- Change intent:
+  - expose the existing release artifact-template service through a
+    product-consumable Growth HTTP read model so Owner/UI tooling no longer
+    needs Codex or CLI-only execution to request the manifest template;
+  - keep the boundary no-write, visible-target scoped, and service-first.
+- Scope:
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-artifact-template`;
+  - added route normalization through
+    `normalizeAutomationReleaseArtifactTemplateInput`, which reuses the
+    release-workbench read scope;
+  - route delegates only to
+    `learningAutomationReleaseEvidenceArtifactTemplateService.template`;
+  - updated Growth platform/architecture/implementation docs and durable
+    project context from CLI-only to API + CLI.
+- Boundary notes:
+  - no Home AI visual harness, Appium, browser, live UI visual tooling, or
+    central visual lane runs inside Growth;
+  - no release evidence, package, collection-run, approval, activation, or
+    runtime enablement rows are written by this route;
+  - no Gateway/model-vendor calls;
+  - no scheduler execution, notification delivery, runtime config mutation,
+    deployment, or learner-state mutation.
+- Validation passed:
+  - `node --check src/routes/growth-routes.js && node --check tests/growth-routes.test.js && node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js`
+    passed `89/89`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=205` and
+    `checkedCount=205`;
+  - `git diff --check`;
+  - `npm test` passed `888/888`.
+
 ## 2026-06-17T09:20+08:00 - Release Evidence Artifact Manifest Template
 
 - Status: implemented and locally validated; not deployed in this slice.
