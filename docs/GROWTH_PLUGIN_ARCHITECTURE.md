@@ -95,6 +95,14 @@ backend boundaries:
   Owner/release audit readback. Release readiness must not call Gateway,
   daily-loop services, cycle-history services, publish, evaluate, schedule,
   activate stage assessments, deliver notifications, or mutate learner state.
+  Service-owned readiness evidence must be an explicit summary object, bundle
+  projection, or validated persisted release-evidence projection. The service
+  rejects bare boolean `true` evidence as blocked with
+  `validated_release_evidence_object_required`, so downstream release review,
+  authorization, closure, controls, inventory, dashboard, and workbench scripts
+  cannot turn legacy CLI flags into passing readiness evidence. Explicit
+  release approval booleans remain a separate Owner approval input and are not
+  smoke/readback evidence.
   Release collection runs are separate summary-only audit
   rows: they persist a completed bundle/audit/readiness collection result,
   never run smoke tasks from the route or service, and never open scheduling
@@ -462,7 +470,11 @@ emit blocked remediation metadata and cannot satisfy release-readiness. Provided
 but non-passing release evidence is reported as `blocked` with bounded
 `invalidReason` readback. The deprecated `--release-workbench-evidence` flag
 preserves its historical remediation code but still cannot satisfy
-`releaseWorkbenchSmokeEvidence`.
+`releaseWorkbenchSmokeEvidence`. Because the release-readiness service itself
+rejects bare boolean evidence, downstream release review, authorization,
+closure, activation, controls, inventory, dashboard, and workbench scripts may
+retain legacy flag parsing for compatibility only; those booleans produce
+blocked readback and must not become passing evidence.
 
 | Learning loop state smoke script | `scripts/smoke-growth-learning-loop-state.js` | CLI-only no-write state evidence for `npm run smoke:learning-loop-state`. It instantiates the normal service graph and calls only `learningLoopStateService.state`, returning compact `growth.learningLoopState.v1` summary-only status and next action for Owner UI/harness review. It must not import repositories, call Gateway directly, draft or publish plans, generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state. |
 | Learning cycle history smoke script | `scripts/smoke-growth-cycle-history.js` | CLI-only no-write selectable history evidence for `npm run smoke:cycle-history`. It instantiates the normal service graph and calls only `learningCycleHistoryService.listCycleHistory`, returning `growth.learningCycleHistory.v1` summary-only cycle rows from plan-audit, evidence-audit, profile-delta-audit, correction, and optional completeness readbacks. It must not import repositories, call Gateway directly, draft or publish plans, generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state. |

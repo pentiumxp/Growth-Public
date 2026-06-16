@@ -207,6 +207,11 @@ a `growth.learningAutomationReleaseEvidenceBundle.v1` bundle, or a validated
 persisted release-evidence record projection. Legacy boolean flags for those
 evidence keys are deprecated remediation markers only: they return blocked
 evidence with a bounded invalid reason and cannot satisfy release-readiness.
+The service-level evidence contract also rejects bare boolean `true` values
+from downstream release review, authorization, closure, controls, inventory,
+dashboard, or workbench readbacks with
+`validated_release_evidence_object_required`; explicit approval booleans remain
+limited to the separate release-approval path.
 `releaseWorkbenchSmokeEvidence` is a Growth-local readiness input for the Owner
 action-template read model and may come from the non-default `release_workbench`
 release-bundle task, explicit summary evidence JSON, or a validated persisted

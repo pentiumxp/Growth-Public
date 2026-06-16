@@ -147,6 +147,13 @@ Growth already has substantial backend foundation:
   The active-policy and central-visual checks now pass in
   `npm run smoke:release-readiness`; release-readiness remains incomplete with
   `pass=26` and `missing=17`.
+  The release-readiness service itself now rejects bare boolean `true` for
+  service-owned smoke/readback evidence and reports
+  `validated_release_evidence_object_required`, so downstream release review,
+  authorization, closure, activation, controls, inventory, dashboard, and
+  workbench readbacks cannot satisfy readiness from legacy boolean flags.
+  Explicit release approval booleans remain separate Owner approval inputs and
+  do not count as smoke/readback evidence.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:

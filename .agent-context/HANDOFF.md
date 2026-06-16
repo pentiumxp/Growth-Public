@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T19:49+08:00 - Release Readiness Boolean Evidence Service Hardening
+
+- Status: implemented, tested, and ready to commit/push. Not deployed per
+  Owner instruction to deploy only after a broader completed slice is ready.
+- Change intent:
+  - `learning-automation-release-readiness-service.evidenceOk()` no longer
+    treats bare boolean `true` as passing service-owned smoke/readback evidence;
+  - bare boolean evidence is still treated as provided, but becomes `blocked`
+    with `invalidReason=validated_release_evidence_object_required`;
+  - explicit release approval booleans remain accepted only through the
+    separate approval path (`releaseApproved()`), because approval inputs are
+    not smoke/readback evidence;
+  - downstream release review/readback scripts that still parse legacy evidence
+    flags into booleans now receive blocked readiness/readback from the service
+    instead of a pass.
+- Harness/docs:
+  - added service coverage for `stageCheckpointEvidence`,
+    `productionPlannerReadinessEvidence`, and `ownerReviewEvidence` bare
+    booleans;
+  - added release review CLI coverage proving
+    `--stage-checkpoint-evidence pass` is blocked in downstream review output;
+  - extended architecture guard so `evidenceOk()` cannot reintroduce
+    `value === true` while `releaseApproved()` keeps the approval boolean path;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Validation:
+  - focused release-readiness/review/architecture tests passed with `63/63`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `git diff --check` passed;
+  - full Growth `npm test` passed with `838/838`;
+  - CodeGraph status after sync: 355 files, 4,816 nodes, 19,203 edges.
+- AI Ops evidence:
+  - implementation/test evidence:
+    `evidence-02c63ea7-1645-4336-8d7e-e901374da3bb`.
+- Boundary:
+  - release-readiness remains advisory evidence only and always keeps
+    `writefulSchedulingAllowed=false`;
+  - this change does not run smoke tasks, call Gateway, publish/generate/evaluate
+    cards, activate stage assessments, schedule work, deliver notifications,
+    mutate learner state, mutate runtime config, or deploy.
+
 ## 2026-06-16T19:31+08:00 - Legacy Release Evidence Flag Hardening
 
 - Status: implemented, tested, pushed, deployed, and production-smoked. This

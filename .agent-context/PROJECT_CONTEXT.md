@@ -229,7 +229,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   profile-feedback, learner-cycle, scheduler dry-run, release-bundle audit,
   platform action, central visual, stage checkpoint, stage-checkpoint controls,
   and release workbench as deprecated remediation markers only. Those flags
-  return blocked metadata and cannot satisfy readiness. Valid evidence for
+  return blocked metadata and cannot satisfy readiness. The underlying
+  `learning-automation-release-readiness-service` now also rejects bare
+  boolean `true` evidence from downstream release review, authorization,
+  closure, activation, controls, inventory, dashboard, or workbench readbacks
+  with `validated_release_evidence_object_required`, while explicit approval
+  booleans remain confined to the release-approval path. Valid evidence for
   those gates must come from the corresponding smoke output supplied through
   `--evidence-json`, a versioned
   `growth.learningAutomationReleaseEvidenceBundle.v1` artifact through

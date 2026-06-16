@@ -101,7 +101,6 @@ function mergeReleaseApprovals(input = {}, persisted = {}) {
 
 function evidenceOk(input = {}, key) {
   const value = evidenceValue(input, key);
-  if (value === true) return true;
   if (value && typeof value === "object") return value.ok === true || value.status === "pass" || value.present === true;
   return false;
 }
@@ -135,6 +134,7 @@ function evidenceProvided(input = {}, key) {
 }
 
 function evidenceFailureReason(value = {}) {
+  if (value === true) return "validated_release_evidence_object_required";
   if (!value || typeof value !== "object") return "release_evidence_not_passing";
   return boundedString(
     value.invalidReason

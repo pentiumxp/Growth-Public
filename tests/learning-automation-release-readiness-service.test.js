@@ -706,6 +706,56 @@ test("automation release readiness service blocks provided non-passing Owner rev
   assert.equal(readback.evidenceId, "owner_review_deprecated_flag");
 });
 
+test("automation release readiness service blocks bare boolean release evidence", () => {
+  const { service } = createService();
+  const evidence = allEvidence();
+  evidence.stageCheckpointEvidence = true;
+  evidence.productionPlannerReadinessEvidence = true;
+  evidence.ownerReviewEvidence = true;
+
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence,
+    releaseApproval: allApprovals()
+  }));
+
+  [
+    {
+      checkKey: "stage_checkpoint_evidence",
+      evidenceKey: "stageCheckpointEvidence",
+      requiredAction: "validate_stage_checkpoint_separation"
+    },
+    {
+      checkKey: "production_planner_readiness_evidence",
+      evidenceKey: "productionPlannerReadinessEvidence",
+      requiredAction: "run_production_planner_readiness_smoke"
+    },
+    {
+      checkKey: "owner_review_evidence",
+      evidenceKey: "ownerReviewEvidence",
+      requiredAction: "run_owner_review_evidence_smoke"
+    }
+  ].forEach(({ checkKey, evidenceKey, requiredAction }) => {
+    const check = result.checks.find((item) => item.key === checkKey);
+    const readback = result.evidenceReadback.items.find((item) => item.key === evidenceKey);
+    assert.equal(check.status, "blocked");
+    assert.equal(check.summary.evidenceProvided, true);
+    assert.equal(check.summary.evidencePresent, false);
+    assert.equal(check.summary.invalidReason, "validated_release_evidence_object_required");
+    assert.equal(check.requiredAction.action, requiredAction);
+    assert.equal(result.releaseReview.blockedCheckKeys.includes(checkKey), true);
+    assert.equal(readback.checkStatus, "blocked");
+    assert.equal(readback.evidencePresent, false);
+    assert.equal(readback.invalidReason, "validated_release_evidence_object_required");
+  });
+
+  const ownerReview = result.checks.find((item) => item.key === "owner_review_evidence");
+  assert.equal(ownerReview.summary.ownerReviewStageSummaryPresent, false);
+  assert.equal(result.status, "blocked");
+  assert.equal(result.evidenceReadback.presentCount, 29);
+  assert.equal(result.evidenceReadback.missingCount, 3);
+  assert.equal(result.checks.find((item) => item.key === "writeful_execution_release_approval").status, "pass");
+});
+
 test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {
   const { service } = createService({
     config: {
