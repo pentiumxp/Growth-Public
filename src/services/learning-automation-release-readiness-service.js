@@ -1,5 +1,13 @@
 "use strict";
 
+const {
+  UI_EVIDENCE_SCHEMA,
+  UI_GATE_SPECS
+} = require("./learning-automation-ui-evidence-service");
+
+const UI_RELEASE_EVIDENCE_KEYS = new Set(Object.keys(UI_GATE_SPECS));
+const UI_RELEASE_EVIDENCE_RECORD_SCHEMA = "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1";
+
 function cleanString(value) {
   return String(value || "").trim();
 }
@@ -128,6 +136,71 @@ function objectOnly(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
+function isSummaryOnlyEvidence(value = {}) {
+  const privacyClass = cleanString(value.privacyClass || value.privacy_class);
+  return value.summaryOnly === true || value.summary_only === true || privacyClass === "summary_only";
+}
+
+function validationSchemaOk(value = {}) {
+  const schemaVersion = cleanString(value.schemaVersion || value.schema_version);
+  const validationSchemaVersion = cleanString(value.validationSchemaVersion || value.validation_schema_version);
+  if (schemaVersion === UI_EVIDENCE_SCHEMA) return true;
+  return schemaVersion === UI_RELEASE_EVIDENCE_RECORD_SCHEMA && validationSchemaVersion === UI_EVIDENCE_SCHEMA;
+}
+
+function uiEvidenceSummaryValidation(value = {}, evidenceKey, checkKey) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: false, reason: "validated_ui_evidence_summary_required" };
+  }
+  const spec = UI_GATE_SPECS[evidenceKey] || null;
+  if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey) || !spec || spec.checkKey !== checkKey) {
+    return { ok: false, reason: "ui_evidence_gate_unknown" };
+  }
+  if (!validationSchemaOk(value)) {
+    return { ok: false, reason: "ui_evidence_validator_schema_required" };
+  }
+  if (!isSummaryOnlyEvidence(value)) {
+    return { ok: false, reason: "ui_evidence_summary_only_required" };
+  }
+  if (value.readyForReleaseEvidence !== true || cleanString(value.status).toLowerCase() !== "pass") {
+    return { ok: false, reason: "ui_evidence_not_ready_for_release" };
+  }
+  if (cleanString(value.evidenceKey || value.evidence_key) !== evidenceKey) {
+    return { ok: false, reason: "ui_evidence_key_mismatch" };
+  }
+  if (cleanString(value.checkKey || value.check_key) !== checkKey) {
+    return { ok: false, reason: "ui_evidence_check_key_mismatch" };
+  }
+  if (asArray(value.missingRequired || value.missing_required).length) {
+    return { ok: false, reason: "ui_evidence_missing_required" };
+  }
+  if (Number(value.privateValueFindingCount || value.private_value_finding_count || 0) > 0) {
+    return { ok: false, reason: "ui_evidence_private_value_findings" };
+  }
+  const uiEvidence = objectOnly(value.uiEvidence || value.ui_evidence);
+  if (!Object.keys(uiEvidence).length) {
+    return { ok: false, reason: "ui_evidence_projection_required" };
+  }
+  const uiEvidenceKey = cleanString(uiEvidence.evidenceKey || uiEvidence.evidence_key);
+  const uiCheckKey = cleanString(uiEvidence.checkKey || uiEvidence.check_key);
+  if (uiEvidenceKey && uiEvidenceKey !== evidenceKey) {
+    return { ok: false, reason: "ui_evidence_projection_key_mismatch" };
+  }
+  if (uiCheckKey && uiCheckKey !== checkKey) {
+    return { ok: false, reason: "ui_evidence_projection_check_key_mismatch" };
+  }
+  if (!(uiEvidence.screenshotPresent === true || uiEvidence.screenshot_present === true || uiEvidence.domEvidencePresent === true || uiEvidence.dom_evidence_present === true)) {
+    return { ok: false, reason: "ui_evidence_visual_or_dom_required" };
+  }
+  if (asArray(uiEvidence.missingCoverage || uiEvidence.missing_coverage).length) {
+    return { ok: false, reason: "ui_evidence_required_coverage_missing" };
+  }
+  if (Number(uiEvidence.failedAssertionCount || uiEvidence.failed_assertion_count || 0) > 0) {
+    return { ok: false, reason: "ui_evidence_failed_assertions" };
+  }
+  return { ok: true, reason: "" };
+}
+
 function ownerReviewStageSummary(value = {}) {
   const source = objectOnly(value.summary || value.automationOwnerReviewEvidence || value.automation_owner_review_evidence || value);
   const summary = {
@@ -226,6 +299,45 @@ function presentCheck(input, evidenceKey, checkKey, label, requiredAction) {
     label,
     evidenceKey,
     evidencePresent: false
+  }, {
+    action: requiredAction,
+    requiredActor: "owner"
+  });
+}
+
+function uiEvidenceCheck(input, evidenceKey, checkKey, label, requiredAction) {
+  const value = evidenceValue(input, evidenceKey);
+  const validation = uiEvidenceSummaryValidation(value, evidenceKey, checkKey);
+  if (validation.ok) {
+    return check(checkKey, "pass", Object.assign({
+      label,
+      evidenceKey,
+      evidencePresent: true,
+      uiEvidenceValidated: true,
+      requiredSchemaVersion: UI_EVIDENCE_SCHEMA,
+      validationSchemaVersion: boundedString(value.validationSchemaVersion || value.validation_schema_version, 180),
+      uiGate: boundedString(value.uiGate || value.ui_gate, 120)
+    }, evidenceRef(input, evidenceKey)));
+  }
+  if (value !== undefined && value !== null && value !== false) {
+    return check(checkKey, "blocked", {
+      label,
+      evidenceKey,
+      evidencePresent: false,
+      uiEvidenceValidated: false,
+      invalidReason: validation.reason,
+      requiredSchemaVersion: UI_EVIDENCE_SCHEMA
+    }, {
+      action: "provide_validated_ui_evidence_summary",
+      requiredActor: "owner"
+    });
+  }
+  return check(checkKey, "missing", {
+    label,
+    evidenceKey,
+    evidencePresent: false,
+    uiEvidenceValidated: false,
+    requiredSchemaVersion: UI_EVIDENCE_SCHEMA
   }, {
     action: requiredAction,
     requiredActor: "owner"
@@ -612,17 +724,17 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
     });
 
     const checks = [
-      presentCheck(inputWithReleaseEvidence, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
-      presentCheck(inputWithReleaseEvidence, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
       presentCheck(inputWithReleaseEvidence, "stageCheckpointEvidence", "stage_checkpoint_evidence", "Stage-checkpoint separation evidence", "validate_stage_checkpoint_separation"),
       presentCheck(inputWithReleaseEvidence, "stageCheckpointControlsEvidence", "stage_checkpoint_controls_evidence", "Stage-checkpoint controls readback evidence", "validate_stage_checkpoint_controls"),
-      presentCheck(inputWithReleaseEvidence, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
       presentCheck(inputWithReleaseEvidence, "productionProposalSmokeEvidence", "production_proposal_smoke_evidence", "Production automation proposal smoke", "run_production_proposal_smoke"),
-      presentCheck(inputWithReleaseEvidence, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),
       reviewedDigestCheck(scope),
       activeFailurePolicyCheck(scope),
       deliveredHandoffCheck(scope),
-      presentCheck(inputWithReleaseEvidence, "automationActionHandoffUiEvidence", "automation_action_handoff_ui_evidence", "Automation action handoff UI evidence", "complete_automation_action_handoff_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "automationActionHandoffUiEvidence", "automation_action_handoff_ui_evidence", "Automation action handoff UI evidence", "complete_automation_action_handoff_ui"),
       presentCheck(inputWithReleaseEvidence, "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence", "Production action handoff smoke", "run_production_action_handoff_smoke"),
       check("owner_explicit_execution_gate", "pass", {
         label: "Owner-explicit execution boundary",
@@ -630,7 +742,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         currentEnabled: Boolean(config.automationWritefulExecutionEnabled),
         writefulSchedulingAllowed: false
       }),
-      presentCheck(inputWithReleaseEvidence, "schedulerExecutionUiEvidence", "scheduler_execution_ui_evidence", "Scheduler execution UI evidence", "complete_scheduler_execution_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "schedulerExecutionUiEvidence", "scheduler_execution_ui_evidence", "Scheduler execution UI evidence", "complete_scheduler_execution_ui"),
       presentCheck(inputWithReleaseEvidence, "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence", "Production scheduler execution smoke", "run_production_scheduler_execution_smoke"),
       check("scheduler_run_default_disabled", config.automationBackgroundSchedulerEnabled ? "blocked" : "pass", {
         label: "Scheduler run default-disabled status",
@@ -640,9 +752,9 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
         action: "disable_scheduler_or_record_release_approval",
         requiredActor: "owner"
       } : {}),
-      presentCheck(inputWithReleaseEvidence, "schedulerRunUiEvidence", "scheduler_run_ui_evidence", "Scheduler run UI evidence", "complete_scheduler_run_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "schedulerRunUiEvidence", "scheduler_run_ui_evidence", "Scheduler run UI evidence", "complete_scheduler_run_ui"),
       presentCheck(inputWithReleaseEvidence, "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence", "Production scheduler run smoke", "run_production_scheduler_run_smoke"),
-      presentCheck(inputWithReleaseEvidence, "schedulerWorkerTargetUiEvidence", "scheduler_worker_target_ui_evidence", "Scheduler worker target UI evidence", "complete_scheduler_worker_target_ui"),
+      uiEvidenceCheck(inputWithReleaseEvidence, "schedulerWorkerTargetUiEvidence", "scheduler_worker_target_ui_evidence", "Scheduler worker target UI evidence", "complete_scheduler_worker_target_ui"),
       presentCheck(inputWithReleaseEvidence, "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence", "Production scheduler worker target smoke", "run_production_scheduler_worker_target_smoke"),
       reviewedWorkerTargetCheck(scope),
       check("worker_timer_default_disabled", config.automationBackgroundWorkerEnabled ? "blocked" : "pass", {

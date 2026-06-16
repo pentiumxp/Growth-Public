@@ -88,6 +88,10 @@ function cleanString(value, max = 180) {
   return String(value || "").trim().slice(0, max);
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function unavailable(error, extra = {}) {
   return Object.assign({
     ok: false,
@@ -189,6 +193,65 @@ function uiValidatedEvidenceSummary(input = {}, evidenceKey, validation = {}) {
   });
 }
 
+function compactStringArray(value = [], max = 120) {
+  return asArray(value).map((item) => cleanString(item, max)).filter(Boolean).slice(0, 20);
+}
+
+function compactUiEvidenceProjection(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    source: cleanString(value.source, 120),
+    evidenceKey: cleanString(value.evidenceKey || value.evidence_key, 160),
+    checkKey: cleanString(value.checkKey || value.check_key, 160),
+    uiGate: cleanString(value.uiGate || value.ui_gate, 120),
+    status: cleanString(value.status, 80),
+    checkedAt: cleanString(value.checkedAt || value.checked_at, 120),
+    clientVersion: cleanString(value.clientVersion || value.client_version, 120),
+    route: cleanString(value.route, 180),
+    screen: cleanString(value.screen, 120),
+    screenshotPresent: value.screenshotPresent === true || value.screenshot_present === true,
+    domEvidencePresent: value.domEvidencePresent === true || value.dom_evidence_present === true,
+    screenshotArtifactName: cleanString(value.screenshotArtifactName || value.screenshot_artifact_name, 180),
+    evidenceFilePresent: value.evidenceFilePresent === true || value.evidence_file_present === true,
+    evidenceFileName: cleanString(value.evidenceFileName || value.evidence_file_name, 180),
+    coverage: compactStringArray(value.coverage),
+    requiredCoverage: compactStringArray(value.requiredCoverage || value.required_coverage),
+    missingCoverage: compactStringArray(value.missingCoverage || value.missing_coverage),
+    assertionCount: Number(value.assertionCount || value.assertion_count || 0) || 0,
+    failedAssertionCount: Number(value.failedAssertionCount || value.failed_assertion_count || 0) || 0
+  };
+}
+
+function compactUiEvidenceBoundary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    growthReadsOnlyEvidenceArtifacts: value.growthReadsOnlyEvidenceArtifacts === true || value.growth_reads_only_evidence_artifacts === true,
+    growthRunsNoVisualTooling: value.growthRunsNoVisualTooling === true || value.growth_runs_no_visual_tooling === true,
+    homeAiOwnsVisualHarness: value.homeAiOwnsVisualHarness === true || value.home_ai_owns_visual_harness === true,
+    noLearnerStateMutation: value.noLearnerStateMutation === true || value.no_learner_state_mutation === true,
+    noModelCalls: value.noModelCalls === true || value.no_model_calls === true
+  };
+}
+
+function compactUiBagFields(record = {}, evidence = {}) {
+  const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
+  if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) return {};
+  return {
+    schemaVersion: cleanString(evidence.schemaVersion || evidence.schema_version, 180),
+    privacyClass: cleanString(evidence.privacyClass || evidence.privacy_class, 80),
+    summaryOnly: evidence.summaryOnly === true || evidence.summary_only === true,
+    validationSchemaVersion: cleanString(evidence.validationSchemaVersion || evidence.validation_schema_version, 180),
+    validatedBy: cleanString(evidence.validatedBy || evidence.validated_by, 160),
+    readyForReleaseEvidence: evidence.readyForReleaseEvidence === true || evidence.ready_for_release_evidence === true,
+    uiGate: cleanString(evidence.uiGate || evidence.ui_gate, 120),
+    uiEvidence: compactUiEvidenceProjection(evidence.uiEvidence || evidence.ui_evidence),
+    uiEvidenceBoundary: compactUiEvidenceBoundary(evidence.uiEvidenceBoundary || evidence.ui_evidence_boundary),
+    missingRequired: compactStringArray(evidence.missingRequired || evidence.missing_required),
+    privateValueFindingCount: Number(evidence.privateValueFindingCount || evidence.private_value_finding_count || 0) || 0
+  };
+}
+
 function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "", uiEvidenceService = null }) {
   if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
     return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
@@ -227,7 +290,7 @@ function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "
 
 function compactBagEntry(record = {}) {
   const evidence = record.evidence || {};
-  return {
+  return Object.assign({
     ok: record.status === "pass",
     status: record.status,
     present: record.status === "pass",
@@ -238,7 +301,7 @@ function compactBagEntry(record = {}) {
     artifactId: cleanString(evidence.artifactId || evidence.artifact_id, 180),
     runId: cleanString(evidence.runId || evidence.run_id, 180),
     taskId: cleanString(evidence.taskId || evidence.task_id, 180)
-  };
+  }, compactUiBagFields(record, evidence));
 }
 
 function createLearningAutomationReleaseEvidenceService(options = {}) {

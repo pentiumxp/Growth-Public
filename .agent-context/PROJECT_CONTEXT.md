@@ -192,14 +192,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--automation-digest-ui-evidence`,
   `--automation-action-handoff-ui-evidence`,
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
-  `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
-  flags, and now has `npm run smoke:ui-evidence`, which validates an explicit
+  `--scheduler-worker-target-ui-evidence` only as deprecated UI evidence flag
+  aliases that surface blocked remediation metadata, and now has
+  `npm run smoke:ui-evidence`, which validates an explicit
   summary-only UI/visual artifact for a canonical UI evidence key before that
   output is optionally persisted through the existing release-evidence record
   path. The release-evidence record service now re-runs that validator before
-  saving any pass UI evidence key, so unvalidated direct `{ok:true}` UI
-  evidence cannot satisfy readiness; blocked/missing UI records can still be
-  persisted as explicit non-pass audit state. The UI evidence validator
+  saving any pass UI evidence key, and its evidence bag preserves the
+  validator schema/projection summary for readiness readback. Release-readiness
+  one-off UI inputs must be `growth.learningAutomationUiEvidence.v1` validator
+  summaries or validated release-evidence record projections, so deprecated UI
+  flags and unvalidated direct `{ok:true}` UI evidence cannot satisfy
+  readiness; blocked/missing UI records can still be persisted as explicit
+  non-pass audit state. The UI evidence validator
   requires matching gate metadata, required coverage markers, passing
   assertions, screenshot or DOM evidence, and a private-value-safe public
   projection; it does not run Appium, the Home AI visual harness, Gateway,

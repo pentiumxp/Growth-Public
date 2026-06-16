@@ -4,6 +4,7 @@ const test = require("node:test");
 const {
   createLearningAutomationReleaseReadinessService
 } = require("../src/services/learning-automation-release-readiness-service");
+const { UI_GATE_SPECS } = require("../src/services/learning-automation-ui-evidence-service");
 
 function scope(overrides = {}) {
   return Object.assign({
@@ -17,19 +18,68 @@ function scope(overrides = {}) {
   }, overrides);
 }
 
+function validUiEvidence(evidenceKey, overrides = {}) {
+  const spec = UI_GATE_SPECS[evidenceKey];
+  return Object.assign({
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey,
+    checkKey: spec.checkKey,
+    uiGate: spec.uiGate,
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey,
+      checkKey: spec.checkKey,
+      uiGate: spec.uiGate,
+      status: "pass",
+      route: "/?embed=hermes#growth",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: `${spec.uiGate}.png`,
+      coverage: spec.requiredCoverage,
+      requiredCoverage: spec.requiredCoverage,
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  }, overrides);
+}
+
+function persistedUiEvidence(evidenceKey, overrides = {}) {
+  return Object.assign({}, validUiEvidence(evidenceKey), {
+    schemaVersion: "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1",
+    validationSchemaVersion: "growth.learningAutomationUiEvidence.v1",
+    validatedBy: "learning-automation-ui-evidence-service"
+  }, overrides);
+}
+
 function allEvidence() {
   return {
-    ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily" },
-    ownerAuditUiEvidence: { ok: true, evidenceId: "ui_audit" },
+    ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily" }),
+    ownerAuditUiEvidence: validUiEvidence("ownerAuditUiEvidence", { evidenceId: "ui_audit" }),
     stageCheckpointEvidence: { ok: true, evidenceId: "stage_sep" },
     stageCheckpointControlsEvidence: { ok: true, evidenceId: "stage_controls" },
-    proposalReviewUiEvidence: { ok: true, evidenceId: "proposal_ui" },
+    proposalReviewUiEvidence: validUiEvidence("proposalReviewUiEvidence", { evidenceId: "proposal_ui" }),
     productionProposalSmokeEvidence: { ok: true, evidenceId: "proposal_smoke" },
-    automationDigestUiEvidence: { ok: true, evidenceId: "digest_ui" },
-    automationActionHandoffUiEvidence: { ok: true, evidenceId: "action_handoff_ui" },
-    schedulerExecutionUiEvidence: { ok: true, evidenceId: "scheduler_execution_ui" },
-    schedulerRunUiEvidence: { ok: true, evidenceId: "scheduler_run_ui" },
-    schedulerWorkerTargetUiEvidence: { ok: true, evidenceId: "scheduler_worker_target_ui" },
+    automationDigestUiEvidence: validUiEvidence("automationDigestUiEvidence", { evidenceId: "digest_ui" }),
+    automationActionHandoffUiEvidence: validUiEvidence("automationActionHandoffUiEvidence", { evidenceId: "action_handoff_ui" }),
+    schedulerExecutionUiEvidence: validUiEvidence("schedulerExecutionUiEvidence", { evidenceId: "scheduler_execution_ui" }),
+    schedulerRunUiEvidence: validUiEvidence("schedulerRunUiEvidence", { evidenceId: "scheduler_run_ui" }),
+    schedulerWorkerTargetUiEvidence: validUiEvidence("schedulerWorkerTargetUiEvidence", { evidenceId: "scheduler_worker_target_ui" }),
     productionActionHandoffSmokeEvidence: { ok: true, evidenceId: "action_handoff_smoke" },
     productionSchedulerExecutionSmokeEvidence: { ok: true, evidenceId: "scheduler_execution_smoke" },
     productionSchedulerRunSmokeEvidence: { ok: true, evidenceId: "scheduler_run_smoke" },
@@ -315,6 +365,7 @@ test("automation release readiness prefers bundled evidence over default false f
         taskId: "stage_assessment"
       },
       proposalReviewUiEvidence: {
+        ...validUiEvidence("proposalReviewUiEvidence"),
         ok: true,
         status: "pass",
         evidenceId: "proposal_ui_from_bundle"
@@ -331,6 +382,33 @@ test("automation release readiness prefers bundled evidence over default false f
   const proposalUi = result.checks.find((item) => item.key === "proposal_review_ui_evidence");
   assert.equal(proposalUi.status, "pass");
   assert.equal(proposalUi.summary.evidenceId, "proposal_ui_from_bundle");
+});
+
+test("automation release readiness blocks direct ok UI evidence without validator summary", () => {
+  const { service } = createService();
+  const evidence = allEvidence();
+  evidence.ownerDailyUiEvidence = { ok: true, evidenceId: "ui_daily_unsafe" };
+
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence,
+    releaseApproval: allApprovals()
+  }));
+
+  const ownerDaily = result.checks.find((item) => item.key === "owner_daily_ui_evidence");
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "blocked");
+  assert.equal(ownerDaily.status, "blocked");
+  assert.equal(ownerDaily.summary.evidencePresent, false);
+  assert.equal(ownerDaily.summary.uiEvidenceValidated, false);
+  assert.equal(ownerDaily.summary.invalidReason, "ui_evidence_validator_schema_required");
+  assert.equal(ownerDaily.requiredAction.action, "provide_validated_ui_evidence_summary");
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("owner_daily_ui_evidence"), true);
+  assert.equal(result.releaseReview.nextAction.key, "owner_daily_ui_evidence");
+  assert.equal(result.evidenceReadback.presentCount, 31);
+  assert.equal(result.evidenceReadback.missingCount, 1);
+  const readback = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
+  assert.equal(readback.evidencePresent, false);
+  assert.equal(readback.checkStatus, "blocked");
 });
 
 test("automation release readiness service reports missing evidence without enabling scheduling", () => {
@@ -515,6 +593,7 @@ test("automation release readiness service can use persisted release evidence re
           ok: true,
           evidence: {
             ownerDailyUiEvidence: {
+              ...persistedUiEvidence("ownerDailyUiEvidence"),
               ok: true,
               status: "pass",
               evidenceId: "lgarev_owner_daily_1",

@@ -5,6 +5,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
+const { UI_GATE_SPECS } = require("../src/services/learning-automation-ui-evidence-service");
 
 const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-readiness.js");
@@ -40,6 +41,59 @@ function parseStdout(result) {
   return JSON.parse(result.stdout);
 }
 
+function validUiEvidence(evidenceKey, overrides = {}) {
+  const spec = UI_GATE_SPECS[evidenceKey];
+  return Object.assign({
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey,
+    checkKey: spec.checkKey,
+    uiGate: spec.uiGate,
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey,
+      checkKey: spec.checkKey,
+      uiGate: spec.uiGate,
+      status: "pass",
+      route: "/?embed=hermes#growth",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: `${spec.uiGate}.png`,
+      coverage: spec.requiredCoverage,
+      requiredCoverage: spec.requiredCoverage,
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  }, overrides);
+}
+
+function deprecatedUiFlag(evidenceKey) {
+  return {
+    ok: false,
+    status: "blocked",
+    source: "release_readiness_smoke_flag_deprecated",
+    evidenceKey,
+    checkKey: UI_GATE_SPECS[evidenceKey].checkKey,
+    error: "validated_ui_evidence_summary_required",
+    readyForReleaseEvidence: false
+  };
+}
+
 test("release readiness smoke script parses bounded scope, evidence, and approval selectors", () => {
   const args = [
     "--workspace-id", "weixin_fanfan",
@@ -51,7 +105,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--horizon", "daily_plan",
     "--limit", "7",
     "--evidence-json", JSON.stringify({
-      ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" }
+      ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily_json" })
     }),
     "--owner-audit-ui-evidence",
     "--stage-checkpoint-controls-evidence",
@@ -89,18 +143,16 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--created-by", "weixin_owner",
     "--created-at", "2026-06-15T18:00:00.000Z"
   ];
-
-  assert.equal(shouldWriteSnapshot(args), true);
-  assert.deepEqual(evidenceFromArgs(args), {
-    ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
-    ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+  const expectedEvidence = {
+    ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily_json" }),
+    ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence"),
     stageCheckpointControlsEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    automationDigestUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    automationDigestUiEvidence: deprecatedUiFlag("automationDigestUiEvidence"),
     productionProposalSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    automationActionHandoffUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    schedulerExecutionUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    schedulerRunUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    schedulerWorkerTargetUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    automationActionHandoffUiEvidence: deprecatedUiFlag("automationActionHandoffUiEvidence"),
+    schedulerExecutionUiEvidence: deprecatedUiFlag("schedulerExecutionUiEvidence"),
+    schedulerRunUiEvidence: deprecatedUiFlag("schedulerRunUiEvidence"),
+    schedulerWorkerTargetUiEvidence: deprecatedUiFlag("schedulerWorkerTargetUiEvidence"),
     productionActionHandoffSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerExecutionSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
@@ -120,7 +172,10 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" },
     releaseWorkbenchSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     ownerReviewEvidence: { ok: true, source: "release_readiness_smoke_flag" }
-  });
+  };
+
+  assert.equal(shouldWriteSnapshot(args), true);
+  assert.deepEqual(evidenceFromArgs(args), expectedEvidence);
   assert.deepEqual(releaseApprovalFromArgs(args), {
     writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },
     backgroundSchedulerApproval: { approved: true, source: "release_readiness_smoke_flag" },
@@ -135,36 +190,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     subject: "science",
     horizon: "daily_plan",
     limit: 7,
-    evidence: {
-      ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
-      ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      stageCheckpointControlsEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      automationDigestUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionProposalSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      automationActionHandoffUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      schedulerExecutionUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      schedulerRunUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      schedulerWorkerTargetUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionActionHandoffSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerExecutionSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerWorkerTargetSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionTargetProvisioningSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionCycleHistorySmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionOwnerAuditSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionRecommendationLifecycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" },
-      releaseWorkbenchSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-      ownerReviewEvidence: { ok: true, source: "release_readiness_smoke_flag" }
-    },
+    evidence: expectedEvidence,
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "approval_json" },
       backgroundSchedulerApproval: { approved: true, source: "release_readiness_smoke_flag" },
@@ -198,7 +224,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       limit: 3
     },
       evidence: {
-        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
@@ -265,7 +291,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         limit: 9
       },
       evidence: {
-        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
@@ -293,7 +319,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       createdAt: "2026-06-15T18:21:00.000Z"
     });
     assert.deepEqual(evidenceFromArgs(args), {
-      ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+      ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
       stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
       stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
       platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
@@ -312,7 +338,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         }
       },
       centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
-      ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+      ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
     });
     assert.deepEqual(releaseApprovalFromArgs(args), {
       writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
@@ -329,7 +355,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       horizon: "weekly_plan",
       limit: 9,
       evidence: {
-        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
@@ -348,7 +374,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
           }
         },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
-        ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+        ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
       },
       evidenceBundleReadback: {
         schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
@@ -425,6 +451,55 @@ test("release readiness smoke script evaluates readiness without writing a snaps
       .get("learning_growth_automation_release_readiness");
     db.close();
     assert.equal(table, undefined);
+  });
+});
+
+test("release readiness smoke script blocks deprecated UI evidence flags", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const result = runScript([
+      "--workspace-id", "weixin_fanfan",
+      "--owner-daily-ui-evidence",
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0);
+    const output = parseStdout(result);
+    const ownerDaily = output.checks.find((item) => item.key === "owner_daily_ui_evidence");
+    assert.equal(output.ok, true);
+    assert.equal(output.status, "blocked");
+    assert.equal(ownerDaily.status, "blocked");
+    assert.equal(ownerDaily.summary.invalidReason, "ui_evidence_validator_schema_required");
+    assert.equal(ownerDaily.requiredAction.action, "provide_validated_ui_evidence_summary");
+    assert.equal(output.releaseReview.blockedCheckKeys.includes("owner_daily_ui_evidence"), true);
+    assert.equal(output.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence").evidencePresent, false);
+  });
+});
+
+test("release readiness smoke script accepts validator UI evidence summaries through evidence JSON", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const result = runScript([
+      "--workspace-id", "weixin_fanfan",
+      "--evidence-json", JSON.stringify({
+        ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily_json" })
+      }),
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0);
+    const output = parseStdout(result);
+    const ownerDaily = output.checks.find((item) => item.key === "owner_daily_ui_evidence");
+    assert.equal(output.ok, true);
+    assert.equal(ownerDaily.status, "pass");
+    assert.equal(ownerDaily.summary.uiEvidenceValidated, true);
+    assert.equal(ownerDaily.summary.evidenceId, "ui_daily_json");
+    assert.equal(output.evidenceReadback.presentEvidenceKeys.includes("ownerDailyUiEvidence"), true);
+    assert.equal(output.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), false);
   });
 });
 

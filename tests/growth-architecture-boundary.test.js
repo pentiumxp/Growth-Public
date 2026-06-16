@@ -1106,6 +1106,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseEvidenceService, /UI_RELEASE_EVIDENCE_KEYS/);
   assert.match(automationReleaseEvidenceService, /validateUiReleaseEvidencePass/);
   assert.match(automationReleaseEvidenceService, /uiEvidenceService\.evaluate/);
+  assert.match(automationReleaseEvidenceService, /compactUiBagFields/);
+  assert.match(automationReleaseEvidenceService, /compactUiEvidenceProjection/);
   assert.match(automationReleaseEvidenceService, /learning_automation_release_evidence_ui_validation_failed/);
   assert.match(automationReleaseEvidenceService, /repository\.saveEvidence/);
   assert.match(automationReleaseEvidenceService, /repository\.listEvidence/);
@@ -1638,6 +1640,13 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--platform-action-evidence/);
   assert.match(script, /workspace_id_required/);
   assert.match(script, /release_readiness_smoke_invalid_json/);
+  assert.match(script, /deprecatedUiEvidenceFlag/);
+  assert.match(script, /validated_ui_evidence_summary_required/);
+  assert.match(script, /release_readiness_smoke_flag_deprecated/);
+  assert.doesNotMatch(script, /ownerDailyUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
+  assert.doesNotMatch(script, /ownerAuditUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
+  assert.doesNotMatch(script, /automationDigestUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
+  assert.doesNotMatch(script, /schedulerExecutionUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
   assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
   assert.doesNotMatch(script, /learning_growth_automation_release_readiness/);
   assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
@@ -1669,6 +1678,8 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /releaseReview\.nextAction/);
   assert.match(scriptHarness, /accepts versioned evidence bundle files/);
   assert.match(scriptHarness, /evidenceBundleReadback/);
+  assert.match(scriptHarness, /blocks deprecated UI evidence flags/);
+  assert.match(scriptHarness, /accepts validator UI evidence summaries through evidence JSON/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence bundle input/);
   assert.match(scriptHarness, /stageCheckpointControlsEvidence/);
   assert.match(scriptHarness, /automationDigestUiEvidence/);
@@ -1700,6 +1711,11 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
   assert.match(releaseReadinessService, /buildReleaseReview/);
   assert.match(releaseReadinessService, /buildEvidenceReadback/);
+  assert.match(releaseReadinessService, /UI_EVIDENCE_SCHEMA/);
+  assert.match(releaseReadinessService, /uiEvidenceSummaryValidation/);
+  assert.match(releaseReadinessService, /uiEvidenceCheck/);
+  assert.match(releaseReadinessService, /provide_validated_ui_evidence_summary/);
+  assert.match(releaseReadinessService, /uiEvidenceValidated/);
   assert.match(releaseReadinessService, /evidenceReadback/);
   assert.match(releaseReadinessService, /requiredActions/);
   assert.match(releaseReadinessService, /missingEvidenceKeys/);

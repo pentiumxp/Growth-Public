@@ -218,6 +218,12 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
+  assert.equal(bag.evidence.ownerDailyUiEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
+  assert.equal(bag.evidence.ownerDailyUiEvidence.validationSchemaVersion, "growth.learningAutomationUiEvidence.v1");
+  assert.equal(bag.evidence.ownerDailyUiEvidence.validatedBy, "learning-automation-ui-evidence-service");
+  assert.equal(bag.evidence.ownerDailyUiEvidence.readyForReleaseEvidence, true);
+  assert.deepEqual(bag.evidence.ownerDailyUiEvidence.uiEvidence.missingCoverage, []);
+  assert.equal(bag.evidence.ownerDailyUiEvidence.uiEvidence.failedAssertionCount, 0);
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");

@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
+const { UI_GATE_SPECS } = require("../src/services/learning-automation-ui-evidence-service");
 
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
@@ -90,6 +91,23 @@ function boundedCountValue(value, fallback = 0) {
 
 function evidenceFlag(args, name) {
   return hasFlag(args, name) || hasFlag(args, name.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()));
+}
+
+function deprecatedUiEvidenceFlag(evidenceKey) {
+  const spec = UI_GATE_SPECS[evidenceKey] || {};
+  return {
+    ok: false,
+    status: "blocked",
+    source: "release_readiness_smoke_flag_deprecated",
+    evidenceKey,
+    checkKey: spec.checkKey || "",
+    error: "validated_ui_evidence_summary_required",
+    readyForReleaseEvidence: false
+  };
+}
+
+function applyDeprecatedUiEvidenceFlag(args, evidence, flagName, evidenceKey) {
+  if (evidenceFlag(args, flagName)) evidence[evidenceKey] = deprecatedUiEvidenceFlag(evidenceKey);
 }
 
 function approvalFlag(args, name) {
@@ -182,17 +200,17 @@ function evidenceBundleReadbackFromArgs(bundle = {}) {
 
 function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   const evidence = Object.assign({}, objectOnly(bundle.evidence), parseJsonArg(args, ["--evidence-json", "--evidenceJson"], {}));
-  if (evidenceFlag(args, "--owner-daily-ui-evidence")) evidence.ownerDailyUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--owner-audit-ui-evidence")) evidence.ownerAuditUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-daily-ui-evidence", "ownerDailyUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-audit-ui-evidence", "ownerAuditUiEvidence");
   if (evidenceFlag(args, "--stage-checkpoint-evidence")) evidence.stageCheckpointEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--stage-checkpoint-controls-evidence")) evidence.stageCheckpointControlsEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--proposal-review-ui-evidence")) evidence.proposalReviewUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--proposal-review-ui-evidence", "proposalReviewUiEvidence");
   if (evidenceFlag(args, "--production-proposal-smoke-evidence")) evidence.productionProposalSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--automation-digest-ui-evidence")) evidence.automationDigestUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--automation-action-handoff-ui-evidence")) evidence.automationActionHandoffUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--scheduler-execution-ui-evidence")) evidence.schedulerExecutionUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--scheduler-run-ui-evidence")) evidence.schedulerRunUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--scheduler-worker-target-ui-evidence")) evidence.schedulerWorkerTargetUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-digest-ui-evidence", "automationDigestUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-action-handoff-ui-evidence", "automationActionHandoffUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-execution-ui-evidence", "schedulerExecutionUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-run-ui-evidence", "schedulerRunUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-worker-target-ui-evidence", "schedulerWorkerTargetUiEvidence");
   if (evidenceFlag(args, "--production-action-handoff-smoke-evidence")) evidence.productionActionHandoffSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-execution-smoke-evidence")) evidence.productionSchedulerExecutionSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-run-smoke-evidence")) evidence.productionSchedulerRunSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
