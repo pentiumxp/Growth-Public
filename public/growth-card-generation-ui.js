@@ -483,6 +483,169 @@
     </section>`;
   }
 
+  function releaseWorkbenchStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "ready" || value === "pass" || value === "ready_for_release_review") return "可记录";
+    if (value === "recording") return "记录中";
+    if (value === "recorded") return "已记录";
+    if (value === "blocked") return "有缺口";
+    if (value === "failed") return "失败";
+    return value || "待检查";
+  }
+
+  function releaseWorkbenchActionText(endpointKey = "") {
+    const value = clean(endpointKey).toLowerCase();
+    if (value === "release_evidence") return "记录证据";
+    if (value === "release_approval") return "记录审批";
+    if (value === "release_activation") return "记录激活";
+    if (value === "runtime_enablement") return "记录启用";
+    if (value === "release_package") return "需要包体";
+    return "查看";
+  }
+
+  function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
+    return ["release_evidence", "release_approval", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
+  }
+
+  function releaseWorkbenchScopeFromContext(context = {}, workspaceId = "") {
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const data = context.releaseWorkbench || {};
+    const summary = data.releaseWorkbench || data;
+    const inventory = summary.inventory || context.releaseInventory || {};
+    return {
+      workspace_id: clean(workspaceId || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || workspaceId),
+      program_id: clean(context.programId || plan.programId || defaults.programId),
+      domain_pack_id: clean(context.domainPackId || plan.domainPackId || defaults.domainPackId),
+      domain: clean(plan.domain || context.domain || defaults.domain),
+      subject: clean(plan.subject || context.subject || defaults.subject || plan.domain || context.domain),
+      horizon: clean(context.horizon || defaults.horizon || "daily_plan"),
+      collection_run_id: clean(context.collectionRunId || inventory.latestCollectionRunId)
+    };
+  }
+
+  function createReleaseWorkbenchActionPayload({ context = {}, workspaceId = "", action = {} } = {}) {
+    const endpointKey = clean(action.endpointKey || action.endpoint_key);
+    const routeBody = action.route?.body || {};
+    const actionKey = clean(action.key || action.actionKey || routeBody.evidence_key || routeBody.check_key || routeBody.approval_key);
+    const payload = Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
+      endpoint_key: endpointKey,
+      action_key: actionKey,
+      requested_by: "owner",
+      action: {
+        key: actionKey,
+        action: clean(action.action),
+        endpointKey,
+        source: clean(action.source),
+        summaryOnly: true
+      }
+    });
+    if (endpointKey === "release_evidence") {
+      payload.evidence_key = clean(routeBody.evidence_key || routeBody.check_key || actionKey);
+      payload.check_key = clean(routeBody.check_key || routeBody.evidence_key || actionKey);
+    }
+    if (endpointKey === "release_approval") {
+      payload.approval_key = clean(routeBody.approval_key || routeBody.config_gate || actionKey);
+      payload.config_gate = clean(routeBody.config_gate || routeBody.approval_key || actionKey);
+      payload.status = "active";
+    }
+    if (endpointKey === "release_activation") {
+      payload.activation_gates = asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean);
+    }
+    if (endpointKey === "runtime_enablement") {
+      payload.activation_gates = asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean);
+    }
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return typeof value === "object" ? Boolean(value) : clean(value);
+    }));
+  }
+
+  function releaseWorkbenchActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const record = result.actionRecord || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "recorded"
+      ? `已写入 ${clean(result.endpointKey || record.endpointKey || "release")} 记录${clean(record.recordId) ? `：${clean(record.recordId)}` : "。"}`
+      : status === "recording"
+        ? "正在写入 release workbench 摘要记录。"
+        : error || "记录失败。";
+    return `<div class="learning-card-generation-release-status" data-release-workbench-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(releaseWorkbenchStatusText(status))}</em>
+    </div>`;
+  }
+
+  function releaseWorkbenchActionRows(actions = [], holder = {}, escapeHtml = defaultEscapeHtml) {
+    const busy = holder.actionStatus === "recording";
+    if (!actions.length) return `<div class="learning-card-generation-release-empty">暂无需要 Owner 记录的 release action。</div>`;
+    return actions.slice(0, 6).map((action) => {
+      const endpointKey = clean(action.endpointKey || action.endpoint_key);
+      const actionKey = clean(action.key || action.actionKey || action.action_key);
+      const supported = releaseWorkbenchSupportedEndpoint(endpointKey);
+      const disabled = busy || !supported;
+      const detail = action.externalActionRequired
+        ? "先在 Growth 外确认配置，再记录摘要"
+        : clean(action.source || action.action || "release workbench");
+      const disabledReason = !supported
+        ? "当前界面只支持 evidence、approval、activation 和 runtime enablement。"
+        : busy ? "正在记录上一条 release action。" : "";
+      return `<div class="learning-card-generation-release-row" data-release-workbench-action-row data-release-workbench-endpoint="${escapeHtml(endpointKey || "unsupported")}">
+        <span>
+          <strong>${escapeHtml(clean(action.label) || actionKey || releaseWorkbenchActionText(endpointKey))}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <button type="button"
+          data-release-workbench-action
+          data-release-workbench-action-key="${escapeHtml(actionKey)}"
+          data-release-workbench-endpoint-key="${escapeHtml(endpointKey)}"
+          ${disabledReason ? `data-release-workbench-blocked-reason="${escapeHtml(disabledReason)}"` : ""}
+          ${disabled ? "disabled" : ""}>${escapeHtml(busy && supported ? "记录中" : releaseWorkbenchActionText(endpointKey))}</button>
+      </div>`;
+    }).join("");
+  }
+
+  function releaseWorkbenchPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.releaseWorkbench || {};
+    const data = holder.data || context.releaseWorkbench || {};
+    const summary = data.releaseWorkbench || data;
+    const loading = holder.status === "loading";
+    const failed = holder.status === "failed";
+    const status = failed ? "failed" : loading ? "loading" : clean(summary.status || data.status || holder.status);
+    const actions = asArray(summary.ownerActions || summary.owner_actions);
+    const inventory = summary.inventory || data.releaseInventory || {};
+    const missingEvidenceKeys = asArray(summary.missingEvidenceKeys).length ? summary.missingEvidenceKeys : summary.missingCheckKeys;
+    const nextAction = summary.nextAction || actions[0] || {};
+    const reason = failed
+      ? clean(holder.error) || "release_workbench_unavailable"
+      : loading
+        ? "正在读取 release readiness、controls、dashboard 和 inventory 摘要。"
+        : clean(nextAction.label || nextAction.action || "Owner 可以按缺口记录 release evidence。");
+    return `<section class="learning-card-generation-release-workbench" data-release-workbench-panel data-release-workbench-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-release-head">
+        <span>
+          <strong>发布工作台</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <em>${escapeHtml(releaseWorkbenchStatusText(status))}</em>
+      </div>
+      <div class="learning-card-generation-release-grid">
+        <span><small>待处理</small><strong>${escapeHtml(String(Number(summary.ownerActionCount ?? actions.length ?? 0) || 0))}</strong></span>
+        <span><small>证据缺口</small><strong>${escapeHtml(String(asArray(missingEvidenceKeys).length))}</strong></span>
+        <span><small>审批缺口</small><strong>${escapeHtml(String(asArray(summary.missingApprovalKeys).length))}</strong></span>
+        <span><small>记录缺口</small><strong>${escapeHtml(String(asArray(summary.missingRecordKinds || inventory.missingRecordKinds).length))}</strong></span>
+      </div>
+      <div class="learning-card-generation-release-actions">
+        ${releaseWorkbenchActionRows(actions, holder, escapeHtml)}
+      </div>
+      ${releaseWorkbenchActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
   function ownerAuditItems(ownerAudit = {}, key = "") {
     const bucket = ownerAudit[key] || {};
     return asArray(bucket.items || bucket.profileDeltas || bucket.corrections || bucket.planDrafts);
@@ -1273,6 +1436,7 @@
           </div>
           ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
+          ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
           ${cycleDrilldownPanel(context, state, escapeHtml)}
@@ -1314,6 +1478,7 @@
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,
     createOwnerCorrectionPayload,
+    createReleaseWorkbenchActionPayload,
     createTargetProvisionPayload,
     createStageAssessmentPayload,
     cycleAuditHasAnchor,

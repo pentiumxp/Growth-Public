@@ -1,6 +1,6 @@
 # Growth Card Generation Management UI
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 This document defines the Growth-owned Owner UI for generating learning cards
 inside the Growth plugin.
@@ -25,13 +25,22 @@ state after loading generation context, renders a summary-only status/next
 action panel, renders `targetProvisioning` plus filtered `graphOptions`, lets
 Owner apply a selected domain pack/subject to context refresh, and can call the
 Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
-target enablement. Central `embedded-plugin-shell` visual evidence passed for
+target enablement. The same Owner tab now also reads
+`GET /api/v1/growth/automation/release-workbench` and renders a summary-only
+release workbench panel. From that panel Owner can call
+`POST /api/v1/growth/automation/release-workbench/actions` for advertised
+`release_evidence`, `release_approval`, `release_activation`, and
+`runtime_enablement` actions. The UI deliberately does not record
+`release_package` from the workbench template because package recording
+requires a real `growth.learningAutomationReleasePackage.v1` artifact rather
+than a placeholder body. Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
 Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
-proposal/digest/action/execution UI, and full automation release review.
+proposal/digest/action/execution UI, real package review UI, and production
+release evidence collection.
 
 ## Objective
 
@@ -107,10 +116,16 @@ selected learner target, not the iframe's Owner workspace.
    `GET /api/v1/growth/learning-loop/state` and shows the current status, next
    action, weakness count, audit-gap count, and stage-checkpoint state. This
    panel is read-only UI glue over the backend state service.
-6. Owner can switch back to the Fanfan sample learner if a future navigation
+6. Growth reads compact release workbench state for the selected target through
+   `GET /api/v1/growth/automation/release-workbench`. This panel is UI glue
+   over backend release services. It may record only advertised Owner actions
+   through `POST /api/v1/growth/automation/release-workbench/actions`; it must
+   not build packages, run smoke tasks, flip runtime config, schedule work,
+   notify users, call Gateway, or mutate learner state directly.
+7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
-7. Owner selects the `日常英语卡` recipe.
-8. Growth shows readiness:
+8. Owner selects the `日常英语卡` recipe.
+9. Growth shows readiness:
    - learner workspace is provisioned;
    - learning graph is imported;
    - mastery/history summary is available;
@@ -118,26 +133,26 @@ selected learner target, not the iframe's Owner workspace.
    - Gateway evaluation boundary is shown separately so Owner can see whether
      the post-submit AI loop is model-backed;
    - there is no blocking open generation job.
-9. Owner reviews the structured plan preview:
+10. Owner reviews the structured plan preview:
    - learning graph plan;
    - learner/mastery summary;
    - recent experience signals;
    - card role, difficulty, and evidence requirements;
    - `daily_score_once` completion policy.
-10. Owner presses `生成卡片`.
-11. Growth immediately renders a visible progress box with four bounded stages:
+11. Owner presses `生成卡片`.
+12. Growth immediately renders a visible progress box with four bounded stages:
    `prepare`, `gateway`, `validation`, and `publish`. The progress box is
    shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
    and must remain visible on mobile embedded viewports without relying on the
    user scrolling back to the generate button.
-12. Growth calls `POST /api/v1/growth/cards/generate`.
-13. Gateway output is converted to an authoring draft.
-14. Validation passes or returns a visible authoring error.
-15. A validated card is transactionally published to Growth SQLite, including
+13. Growth calls `POST /api/v1/growth/cards/generate`.
+14. Gateway output is converted to an authoring draft.
+15. Validation passes or returns a visible authoring error.
+16. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
-16. Owner sees the generated card preview and can open the card on the learner
+17. Owner sees the generated card preview and can open the card on the learner
     board.
-17. The learner can submit the generated card from the plugin card detail,
+18. The learner can submit the generated card from the plugin card detail,
     optionally attach a recording, see one-shot evaluation feedback, and submit
     one optional reflection without Codex involvement. The detailed learner
     flow is defined in `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
@@ -319,6 +334,52 @@ automation digest review, active failure policy, and notification/action
 handoff are proven. The digest plan is
 `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`; the failure-policy backend
 contract is `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`.
+
+### Release Workbench Panel
+
+The Owner `生成` tab includes a compact `发布工作台` panel backed by
+`GET /api/v1/growth/automation/release-workbench`. This panel renders only the
+summary DTO returned by `learning-automation-release-workbench-service`:
+
+- workbench status and next Owner action;
+- Owner action count;
+- missing evidence/check keys;
+- missing approval keys;
+- missing release record kinds;
+- bounded action labels and endpoint keys.
+
+The panel may call
+`POST /api/v1/growth/automation/release-workbench/actions` only for endpoint
+keys that are both advertised by the backend workbench and supported by the
+embedded UI:
+
+- `release_evidence`;
+- `release_approval`;
+- `release_activation`;
+- `runtime_enablement`.
+
+The UI action payload is constructed from the selected target context plus the
+backend action template. It sends summary-only scope fields, the endpoint key,
+the action key, and the minimal evidence/approval/gate fields required by the
+action facade. It must not send raw visual logs, screenshots, transcripts,
+private local paths, provider config, raw prompts, model output, access tokens,
+or raw smoke output. Success and failure are rendered in the same panel; a
+record action cannot be a silent no-op.
+
+The panel intentionally does not record `release_package`. The
+`learning-automation-release-workbench-action-service` can delegate package
+records only when the request contains a real
+`growth.learningAutomationReleasePackage.v1` artifact. A workbench route
+template with `{ summaryOnly: true }` is not enough to create or record a
+package. Package building and package review remain handled by the existing
+release package builder/smoke path until a dedicated package review UI exists.
+
+The release workbench panel does not grant scheduling permission. It does not
+apply runtime config, run smoke scripts, build packages, publish cards, call
+Gateway, notify users, or mutate learner state. Runtime enablement action
+records are audit/readback records only; external configuration verification
+still happens outside Growth and must be represented as bounded summary
+evidence before scheduler execution can proceed.
 
 ### Owner Daily Loop Screen Contract
 
@@ -904,6 +965,8 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
 3. Add frontend API helpers:
    - `fetchCardGenerationContext(targetWorkspaceId)`;
    - `fetchLearningLoopState(targetWorkspaceId, context)`;
+   - `fetchGrowthReleaseWorkbench(targetWorkspaceId, context)`;
+   - `recordGrowthReleaseWorkbenchAction(payload, targetWorkspaceId)`;
    - `draftGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `publishGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `fetchGrowthCycleAudit(payload, targetWorkspaceId)`;
@@ -923,6 +986,8 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
      `POST /api/v1/growth/daily-loop/publish`;
    - refresh board, card-generation context, and learning-loop state after
      publish;
+   - refresh release workbench state after context load, target provisioning,
+     plan draft, and publish/context refresh;
    - refresh single-card cycle audit/completeness after publish when a cycle
      anchor is available, while keeping failures visible only inside the audit
      drilldown panel.
@@ -970,6 +1035,7 @@ Add focused tests before broad regression runs:
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
+| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/activation/runtime enablement endpoints without package placeholders |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |

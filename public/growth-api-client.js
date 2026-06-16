@@ -109,6 +109,27 @@
       return query ? `?${query}` : "";
     }
 
+    function releaseWorkbenchQuery(targetWorkspaceId = getWorkspaceId(), context = {}) {
+      const workspaceId = clean(targetWorkspaceId);
+      const params = new URLSearchParams();
+      const target = context.target || {};
+      const plan = context.suggestedPlan || {};
+      const defaults = context.generationDefaults || {};
+      const releaseWorkbench = context.releaseWorkbench?.releaseWorkbench || context.releaseWorkbench || {};
+      const inventory = releaseWorkbench.inventory || context.releaseInventory || {};
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", target.learnerId || workspaceId);
+      appendQueryParam(params, "programId", context.programId || plan.programId || defaults.programId);
+      appendQueryParam(params, "domainPackId", context.domainPackId || plan.domainPackId || defaults.domainPackId);
+      appendQueryParam(params, "domain", plan.domain || context.domain || defaults.domain);
+      appendQueryParam(params, "subject", plan.subject || context.subject || defaults.subject || plan.domain || context.domain);
+      appendQueryParam(params, "horizon", context.horizon || defaults.horizon || "daily_plan");
+      appendQueryParam(params, "collectionRunId", context.collectionRunId || inventory.latestCollectionRunId);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function cycleAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -163,6 +184,10 @@
 
     function fetchLearningLoopState(targetWorkspaceId = getWorkspaceId(), context = {}) {
       return fetchJson(`${growthApiPath("learning-loop", "state")}${learningLoopStateQuery(targetWorkspaceId, context)}`);
+    }
+
+    function fetchGrowthReleaseWorkbench(targetWorkspaceId = getWorkspaceId(), context = {}) {
+      return fetchJson(`${growthApiPath("automation", "release-workbench")}${releaseWorkbenchQuery(targetWorkspaceId, context)}`);
     }
 
     function fetchGrowthCard(taskCardId, targetWorkspaceId = getWorkspaceId()) {
@@ -259,6 +284,12 @@
       }, payload));
     }
 
+    function recordGrowthReleaseWorkbenchAction(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "release-workbench", "actions"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     return {
       appendWorkspaceQuery,
       activateGrowthStageAssessment,
@@ -268,11 +299,13 @@
       fetchGrowthCycleAudit,
       fetchGrowthCycleCompleteness,
       fetchGrowthCard,
+      fetchGrowthReleaseWorkbench,
       fetchJson,
       fetchLearningLoopState,
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,
+      recordGrowthReleaseWorkbenchAction,
       provisionGrowthDomainPack,
       publishGrowthDailyLoop,
       retryGrowthEvaluation,

@@ -263,6 +263,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   build packages, create readiness snapshots, record collection runs, record
   release decisions, call Gateway/model providers, publish, schedule, mutate
   runtime config, grant scheduler permission, or mutate learner state.
+  The embedded Owner `生成` UI now consumes the release workbench read model and
+  action facade through `public/growth-api-client.js`, renders
+  `data-release-workbench-panel`, and can record advertised
+  `release_evidence`, `release_approval`, `release_activation`, and
+  `runtime_enablement` actions from the plugin UI. It intentionally does not
+  record `release_package` from the workbench template because package record
+  writes require a real release package artifact, not a placeholder body.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only

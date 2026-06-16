@@ -136,6 +136,8 @@ test("Growth learning profile projection stays service-owned", () => {
   const ui = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(ui, /data-card-generation-profile/);
   assert.match(ui, /data-card-generation-lifecycle/);
+  assert.match(ui, /data-release-workbench-panel/);
+  assert.match(ui, /createReleaseWorkbenchActionPayload/);
   assert.match(ui, /recommendationLifecycle/);
   assert.match(ui, /recipe_id/);
   assert.doesNotMatch(ui, /target_node_id: clean\(plan\.targetNodeId\)/);
@@ -3296,4 +3298,6 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   const generationUi = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(generationUi, /data-learning-loop-state-panel/);
   assert.match(generationUi, /learningLoopStatePanel/);
+  assert.match(generationUi, /data-release-workbench-panel/);
+  assert.match(generationUi, /releaseWorkbenchPanel/);
 });

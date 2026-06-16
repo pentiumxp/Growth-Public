@@ -541,6 +541,16 @@ Use the Growth-owned release-readiness boundary:
   readiness snapshots, record collection runs, record release decisions, run
   smoke tasks internally, publish, schedule, notify, call Gateway, flip runtime
   config, grant scheduler permission, or mutate learner state.
+- embedded release workbench UI:
+  the Owner `生成` tab now consumes `GET /api/v1/growth/automation/release-workbench`
+  through `growth-api-client.js`, renders status/missing evidence/approval/
+  record counts plus advertised Owner actions, and calls
+  `POST /api/v1/growth/automation/release-workbench/actions` only for
+  supported `release_evidence`, `release_approval`, `release_activation`, and
+  `runtime_enablement` endpoints. It is UI glue over existing services. It
+  does not support `release_package` from a placeholder template; package
+  records still require a real release package artifact from the package
+  builder or a future package review UI.
 - action handoff smoke CLI:
   `npm run smoke:action-handoff -- --workspace-id <workspace> --learner-id <learner> --json`.
 - scheduler execution smoke CLI:

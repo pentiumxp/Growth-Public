@@ -125,7 +125,13 @@ full operating loop:
   provisioning panel, domain-pack/subject selectors, and explicit
   domain-pack provision action through Growth service routes, plus
   current-card single-cycle audit/completeness drilldown through Growth service
-  routes. The backend now also exposes selectable historical-cycle readback
+  routes. It now also renders a summary-only release workbench panel over
+  `GET /api/v1/growth/automation/release-workbench` and can call the
+  Owner-only `POST /api/v1/growth/automation/release-workbench/actions`
+  facade for advertised evidence, approval, activation, and runtime enablement
+  records. It deliberately does not record `release_package`, because package
+  recording requires a real release package artifact rather than a workbench
+  placeholder. The backend now also exposes selectable historical-cycle readback
   through `learning-cycle-history-service`, visible-target scoped
   `GET /api/v1/growth/learning-cycles/history`, and
   `npm run smoke:cycle-history`; browser richer older-cycle history controls
@@ -243,6 +249,10 @@ unbounded automation. Priority order:
      preview from bounded DTOs;
    - avoid browser-side prompt assembly, Gateway calls, direct repository
      reads, or profile-diff computation.
+   - keep the release workbench panel as thin UI over
+     `release-workbench`/`release-workbench/actions`; package construction and
+     full release review remain package-builder/release-review work until a
+     dedicated package review UI exists.
 2. Audit and correction UI closure:
    - use `learning-cycle-audit-service`,
      `learning-audit-completeness-service`,

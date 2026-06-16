@@ -15,6 +15,14 @@
         data: null,
         error: ""
       },
+      releaseWorkbench: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       targetProvisionDraft: {
         domainPackId: "",
         domain: "",
@@ -662,6 +670,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-workbench-action]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled && !button.dataset.releaseWorkbenchBlockedReason) return;
+        recordReleaseWorkbenchActionFromUi(button).catch((error) => {
+          pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-stage-assessment-check]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -760,6 +781,14 @@
       data: null,
       error: ""
     };
+    pageState.cardGeneration.releaseWorkbench = {
+      status: "loading",
+      data: pageState.cardGeneration.releaseWorkbench?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     renderShell();
     const context = await api.fetchCardGenerationContext(requestedTargetWorkspaceId, requestedSelection);
     pageState.cardGeneration.context = context;
@@ -781,6 +810,7 @@
     };
     renderShell();
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+    await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
 
@@ -810,6 +840,45 @@
     }
   }
 
+  async function refreshReleaseWorkbench(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.releaseWorkbench || {};
+    pageState.cardGeneration.releaseWorkbench = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    try {
+      const result = await api.fetchGrowthReleaseWorkbench(requestedTargetWorkspaceId, context);
+      pageState.cardGeneration.releaseWorkbench = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, context, {
+        releaseWorkbench: result
+      });
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.releaseWorkbench = {
+        status: "failed",
+        data: null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      return null;
+    }
+  }
+
   async function refreshCardGenerationContextAfterPublish(targetWorkspaceId = cardGenerationWorkspaceId(), options = {}) {
     if (!pageState.auth.isOwner) return null;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
@@ -824,6 +893,7 @@
         error: pageState.cardGeneration.targetProvisionDraft?.error || ""
       }));
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+      await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
       const message = refreshError.message || String(refreshError);
@@ -1040,6 +1110,7 @@
         error: ""
       };
       await refreshLearningLoopState(targetWorkspaceId, context);
+      await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {
       pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
@@ -1079,6 +1150,7 @@
       pageState.cardGeneration.progressStep = "validation";
       pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
       await refreshLearningLoopState(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -1172,6 +1244,73 @@
         result: pageState.cardGeneration.ownerCorrection?.result || null,
         error: error.message || String(error)
       };
+      renderShell();
+    }
+  }
+
+  function currentReleaseWorkbenchSummary() {
+    const holder = pageState.cardGeneration.releaseWorkbench || {};
+    const data = holder.data || pageState.cardGeneration.context?.releaseWorkbench || {};
+    return data.releaseWorkbench || data || {};
+  }
+
+  function findReleaseWorkbenchAction(endpointKey = "", actionKey = "") {
+    const summary = currentReleaseWorkbenchSummary();
+    const actions = Array.isArray(summary.ownerActions) ? summary.ownerActions : [];
+    const wantedEndpointKey = clean(endpointKey);
+    const wantedActionKey = clean(actionKey);
+    return actions.find((action = {}) => {
+      return clean(action.endpointKey || action.endpoint_key) === wantedEndpointKey
+        && clean(action.key || action.actionKey || action.action_key) === wantedActionKey;
+    }) || actions.find((action = {}) => clean(action.endpointKey || action.endpoint_key) === wantedEndpointKey) || null;
+  }
+
+  function createReleaseWorkbenchActionPayloadFromButton(button) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createReleaseWorkbenchActionPayload !== "function") {
+      throw new Error("release_workbench_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const action = findReleaseWorkbenchAction(button.dataset.releaseWorkbenchEndpointKey, button.dataset.releaseWorkbenchActionKey);
+    if (!action) throw new Error("release_workbench_action_not_found");
+    return {
+      payload: ui.createReleaseWorkbenchActionPayload({ context, workspaceId: targetWorkspaceId, action }),
+      targetWorkspaceId
+    };
+  }
+
+  async function recordReleaseWorkbenchActionFromUi(button) {
+    const blockedReason = clean(button.dataset.releaseWorkbenchBlockedReason);
+    if (blockedReason) {
+      pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+        actionStatus: "failed",
+        actionError: blockedReason
+      });
+      renderShell();
+      return;
+    }
+    const { payload, targetWorkspaceId } = createReleaseWorkbenchActionPayloadFromButton(button);
+    pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+      actionStatus: "recording",
+      actionResult: pageState.cardGeneration.releaseWorkbench?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.recordGrowthReleaseWorkbenchAction(payload, targetWorkspaceId);
+      pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+        actionStatus: "recorded",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
       renderShell();
     }
   }

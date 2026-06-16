@@ -9,6 +9,82 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T00:00Z - Release Workbench Embedded Owner UI
+
+- Status: implemented and validated locally. This slice adds embedded Owner UI
+  glue over the existing release workbench read/action facades. It does not
+  deploy, apply runtime config, grant scheduler permission, call Gateway/model
+  vendors, publish cards/plans, evaluate submissions, run scheduler actions,
+  build release packages, deliver notifications, activate stage assessments,
+  mutate learner state, or write production release records by itself.
+- Scope:
+  - `public/growth-api-client.js` now exposes
+    `fetchGrowthReleaseWorkbench(targetWorkspaceId, context)` and
+    `recordGrowthReleaseWorkbenchAction(payload, targetWorkspaceId)` with
+    Home AI proxy-aware query routing;
+  - `public/growth-card-generation-ui.js` now renders
+    `data-release-workbench-panel` inside the Owner `生成` tab with release
+    status, missing evidence/approval/record counts, advertised Owner actions,
+    action result/error state, and a summary-only
+    `createReleaseWorkbenchActionPayload` helper;
+  - `public/app.js` refreshes release workbench state after context load,
+    target provisioning, plan draft, and publish/context refresh, and binds
+    `data-release-workbench-action` buttons to the Owner-only action facade;
+  - embedded UI currently supports `release_evidence`, `release_approval`,
+    `release_activation`, and `runtime_enablement` actions only. It
+    intentionally does not record `release_package` because package records
+    require a real release package artifact, not a workbench placeholder body.
+- Changed files:
+  - `public/growth-api-client.js`;
+  - `public/growth-card-generation-ui.js`;
+  - `public/app.js`;
+  - `public/growth-homeai-legacy.css`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - syntax checks for touched public JS files;
+  - `node --test tests/growth-frontend-adapter.test.js`
+    (`30/30`);
+  - focused frontend/architecture Harness:
+    `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js`
+    (`61/61`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`190/190` runtime JavaScript files covered);
+  - `npm test` (`761/761`);
+  - Home AI app
+    `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops intake/required-checks classified required checks as H3, visual lane
+    not required, deployment not required;
+  - AI Ops evidence ledger append id:
+    `evidence-fb1d79ba-4034-4821-b956-487e7635166e`;
+  - supplemental local Chrome mobile-dark render of the real Growth
+    `growth-card-generation-ui.js` plus `growth-homeai-legacy.css` passed:
+    390px viewport, `data-release-workbench-panel` present,
+    release status `blocked`, first action button `记录证据`, recorded-status
+    text visible, buttons fit, and page scrolls.
+- Visual note:
+  - central Home AI iOS PWA visual harness was attempted twice with
+    `npm run ios:pwa:visual -- --debug-url http://127.0.0.1:19073/ --scenario embedded-plugin-shell --plugin-id growth --theme dark`.
+    First run returned `{ ok:false, error:"This operation was aborted" }`;
+    second run stalled past the configured timeout and was killed. Appium,
+    WDA, and the live debug server were all reachable afterwards. This means
+    central iOS visual evidence is not collected for this slice yet, even
+    though the supplemental Chrome render passed.
+- Remaining product work:
+  - rerun central iOS PWA `embedded-plugin-shell --plugin-id growth` once the
+    visual harness lane is stable, before any production UI deployment;
+  - build a dedicated release package review UI before allowing package records
+    from the browser;
+  - keep writeful/background scheduling blocked until package, dashboard/
+    readiness, Owner approval, activation, runtime enablement audit, platform
+    action evidence, central visual evidence, production dry-run evidence, and
+    manual config evidence are complete.
+
 ## 2026-06-15T23:31Z - Release Workbench Action Facade
 
 - Status: implemented and validated locally. This slice is backend/Harness/docs
