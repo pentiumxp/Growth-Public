@@ -9,6 +9,7 @@ const SUPPORTED_ENDPOINTS = Object.freeze([
   "release_readiness_snapshot",
   "release_evidence",
   "release_approval",
+  "release_evidence_collection",
   "release_collection_run",
   "release_decision",
   "release_package",
@@ -103,6 +104,7 @@ function requireEndpointService(scope, endpointKey, services) {
   if (endpointKey === "release_readiness_snapshot") return requireMethod(scope, "release_readiness", services.releaseReadinessService, "createSnapshot");
   if (endpointKey === "release_evidence") return requireMethod(scope, "release_evidence", services.releaseEvidenceService, "recordEvidence");
   if (endpointKey === "release_approval") return requireMethod(scope, "release_approval", services.releaseApprovalService, "recordApproval");
+  if (endpointKey === "release_evidence_collection") return requireMethod(scope, "release_evidence_collection", services.releaseEvidenceCollectionService, "collect");
   if (endpointKey === "release_collection_run") return requireMethod(scope, "release_collection_run", services.releaseCollectionRunService, "recordRun");
   if (endpointKey === "release_decision") return requireMethod(scope, "release_decision", services.releaseDecisionService, "recordDecision");
   if (endpointKey === "release_package") return requireMethod(scope, "release_package", services.releasePackageService, "recordPackage");
@@ -173,6 +175,12 @@ function callWriteService(endpointKey, input, scope, services) {
       evidence: defaultSummary(input, "evidence")
     }));
   }
+  if (endpointKey === "release_evidence_collection") {
+    return services.releaseEvidenceCollectionService.collect(Object.assign({}, base, {
+      allowWriteCollection: true,
+      ownerAuthorizedWrite: true
+    }));
+  }
   if (endpointKey === "release_collection_run") {
     return services.releaseCollectionRunService.recordRun(base);
   }
@@ -206,6 +214,7 @@ function resultRecord(endpointKey, result = {}) {
   if (endpointKey === "release_readiness_snapshot") return result.snapshot || null;
   if (endpointKey === "release_evidence") return result.evidence || null;
   if (endpointKey === "release_approval") return result.approval || null;
+  if (endpointKey === "release_evidence_collection") return result.collection || null;
   if (endpointKey === "release_collection_run") return result.run || null;
   if (endpointKey === "release_decision") return result.decision || null;
   if (endpointKey === "release_package") return result.package || null;
@@ -214,10 +223,16 @@ function resultRecord(endpointKey, result = {}) {
   return null;
 }
 
+function actionWriteSucceeded(endpointKey, result = {}) {
+  if (endpointKey === "release_evidence_collection") return Boolean(result?.collection);
+  return result?.ok === true;
+}
+
 function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   const releaseWorkbenchService = options.releaseWorkbenchService || null;
   const releaseReadinessService = options.releaseReadinessService || null;
   const releaseEvidenceService = options.releaseEvidenceService || null;
+  const releaseEvidenceCollectionService = options.releaseEvidenceCollectionService || null;
   const releaseApprovalService = options.releaseApprovalService || null;
   const releaseCollectionRunService = options.releaseCollectionRunService || null;
   const releaseDecisionService = options.releaseDecisionService || null;
@@ -250,6 +265,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
     const services = {
       releaseReadinessService,
       releaseEvidenceService,
+      releaseEvidenceCollectionService,
       releaseApprovalService,
       releaseCollectionRunService,
       releaseDecisionService,
@@ -260,7 +276,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
     const missing = requireEndpointService(scope, endpointKey, services);
     if (missing) return missing;
     const result = callWriteService(endpointKey, input, scope, services);
-    if (!result?.ok) {
+    if (!actionWriteSucceeded(endpointKey, result)) {
       return Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {
         endpointKey,
         writeResult: result || null
@@ -282,7 +298,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
         summaryOnly: true,
         endpointKey,
         actionKey: actionKeyFrom(input),
-        recordId: cleanString(record?.readinessId || record?.evidenceRecordId || record?.approvalId || record?.runId || record?.decisionId || record?.packageId || record?.activationId || record?.enablementId, 180),
+        recordId: cleanString(record?.readinessId || record?.evidenceRecordId || record?.approvalId || record?.collectionRunId || record?.collection_run_id || record?.runId || record?.decisionId || record?.packageId || record?.activationId || record?.enablementId, 180),
         recordStatus: cleanString(record?.status, 120)
       },
       writeResult: result,

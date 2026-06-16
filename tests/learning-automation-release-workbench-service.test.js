@@ -60,7 +60,7 @@ test("release workbench composes release services into Owner action templates wi
           status: "manual_runtime_config_required",
           releaseInventory: {
             status: "manual_runtime_config_required",
-            missingRecordKinds: ["release_package", "runtime_enablement"],
+            missingRecordKinds: ["release_collection_run", "release_package", "runtime_enablement"],
             latestCollectionRunId: input.collectionRunId,
             latestReleaseEvidenceRecordId: ""
           },
@@ -112,6 +112,15 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.releaseWorkbench.summaryOnly, true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_approval"), true);
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence_collection"), true);
+  const collectionAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_evidence_collection");
+  assert.equal(collectionAction.key, "release_collection_run");
+  assert.equal(collectionAction.action, "run_release_evidence_collection");
+  assert.equal(collectionAction.requiresPreparation, false);
+  assert.equal(collectionAction.route.path, "/api/v1/growth/automation/release-evidence-collections/run");
+  assert.deepEqual(collectionAction.route.body.tasks, ["learning_loop_state"]);
+  assert.deepEqual(collectionAction.route.body.required_task_ids, ["learning_loop_state"]);
+  assert.equal(collectionAction.route.body.write_collection_run, true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
   const packageAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_package");
   assert.equal(packageAction.requiresPreparation, true);
@@ -123,10 +132,11 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "runtime_enablement"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.externalActionRequired === true), true);
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_authorization"), true);
+  assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "release_evidence_collection"), true);
   assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "runtime_enablement"), true);
   assert.deepEqual(result.releaseWorkbench.missingEvidenceKeys.sort(), ["central_visual_evidence", "owner_daily_ui_evidence"].sort());
   assert.deepEqual(result.releaseWorkbench.missingApprovalKeys, ["writefulExecutionApproval"]);
-  assert.deepEqual(result.releaseWorkbench.missingRecordKinds, ["release_package", "runtime_enablement"]);
+  assert.deepEqual(result.releaseWorkbench.missingRecordKinds, ["release_collection_run", "release_package", "runtime_enablement"]);
   assert.equal(result.configChangeApplied, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);

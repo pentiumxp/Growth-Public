@@ -9,6 +9,80 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T01:49+08:00 - Release Evidence Collection Workbench Action
+
+- Status: implemented locally, fully validated, committed, and pushed after
+  validation. This slice was not deployed because deployment is intentionally
+  deferred until the broader Growth target is complete.
+- Change intent:
+  - let Owner handle a missing `release_collection_run` from the embedded Growth
+    release workbench without asking Codex/CLI to compose artifacts manually;
+  - keep Service First boundaries: the workbench advertises the action, the
+    action facade delegates to
+    `learning-automation-release-evidence-collection-service.collect`, and the
+    collection service remains the only place that composes bundle, audit,
+    readiness, and collection-run readback;
+  - keep the action incomplete-safe: a returned
+    `growth.learningAutomationReleaseEvidenceCollection.v1` artifact completes
+    the UI/action transport even if the release-readiness status inside the
+    collection remains `incomplete`.
+- Scope:
+  - `learning-automation-release-workbench-service` now advertises
+    `release_evidence_collection` for missing `release_collection_run` records,
+    with bounded `learning_loop_state` tasks and `write_collection_run=true`;
+  - `learning-automation-release-workbench-action-service` now supports
+    `release_evidence_collection`, requires only
+    `releaseEvidenceCollectionService.collect`, and still preserves the legacy
+    direct `release_collection_run` record endpoint;
+  - `src/app/services.js` wires
+    `learningAutomationReleaseEvidenceCollectionService` into the workbench
+    action facade;
+  - `growth-routes` now normalizes workbench action collection fields including
+    `tasks`, `requiredTaskIds`, `targetNodeIds`, approval keys, activation gates,
+    and `writeCollectionRun`;
+  - the Owner `生成` release workbench UI now treats
+    `release_evidence_collection` as supported and constructs summary-only
+    payloads with bounded collection tasks and no raw prompts/transcripts or
+    scheduler permission flags.
+- Docs changed:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation:
+  - syntax:
+    `node --check src/services/learning-automation-release-workbench-service.js`;
+  - syntax:
+    `node --check src/services/learning-automation-release-workbench-action-service.js`;
+  - syntax: `node --check src/app/services.js`;
+  - syntax: `node --check src/routes/growth-routes.js`;
+  - syntax: `node --check public/growth-card-generation-ui.js`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-routes.test.js tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js`
+    passed `121/121`.
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check` passed in Growth;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `848/848`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,933 nodes, 20,892 edges, index up
+    to date, with the existing optional earlier-engine reindex notice;
+  - Home AI AI Ops intake classified the task as H1 because of workbench/release
+    wording, but production deployment was intentionally not run in this slice.
+    Non-deploy app checks passed: deployment script syntax, deployment script
+    Harness, production-status Harness, and app `git diff --check`.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-a248a780-0f5a-4007-8c5f-02d7be3779d9`.
+- Remaining gates:
+  - no production deployment was run for this slice;
+  - broader Growth release evidence collection, real production UI/visual
+    evidence, and final deployment remain later work.
+
 ## 2026-06-17T01:35+08:00 - Release Package Review UI Evidence Gate
 
 - Status: implemented locally, fully validated, and pushed after validation.

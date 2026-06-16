@@ -565,6 +565,7 @@
     const value = clean(endpointKey).toLowerCase();
     if (value === "release_evidence") return "记录证据";
     if (value === "release_approval") return "记录审批";
+    if (value === "release_evidence_collection") return "收集证据";
     if (value === "release_activation") return "记录激活";
     if (value === "runtime_enablement") return "记录启用";
     if (value === "release_package") return "需要包体";
@@ -572,7 +573,7 @@
   }
 
   function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
-    return ["release_evidence", "release_approval", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
+    return ["release_evidence", "release_approval", "release_evidence_collection", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
   }
 
   function releaseWorkbenchScopeFromContext(context = {}, workspaceId = "") {
@@ -646,6 +647,11 @@
       payload.approval_key = clean(routeBody.approval_key || routeBody.config_gate || actionKey);
       payload.config_gate = clean(routeBody.config_gate || routeBody.approval_key || actionKey);
       payload.status = "active";
+    }
+    if (endpointKey === "release_evidence_collection") {
+      payload.tasks = asArray(routeBody.tasks || ["learning_loop_state"]).map(clean).filter(Boolean);
+      payload.required_task_ids = asArray(routeBody.required_task_ids || routeBody.requiredTaskIds || payload.tasks).map(clean).filter(Boolean);
+      payload.write_collection_run = routeBody.write_collection_run === true || routeBody.writeCollectionRun === true || routeBody.record_collection_run === true || routeBody.recordCollectionRun === true;
     }
     if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
       payload.release_package = releasePackage;
@@ -745,7 +751,7 @@
         ? "先在 Growth 外确认配置，再记录摘要"
         : clean(action.source || action.action || "release workbench");
       const disabledReason = !supported
-        ? "当前界面只支持 evidence、approval、activation 和 runtime enablement。"
+        ? "当前界面只支持 evidence、approval、evidence collection、activation 和 runtime enablement。"
         : busy ? "正在记录上一条 release action。" : "";
       return `<div class="learning-card-generation-release-row" data-release-workbench-action-row data-release-workbench-endpoint="${escapeHtml(endpointKey || "unsupported")}">
         <span>

@@ -362,6 +362,7 @@ embedded UI:
 
 - `release_evidence`;
 - `release_approval`;
+- `release_evidence_collection`;
 - `release_package`;
 - `release_activation`;
 - `runtime_enablement`.
@@ -378,6 +379,15 @@ For `release_approval`, the embedded UI sends only the advertised approval key
 and config gate plus summary-only action metadata. It must not send
 `writefulSchedulingAllowed`, runtime config values, private evidence payloads,
 or any field that implies scheduler permission.
+
+For `release_evidence_collection`, the embedded UI sends only summary scope,
+action metadata, bounded `tasks`, bounded `required_task_ids`, and
+`write_collection_run=true` from the backend action template. The Owner button
+is allowed to complete with a collection DTO whose readiness status remains
+`incomplete`; that is a release-evidence state, not a UI/action transport
+failure. The payload must not send raw prompts, transcripts, raw smoke output,
+private paths, Gateway/model payloads, package artifacts, release decisions,
+runtime config values, or scheduler permission fields.
 
 For `release_package`, the embedded UI must first call the Owner-only package
 build route and retain the returned summary-only
@@ -1084,7 +1094,7 @@ Add focused tests before broad regression runs:
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
-| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate` and without `writefulSchedulingAllowed`, raw prompts, or transcripts. |
+| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/package/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with bounded `tasks` / `required_task_ids` / `write_collection_run`, and absence of `writefulSchedulingAllowed`, raw prompts, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |

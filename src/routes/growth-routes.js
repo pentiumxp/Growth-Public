@@ -734,6 +734,11 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     domain: merged.domain,
     subject: merged.subject,
     horizon: merged.horizon || "daily_plan",
+    availableMinutes: merged.availableMinutes || merged.available_minutes,
+    targetNodeIds: listFromBodyValue(merged.targetNodeIds || merged.target_node_ids || merged.nodeIds || merged.node_ids),
+    tasks: listFromBodyValue(merged.tasks || merged.taskIds || merged.task_ids),
+    requiredTaskIds: listFromBodyValue(merged.requiredTaskIds || merged.required_task_ids || merged.requiredTasks || merged.required_tasks),
+    requiredApprovalKeys: listFromBodyValue(merged.requiredApprovalKeys || merged.required_approval_keys),
     collectionRunId: merged.collectionRunId || merged.collection_run_id || merged.runId || merged.run_id,
     endpointKey: merged.endpointKey || merged.endpoint_key,
     actionKey: merged.actionKey || merged.action_key || merged.key,
@@ -742,7 +747,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     evidenceKey: merged.evidenceKey || merged.evidence_key || merged.checkKey || merged.check_key,
     approvalKey: merged.approvalKey || merged.approval_key || merged.configGate || merged.config_gate,
     activationGate: merged.activationGate || merged.activation_gate,
-    activationGates: merged.activationGates || merged.activation_gates || merged.requestedActivationGates || merged.requested_activation_gates,
+    activationGates: listFromBodyValue(merged.activationGates || merged.activation_gates || merged.requestedActivationGates || merged.requested_activation_gates || merged.activationGate || merged.activation_gate),
     releaseEvidenceBundle: merged.releaseEvidenceBundle || merged.release_evidence_bundle || merged.evidenceBundle || merged.evidence_bundle || merged.bundle,
     releaseEvidenceBundleAudit: merged.releaseEvidenceBundleAudit || merged.release_evidence_bundle_audit || merged.evidenceBundleAudit || merged.evidence_bundle_audit || merged.audit,
     releaseReadiness: merged.releaseReadiness || merged.release_readiness || merged.readiness,
@@ -769,6 +774,8 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     approvedAt: merged.approvedAt || merged.approved_at || merged.recordedAt || merged.recorded_at,
     decidedAt: merged.decidedAt || merged.decided_at,
     createdAt: merged.createdAt || merged.created_at,
+    writeCollectionRun: merged.writeCollectionRun === true || merged.write_collection_run === true || merged.recordCollectionRun === true || merged.record_collection_run === true,
+    allowWriteCollection: true,
     ownerAuthorizedWrite: true
   };
 }

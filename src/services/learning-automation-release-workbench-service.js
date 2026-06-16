@@ -4,6 +4,7 @@ const RELEASE_WORKBENCH_SCHEMA = "growth.learningAutomationReleaseWorkbench.v1";
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
+const RELEASE_EVIDENCE_COLLECTION_TASKS = Object.freeze(["learning_loop_state"]);
 
 function cleanString(value, max = 160) {
   return String(value || "").trim().slice(0, max);
@@ -195,6 +196,21 @@ function recordRoutes(scope = {}) {
       })
     },
     {
+      key: "release_evidence_collection",
+      route: routeTemplate("/api/v1/growth/automation/release-evidence-collections/run", {
+        workspace_id: scope.workspaceId,
+        learner_id: scope.learnerId,
+        program_id: scope.programId,
+        domain_pack_id: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
+        tasks: RELEASE_EVIDENCE_COLLECTION_TASKS,
+        required_task_ids: RELEASE_EVIDENCE_COLLECTION_TASKS,
+        write_collection_run: true
+      })
+    },
+    {
       key: "release_collection_run",
       route: routeTemplate("/api/v1/growth/automation/release-collection-runs", {
         workspace_id: scope.workspaceId,
@@ -259,6 +275,7 @@ function actionKeyForRecordKind(kind = "") {
   if (value === "release_approval") return "release_approval";
   if (value === "release_activation") return "release_activation";
   if (value === "runtime_enablement") return "runtime_enablement";
+  if (value === "release_evidence_collection") return "release_evidence_collection";
   if (value === "release_collection_run") return "release_collection_run";
   if (value === "release_decision") return "release_decision";
   return "";
@@ -273,6 +290,7 @@ function endpointForAction(action = {}) {
   if (/package/.test(key) || /package/.test(kind)) return "release_package";
   if (/approval/.test(key) || /approval/.test(kind)) return "release_approval";
   if (/decision/.test(key) || /decision/.test(kind)) return "release_decision";
+  if (/evidence.*collection|collection.*evidence/.test(key) || /evidence.*collection|collection.*evidence/.test(kind)) return "release_evidence_collection";
   if (/collection.*run|collection_run/.test(key) || /collection.*run|collection_run/.test(kind)) return "release_collection_run";
   if (/evidence|visual|platform|smoke|ui/.test(key) || /evidence|visual|platform|smoke|ui/.test(kind)) return "release_evidence";
   return "";
@@ -327,7 +345,7 @@ function actionsFromMissingApprovals(keys = [], scope = {}) {
 
 function actionsFromMissingRecords(kinds = [], scope = {}) {
   return uniqueStrings(kinds, 12).map((kind) => {
-    const endpointKey = actionKeyForRecordKind(kind);
+    const endpointKey = kind === "release_collection_run" ? "release_evidence_collection" : actionKeyForRecordKind(kind);
     if (!endpointKey) return null;
     const preparationRoute = endpointKey === "release_package"
       ? routeTemplate("/api/v1/growth/automation/release-packages/build", {
@@ -347,9 +365,9 @@ function actionsFromMissingRecords(kinds = [], scope = {}) {
       schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
       summaryOnly: true,
       key: kind,
-      action: `record_${kind}`,
+      action: endpointKey === "release_evidence_collection" ? "run_release_evidence_collection" : `record_${kind}`,
       requiredActor: "owner",
-      label: `Record ${kind}`,
+      label: endpointKey === "release_evidence_collection" ? "Run release evidence collection" : `Record ${kind}`,
       source: "missing_record",
       endpointKey,
       route: recordRoutes(scope).find((item) => item.key === endpointKey)?.route || null,

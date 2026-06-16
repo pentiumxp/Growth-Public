@@ -142,6 +142,7 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(ui, /createRecommendationLifecycleDecisionPayload/);
   assert.match(ui, /data-release-workbench-panel/);
   assert.match(ui, /createReleaseWorkbenchActionPayload/);
+  assert.match(ui, /release_evidence_collection/);
   assert.match(ui, /data-automation-proposal-panel/);
   assert.match(ui, /createAutomationProposalDecisionPayload/);
   assert.match(ui, /createAutomationProposalPublishPayload/);
@@ -220,6 +221,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /createLearningAutomationReleaseEvidenceService/);
   assert.match(services, /learningAutomationReleaseEvidenceService/);
   assert.match(services, /uiEvidenceService: learningAutomationUiEvidenceService/);
+  assert.match(services, /createLearningAutomationReleaseEvidenceCollectionService/);
+  assert.match(services, /learningAutomationReleaseEvidenceCollectionService/);
+  assert.match(services, /releaseEvidenceCollectionService: learningAutomationReleaseEvidenceCollectionService/);
   assert.match(services, /createLearningAutomationReleaseCollectionRunService/);
   assert.match(services, /learningAutomationReleaseCollectionRunService/);
   assert.match(services, /createLearningAutomationReleaseDecisionService/);
@@ -2454,6 +2458,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /releaseReadinessService\.createSnapshot/);
   assert.match(releaseWorkbenchActionService, /releaseEvidenceService\.recordEvidence/);
   assert.match(releaseWorkbenchActionService, /releaseApprovalService\.recordApproval/);
+  assert.match(releaseWorkbenchActionService, /releaseEvidenceCollectionService\.collect/);
   assert.match(releaseWorkbenchActionService, /releaseCollectionRunService\.recordRun/);
   assert.match(releaseWorkbenchActionService, /releaseDecisionService\.recordDecision/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.recordPackage/);

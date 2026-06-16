@@ -339,15 +339,22 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised
-  `release_evidence`, `release_approval`, `release_package`,
-  `release_activation`, and `runtime_enablement` actions from the plugin UI.
+  `release_evidence`, `release_approval`, `release_evidence_collection`,
+  `release_package`, `release_activation`, and `runtime_enablement` actions from
+  the plugin UI. For a missing `release_collection_run`, the workbench advertises
+  `release_evidence_collection`; the action facade delegates to
+  `learning-automation-release-evidence-collection-service.collect`, and a
+  returned collection artifact completes the UI action even when release-readiness
+  remains `incomplete`.
   `release_package` is two-step UI glue: Owner must first build a summary-only
   `growth.learningAutomationReleasePackage.v1` candidate through
   `POST /api/v1/growth/automation/release-packages/build`, then record that
   exact candidate through the workbench action facade. A workbench placeholder
   body cannot create a package record. The frontend harness explicitly covers
-  `release_approval` and `release_package` action templates: approval payloads
-  must contain only advertised approval/config gate fields, package build
+  `release_approval`, `release_evidence_collection`, and `release_package`
+  action templates: approval payloads must contain only advertised
+  approval/config gate fields, collection payloads must contain only bounded
+  tasks / required task ids / `write_collection_run`, package build
   payloads must not include package artifacts, package record payloads must
   include a real summary-only package candidate, and none of these payloads may
   include `writefulSchedulingAllowed`, raw prompts, transcripts, private

@@ -406,6 +406,7 @@ function createServices(config) {
     releaseWorkbenchService: learningAutomationReleaseWorkbenchService,
     releaseReadinessService: learningAutomationReleaseReadinessService,
     releaseEvidenceService: learningAutomationReleaseEvidenceService,
+    releaseEvidenceCollectionService: learningAutomationReleaseEvidenceCollectionService,
     releaseApprovalService: learningAutomationReleaseApprovalService,
     releaseCollectionRunService: learningAutomationReleaseCollectionRunService,
     releaseDecisionService: learningAutomationReleaseDecisionService,

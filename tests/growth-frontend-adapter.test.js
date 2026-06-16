@@ -999,10 +999,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       status: "blocked",
       releaseWorkbench: {
         status: "blocked",
-        ownerActionCount: 4,
+        ownerActionCount: 5,
         missingEvidenceKeys: ["visual_smoke"],
         missingApprovalKeys: ["writefulExecutionApproval"],
-        missingRecordKinds: ["release_package", "runtime_enablement"],
+        missingRecordKinds: ["release_collection_run", "release_package", "runtime_enablement"],
         ownerActions: [{
           key: "visual_smoke",
           action: "record_release_evidence",
@@ -1028,6 +1028,20 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             body: {
               approval_key: "writefulExecutionApproval",
               config_gate: "writefulExecutionApproval"
+            }
+          }
+        }, {
+          key: "release_collection_run",
+          action: "run_release_evidence_collection",
+          requiredActor: "owner",
+          label: "Run release evidence collection",
+          source: "missing_record",
+          endpointKey: "release_evidence_collection",
+          route: {
+            body: {
+              tasks: ["learning_loop_state"],
+              required_task_ids: ["learning_loop_state"],
+              write_collection_run: true
             }
           }
         }, {
@@ -1652,11 +1666,14 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /发布工作台/);
   assert.match(html, /Record release evidence for visual_smoke/);
   assert.match(html, /Record release approval for writeful execution/);
+  assert.match(html, /Run release evidence collection/);
   assert.match(html, /Record release package/);
   assert.match(html, /data-release-workbench-action/);
   assert.match(html, /data-release-workbench-endpoint-key="release_evidence"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_approval"/);
+  assert.match(html, /data-release-workbench-endpoint-key="release_evidence_collection"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_package"/);
+  assert.match(html, /收集证据/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -1780,7 +1797,36 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(releaseApprovalPayload, "transcript"), false);
   assert.equal(Object.hasOwn(releaseApprovalPayload, "writefulSchedulingAllowed"), false);
 
-  const releasePackageAction = context.releaseWorkbench.releaseWorkbench.ownerActions[2];
+  const releaseCollectionPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    action: context.releaseWorkbench.releaseWorkbench.ownerActions[2]
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseCollectionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    endpoint_key: "release_evidence_collection",
+    action_key: "release_collection_run",
+    requested_by: "owner",
+    action: {
+      key: "release_collection_run",
+      action: "run_release_evidence_collection",
+      endpointKey: "release_evidence_collection",
+      source: "missing_record",
+      summaryOnly: true
+    },
+    tasks: ["learning_loop_state"],
+    required_task_ids: ["learning_loop_state"],
+    write_collection_run: true
+  });
+  assert.equal(Object.hasOwn(releaseCollectionPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseCollectionPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releaseCollectionPayload, "writefulSchedulingAllowed"), false);
+
+  const releasePackageAction = context.releaseWorkbench.releaseWorkbench.ownerActions[3];
   const releasePackageBuildPayload = windowRef.HermesGrowthCardGenerationUi.createReleasePackageBuildPayload({
     context,
     workspaceId: "weixin_fanfan",

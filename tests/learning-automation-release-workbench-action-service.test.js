@@ -19,6 +19,7 @@ function workbenchResult(status = "release_evidence_required") {
         { key: "release_readiness_snapshot" },
         { key: "release_evidence" },
         { key: "release_approval" },
+        { key: "release_evidence_collection" },
         { key: "release_collection_run" },
         { key: "release_decision" },
         { key: "release_package" },
@@ -76,6 +77,25 @@ function serviceWith(overrides = {}) {
             approvalId: "lgaapp_1",
             status: "approved",
             approvalKey: input.approvalKey
+          }
+        };
+      }
+    },
+    releaseEvidenceCollectionService: overrides.releaseEvidenceCollectionService || {
+      collect(input) {
+        calls.push(["release_evidence_collection", input]);
+        return {
+          ok: false,
+          collection: {
+            schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.v1",
+            summaryOnly: true,
+            status: "incomplete",
+            collectionRunId: "lgacrn_collect_1",
+            writeCollectionRun: input.writeCollectionRun === true,
+            summary: {
+              collectionRunId: "lgacrn_collect_1",
+              collectionRunWritten: input.writeCollectionRun === true
+            }
           }
         };
       }
@@ -174,6 +194,34 @@ test("release workbench action records evidence through the existing evidence se
   assert.equal(calls[1][1].workspaceId, "fanfan");
   assert.equal(calls[1][1].evidenceKey, "owner_daily_ui_evidence");
   assert.equal(calls[1][1].evidence.summaryOnly, true);
+});
+
+test("release workbench action runs evidence collection even when readiness remains incomplete", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence_collection",
+    actionKey: "release_collection_run",
+    tasks: ["learning_loop_state"],
+    requiredTaskIds: ["learning_loop_state"],
+    writeCollectionRun: true,
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "recorded");
+  assert.equal(result.endpointKey, "release_evidence_collection");
+  assert.equal(result.actionRecord.recordId, "lgacrn_collect_1");
+  assert.equal(result.actionRecord.recordStatus, "incomplete");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigMutationPerformed, false);
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence_collection"]);
+  assert.deepEqual(calls[1][1].tasks, ["learning_loop_state"]);
+  assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state"]);
+  assert.equal(calls[1][1].writeCollectionRun, true);
+  assert.equal(calls[1][1].allowWriteCollection, true);
+  assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
 test("release workbench action requires only the selected endpoint write service", () => {
