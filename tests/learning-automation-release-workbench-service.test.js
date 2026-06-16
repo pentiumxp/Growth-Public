@@ -151,8 +151,16 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "runtime_enablement"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.externalActionRequired === true), true);
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_authorization"), true);
+  assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_preflight"), true);
+  assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_preflight_reports"), true);
   assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "release_evidence_collection"), true);
+  assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "release_preflight"), true);
   assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "runtime_enablement"), true);
+  const preflightRoute = result.releaseWorkbench.recordRoutes.find((route) => route.key === "release_preflight");
+  assert.equal(preflightRoute.route.path, "/api/v1/growth/automation/release-preflight-reports");
+  assert.equal(preflightRoute.route.body.allow_write_preflight, true);
+  assert.equal(preflightRoute.route.body.collection_run_id, "lgacrn_1");
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_preflight"), false);
   assert.deepEqual(result.releaseWorkbench.missingEvidenceKeys.sort(), [
     "central_visual_evidence",
     "owner_daily_ui_evidence",
@@ -169,6 +177,91 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.backgroundSchedulingAllowed, false);
   assert.equal(result.backgroundWorkerAllowed, false);
+});
+
+test("release workbench offers preflight action before activation and runtime records", () => {
+  const service = createLearningAutomationReleaseWorkbenchService({
+    releaseReadinessService: {
+      evaluateReadiness(input) {
+        return {
+          ok: true,
+          status: "ready_for_release_review",
+          releaseReview: {
+            status: "ready_for_release_review",
+            requiredActionCount: 0,
+            missingCheckKeys: [],
+            missingEvidenceKeys: [],
+            missingApprovalKeys: []
+          },
+          collectionRunId: input.collectionRunId,
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseControlsService: {
+      summarize() {
+        return {
+          ok: true,
+          status: "activation_required",
+          releaseControls: {
+            status: "activation_required",
+            requiredActionCount: 0,
+            missingApprovalKeys: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseInventoryService: {
+      inventory() {
+        return {
+          ok: true,
+          status: "activation_required",
+          releaseInventory: {
+            status: "activation_required",
+            missingRecordKinds: ["release_activation", "runtime_enablement"],
+            blockedRecordKinds: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseDashboardService: {
+      dashboard() {
+        return {
+          ok: true,
+          status: "activation_required",
+          releaseDashboard: {
+            status: "activation_required",
+            requiredActionCount: 0,
+            missingCheckKeys: [],
+            missingEvidenceKeys: [],
+            missingApprovalKeys: [],
+            missingRecordKinds: ["release_activation", "runtime_enablement"],
+            blockedRecordKinds: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    }
+  });
+
+  const result = service.workbench({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    collectionRunId: "lgacrn_ready_1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.releaseWorkbench.ownerActions[0].endpointKey, "release_preflight");
+  assert.equal(result.releaseWorkbench.ownerActions[0].action, "record_release_preflight");
+  assert.equal(result.releaseWorkbench.ownerActions[0].route.path, "/api/v1/growth/automation/release-preflight-reports");
+  assert.equal(result.releaseWorkbench.ownerActions[0].route.body.collection_run_id, "lgacrn_ready_1");
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_activation"), true);
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "runtime_enablement"), true);
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.configChangeApplied === true), false);
+  assert.equal(result.releaseWorkbench.writefulSchedulingAllowed, false);
 });
 
 test("release workbench fails closed when a dependency is missing", () => {

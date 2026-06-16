@@ -5636,6 +5636,31 @@ test("growth automation release workbench action route is Owner-write and visibl
 	    assert.deepEqual(calls[2].activationGates, ["writeful_execution"]);
 	    assert.equal(calls[2].releasePackage, undefined);
 
+	    const preflightResponse = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+	      method: "POST",
+	      headers: {
+	        authorization: "Bearer workspace-key",
+	        "content-type": "application/json",
+	        "x-hermes-plugin-actor-role": "owner",
+	        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+	      },
+	      body: JSON.stringify({
+	        workspace_id: "weixin_fanfan",
+	        learner_id: "fanfan",
+	        program_id: "program_science",
+	        endpoint_key: "release_preflight",
+	        action_key: "release_preflight",
+	        collection_run_id: "lgacrn_route_1",
+	        requested_by: "weixin_owner"
+	      })
+	    });
+	    assert.equal(preflightResponse.status, 201);
+	    assert.equal((await preflightResponse.json()).endpointKey, "release_preflight");
+	    assert.equal(calls[3].endpointKey, "release_preflight");
+	    assert.equal(calls[3].actionKey, "release_preflight");
+	    assert.equal(calls[3].collectionRunId, "lgacrn_route_1");
+	    assert.equal(calls[3].ownerAuthorizedWrite, true);
+
 	    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
       method: "POST",
       headers: {

@@ -231,6 +231,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /createLearningAutomationReleaseEvidenceArtifactTemplateService/);
   assert.match(services, /learningAutomationReleaseEvidenceArtifactTemplateService/);
   assert.match(services, /releaseWorkbenchService: learningAutomationReleaseWorkbenchService/);
+  assert.match(services, /releasePreflightService: learningAutomationReleasePreflightService/);
   assert.match(services, /createLearningAutomationReleaseCollectionRunService/);
   assert.match(services, /learningAutomationReleaseCollectionRunService/);
   assert.match(services, /createLearningAutomationReleaseDecisionService/);
@@ -2534,6 +2535,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchService, /ownerActions/);
   assert.match(releaseWorkbenchService, /readRoutes/);
   assert.match(releaseWorkbenchService, /recordRoutes/);
+  assert.match(releaseWorkbenchService, /release_preflight/);
+  assert.match(releaseWorkbenchService, /record_release_preflight/);
   assert.match(releaseWorkbenchService, /externalActionRequired/);
   assert.doesNotMatch(releaseWorkbenchService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseWorkbenchService, /learning_growth_/);
@@ -2541,6 +2544,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseWorkbenchService, /recordPackage/);
   assert.doesNotMatch(releaseWorkbenchService, /recordEvidence/);
   assert.doesNotMatch(releaseWorkbenchService, /recordApproval/);
+  assert.doesNotMatch(releaseWorkbenchService, /recordReport/);
   assert.doesNotMatch(releaseWorkbenchService, /publishPlanItem/);
   assert.doesNotMatch(releaseWorkbenchService, /generateCard/);
   assert.doesNotMatch(releaseWorkbenchService, /evaluateSubmission/);
@@ -2623,6 +2627,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /releaseDecisionService\.recordDecision/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.recordPackage/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.buildPackage/);
+  assert.match(releaseWorkbenchActionService, /releasePreflightService\.recordReport/);
   assert.match(releaseWorkbenchActionService, /releaseActivationService\.recordActivation/);
   assert.match(releaseWorkbenchActionService, /runtimeEnablementService\.recordEnablement/);
   assert.doesNotMatch(releaseWorkbenchActionService, /require\(["']\.\.\/stores/);

@@ -1031,7 +1031,12 @@ Implemented backend shape:
   release-workbench, and release-closure summaries, can list persisted preflight
   reports, and can write a summary-only
   `learning_growth_automation_release_preflight_reports` row only with
-  `--operation record --allow-write` or the Owner-only HTTP route. It keeps
+  `--operation record --allow-write`, the Owner-only HTTP route, or the
+  Owner-only `release_preflight` workbench action facade. The release workbench
+  advertises the preflight read/report routes plus a `release_preflight`
+  record-route template, and offers `record_release_preflight` before
+  activation/runtime actions once evidence, approval, collection-run, decision,
+  and package blockers are clear. It keeps
   `readyForProductionDeploy=false`; `readyForProductionDeployReview` and
   `readyForOwnerReleaseActivation` remain advisory evidence and do not replace
   Home AI central visual, deployment, or runtime-config gates. It does not run
@@ -1241,9 +1246,11 @@ Remaining release gaps:
   gate still needs a real summary UI/visual artifact with candidate-build,
   candidate-status, and record-package-action coverage before it can pass in
   production. Local Harness now proves that the backend workbench action can
-  either record an existing package artifact or explicitly delegate
+  either record an existing package artifact, explicitly delegate
   build-and-record to the package service with bounded unavailable-service
-  failure. Local Harness also proves that a validated
+  failure, or delegate a `release_preflight` action to
+  `learning-automation-release-preflight-service.recordReport` without owning
+  the preflight repository. Local Harness also proves that a validated
   release-package-review UI evidence summary can be recorded through
   `npm run smoke:release-evidence` into a temporary Growth SQLite database and
   read back from the release-evidence bag with top-level evidence/check keys

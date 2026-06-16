@@ -167,6 +167,43 @@ test("release workbench action smoke script delegates only to action service", (
   assert.equal(calls[0].buildReleasePackage, true);
 });
 
+test("release workbench action smoke script accepts release preflight endpoint", () => {
+  const calls = [];
+  const service = {
+    recordAction(input) {
+      calls.push(input);
+      return {
+        ok: true,
+        schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.v1",
+        endpointKey: input.endpointKey,
+        actionRecord: {
+          endpointKey: input.endpointKey,
+          recordId: "lgarpf_cli_1"
+        },
+        writefulSchedulingAllowed: false
+      };
+    }
+  };
+  const input = inputFromArgs([
+    "--workspace-id", "fanfan",
+    "--learner-id", "fanfan",
+    "--program-id", "program_science",
+    "--endpoint-key", "release_preflight",
+    "--action-key", "release_preflight",
+    "--collection-run-id", "lgacrn_cli_1",
+    "--requested-by", "owner"
+  ]);
+
+  assert.equal(validateInput(input, true).ok, true);
+  const result = runOperation(service, input);
+  assert.equal(result.ok, true);
+  assert.equal(result.endpointKey, "release_preflight");
+  assert.equal(result.actionRecord.recordId, "lgarpf_cli_1");
+  assert.equal(calls[0].endpointKey, "release_preflight");
+  assert.equal(calls[0].actionKey, "release_preflight");
+  assert.equal(calls[0].collectionRunId, "lgacrn_cli_1");
+});
+
 test("release workbench action smoke script can run evidence collection through the workbench facade", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-workbench-action-collection-"));
   const dbPath = path.join(dir, "growth-learning.sqlite3");

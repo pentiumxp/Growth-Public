@@ -430,6 +430,7 @@ function createServices(config) {
     releaseCollectionRunService: learningAutomationReleaseCollectionRunService,
     releaseDecisionService: learningAutomationReleaseDecisionService,
     releasePackageService: learningAutomationReleasePackageService,
+    releasePreflightService: learningAutomationReleasePreflightService,
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService
   });

@@ -9,6 +9,78 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T07:35+08:00 - Release Preflight Workbench Action Facade
+
+- Status: implemented and full-Harness validated locally; not committed yet;
+  no production deployment in this slice.
+- Change intent:
+  - close the backend gap where release preflight reports existed only through
+    direct preflight API/CLI and not through the Owner release workbench action
+    facade;
+  - keep the final backend preflight audit Owner-triggerable from the same
+    product action chain as evidence collection, release decision, package
+    build/record, activation, and runtime enablement;
+  - preserve the advisory-only release boundary and avoid treating preflight as
+    deployment permission.
+- Scope:
+  - `learning-automation-release-workbench-service` now advertises
+    `release_preflight` and `release_preflight_reports` read routes plus a
+    `release_preflight` Owner record-route template to
+    `/api/v1/growth/automation/release-preflight-reports`;
+  - when evidence, check, approval, collection-run, decision, and package
+    blockers are clear and only activation/runtime records remain, the
+    workbench offers `record_release_preflight` before activation/runtime
+    actions;
+  - `learning-automation-release-workbench-action-service` now supports
+    endpoint key `release_preflight`, requires only
+    `releasePreflightService.recordReport`, supplies explicit Owner/write
+    authorization, and normalizes action record ids from `preflightReportId`;
+  - `src/app/services.js` injects `learningAutomationReleasePreflightService`
+    into the workbench action service;
+  - route and CLI action harnesses now accept/forward `release_preflight`
+    through the existing Owner-only `/release-workbench/actions` facade.
+- Boundary notes:
+  - the workbench remains no-write and owns no repository/table;
+  - the workbench action facade still owns no repository/table and does not
+    compute preflight itself;
+  - preflight report persistence remains owned by
+    `learning-automation-release-preflight-service` and
+    `learning_growth_automation_release_preflight_reports`;
+  - this does not call Gateway/model vendors, run smoke tasks internally,
+    publish/generate/evaluate, execute scheduler actions, run scheduler ticks,
+    deliver notifications, activate stage assessments, flip runtime config,
+    grant scheduler permission, inspect SQLite directly, deploy, or mark
+    production release ready.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for changed service/app/test files;
+  - focused service Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js`
+    passed `16/16`;
+  - focused route/CLI/architecture Harness:
+    `node --test tests/growth-routes.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `90/90`;
+  - focused release union:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/learning-automation-release-preflight-service.test.js tests/learning-automation-release-preflight-repository.test.js tests/growth-release-preflight-smoke-script.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `116/116`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - `git diff --check`;
+  - `npm test` passed `907/907`;
+  - `codegraph sync && codegraph status` reported index up to date with `370`
+    files, `5,177` nodes, and `22,358` edges, plus the existing earlier-engine
+    advisory.
+- Remaining before push:
+  - commit and push to the configured Growth remotes; do not deploy.
+
 ## 2026-06-17T15:35+08:00 - Release Preflight Audit Report Boundary
 
 - Status: implemented, documented, full-Harness validated locally, and ready

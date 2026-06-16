@@ -223,6 +223,8 @@ function readRoutes() {
     { key: "release_review", method: "GET", path: "/api/v1/growth/automation/release-review" },
     { key: "release_authorization", method: "GET", path: "/api/v1/growth/automation/release-authorization" },
     { key: "release_closure", method: "GET", path: "/api/v1/growth/automation/release-closure" },
+    { key: "release_preflight", method: "GET", path: "/api/v1/growth/automation/release-preflight" },
+    { key: "release_preflight_reports", method: "GET", path: "/api/v1/growth/automation/release-preflight-reports" },
     { key: "release_activation_preflight", method: "GET", path: "/api/v1/growth/automation/release-activation/preflight" },
     { key: "release_activations", method: "GET", path: "/api/v1/growth/automation/release-activations" },
     { key: "runtime_enablements", method: "GET", path: "/api/v1/growth/automation/runtime-enablements" },
@@ -363,6 +365,20 @@ function recordRoutes(scope = {}, collectionTasks = {}) {
       })
     },
     {
+      key: "release_preflight",
+      route: routeTemplate("/api/v1/growth/automation/release-preflight-reports", {
+        workspace_id: scope.workspaceId,
+        learner_id: scope.learnerId,
+        program_id: scope.programId,
+        domain_pack_id: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
+        collection_run_id: scope.collectionRunId,
+        allow_write_preflight: true
+      })
+    },
+    {
       key: "release_activation",
       route: routeTemplate("/api/v1/growth/automation/release-activations", {
         workspace_id: scope.workspaceId,
@@ -398,12 +414,14 @@ function actionKeyForRecordKind(kind = "") {
   if (value === "release_evidence_collection") return "release_evidence_collection";
   if (value === "release_collection_run") return "release_collection_run";
   if (value === "release_decision") return "release_decision";
+  if (value === "release_preflight") return "release_preflight";
   return "";
 }
 
 function endpointForAction(action = {}) {
   const key = cleanString(action.key || "", 180).toLowerCase();
   const kind = cleanString(action.action || "", 180).toLowerCase();
+  if (/preflight/.test(key) || /preflight/.test(kind)) return "release_preflight";
   if (/readiness.*snapshot/.test(key) || /readiness.*snapshot/.test(kind)) return "release_readiness_snapshot";
   if (/runtime|manual_config/.test(key) || /runtime|manual_config/.test(kind)) return "runtime_enablement";
   if (/activation/.test(key) || /activation/.test(kind)) return "release_activation";
@@ -508,6 +526,24 @@ function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {})
       writefulSchedulingAllowed: false
     };
   }).filter(Boolean);
+}
+
+function shouldOfferReleasePreflight(missingEvidenceKeys = [], missingCheckKeys = [], missingApprovalKeys = [], inventorySummary = {}) {
+  if (asArray(missingEvidenceKeys).length || asArray(missingCheckKeys).length || asArray(missingApprovalKeys).length) return false;
+  if (asArray(inventorySummary.blockedRecordKinds).length) return false;
+  const blockingRecords = asArray(inventorySummary.missingRecordKinds)
+    .map((kind) => cleanString(kind, 140))
+    .filter((kind) => kind && !["release_activation", "runtime_enablement", "release_preflight"].includes(kind));
+  return blockingRecords.length === 0;
+}
+
+function releasePreflightAction(scope = {}, collectionTasks = {}) {
+  return ownerAction({
+    key: "release_preflight",
+    action: "record_release_preflight",
+    requiredActor: "owner",
+    label: "Record release preflight report"
+  }, scope, "release_preflight", collectionTasks);
 }
 
 function dedupeActions(actions = [], max = 16) {
@@ -619,6 +655,9 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
       ownerAction(readinessSummary.nextAction, scope, "release_readiness", collectionTasks),
       ...actionsFromMissingEvidence(missingEvidenceKeys.length ? missingEvidenceKeys : missingCheckKeys, scope),
       ...actionsFromMissingApprovals(missingApprovalKeys, scope),
+      shouldOfferReleasePreflight(missingEvidenceKeys, missingCheckKeys, missingApprovalKeys, inventorySummary)
+        ? releasePreflightAction(scope, collectionTasks)
+        : null,
       ...actionsFromMissingRecords(inventorySummary.missingRecordKinds, scope, collectionTasks)
     ]);
     const status = deriveStatus(dashboard, controls, readiness);

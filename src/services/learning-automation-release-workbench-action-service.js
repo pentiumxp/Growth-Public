@@ -21,6 +21,7 @@ const SUPPORTED_ENDPOINTS = Object.freeze([
   "release_collection_run",
   "release_decision",
   "release_package",
+  "release_preflight",
   "release_activation",
   "runtime_enablement"
 ]);
@@ -129,6 +130,7 @@ function requireEndpointService(scope, endpointKey, services) {
   if (endpointKey === "release_collection_run") return requireMethod(scope, "release_collection_run", services.releaseCollectionRunService, "recordRun");
   if (endpointKey === "release_decision") return requireMethod(scope, "release_decision", services.releaseDecisionService, "recordDecision");
   if (endpointKey === "release_package") return requireMethod(scope, "release_package", services.releasePackageService, "recordPackage");
+  if (endpointKey === "release_preflight") return requireMethod(scope, "release_preflight", services.releasePreflightService, "recordReport");
   if (endpointKey === "release_activation") return requireMethod(scope, "release_activation", services.releaseActivationService, "recordActivation");
   if (endpointKey === "runtime_enablement") return requireMethod(scope, "runtime_enablement", services.runtimeEnablementService, "recordEnablement");
   return unavailable("release_workbench_action_endpoint_unsupported", scope, { endpointKey });
@@ -237,6 +239,12 @@ function callWriteService(endpointKey, input, scope, services) {
       ownerAuthorizedWrite: true
     }));
   }
+  if (endpointKey === "release_preflight") {
+    return services.releasePreflightService.recordReport(Object.assign({}, base, {
+      allowWritePreflight: true,
+      ownerAuthorizedWrite: true
+    }));
+  }
   if (endpointKey === "release_activation") {
     return services.releaseActivationService.recordActivation(Object.assign({}, base, {
       activationDecision: defaultSummary(input, "activationDecision"),
@@ -260,6 +268,7 @@ function resultRecord(endpointKey, result = {}) {
   if (endpointKey === "release_collection_run") return result.run || null;
   if (endpointKey === "release_decision") return result.decision || null;
   if (endpointKey === "release_package") return result.record?.package || result.package || null;
+  if (endpointKey === "release_preflight") return result.report || null;
   if (endpointKey === "release_activation") return result.activation || null;
   if (endpointKey === "runtime_enablement") return result.enablement || null;
   return null;
@@ -284,6 +293,8 @@ function actionRecordId(record = {}) {
     record?.runId ||
     record?.decisionId ||
     record?.packageId ||
+    record?.preflightReportId ||
+    record?.reportId ||
     record?.activationId ||
     record?.enablementId,
     180
@@ -305,6 +316,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   const releaseCollectionRunService = options.releaseCollectionRunService || null;
   const releaseDecisionService = options.releaseDecisionService || null;
   const releasePackageService = options.releasePackageService || null;
+  const releasePreflightService = options.releasePreflightService || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
 
@@ -339,6 +351,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
       releaseCollectionRunService,
       releaseDecisionService,
       releasePackageService,
+      releasePreflightService,
       releaseActivationService,
       runtimeEnablementService
     };

@@ -404,7 +404,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   report rows, keeps `readyForProductionDeploy=false`, and never applies runtime
   config, grants scheduler permission, runs smoke tasks internally, calls
   Gateway/model providers, publishes, evaluates, schedules, deploys, or mutates
-  learner state.
+  learner state. The release workbench now advertises `release_preflight` and
+  `release_preflight_reports` readback plus a `release_preflight` record route;
+  when evidence, approval, collection-run, decision, and package blockers are
+  clear, the workbench offers `record_release_preflight` before activation and
+  runtime-enablements. The Owner-only `release-workbench/actions` facade can
+  execute that advertised endpoint by delegating only to
+  `learning-automation-release-preflight-service.recordReport` with write
+  authorization.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised

@@ -23,6 +23,7 @@ function workbenchResult(status = "release_evidence_required") {
         { key: "release_collection_run" },
         { key: "release_decision" },
         { key: "release_package" },
+        { key: "release_preflight" },
         { key: "release_activation" },
         { key: "runtime_enablement" }
       ]
@@ -168,6 +169,24 @@ function serviceWith(overrides = {}) {
           package: {
             packageId: "lgapkg_1",
             status: "ready_for_release_review"
+          }
+        };
+      }
+    },
+    releasePreflightService: overrides.releasePreflightService || {
+      recordReport(input) {
+        calls.push(["release_preflight", input]);
+        return {
+          ok: true,
+          report: {
+            preflightReportId: "lgarpf_1",
+            status: "ready_for_owner_release_activation",
+            privacyClass: "summary_only"
+          },
+          releasePreflight: {
+            summaryOnly: true,
+            readyForProductionDeploy: false,
+            readyForProductionDeployReview: true
           }
         };
       }
@@ -391,6 +410,46 @@ test("release workbench action records package artifacts only through package re
   assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_package"]);
   assert.equal(calls[1][1].releasePackage, releasePackage);
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action records preflight report through preflight service only", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    endpointKey: "release_preflight",
+    actionKey: "release_preflight",
+    collectionRunId: "lgacrn_1",
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "recorded");
+  assert.equal(result.endpointKey, "release_preflight");
+  assert.equal(result.actionRecord.recordId, "lgarpf_1");
+  assert.equal(result.actionRecord.recordStatus, "ready_for_owner_release_activation");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigMutationPerformed, false);
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_preflight"]);
+  assert.equal(calls[1][1].workspaceId, "fanfan");
+  assert.equal(calls[1][1].programId, "program_science");
+  assert.equal(calls[1][1].collectionRunId, "lgacrn_1");
+  assert.equal(calls[1][1].allowWritePreflight, true);
+  assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action fails closed when preflight service is unavailable", () => {
+  const { service, calls } = serviceWith({ releasePreflightService: {} });
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_preflight",
+    actionKey: "release_preflight"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_release_workbench_action_release_preflight_unavailable");
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench"]);
 });
 
 test("release workbench action can explicitly build and record a package through package service", () => {
