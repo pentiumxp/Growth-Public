@@ -11,8 +11,9 @@
 
 ## 2026-06-17T06:55+08:00 - Explicit Package Build-And-Record Workbench Action
 
-- Status: implemented, documented, full-Harness validated locally, and ready for
-  commit/push closure in this slice. No deployment in this slice.
+- Status: implemented, documented, full-Harness validated locally, committed as
+  `27bff4e`, and pushed to `origin/main` and `public/main`; no deployment in
+  this slice.
 - Change intent:
   - close the remaining backend gap where the Owner release workbench
     `release_package` action could record only a prebuilt
