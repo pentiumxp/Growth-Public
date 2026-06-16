@@ -50,7 +50,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GET /api/v1/growth/stage-assessments/controls`; that read model delegates
   only to `learning-stage-assessment-service.stageReadiness()` and cannot
   activate assessments, publish plans, generate cards, call Gateway, inspect
-  SQLite tables, or mutate learner state. The next target architecture is the
+  SQLite tables, or mutate learner state. The same boundary now has a no-write
+  operational smoke through `npm run smoke:stage-checkpoint-controls`, which
+  delegates only to `learningStageCheckpointControlsService.controls()` through
+  the normal service graph and feeds `stageCheckpointControlsEvidence` into
+  release evidence bundles/readiness. The next target architecture is the
   Growth-owned AI learning operating loop documented in
   `docs/GROWTH_LEARNING_OPERATING_LOOP.md`: evidence ledger, Profile V2,
   Gateway-backed planner, post-evaluation profile-delta audit,
@@ -200,7 +204,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
   includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
-  smoke, platform action evidence, central visual evidence, and proposal smoke
+  smoke, stage-checkpoint controls readback smoke, platform action evidence,
+  central visual evidence, and proposal smoke
   in the default task set, and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,

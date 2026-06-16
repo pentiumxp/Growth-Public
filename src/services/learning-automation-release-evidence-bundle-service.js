@@ -16,6 +16,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "profile_feedback",
   "learner_cycle",
   "stage_assessment",
+  "stage_checkpoint_controls",
   "proposal",
   "platform_action",
   "central_visual",
@@ -89,6 +90,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "stageCheckpointEvidence",
     script: "scripts/smoke-growth-stage-assessment.js",
     commandName: "npm run smoke:stage-assessment"
+  },
+  {
+    taskId: "stage_checkpoint_controls",
+    evidenceKey: "stageCheckpointControlsEvidence",
+    script: "scripts/smoke-growth-stage-checkpoint-controls.js",
+    commandName: "npm run smoke:stage-checkpoint-controls"
   },
   {
     taskId: "proposal",

@@ -185,6 +185,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--owner-daily-ui-evidence")) evidence.ownerDailyUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--owner-audit-ui-evidence")) evidence.ownerAuditUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--stage-checkpoint-evidence")) evidence.stageCheckpointEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--stage-checkpoint-controls-evidence")) evidence.stageCheckpointControlsEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--proposal-review-ui-evidence")) evidence.proposalReviewUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-proposal-smoke-evidence")) evidence.productionProposalSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--automation-digest-ui-evidence")) evidence.automationDigestUiEvidence = { ok: true, source: "release_readiness_smoke_flag" };

@@ -1501,6 +1501,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--evidence-bundle-json/);
   assert.match(script, /evidenceBundleReadbackFromArgs/);
   assert.match(script, /release_readiness_smoke_bundle_privacy_failed/);
+  assert.match(script, /--stage-checkpoint-controls-evidence/);
   assert.match(script, /--automation-digest-ui-evidence/);
   assert.match(script, /--production-proposal-smoke-evidence/);
   assert.match(script, /--automation-action-handoff-ui-evidence/);
@@ -1544,6 +1545,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /accepts versioned evidence bundle files/);
   assert.match(scriptHarness, /evidenceBundleReadback/);
   assert.match(scriptHarness, /fails closed for privacy-risk evidence bundle input/);
+  assert.match(scriptHarness, /stageCheckpointControlsEvidence/);
   assert.match(scriptHarness, /automationDigestUiEvidence/);
   assert.match(scriptHarness, /productionProposalSmokeEvidence/);
   assert.match(scriptHarness, /automationActionHandoffUiEvidence/);
@@ -2263,6 +2265,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /smoke-growth-cycle-history\.js/);
   assert.match(service, /smoke-growth-owner-audit\.js/);
   assert.match(service, /stageCheckpointEvidence/);
+  assert.match(service, /stage_checkpoint_controls/);
+  assert.match(service, /stageCheckpointControlsEvidence/);
   assert.match(service, /productionProposalSmokeEvidence/);
   assert.match(service, /productionSchedulerDryRunSmokeEvidence/);
   assert.match(service, /productionActionHandoffSmokeEvidence/);
@@ -3317,6 +3321,47 @@ test("Growth stage-assessment smoke CLI stays service-owned and write-gated", ()
   assert.match(scriptHarness, /delegates operations to stage assessment service only/);
   assert.match(scriptHarness, /temporary SQLite db without creating stage cycles/);
   assert.match(scriptHarness, /fails closed for missing input, invalid JSON, privacy risk, and missing write prerequisites/);
+});
+
+test("Growth stage checkpoint controls smoke CLI stays read-only and service-owned", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:stage-checkpoint-controls/);
+  assert.match(packageJson, /smoke-growth-stage-checkpoint-controls\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-stage-checkpoint-controls.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningStageCheckpointControlsService/);
+  assert.match(script, /runControls/);
+  assert.match(script, /stage_checkpoint_controls_smoke_write_not_supported/);
+  assert.match(script, /stage_checkpoint_controls_smoke_invalid_json/);
+  assert.match(script, /stage_checkpoint_controls_smoke_operation_invalid/);
+  assert.match(script, /stage_checkpoint_controls_smoke_privacy_failed/);
+  assert.match(script, /workspace_id_required/);
+  assert.match(script, /stage_checkpoint_controls_target_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /learningAutomation/);
+  assert.doesNotMatch(script, /stageReadiness/);
+  assert.doesNotMatch(script, /evaluateEligibility/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+  assert.doesNotMatch(script, /recordAssessmentCompletion/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /dryRun/);
+  assert.doesNotMatch(script, /deliverHandoff/);
+
+  const scriptHarness = read(path.join("tests", "growth-stage-checkpoint-controls-smoke-script.test.js"));
+  assert.match(scriptHarness, /parses bounded readback selectors/);
+  assert.match(scriptHarness, /read-only and delegates to controls service only/);
+  assert.match(scriptHarness, /temporary SQLite db without creating stage cycles/);
+  assert.match(scriptHarness, /fails closed for missing input, invalid JSON, privacy risk, unsupported operation, and write flag/);
 });
 
 test("Growth frontend app remains boot wiring over adapter modules", () => {

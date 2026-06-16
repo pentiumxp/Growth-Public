@@ -9,6 +9,77 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T04:00Z - Stage Checkpoint Controls Smoke And Release Evidence
+
+- Status: implemented and validated locally. This slice adds a
+  no-write operational smoke for the stage-checkpoint Owner controls read model
+  and wires that evidence into release evidence bundles/readiness. It does not
+  deploy, call Gateway/model vendors, write SQLite, publish plans/cards,
+  generate cards, evaluate submissions, execute scheduler actions, run
+  scheduler ticks, deliver notifications, activate stage assessments, mutate
+  learner state, or change runtime config.
+- Scope:
+  - added `scripts/smoke-growth-stage-checkpoint-controls.js`, exposed through
+    `npm run smoke:stage-checkpoint-controls`;
+  - the CLI instantiates the normal service graph and delegates only to
+    `learningStageCheckpointControlsService.controls()`;
+  - the CLI rejects missing workspace/target input, invalid JSON,
+    privacy-risk keys, unsupported operations, and any `--allow-write` flag;
+  - added default release evidence bundle task `stage_checkpoint_controls`,
+    mapping bounded no-write controls output to
+    `stageCheckpointControlsEvidence`;
+  - added release-readiness check key
+    `stage_checkpoint_controls_evidence`, plus CLI/route normalization for
+    `stageCheckpointControlsEvidence`;
+  - kept actual formal checkpoint activation and cooldown writes owned by
+    `learning-stage-assessment-service`.
+- Changed files:
+  - `scripts/smoke-growth-stage-checkpoint-controls.js`;
+  - `scripts/smoke-growth-release-readiness.js`;
+  - `src/routes/growth-routes.js`;
+  - `src/services/learning-automation-release-evidence-bundle-service.js`;
+  - `src/services/learning-automation-release-readiness-service.js`;
+  - `tests/growth-stage-checkpoint-controls-smoke-script.test.js`;
+  - release bundle/readiness/route/architecture tests;
+  - Growth architecture/next-stage/closed-loop/platform-pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Focused validation passed:
+  - `node --check scripts/smoke-growth-stage-checkpoint-controls.js`;
+  - `node --check tests/growth-stage-checkpoint-controls-smoke-script.test.js`;
+  - `node --check scripts/smoke-growth-release-readiness.js`;
+  - `node --check src/routes/growth-routes.js`;
+  - focused controls/bundle/readiness/route/architecture tests:
+    `node --test tests/growth-stage-checkpoint-controls-smoke-script.test.js tests/learning-stage-checkpoint-controls-service.test.js tests/learning-automation-release-readiness-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-evidence-bundle-audit-service.test.js tests/growth-routes.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`.
+- Broad validation passed:
+  - focused release controls/dashboard/inventory smoke regression:
+    `node --test tests/growth-release-controls-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-release-inventory-smoke-script.test.js`
+    (`13/13`);
+  - `npm test` (`771/771`);
+  - `npm run check` (`192/192` runtime JavaScript files covered);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 339 indexed JavaScript files;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`.
+- AI Ops note:
+  - `node scripts/ai-ops-control-plane.js intake` in the Home AI app
+    repeatedly classified this internal Growth smoke/readiness documentation
+    slice as `H1` Mac production deployment because of release/deployment
+    keyword routing. This slice intentionally did not run production deploy
+    commands or deployment plans because no runtime release was requested or
+    changed.
+- Progress calibration:
+  - use the broader `Growth AI learning closed-loop MVP` denominator for future
+    percentage updates. Under that denominator, this checkpoint is about 80%
+    complete before commit/push and about 81% once this slice is committed and
+    pushed.
+- Remaining product work:
+  - render the controls DTO and activation action in the embedded Owner
+    stage-checkpoint UI;
+  - collect central visual evidence before any production UI release.
+
 ## 2026-06-16T03:00Z - Stage Checkpoint Controls Read Model
 
 - Status: implemented and validated locally. This slice adds a summary-only

@@ -531,6 +531,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       presentCheck(inputWithReleaseEvidence, "ownerDailyUiEvidence", "owner_daily_ui_evidence", "Owner daily UI product/visual evidence", "complete_owner_daily_ui_visual_validation"),
       presentCheck(inputWithReleaseEvidence, "ownerAuditUiEvidence", "owner_audit_ui_evidence", "Owner audit/correction UI evidence", "complete_owner_audit_ui_privacy_validation"),
       presentCheck(inputWithReleaseEvidence, "stageCheckpointEvidence", "stage_checkpoint_evidence", "Stage-checkpoint separation evidence", "validate_stage_checkpoint_separation"),
+      presentCheck(inputWithReleaseEvidence, "stageCheckpointControlsEvidence", "stage_checkpoint_controls_evidence", "Stage-checkpoint controls readback evidence", "validate_stage_checkpoint_controls"),
       presentCheck(inputWithReleaseEvidence, "proposalReviewUiEvidence", "proposal_review_ui_evidence", "Proposal review UI evidence", "complete_proposal_review_ui"),
       presentCheck(inputWithReleaseEvidence, "productionProposalSmokeEvidence", "production_proposal_smoke_evidence", "Production automation proposal smoke", "run_production_proposal_smoke"),
       presentCheck(inputWithReleaseEvidence, "automationDigestUiEvidence", "automation_digest_ui_evidence", "Automation digest UI evidence", "complete_automation_digest_ui"),

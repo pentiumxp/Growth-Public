@@ -54,6 +54,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" }
     }),
     "--owner-audit-ui-evidence",
+    "--stage-checkpoint-controls-evidence",
     "--automation-digest-ui-evidence",
     "--production-proposal-smoke-evidence",
     "--automation-action-handoff-ui-evidence",
@@ -89,6 +90,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
   assert.deepEqual(evidenceFromArgs(args), {
     ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
     ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    stageCheckpointControlsEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     automationDigestUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionProposalSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     automationActionHandoffUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
@@ -128,6 +130,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     evidence: {
       ownerDailyUiEvidence: { ok: true, evidenceId: "ui_daily_json" },
       ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      stageCheckpointControlsEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       automationDigestUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionProposalSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       automationActionHandoffUiEvidence: { ok: true, source: "release_readiness_smoke_flag" },
@@ -182,11 +185,12 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       horizon: "weekly_plan",
       limit: 3
     },
-    evidence: {
-      ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
-      stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
-      platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" }
-    },
+      evidence: {
+        ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
+        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
+        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
+        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" }
+      },
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" }
     },
@@ -237,6 +241,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       evidence: {
         ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
+        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
       },
@@ -250,6 +255,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     assert.deepEqual(evidenceFromArgs(args), {
       ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
       stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
+      stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
       platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
       centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
       ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
@@ -271,6 +277,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       evidence: {
         ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
+        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
         ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
