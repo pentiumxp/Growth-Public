@@ -235,6 +235,25 @@ function collectionTaskPlan(keys = []) {
   };
 }
 
+function releaseEvidenceCollectionBody(scope = {}, taskIds = [], requiredTaskIds = []) {
+  const body = {
+    workspace_id: scope.workspaceId,
+    learner_id: scope.learnerId,
+    program_id: scope.programId,
+    domain_pack_id: scope.domainPackId,
+    domain: scope.domain,
+    subject: scope.subject,
+    horizon: scope.horizon,
+    tasks: taskIds,
+    required_task_ids: requiredTaskIds,
+    write_collection_run: true
+  };
+  if (asArray(taskIds).includes("profile_feedback")) {
+    body.auto_select_latest_completed_cycle = true;
+  }
+  return body;
+}
+
 function recordRoutes(scope = {}, collectionTasks = {}) {
   const taskIds = asArray(collectionTasks.taskIds).length ? collectionTasks.taskIds : RELEASE_EVIDENCE_COLLECTION_TASKS;
   const requiredTaskIds = asArray(collectionTasks.requiredTaskIds).length ? collectionTasks.requiredTaskIds : taskIds;
@@ -276,18 +295,10 @@ function recordRoutes(scope = {}, collectionTasks = {}) {
     },
     {
       key: "release_evidence_collection",
-      route: routeTemplate("/api/v1/growth/automation/release-evidence-collections/run", {
-        workspace_id: scope.workspaceId,
-        learner_id: scope.learnerId,
-        program_id: scope.programId,
-        domain_pack_id: scope.domainPackId,
-        domain: scope.domain,
-        subject: scope.subject,
-        horizon: scope.horizon,
-        tasks: taskIds,
-        required_task_ids: requiredTaskIds,
-        write_collection_run: true
-      })
+      route: routeTemplate(
+        "/api/v1/growth/automation/release-evidence-collections/run",
+        releaseEvidenceCollectionBody(scope, taskIds, requiredTaskIds)
+      )
     },
     {
       key: "release_collection_run",

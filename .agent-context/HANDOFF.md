@@ -9,6 +9,107 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T03:30+08:00 - Profile Feedback Completed-Cycle Auto-Selection
+
+- Status: implemented locally, fully validated, and ready for commit/push.
+  This slice was not deployed because production deployment remains deferred
+  until the broader Growth target is complete.
+- Change intent:
+  - let Owner-triggered release evidence collection collect real
+    `profile_feedback` evidence from a completed cycle without requiring Codex
+    to manually splice completed-cycle selectors;
+  - keep the default `npm run smoke:profile-feedback` contract fail-closed
+    when no selector is supplied;
+  - keep auto-selection explicit, read-only, summary-only, and scoped to
+    completed candidates from `learning-cycle-history-service`.
+- Scope:
+  - `learning-profile-feedback-evidence-service` now accepts
+    `autoSelectCompletedCycle` and `autoSelectLatestCompletedCycle`;
+  - no selector plus no auto-select flag still returns
+    `profile_feedback_cycle_selector_required` with bounded
+    `selectorDiscovery` and remediation metadata;
+  - `autoSelectCompletedCycle` selects only one completed candidate when the
+    candidate set is unique;
+  - `autoSelectLatestCompletedCycle` selects the most recent completed
+    candidate when several are available;
+  - successful auto-selection merges the selected completed-cycle selector back
+    into the normal audit/evidence/Profile V2/profile-delta/recommendation/
+    loop-state checks, so downstream evidence must still pass;
+  - release evidence bundle scope forwards the auto-select flags only to the
+    `profile_feedback` task and preserves bounded `autoSelectionStatus`,
+    `selectedCycleId`, and `selectedTaskCardId` summary fields;
+  - release workbench action templates now include
+    `auto_select_latest_completed_cycle=true` only when the derived
+    `release_evidence_collection` task set includes `profile_feedback`;
+  - Owner UI release-workbench payloads forward those explicit route-body
+    flags to `release-workbench/actions`.
+- Boundary notes:
+  - no Gateway/model-vendor calls;
+  - no direct Home AI old Growth server logic;
+  - no card generation, publication, evaluation, scheduler execution, stage
+    activation, notification delivery, runtime config mutation, deployment, or
+    learner-state writes;
+  - auto-selection never fabricates a completed cycle and never makes missing
+    downstream evidence pass.
+- Docs changed:
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation:
+  - syntax checks passed for
+    `learning-profile-feedback-evidence-service.js`,
+    `learning-automation-release-evidence-bundle-service.js`,
+    `learning-automation-release-workbench-service.js`,
+    `smoke-growth-profile-feedback.js`,
+    `build-growth-release-evidence-bundle.js`, and
+    `public/growth-card-generation-ui.js`;
+  - focused Harness:
+    `node --test tests/learning-profile-feedback-evidence-service.test.js tests/growth-profile-feedback-smoke-script.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-workbench-service.test.js tests/growth-frontend-adapter.test.js tests/learning-automation-release-evidence-collection-service.test.js`
+    passed `94/94`;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` with `requiredCount=35`;
+  - docs/architecture Harness:
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - full Growth `npm test` passed `858/858`;
+  - `git diff --check` passed in Growth and app;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 4,984 nodes, 21,321 edges, index up
+    to date, with the existing earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - required app-side checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`,
+    `node tests/runtime-config-provider.test.js`,
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - the app deploy plan reported unrelated existing dirty files
+    `public/app-embedded-plugin-ui.js`,
+    `public/app-plugin-topics-ui.js`, `public/directory-viewer.html`,
+    `public/index.html`, `public/service-worker.js`, and
+    `tests/task-list-ui.test.js`; they were not touched by this Growth slice.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-16663301-84fb-4bad-9503-5ca1f09302bc`.
+- Remaining gates:
+  - no production deployment in this slice;
+  - the broader Growth objective still needs the next backend/release-evidence
+    package before final deployment.
+
 ## 2026-06-17T02:31+08:00 - Learning Loop Reward Audit Trace
 
 - Status: implemented locally, fully validated, and committed. This slice was

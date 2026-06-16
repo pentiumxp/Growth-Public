@@ -51,6 +51,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
     "--tasks", "scheduler_dry_run",
     "--required-task", "planner_readiness",
     "--required-tasks", "scheduler_dry_run",
+    "--auto-select-latest-completed-cycle",
     "--write-collection-run",
     "--allow-write",
     "--requested-by", "owner",
@@ -66,6 +67,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
   assert.equal(input.learnerId, "fanfan");
   assert.equal(input.writeCollectionRun, true);
   assert.equal(input.allowWriteCollection, true);
+  assert.equal(input.autoSelectLatestCompletedCycle, true);
 });
 
 test("release evidence collection script fails closed for write without allow-write", () => {

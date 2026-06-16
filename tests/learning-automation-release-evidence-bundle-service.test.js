@@ -62,6 +62,8 @@ test("release evidence bundle service normalizes scope and task args", () => {
     limit: 12,
     targetNodeIds: ["kg_science_fair_test"],
     allowWriteEvidence: false,
+    autoSelectCompletedCycle: false,
+    autoSelectLatestCompletedCycle: false,
     dailyLoopWriteOperation: "draft",
     learnerCycleOperation: "audit",
     taskCardId: "",
@@ -139,6 +141,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     domain: "science",
     subject: "science",
     targetNodeIds: ["kg_science_fair_test"],
+    autoSelectLatestCompletedCycle: true,
     taskCardId: "ltask_science_daily_1",
     tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "cycle_history", "owner_audit", "profile_feedback", "learner_cycle", "stage_assessment", "stage_checkpoint_controls", "proposal", "owner_review_evidence"],
     requestedBy: "owner"
@@ -183,6 +186,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   assert.ok(calls[4].args.includes("ltask_science_daily_1"));
   assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-profile-feedback.js"));
   assert.equal(calls[5].args.includes("--operation"), false);
+  assert.equal(calls[5].args.includes("--auto-select-latest-completed-cycle"), true);
   assert.ok(calls[5].args.includes("--task-card-id"));
   assert.ok(calls[5].args.includes("ltask_science_daily_1"));
   assert.ok(calls[6].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));

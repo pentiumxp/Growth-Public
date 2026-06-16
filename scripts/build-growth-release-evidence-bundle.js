@@ -111,6 +111,8 @@ function inputFromArgs(args) {
     createdAt: firstArgValue(args, ["--created-at", "--createdAt"], ""),
     targetNodeIds: targetNodeIds(args),
     tasks: taskIds(args),
+    autoSelectCompletedCycle: hasFlag(args, "--auto-select-completed-cycle") || hasFlag(args, "--autoSelectCompletedCycle"),
+    autoSelectLatestCompletedCycle: hasFlag(args, "--auto-select-latest-completed-cycle") || hasFlag(args, "--autoSelectLatestCompletedCycle"),
     taskCardId: firstArgValue(args, ["--task-card-id", "--taskCardId"], ""),
     collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--run-id", "--runId"], ""),
     evaluationId: firstArgValue(args, ["--evaluation-id", "--evaluationId"], ""),

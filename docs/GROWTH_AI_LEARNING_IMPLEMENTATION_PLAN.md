@@ -317,7 +317,7 @@ Implementation implication:
 | Evidence ledger | What summary evidence should profile use? | `learning-evidence-ledger-service`, `evidence-ledger.js`. |
 | Profile V2 | What does Growth currently believe about the learner? | `learning-profile-v2-service`. |
 | Profile delta | What changed after this cycle and why? | `learning-profile-delta-service`, `profile-delta-audits.js`. |
-| Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? If no completed-cycle selector is supplied, can the system prove whether a bounded selector candidate exists without writing learner state? | `learning-profile-feedback-evidence-service`, `learning-cycle-history-service` for no-write selector discovery only, `scripts/smoke-growth-profile-feedback.js`. |
+| Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? If no completed-cycle selector is supplied, can the system prove whether a bounded selector candidate exists without writing learner state, and can an explicit release-evidence collection path auto-select a real completed candidate without fabricating evidence? | `learning-profile-feedback-evidence-service`, `learning-cycle-history-service` for no-write selector discovery only, `scripts/smoke-growth-profile-feedback.js`. Default callers still fail closed without a selector; `autoSelectCompletedCycle` can select a single completed candidate, while `autoSelectLatestCompletedCycle` can select the most recent completed candidate when several exist. |
 | Recommendation lifecycle | Which persisted next-card recommendation is pending, accepted, or superseded, and which generated card/plan accepted it? | `learning-recommendation-lifecycle-service`, `scripts/smoke-growth-recommendation-lifecycle.js`, `GET /api/v1/growth/recommendations/lifecycle`. |
 | Owner correction | What did Owner confirm or correct? | `learning-owner-correction-service`, evidence ledger correction rows. |
 | Cycle audit | Can this card/evaluation/plan cycle explain itself? | `learning-cycle-audit-service`. |
@@ -393,6 +393,7 @@ Required harness:
 - `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --task-card-id <taskCardId> --evaluation-id <evaluationId> --json`;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --learner-id <learner> --target-node-id <nodeId> --json` for the fail-closed selector-discovery path when no completed-cycle selector exists;
+- `npm run smoke:profile-feedback -- --workspace-id <workspace> --learner-id <learner> --target-node-id <nodeId> --auto-select-latest-completed-cycle --json` only for an explicit release-evidence collection path that should use the most recent real completed cycle from read-only history discovery;
 - `npm run smoke:daily-loop -- --operation draft --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <planDraftId> --item-id <itemId> --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - central Home AI embedded-plugin visual harness before production release.
@@ -763,7 +764,11 @@ Implemented backend shape:
   no-write `npm run smoke:owner-audit` output to
   `productionOwnerAuditSmokeEvidence`. The default `profile_feedback` task
   maps no-write completed-cycle feedback readback to
-  `productionProfileFeedbackSmokeEvidence`. The default
+  `productionProfileFeedbackSmokeEvidence`. When release collection explicitly
+  enables completed-cycle auto-selection, the bundle forwards
+  `--auto-select-completed-cycle` or `--auto-select-latest-completed-cycle`
+  only to the `profile_feedback` task and records the selected cycle id/task
+  card id in bounded summary fields. The default
   `recommendation_lifecycle` task delegates to
   `npm run smoke:recommendation-lifecycle`, maps to
   `productionRecommendationLifecycleSmokeEvidence`, and proves pending,

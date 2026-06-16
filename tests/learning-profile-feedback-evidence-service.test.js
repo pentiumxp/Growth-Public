@@ -241,6 +241,83 @@ test("profile feedback evidence service requires a completed-cycle selector", ()
   assert.deepEqual(calls.map((call) => call.type), ["cycleHistory"]);
 });
 
+test("profile feedback evidence service can auto-select the latest completed cycle for release evidence", () => {
+  const { calls, services } = completeDependencies({
+    cycleHistory: {
+      ok: true,
+      available: true,
+      summary: {
+        cycleCount: 2,
+        completeCount: 2,
+        readyForAutomationCount: 2,
+        latestActivityAt: "2026-06-16T09:30:00.000Z"
+      },
+      cycles: [
+        {
+          cycleId: "cycle_old",
+          status: "ready_for_profile_feedback",
+          latestActivityAt: "2026-06-15T08:00:00.000Z",
+          selectors: {
+            taskCardId: "ltask_old_daily_1",
+            evaluationId: "leval_old_daily_1",
+            profileDeltaId: "lgpdelta_old_daily_1",
+            evidenceId: "lgevd_old_daily_1",
+            sourceId: "leval_old_daily_1",
+            targetNodeIds: ["kg_science_old"]
+          },
+          completeness: { complete: true, readyForAutomation: true }
+        },
+        {
+          cycleId: "cycle_latest",
+          status: "ready_for_profile_feedback",
+          latestActivityAt: "2026-06-16T09:30:00.000Z",
+          selectors: {
+            planDraftId: "lgplan_science_latest",
+            taskCardId: "ltask_science_latest",
+            evaluationId: "leval_science_latest",
+            profileDeltaId: "lgpdelta_science_latest",
+            evidenceId: "lgevd_science_latest",
+            sourceId: "leval_science_latest",
+            targetNodeIds: ["kg_science_fair_test"]
+          },
+          completeness: { complete: true, readyForAutomation: true }
+        }
+      ]
+    }
+  });
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    autoSelectLatestCompletedCycle: true
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "pass");
+  assert.equal(result.autoSelection.status, "selected_latest_completed_cycle");
+  assert.equal(result.selectedCompletedCycle.cycleId, "cycle_latest");
+  assert.equal(result.selectedCompletedCycle.taskCardId, "ltask_science_latest");
+  assert.equal(result.summary.selectedCycleId, "cycle_latest");
+  assert.equal(result.summary.selectedTaskCardId, "ltask_science_latest");
+  assert.equal(result.summary.autoSelectionStatus, "selected_latest_completed_cycle");
+  assert.deepEqual(calls.map((call) => call.type), [
+    "cycleHistory",
+    "completeness",
+    "evidenceAudit",
+    "profileDeltaAudit",
+    "profileV2",
+    "recommendation",
+    "loopState"
+  ]);
+  for (const call of calls.filter((item) => item.type !== "cycleHistory")) {
+    assert.equal(call.input.taskCardId, "ltask_science_latest");
+    assert.equal(call.input.evaluationId, "leval_science_latest");
+    assert.deepEqual(call.input.targetNodeIds, ["kg_science_fair_test"]);
+  }
+  assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
+});
+
 test("profile feedback evidence service reports no completed cycle candidates without fabricating release evidence", () => {
   const { calls, services } = completeDependencies({
     cycleHistory: {
@@ -334,6 +411,8 @@ test("profile feedback evidence service fails closed for privacy-risk input and 
     correctionId: "",
     sourceId: "",
     targetNodeIds: ["kg_science_fair_test"],
+    autoSelectCompletedCycle: false,
+    autoSelectLatestCompletedCycle: false,
     limit: 12
   });
 

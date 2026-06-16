@@ -54,6 +54,8 @@ test("profile-feedback smoke script parses bounded cycle scope", () => {
     "--subject", "science",
     "--horizon", "daily_plan",
     "--available-minutes", "12",
+    "--auto-select-completed-cycle",
+    "--auto-select-latest-completed-cycle",
     "--target-node-id", "kg_science_fair_test",
     "--target-node-ids", "kg_science_fair_test,kg_science_observation_language",
     "--limit", "7",
@@ -82,6 +84,8 @@ test("profile-feedback smoke script parses bounded cycle scope", () => {
     availableMinutes: 12,
     limit: 7,
     targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
+    autoSelectCompletedCycle: true,
+    autoSelectLatestCompletedCycle: true,
     requestedBy: "weixin_owner"
   });
 });

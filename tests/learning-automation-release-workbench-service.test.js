@@ -128,6 +128,7 @@ test("release workbench composes release services into Owner action templates wi
   assert.deepEqual(collectionAction.writeGatedCollectionTaskIds, ["daily_loop_write"]);
   assert.deepEqual(collectionAction.unsupportedCollectionKeys, ["owner_daily_ui_evidence"]);
   assert.equal(collectionAction.route.body.write_collection_run, true);
+  assert.equal(collectionAction.route.body.auto_select_latest_completed_cycle, true);
   assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual"]);
   assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
   assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, ["owner_daily_ui_evidence"]);

@@ -87,6 +87,14 @@ function inputFromArgs(args) {
   const jsonInput = parseJsonArg(args, ["--input-json", "--inputJson"], {});
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], jsonInput.workspaceId || jsonInput.workspace_id || "");
   const explicitTargetNodeIds = targetNodeIds(args);
+  const autoSelectCompletedCycle = hasFlag(args, "--auto-select-completed-cycle")
+    || hasFlag(args, "--autoSelectCompletedCycle")
+    || jsonInput.autoSelectCompletedCycle === true
+    || jsonInput.auto_select_completed_cycle === true;
+  const autoSelectLatestCompletedCycle = hasFlag(args, "--auto-select-latest-completed-cycle")
+    || hasFlag(args, "--autoSelectLatestCompletedCycle")
+    || jsonInput.autoSelectLatestCompletedCycle === true
+    || jsonInput.auto_select_latest_completed_cycle === true;
   return stripUndefined(Object.assign({}, jsonInput, {
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], jsonInput.learnerId || jsonInput.learner_id || "") || workspaceId,
@@ -105,6 +113,8 @@ function inputFromArgs(args) {
     availableMinutes: boundedNumberArg(args, ["--available-minutes", "--availableMinutes"], jsonInput.availableMinutes || jsonInput.available_minutes || 15, 1, 60),
     limit: boundedNumberArg(args, ["--limit"], jsonInput.limit || 12, 1, 50),
     targetNodeIds: explicitTargetNodeIds.length ? explicitTargetNodeIds : jsonInput.targetNodeIds || jsonInput.target_node_ids,
+    autoSelectCompletedCycle: autoSelectCompletedCycle || undefined,
+    autoSelectLatestCompletedCycle: autoSelectLatestCompletedCycle || undefined,
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], jsonInput.requestedBy || jsonInput.requested_by || "")
   }));
 }

@@ -1634,9 +1634,15 @@ Implementation progress on 2026-06-15:
   persisted profile delta, Profile V2, recommendation, and next loop state.
   If no completed-cycle selector is supplied, the profile-feedback service may
   call the read-only cycle-history service for bounded selector discovery only.
-  The bundle then carries summary-only `selectorDiscovery` counts and a
+  The default path then carries summary-only `selectorDiscovery` counts and a
   remediation `nextAction` such as `produce_completed_daily_cycle`; it must not
-  convert an absent production cycle into passing release evidence.
+  convert an absent production cycle into passing release evidence. An explicit
+  release-evidence collection path may pass `autoSelectCompletedCycle` to
+  select exactly one completed candidate, or `autoSelectLatestCompletedCycle`
+  to select the most recent completed candidate when several exist. Those flags
+  only convert real read-only history candidates into the normal selector
+  input; they do not publish, evaluate, write learner state, or relax the
+  persisted evidence/Profile V2/profile-delta/recommendation/loop-state checks.
   Passing profile-feedback evidence also carries the next loop-state reward
   readback summary, including `rewardSettlementCount` and `totalRewardCoins`;
   the release evidence bundle preserves those fields for release review instead

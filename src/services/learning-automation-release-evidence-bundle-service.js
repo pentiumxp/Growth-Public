@@ -341,6 +341,8 @@ function publicScope(input = {}) {
     limit: clampLimit(input.limit || 12, 12),
     targetNodeIds,
     allowWriteEvidence: booleanFlag(input.allowWriteEvidence || input.allow_write_evidence),
+    autoSelectCompletedCycle: booleanFlag(input.autoSelectCompletedCycle || input.auto_select_completed_cycle),
+    autoSelectLatestCompletedCycle: booleanFlag(input.autoSelectLatestCompletedCycle || input.auto_select_latest_completed_cycle),
     dailyLoopWriteOperation,
     learnerCycleOperation,
     taskCardId: cleanString(input.taskCardId || input.task_card_id, 120),
@@ -459,6 +461,9 @@ function summaryFromSmoke(value = {}) {
     summary.cycleCount = Number(value.summary.cycleCount || 0) || 0;
     summary.rewardSettlementCount = Number(value.summary.rewardSettlementCount || 0) || 0;
     summary.totalRewardCoins = Number(value.summary.totalRewardCoins || 0) || 0;
+    summary.autoSelectionStatus = cleanString(value.summary.autoSelectionStatus, 120);
+    summary.selectedCycleId = cleanString(value.summary.selectedCycleId, 160);
+    summary.selectedTaskCardId = cleanString(value.summary.selectedTaskCardId, 120);
   }
   const requiredActions = requiredActionsFromChecks(value.checks);
   if (requiredActions.length) {
@@ -467,6 +472,26 @@ function summaryFromSmoke(value = {}) {
   }
   const selectorDiscovery = publicSelectorDiscovery(value.selectorDiscovery || value.checks?.[0]?.summary?.selectorDiscovery);
   if (selectorDiscovery) summary.selectorDiscovery = selectorDiscovery;
+  if (value.autoSelection && typeof value.autoSelection === "object" && !Array.isArray(value.autoSelection)) {
+    summary.autoSelection = {
+      attempted: value.autoSelection.attempted === true,
+      status: cleanString(value.autoSelection.status, 120),
+      candidateCount: Number(value.autoSelection.candidateCount || 0) || 0
+    };
+  }
+  if (value.selectedCompletedCycle && typeof value.selectedCompletedCycle === "object" && !Array.isArray(value.selectedCompletedCycle)) {
+    summary.selectedCompletedCycle = {
+      cycleId: cleanString(value.selectedCompletedCycle.cycleId, 160),
+      status: cleanString(value.selectedCompletedCycle.status, 80),
+      latestActivityAt: cleanString(value.selectedCompletedCycle.latestActivityAt, 80),
+      taskCardId: cleanString(value.selectedCompletedCycle.taskCardId, 120),
+      evaluationId: cleanString(value.selectedCompletedCycle.evaluationId, 120),
+      profileDeltaId: cleanString(value.selectedCompletedCycle.profileDeltaId, 120),
+      evidenceId: cleanString(value.selectedCompletedCycle.evidenceId, 120),
+      sourceId: cleanString(value.selectedCompletedCycle.sourceId, 120),
+      targetNodeIds: uniqueStrings(value.selectedCompletedCycle.targetNodeIds || []).slice(0, 12)
+    };
+  }
   return summary;
 }
 
@@ -944,6 +969,10 @@ function preflightTaskEvidence(task, scope, generatedAt) {
 
 function taskSpecificArgs(task, scope) {
   const args = Array.from(task.extraArgs || []);
+  if (task.taskId === "profile_feedback") {
+    if (scope.autoSelectCompletedCycle) args.push("--auto-select-completed-cycle");
+    if (scope.autoSelectLatestCompletedCycle) args.push("--auto-select-latest-completed-cycle");
+  }
   if (task.taskId === "learner_cycle") {
     args.push("--operation", scope.learnerCycleOperation);
     if (scope.taskCardId) args.push("--task-card-id", scope.taskCardId);

@@ -13,6 +13,10 @@ function uniqueStrings(value = []) {
   return Array.from(new Set(values.map((item) => cleanString(item, 160)).filter(Boolean)));
 }
 
+function booleanFlag(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
 
 function scanPrivacy(value, path = "$", findings = []) {
@@ -48,6 +52,8 @@ function publicScope(input = {}) {
     correctionId: cleanString(input.correctionId || input.correction_id, 120),
     sourceId: cleanString(input.sourceId || input.source_id, 120),
     targetNodeIds: uniqueStrings(input.targetNodeIds || input.target_node_ids || input.nodeIds || input.node_ids).slice(0, 12),
+    autoSelectCompletedCycle: booleanFlag(input.autoSelectCompletedCycle || input.auto_select_completed_cycle),
+    autoSelectLatestCompletedCycle: booleanFlag(input.autoSelectLatestCompletedCycle || input.auto_select_latest_completed_cycle),
     limit: Math.max(1, Math.min(50, Math.round(Number(input.limit || 12) || 12)))
   };
 }
@@ -231,6 +237,11 @@ function selectorFromCycle(cycle = {}) {
   };
 }
 
+function selectorTimeValue(selector = {}) {
+  const value = Date.parse(selector.latestActivityAt || "");
+  return Number.isFinite(value) ? value : 0;
+}
+
 function selectorDiscoverySummary(result = {}) {
   if (!result?.ok) {
     return {
@@ -249,6 +260,7 @@ function selectorDiscoverySummary(result = {}) {
     .filter((cycle) => cycle.completeness?.complete || cycle.completeness?.readyForAutomation)
     .map(selectorFromCycle)
     .filter((selector) => selector.taskCardId || selector.evaluationId || selector.profileDeltaId || selector.evidenceId || selector.planDraftId || selector.sourceId)
+    .sort((a, b) => selectorTimeValue(b) - selectorTimeValue(a))
     .slice(0, 5);
   return {
     available: true,
@@ -260,6 +272,54 @@ function selectorDiscoverySummary(result = {}) {
     partialFailureCount: Number(result.summary?.partialFailureCount || asArray(result.partialFailures).length || 0) || 0,
     candidateCount: candidates.length,
     candidates
+  };
+}
+
+function selectorInput(selector = {}) {
+  return {
+    planDraftId: cleanString(selector.planDraftId, 120),
+    taskCardId: cleanString(selector.taskCardId, 120),
+    evaluationId: cleanString(selector.evaluationId, 120),
+    profileDeltaId: cleanString(selector.profileDeltaId, 120),
+    evidenceId: cleanString(selector.evidenceId, 120),
+    sourceId: cleanString(selector.sourceId, 120),
+    targetNodeIds: uniqueStrings(selector.targetNodeIds).slice(0, 12)
+  };
+}
+
+function compactSelector(selector = {}) {
+  const output = selectorInput(selector);
+  output.cycleId = cleanString(selector.cycleId, 160);
+  output.status = cleanString(selector.status, 80);
+  output.latestActivityAt = cleanString(selector.latestActivityAt, 80);
+  output.complete = selector.complete === true;
+  output.readyForAutomation = selector.readyForAutomation === true;
+  return output;
+}
+
+function autoSelectCycle(discovery = {}, scope = {}) {
+  const candidates = asArray(discovery.candidates);
+  const latestAllowed = scope.autoSelectLatestCompletedCycle === true;
+  const uniqueAllowed = scope.autoSelectCompletedCycle === true || latestAllowed;
+  if (!uniqueAllowed) {
+    return { attempted: false, status: "disabled", candidateCount: candidates.length };
+  }
+  if (!candidates.length) {
+    return { attempted: true, status: "no_candidate", candidateCount: 0 };
+  }
+  if (candidates.length === 1 || latestAllowed) {
+    const selected = candidates[0];
+    return {
+      attempted: true,
+      status: candidates.length === 1 ? "selected_unique_completed_cycle" : "selected_latest_completed_cycle",
+      candidateCount: candidates.length,
+      selected: compactSelector(selected)
+    };
+  }
+  return {
+    attempted: true,
+    status: "ambiguous_completed_cycle",
+    candidateCount: candidates.length
   };
 }
 
@@ -297,7 +357,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
   const cycleHistoryService = options.cycleHistoryService || null;
 
   function evaluate(input = {}) {
-    const scope = publicScope(input);
+    let scope = publicScope(input);
     if (!scope.workspaceId) {
       return { ok: false, source: "growth-learning-profile-feedback-evidence-service", error: "profile_feedback_workspace_required" };
     }
@@ -310,6 +370,9 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         privacyFindings
       };
     }
+    let selectorDiscovery = null;
+    let autoSelection = null;
+    let selectedCompletedCycle = null;
     if (!hasCycleSelector(scope)) {
       const cycleHistory = callService(
         cycleHistoryService,
@@ -320,7 +383,15 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         }),
         "profile_feedback_cycle_history_unavailable"
       );
-      const selectorDiscovery = selectorDiscoverySummary(cycleHistory);
+      selectorDiscovery = selectorDiscoverySummary(cycleHistory);
+      autoSelection = autoSelectCycle(selectorDiscovery, scope);
+      if (autoSelection.selected) {
+        selectedCompletedCycle = autoSelection.selected;
+        scope = Object.assign({}, scope, selectorInput(selectedCompletedCycle));
+      }
+    }
+
+    if (!hasCycleSelector(scope)) {
       const requiredAction = actionForSelectorDiscovery(selectorDiscovery);
       return {
         ok: false,
@@ -339,6 +410,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
           }, requiredAction)
         ],
         selectorDiscovery,
+        autoSelection,
         summary: {
           missingRequired: ["cycle_selector_present"],
           readyForNextPlan: false,
@@ -346,6 +418,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
           selectorCandidateCount: selectorDiscovery.candidateCount,
           completeCycleCount: selectorDiscovery.completeCount,
           cycleCount: selectorDiscovery.cycleCount,
+          autoSelectionStatus: autoSelection.status,
           nextAction: requiredAction
         }
       };
@@ -472,6 +545,9 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
       profileDelta,
       recommendation: nextRecommendation,
       loopState: nextLoopState,
+      selectorDiscovery,
+      autoSelection,
+      selectedCompletedCycle,
       summary: {
         readyForNextPlan,
         missingRequired,
@@ -485,6 +561,10 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         recommendationMode: nextRecommendation.mode,
         recommendationStrategy: nextRecommendation.strategy,
         loopStatus: nextLoopState.status,
+        selectorDiscoveryStatus: selectorDiscovery ? selectorDiscovery.status : "",
+        autoSelectionStatus: autoSelection ? autoSelection.status : "",
+        selectedCycleId: cleanString(selectedCompletedCycle?.cycleId, 160),
+        selectedTaskCardId: cleanString(selectedCompletedCycle?.taskCardId, 120),
         nextAction: nextLoopState.nextAction.action
       }
     };

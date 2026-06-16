@@ -652,6 +652,12 @@
       payload.tasks = asArray(routeBody.tasks || ["learning_loop_state"]).map(clean).filter(Boolean);
       payload.required_task_ids = asArray(routeBody.required_task_ids || routeBody.requiredTaskIds || payload.tasks).map(clean).filter(Boolean);
       payload.write_collection_run = routeBody.write_collection_run === true || routeBody.writeCollectionRun === true || routeBody.record_collection_run === true || routeBody.recordCollectionRun === true;
+      if (routeBody.auto_select_completed_cycle === true || routeBody.autoSelectCompletedCycle === true) {
+        payload.auto_select_completed_cycle = true;
+      }
+      if (routeBody.auto_select_latest_completed_cycle === true || routeBody.autoSelectLatestCompletedCycle === true) {
+        payload.auto_select_latest_completed_cycle = true;
+      }
     }
     if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
       payload.release_package = releasePackage;
