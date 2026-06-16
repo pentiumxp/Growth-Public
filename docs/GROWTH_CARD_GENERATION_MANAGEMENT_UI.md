@@ -51,11 +51,14 @@ authorization. Central `embedded-plugin-shell` visual evidence passed for
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
-Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
-proposal/digest/action-handoff/scheduler-execution/scheduler-run/worker-target
-production evidence, a real `releasePackageReviewUiEvidence` artifact for the
-release package review UI, central visual evidence for that UI, and production
-release evidence collection.
+Older-cycle selection and formal stage-checkpoint controls are browser-wired
+through summary-only service DTOs and focused Harness; their remaining product
+closure is production visual/release evidence rather than basic UI plumbing.
+The broader remaining closure is proposal/digest/action-handoff/
+scheduler-execution/scheduler-run/worker-target production evidence, a real
+`releasePackageReviewUiEvidence` artifact for the release package review UI,
+central visual evidence for that UI, and production release evidence
+collection.
 
 ## Objective
 

@@ -11,8 +11,9 @@
 
 ## 2026-06-17T04:35+08:00 - Release Workbench UI Document Consistency Closure
 
-- Status: implemented, locally validated, committed as `2bcdde9`, and pushed to
-  both configured Growth remotes (`origin` and `public`).
+- Status: implemented and locally validated. The documentation consistency
+  changes for this section are committed in git history and pushed to both
+  configured Growth remotes (`origin` and `public`).
 - Change intent:
   - align the top-level V1 implementation status in
     `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` with the already
@@ -27,6 +28,11 @@
     auto-selection through the decision service, and package recording still
     requires a real summary-only package candidate rather than a placeholder
     route body.
+  - align the same status summary with the implemented older-cycle selection
+    and stage-checkpoint controls wiring: those browser surfaces are backed by
+    summary-only service DTOs and focused Harness, while their remaining
+    closure is production visual/release evidence rather than basic UI
+    plumbing.
 - Boundary notes:
   - docs-only change;
   - no runtime code changes;
@@ -47,6 +53,7 @@
     `requiredCount=35`;
   - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
     passed `34/34`;
+  - `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
   - `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
     passed `121/121`.
   - `git diff --check` passed;
