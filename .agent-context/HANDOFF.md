@@ -11,8 +11,8 @@
 
 ## 2026-06-17T04:35+08:00 - Release Workbench UI Document Consistency Closure
 
-- Status: implemented, locally validated, and committed in the current local
-  HEAD. Push is pending for this slice.
+- Status: implemented, locally validated, committed as `2bcdde9`, and pushed to
+  both configured Growth remotes (`origin` and `public`).
 - Change intent:
   - align the top-level V1 implementation status in
     `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` with the already
@@ -54,7 +54,7 @@
   - `codegraph status` reported 357 files, 5,003 nodes, 21,565 edges, and an
     up-to-date index, with the existing earlier-engine reindex notice.
 - Remaining gates:
-  - push to configured Growth remotes.
+  - no production deployment in this slice.
 
 ## 2026-06-17T04:28+08:00 - Release Workbench UI Decision Action Closure
 
