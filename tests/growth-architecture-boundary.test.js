@@ -174,6 +174,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningProfileDeltaAuditService/);
   assert.match(services, /createLearningProfileFeedbackEvidenceService/);
   assert.match(services, /learningProfileFeedbackEvidenceService/);
+  assert.match(services, /createLearningRewardAuditService/);
+  assert.match(services, /learningRewardAuditService/);
   assert.match(services, /createLearningPlannerContextService/);
   assert.match(services, /learningPlannerContextService/);
   assert.match(services, /createGrowthGatewayPlannerClient/);
@@ -262,6 +264,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
   assert.match(services, /planPublisherService: learningPlanPublisherService/);
   assert.match(services, /dailyLoopService: learningDailyLoopService/);
+  assert.match(services, /rewardAuditService: learningRewardAuditService/);
   assert.match(services, /stageAssessmentService: learningStageAssessmentService/);
   assert.match(services, /evaluationService: growthEvaluationService/);
   assert.match(services, /cycleAuditService: learningCycleAuditService/);
@@ -474,6 +477,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(routes, /learning_growth_automation_release_readiness/);
   assert.doesNotMatch(routes, /learning_growth_automation_release_decisions/);
   assert.doesNotMatch(routes, /learning_growth_automation_release_packages/);
+  assert.doesNotMatch(routes, /learning_reward_settlements/);
   assert.doesNotMatch(routes, /learning_growth_domain_pack_provisions/);
   assert.doesNotMatch(routes, /profileV2\(/);
   assert.doesNotMatch(routes, /recordEvaluationProfileDelta/);
@@ -490,6 +494,15 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(evidenceAuditService, /listEvidenceAudit/);
   assert.match(evidenceAuditService, /publicEvidenceAuditItem/);
   assert.doesNotMatch(evidenceAuditService, /learning_growth_evidence_ledger/);
+
+  const rewardAuditService = read(path.join("src", "services", "learning-reward-audit-service.js"));
+  assert.match(rewardAuditService, /createLearningRewardAuditService/);
+  assert.match(rewardAuditService, /listRewardAudit/);
+  assert.match(rewardAuditService, /growth\.learningRewardAudit\.v1/);
+  assert.match(rewardAuditService, /summary_only/);
+  assert.doesNotMatch(rewardAuditService, /learning_reward_settlements/);
+  assert.doesNotMatch(rewardAuditService, /rawAnswer/);
+  assert.doesNotMatch(rewardAuditService, /rawPrompt:/);
 
   const profileV2Service = read(path.join("src", "services", "learning-profile-v2-service.js"));
   assert.match(profileV2Service, /profileV2/);

@@ -512,7 +512,7 @@ The target loop is:
 | Execution layer | Learner card UI, submission, optional audio, one evaluation, one reflection, low-pressure completion. | Implemented for generated daily cards. | Keep stable while adding subject-specific card content. |
 | Evaluation layer | Gateway evaluation, bounded DTO, visible failure/retry, evidence derivation. | Implemented with Gateway/fallback boundary. | Add subject-aware rubrics and evidence mapping into ledger. |
 | Stage layer | Formal assessment eligibility, activation, high-weight evidence, cooldown. | Implemented as a service boundary. | Use profile confidence and ledger freshness to suggest assessment cycles. |
-| Audit layer | Owner-visible reason, evidence basis, plan publication link, profile delta, model-boundary state, failure state, Owner-reviewed correction trail, historical-cycle selection, and required audit completeness. | Owner generation context shows profile, recommendation, planner readiness, planner context preview, Profile V2, bounded evidence audit items, and `ownerAudit` readback over plan-audit, persisted profile-delta, and correction DTOs. Evidence-audit readback is implemented through `learning-evidence-audit-service` and `GET /api/v1/growth/evidence/audit`; plan-audit readback is implemented through `learning-plan-audit-service`; profile-delta persistence/readback are implemented through `learning_growth_profile_delta_audits` and `GET /api/v1/growth/profile-delta-audits`; Owner-reviewed corrections are implemented through `learning-owner-correction-service`, `POST /api/v1/growth/profile-corrections`, and `GET /api/v1/growth/profile-corrections`; cycle-level readback is implemented through `learning-cycle-audit-service` and `GET /api/v1/growth/learning-cycles/audit`; selectable cycle history is implemented through `learning-cycle-history-service`, `GET /api/v1/growth/learning-cycles/history`, and `npm run smoke:cycle-history`; embedded older-cycle controls now read that DTO and use selected service-provided selectors to refresh `learning-cycles/audit` and `learning-cycles/completeness`; required audit evidence readback is implemented through `learning-audit-completeness-service` and `GET /api/v1/growth/learning-cycles/completeness`. | Collect production visual/release evidence for the embedded Owner audit surface before treating it as product-complete. |
+| Audit layer | Owner-visible reason, evidence basis, plan publication link, score-proportional reward settlement, profile delta, model-boundary state, failure state, Owner-reviewed correction trail, historical-cycle selection, and required audit completeness. | Owner generation context shows profile, recommendation, planner readiness, planner context preview, Profile V2, bounded evidence audit items, and `ownerAudit` readback over plan-audit, persisted profile-delta, and correction DTOs. Evidence-audit readback is implemented through `learning-evidence-audit-service` and `GET /api/v1/growth/evidence/audit`; reward settlement readback is implemented through `learning-reward-audit-service` and injected into `learning-loop-state-service` as summary-only recommendation evidence; plan-audit readback is implemented through `learning-plan-audit-service`; profile-delta persistence/readback are implemented through `learning_growth_profile_delta_audits` and `GET /api/v1/growth/profile-delta-audits`; Owner-reviewed corrections are implemented through `learning-owner-correction-service`, `POST /api/v1/growth/profile-corrections`, and `GET /api/v1/growth/profile-corrections`; cycle-level readback is implemented through `learning-cycle-audit-service` and `GET /api/v1/growth/learning-cycles/audit`; selectable cycle history is implemented through `learning-cycle-history-service`, `GET /api/v1/growth/learning-cycles/history`, and `npm run smoke:cycle-history`; embedded older-cycle controls now read that DTO and use selected service-provided selectors to refresh `learning-cycles/audit` and `learning-cycles/completeness`; required audit evidence readback is implemented through `learning-audit-completeness-service` and `GET /api/v1/growth/learning-cycles/completeness`. | Collect production visual/release evidence for the embedded Owner audit surface before treating it as product-complete. |
 | Automation proposal layer | Owner-reviewed proposal creation, decision, and explicit accepted-proposal publish execution before any scheduling or automatic publication. | The target boundary is `learning-automation-proposal-service`, `learning_growth_automation_proposals`, `GET`/`POST /api/v1/growth/automation/proposals`, `POST /api/v1/growth/automation/proposals/:proposalId/decision`, and `POST /api/v1/growth/automation/proposals/:proposalId/publish`: previous cycle completeness and target provisioning are required before a new plan draft can become a proposal, Owner decisions record `accepted`, `skipped`, `expired`, or `superseded`, and accepted publish execution delegates to the plan publisher while recording bounded execution metadata. The embedded Owner `生成` tab now has a minimal selected-cycle create/list/review/accepted-publish panel over those routes. Backend Owner review evidence summarizes `proposed`, `accepted`, `skipped`, `expired`, `superseded`, owner-decision, proposal execution-status counts, and downstream digest/action-handoff/scheduler execution/scheduler run/worker-target/failure-policy stage counts, while keeping the accepted-proposal gate limited to `accepted`. | Add `expired`/`superseded` decision UI, production visual/release evidence, and digest/action UI before making proposals a primary Owner workflow. |
 | Scheduler dry-run layer | Read-only candidate inspection before any writeful scheduling worker. | `learning-automation-scheduler-service` and Owner-only `POST /api/v1/growth/automation/scheduler/dry-run` list accepted proposals, skip already-published executions, recheck audit completeness and target provisioning, and return `would_publish`, blocked, or skipped candidates without writes, Gateway calls, publication, notifications, or stage activation. | Add Owner digest/review UI and real production platform Action Inbox/Web Push receipt evidence before considering writeful scheduling. |
 | Automation failure-policy layer | Summary-only rollback, failure visibility, and manual retry prerequisite before writeful scheduling. | `learning-automation-failure-policy-service`, `learning_growth_automation_failure_policies`, and visible-target/Owner scoped `/api/v1/growth/automation/failure-policies` routes are implemented. Draft policies activate only through Owner review; readiness reports active policy as one prerequisite and keeps `writefulSchedulingAllowed=false`. | Render policy readiness in Owner automation UI and keep writeful scheduling blocked until action UI/platform evidence and visual evidence exist. |
@@ -777,8 +777,9 @@ activate stage assessments, or expose generated authoring draft internals.
 Owns compact Owner-loop state readback for UI and harness use.
 
 Implementation status: implemented. The service composes
-`learning-daily-loop-service.preview` and read-only
-`learning-stage-assessment-service.stageReadiness` into
+`learning-daily-loop-service.preview`, read-only
+`learning-stage-assessment-service.stageReadiness`, and read-only
+`learning-reward-audit-service` reward settlement trace into
 `growth.learningLoopState.v1`.
 
 It returns:
@@ -788,6 +789,10 @@ It returns:
 - one `status` value for the current loop;
 - one `nextAction` for Owner review, draft, publish, audit completion,
   target provisioning, graph selection, or planner configuration.
+- nested `growth.learningLoopState.recommendationEvidence.v1` with bounded
+  evidence ids, source card/evaluation ids, reward settlement ids and coin
+  totals, plan draft ids, profile-delta ids, correction ids, Profile V2
+  summaries, and recommendation lifecycle rows.
 
 Routes and smoke:
 
@@ -795,8 +800,11 @@ Routes and smoke:
 - no-write `npm run smoke:learning-loop-state`.
 
 The service must not call Gateway, import repositories, publish plans,
-generate cards, evaluate submissions, start schedulers, deliver notifications
-or handoffs, activate stage assessments, or mutate learner state.
+generate cards, evaluate submissions, settle rewards, start schedulers,
+deliver notifications or handoffs, activate stage assessments, or mutate
+learner state. Reward readback must stay summary-only and must not expose
+idempotency keys, ledger-entry JSON, raw settlement payloads, learner answers,
+transcripts, prompts, credentials, or provider configuration.
 
 ### `learning-plan-audit-service`
 

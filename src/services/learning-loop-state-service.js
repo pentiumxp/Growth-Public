@@ -297,7 +297,56 @@ function publicLifecycleTraceItem(item = {}) {
   };
 }
 
-function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {}, profile = {}, audit = {}) {
+function publicRewardSettlementTraceItem(item = {}) {
+  return {
+    rewardSettlementId: cleanString(item.rewardSettlementId),
+    taskCardId: cleanString(item.taskCardId),
+    evaluationId: cleanString(item.evaluationId),
+    status: cleanString(item.status),
+    coinAmount: number(item.coinAmount),
+    currency: cleanString(item.currency || "learning_coin", 40) || "learning_coin",
+    reason: cleanString(item.reason, 180),
+    sourceType: cleanString(item.sourceType, 120),
+    sourceId: cleanString(item.sourceId, 140),
+    settledAt: cleanString(item.settledAt, 64),
+    createdAt: cleanString(item.createdAt, 64)
+  };
+}
+
+function publicRewardAudit(rewardAudit = {}) {
+  if (!rewardAudit || rewardAudit.ok !== true) {
+    return {
+      available: false,
+      ok: false,
+      error: cleanString(rewardAudit?.error || "learning_reward_audit_unavailable"),
+      rewardSettlements: [],
+      summary: {
+        rewardSettlementCount: 0,
+        settledCount: 0,
+        totalCoinAmount: 0,
+        currency: "learning_coin"
+      }
+    };
+  }
+  const rewardSettlements = asArray(rewardAudit.rewardSettlements).map(publicRewardSettlementTraceItem)
+    .filter((item) => item.rewardSettlementId || item.taskCardId || item.evaluationId)
+    .slice(0, 8);
+  const totalCoinAmount = number(rewardAudit.summary?.totalCoinAmount || rewardSettlements.reduce((sum, item) => sum + number(item.coinAmount), 0));
+  return {
+    available: true,
+    ok: true,
+    rewardSettlements,
+    summary: {
+      rewardSettlementCount: rewardSettlements.length,
+      settledCount: number(rewardAudit.summary?.settledCount || rewardSettlements.filter((item) => item.status === "settled").length),
+      totalCoinAmount,
+      currency: cleanString(rewardAudit.summary?.currency || "learning_coin", 40) || "learning_coin",
+      latestRewardSettlementId: cleanString(rewardAudit.summary?.latestRewardSettlementId || rewardSettlements[0]?.rewardSettlementId)
+    }
+  };
+}
+
+function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {}, profile = {}, audit = {}, rewardAudit = {}) {
   const context = preview.context || {};
   const nextCardRecommendation = context.nextCardRecommendation || {};
   const ownerAudit = context.ownerAudit || {};
@@ -336,6 +385,8 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
   const lifecycle = asArray(context.recommendationLifecycle).map(publicLifecycleTraceItem)
     .filter((item) => item.trajectoryId || item.status || item.strategy)
     .slice(0, 6);
+  const rewardTrace = publicRewardAudit(rewardAudit);
+  const rewardSettlements = rewardTrace.rewardSettlements;
   const evidenceIds = uniqueStrings([
     ...evidenceItems.map((item) => item.evidenceId),
     ...planDrafts.flatMap((item) => item.basisEvidenceIds),
@@ -361,9 +412,10 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
     nextCardRecommendation.evidenceBasis?.trajectoryId,
     ...lifecycle.map((item) => item.trajectoryId)
   ]).slice(0, 12);
+  const rewardSettlementIds = uniqueStrings(rewardSettlements.map((item) => item.rewardSettlementId)).slice(0, 12);
   const explanationReady = Boolean(
     recommendation.available
-    && (evidenceIds.length || profileDeltas.length || lifecycle.length || planDrafts.length || profile.evidenceCount || audit.profileDeltaCount)
+    && (evidenceIds.length || profileDeltas.length || lifecycle.length || planDrafts.length || rewardSettlementIds.length || profile.evidenceCount || audit.profileDeltaCount)
   );
   return {
     schemaVersion: "growth.learningLoopState.recommendationEvidence.v1",
@@ -392,7 +444,8 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       trajectoryIds,
       planDraftIds: planDrafts.map((item) => item.planDraftId),
       profileDeltaIds: profileDeltas.map((item) => item.profileDeltaId),
-      correctionIds: corrections.map((item) => item.correctionId)
+      correctionIds: corrections.map((item) => item.correctionId),
+      rewardSettlementIds
     },
     profileTrace: {
       capabilityStateCount: profile.capabilityStateCount,
@@ -416,7 +469,15 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       evidenceItems,
       profileDeltas,
       corrections,
-      recommendationLifecycle: lifecycle
+      recommendationLifecycle: lifecycle,
+      rewardSettlements
+    },
+    rewardTrace: {
+      available: rewardTrace.available,
+      ok: rewardTrace.ok,
+      error: rewardTrace.available ? "" : rewardTrace.error,
+      rewardSettlements,
+      summary: rewardTrace.summary
     },
     summary: {
       explanationReady,
@@ -424,6 +485,8 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       evidenceIdCount: evidenceIds.length,
       profileDeltaCount: profileDeltas.length,
       correctionCount: corrections.length,
+      rewardSettlementCount: rewardSettlements.length,
+      totalRewardCoins: rewardTrace.summary.totalCoinAmount,
       recommendationLifecycleCount: lifecycle.length,
       basisTrajectoryPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.trajectoryId)),
       basisEvaluationPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.sourceEvaluationId))
@@ -526,6 +589,7 @@ function statusFrom(nextAction = {}, audit = {}, stageAssessment = {}) {
 
 function createLearningLoopStateService(options = {}) {
   const dailyLoopService = options.dailyLoopService || null;
+  const rewardAuditService = options.rewardAuditService || null;
   const stageAssessmentService = options.stageAssessmentService || null;
 
   function stageAssessmentFor(input = {}, preview = {}) {
@@ -546,6 +610,24 @@ function createLearningLoopStateService(options = {}) {
       targetNodeId: targetNodeIds[0],
       targetNodeIds,
       assessmentCoverageNodeIds: targetNodeIds
+    });
+  }
+
+  function rewardAuditFor(input = {}, target = {}, scope = {}, recommendationEvidence = {}) {
+    if (!rewardAuditService || typeof rewardAuditService.listRewardAudit !== "function") {
+      return {
+        ok: false,
+        error: "learning_reward_audit_service_unavailable"
+      };
+    }
+    const trace = recommendationEvidence.evidenceTrace || {};
+    return rewardAuditService.listRewardAudit({
+      workspaceId: target.workspaceId,
+      learnerId: target.learnerId,
+      programId: scope.programId,
+      taskCardIds: uniqueStrings(input.taskCardIds || input.task_card_ids || input.taskCardId || input.task_card_id || trace.sourceTaskCardIds).slice(0, 20),
+      evaluationIds: uniqueStrings(input.evaluationIds || input.evaluation_ids || input.evaluationId || input.evaluation_id || trace.sourceEvaluationIds).slice(0, 20),
+      limit: input.rewardLimit || input.reward_limit || 8
     });
   }
 
@@ -572,7 +654,9 @@ function createLearningLoopStateService(options = {}) {
     const profile = profileFrom(preview.context || {});
     const audit = auditFrom(preview);
     const recommendation = recommendationFrom(preview.context || {});
-    const recommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit);
+    const initialRecommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit);
+    const rewardAudit = rewardAuditFor(input, target, scope, initialRecommendationEvidence);
+    const recommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit, rewardAudit);
     const stageAssessmentReadiness = stageAssessmentFor(input, preview);
     const stageAssessment = publicStageAssessment(stageAssessmentReadiness);
     stageAssessment.targetNodeIds = scope.targetNodeIds;

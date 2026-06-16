@@ -201,6 +201,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     evaluationJobContext: evaluationJobs.evaluationJobContext,
     failEvaluationJob: evaluationJobs.failEvaluationJob,
     learningCoinBalance: rewardRepository.learningCoinBalance,
+    listRewardSettlements: rewardRepository.listRewardSettlements,
     listEvaluationJobs: evaluationJobs.listEvaluationJobs,
     ownerReviewEvaluationJob: evaluationJobs.ownerReviewEvaluationJob,
     recordEvaluation: evaluationJobs.recordEvaluation,

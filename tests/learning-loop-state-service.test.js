@@ -249,6 +249,39 @@ function createService(options = {}) {
         return preview(options.previewOverrides);
       }
     },
+    rewardAuditService: {
+      listRewardAudit(input) {
+        calls.push({ type: "rewardAudit", input });
+        if (options.rewardAuditFails) return { ok: false, error: "reward_audit_failed", rawPrompt: "must not leak" };
+        return {
+          ok: true,
+          schemaVersion: "growth.learningRewardAudit.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          rewardSettlements: [{
+            rewardSettlementId: "lrwd_science_1",
+            taskCardId: "ltask_science_1",
+            evaluationId: "eval_science_1",
+            status: "settled",
+            coinAmount: 48,
+            currency: "learning_coin",
+            reason: "growth_coin_settled_by_daily_score",
+            sourceType: "growth-plugin-evaluation",
+            sourceId: "eval_science_1",
+            idempotencyKey: "must_not_leak",
+            ledgerEntry: { rawPrompt: "must not leak" },
+            settledAt: "2026-06-15T08:25:00.000Z"
+          }],
+          summary: {
+            rewardSettlementCount: 1,
+            settledCount: 1,
+            totalCoinAmount: 48,
+            currency: "learning_coin",
+            latestRewardSettlementId: "lrwd_science_1"
+          }
+        };
+      }
+    },
     stageAssessmentService: {
       stageReadiness(input) {
         calls.push({ type: "stageReadiness", input });
@@ -308,15 +341,25 @@ test("learning loop state projects a summary-only ready-to-draft state", () => {
   assert.deepEqual(result.recommendationEvidence.evidenceTrace.evidenceIds, ["evidence_eval_1", "evidence_corr_1"]);
   assert.deepEqual(result.recommendationEvidence.evidenceTrace.profileDeltaIds, ["pdelta_science_1"]);
   assert.deepEqual(result.recommendationEvidence.evidenceTrace.correctionIds, ["corr_science_1"]);
+  assert.deepEqual(result.recommendationEvidence.evidenceTrace.rewardSettlementIds, ["lrwd_science_1"]);
   assert.equal(result.recommendationEvidence.profileTrace.weaknesses[0].nodeId, "kg_science_fair_test");
   assert.equal(result.recommendationEvidence.auditTrace.planDrafts[0].planDraftId, "lgplan_science_1");
   assert.equal(result.recommendationEvidence.auditTrace.evidenceItems[0].summary.feedbackSummary, "Controlled variables need another short repair card.");
   assert.equal(result.recommendationEvidence.auditTrace.profileDeltas[0].plannerHintChange.afterStrategy, "repair");
   assert.equal(result.recommendationEvidence.auditTrace.recommendationLifecycle[0].trajectoryId, "traj_science_1");
+  assert.equal(result.recommendationEvidence.auditTrace.rewardSettlements[0].rewardSettlementId, "lrwd_science_1");
+  assert.equal(result.recommendationEvidence.rewardTrace.summary.totalCoinAmount, 48);
+  assert.equal(result.recommendationEvidence.rewardTrace.rewardSettlements[0].reason, "growth_coin_settled_by_daily_score");
+  assert.equal(result.recommendationEvidence.summary.rewardSettlementCount, 1);
+  assert.equal(result.recommendationEvidence.summary.totalRewardCoins, 48);
   assert.equal(result.summary.recommendationEvidenceReady, true);
-  assert.deepEqual(calls.map((call) => call.type), ["preview", "stageReadiness"]);
+  assert.deepEqual(calls.map((call) => call.type), ["preview", "rewardAudit", "stageReadiness"]);
+  assert.deepEqual(calls[1].input.taskCardIds, ["ltask_science_1"]);
+  assert.deepEqual(calls[1].input.evaluationIds, ["eval_science_1"]);
   assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
   assert.equal(JSON.stringify(result).includes("authoringDraft"), false);
+  assert.equal(JSON.stringify(result).includes("idempotencyKey"), false);
+  assert.equal(JSON.stringify(result).includes("ledgerEntry"), false);
 });
 
 test("learning loop state prefers publish when a selected plan is ready", () => {
@@ -372,6 +415,21 @@ test("learning loop state surfaces incomplete audit before drafting more work", 
   assert.equal(result.status, "audit_incomplete");
   assert.equal(result.nextAction.action, "complete_cycle_audit");
   assert.deepEqual(result.nextAction.missingRequired, ["profile_delta_audit"]);
+});
+
+test("learning loop state keeps reward audit failure visible and non-fatal", () => {
+  const { service } = createService({ rewardAuditFails: true });
+
+  const result = service.state({
+    workspaceId: "weixin_fanfan",
+    taskCardId: "ltask_science_1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.recommendationEvidence.rewardTrace.available, false);
+  assert.equal(result.recommendationEvidence.rewardTrace.error, "reward_audit_failed");
+  assert.equal(result.recommendationEvidence.summary.rewardSettlementCount, 0);
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
 });
 
 test("learning loop state surfaces stage checkpoint readiness", () => {

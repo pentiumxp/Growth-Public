@@ -75,6 +75,7 @@ const { createLearningProfileFeedbackEvidenceService } = require("../services/le
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../services/learning-profile-v2-service");
 const { createLearningRecommendationLifecycleService } = require("../services/learning-recommendation-lifecycle-service");
+const { createLearningRewardAuditService } = require("../services/learning-reward-audit-service");
 const { createLearningStageCheckpointControlsService } = require("../services/learning-stage-checkpoint-controls-service");
 const { createLearningStageAssessmentService } = require("../services/learning-stage-assessment-service");
 const { createLearningTargetProvisioningService } = require("../services/learning-target-provisioning-service");
@@ -148,6 +149,9 @@ function createServices(config) {
   });
   const learningRecommendationLifecycleService = createLearningRecommendationLifecycleService({
     repository: growthLearningStore.masteryProfileRepository
+  });
+  const learningRewardAuditService = createLearningRewardAuditService({
+    repository: growthLearningStore
   });
   const learningExperienceSignalService = createLearningExperienceSignalService({
     repository: growthLearningStore.masteryProfileRepository,
@@ -478,6 +482,7 @@ function createServices(config) {
   });
   const learningLoopStateService = createLearningLoopStateService({
     dailyLoopService: learningDailyLoopService,
+    rewardAuditService: learningRewardAuditService,
     stageAssessmentService: learningStageAssessmentService
   });
   const learningProfileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
@@ -583,6 +588,7 @@ function createServices(config) {
     learningProfileProjectionService,
     learningProfileV2Service,
     learningRecommendationLifecycleService,
+    learningRewardAuditService,
     learningStageCheckpointControlsService,
     learningStageAssessmentService,
     learningTargetProvisioningService,

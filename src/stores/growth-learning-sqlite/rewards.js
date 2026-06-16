@@ -99,6 +99,48 @@ function learningCoinBalanceFromDb(db, input = {}) {
 }
 
 function createRewardRepository({ open }) {
+  function listRewardSettlements(input = {}) {
+    const db = open(true);
+    try {
+      if (!tableExists(db, "learning_reward_settlements")) return [];
+      const columns = tableColumns(db, "learning_reward_settlements");
+      const where = [];
+      const params = [];
+      const addFilter = (column, value) => {
+        const text = cleanString(value);
+        if (!text || !columns.includes(column)) return;
+        where.push(`${column} = ?`);
+        params.push(text);
+      };
+      const addListFilter = (column, values = []) => {
+        const cleaned = (Array.isArray(values) ? values : String(values || "").split(","))
+          .map(cleanString)
+          .filter(Boolean)
+          .slice(0, 20);
+        if (!cleaned.length || !columns.includes(column)) return;
+        where.push(`${column} IN (${cleaned.map(() => "?").join(", ")})`);
+        params.push(...cleaned);
+      };
+      addFilter("workspace_id", input.workspaceId || input.workspace_id);
+      addFilter("learner_id", input.learnerId || input.learner_id);
+      addFilter("program_id", input.programId || input.program_id);
+      addFilter("status", input.status);
+      addListFilter("task_card_id", input.taskCardIds || input.task_card_ids || input.taskCardId || input.task_card_id);
+      addListFilter("evaluation_id", input.evaluationIds || input.evaluation_ids || input.evaluationId || input.evaluation_id);
+      addListFilter("id", input.rewardSettlementIds || input.reward_settlement_ids || input.rewardSettlementId || input.reward_settlement_id);
+      const limit = Math.max(1, Math.min(50, Number(input.limit || 12) || 12));
+      const sql = `
+        SELECT * FROM learning_reward_settlements
+        ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+        ORDER BY COALESCE(NULLIF(settled_at, ''), NULLIF(updated_at, ''), created_at) DESC
+        LIMIT ?
+      `;
+      return db.prepare(sql).all(...params, limit).map(publicRewardSettlement);
+    } finally {
+      db.close();
+    }
+  }
+
   function settleEvaluationReward(input = {}) {
     const db = open(false);
     try {
@@ -322,6 +364,7 @@ function createRewardRepository({ open }) {
   return {
     clearLearningCoinBalanceForMonthlyExchange,
     learningCoinBalance,
+    listRewardSettlements,
     settleEvaluationReward
   };
 }

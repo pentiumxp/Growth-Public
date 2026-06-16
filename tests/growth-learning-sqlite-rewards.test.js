@@ -153,6 +153,47 @@ test("reward repository settles low scores without requiring a pass line", () =>
   });
 });
 
+test("reward repository lists bounded reward settlements by task and evaluation", () => {
+  withRewardDb(({ repository }) => {
+    repository.settleEvaluationReward({
+      evaluation: {
+        evaluationId: "eval_reward_trace",
+        status: "completed",
+        score: 64,
+        passed: false
+      },
+      taskCard: {
+        id: "card_1",
+        learner_id: "learner_1",
+        workspace_id: "weixin_child",
+        program_id: "program_1",
+        reward_cap_coins: 125,
+        raw_json: "{}"
+      },
+      submission: { id: "sub_trace", session_id: "session_trace" },
+      settledAt: "2026-06-11T02:00:00.000Z"
+    });
+
+    const byTask = repository.listRewardSettlements({
+      workspaceId: "weixin_child",
+      taskCardIds: ["card_1"],
+      limit: 2
+    });
+    assert.equal(byTask.length, 1);
+    assert.equal(byTask[0].rewardSettlementId.startsWith("lrwd_"), true);
+    assert.equal(byTask[0].evaluationId, "eval_reward_trace");
+    assert.equal(byTask[0].coinAmount, 80);
+
+    const byEvaluation = repository.listRewardSettlements({
+      workspaceId: "weixin_child",
+      evaluationIds: ["eval_reward_trace"],
+      status: "settled"
+    });
+    assert.equal(byEvaluation.length, 1);
+    assert.equal(byEvaluation[0].taskCardId, "card_1");
+  });
+});
+
 test("reward repository reports and clears learning coin balance idempotently", () => {
   withRewardDb(({ repository }) => {
     repository.settleEvaluationReward({
