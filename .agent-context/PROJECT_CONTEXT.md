@@ -680,6 +680,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   smoke for this boundary: `list` is the default read-only operation, while
   `create` and `deliver` require explicit `--allow-write` and still delegate
   only to `learning-automation-action-handoff-service`.
+  Backend-only Owner automation evidence is now implemented through
+  `learning-automation-owner-review-evidence-service`,
+  visible-target scoped
+  `GET /api/v1/growth/automation/owner-review-evidence`, and
+  `npm run smoke:owner-review-evidence`. It owns no repository/table, reads
+  only existing proposal, digest, failure-policy, action-handoff, scheduler
+  execution/run, worker-target, and release-readiness service DTOs, returns
+  `growth.learningAutomationOwnerReviewEvidence.v1` summary-only evidence, and
+  keeps all writeful scheduling/runtime flags false. This is backend evidence
+  only and does not replace proposal/digest/action/execution UI or central
+  visual evidence.
   The automation scheduler execution backend is now implemented through
   `learning-automation-scheduler-execution-service`,
   `automation-scheduler-executions.js`,

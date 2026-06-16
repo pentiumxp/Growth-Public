@@ -12,6 +12,7 @@ const { createLearningAutomationActionHandoffService } = require("../services/le
 const { createLearningAutomationCentralVisualEvidenceService } = require("../services/learning-automation-central-visual-evidence-service");
 const { createLearningAutomationDigestService } = require("../services/learning-automation-digest-service");
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
+const { createLearningAutomationOwnerReviewEvidenceService } = require("../services/learning-automation-owner-review-evidence-service");
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
@@ -420,6 +421,16 @@ function createServices(config) {
     leaseMs: config.automationBackgroundWorkerLeaseMs,
     defaultTargets: config.automationBackgroundWorkerTargets
   });
+  const learningAutomationOwnerReviewEvidenceService = createLearningAutomationOwnerReviewEvidenceService({
+    proposalService: learningAutomationProposalService,
+    digestService: learningAutomationDigestService,
+    failurePolicyService: learningAutomationFailurePolicyService,
+    actionHandoffService: learningAutomationActionHandoffService,
+    schedulerExecutionService: learningAutomationSchedulerExecutionService,
+    schedulerRunService: learningAutomationSchedulerRunService,
+    schedulerWorkerTargetService: learningAutomationSchedulerWorkerTargetService,
+    releaseReadinessService: learningAutomationReleaseReadinessService
+  });
   const learningCardGenerationContextService = createLearningCardGenerationContextService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
@@ -498,6 +509,7 @@ function createServices(config) {
     learningAutomationCentralVisualEvidenceService,
     learningAutomationDigestService,
     learningAutomationFailurePolicyService,
+    learningAutomationOwnerReviewEvidenceService,
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,

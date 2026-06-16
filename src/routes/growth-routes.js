@@ -677,6 +677,12 @@ function normalizeAutomationReleaseWorkbenchInput(url, target) {
   return normalizeAutomationReleaseDashboardInput(url, target);
 }
 
+function normalizeAutomationOwnerReviewEvidenceInput(url, target) {
+  return Object.assign(normalizeAutomationReleaseDashboardInput(url, target), {
+    recordLimit: url.searchParams.get("recordLimit") || url.searchParams.get("record_limit") || url.searchParams.get("limit") || ""
+  });
+}
+
 function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, target, request, url) {
   const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {};
   const merged = Object.assign({}, payload, body);
@@ -1571,6 +1577,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-workbench") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseWorkbenchService.workbench(normalizeAutomationReleaseWorkbenchInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/owner-review-evidence") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationOwnerReviewEvidenceService.evaluate(normalizeAutomationOwnerReviewEvidenceInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

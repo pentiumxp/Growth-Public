@@ -891,13 +891,21 @@ Implemented backend shape:
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.
+- `npm run smoke:owner-review-evidence` delegates to
+  `learning-automation-owner-review-evidence-service.evaluate`. It is no-write
+  and aggregates existing proposal, digest, failure-policy, action-handoff,
+  scheduler execution/run, worker-target, and release-readiness DTOs into one
+  summary-only Owner automation evidence read model. It owns no table, records
+  nothing, enables no scheduling, and is backend evidence only.
 
 Required behavior:
 
 - aggregate summary-only evidence for Owner daily UI, audit/correction UI,
   stage-checkpoint separation from `npm run smoke:stage-assessment`, proposal
   review, production proposal smoke evidence from `npm run smoke:proposal`,
-  automation digest UI, digest review, active failure policy, delivered action
+  backend Owner review evidence from
+  `npm run smoke:owner-review-evidence`, automation digest UI, digest review,
+  active failure policy, delivered action
   handoff, automation action handoff UI, production action handoff smoke evidence from
   `npm run smoke:action-handoff`, Owner-explicit execution gate status,
   scheduler execution UI, production scheduler execution smoke evidence from
@@ -992,6 +1000,8 @@ Required harness:
 - `tests/growth-release-dashboard-smoke-script.test.js`;
 - `tests/learning-automation-release-workbench-service.test.js`;
 - `tests/growth-release-workbench-smoke-script.test.js`;
+- `tests/learning-automation-owner-review-evidence-service.test.js`;
+- `tests/growth-automation-owner-review-evidence-smoke-script.test.js`;
 - `tests/learning-automation-release-package-service.test.js`;
 - `tests/learning-automation-release-package-repository.test.js`;
 - `tests/growth-release-package-script.test.js`;
@@ -1008,7 +1018,9 @@ Required harness:
 Remaining release gaps:
 
 - product UI evidence for Owner daily, audit/correction, proposal review,
-  digest/action/execution/run, and worker-target views;
+  digest/action/execution/run, and worker-target views. Backend Owner review
+  evidence now exists through `npm run smoke:owner-review-evidence`, but it
+  does not replace product UI or central visual evidence;
 - real production Home AI platform Action Inbox/Web Push receipt evidence from
   `npm run smoke:platform-action-evidence`;
 - real production central embedded-plugin visual artifact for mobile scroll,

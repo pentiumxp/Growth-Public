@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T10:12+08:00 - Owner Automation Review Evidence Read Model
+
+- Status: implemented and focused-Harness validated locally. This slice adds
+  a backend-only Owner automation evidence read model over the existing
+  proposal, digest, failure-policy, action-handoff, scheduler execution/run,
+  worker-target, and release-readiness service DTOs. It does not create a new
+  SQLite table, write business state, call Gateway/model vendors, publish
+  plans/cards, generate cards, evaluate submissions, execute scheduler actions,
+  run scheduler ticks, deliver notifications, emit platform events, activate
+  stage assessments, mutate learner state, flip runtime config, grant
+  scheduler permission, or replace UI/visual evidence.
+- Scope:
+  - added `learning-automation-owner-review-evidence-service` with schema
+    `growth.learningAutomationOwnerReviewEvidence.v1`;
+  - wired `learningAutomationOwnerReviewEvidenceService` in `src/app/services.js`;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/owner-review-evidence`;
+  - added `scripts/smoke-growth-automation-owner-review-evidence.js` and
+    `npm run smoke:owner-review-evidence`;
+  - added the owning doc
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - updated docs index, architecture, implementation, and next-stage docs.
+- Focused validation passed:
+  - `node --check` on the new service, smoke CLI, service graph, and route;
+  - `node --test tests/learning-automation-owner-review-evidence-service.test.js tests/growth-automation-owner-review-evidence-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`86/86`).
+- Broad validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `npm run smoke:owner-review-evidence -- --workspace-id fanfan --learner-id fanfan --domain science --subject science --json`
+    returned `status=proposal_required` on the current local DB with
+    summary-only missing-gate readback;
+  - `git diff --check`;
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`783/783`);
+  - CodeGraph status reported 343 JavaScript files indexed.
+- Remaining before calling the full loop product-complete:
+  - embedded proposal/digest/action/execution/run/worker-target UI evidence;
+  - central visual evidence for the relevant mobile/dark-mode/progress states;
+  - production evidence collection and release-readiness snapshot/package
+    closure after the UI/visual surfaces are ready.
+- Progress calibration:
+  - using the full closed-loop MVP denominator, this advances backend
+    observability and auditability. Overall progress remains about 65-70%;
+    backend/service/Harness progress is higher, while product UI and central
+    visual evidence remain the main remaining denominator.
+
 ## 2026-06-16T06:00Z - Release Workbench Evidence In Release-Readiness
 
 - Status: implemented and focused-Harness validated locally. This slice wires
