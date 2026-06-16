@@ -5,6 +5,13 @@ const {
   RELEASE_EVIDENCE_COLLECTION_SCHEMA,
   createLearningAutomationReleaseEvidenceCollectionService
 } = require("../src/services/learning-automation-release-evidence-collection-service");
+const {
+  createLearningAutomationReleaseEvidenceService
+} = require("../src/services/learning-automation-release-evidence-service");
+const {
+  UI_GATE_SPECS,
+  createLearningAutomationUiEvidenceService
+} = require("../src/services/learning-automation-ui-evidence-service");
 
 function scope(overrides = {}) {
   return Object.assign({
@@ -113,6 +120,71 @@ function collectionRun(overrides = {}) {
   }, overrides);
 }
 
+function validReleasePackageReviewUiEvidence(overrides = {}) {
+  const spec = UI_GATE_SPECS.releasePackageReviewUiEvidence;
+  return Object.assign({
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "releasePackageReviewUiEvidence",
+    checkKey: spec.checkKey,
+    uiGate: spec.uiGate,
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      checkKey: spec.checkKey,
+      uiGate: spec.uiGate,
+      status: "pass",
+      route: "/?embed=hermes#generate",
+      screenshotPresent: true,
+      domEvidencePresent: true,
+      screenshotArtifactName: "growth-release-package-review.png",
+      coverage: spec.requiredCoverage,
+      requiredCoverage: spec.requiredCoverage,
+      missingCoverage: [],
+      assertionCount: 2,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  }, overrides);
+}
+
+function releaseEvidenceServiceWithRows(rows = []) {
+  return createLearningAutomationReleaseEvidenceService({
+    uiEvidenceService: createLearningAutomationUiEvidenceService(),
+    repository: {
+      saveEvidence(input) {
+        const evidence = Object.assign({
+          evidenceRecordId: `lgarev_${rows.length + 1}`,
+          status: input.status || input.evidence?.status || "pass",
+          observedAt: input.observedAt || "2026-06-16T07:00:00.000Z"
+        }, input);
+        rows.push(evidence);
+        return { ok: true, duplicate: false, evidence };
+      },
+      listEvidence(input) {
+        return rows.filter((row) => {
+          if (input.status && row.status !== input.status) return false;
+          if (input.evidenceKey && row.evidenceKey !== input.evidenceKey) return false;
+          return true;
+        });
+      }
+    }
+  });
+}
+
 function serviceWith(records = {}) {
   const bundleValue = records.bundle || bundle();
   const auditValue = records.audit || audit();
@@ -134,7 +206,7 @@ function serviceWith(records = {}) {
       };
     };
   }
-  const releaseEvidenceService = records.omitRecordEvidenceService ? null : {
+  const releaseEvidenceService = records.releaseEvidenceService || (records.omitRecordEvidenceService ? null : {
     recordEvidence(input) {
       records.releaseEvidenceRecordInputs = records.releaseEvidenceRecordInputs || [];
       records.releaseEvidenceRecordInputs.push(input);
@@ -153,7 +225,7 @@ function serviceWith(records = {}) {
         }
       };
     }
-  };
+  });
   return createLearningAutomationReleaseEvidenceCollectionService({
     now: () => new Date("2026-06-16T07:00:00.000Z"),
     evidenceBundleService: {
@@ -279,6 +351,62 @@ test("release evidence collection service gates release evidence record writes",
     "productionPlannerReadinessEvidence",
     "releaseEvidenceBundleAudit"
   ]);
+});
+
+test("release evidence collection service preserves UI evidence fields for persisted release evidence records", () => {
+  const rows = [];
+  const releaseEvidenceService = releaseEvidenceServiceWithRows(rows);
+  const result = serviceWith({
+    releaseEvidenceService,
+    bundle: bundle({
+      evidence: {
+        releasePackageReviewUiEvidence: validReleasePackageReviewUiEvidence()
+      },
+      tasks: [{
+        taskId: "release_package_review_ui",
+        status: "pass",
+        ok: true,
+        evidenceKey: "releasePackageReviewUiEvidence"
+      }],
+      summary: {
+        taskCount: 1,
+        passedCount: 1,
+        blockedCount: 0,
+        failedTaskIds: []
+      }
+    })
+  }).collect(Object.assign(scope(), {
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.collection.artifacts.releaseEvidenceRecords.status, "pass");
+  assert.deepEqual(result.collection.artifacts.releaseEvidenceRecords.evidenceKeys, [
+    "releaseEvidenceBundleAudit",
+    "releasePackageReviewUiEvidence"
+  ]);
+  const uiRow = rows.find((row) => row.evidenceKey === "releasePackageReviewUiEvidence");
+  assert.ok(uiRow);
+  assert.equal(uiRow.checkKey, "release_package_review_ui_evidence");
+  assert.equal(uiRow.evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
+  assert.equal(uiRow.evidence.validationSchemaVersion, "growth.learningAutomationUiEvidence.v1");
+  assert.equal(uiRow.evidence.validatedBy, "learning-automation-ui-evidence-service");
+  assert.equal(uiRow.evidence.uiGate, "release_package_review");
+  assert.equal(uiRow.evidence.readyForReleaseEvidence, true);
+  assert.equal(uiRow.evidence.uiEvidence.evidenceKey, "releasePackageReviewUiEvidence");
+  assert.equal(uiRow.evidence.uiEvidence.checkKey, "release_package_review_ui_evidence");
+  assert.equal(uiRow.evidence.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+  assert.deepEqual(uiRow.evidence.uiEvidence.coverage, [
+    "package_candidate_build",
+    "package_candidate_status",
+    "record_package_action"
+  ]);
+  assert.deepEqual(uiRow.evidence.uiEvidence.missingCoverage, []);
+  assert.equal(uiRow.evidence.uiEvidenceBoundary.homeAiOwnsVisualHarness, true);
+  assert.equal(uiRow.evidence.writefulSchedulingAllowed, false);
 });
 
 test("release evidence collection service surfaces release evidence record failures", () => {

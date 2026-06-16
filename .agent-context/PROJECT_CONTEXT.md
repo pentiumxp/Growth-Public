@@ -445,9 +445,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `learning_growth_automation_release_evidence` table only through
   `learning-automation-release-evidence-service.recordEvidence` when
   `--write-release-evidence-records --allow-write` or Owner route/workbench
-  authorization is present. The service owns no evidence repository and keeps
-  release-evidence record failures visible in the collection artifact instead
-  of fabricating readiness. It does not create release package records, release decisions,
+  authorization is present. For UI pass evidence from the bundle, the
+  collection service preserves only the bounded UI validator projection fields
+  during compaction so the release-evidence service can re-run the UI evidence
+  validator before saving a pass record. The service owns no evidence
+  repository and keeps release-evidence record failures visible in the
+  collection artifact instead of fabricating readiness. It does not create
+  release package records, release decisions,
   approvals, activation/runtime enablement rows, scheduler permission,
   deployment, publication, generation, evaluation, or learner-state mutation.
   The facade is deployed in Mac production at commit `2178bdc86b97`. A

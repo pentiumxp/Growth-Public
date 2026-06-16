@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T05:20+08:00 - Release Evidence Collection UI Record Preservation
+
+- Status: implemented and locally validated.
+- Change intent:
+  - close the backend/Harness gap where
+    `learning-automation-release-evidence-collection-service` could compact a
+    validated UI bundle artifact before persisting release evidence records and
+    drop the UI validator fields needed by
+    `learning-automation-release-evidence-service`;
+  - keep the release evidence boundary strict: UI pass records collected from
+    a bundle must still be revalidated by
+    `learning-automation-ui-evidence-service` before a pass row is saved.
+- Scope:
+  - `src/services/learning-automation-release-evidence-collection-service.js`
+    now preserves bounded UI evidence fields for canonical UI release evidence
+    keys during collection compaction;
+  - `tests/learning-automation-release-evidence-collection-service.test.js`
+    now proves a validated `releasePackageReviewUiEvidence` bundle artifact can
+    be compacted, handed to the real release-evidence service plus UI
+    validator, and persisted with validator schema/projection readback intact;
+  - Growth-local docs, the local platform pointer, and durable context now
+    describe the collection-to-release-evidence UI record path.
+- Boundary notes:
+  - no raw screenshot path, raw visual artifact, learner answer, transcript,
+    prompt, model output, or credential is persisted by this path;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-collection-service.js`
+    passed;
+  - `node --test tests/learning-automation-release-evidence-collection-service.test.js`
+    passed `10/10`;
+  - `node --test tests/learning-automation-release-evidence-collection-service.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js tests/growth-automation-release-evidence-smoke-script.test.js tests/learning-automation-ui-evidence-service.test.js tests/growth-ui-evidence-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js`
+    passed `63/63`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run --silent check` passed with `runtimeCount=201` and
+    `checkedCount=201`;
+  - `npm test` passed `867/867`;
+  - `git diff --check` passed.
+- Remaining gates:
+  - production Home AI visual/UI artifact and final production release evidence
+    are still separate open release gates;
+  - no production deployment in this slice unless explicitly requested after
+    completion.
+
 ## 2026-06-17T04:51+08:00 - Release Package UI Evidence Readiness Consumption
 
 - Status: implemented and locally validated. This handoff section belongs to

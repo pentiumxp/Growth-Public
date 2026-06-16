@@ -1,6 +1,6 @@
 # Growth AI Learning Implementation Plan
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 ## Purpose
 
@@ -143,7 +143,12 @@ AI-driven loop:
   evaluation into one summary-only collection pass without package records,
   release decisions, runtime config, scheduler permission, deployment, or card
   publication. Optional writes can delegate only to the existing collection-run
-  audit row with explicit Owner/write authorization. The facade has been
+  audit row and canonical pass release-evidence records through the existing
+  release-evidence service with explicit Owner/write authorization. For UI gate
+  evidence, the collection summarizer must preserve the validator projection
+  fields so `learning-automation-release-evidence-service` can re-run
+  `learning-automation-ui-evidence-service` before any pass record is saved.
+  The facade has been
   deployed to Mac production at Growth commit `2178bdc86b97`; production
   no-write smoke must be interpreted as collection-path evidence, not release
   approval. A subset run can pass bundle and audit while release-readiness
@@ -711,7 +716,9 @@ Implemented backend shape:
 - `learning-automation-release-evidence-service` records and lists
   summary-only release evidence records for canonical release-readiness evidence
   keys and projects active pass records back into release-readiness input before
-  one-off CLI/query evidence is evaluated;
+  one-off CLI/query evidence is evaluated. Pass UI evidence records must be
+  revalidated through `learning-automation-ui-evidence-service` before
+  persistence, including records proposed by release evidence collection;
 - `learning-automation-platform-action-evidence-service` reads only Growth
   event-outbox delivered `growth.automation.action_required` receipts and
   emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`
@@ -860,7 +867,13 @@ Implemented backend shape:
   release-readiness, and evaluates a collection-run readback into
   `growth.learningAutomationReleaseEvidenceCollection.v1`. It defaults to
   no-write; `--write-collection-run --allow-write` may persist only the
-  existing collection-run audit row. The Owner-only
+  existing collection-run audit row, while
+  `--write-release-evidence-records --allow-write` may persist only canonical
+  pass bundle evidence plus `releaseEvidenceBundleAudit` through
+  `learning-automation-release-evidence-service`. UI evidence from the bundle
+  remains validator-gated after collection compaction; the collection service
+  must preserve only summary validator fields, not raw screenshots or private
+  artifact paths. The Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` route
   exposes the same boundary from the plugin API. This facade is useful when
   Owner/release tooling needs a structured collection pass without building or

@@ -4,10 +4,14 @@ const {
   RELEASE_EVIDENCE_KEYS,
   canonicalReleaseEvidenceKey
 } = require("./learning-automation-release-evidence-service");
+const {
+  UI_GATE_SPECS
+} = require("./learning-automation-ui-evidence-service");
 
 const RELEASE_EVIDENCE_COLLECTION_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.v1";
 const RELEASE_EVIDENCE_RECORDS_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.records.v1";
 const RELEASE_EVIDENCE_KEY_SET = new Set(RELEASE_EVIDENCE_KEYS);
+const UI_EVIDENCE_KEY_SET = new Set(Object.keys(UI_GATE_SPECS));
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 
@@ -208,11 +212,78 @@ function compactOwnerReviewStageSummary(value = {}) {
   return hasEvidence ? summary : null;
 }
 
+function compactUiEvidencePayload(value = {}, evidenceKey = "") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const spec = UI_GATE_SPECS[evidenceKey] || {};
+  return Object.fromEntries(Object.entries({
+    source: cleanString(value.source || "growth-ui-evidence-harness", 120),
+    evidenceKey: cleanString(value.evidenceKey || value.evidence_key || evidenceKey, 160),
+    checkKey: cleanString(value.checkKey || value.check_key || spec.checkKey, 160),
+    uiGate: cleanString(value.uiGate || value.ui_gate || spec.uiGate, 120),
+    status: cleanString(value.status || (value.ok === true ? "pass" : ""), 80),
+    checkedAt: cleanString(value.checkedAt || value.checked_at || value.createdAt || value.created_at, 120),
+    clientVersion: cleanString(value.clientVersion || value.client_version, 120),
+    route: cleanString(value.route || value.path || value.screenRoute || value.screen_route, 180),
+    screen: cleanString(value.screen || value.view || value.surface, 120),
+    screenshotPresent: value.screenshotPresent === true || value.screenshot_present === true,
+    domEvidencePresent: value.domEvidencePresent === true || value.dom_evidence_present === true,
+    screenshotArtifactName: cleanString(value.screenshotArtifactName || value.screenshot_artifact_name, 180),
+    evidenceFilePresent: value.evidenceFilePresent === true || value.evidence_file_present === true,
+    evidenceFileName: cleanString(value.evidenceFileName || value.evidence_file_name, 180),
+    coverage: boundedArray(value.coverage || value.coverage_ids || value.coverageIds),
+    requiredCoverage: boundedArray(value.requiredCoverage || value.required_coverage || spec.requiredCoverage),
+    missingCoverage: boundedArray(value.missingCoverage || value.missing_coverage),
+    assertionCount: Number(value.assertionCount || value.assertion_count || 0) || 0,
+    failedAssertionCount: Number(value.failedAssertionCount || value.failed_assertion_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
+function compactUiEvidenceBoundary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    growthReadsOnlyEvidenceArtifacts: value.growthReadsOnlyEvidenceArtifacts === true || value.growth_reads_only_evidence_artifacts === true,
+    growthRunsNoVisualTooling: value.growthRunsNoVisualTooling === true || value.growth_runs_no_visual_tooling === true,
+    homeAiOwnsVisualHarness: value.homeAiOwnsVisualHarness === true || value.home_ai_owns_visual_harness === true,
+    noLearnerStateMutation: value.noLearnerStateMutation === true || value.no_learner_state_mutation === true,
+    noModelCalls: value.noModelCalls === true || value.no_model_calls === true
+  };
+}
+
+function compactUiEvidenceFields(source = {}, evidenceKey = "") {
+  const spec = UI_GATE_SPECS[evidenceKey] || null;
+  if (!spec) return {};
+  const nested = objectOnly(source.uiEvidence || source.ui_evidence);
+  const projected = Object.keys(nested).length
+    ? compactUiEvidencePayload(nested, evidenceKey)
+    : compactUiEvidencePayload(source, evidenceKey);
+  return Object.fromEntries(Object.entries({
+    checkKey: cleanString(source.checkKey || source.check_key || spec.checkKey, 160),
+    uiGate: cleanString(source.uiGate || source.ui_gate || spec.uiGate, 120),
+    validationSchemaVersion: cleanString(source.validationSchemaVersion || source.validation_schema_version || source.schemaVersion || source.schema_version, 180),
+    validatedBy: cleanString(source.validatedBy || source.validated_by, 160),
+    uiEvidence: projected,
+    uiEvidenceBoundary: compactUiEvidenceBoundary(source.uiEvidenceBoundary || source.ui_evidence_boundary),
+    missingRequired: boundedArray(source.missingRequired || source.missing_required),
+    privateValueFindingCount: Number(source.privateValueFindingCount || source.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
   const source = objectOnly(value);
   const ownerReviewSummary = evidenceKey === "ownerReviewEvidence"
     ? compactOwnerReviewStageSummary(source.ownerReviewStageSummary || source.owner_review_stage_summary || source.summary || source.ownerReview || source.owner_review)
     : null;
+  const uiEvidenceFields = UI_EVIDENCE_KEY_SET.has(evidenceKey)
+    ? compactUiEvidenceFields(source, evidenceKey)
+    : {};
   return Object.fromEntries(Object.entries(Object.assign({
     schemaVersion: cleanString(source.schemaVersion || source.schema_version || "growth.learningAutomationReleaseEvidenceRecord.collectionEvidence.v1", 180),
     privacyClass: "summary_only",
@@ -229,7 +300,7 @@ function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
     observedAt: cleanString(source.observedAt || source.observed_at || source.checkedAt || source.checked_at || source.createdAt || source.created_at || extra.observedAt, 120),
     readyForReleaseEvidence: source.readyForReleaseEvidence === true || source.ready_for_release_evidence === true || extra.readyForReleaseEvidence === true,
     ownerReviewStageSummary: ownerReviewSummary || undefined
-  }, extra)).filter(([, item]) => item !== undefined && item !== ""));
+  }, uiEvidenceFields, extra)).filter(([, item]) => item !== undefined && item !== ""));
 }
 
 function releaseEvidenceCandidates(scope, input, bundle, audit, collectionRun, createdAt) {
