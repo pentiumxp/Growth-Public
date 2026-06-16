@@ -213,6 +213,23 @@
       return query ? `?${query}` : "";
     }
 
+    function automationSchedulerWorkerTargetQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "limit", payload.limit || 6);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function cycleAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -334,6 +351,10 @@
 
     function fetchGrowthAutomationSchedulerRuns(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("automation", "scheduler", "runs")}${automationSchedulerRunQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function fetchGrowthAutomationSchedulerWorkerTargets(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "scheduler", "worker-targets")}${automationSchedulerWorkerTargetQuery(targetWorkspaceId, payload)}`);
     }
 
     function createGrowthAutomationProposal(payload = {}, targetWorkspaceId = getWorkspaceId()) {
@@ -492,6 +513,20 @@
       }, payload));
     }
 
+    function createGrowthAutomationSchedulerWorkerTarget(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "scheduler", "worker-targets"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function reviewGrowthAutomationSchedulerWorkerTarget(targetId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const id = clean(targetId);
+      if (!id) throw new Error("missing_scheduler_worker_target_id");
+      return postJson(growthApiPath("automation", "scheduler", "worker-targets", encodeURIComponent(id), "review"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function reviewGrowthRecommendationLifecycle(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("recommendations", "lifecycle", "review"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -513,6 +548,7 @@
       evaluateGrowthStageAssessment,
       executeGrowthAutomationSchedulerOnce,
       createGrowthAutomationActionHandoff,
+      createGrowthAutomationSchedulerWorkerTarget,
       createGrowthAutomationProposal,
       fetchCardGenerationContext,
       fetchGrowthAutomationActionHandoffs,
@@ -520,6 +556,7 @@
       fetchGrowthAutomationProposals,
       fetchGrowthAutomationSchedulerExecutions,
       fetchGrowthAutomationSchedulerRuns,
+      fetchGrowthAutomationSchedulerWorkerTargets,
       fetchGrowthCycleAudit,
       fetchGrowthCycleCompleteness,
       fetchGrowthCycleHistory,
@@ -539,6 +576,7 @@
       retryGrowthEvaluation,
       deliverGrowthAutomationActionHandoff,
       reviewGrowthAutomationDigest,
+      reviewGrowthAutomationSchedulerWorkerTarget,
       reviewGrowthAutomationProposal,
       reviewGrowthRecommendationLifecycle,
       resolveGrowthApiPath,

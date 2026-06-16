@@ -63,6 +63,14 @@
         actionResult: null,
         actionError: ""
       },
+      automationSchedulerWorkerTargets: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       recommendationLifecycle: {
         actionStatus: "idle",
         actionResult: null,
@@ -947,6 +955,45 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-scheduler-worker-target-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshAutomationSchedulerWorkerTargets().catch((error) => {
+          pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-scheduler-worker-target-create]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        createAutomationSchedulerWorkerTargetFromUi().catch((error) => {
+          pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-scheduler-worker-target-review]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        reviewAutomationSchedulerWorkerTargetFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-recommendation-lifecycle-review]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1115,6 +1162,14 @@
       actionResult: null,
       actionError: ""
     };
+    pageState.cardGeneration.automationSchedulerWorkerTargets = {
+      status: "loading",
+      data: pageState.cardGeneration.automationSchedulerWorkerTargets?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.recommendationLifecycle = {
       actionStatus: "idle",
       actionResult: null,
@@ -1151,6 +1206,7 @@
     await refreshAutomationActionHandoffs(requestedTargetWorkspaceId, context);
     await refreshAutomationSchedulerExecutions(requestedTargetWorkspaceId, context);
     await refreshAutomationSchedulerRuns(requestedTargetWorkspaceId, context);
+    await refreshAutomationSchedulerWorkerTargets(requestedTargetWorkspaceId, context);
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
@@ -1438,6 +1494,47 @@
     }
   }
 
+  async function refreshAutomationSchedulerWorkerTargets(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.automationSchedulerWorkerTargets || {};
+    pageState.cardGeneration.automationSchedulerWorkerTargets = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createAutomationSchedulerWorkerTargetQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthAutomationSchedulerWorkerTargets(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.automationSchedulerWorkerTargets = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.automationSchedulerWorkerTargets = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
   function automationProposalItems() {
     const holder = pageState.cardGeneration.automationProposals || {};
     const data = holder.data || {};
@@ -1469,6 +1566,17 @@
   function findAutomationActionHandoff(handoffId = "") {
     const id = clean(handoffId);
     return automationActionHandoffItems().find((handoff = {}) => clean(handoff.handoffId || handoff.handoff_id) === id) || null;
+  }
+
+  function automationSchedulerWorkerTargetItems() {
+    const holder = pageState.cardGeneration.automationSchedulerWorkerTargets || {};
+    const data = holder.data || {};
+    return Array.isArray(data.targets) ? data.targets : [];
+  }
+
+  function findAutomationSchedulerWorkerTarget(targetId = "") {
+    const id = clean(targetId);
+    return automationSchedulerWorkerTargetItems().find((target = {}) => clean(target.targetId || target.target_id || target.workerTargetId || target.worker_target_id) === id) || null;
   }
 
   function recommendationLifecycleItems() {
@@ -1583,6 +1691,32 @@
     const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
     return {
       payload: ui.createAutomationSchedulerRunPayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
+  function createAutomationSchedulerWorkerTargetPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationSchedulerWorkerTargetPayload !== "function") {
+      throw new Error("automation_scheduler_worker_target_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationSchedulerWorkerTargetPayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
+  function createAutomationSchedulerWorkerTargetReviewPayload(target = {}, status = "") {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationSchedulerWorkerTargetReviewPayload !== "function") {
+      throw new Error("automation_scheduler_worker_target_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationSchedulerWorkerTargetReviewPayload({ context, workspaceId: targetWorkspaceId, target, status }),
       targetWorkspaceId
     };
   }
@@ -1826,6 +1960,68 @@
       });
       await refreshAutomationSchedulerRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshAutomationSchedulerExecutions(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    }
+  }
+
+  async function createAutomationSchedulerWorkerTargetFromUi() {
+    const { payload, targetWorkspaceId } = createAutomationSchedulerWorkerTargetPayload();
+    pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationSchedulerWorkerTargets?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.createGrowthAutomationSchedulerWorkerTarget(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+        actionStatus: "created",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    }
+  }
+
+  async function reviewAutomationSchedulerWorkerTargetFromUi(button) {
+    const targetId = clean(button.dataset.automationSchedulerWorkerTargetId);
+    const status = clean(button.dataset.automationSchedulerWorkerTargetStatus);
+    const target = findAutomationSchedulerWorkerTarget(targetId);
+    if (!target) throw new Error("automation_scheduler_worker_target_not_found");
+    const { payload, targetWorkspaceId } = createAutomationSchedulerWorkerTargetReviewPayload(target, status);
+    pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationSchedulerWorkerTargets?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.reviewGrowthAutomationSchedulerWorkerTarget(targetId, payload, targetWorkspaceId);
+      pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+        actionStatus: "reviewed",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationSchedulerWorkerTargets = Object.assign({}, pageState.cardGeneration.automationSchedulerWorkerTargets, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     }
@@ -2308,6 +2504,14 @@
         actionResult: null,
         actionError: ""
       };
+      pageState.cardGeneration.automationSchedulerWorkerTargets = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       await refreshLearningLoopState(targetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
       await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
@@ -2315,6 +2519,7 @@
       await refreshAutomationActionHandoffs(targetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerExecutions(targetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerRuns(targetWorkspaceId, context, { silent: true });
+      await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {

@@ -850,7 +850,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   create/review routes. Worker target creation requires target/domain-pack/
   subject provisioning, review can move targets to `enabled`, `disabled`, or
   `archived`, and production worker targets must come from reviewed enabled
-  rows rather than environment JSON alone. It also includes a
+  rows rather than environment JSON alone. The embedded Owner `生成` tab now
+  lists worker target rows, can create a proposed target for the selected
+  visible/provisioned learner scope, and can review it as `enabled`,
+  `disabled`, or `archived`; the UI keeps `productionSchedulingAllowed=false`
+  and does not start workers, claim leases, call scheduler run/execution,
+  deliver handoffs, call Gateway, publish, evaluate, mutate runtime config, or
+  grant release permission. It also includes a
   default-disabled worker/lease backend through
   `learning-automation-scheduler-worker-service`,
   `automation-scheduler-worker-leases.js`, and

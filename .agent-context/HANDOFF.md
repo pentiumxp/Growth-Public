@@ -9,6 +9,92 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T23:35+08:00 - Automation Scheduler Worker Target Owner UI Controls
+
+- Status: implemented and locally validated; commit and push are still pending
+  in this turn. Not deployed per Owner instruction to deploy only after the
+  broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now lists persisted automation scheduler
+    worker target configuration rows for the selected Growth target;
+  - Owner can create one `proposed` worker target for a selected
+    visible/provisioned learner scope;
+  - Owner can review a target as `enabled`, `disabled`, or `archived`;
+  - even reviewed `enabled` rows remain configuration evidence only:
+    `productionSchedulingAllowed=false`, no worker starts, no lease is claimed,
+    and no scheduler run/execution is called.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationSchedulerWorkerTargets()`,
+    `createGrowthAutomationSchedulerWorkerTarget()`, and
+    `reviewGrowthAutomationSchedulerWorkerTarget()`, including Home AI plugin
+    proxy routing;
+  - `public/growth-card-generation-ui.js` adds summary-only worker-target
+    query/create/review payload builders, persisted target rows, review action
+    buttons, status counts, `productionSchedulingAllowed=false` wording, and
+    a `Worker Target` Owner panel;
+  - `public/app.js` loads worker target readbacks with Owner generation
+    context, wires refresh/create/review buttons, and refreshes worker targets
+    plus release-workbench readbacks after explicit actions;
+  - `public/index.html` static asset version is bumped to
+    `20260616-worker-target-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers API helpers, proxy paths,
+    Owner panel rendering, payload privacy, static version, and app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for worker-target list/create/review helpers;
+  - updated `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - syntax checks passed for `public/growth-api-client.js`,
+    `public/growth-card-generation-ui.js`, `public/app.js`,
+    `tests/growth-frontend-adapter.test.js`, and
+    `tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-scheduler-worker-target-repository.test.js
+    tests/learning-automation-scheduler-worker-target-service.test.js
+    tests/growth-automation-scheduler-worker-target-smoke-script.test.js
+    tests/growth-routes.test.js` passed `58/58`;
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - static cache key check passed for `20260616-worker-target-ui-v1` with 13
+    references and no stale action-handoff/scheduler-execution/scheduler-run
+    keys in `public/index.html`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI changed-file required-checks returned H1; required H1 checks passed:
+    `node tests/gateway-run-lifecycle-service.test.js`,
+    `node tests/gateway-run-start-service.test.js`,
+    `node tests/gateway-run-stream-service.test.js`, and
+    `node tests/runtime-config-provider.test.js`;
+  - Home AI H2/static checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/task-list-ui.test.js`, and
+    `node tests/static-cache-version-harness.test.js`;
+  - central iOS PWA visual harness passed:
+    `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url
+    http://127.0.0.1:19075/ --artifact-dir
+    /tmp/homeai-growth-worker-target-visual --timeout-ms 45000 --wait-ms 900`,
+    screenshot
+    `/tmp/homeai-growth-worker-target-visual/ios-pwa-visual-dark-growth-surfaces-20260616T153645Z.png`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,916 nodes, 19,979 edges, index
+    up to date.
+- AI Ops evidence:
+  - visual lane allocated and released:
+    `ios-pwa-3` / `http://127.0.0.1:19075/`;
+  - test evidence ledger record:
+    `evidence-490566aa-fb08-4d13-bd53-a5fe668c9ffb`;
+  - visual evidence ledger record:
+    `evidence-97f00c7e-6cea-4bf8-b77b-8047fba88ec3`.
+
 ## 2026-06-16T23:18+08:00 - Automation Scheduler Run Owner UI Controls
 
 - Status: implemented, locally validated, and committed/pushed as

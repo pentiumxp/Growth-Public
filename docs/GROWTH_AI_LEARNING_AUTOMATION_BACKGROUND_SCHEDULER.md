@@ -64,6 +64,8 @@ Implemented local worker/lease shape:
   `POST /api/v1/growth/automation/scheduler/worker-targets/:targetId/review`;
 - service-owned worker target smoke:
   `npm run smoke:scheduler-worker-target`;
+- embedded Owner UI: the Growth `生成` tab can list, create, and review
+  worker target rows for one selected visible/provisioned learner scope;
 - service: `learning-automation-scheduler-worker-service`;
 - repository: `automation-scheduler-worker-leases.js`;
 - table: `learning_growth_automation_scheduler_worker_leases`;
@@ -509,6 +511,23 @@ Worker target routes:
 - routes must not call Gateway, scheduler run, execution, publication,
   card-generation, stage-assessment, or repository functions directly.
 
+Scheduler worker target UI controls:
+
+- may call only `GET /api/v1/growth/automation/scheduler/worker-targets`,
+  `POST /api/v1/growth/automation/scheduler/worker-targets`, and
+  `POST /api/v1/growth/automation/scheduler/worker-targets/:targetId/review`
+  through the Growth API client;
+- must send summary-only target policy/readiness intent with
+  `productionSchedulingAllowed=false`;
+- may create only `proposed` configuration through the service and may review
+  existing rows only as `enabled`, `disabled`, or `archived`;
+- must render reviewed `enabled` rows as configuration evidence, not as worker
+  enablement;
+- must not start worker timers, claim leases, call scheduler run or scheduler
+  execution, deliver handoffs, call Gateway, publish cards, evaluate
+  submissions, activate stage assessments, mutate runtime config, or infer
+  release permission from UI state.
+
 ## Safety Gates
 
 Background scheduling can be considered only after all of these are complete:
@@ -517,8 +536,8 @@ Background scheduling can be considered only after all of these are complete:
 - Owner audit/correction UI is product-usable and privacy-tested.
 - Stage-assessment controls are separate from daily plan publication.
 - Proposal review UI exists.
-- Digest, failure-policy, action-handoff, execution, and scheduler-run UI
-  exists.
+- Digest, failure-policy, action-handoff, execution, scheduler-run, and worker
+  target UI exists.
 - Platform Action Inbox/Web Push receipt evidence has been collected through
   `npm run smoke:platform-action-evidence`, which reads only delivered Growth
   event-outbox receipts and does not inspect Home AI Action Inbox/Web Push
@@ -675,6 +694,11 @@ Required and implemented assertions:
   `background_supervised_tick` requests through the route, shows
   default-disabled blocked rows, and treats the panel as Owner glue rather than
   background scheduler enablement;
+- the embedded Owner UI lists persisted worker target rows, builds only
+  summary-only worker-target query/create/review payloads, sends proposed-target
+  create plus `enabled`/`disabled`/`archived` reviews through the route, shows
+  `productionSchedulingAllowed=false`, and treats reviewed targets as
+  configuration evidence rather than worker enablement;
 - `npm run smoke:scheduler-run` defaults to read-only list, requires explicit
   `--allow-write` for run/tick, records default-disabled blocked state, and
   keeps the CLI out of repositories, Gateway, execution, publication, card

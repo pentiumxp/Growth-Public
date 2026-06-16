@@ -876,6 +876,54 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function createAutomationSchedulerWorkerTargetQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationSchedulerWorkerTargetPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const plan = context.suggestedPlan || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const targetNodeIds = firstCleanArray(recommendation.targetNodeIds, plan.targetNodeIds, [recommendation.targetNodeId || plan.targetNodeId]);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      target_node_ids: targetNodeIds,
+      limit: 5,
+      policy: {
+        schemaVersion: "growth.learningAutomationSchedulerWorkerTarget.policy.v1",
+        summaryOnly: true,
+        workerMode: "background_worker_tick",
+        schedulerRunMode: "background_supervised_tick",
+        ownerReviewRequired: true,
+        targetProvisioningRequired: true,
+        actionHandoffRequiredBeforeScheduling: true,
+        productionSchedulingAllowed: false,
+        maxActionsPerTick: 5
+      },
+      requested_by: "owner"
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (value && typeof value === "object") return true;
+      return clean(value);
+    }));
+  }
+
+  function createAutomationSchedulerWorkerTargetReviewPayload({ context = {}, workspaceId = "", target = {}, status = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const targetId = clean(target.targetId || target.target_id || target.workerTargetId || target.worker_target_id);
+    const targetStatus = clean(status);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      target_id: targetId,
+      status: targetStatus,
+      reason: targetStatus === "enabled"
+        ? "Owner reviewed target for future scheduler worker evidence; production scheduling remains disabled."
+        : `Owner marked worker target ${targetStatus || "reviewed"}; no worker started.`,
+      reviewed_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
     const plan = context.suggestedPlan || {};
     const defaults = context.generationDefaults || {};
@@ -1516,6 +1564,113 @@
         ${automationSchedulerRunRows(holder, escapeHtml)}
       </div>
       ${automationSchedulerRunActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationSchedulerWorkerTargetStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "proposed") return "待复核";
+    if (value === "enabled") return "已复核";
+    if (value === "disabled") return "已停用";
+    if (value === "archived") return "已归档";
+    if (value === "submitting") return "保存中";
+    if (value === "created") return "已创建";
+    if (value === "reviewed") return "已复核";
+    if (value === "failed") return "失败";
+    return value || "记录";
+  }
+
+  function automationSchedulerWorkerTargetActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const target = result.target || {};
+    const targetId = clean(target.targetId || result.targetId);
+    if (!status || status === "idle") return "";
+    const detail = status === "created"
+      ? `Worker target 已创建${targetId ? `：${targetId}` : "，等待 Owner 复核。"}`
+      : status === "reviewed"
+        ? `Worker target 已记录为 ${automationSchedulerWorkerTargetStatusText(target.status)}${targetId ? `：${targetId}` : "。"}`
+        : status === "submitting"
+          ? "正在通过 Growth worker target service 写入。"
+          : error || "Worker target 操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-scheduler-worker-target-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationSchedulerWorkerTargetStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationSchedulerWorkerTargetRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const targets = asArray(data.targets).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取 worker target。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">Worker target 读取失败：${escapeHtml(clean(holder.error) || "automation_scheduler_worker_targets_failed")}</div>`;
+    if (!targets.length) return `<div class="learning-card-generation-proposal-empty">暂无 worker target。可以先创建一个 proposed target，等待 Owner 复核。</div>`;
+    return targets.map((target) => {
+      const targetId = clean(target.targetId || target.target_id || target.workerTargetId || target.worker_target_id);
+      const targetStatus = clean(target.status);
+      const policy = target.policy || {};
+      const readiness = target.readiness || {};
+      const summary = target.target || {};
+      const label = clean(summary.subject || target.subject || summary.domain || target.domain || "worker target");
+      const nodes = asArray(summary.targetNodeIds || target.targetNodeIds).map(clean).filter(Boolean).slice(0, 3);
+      const canEnable = targetStatus === "proposed" || targetStatus === "disabled";
+      const canDisable = targetStatus === "proposed" || targetStatus === "enabled";
+      const canArchive = targetStatus !== "archived";
+      const busy = holder.actionStatus === "submitting";
+      return `<div class="learning-card-generation-proposal-row" data-automation-scheduler-worker-target-row data-automation-scheduler-worker-target-id="${escapeHtml(targetId)}">
+        <span>
+          <strong>${escapeHtml(targetId || label)}</strong>
+          <small>${escapeHtml(`${label} · ${clean(target.horizon || summary.horizon || "daily_plan")}`)}</small>
+          <small>${escapeHtml(nodes.length ? `nodes ${nodes.join(" · ")}` : "reviewed target config only")}</small>
+          <small>${escapeHtml(`productionSchedulingAllowed=${policy.productionSchedulingAllowed === true || readiness.productionSchedulingAllowed === true ? "true" : "false"}`)}</small>
+        </span>
+        <em>${escapeHtml(automationSchedulerWorkerTargetStatusText(targetStatus))}</em>
+        ${canEnable || canDisable || canArchive ? `<div class="learning-card-generation-proposal-actions">
+          ${canEnable ? `<button type="button" data-automation-scheduler-worker-target-review data-automation-scheduler-worker-target-id="${escapeHtml(targetId)}" data-automation-scheduler-worker-target-status="enabled" ${busy ? "disabled" : ""}>启用记录</button>` : ""}
+          ${canDisable ? `<button type="button" data-automation-scheduler-worker-target-review data-automation-scheduler-worker-target-id="${escapeHtml(targetId)}" data-automation-scheduler-worker-target-status="disabled" ${busy ? "disabled" : ""}>停用</button>` : ""}
+          ${canArchive ? `<button type="button" data-automation-scheduler-worker-target-review data-automation-scheduler-worker-target-id="${escapeHtml(targetId)}" data-automation-scheduler-worker-target-status="archived" ${busy ? "disabled" : ""}>归档</button>` : ""}
+        </div>` : ""}
+      </div>`;
+    }).join("");
+  }
+
+  function automationSchedulerWorkerTargetPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationSchedulerWorkerTargets || {};
+    const data = holder.data || {};
+    const targets = asArray(data.targets);
+    const proposed = targets.filter((item) => clean(item.status) === "proposed").length;
+    const enabled = targets.filter((item) => clean(item.status) === "enabled").length;
+    const disabled = targets.filter((item) => clean(item.status) === "disabled").length;
+    const archived = targets.filter((item) => clean(item.status) === "archived").length;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    const reason = status === "loading"
+      ? "正在读取 worker target。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_scheduler_worker_targets_failed"
+        : "Worker target 是未来后台 worker 的 Owner 复核配置；创建和复核都不会启动 worker。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-worker-targets" data-automation-scheduler-worker-target-panel data-automation-scheduler-worker-target-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>Worker Target</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-scheduler-worker-target-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新 Target"}</button>
+          <button type="button" data-automation-scheduler-worker-target-create ${busy ? "disabled" : ""}>${busy ? "创建中" : "创建 Target"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>待复核</small><strong>${escapeHtml(String(proposed))}</strong></span>
+        <span><small>已复核</small><strong>${escapeHtml(String(enabled))}</strong></span>
+        <span><small>停用/归档</small><strong>${escapeHtml(String(disabled + archived))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationSchedulerWorkerTargetRows(holder, escapeHtml)}
+      </div>
+      ${automationSchedulerWorkerTargetActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -2453,6 +2608,7 @@
           ${automationActionHandoffPanel(context, state, escapeHtml)}
           ${automationSchedulerExecutionPanel(context, state, escapeHtml)}
           ${automationSchedulerRunPanel(context, state, escapeHtml)}
+          ${automationSchedulerWorkerTargetPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -2504,6 +2660,9 @@
     createAutomationSchedulerExecutionPayload,
     createAutomationSchedulerRunQueryPayload,
     createAutomationSchedulerRunPayload,
+    createAutomationSchedulerWorkerTargetQueryPayload,
+    createAutomationSchedulerWorkerTargetPayload,
+    createAutomationSchedulerWorkerTargetReviewPayload,
     createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,

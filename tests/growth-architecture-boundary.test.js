@@ -3863,6 +3863,12 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createAutomationSchedulerRunQueryPayload/);
   assert.match(generationUi, /createAutomationSchedulerRunPayload/);
   assert.match(generationUi, /data-automation-scheduler-run-once/);
+  assert.match(generationUi, /data-automation-scheduler-worker-target-panel/);
+  assert.match(generationUi, /createAutomationSchedulerWorkerTargetQueryPayload/);
+  assert.match(generationUi, /createAutomationSchedulerWorkerTargetPayload/);
+  assert.match(generationUi, /createAutomationSchedulerWorkerTargetReviewPayload/);
+  assert.match(generationUi, /data-automation-scheduler-worker-target-create/);
+  assert.match(generationUi, /data-automation-scheduler-worker-target-review/);
 
   const apiClient = read(path.join("public", "growth-api-client.js"));
   assert.match(apiClient, /fetchGrowthCycleHistory/);
@@ -3880,6 +3886,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /executeGrowthAutomationSchedulerOnce/);
   assert.match(apiClient, /fetchGrowthAutomationSchedulerRuns/);
   assert.match(apiClient, /runGrowthAutomationSchedulerOnce/);
+  assert.match(apiClient, /fetchGrowthAutomationSchedulerWorkerTargets/);
+  assert.match(apiClient, /createGrowthAutomationSchedulerWorkerTarget/);
+  assert.match(apiClient, /reviewGrowthAutomationSchedulerWorkerTarget/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
   assert.match(apiClient, /automation", "action-handoffs"/);
@@ -3887,6 +3896,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /automation", "scheduler", "execute-once"/);
   assert.match(apiClient, /automation", "scheduler", "runs"/);
   assert.match(apiClient, /automation", "scheduler", "run-once"/);
+  assert.match(apiClient, /automation", "scheduler", "worker-targets"/);
   assert.doesNotMatch(generationUi, /learning_growth_/);
   assert.doesNotMatch(generationUi, /raw_answer|raw_prompt|raw_model|source_document_body/);
 });
