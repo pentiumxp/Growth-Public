@@ -132,7 +132,8 @@ AI-driven loop:
   rows and treats environment JSON targets as local fallback rather than
   production approval;
 - release-readiness evidence backend for summary-only readiness evaluation,
-  bounded `evidenceReadback` catalog projection, and Owner-created snapshots.
+  bounded `evidenceReadback` catalog projection, release workbench smoke
+  evidence, and Owner-created snapshots.
   Snapshots persist the readback catalog in
   `learning_growth_automation_release_readiness.evidence_readback_json`. This
   boundary is advisory, keeps `writefulSchedulingAllowed=false`, and is not a
@@ -173,7 +174,7 @@ amount of code that already exists.
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
 | W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
-| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks plus persisted `evidenceReadback` and downstream controls/inventory/dashboard summary projection, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
+| W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks plus persisted `evidenceReadback` and downstream controls/inventory/dashboard/workbench summary projection, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
 
 Sequencing rule:
 
@@ -724,6 +725,14 @@ Implemented backend shape:
   Appium or running `npm run ios:pwa:visual` inside Growth. The release bundle
   records only bounded visual summary fields and file-presence metadata, not
   raw local artifact paths.
+  The explicit non-default `release_workbench` task maps
+  `npm run smoke:release-workbench` output into
+  `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final
+  Owner action-template read model without Codex hand-spliced DTOs. A passing
+  workbench task means bounded read routes, Owner record-route templates,
+  missing-key summaries, and next action were collected; it is not release
+  approval, runtime config enablement, scheduler permission, package recording,
+  or deployment.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -928,7 +937,9 @@ Required behavior:
   release-bundle task, optional final release-inventory readback through the
   non-default `release_inventory` release-bundle task, optional final
   release-dashboard readback through the non-default `release_dashboard`
-  release-bundle task, and explicit release approval records for each writeful
+  release-bundle task, optional final release-workbench readback through the
+  non-default `release_workbench` release-bundle task or
+  `--release-workbench-evidence`, and explicit release approval records for each writeful
   config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
@@ -979,13 +990,15 @@ Required harness:
 - `tests/growth-release-controls-smoke-script.test.js`;
 - `tests/learning-automation-release-dashboard-service.test.js`;
 - `tests/growth-release-dashboard-smoke-script.test.js`;
+- `tests/learning-automation-release-workbench-service.test.js`;
+- `tests/growth-release-workbench-smoke-script.test.js`;
 - `tests/learning-automation-release-package-service.test.js`;
 - `tests/learning-automation-release-package-repository.test.js`;
 - `tests/growth-release-package-script.test.js`;
 - `tests/learning-automation-release-evidence-bundle-service.test.js` and
   `tests/growth-release-evidence-bundle-script.test.js` for the optional
   non-default `release_controls`, `release_inventory`, and
-  `release_dashboard` evidence-bundle tasks;
+  `release_dashboard`, and `release_workbench` evidence-bundle tasks;
 - route tests in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`,
   including the `releaseReview` remediation fields;

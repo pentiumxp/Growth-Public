@@ -144,7 +144,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   separate required readiness check, and treats production learner daily-cycle
   smoke evidence as a separate required readiness check while still never
   calling daily-loop, cycle-history, or learner-cycle services from the
-  release-readiness boundary. It now also has
+  release-readiness boundary. It now also treats bounded release-workbench
+  smoke/readback evidence as a separate required readiness check after
+  `npm run smoke:release-workbench` or the explicit `release_workbench`
+  release evidence bundle task. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
   `--stage-checkpoint-evidence` after
@@ -155,6 +158,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
   `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
   flags, accepts
+  `--release-workbench-evidence` as final Owner action-template readback
+  evidence, accepts
   `--production-proposal-smoke-evidence` after
   `npm run smoke:proposal` has produced bounded read-only production proposal
   evidence, accepts
@@ -233,8 +238,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `productionOwnerAuditSmokeEvidence`, platform action evidence from delivered
   Growth event-outbox receipts into `platformActionEvidence`, central Home AI
   visual harness artifact validation into `centralVisualEvidence`, controlled daily-loop write smoke into
-  `productionDailyLoopWriteSmokeEvidence`, and learner-cycle audit smoke into
-  `productionLearnerCycleSmokeEvidence`; it does not write
+  `productionDailyLoopWriteSmokeEvidence`, learner-cycle audit smoke into
+  `productionLearnerCycleSmokeEvidence`, and explicit non-default release
+  workbench smoke into `releaseWorkbenchSmokeEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
   release-readiness or scheduler permission. The same builder now also exposes
   an explicit non-default `release_controls` task that runs
@@ -255,6 +261,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   The release evidence bundle can also collect it explicitly through the
   non-default `release_dashboard` task, which stores bounded
   `releaseDashboardSmokeEvidence` as final readback packaging only.
+  The release evidence bundle can also collect the final workbench action
+  template readback explicitly through the non-default `release_workbench`
+  task, which stores bounded `releaseWorkbenchSmokeEvidence`; task pass means
+  the read model was collected, not that release, runtime config, or scheduling
+  state changed.
   Growth now also has `npm run smoke:release-workbench`, a no-write
   Owner/visible-target action-template read model implemented by
   `learning-automation-release-workbench-service`,

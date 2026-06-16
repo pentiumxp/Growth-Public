@@ -210,6 +210,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--release-evidence-bundle-audit")) evidence.releaseEvidenceBundleAudit = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--platform-action-evidence")) evidence.platformActionEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--central-visual-evidence")) evidence.centralVisualEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--release-workbench-evidence")) evidence.releaseWorkbenchSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   return evidence;
 }
 

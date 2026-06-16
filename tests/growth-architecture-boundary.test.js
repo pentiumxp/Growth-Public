@@ -1640,6 +1640,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /platformActionEvidence/);
   assert.match(releaseReadinessService, /platform_action_evidence/);
   assert.match(releaseReadinessService, /attach_platform_action_evidence/);
+  assert.match(releaseReadinessService, /releaseWorkbenchSmokeEvidence/);
+  assert.match(releaseReadinessService, /release_workbench_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_release_workbench_readback_smoke/);
   assert.doesNotMatch(releaseReadinessService, /learningDailyLoopService/);
   assert.doesNotMatch(releaseReadinessService, /publishPlanItem/);
   assert.doesNotMatch(releaseReadinessService, /generateCard/);
@@ -2249,6 +2252,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /releaseInventorySmokeEvidence/);
   assert.match(service, /release_dashboard/);
   assert.match(service, /releaseDashboardSmokeEvidence/);
+  assert.match(service, /release_workbench/);
+  assert.match(service, /releaseWorkbenchSmokeEvidence/);
+  assert.match(service, /releaseWorkbenchSummaryFromSmoke/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
   assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);

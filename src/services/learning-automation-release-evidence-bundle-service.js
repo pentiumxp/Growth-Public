@@ -176,6 +176,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "releaseDashboardSmokeEvidence",
     script: "scripts/smoke-growth-release-dashboard.js",
     commandName: "npm run smoke:release-dashboard"
+  },
+  {
+    taskId: "release_workbench",
+    evidenceKey: "releaseWorkbenchSmokeEvidence",
+    script: "scripts/smoke-growth-release-workbench.js",
+    commandName: "npm run smoke:release-workbench"
   }
 ]);
 
@@ -551,10 +557,42 @@ function releaseDashboardSummaryFromSmoke(value = {}) {
   };
 }
 
+function releaseWorkbenchSummaryFromSmoke(value = {}) {
+  const workbench = value.releaseWorkbench && typeof value.releaseWorkbench === "object" ? value.releaseWorkbench : {};
+  return {
+    source: cleanString(value.source || "growth-learning-automation-release-workbench-service", 160),
+    status: cleanString(workbench.status || value.status, 120),
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 160),
+    ownerActionCount: Number(workbench.ownerActionCount || workbench.owner_action_count) || 0,
+    readRouteCount: Array.isArray(workbench.readRoutes || workbench.read_routes) ? (workbench.readRoutes || workbench.read_routes).length : 0,
+    recordRouteCount: Array.isArray(workbench.recordRoutes || workbench.record_routes) ? (workbench.recordRoutes || workbench.record_routes).length : 0,
+    missingEvidenceKeys: uniqueStrings(workbench.missingEvidenceKeys || workbench.missing_evidence_keys || []),
+    missingApprovalKeys: uniqueStrings(workbench.missingApprovalKeys || workbench.missing_approval_keys || []),
+    missingRecordKinds: uniqueStrings(workbench.missingRecordKinds || workbench.missing_record_kinds || []),
+    nextActionKey: cleanString(workbench.nextAction?.key || workbench.next_action?.key, 120),
+    actionEndpointKeys: uniqueStrings((workbench.ownerActions || workbench.owner_actions || [])
+      .map((action) => action && (action.endpointKey || action.endpoint_key))
+      .filter(Boolean)),
+    readRouteKeys: uniqueStrings((workbench.readRoutes || workbench.read_routes || [])
+      .map((route) => route && route.key)
+      .filter(Boolean)),
+    recordRouteKeys: uniqueStrings((workbench.recordRoutes || workbench.record_routes || [])
+      .map((route) => route && route.key)
+      .filter(Boolean)),
+    configChangeApplied: value.configChangeApplied === true,
+    runtimeConfigChange: value.runtimeConfigChange === true,
+    runtimeConfigMutationPerformed: value.runtimeConfigMutationPerformed === true,
+    writefulSchedulingAllowed: value.writefulSchedulingAllowed === true,
+    backgroundSchedulingAllowed: value.backgroundSchedulingAllowed === true,
+    backgroundWorkerAllowed: value.backgroundWorkerAllowed === true
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
   if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
+  if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
@@ -708,7 +746,7 @@ function taskSpecificArgs(task, scope) {
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
   }
-  if (task.taskId === "release_controls" || task.taskId === "release_inventory" || task.taskId === "release_dashboard") {
+  if (task.taskId === "release_controls" || task.taskId === "release_inventory" || task.taskId === "release_dashboard" || task.taskId === "release_workbench") {
     if (scope.collectionRunId) args.push("--collection-run-id", scope.collectionRunId);
     if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));
     if (scope.requiredApprovalKeys.length) args.push("--required-approval-keys", scope.requiredApprovalKeys.join(","));

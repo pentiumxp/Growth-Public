@@ -325,7 +325,10 @@ Use the Growth-owned release-readiness boundary:
   `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with
   `summaryOnly=true`, source bundle summary, present/missing counts, missing
-  check keys, and bounded per-check evidence references. `--write-snapshot`
+  check keys, and bounded per-check evidence references. The CLI also accepts
+  `--release-workbench-evidence` for the final no-write Owner action-template
+  readback after `npm run smoke:release-workbench` has produced bounded
+  `growth.learningAutomationReleaseWorkbench.v1` evidence. `--write-snapshot`
   persists that readback catalog in `evidence_readback_json`.
 - release evidence bundle builder CLI:
   `npm run smoke:release-evidence-bundle -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --target-node-id <target-node-id> --output-file <bundle.json> --json`.
@@ -377,6 +380,14 @@ Use the Growth-owned release-readiness boundary:
   `releaseEvidenceRecordCount`, `latestReleaseEvidenceRecordId`,
   `latestReleaseEvidenceKey`, `latestReleaseEvidenceCheckKey`, and
   `latestReleaseEvidenceStatus` in release inventory/dashboard outputs.
+  Final workbench action-template readback can be collected only by explicitly
+  adding `--task release_workbench`; that task is non-default, no-write,
+  delegates to `npm run smoke:release-workbench`, accepts the same release
+  readback flags, and maps the bounded output to
+  `releaseWorkbenchSmokeEvidence`. Passing this task means Owner action
+  templates, read routes, record routes, and missing-key summaries were
+  collected; it is not release approval, runtime config enablement, scheduling
+  permission, package recording, or deployment.
 - release evidence bundle audit CLI:
   `npm run smoke:release-evidence-bundle-audit -- --workspace-id <workspace> --release-evidence-bundle-file <bundle.json> --json`.
   This audit delegates to
@@ -540,6 +551,10 @@ Use the Growth-owned release-readiness boundary:
   It exists so Owner UI can show bounded read routes, Owner-only record-route
   templates, missing evidence/check/approval/record summaries, and manual
   runtime-config follow-up hints without Codex joining DTOs or applying config.
+  Its bounded output can be passed to release-readiness through
+  `--release-workbench-evidence` or collected by the non-default
+  `release_workbench` release evidence bundle task as
+  `releaseWorkbenchSmokeEvidence`.
   It owns no repository/table, does not run smoke tasks internally, and does
   not write, publish, schedule, notify, call Gateway, flip runtime config,
   grant scheduler permission, or mutate learner state.
@@ -654,6 +669,9 @@ The service aggregates summary-only readiness evidence:
   `learning-automation-scheduler-service.dryRun`;
 - Home AI platform Action Inbox/Web Push evidence;
 - central embedded-plugin visual evidence;
+- release workbench action-template readback evidence from
+  `npm run smoke:release-workbench` or from the non-default release-bundle
+  `release_workbench` task;
 - explicit release approval for each config gate, either as bounded one-off
   readiness input or as a persisted summary-only approval record read through
   `learning-automation-release-approval-service`:

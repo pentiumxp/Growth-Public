@@ -46,7 +46,8 @@ function allEvidence() {
     productionSchedulerDryRunSmokeEvidence: { ok: true, evidenceId: "scheduler_dry_run_smoke" },
     releaseEvidenceBundleAudit: { ok: true, evidenceId: "release_bundle_audit" },
     platformActionEvidence: { ok: true, evidenceId: "platform_action" },
-    centralVisualEvidence: { ok: true, evidenceId: "visual" }
+    centralVisualEvidence: { ok: true, evidenceId: "visual" },
+    releaseWorkbenchSmokeEvidence: { ok: true, evidenceId: "release_workbench" }
   };
 }
 
@@ -185,7 +186,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.evidenceReadback.schemaVersion, "growth.learningAutomationReleaseReadiness.evidenceReadback.v1");
   assert.equal(result.evidenceReadback.summaryOnly, true);
-  assert.equal(result.evidenceReadback.presentCount, 28);
+  assert.equal(result.evidenceReadback.presentCount, 29);
   assert.equal(result.evidenceReadback.missingCount, 0);
   assert.equal(result.evidenceReadback.writefulSchedulingAllowed, false);
   assert.equal(result.evidenceReadback.sourceBundle, null);
@@ -217,6 +218,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "release_evidence_bundle_audit").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "release_workbench_smoke_evidence").status, "pass");
   assert.deepEqual(calls.map((call) => call.type), [
     "listDigests",
     "evaluateFailurePolicy",
@@ -249,7 +251,7 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("active_failure_policy"), false);
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
   assert.equal(result.evidenceReadback.presentCount, 0);
-  assert.equal(result.evidenceReadback.missingCount, 28);
+  assert.equal(result.evidenceReadback.missingCount, 29);
   assert.equal(result.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
   const missingOwnerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
   assert.equal(missingOwnerDailyEvidence.evidencePresent, false);
@@ -278,6 +280,7 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_learner_cycle_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "missing");
+  assert.equal(result.checks.find((item) => item.key === "release_workbench_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_planner_readiness_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run_smoke_evidence").status, "missing");
   assert.equal(result.checks.find((item) => item.key === "writeful_execution_release_approval").status, "missing");
@@ -481,7 +484,7 @@ test("automation release readiness service creates summary-only snapshots and li
   assert.equal(created.snapshot.status, "ready_for_release_review");
   assert.equal(created.snapshot.summary.writefulSchedulingAllowed, false);
   assert.equal(created.snapshot.evidenceReadback.summaryOnly, true);
-  assert.equal(created.snapshot.evidenceReadback.presentCount, 28);
+  assert.equal(created.snapshot.evidenceReadback.presentCount, 29);
   assert.equal(calls.at(-1).type, "saveSnapshot");
   assert.equal(calls.at(-1).input.privacyClass, "summary_only");
   assert.equal(calls.at(-1).input.releaseReview.requiredActionCount, 0);

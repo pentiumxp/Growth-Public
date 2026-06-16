@@ -576,6 +576,45 @@ test("release evidence bundle script writes bounded release-dashboard readback f
   });
 });
 
+test("release evidence bundle script writes bounded release-workbench readback from no-write workbench smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "release-workbench-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--activation-gates", "writeful_execution",
+      "--required-approval-key", "writefulExecutionApproval",
+      "--task", "release_workbench",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.smoke, "npm run smoke:release-workbench");
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.source, "growth-learning-automation-release-workbench-service");
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.schemaVersion, "growth.learningAutomationReleaseWorkbench.v1");
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.writefulSchedulingAllowed, false);
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.runtimeConfigMutationPerformed, false);
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.actionEndpointKeys.includes("release_evidence"), true);
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.recordRouteKeys.includes("release_evidence"), true);
+    assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.readRouteKeys.includes("release_dashboard"), true);
+    assert.equal(fileBundle.scope.activationGates[0], "writeful_execution");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
 test("release evidence bundle script writes stage-checkpoint evidence from read-only stage smoke", () => {
   withTempDb(({ dir, dbPath }) => {
     const bundlePath = path.join(dir, "stage-bundle.json");

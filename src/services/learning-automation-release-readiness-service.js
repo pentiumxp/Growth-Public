@@ -583,6 +583,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       schedulerDryRunCheck(scope, input),
       presentCheck(inputWithReleaseEvidence, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
       presentCheck(inputWithReleaseEvidence, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
+      presentCheck(inputWithReleaseEvidence, "releaseWorkbenchSmokeEvidence", "release_workbench_smoke_evidence", "Release workbench action-template readback", "run_release_workbench_readback_smoke"),
       configGateCheck(inputWithReleaseApproval, config, "writeful_execution_release_approval", "automationWritefulExecutionEnabled", "writefulExecutionApproval", "Writeful execution release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_scheduler_release_approval", "automationBackgroundSchedulerEnabled", "backgroundSchedulerApproval", "Background scheduler release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")

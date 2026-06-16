@@ -184,9 +184,14 @@ per-check evidence references. `npm run smoke:release-readiness` passes bounded
 `evidenceBundleReadback` from versioned release evidence bundles into the
 service. Snapshot writes persist the catalog in
 `learning_growth_automation_release_readiness.evidence_readback_json`.
-Release controls, release inventory, and release dashboard DTOs may project
+Release controls, release inventory, release dashboard, and release workbench DTOs may project
 only bounded summary fields from that catalog, such as present/missing counts
 and source bundle ids/status/counts; they must not expose full evidence items.
+`releaseWorkbenchSmokeEvidence` is a Growth-local readiness input for the
+Owner action-template read model and may come from
+`--release-workbench-evidence` or the non-default `release_workbench`
+release-bundle task. It is readback evidence only and does not approve release,
+enable runtime config, record a package, grant scheduling permission, or deploy.
 
 This addendum is Growth-local only. It does not change the Home AI central
 platform contract, does not grant runtime config permission, and does not allow

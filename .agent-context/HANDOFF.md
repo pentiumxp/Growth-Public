@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T06:00Z - Release Workbench Evidence In Release-Readiness
+
+- Status: implemented and focused-Harness validated locally. This slice wires
+  the existing no-write Owner release workbench read model into release
+  evidence bundles and release-readiness as a first-class required evidence
+  item. It does not deploy, call Gateway/model vendors, publish plans/cards,
+  generate cards, evaluate submissions, execute scheduler actions, run
+  scheduler ticks, deliver notifications, activate stage assessments, mutate
+  learner state, write business state, flip runtime config, grant scheduler
+  permission, or record release packages.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now supports the
+    explicit non-default `release_workbench` task, delegates to
+    `npm run smoke:release-workbench`, and stores bounded
+    `releaseWorkbenchSmokeEvidence`;
+  - `learning-automation-release-readiness-service` now treats
+    `releaseWorkbenchSmokeEvidence` as the
+    `release_workbench_smoke_evidence` check with required action
+    `run_release_workbench_readback_smoke`;
+  - `scripts/smoke-growth-release-readiness.js` accepts
+    `--release-workbench-evidence`;
+  - `growth-routes.js` normalizes `releaseWorkbenchSmokeEvidence` /
+    `release_workbench_smoke_evidence` / `releaseWorkbenchEvidence` /
+    `release_workbench_evidence` through release-readiness, review,
+    activation, and package-build input paths;
+  - Growth docs now describe the new evidence key, bundle task, readiness
+    check, and non-release-switch boundary.
+- Focused validation passed:
+  - `node --check` on the touched service, route, script, and test files;
+  - `node --test tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`110/110`).
+- Broad and central validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    (`33/33`);
+  - focused release/readiness regression:
+    `node --test tests/growth-release-controls-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-release-inventory-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`123/123`);
+  - `npm run check` (`192/192` runtime JavaScript files covered);
+  - `npm test` (`773/773`);
+  - `git diff --check`;
+  - `codegraph sync` / `codegraph status` reported up to date with 339
+    JavaScript files indexed; CodeGraph still printed the existing
+    older-engine rebuild suggestion;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`.
+- AI Ops note:
+  - `node scripts/ai-ops-control-plane.js intake --task "Growth release
+    workbench readback evidence wiring for release-readiness; local docs and
+    harness only; no production deploy" --json` classified this local
+    release/readiness slice as H1 and required a Mac deployment plan. No
+    production deploy command was run because no runtime release was requested
+    or changed.
+- Progress calibration:
+  - keep using the full `Growth AI learning closed-loop MVP` denominator.
+    This slice advances L7 release-review evidence, not L2/L3 product browser
+    learning-loop closure. After this slice and broad validation, the overall
+    target is about 83% complete once commit/push closes it.
+
 ## 2026-06-16T05:00Z - Stage Checkpoint Controls Owner UI
 
 - Status: implemented and focused-Harness validated locally. This slice wires

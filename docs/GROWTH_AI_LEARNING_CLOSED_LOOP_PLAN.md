@@ -129,6 +129,7 @@ confused:
 | Learner card interaction | Generated daily cards support one submission, one evaluation, one optional reflection, audio evidence, and score-proportional completion. | The UI must keep at most one active text box per stage and must never require a pass-line retry for ordinary daily cards. |
 | Audit readback | Backend read routes expose plan, evidence, profile-delta, correction, cycle audit, selectable cycle history, and completeness DTOs. | Owner UI must render those DTOs as an explanation surface, older-cycle selector, and correction entry point without exposing raw private content. |
 | Supervised automation | Proposal creation, Owner decision, and accepted-proposal explicit publication are implemented as a non-scheduling backend layer. | Proposal review UI must exist before any scheduler; scheduling must start with read-only dry-run evidence and notification/action handoff design. |
+| Release-review evidence | Release-readiness can require bounded release workbench smoke evidence and evidence-bundle readback for Owner release tooling. | This remains L7/release-review evidence only; it does not advance the daily browser loop until Owner/learner learning flows and audit/correction UI are browser-operable and visually validated. |
 
 This distinction is important for planning. Growth can already create certain
 cards from the plugin UI, but the full AI-driven operating loop is not

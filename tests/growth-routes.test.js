@@ -2826,7 +2826,8 @@ test("growth automation release readiness routes are visible-target scoped and s
           proposalReviewUiEvidence: false,
           productionPlannerReadinessEvidence: false,
           platformActionEvidence: false,
-          centralVisualEvidence: false
+          centralVisualEvidence: false,
+          releaseWorkbenchSmokeEvidence: false
         },
         releaseApproval: {
           writefulExecutionApproval: true,
@@ -2934,7 +2935,8 @@ test("growth automation release readiness routes are visible-target scoped and s
           proposalReviewUiEvidence: undefined,
           productionPlannerReadinessEvidence: undefined,
           platformActionEvidence: undefined,
-          centralVisualEvidence: undefined
+          centralVisualEvidence: undefined,
+          releaseWorkbenchSmokeEvidence: undefined
         },
         releaseApproval: {
           writeful_execution_approval: { approved: true },
@@ -3206,7 +3208,8 @@ test("growth automation release readiness routes are visible-target scoped and s
         automationActionHandoffUiEvidence: false,
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: true,
-        schedulerWorkerTargetUiEvidence: false
+        schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
       }
     });
 
@@ -3243,6 +3246,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: ["writefulExecutionApproval"]
       }
     });
@@ -3280,6 +3284,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: ["writefulExecutionApproval", "backgroundSchedulerApproval"]
       }
     });
@@ -3317,6 +3322,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: ["backgroundWorkerApproval"],
         activationGates: ["writeful_execution", "background_scheduler"]
       }
@@ -3355,6 +3361,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: undefined,
         activationGates: ["writeful_execution"]
       }
@@ -3416,6 +3423,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: undefined,
         schedulerRunUiEvidence: undefined,
         schedulerWorkerTargetUiEvidence: undefined,
+        releaseWorkbenchSmokeEvidence: undefined,
         activationDecision: {
           decision: "approved_for_config_enablement"
         },
@@ -3671,6 +3679,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         schedulerExecutionUiEvidence: undefined,
         schedulerRunUiEvidence: undefined,
         schedulerWorkerTargetUiEvidence: true,
+        releaseWorkbenchSmokeEvidence: undefined,
         evidence: undefined,
         releaseApproval: {
           writefulExecutionApproval: undefined,
@@ -3943,6 +3952,7 @@ test("growth automation runtime enablement routes are Owner-write and visible-ta
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: undefined,
         activationGates: ["writeful_execution", "background_scheduler"],
         enablementStatus: "",
@@ -3984,6 +3994,7 @@ test("growth automation runtime enablement routes are Owner-write and visible-ta
         schedulerExecutionUiEvidence: false,
         schedulerRunUiEvidence: false,
         schedulerWorkerTargetUiEvidence: false,
+        releaseWorkbenchSmokeEvidence: false,
         requiredApprovalKeys: undefined,
         activationGates: ["writeful_execution"],
         enablementStatus: "ready_for_manual_runtime_config_enablement",
@@ -4155,6 +4166,7 @@ test("growth automation release controls route is visible-target read only", asy
       schedulerExecutionUiEvidence: false,
       schedulerRunUiEvidence: false,
       schedulerWorkerTargetUiEvidence: false,
+      releaseWorkbenchSmokeEvidence: false,
       requiredApprovalKeys: ["writefulExecutionApproval"],
       activationGates: ["writeful_execution", "background_scheduler"],
       enablementStatus: "",
@@ -4263,6 +4275,7 @@ test("growth automation release inventory route aggregates visible-target readba
       schedulerExecutionUiEvidence: false,
       schedulerRunUiEvidence: false,
       schedulerWorkerTargetUiEvidence: false,
+      releaseWorkbenchSmokeEvidence: false,
       requiredApprovalKeys: ["writefulExecutionApproval"],
       activationGates: ["writeful_execution"],
       enablementStatus: "",
@@ -4373,6 +4386,7 @@ test("growth automation release dashboard route aggregates visible-target releas
       schedulerExecutionUiEvidence: false,
       schedulerRunUiEvidence: false,
       schedulerWorkerTargetUiEvidence: false,
+      releaseWorkbenchSmokeEvidence: false,
       requiredApprovalKeys: ["writefulExecutionApproval"],
       activationGates: ["writeful_execution"],
       enablementStatus: "",
@@ -4481,6 +4495,7 @@ test("growth automation release workbench route returns visible-target Owner act
       schedulerExecutionUiEvidence: false,
       schedulerRunUiEvidence: false,
       schedulerWorkerTargetUiEvidence: false,
+      releaseWorkbenchSmokeEvidence: false,
       requiredApprovalKeys: ["writefulExecutionApproval"],
       activationGates: ["writeful_execution"],
       enablementStatus: "",
