@@ -9,6 +9,53 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:35+08:00 - Release Workbench UI Document Consistency Closure
+
+- Status: implemented, locally validated, and committed in the current local
+  HEAD. Push is pending for this slice.
+- Change intent:
+  - align the top-level V1 implementation status in
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` with the already
+    implemented release workbench UI/service contract;
+  - make the status summary list the full embedded UI action set:
+    `release_evidence`, `release_approval`,
+    `release_evidence_collection`, `release_decision`, `release_package`,
+    `release_activation`, and `runtime_enablement`;
+  - record the important safety semantics beside the status summary:
+    evidence collection uses only backend-derived bounded tasks and explicit
+    write flags, release decisions use latest-ready collection-run
+    auto-selection through the decision service, and package recording still
+    requires a real summary-only package candidate rather than a placeholder
+    route body.
+- Boundary notes:
+  - docs-only change;
+  - no runtime code changes;
+  - no Gateway/model-vendor calls;
+  - no release evidence collection run, package build, release decision,
+    activation, runtime enablement, scheduler execution, runtime config
+    mutation, deployment, or learner-state mutation.
+- Structural readback:
+  - `codegraph explore` over the release workbench UI/action/service symbols
+    showed the workbench read model delegates to release-readiness, controls,
+    inventory, and dashboard services;
+  - targeted source readback confirmed the action facade delegates supported
+    endpoints only to existing write services and forwards
+    `release_evidence_collection` / `release_decision` fields through the
+    existing service boundaries.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `121/121`.
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 5,003 nodes, 21,565 edges, and an
+    up-to-date index, with the existing earlier-engine reindex notice.
+- Remaining gates:
+  - push to configured Growth remotes.
+
 ## 2026-06-17T04:28+08:00 - Release Workbench UI Decision Action Closure
 
 - Status: implemented, locally validated, committed, and pushed to both

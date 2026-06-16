@@ -29,9 +29,17 @@ target enablement. The same Owner tab now also reads
 `GET /api/v1/growth/automation/release-workbench` and renders a summary-only
 release workbench panel. From that panel Owner can call
 `POST /api/v1/growth/automation/release-workbench/actions` for advertised
-`release_evidence`, `release_approval`, `release_package`,
-`release_activation`, and `runtime_enablement` actions. `release_package` is a
-two-step browser flow: Owner first builds a summary-only
+`release_evidence`, `release_approval`, `release_evidence_collection`,
+`release_decision`, `release_package`, `release_activation`, and
+`runtime_enablement` actions. `release_evidence_collection` runs only the
+bounded task list derived by the backend workbench template, can persist the
+collection-run row plus canonical pass release-evidence records only when the
+template forwards explicit write flags, and may complete while overall
+readiness remains incomplete. `release_decision` sends only summary decision
+metadata plus the explicit latest-ready collection-run auto-selection flag; the
+decision service still owns collection-run lookup, ready-run validation, and
+record persistence. `release_package` is a two-step browser flow: Owner first
+builds a summary-only
 `growth.learningAutomationReleasePackage.v1` candidate through
 `POST /api/v1/growth/automation/release-packages/build`, then records that
 candidate through the workbench action facade. A placeholder route body is
