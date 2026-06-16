@@ -11,8 +11,9 @@
 
 ## 2026-06-16T21:10+08:00 - Recommendation Lifecycle Owner UI Controls
 
-- Status: implemented, validated, and ready to commit/push; not deployed per
-  Owner instruction to deploy only after the broader slice is complete.
+- Status: implemented, validated, and committed/pushed as
+  `b039d96 Add recommendation lifecycle UI controls`; not deployed per Owner
+  instruction to deploy only after the broader slice is complete.
 - Change intent:
   - Owner generation UI now exposes the backend recommendation lifecycle review
     boundary for pending `recommendationLifecycle` rows;
