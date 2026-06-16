@@ -63,6 +63,14 @@ The top-level DTO contains:
 The gate list is advisory. Missing gate keys identify what Owner or release
 tooling should inspect next; they do not enable scheduling.
 
+Proposal lifecycle summary is intentionally more detailed than the execution
+gate. The proposal summary reports `proposed`, `accepted`, `skipped`,
+`expired`, and `superseded` counts, owner-decision count, and bounded proposal
+execution counts for `published`, `blocked`, and `failed`. Only `accepted`
+proposals satisfy the publishable proposal gate. `skipped`, `expired`, and
+`superseded` records are audit evidence only and must not become scheduler or
+publish permission.
+
 ## Release Evidence Integration
 
 `owner_review_evidence` is now part of the default release evidence bundle.
@@ -122,6 +130,11 @@ Required local harness:
 
 The smoke CLI is no-write. It instantiates the normal service graph and calls
 only `learningAutomationOwnerReviewEvidenceService.evaluate`.
+
+The service harness must cover repository-native proposal lifecycle states.
+In particular, `proposed` counts as pending review evidence, while `skipped`,
+`expired`, and `superseded` remain owner-decision audit counts and do not pass
+the accepted-proposal gate.
 
 ## Current Product Gap
 

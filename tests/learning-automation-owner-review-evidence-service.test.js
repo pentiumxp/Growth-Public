@@ -12,10 +12,13 @@ function createService(overrides = {}, calls = []) {
         calls.push({ type: "proposals", input });
         return {
           ok: true,
-          count: 2,
+          count: 5,
           proposals: [
             { proposalId: "lgaprop_accepted_1", status: "accepted", execution: { status: "blocked" } },
-            { proposalId: "lgaprop_pending_1", status: "pending" }
+            { proposalId: "lgaprop_proposed_1", status: "proposed" },
+            { proposalId: "lgaprop_skipped_1", status: "skipped", execution: { status: "failed" } },
+            { proposalId: "lgaprop_expired_1", status: "expired" },
+            { proposalId: "lgaprop_superseded_1", status: "superseded", execution: { status: "published" } }
           ]
         };
       }
@@ -138,8 +141,17 @@ test("owner review evidence composes summary-only automation state from existing
   assert.equal(result.schemaVersion, OWNER_REVIEW_EVIDENCE_SCHEMA);
   assert.equal(result.status, "owner_review_pipeline_ready");
   assert.equal(result.automationOwnerReviewEvidence.summaryOnly, true);
-  assert.equal(result.automationOwnerReviewEvidence.proposalCount, 2);
+  assert.equal(result.automationOwnerReviewEvidence.proposalCount, 5);
+  assert.equal(result.automationOwnerReviewEvidence.proposedProposalCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.acceptedProposalCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.skippedProposalCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.expiredProposalCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.supersededProposalCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.ownerDecisionProposalCount, 4);
+  assert.equal(result.automationOwnerReviewEvidence.proposalExecutionCount, 3);
+  assert.equal(result.automationOwnerReviewEvidence.publishedProposalExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.blockedProposalExecutionCount, 1);
+  assert.equal(result.automationOwnerReviewEvidence.failedProposalExecutionCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.reviewedDigestCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.deliveredHandoffCount, 1);
   assert.equal(result.automationOwnerReviewEvidence.schedulerExecutionCount, 1);
@@ -151,7 +163,14 @@ test("owner review evidence composes summary-only automation state from existing
   assert.deepEqual(result.automationOwnerReviewEvidence.missingGateKeys, []);
   assert.equal(result.releaseReadiness.readyForReleaseReview, false);
   assert.deepEqual(result.releaseReadiness.persistedEvidenceKeys, ["platformActionEvidence"]);
+  assert.equal(result.proposals.proposedCount, 1);
   assert.equal(result.proposals.acceptedCount, 1);
+  assert.equal(result.proposals.pendingCount, 1);
+  assert.equal(result.proposals.skippedCount, 1);
+  assert.equal(result.proposals.expiredCount, 1);
+  assert.equal(result.proposals.supersededCount, 1);
+  assert.equal(result.proposals.executionCount, 3);
+  assert.deepEqual(result.proposals.executionStatuses, { blocked: 1, failed: 1, published: 1 });
   assert.equal(result.digests.requiredActionCount, 1);
   assert.equal(result.actionHandoffs.deliveredCount, 1);
   assert.equal(result.failurePolicy.policyId, "lgafpol_active_1");

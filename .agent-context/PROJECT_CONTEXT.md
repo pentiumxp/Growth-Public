@@ -155,7 +155,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release evidence bundle task, the `--owner-review-evidence` readiness flag,
   or a persisted `owner_review_evidence` release evidence record. This evidence
   proves backend readback only and does not replace product UI or visual
-  evidence. The supervised automation P5-P9 SQLite repository chain now
+  evidence. Owner review evidence now also projects bounded proposal lifecycle
+  counts for `proposed`, `accepted`, `skipped`, `expired`, `superseded`,
+  owner-decision, and proposal execution statuses; only `accepted` proposals
+  satisfy the accepted-proposal gate. The supervised automation P5-P9 SQLite
+  repository chain now
   applies repository-level privacy scanning for privacy-risk keys, private
   path/token-looking string values, and non-summary privacy classes before any
   automation evidence persists. The covered repositories are proposal, digest,
@@ -241,7 +245,7 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
   smoke, stage-checkpoint controls readback smoke, platform action evidence,
   central visual evidence, proposal smoke, and backend Owner automation review
-  evidence in the default task set, and now also collects the
+  evidence with proposal lifecycle counts in the default task set, and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`

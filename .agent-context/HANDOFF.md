@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T13:56+08:00 - Owner Review Evidence Proposal Lifecycle Counts
+
+- Status: implemented, documented, and validated. This backend slice hardens
+  the Owner automation review evidence read model so proposal lifecycle state
+  is auditable after a completed learning cycle. Overall Growth closed-loop MVP
+  progress is about `78%`: backend evidence is stronger, but product visual
+  evidence, digest/action/execution UI, production evidence collection, and
+  broader rollout remain open.
+- Scope:
+  - `learning-automation-owner-review-evidence-service` now summarizes
+    `proposed`, `accepted`, `skipped`, `expired`, and `superseded` proposal
+    counts, owner-decision count, and bounded proposal execution counts for
+    `published`, `blocked`, and `failed`;
+  - `proposed` is treated as pending Owner-review evidence;
+  - only `accepted` proposals satisfy the accepted-proposal gate, so skipped,
+    expired, and superseded records remain audit evidence and do not grant
+    publish/scheduler permission;
+  - `learning-automation-release-evidence-bundle-service` now carries those
+    proposal lifecycle counts into the bounded `ownerReviewEvidence.summary`
+    projection without storing raw proposal rows.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Harness updated:
+  - `tests/learning-automation-owner-review-evidence-service.test.js`;
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`;
+  - `tests/growth-release-evidence-bundle-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-owner-review-evidence-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-architecture-boundary.test.js` (`76/76`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - targeted `node --check` for changed runtime/test files;
+  - `git diff --check`;
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `npm test` (`803/803`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth Owner automation owner-review evidence proposal lifecycle summary hardening; backend service docs harness only; no production deploy" --json`
+    classified this as H1 and did not require the visual lane.
+  - AI Ops evidence record:
+    `evidence-e06c2cdd-0fba-4821-92fb-9b196d4d5704`.
+  - The Home AI app deploy plan still reported unrelated native-notification/
+    Web Push dirty files and `main...origin/main [ahead 1]`; they were not
+    modified by this Growth slice.
+- CodeGraph status after edits: `347` JavaScript files, `4,641` nodes,
+  `18,588` edges.
+
 ## 2026-06-16T13:43+08:00 - Owner Selected-Cycle Proposal Creation UI
 
 - Status: implemented, documented, and full-Harness validated locally. This

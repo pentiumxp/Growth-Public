@@ -769,8 +769,10 @@ Implemented backend shape:
   The default `owner_review_evidence` task maps
   `npm run smoke:owner-review-evidence` output to `ownerReviewEvidence`.
   A passing owner-review task means the backend summary-only Owner automation
-  evidence read model was collected; it is not proposal/digest/action UI
-  evidence and is not mobile visual evidence.
+  evidence read model was collected, including proposal lifecycle counts for
+  `proposed`, `accepted`, `skipped`, `expired`, `superseded`, owner-decision,
+  and proposal execution statuses. It is not proposal/digest/action UI evidence
+  and is not mobile visual evidence.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -953,7 +955,8 @@ Required behavior:
   review, production proposal smoke evidence from `npm run smoke:proposal`,
   backend Owner review evidence from
   `npm run smoke:owner-review-evidence`, the release-readiness
-  `owner_review_evidence` key or persisted `ownerReviewEvidence` record,
+  `owner_review_evidence` key or persisted `ownerReviewEvidence` record
+  including bounded proposal lifecycle counts,
   automation digest UI, digest review,
   active failure policy, delivered action
   handoff, automation action handoff UI, production action handoff smoke evidence from

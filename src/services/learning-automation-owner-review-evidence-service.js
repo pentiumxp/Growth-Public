@@ -139,6 +139,11 @@ function countStatuses(records = []) {
   return counts;
 }
 
+function executionStatusOf(record = {}) {
+  const execution = objectOnly(record.execution);
+  return cleanString(execution.status || record.executionStatus || record.execution_status, 120);
+}
+
 function latestId(record = {}) {
   return cleanString(record.proposalId || record.proposal_id
     || record.digestId || record.digest_id
@@ -169,11 +174,27 @@ function listSummary(result = {}, listKey, idLabel) {
 function proposalSummary(result = {}) {
   const records = asArray(result.proposals);
   const base = listSummary(result, "proposals", "proposalId");
+  const decidedStatuses = new Set(["accepted", "skipped", "expired", "superseded"]);
+  const executionStatusCounts = {};
+  for (const record of records) {
+    const status = executionStatusOf(record);
+    if (!status) continue;
+    executionStatusCounts[status] = (executionStatusCounts[status] || 0) + 1;
+  }
   return Object.assign(base, {
+    proposedCount: records.filter((item) => statusOf(item) === "proposed").length,
     acceptedCount: records.filter((item) => statusOf(item) === "accepted").length,
-    pendingCount: records.filter((item) => ["pending", "draft", ""].includes(statusOf(item))).length,
+    skippedCount: records.filter((item) => statusOf(item) === "skipped").length,
+    expiredCount: records.filter((item) => statusOf(item) === "expired").length,
+    supersededCount: records.filter((item) => statusOf(item) === "superseded").length,
+    ownerDecisionCount: records.filter((item) => decidedStatuses.has(statusOf(item))).length,
+    pendingCount: records.filter((item) => ["proposed", "pending", "draft", ""].includes(statusOf(item))).length,
     rejectedCount: records.filter((item) => ["rejected", "declined"].includes(statusOf(item))).length,
-    executionCount: records.filter((item) => objectOnly(item.execution).status).length
+    executionCount: records.filter((item) => executionStatusOf(item)).length,
+    publishedExecutionCount: records.filter((item) => executionStatusOf(item) === "published").length,
+    blockedExecutionCount: records.filter((item) => executionStatusOf(item) === "blocked").length,
+    failedExecutionCount: records.filter((item) => executionStatusOf(item) === "failed").length,
+    executionStatuses: executionStatusCounts
   });
 }
 
@@ -413,7 +434,16 @@ function createLearningAutomationOwnerReviewEvidenceService(options = {}) {
         releaseReadinessStatus: summaries.releaseReadiness.status,
         releaseMissingCheckKeys: summaries.releaseReadiness.missingCheckKeys,
         proposalCount: summaries.proposals.count,
+        proposedProposalCount: summaries.proposals.proposedCount,
         acceptedProposalCount: summaries.proposals.acceptedCount,
+        skippedProposalCount: summaries.proposals.skippedCount,
+        expiredProposalCount: summaries.proposals.expiredCount,
+        supersededProposalCount: summaries.proposals.supersededCount,
+        ownerDecisionProposalCount: summaries.proposals.ownerDecisionCount,
+        proposalExecutionCount: summaries.proposals.executionCount,
+        publishedProposalExecutionCount: summaries.proposals.publishedExecutionCount,
+        blockedProposalExecutionCount: summaries.proposals.blockedExecutionCount,
+        failedProposalExecutionCount: summaries.proposals.failedExecutionCount,
         digestCount: summaries.digests.count,
         reviewedDigestCount: summaries.digests.reviewedCount,
         deliveredHandoffCount: summaries.actionHandoffs.deliveredCount,

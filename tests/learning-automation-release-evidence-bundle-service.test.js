@@ -193,6 +193,59 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
 });
 
+test("release evidence bundle service preserves owner-review proposal lifecycle counts", () => {
+  const { calls, service } = createServiceWithRunner(() => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-owner-review-evidence-service",
+      schemaVersion: "growth.learningAutomationOwnerReviewEvidence.v1",
+      status: "owner_review_pipeline_ready",
+      automationOwnerReviewEvidence: {
+        status: "owner_review_pipeline_ready",
+        passedGateCount: 9,
+        missingGateCount: 0,
+        proposalCount: 5,
+        proposedProposalCount: 1,
+        acceptedProposalCount: 1,
+        skippedProposalCount: 1,
+        expiredProposalCount: 1,
+        supersededProposalCount: 1,
+        ownerDecisionProposalCount: 4,
+        proposalExecutionCount: 3,
+        publishedProposalExecutionCount: 1,
+        blockedProposalExecutionCount: 1,
+        failedProposalExecutionCount: 1,
+        missingGateKeys: []
+      },
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["owner_review_evidence"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 1);
+  const summary = result.bundle.evidence.ownerReviewEvidence.summary;
+  assert.equal(summary.proposalCount, 5);
+  assert.equal(summary.proposedProposalCount, 1);
+  assert.equal(summary.acceptedProposalCount, 1);
+  assert.equal(summary.skippedProposalCount, 1);
+  assert.equal(summary.expiredProposalCount, 1);
+  assert.equal(summary.supersededProposalCount, 1);
+  assert.equal(summary.ownerDecisionProposalCount, 4);
+  assert.equal(summary.proposalExecutionCount, 3);
+  assert.equal(summary.publishedProposalExecutionCount, 1);
+  assert.equal(summary.blockedProposalExecutionCount, 1);
+  assert.equal(summary.failedProposalExecutionCount, 1);
+  assert.equal(JSON.stringify(result.bundle).includes("lgaprop_"), false);
+});
+
 test("release evidence bundle service blocks learner-cycle write operations from bundle scope", () => {
   const { calls, service } = createServiceWithRunner(() => {
     throw new Error("runner should not be called for learner-cycle write scope");

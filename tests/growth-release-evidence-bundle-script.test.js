@@ -835,6 +835,10 @@ test("release evidence bundle script writes bounded owner-review evidence from n
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.source, "growth-learning-automation-owner-review-evidence-service");
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.schemaVersion, "growth.learningAutomationOwnerReviewEvidence.v1");
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.status, "proposal_required");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.proposalCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.proposedProposalCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.acceptedProposalCount, 0);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.proposalExecutionCount, 0);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.missingGateKeys.includes("proposal_record_present"), true);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.writefulSchedulingAllowed, false);
     assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.runtimeConfigChange, false);

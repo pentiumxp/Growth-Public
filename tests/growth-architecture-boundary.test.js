@@ -1193,6 +1193,11 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationOwnerReviewEvidenceService, /schedulerRunService\.listRuns/);
   assert.match(automationOwnerReviewEvidenceService, /schedulerWorkerTargetService\.listTargets/);
   assert.match(automationOwnerReviewEvidenceService, /releaseReadinessService\.evaluateReadiness/);
+  assert.match(automationOwnerReviewEvidenceService, /proposedProposalCount/);
+  assert.match(automationOwnerReviewEvidenceService, /skippedProposalCount/);
+  assert.match(automationOwnerReviewEvidenceService, /expiredProposalCount/);
+  assert.match(automationOwnerReviewEvidenceService, /supersededProposalCount/);
+  assert.match(automationOwnerReviewEvidenceService, /publishedProposalExecutionCount/);
   assert.match(automationOwnerReviewEvidenceService, /summaryOnly: true/);
   assert.match(automationOwnerReviewEvidenceService, /writefulSchedulingAllowed: false/);
   assert.doesNotMatch(automationOwnerReviewEvidenceService, /require\(["']\.\.\/stores/);
@@ -2873,6 +2878,15 @@ test("Growth automation owner review evidence smoke CLI stays service-owned and 
   const scriptHarness = read(path.join("tests", "growth-automation-owner-review-evidence-smoke-script.test.js"));
   assert.match(scriptHarness, /delegates only to service evaluate/);
   assert.match(scriptHarness, /runs no-write read model against a temporary SQLite db/);
+
+  const bundleService = read(path.join("src", "services", "learning-automation-release-evidence-bundle-service.js"));
+  assert.match(bundleService, /ownerReviewSummaryFromSmoke/);
+  assert.match(bundleService, /proposedProposalCount/);
+  assert.match(bundleService, /supersededProposalCount/);
+  assert.match(bundleService, /failedProposalExecutionCount/);
+
+  const bundleHarness = read(path.join("tests", "learning-automation-release-evidence-bundle-service.test.js"));
+  assert.match(bundleHarness, /preserves owner-review proposal lifecycle counts/);
 });
 
 test("Growth automation release approval smoke CLI stays service-owned and write-gated", () => {
