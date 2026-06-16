@@ -14370,3 +14370,72 @@
     reported active lane `overflow-y:auto`, `clientHeight=471`,
     `scrollHeight=1026`, touchmove `laneScrollTop=439`, and
     `detailOpen=false`.
+
+## 2026-06-16T08:40Z - Release evidence production no-write closure advanced
+
+- Status:
+  - Growth release evidence bundle privacy normalization and release-evidence
+    canonical key coverage are deployed to Mac production.
+  - This closes the safe no-write/default-disabled production evidence subset
+    for Fanfan science without fabricating learner cycle evidence or enabling
+    scheduling.
+- Commits:
+  - `fce98d7` `fix: allow bounded privacy assertions in release evidence`;
+  - `5a77557` `fix: persist release readiness evidence keys`;
+  - both commits were pushed to `origin/main` and `public/main`.
+- Deployment:
+  - deployed with the central Home AI Mac deploy script, not a plugin-local
+    deploy path;
+  - latest deployed source ref: `5a7755726438`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T083649Z-plugin-growth-manual`;
+  - `com.hermesmobile.plugin.growth` restarted and manifest health passed.
+- Code changes:
+  - `learning-automation-release-evidence-bundle-service` allows only explicit
+    negative privacy assertions (`noFullTranscripts`, `noRawPrompts`) from
+    bounded smoke DTOs; real transcript, raw prompt, answer-key, token,
+    provider-config, or private-path fields still fail closed;
+  - `learning-automation-release-evidence-service` now supports
+    `stageCheckpointControlsEvidence` and `releaseWorkbenchSmokeEvidence` as
+    canonical persisted release evidence keys.
+- Harness/docs:
+  - updated release evidence bundle, release evidence service, and
+    release-readiness service tests;
+  - updated `docs/GROWTH_LEARNING_OPERATING_LOOP.md` and
+    `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - validation passed:
+    `npm run check`,
+    `node --test tests/learning-automation-release-evidence-bundle-service.test.js`,
+    `node --test tests/learning-automation-release-evidence-service.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-automation-release-evidence-smoke-script.test.js`,
+    `node --test tests/learning-automation-release-evidence-collection-service.test.js tests/growth-release-evidence-collection-smoke-script.test.js`,
+    and the release-related architecture-boundary subset.
+- Production evidence:
+  - production no-write collection for
+    `workspaceId=weixin_stephen`, `learnerId=fanfan`,
+    `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
+    `subject=science`, target
+    `kg_ls_science_scientific_enquiry_plan_investigative_work` now has
+    bundle `passedCount=11`, `blockedCount=0`, and bundle-audit `pass`;
+  - persisted summary-only release evidence bag now has 12 keys:
+    `productionPlannerReadinessEvidence`,
+    `productionDailyLoopPreviewSmokeEvidence`,
+    `productionLearningLoopStateSmokeEvidence`,
+    `productionCycleHistorySmokeEvidence`,
+    `productionOwnerAuditSmokeEvidence`,
+    `productionLearnerCycleSmokeEvidence`,
+    `productionTargetProvisioningSmokeEvidence`,
+    `stageCheckpointEvidence`,
+    `stageCheckpointControlsEvidence`,
+    `productionSchedulerDryRunSmokeEvidence`,
+    `productionRecommendationLifecycleSmokeEvidence`,
+    `releaseEvidenceBundleAudit`;
+  - release-readiness readback status is still `incomplete`, with
+    `pass=16`, `missing=27`, and `writefulSchedulingAllowed=false`.
+- Remaining gaps:
+  - do not mark production release-ready yet;
+  - real missing gates still include Owner daily/audit/proposal/digest/action
+    UI evidence, platform action evidence, central visual evidence, production
+    proposal/action/scheduler/worker smokes, reviewed digest/failure
+    policy/action handoff/worker target, profile-feedback from a real completed
+    cycle, controlled daily-loop write evidence, release workbench evidence,
+    Owner review evidence, and explicit release approvals.
