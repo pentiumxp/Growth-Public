@@ -203,13 +203,15 @@ test("release workbench action records evidence through the existing evidence se
 
 test("release workbench action runs evidence collection even when readiness remains incomplete", () => {
   const { service, calls } = serviceWith();
+  const releasePackageReviewUiEvidenceFile = "/Users/hermes-dev/.homeai-qa/release-package-review-ui.json";
   const result = service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence_collection",
     actionKey: "release_collection_run",
-    tasks: ["learning_loop_state"],
-    requiredTaskIds: ["learning_loop_state"],
+    tasks: ["learning_loop_state", "release_package_review_ui"],
+    requiredTaskIds: ["learning_loop_state", "release_package_review_ui"],
+    releasePackageReviewUiEvidenceFile,
     writeCollectionRun: true,
     writeReleaseEvidenceRecords: true,
     requestedBy: "owner"
@@ -223,12 +225,34 @@ test("release workbench action runs evidence collection even when readiness rema
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
   assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence_collection"]);
-  assert.deepEqual(calls[1][1].tasks, ["learning_loop_state"]);
-  assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state"]);
+  assert.deepEqual(calls[1][1].tasks, ["learning_loop_state", "release_package_review_ui"]);
+  assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state", "release_package_review_ui"]);
+  assert.equal(calls[1][1].releasePackageReviewUiEvidenceFile, releasePackageReviewUiEvidenceFile);
   assert.equal(calls[1][1].writeCollectionRun, true);
   assert.equal(calls[1][1].writeReleaseEvidenceRecords, true);
   assert.equal(calls[1][1].allowWriteCollection, true);
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action still blocks private paths outside transient artifact fields", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence_collection",
+    actionKey: "release_collection_run",
+    tasks: ["release_package_review_ui"],
+    evidence: {
+      artifactPath: "/Users/hermes-dev/.homeai-qa/release-package-review-ui.json"
+    },
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "release_workbench_action_privacy_failed");
+  assert.deepEqual(calls, []);
 });
 
 test("release workbench action requires only the selected endpoint write service", () => {

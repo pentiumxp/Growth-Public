@@ -460,6 +460,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `release_package_review_ui` bundle task can flow through this facade from a
   supplied summary UI artifact file; the raw artifact path is treated as
   transient input, stripped from public artifacts, and never persisted. The
+  release workbench now maps missing `release_package_review_ui_evidence` to
+  that collection task, Owner action routing accepts the matching transient
+  artifact-file field only as a whitelisted collection input, and the embedded
+  Owner UI preserves the derived task selector in its action payload. The
   service owns no evidence
   repository and keeps release-evidence record failures visible in the
   collection artifact instead of fabricating readiness. It does not create

@@ -65,6 +65,8 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--release-readiness-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseReadiness.v1", summaryOnly: true }),
     "--release-collection-run-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1", summaryOnly: true }),
     "--release-decision-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseDecision.v1", summaryOnly: true }),
+    "--central-visual-evidence-file", "/tmp/central-visual.json",
+    "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
     "--evidence-json", JSON.stringify({ evidenceId: "ui_1" }),
     "--requested-by", "owner"
   ]);
@@ -85,6 +87,8 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
   assert.equal(input.releaseCollectionRun.schemaVersion, "growth.learningAutomationReleaseCollectionRun.v1");
   assert.equal(input.releaseDecision.schemaVersion, "growth.learningAutomationReleaseDecision.v1");
+  assert.equal(input.centralVisualEvidenceFile, "/tmp/central-visual.json");
+  assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
 });

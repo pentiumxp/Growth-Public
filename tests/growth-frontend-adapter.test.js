@@ -1039,11 +1039,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           endpointKey: "release_evidence_collection",
           route: {
             body: {
-              tasks: ["profile_feedback", "platform_action", "central_visual"],
-              required_task_ids: ["profile_feedback", "platform_action", "central_visual"],
+              tasks: ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"],
+              required_task_ids: ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"],
               auto_select_latest_completed_cycle: true,
               write_collection_run: true,
-              write_release_evidence_records: true
+              write_release_evidence_records: true,
+              central_visual_evidence_file: "",
+              release_package_review_ui_evidence_file: ""
             }
           }
         }, {
@@ -1838,8 +1840,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       source: "missing_record",
       summaryOnly: true
     },
-    tasks: ["profile_feedback", "platform_action", "central_visual"],
-    required_task_ids: ["profile_feedback", "platform_action", "central_visual"],
+    tasks: ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"],
+    required_task_ids: ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"],
     auto_select_latest_completed_cycle: true,
     write_collection_run: true,
     write_release_evidence_records: true

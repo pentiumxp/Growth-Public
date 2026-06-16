@@ -4,6 +4,12 @@ const RELEASE_WORKBENCH_ACTION_SCHEMA = "growth.learningAutomationReleaseWorkben
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
+const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
+  "centralVisualEvidenceFile",
+  "central_visual_evidence_file",
+  "releasePackageReviewUiEvidenceFile",
+  "release_package_review_ui_evidence_file"
+]);
 
 const SUPPORTED_ENDPOINTS = Object.freeze([
   "release_readiness_snapshot",
@@ -58,6 +64,15 @@ function scanPrivateValues(value, path = "", findings = [], seen = new Set()) {
     if (findings.length >= 16) return findings;
   }
   return findings;
+}
+
+function inputForPrivacyScan(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(inputForPrivacyScan);
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [
+    key,
+    TRANSIENT_EVIDENCE_FILE_KEYS.has(key) ? "[transient_evidence_file]" : inputForPrivacyScan(child)
+  ]));
 }
 
 function scopeFrom(input = {}) {
@@ -270,7 +285,8 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   function recordAction(input = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("release_workbench_action_scope_required", scope);
-    const privacyFindings = scanPrivacyKeys(input).concat(scanPrivateValues(input)).slice(0, 16);
+    const privacyScope = inputForPrivacyScan(input);
+    const privacyFindings = scanPrivacyKeys(privacyScope).concat(scanPrivateValues(privacyScope)).slice(0, 16);
     if (privacyFindings.length) return unavailable("release_workbench_action_privacy_failed", scope, { privacyFindings });
 
     const endpointKey = endpointKeyFrom(input);

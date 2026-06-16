@@ -24,7 +24,8 @@ test("release workbench composes release services into Owner action templates wi
             missingEvidenceKeys: [
               "owner_daily_ui_evidence",
               "production_profile_feedback_smoke_evidence",
-              "production_daily_loop_write_smoke_evidence"
+              "production_daily_loop_write_smoke_evidence",
+              "release_package_review_ui_evidence"
             ],
             nextAction: {
               key: "owner_daily_ui_evidence",
@@ -81,7 +82,7 @@ test("release workbench composes release services into Owner action templates wi
           releaseDashboard: {
             status: "manual_runtime_config_required",
             requiredActionCount: 3,
-            missingEvidenceKeys: ["central_visual_evidence", "platform_action_evidence"],
+            missingEvidenceKeys: ["central_visual_evidence", "platform_action_evidence", "release_package_review_ui_evidence"],
             nextAction: {
               key: "manual_config_change",
               action: "enable_runtime_config",
@@ -122,18 +123,20 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(collectionAction.action, "run_release_evidence_collection");
   assert.equal(collectionAction.requiresPreparation, false);
   assert.equal(collectionAction.route.path, "/api/v1/growth/automation/release-evidence-collections/run");
-  assert.deepEqual(collectionAction.route.body.tasks, ["profile_feedback", "platform_action", "central_visual"]);
-  assert.deepEqual(collectionAction.route.body.required_task_ids, ["profile_feedback", "platform_action", "central_visual"]);
-  assert.deepEqual(collectionAction.collectionTaskIds, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(collectionAction.route.body.tasks, ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.route.body.required_task_ids, ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.collectionTaskIds, ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"]);
   assert.deepEqual(collectionAction.writeGatedCollectionTaskIds, ["daily_loop_write"]);
   assert.deepEqual(collectionAction.unsupportedCollectionKeys, ["owner_daily_ui_evidence"]);
+  assert.equal(collectionAction.route.body.central_visual_evidence_file, "");
+  assert.equal(collectionAction.route.body.release_package_review_ui_evidence_file, "");
   assert.equal(collectionAction.route.body.write_collection_run, true);
   assert.equal(collectionAction.route.body.write_release_evidence_records, true);
   assert.equal(collectionAction.route.body.auto_select_latest_completed_cycle, true);
   const decisionRoute = result.releaseWorkbench.recordRoutes.find((route) => route.key === "release_decision");
   assert.equal(decisionRoute.route.body.auto_select_latest_ready_collection_run, true);
   assert.equal(decisionRoute.route.body.status, "approved");
-  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual", "release_package_review_ui"]);
   assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
   assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, ["owner_daily_ui_evidence"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
@@ -154,7 +157,8 @@ test("release workbench composes release services into Owner action templates wi
     "owner_daily_ui_evidence",
     "platform_action_evidence",
     "production_daily_loop_write_smoke_evidence",
-    "production_profile_feedback_smoke_evidence"
+    "production_profile_feedback_smoke_evidence",
+    "release_package_review_ui_evidence"
   ].sort());
   assert.deepEqual(result.releaseWorkbench.missingApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(result.releaseWorkbench.missingRecordKinds, ["release_collection_run", "release_package", "runtime_enablement"]);

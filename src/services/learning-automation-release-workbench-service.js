@@ -20,6 +20,7 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
   "proposal",
   "platform_action",
   "central_visual",
+  "release_package_review_ui",
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -50,12 +51,19 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
   production_scheduler_dry_run_smoke_evidence: "scheduler_dry_run",
   platform_action_evidence: "platform_action",
   central_visual_evidence: "central_visual",
+  release_package_review_ui_evidence: "release_package_review_ui",
   release_workbench_smoke_evidence: "release_workbench",
   owner_review_evidence: "owner_review_evidence"
 });
 const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
   production_daily_loop_write_smoke_evidence: "daily_loop_write"
 });
+const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
+  "centralVisualEvidenceFile",
+  "central_visual_evidence_file",
+  "releasePackageReviewUiEvidenceFile",
+  "release_package_review_ui_evidence_file"
+]);
 
 function cleanString(value, max = 160) {
   return String(value || "").trim().slice(0, max);
@@ -111,6 +119,15 @@ function scanPrivateValues(value, path = "", findings = [], seen = new Set()) {
     if (findings.length >= 16) return findings;
   }
   return findings;
+}
+
+function inputForPrivacyScan(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(inputForPrivacyScan);
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [
+    key,
+    TRANSIENT_EVIDENCE_FILE_KEYS.has(key) ? "[transient_evidence_file]" : inputForPrivacyScan(child)
+  ]));
 }
 
 function scopeFrom(input = {}) {
@@ -252,6 +269,12 @@ function releaseEvidenceCollectionBody(scope = {}, taskIds = [], requiredTaskIds
   if (asArray(taskIds).includes("profile_feedback")) {
     body.auto_select_latest_completed_cycle = true;
   }
+  if (asArray(taskIds).includes("central_visual")) {
+    body.central_visual_evidence_file = "";
+  }
+  if (asArray(taskIds).includes("release_package_review_ui")) {
+    body.release_package_review_ui_evidence_file = "";
+  }
   return body;
 }
 
@@ -379,6 +402,7 @@ function endpointForAction(action = {}) {
   if (/readiness.*snapshot/.test(key) || /readiness.*snapshot/.test(kind)) return "release_readiness_snapshot";
   if (/runtime|manual_config/.test(key) || /runtime|manual_config/.test(kind)) return "runtime_enablement";
   if (/activation/.test(key) || /activation/.test(kind)) return "release_activation";
+  if (/record_release_evidence|release_evidence_record/.test(kind) || /record_release_evidence|release_evidence_record/.test(key)) return "release_evidence";
   if (/package/.test(key) || /package/.test(kind)) return "release_package";
   if (/approval/.test(key) || /approval/.test(kind)) return "release_approval";
   if (/decision/.test(key) || /decision/.test(kind)) return "release_decision";
@@ -541,7 +565,8 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
   function workbench(input = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("learning_automation_release_workbench_scope_required", scope);
-    const inputPrivacyFindings = scanPrivacyKeys(input).concat(scanPrivateValues(input)).slice(0, 16);
+    const inputPrivacyScope = inputForPrivacyScan(input);
+    const inputPrivacyFindings = scanPrivacyKeys(inputPrivacyScope).concat(scanPrivateValues(inputPrivacyScope)).slice(0, 16);
     if (inputPrivacyFindings.length) {
       return unavailable("learning_automation_release_workbench_privacy_failed", scope, { privacyFindings: inputPrivacyFindings });
     }

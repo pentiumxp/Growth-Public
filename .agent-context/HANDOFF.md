@@ -17319,3 +17319,60 @@
     evidence over real production inputs;
   - keep scheduler/runtime writeful execution disabled until the remaining
     release gates and Owner approvals exist.
+
+## 2026-06-17T00:00Z - Release package review UI collection is reachable from Owner workbench
+
+- Status:
+  - Implemented local Growth backend/docs/harness slice.
+  - No production deploy was executed.
+  - Progress estimate remains about 97% for backend release-evidence closure
+    when excluding broad new slice-test expansion. This removes a remaining
+    Owner/workbench API gap; real production visual artifacts and release
+    approvals remain outside this local slice.
+- Implemented behavior:
+  - `learning-automation-release-workbench-service` now maps missing
+    `release_package_review_ui_evidence` to the explicit
+    `release_package_review_ui` release-evidence collection task instead of
+    surfacing it as unsupported/manual-only evidence.
+  - The workbench collection route template now includes empty
+    `central_visual_evidence_file` and
+    `release_package_review_ui_evidence_file` placeholders when those tasks are
+    selected. These placeholders are hints for Owner/release tooling; Growth
+    still does not run Home AI visual tooling and still does not persist raw
+    artifact paths.
+  - `learning-automation-release-workbench-action-service`, route
+    normalization, and `scripts/smoke-growth-release-workbench-action.js` now
+    accept whitelisted transient evidence-file inputs for the collection
+    action. Those values are redacted before action/workbench privacy scanning
+    and forwarded only to `learning-automation-release-evidence-collection-service`.
+    Private paths outside those whitelisted fields remain blocked.
+  - The Owner UI payload builder preserves the derived
+    `release_package_review_ui` task selector and optional non-empty artifact
+    file fields supplied by the backend action template.
+  - The workbench action classifier now treats `record_release_evidence`
+    actions as release-evidence actions before matching the word `package`, so
+    `release_package_review_ui_evidence` is not misrouted to package-record
+    actions.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - `node --check src/services/learning-automation-release-workbench-action-service.js`;
+  - `node --check src/routes/growth-routes.js`;
+  - `node --check scripts/smoke-growth-release-workbench-action.js`;
+  - `node --check public/growth-card-generation-ui.js`;
+  - focused workbench/action/collection/frontend/route/architecture harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/learning-automation-release-evidence-collection-service.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `143/143`.
+- Remaining next-step candidates:
+  - collect real Home AI visual/UI summary artifacts for release package review
+    and the other UI gates through the central Home AI visual toolchain;
+  - collect platform Action Inbox/Web Push evidence, controlled daily-loop
+    write evidence, real production profile-feedback evidence, and explicit
+    release approvals;
+  - run docs locality, `npm run check`, full `npm test`, `git diff --check`,
+    and CodeGraph sync/status before the next commit/push.

@@ -90,6 +90,8 @@ function inputFromArgs(args) {
     releaseReadiness: parseJsonArg(args, ["--release-readiness-json", "--releaseReadinessJson", "--readiness-json", "--readinessJson"], undefined),
     releaseCollectionRun: parseJsonArg(args, ["--release-collection-run-json", "--releaseCollectionRunJson", "--collection-run-json", "--collectionRunJson", "--run-json", "--runJson"], undefined),
     releaseDecision: parseJsonArg(args, ["--release-decision-json", "--releaseDecisionJson", "--decision-json", "--decisionJson"], undefined),
+    centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
+    releasePackageReviewUiEvidenceFile: firstArgValue(args, ["--release-package-review-ui-evidence-file", "--releasePackageReviewUiEvidenceFile", "--ui-evidence-file", "--uiEvidenceFile"], ""),
     releasePackage: parseJsonArg(args, ["--release-package-json", "--releasePackageJson"], undefined),
     action: parseJsonArg(args, ["--action-json", "--actionJson"], undefined),
     evidence: parseJsonArg(args, ["--evidence-json", "--evidenceJson"], undefined),

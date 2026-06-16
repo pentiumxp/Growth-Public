@@ -666,6 +666,8 @@
       if (routeBody.auto_select_latest_completed_cycle === true || routeBody.autoSelectLatestCompletedCycle === true) {
         payload.auto_select_latest_completed_cycle = true;
       }
+      payload.central_visual_evidence_file = clean(routeBody.central_visual_evidence_file || routeBody.centralVisualEvidenceFile);
+      payload.release_package_review_ui_evidence_file = clean(routeBody.release_package_review_ui_evidence_file || routeBody.releasePackageReviewUiEvidenceFile);
     }
     if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
       payload.release_package = releasePackage;
