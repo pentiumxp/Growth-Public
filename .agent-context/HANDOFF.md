@@ -11,10 +11,10 @@
 
 ## 2026-06-16T23:35+08:00 - Automation Scheduler Worker Target Owner UI Controls
 
-- Status: implemented, locally validated, and committed as
-  `4961eec Add scheduler worker target Owner UI controls`; push is still
-  pending in this turn. Not deployed per Owner instruction to deploy only after
-  the broader slice is complete.
+- Status: implemented, locally validated, and committed/pushed as
+  `4961eec Add scheduler worker target Owner UI controls` plus
+  `bc3aead Update scheduler worker target UI handoff status`; not deployed per
+  Owner instruction to deploy only after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation scheduler
     worker target configuration rows for the selected Growth target;
