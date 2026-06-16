@@ -9,6 +9,73 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T18:56+08:00 - Release Workbench Evidence Flag Hardening
+
+- Status: implemented, tested, pushed, deployed, and production-smoked. This
+  backend/docs/harness slice continues tightening release-readiness evidence
+  inputs beyond UI gates.
+- Change intent:
+  - `learning-automation-release-readiness-service.presentCheck()` now treats
+    provided but non-passing release evidence as `blocked`, preserving bounded
+    `invalidReason` in evidence readback;
+  - deprecated `--release-workbench-evidence` no longer fabricates
+    `{ok:true}` for `releaseWorkbenchSmokeEvidence`;
+  - valid workbench evidence must come from `npm run smoke:release-workbench`
+    through explicit evidence JSON, the non-default `release_workbench`
+    release evidence bundle task, or a persisted release-evidence record
+    projection;
+  - `evidenceReadback.items[]` now exposes bounded `invalidReason` for blocked
+    provided evidence so Owner/release tooling can distinguish missing evidence
+    from invalid/deprecated evidence.
+- Boundary:
+  - readiness remains advisory and always keeps `writefulSchedulingAllowed=false`;
+  - the readiness CLI still delegates to the normal service graph and does not
+    run workbench smoke tasks, visual tooling, Gateway, publication,
+    generation, evaluation, scheduler execution, notification delivery, stage
+    activation, learner-state mutation, runtime config mutation, or deployment;
+  - this change does not make release workbench evidence a release approval or
+    package record.
+- Validation:
+  - focused service/script/architecture/docs tests passed with `55/55`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `npm run check` passed;
+  - full Growth `npm test` passed with `834/834`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `git diff --check` passed;
+  - CodeGraph status after sync: 355 files, 4,814 nodes, 19,215 edges, index
+    up to date.
+- Commit/deploy:
+  - commit: `c3016a5ba40d` (`Harden release workbench readiness evidence flag`);
+  - pushed to `origin/main` and `public/main`;
+  - deployed through the central Home AI Mac plugin deploy path;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T105501Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - manifest health check passed on attempt 2;
+  - codex shared-auth repair passed;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+- Production smoke:
+  - ran deployed `scripts/smoke-growth-release-readiness.js` as `hermes-host`
+    under `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - used an initialized temporary SQLite DB under `/tmp`, removed after the
+    run, with no production Growth SQLite writes;
+  - deprecated `--release-workbench-evidence` returned `ok=true`,
+    `status=blocked`, check `release_workbench_smoke_evidence.status=blocked`,
+    `invalidReason=validated_release_workbench_evidence_required`,
+    `requiredAction.action=provide_validated_release_workbench_evidence`, and
+    matching bounded `evidenceReadback` invalid reason.
+- AI Ops evidence:
+  - `evidence-f2fc8b27-b297-4d1d-8052-1d109b11d1ed`.
+- Next:
+  - repeat this hardening pattern for the remaining one-off production smoke
+    flags that still map directly to `{ok:true}` where a service-owned smoke or
+    release-bundle artifact already exists;
+  - real release readiness still requires central Home AI visual/UI artifacts,
+    production completed-cycle/profile feedback evidence, platform Action
+    Inbox/Web Push evidence, controlled daily-loop evidence, and explicit
+    release approvals.
+
 ## 2026-06-16T18:35+08:00 - Release-Readiness UI Evidence Input Hardening
 
 - Status: implemented, tested, pushed, deployed, and production-smoked. This
