@@ -782,11 +782,13 @@ Required closure:
   class, and privacy-risk key rejection;
 - release approval repository and service tests for idempotent approval
   persistence, canonical gate aliases, readiness approval bag projection,
-  privacy class, and privacy-risk key rejection;
+  privacy class, privacy-risk key rejection, and private path/token-looking
+  value rejection;
 - service tests for each prerequisite, dependency failure, disabled config,
   missing evidence, persisted approval fallback, and all-pass snapshot status;
 - release approval smoke-script tests for read-only default behavior, explicit
-  write gating, invalid JSON, and temporary-SQLite record/readback;
+  write gating, invalid JSON, private path/token-looking value rejection, and
+  temporary-SQLite record/readback;
 - route tests for Owner/workspace authorization and visible-target scoping;
 - architecture guard proving no forbidden Gateway/publication/evaluation/
   scheduler/stage-assessment calls;

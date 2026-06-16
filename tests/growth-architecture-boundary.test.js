@@ -1073,6 +1073,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseApprovalService, /repository\.listApprovals/);
   assert.match(automationReleaseApprovalService, /summaryOnly: true/);
   assert.match(automationReleaseApprovalService, /writefulSchedulingAllowed: false/);
+  assert.match(automationReleaseApprovalService, /PRIVATE_VALUE_PATTERN/);
   assert.doesNotMatch(automationReleaseApprovalService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
   assert.doesNotMatch(automationReleaseApprovalService, /publishPlanItem/);
   assert.doesNotMatch(automationReleaseApprovalService, /publishAcceptedProposal/);
@@ -1390,6 +1391,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseApprovalRepository, /createLearningAutomationReleaseApprovalRepository/);
   assert.match(automationReleaseApprovalRepository, /summary_only/);
   assert.match(automationReleaseApprovalRepository, /scanPrivacyKeys/);
+  assert.match(automationReleaseApprovalRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseApprovalRepository, /saveApproval/);
   assert.match(automationReleaseApprovalRepository, /listApprovals/);
   assert.match(automationReleaseApprovalRepository, /learning_automation_release_approval_privacy_class_required/);
@@ -2835,6 +2837,7 @@ test("Growth automation release approval smoke CLI stays service-owned and write
   assert.match(scriptHarness, /parses default read-only list input/);
   assert.match(scriptHarness, /requires explicit allow-write for record/);
   assert.match(scriptHarness, /delegates operations to service only/);
+  assert.match(scriptHarness, /rejects privacy-risk values before persisting/);
   assert.match(scriptHarness, /temporary SQLite db when explicitly allowed/);
 
   const releaseEvidenceScript = read(path.join("scripts", "smoke-growth-automation-release-evidence.js"));

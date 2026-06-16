@@ -97,5 +97,12 @@ test("automation release approval service rejects invalid gates and privacy-risk
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_automation_release_approval_privacy_failed");
 
+  const privacyValue = service.recordApproval(Object.assign(scope(), {
+    approvalKey: "background_scheduler",
+    evidence: { artifactId: "/Users/example/private-approval.json" }
+  }));
+  assert.equal(privacyValue.ok, false);
+  assert.equal(privacyValue.error, "learning_automation_release_approval_privacy_failed");
+
   assert.equal(canonicalApprovalKey("background_worker_release_approval"), "backgroundWorkerApproval");
 });

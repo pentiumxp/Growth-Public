@@ -104,6 +104,13 @@ test("automation release approval repository rejects privacy-risk and non-summar
     assert.equal(privacy.ok, false);
     assert.equal(privacy.error, "learning_automation_release_approval_privacy_failed");
 
+    const privacyValue = repository.saveApproval(sampleApproval({
+      approvalKey: "backgroundWorkerApproval",
+      evidence: { artifactId: "/Users/example/private-approval.json" }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_release_approval_privacy_failed");
+
     const privateClass = repository.saveApproval(sampleApproval({
       approvalKey: "backgroundSchedulerApproval",
       privacyClass: "private"

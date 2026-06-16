@@ -127,9 +127,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   includes summary-only remediation fields `missingCheckKeys`,
   `blockedCheckKeys`, `missingEvidenceKeys`, `requiredActionCount`,
   `requiredActions`, and `nextAction` so Owner/release tooling can see what
-  evidence remains without walking raw checks. Approval records and remediation
-  remain advisory evidence and never flip runtime config. Release-readiness also
-  projects summary-only `evidenceReadback`
+  evidence remains without walking raw checks. Release approval service and
+  SQLite repository privacy scanning reject privacy-risk keys plus private
+  path/token-looking string values before approval records persist. Approval
+  records and remediation remain advisory evidence and never flip runtime
+  config. Release-readiness also projects summary-only `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
   bundle readback, present/missing counts, missing check keys, and bounded
   per-check evidence references. Owner snapshots persist that readback in

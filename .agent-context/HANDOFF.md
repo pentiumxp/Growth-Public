@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T11:01+08:00 - Release Approval Privacy Value Guard
+
+- Status: implemented and full-Harness validated locally. This slice hardens
+  release approval persistence so private path and token-looking string values
+  are rejected before approval records can be saved. It does not deploy, call
+  Gateway/model vendors, publish plans/cards, generate cards, evaluate
+  submissions, execute scheduler actions, run scheduler ticks, deliver
+  notifications, emit platform events, activate stage assessments, mutate
+  learner state, write new business state outside explicit release approval
+  records, flip runtime config, grant scheduler permission, or change product
+  UI.
+- Scope:
+  - `learning-automation-release-approval-service` now rejects privacy-risk
+    string values, such as private local paths and token-looking markers, in
+    addition to privacy-risk field names;
+  - `automation-release-approvals.js` applies the same value scanner at the
+    SQLite repository boundary, so callers that bypass the service still fail
+    closed before persistence;
+  - release approval service, repository, CLI smoke, architecture boundary, and
+    Growth docs now cover the private-path/token-like value guard.
+- Focused validation passed:
+  - `node --check src/services/learning-automation-release-approval-service.js src/stores/growth-learning-sqlite/automation-release-approvals.js tests/learning-automation-release-approval-service.test.js tests/learning-automation-release-approval-repository.test.js tests/growth-automation-release-approval-smoke-script.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-approval-service.test.js tests/learning-automation-release-approval-repository.test.js tests/growth-automation-release-approval-smoke-script.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`45/45`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`).
+- Broad and central validation passed:
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`785/785`);
+  - `git diff --check`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `mode: "plan"` and did not execute deployment.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth non-UI backend closed-loop completion slice; release/runtime evidence and database harness; no production deploy" --json`
+    classified this local backend/database slice as H1 and required a Mac
+    deployment plan. No production deploy was executed.
+  - The Home AI app deploy plan reported unrelated dirty app files from another
+    workspace state. They were not modified by this Growth slice.
+- Progress calibration:
+  - Earlier 80% estimates were for the narrower card-generation/daily-card or
+    release-readiness backend denominator. Using the full AI-driven Growth
+    closed-loop MVP denominator, the current overall progress remains about
+    70-72%. Backend/service/Harness coverage is higher; remaining denominator
+    is mainly product-visible Owner UI, central visual evidence, production
+    release evidence closure, and multi-workspace/domain-pack generalization.
+
 ## 2026-06-16T10:51+08:00 - Release Package Dashboard Readiness Evidence Summary
 
 - Status: implemented and full-Harness validated locally. This slice preserves

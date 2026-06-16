@@ -100,6 +100,36 @@ test("automation release approval smoke script rejects invalid JSON before servi
   assert.equal(output.error, "automation_release_approval_smoke_invalid_json");
 });
 
+test("automation release approval smoke script rejects privacy-risk values before persisting", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-automation-release-approval-privacy-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  try {
+    const result = spawnSync(process.execPath, [
+      scriptPath,
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--approval-key", "writeful_execution",
+      "--approval-json", JSON.stringify({ artifactId: "/Users/example/private-approval.json" }),
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    assert.equal(result.status, 1);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.ok, false);
+    assert.equal(output.error, "learning_automation_release_approval_privacy_failed");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("automation release approval smoke script can record against a temporary SQLite db when explicitly allowed", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-automation-release-approval-smoke-"));
   const dbPath = path.join(dir, "growth-learning.sqlite3");

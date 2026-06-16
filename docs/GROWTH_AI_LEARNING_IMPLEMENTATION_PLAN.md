@@ -658,7 +658,9 @@ Implemented backend shape:
   `requiredActionCount`, `requiredActions`, and `nextAction`;
 - `learning-automation-release-approval-service` records and lists
   summary-only approvals for individual writeful config gates and projects
-  active approvals back into release-readiness input;
+  active approvals back into release-readiness input; both the service and
+  SQLite repository reject privacy-risk keys plus private path/token-looking
+  values before approval records can become persisted release evidence;
 - `learning-automation-release-evidence-service` records and lists
   summary-only release evidence records for canonical release-readiness evidence
   keys and projects active pass records back into release-readiness input before
