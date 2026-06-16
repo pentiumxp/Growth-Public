@@ -9,6 +9,80 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T02:14+08:00 - Compact Daily Recipe Generalization
+
+- Status: implemented locally, fully validated, and ready for push. This slice
+  was not deployed because the user deferred production deployment until the
+  broader Growth target is complete.
+- Commit:
+  - `3635129 Generalize growth daily card recipes`.
+- Change intent:
+  - remove the compact ordinary-card recipe bottleneck that allowed only
+    `daily_english_v1`;
+  - keep stage-assessment generation outside ordinary daily recipe defaults;
+  - allow Owner generation to start a low-pressure daily science card or a
+    selected subject-scoped daily practice card while preserving target
+    provisioning, graph planning, Gateway authoring, validation, and
+    transactional publish boundaries.
+- Scope:
+  - `learning-card-generation-recipe-policy-service` now exposes
+    `daily_english_v1`, `daily_science_v1`, and
+    `daily_subject_practice_v1`;
+  - daily science defaults to a 10-15 minute practice role with bounded science
+    reasoning evidence;
+  - generic daily subject practice derives the selected domain/subject from
+    Owner input and stays a low-pressure ordinary practice card;
+  - graph-node evidence requirements still override recipe defaults, so compact
+    recipes cannot weaken a validated graph plan;
+  - stage assessment generation remains explicitly outside daily recipe
+    normalization.
+- Docs changed:
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - this handoff.
+- Validation:
+  - `node --check src/services/learning-card-generation-recipe-policy-service.js`;
+  - focused Harness:
+    `node --test tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js`
+    passed `25/25`;
+  - wider focused Harness:
+    `node --test tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-routes.test.js tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js`
+    passed `136/136`;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `852/852`;
+  - `git diff --check` passed in Growth and app;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,942 nodes, 20,961 edges, index up
+    to date, with the existing optional earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because the task text included
+    deployment/no-deployment boundary wording;
+  - changed-file required-checks classified the concrete Growth file scope as
+    H3 and returned syntax, architecture-map, and diff-hygiene checks;
+  - app-side required checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-ab0b723c-9cb3-47fb-9214-8eb8286048a3`.
+- Remaining gates:
+  - no production deployment in this slice;
+  - the broader Growth objective still needs subsequent backend slices before
+    final deployment.
+
 ## 2026-06-17T02:00+08:00 - Release Workbench Action Collection CLI Closure
 
 - Status: implemented locally, fully validated, committed, and pushed to both
