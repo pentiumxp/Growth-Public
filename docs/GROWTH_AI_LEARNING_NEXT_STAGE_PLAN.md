@@ -756,14 +756,19 @@ Use the Growth-owned release-readiness boundary:
   record counts plus advertised Owner actions, and calls
   `POST /api/v1/growth/automation/release-workbench/actions` only for
   supported `release_evidence`, `release_approval`,
-  `release_evidence_collection`, `release_package`, `release_activation`, and
-  `runtime_enablement` endpoints. It is UI glue over existing services. For
-  `release_evidence_collection`, the UI sends bounded collection tasks and
-  `write_collection_run=true` from the backend action template. Those task ids
-  come from the workbench's missing-evidence-derived no-write plan; UI/manual
-  evidence and write-gated evidence are surfaced for Owner review but are not
-  auto-collected by the normal button. The UI sends no raw prompt/transcript
-  payloads and does not grant scheduling permission. For
+  `release_evidence_collection`, `release_decision`, `release_package`,
+  `release_activation`, and `runtime_enablement` endpoints. It is UI glue over
+  existing services. For `release_evidence_collection`, the UI sends bounded
+  collection tasks, `write_collection_run=true`, and
+  `write_release_evidence_records=true` from the backend action template. Those
+  task ids come from the workbench's missing-evidence-derived no-write plan;
+  UI/manual evidence and write-gated evidence are surfaced for Owner review but
+  are not auto-collected by the normal button. For `release_decision`, the UI
+  sends only the advertised status, summary-only decision metadata, and the
+  explicit latest-ready collection-run auto-selection flag; collection-run
+  lookup, validation, and persistence remain in
+  `learning-automation-release-decision-service`. The UI sends no raw
+  prompt/transcript payloads and does not grant scheduling permission. For
   `release_package`, Owner first builds a summary-only
   candidate through `POST /api/v1/growth/automation/release-packages/build`;
   the record action remains blocked until that real

@@ -999,7 +999,7 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       status: "blocked",
       releaseWorkbench: {
         status: "blocked",
-        ownerActionCount: 5,
+        ownerActionCount: 6,
         missingEvidenceKeys: ["visual_smoke"],
         missingApprovalKeys: ["writefulExecutionApproval"],
         missingRecordKinds: ["release_collection_run", "release_package", "runtime_enablement"],
@@ -1044,6 +1044,21 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
               auto_select_latest_completed_cycle: true,
               write_collection_run: true,
               write_release_evidence_records: true
+            }
+          }
+        }, {
+          key: "release_decision",
+          action: "record_release_decision",
+          requiredActor: "owner",
+          label: "Record release decision",
+          source: "missing_record",
+          endpointKey: "release_decision",
+          route: {
+            body: {
+              collection_run_id: "lgacr_ready_1",
+              auto_select_latest_ready_collection_run: true,
+              status: "approved",
+              decision_summary: { summaryOnly: true }
             }
           }
         }, {
@@ -1669,13 +1684,16 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /Record release evidence for visual_smoke/);
   assert.match(html, /Record release approval for writeful execution/);
   assert.match(html, /Run release evidence collection/);
+  assert.match(html, /Record release decision/);
   assert.match(html, /Record release package/);
   assert.match(html, /data-release-workbench-action/);
   assert.match(html, /data-release-workbench-endpoint-key="release_evidence"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_approval"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_evidence_collection"/);
+  assert.match(html, /data-release-workbench-endpoint-key="release_decision"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_package"/);
   assert.match(html, /收集证据/);
+  assert.match(html, /记录决策/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -1830,7 +1848,37 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(releaseCollectionPayload, "transcript"), false);
   assert.equal(Object.hasOwn(releaseCollectionPayload, "writefulSchedulingAllowed"), false);
 
-  const releasePackageAction = context.releaseWorkbench.releaseWorkbench.ownerActions[3];
+  const releaseDecisionPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    action: context.releaseWorkbench.releaseWorkbench.ownerActions[3]
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseDecisionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    collection_run_id: "lgacr_ready_1",
+    endpoint_key: "release_decision",
+    action_key: "release_decision",
+    requested_by: "owner",
+    action: {
+      key: "release_decision",
+      action: "record_release_decision",
+      endpointKey: "release_decision",
+      source: "missing_record",
+      summaryOnly: true
+    },
+    status: "approved",
+    decision_summary: { summaryOnly: true },
+    auto_select_latest_ready_collection_run: true
+  });
+  assert.equal(Object.hasOwn(releaseDecisionPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseDecisionPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releaseDecisionPayload, "writefulSchedulingAllowed"), false);
+
+  const releasePackageAction = context.releaseWorkbench.releaseWorkbench.ownerActions[4];
   const releasePackageBuildPayload = windowRef.HermesGrowthCardGenerationUi.createReleasePackageBuildPayload({
     context,
     workspaceId: "weixin_fanfan",

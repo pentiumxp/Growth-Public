@@ -9,6 +9,83 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:28+08:00 - Release Workbench UI Decision Action Closure
+
+- Status: implemented and focused Harness validated locally. Commit/push is
+  still pending for this slice. This slice is not deployed because the user
+  deferred production deployment until the broader Growth target is complete.
+- Change intent:
+  - make the embedded Owner release workbench UI able to execute the existing
+    `release_decision` workbench action instead of leaving release decisions as
+    backend/CLI-only after the service facade already supports them;
+  - keep the UI as thin glue: the browser sends only summary action metadata,
+    status, and the explicit latest-ready collection-run auto-selection flag;
+  - keep collection-run lookup, ready-run validation, decision persistence, and
+    privacy checks inside `learning-automation-release-decision-service` and
+    the existing workbench action facade.
+- Scope:
+  - `public/growth-card-generation-ui.js` now supports `release_decision` in
+    release-workbench action text, supported endpoint filtering, and action
+    payload construction;
+  - release-decision payloads preserve `collection_run_id` from the backend
+    route template when present and forward
+    `auto_select_latest_ready_collection_run=true`;
+  - `tests/growth-frontend-adapter.test.js` now covers the rendered
+    `release_decision` action row and verifies the summary-only decision
+    payload excludes raw prompts, transcripts, and scheduler-permission flags;
+  - Growth-local docs and project context now list `release_decision` as a
+    supported embedded release-workbench UI endpoint and document
+    `write_release_evidence_records` forwarding for evidence collection.
+- Boundary notes:
+  - no Gateway/model-vendor calls;
+  - no Home AI old Growth server imports;
+  - no direct repository/table access from the browser;
+  - no package building, release evidence collection execution, activation,
+    runtime enablement, scheduler execution/ticks, notifications, stage
+    activation, deployment, card generation, evaluation, runtime config
+    mutation, scheduler permission, or learner-state mutation.
+- Docs changed:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation passed so far:
+  - syntax: `node --check public/growth-card-generation-ui.js`;
+  - frontend adapter Harness:
+    `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
+  - docs locality:
+    `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - release workbench/action/route/architecture focused Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `95/95`;
+  - docs/architecture Harness:
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`.
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 5,003 nodes, 21,565 edges, index up
+    to date, with the existing earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - required app-side checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node --check /Users/hermes-dev/HermesMobileDev/plugins/growth/public/growth-card-generation-ui.js`,
+    `node --check /Users/hermes-dev/HermesMobileDev/plugins/growth/tests/growth-frontend-adapter.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - AI Ops evidence ledger record:
+    `evidence-1507828a-ef6f-4e83-84d9-f5b68ff5db68`.
+- Remaining gates:
+  - run final diff hygiene;
+  - commit and push this slice if requested/when batching the next commit.
+
 ## 2026-06-17T04:16+08:00 - Release Decision Latest Ready Collection Run Auto-Selection
 
 - Status: implemented, locally validated, committed, and pushed to both

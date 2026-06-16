@@ -566,6 +566,7 @@
     if (value === "release_evidence") return "记录证据";
     if (value === "release_approval") return "记录审批";
     if (value === "release_evidence_collection") return "收集证据";
+    if (value === "release_decision") return "记录决策";
     if (value === "release_activation") return "记录激活";
     if (value === "runtime_enablement") return "记录启用";
     if (value === "release_package") return "需要包体";
@@ -573,7 +574,7 @@
   }
 
   function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
-    return ["release_evidence", "release_approval", "release_evidence_collection", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
+    return ["release_evidence", "release_approval", "release_evidence_collection", "release_decision", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
   }
 
   function releaseWorkbenchScopeFromContext(context = {}, workspaceId = "") {
@@ -668,6 +669,16 @@
     }
     if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
       payload.release_package = releasePackage;
+    }
+    if (endpointKey === "release_decision") {
+      payload.status = clean(routeBody.status || "approved");
+      payload.decision_summary = routeBody.decision_summary && typeof routeBody.decision_summary === "object"
+        ? routeBody.decision_summary
+        : { summaryOnly: true };
+      payload.collection_run_id = clean(routeBody.collection_run_id || routeBody.collectionRunId || payload.collection_run_id);
+      if (routeBody.auto_select_latest_ready_collection_run === true || routeBody.autoSelectLatestReadyCollectionRun === true) {
+        payload.auto_select_latest_ready_collection_run = true;
+      }
     }
     if (endpointKey === "release_activation") {
       payload.activation_gates = asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean);

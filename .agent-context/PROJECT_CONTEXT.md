@@ -347,8 +347,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised
   `release_evidence`, `release_approval`, `release_evidence_collection`,
-  `release_package`, `release_activation`, and `runtime_enablement` actions from
-  the plugin UI. For a missing `release_collection_run`, the workbench advertises
+  `release_decision`, `release_package`, `release_activation`, and
+  `runtime_enablement` actions from the plugin UI. For a missing
+  `release_collection_run`, the workbench advertises
   `release_evidence_collection`; the action facade delegates to
   `learning-automation-release-evidence-collection-service.collect`, and the
   advertised route body is now derived from supported missing release evidence
@@ -359,6 +360,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   If no supported task can be derived, the workbench falls back to the bounded
   `learning_loop_state` task. A returned collection artifact completes the UI
   action even when release-readiness remains `incomplete`.
+  The UI `release_decision` action sends only advertised status, summary-only
+  decision metadata, and `auto_select_latest_ready_collection_run=true` when
+  provided by the backend template; latest ready-run lookup and approved
+  decision validation remain in `learning-automation-release-decision-service`.
   `release_package` remains two-step UI glue by default: Owner first builds a
   summary-only `growth.learningAutomationReleasePackage.v1` candidate through
   `POST /api/v1/growth/automation/release-packages/build`, then records that
@@ -367,14 +372,16 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   persist a package audit record only when explicit `write_package_record` /
   `--write-package-record` plus write authorization is supplied. The frontend
   harness explicitly covers
-  `release_approval`, `release_evidence_collection`, and `release_package`
-  action templates: approval payloads must contain only advertised
-  approval/config gate fields, collection payloads must contain only bounded
-  tasks / required task ids / `write_collection_run`, package build
-  payloads must not include package artifacts, package record payloads must
-  include a real summary-only package candidate, and none of these payloads may
-  include `writefulSchedulingAllowed`, raw prompts, transcripts, private
-  evidence, or runtime config values.
+  `release_approval`, `release_evidence_collection`, `release_decision`, and
+  `release_package` action templates: approval payloads must contain only
+  advertised approval/config gate fields, collection payloads must contain only
+  bounded tasks / required task ids / `write_collection_run` /
+  `write_release_evidence_records`, decision payloads must contain only the
+  explicit latest-ready collection-run auto-selection flag plus summary-only
+  decision metadata, package build payloads must not include package artifacts,
+  package record payloads must include a real summary-only package candidate,
+  and none of these payloads may include `writefulSchedulingAllowed`, raw
+  prompts, transcripts, private evidence, or runtime config values.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only
