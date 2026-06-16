@@ -874,17 +874,17 @@ be feature-driven:
    `POST /api/v1/growth/automation/proposals/:proposalId/publish` only after
    the audit UI can explain the source cycle. Proposal review must stay manual
    and must not start scheduling.
-7. Add the automation digest UI described in
-   `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md` before any writeful
-   scheduler. The service, repository, Owner routes, privacy guard, and
-   architecture guard are implemented locally; review UI and visual evidence
-   remain future work.
-8. Add the automation action handoff UI / platform evidence described in
+7. Collect production visual/release evidence for the automation digest UI
+   described in `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md` before any
+   writeful scheduler. The service, repository, Owner routes, privacy guard,
+   architecture guard, and read/review UI are implemented locally; digest
+   creation UI remains future work.
+8. Collect production visual/release evidence and platform Action Inbox/Web
+   Push receipt evidence for the automation action handoff UI described in
    `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md` before any writeful
    scheduler. The service, repository, Owner routes, event mapping, delivery
-   failure guard, and architecture guard are implemented locally; product UI,
-   central platform Action Inbox/Web Push evidence, and visual evidence remain
-   future work.
+   failure guard, architecture guard, and read/create/deliver UI are
+   implemented locally.
 9. Add a Growth-domain event dispatcher only when submission, reflection,
    evaluation, reward, notification, or audit behavior needs durable fan-out.
 10. Split the SQLite store facade into narrower repository interfaces only when

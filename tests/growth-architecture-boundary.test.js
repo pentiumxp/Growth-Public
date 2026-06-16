@@ -3849,6 +3849,12 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createAutomationDigestQueryPayload/);
   assert.match(generationUi, /createAutomationDigestReviewPayload/);
   assert.match(generationUi, /data-automation-digest-review/);
+  assert.match(generationUi, /data-automation-action-handoff-panel/);
+  assert.match(generationUi, /createAutomationActionHandoffQueryPayload/);
+  assert.match(generationUi, /createAutomationActionHandoffPayload/);
+  assert.match(generationUi, /createAutomationActionHandoffDeliverPayload/);
+  assert.match(generationUi, /data-automation-action-handoff-create/);
+  assert.match(generationUi, /data-automation-action-handoff-deliver/);
 
   const apiClient = read(path.join("public", "growth-api-client.js"));
   assert.match(apiClient, /fetchGrowthCycleHistory/);
@@ -3859,8 +3865,12 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /publishGrowthAutomationProposal/);
   assert.match(apiClient, /fetchGrowthAutomationDigests/);
   assert.match(apiClient, /reviewGrowthAutomationDigest/);
+  assert.match(apiClient, /fetchGrowthAutomationActionHandoffs/);
+  assert.match(apiClient, /createGrowthAutomationActionHandoff/);
+  assert.match(apiClient, /deliverGrowthAutomationActionHandoff/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
+  assert.match(apiClient, /automation", "action-handoffs"/);
   assert.doesNotMatch(generationUi, /learning_growth_/);
   assert.doesNotMatch(generationUi, /raw_answer|raw_prompt|raw_model|source_document_body/);
 });

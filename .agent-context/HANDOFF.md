@@ -9,6 +9,89 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T22:48+08:00 - Automation Action Handoff Owner UI Controls
+
+- Status: implemented and locally validated; pending commit/push. Not deployed
+  per Owner instruction to deploy after the broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now lists persisted automation action
+    handoff rows for the selected Growth target;
+  - Owner can create a handoff from a reviewed digest and deliver bounded
+    platform action metadata through explicit buttons;
+  - handoff delivery records `delivered` or `delivery_failed` state only. It
+    does not publish cards, schedule work, call Gateway, evaluate submissions,
+    activate stage assessments, or mutate learner state.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationActionHandoffs()`,
+    `createGrowthAutomationActionHandoff()`, and
+    `deliverGrowthAutomationActionHandoff()`, including Home AI plugin proxy
+    routing;
+  - `public/growth-card-generation-ui.js` adds summary-only action handoff
+    query/create/deliver payload builders, reviewed-digest create rows,
+    persisted handoff rows, delivery status, and manual metadata-only wording;
+  - `public/app.js` loads action handoff readbacks with the Owner generation
+    context, wires refresh/create/deliver buttons, and refreshes handoff plus
+    release-workbench readbacks after action;
+  - `public/index.html` static asset version is bumped to
+    `20260616-action-handoff-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers API helpers, proxy paths,
+    Owner panel rendering, payload privacy, static version, and app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for handoff read/create/deliver helpers;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - syntax checks passed for `public/growth-api-client.js`,
+    `public/growth-card-generation-ui.js`, `public/app.js`,
+    `tests/growth-frontend-adapter.test.js`, and
+    `tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-action-handoff-repository.test.js
+    tests/learning-automation-action-handoff-service.test.js
+    tests/growth-automation-action-handoff-smoke-script.test.js
+    tests/growth-routes.test.js` passed `60/60`;
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - static version check passed for `20260616-action-handoff-ui-v1` with 14
+    references and no stale `20260616-automation-digest-ui-v1`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI H2 checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/task-list-ui.test.js`, and
+    `node tests/static-cache-version-harness.test.js`;
+  - central iOS PWA visual harness passed:
+    `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url
+    http://127.0.0.1:19074/ --artifact-dir
+    /tmp/homeai-growth-action-handoff-visual --timeout-ms 45000 --wait-ms
+    900`, screenshot
+    `/tmp/homeai-growth-action-handoff-visual/ios-pwa-visual-dark-growth-surfaces-20260616T144738Z.png`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,872 nodes, 19,678 edges, index
+    up to date.
+- AI Ops evidence:
+  - changed-file required-checks returned H2 with visual lane required;
+  - visual lane allocated and released:
+    `ios-pwa-2` / `http://127.0.0.1:19074/`;
+  - test evidence ledger record:
+    `evidence-1c735a3a-a5f8-468b-a562-200bbfdf4772`;
+  - visual evidence ledger record:
+    `evidence-27b6efc5-230f-4df3-98ba-bc3f23c6a7e5`.
+- Boundary:
+  - no Gateway/model call, card generation, plan publication, digest creation,
+    proposal publication, evaluation, scheduler execution/run/tick, worker
+    action, stage activation, database schema change, runtime config mutation,
+    production sync, or deployment was performed.
+
 ## 2026-06-16T22:34+08:00 - Automation Digest Owner UI Controls
 
 - Status: implemented, locally validated, and committed/pushed as

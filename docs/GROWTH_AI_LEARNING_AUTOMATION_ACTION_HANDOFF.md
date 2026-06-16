@@ -1,6 +1,6 @@
 # Growth AI Learning Automation Action Handoff
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Purpose
 
@@ -39,13 +39,13 @@ Implemented locally:
   `npm run smoke:action-handoff`;
 - `growth.automation.action_required` event mapping through
   `growth-event-service`;
-- focused repository, service, smoke-script, event, route, and architecture
-  harnesses.
+- embedded Owner generation UI list/create/deliver controls over the handoff
+  routes;
+- focused repository, service, smoke-script, event, route, frontend, and
+  architecture harnesses.
 
 Not implemented by this layer:
 
-- digest UI;
-- proposal review UI;
 - platform Action Inbox or Web Push internals;
 - writeful scheduler;
 - background worker;
@@ -265,6 +265,30 @@ Delivery failure is not learning failure. A dropped or rejected notification:
 - does not record proposal execution;
 - does not mutate learner evidence, profile, rewards, or stage state.
 
+## UI Contract
+
+The embedded Owner generation UI exposes action handoff as a panel after
+automation digest review.
+
+Implemented UI responsibilities:
+
+- read persisted handoff rows through
+  `GET /api/v1/growth/automation/action-handoffs`;
+- show reviewed digest rows that can create a handoff;
+- create a handoff only through explicit Owner click on
+  `POST /api/v1/growth/automation/action-handoffs`;
+- deliver a persisted handoff only through explicit Owner click on
+  `POST /api/v1/growth/automation/action-handoffs/:handoffId/deliver`;
+- show delivery status as `not_delivered`, `delivered`, `delivery_failed`, or
+  `delivery_pending`;
+- say that delivery is platform action metadata only and never card
+  publication or scheduling;
+- keep payloads summary-only and scoped to the selected visible learner target.
+
+The UI must not call Gateway, publish cards, run scheduler actions, evaluate
+submissions, activate stage assessments, mutate learner state, inspect SQLite,
+or mark platform notification delivery as release permission.
+
 ## Harness
 
 Focused tests:
@@ -277,6 +301,7 @@ node --test tests/learning-automation-action-handoff-repository.test.js \
   tests/growth-platform-action-evidence-smoke-script.test.js \
   tests/growth-event-service.test.js \
   tests/growth-routes.test.js \
+  tests/growth-frontend-adapter.test.js \
   tests/growth-architecture-boundary.test.js
 ```
 
@@ -296,6 +321,8 @@ Coverage:
   including missing evidence and privacy-risk input;
 - route Owner-only writes, visible-target reads, workspace bearer writes, and
   bounded failure responses;
+- frontend adapter coverage for action handoff list/create/deliver helpers,
+  proxy paths, Owner panel controls, summary-only payloads, and app wiring;
 - architecture guard for no Gateway, scheduler, publication, card generation,
   proposal execution, stage activation, direct SQLite table access, or raw
   private fields in the service.
@@ -319,8 +346,9 @@ Future writeful scheduling still requires:
 3. Proposal review UI closure.
 4. Digest review UI closure.
 5. Active failure policy for the target scope.
-6. Action handoff UI and real production platform Action Inbox/Web Push receipt
-   evidence from `npm run smoke:platform-action-evidence`.
+6. Production action handoff UI/visual evidence and real production platform
+   Action Inbox/Web Push receipt evidence from
+   `npm run smoke:platform-action-evidence`.
 7. The default-disabled Owner-explicit scheduler execution backend has
    repository/service/route/architecture harness evidence and remains disabled
    until explicit release approval.

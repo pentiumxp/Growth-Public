@@ -39,6 +39,14 @@
         actionResult: null,
         actionError: ""
       },
+      automationActionHandoffs: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       recommendationLifecycle: {
         actionStatus: "idle",
         actionResult: null,
@@ -832,6 +840,45 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-action-handoff-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshAutomationActionHandoffs().catch((error) => {
+          pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-action-handoff-create]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        createAutomationActionHandoffFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-action-handoff-deliver]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        deliverAutomationActionHandoffFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-recommendation-lifecycle-review]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -976,6 +1023,14 @@
       actionResult: null,
       actionError: ""
     };
+    pageState.cardGeneration.automationActionHandoffs = {
+      status: "loading",
+      data: pageState.cardGeneration.automationActionHandoffs?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.recommendationLifecycle = {
       actionStatus: "idle",
       actionResult: null,
@@ -1009,6 +1064,7 @@
     await refreshCycleHistoryFromUi({ silent: true });
     await refreshAutomationProposals(requestedTargetWorkspaceId, context);
     await refreshAutomationDigests(requestedTargetWorkspaceId, context);
+    await refreshAutomationActionHandoffs(requestedTargetWorkspaceId, context);
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
@@ -1173,6 +1229,47 @@
     }
   }
 
+  async function refreshAutomationActionHandoffs(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.automationActionHandoffs || {};
+    pageState.cardGeneration.automationActionHandoffs = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createAutomationActionHandoffQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthAutomationActionHandoffs(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.automationActionHandoffs = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.automationActionHandoffs = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
   function automationProposalItems() {
     const holder = pageState.cardGeneration.automationProposals || {};
     const data = holder.data || {};
@@ -1193,6 +1290,17 @@
   function findAutomationDigest(digestId = "") {
     const id = clean(digestId);
     return automationDigestItems().find((digest = {}) => clean(digest.digestId || digest.digest_id) === id) || null;
+  }
+
+  function automationActionHandoffItems() {
+    const holder = pageState.cardGeneration.automationActionHandoffs || {};
+    const data = holder.data || {};
+    return Array.isArray(data.handoffs) ? data.handoffs : [];
+  }
+
+  function findAutomationActionHandoff(handoffId = "") {
+    const id = clean(handoffId);
+    return automationActionHandoffItems().find((handoff = {}) => clean(handoff.handoffId || handoff.handoff_id) === id) || null;
   }
 
   function recommendationLifecycleItems() {
@@ -1255,6 +1363,32 @@
     const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
     return {
       payload: ui.createAutomationDigestReviewPayload({ context, workspaceId: targetWorkspaceId, digest, status }),
+      targetWorkspaceId
+    };
+  }
+
+  function createAutomationActionHandoffPayload(digest = {}) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationActionHandoffPayload !== "function") {
+      throw new Error("automation_action_handoff_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationActionHandoffPayload({ context, workspaceId: targetWorkspaceId, digest }),
+      targetWorkspaceId
+    };
+  }
+
+  function createAutomationActionHandoffDeliverPayload(handoff = {}) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationActionHandoffDeliverPayload !== "function") {
+      throw new Error("automation_action_handoff_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationActionHandoffDeliverPayload({ context, workspaceId: targetWorkspaceId, handoff }),
       targetWorkspaceId
     };
   }
@@ -1364,10 +1498,71 @@
         actionError: ""
       });
       await refreshAutomationDigests(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationDigests = Object.assign({}, pageState.cardGeneration.automationDigests, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function createAutomationActionHandoffFromUi(button) {
+    const digestId = clean(button.dataset.automationDigestId);
+    const digest = findAutomationDigest(digestId);
+    if (!digest) throw new Error("automation_digest_not_found");
+    const { payload, targetWorkspaceId } = createAutomationActionHandoffPayload(digest);
+    pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationActionHandoffs?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.createGrowthAutomationActionHandoff(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+        actionStatus: "created",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function deliverAutomationActionHandoffFromUi(button) {
+    const handoffId = clean(button.dataset.automationActionHandoffId);
+    const handoff = findAutomationActionHandoff(handoffId);
+    if (!handoff) throw new Error("automation_action_handoff_not_found");
+    const { payload, targetWorkspaceId } = createAutomationActionHandoffDeliverPayload(handoff);
+    pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationActionHandoffs?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.deliverGrowthAutomationActionHandoff(handoffId, payload, targetWorkspaceId);
+      pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
+        actionStatus: "delivered",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationActionHandoffs = Object.assign({}, pageState.cardGeneration.automationActionHandoffs, {
         actionStatus: "failed",
         actionError: error.message || String(error)
       });
@@ -1828,10 +2023,19 @@
         actionResult: null,
         actionError: ""
       };
+      pageState.cardGeneration.automationActionHandoffs = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       await refreshLearningLoopState(targetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
       await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
       await refreshAutomationDigests(targetWorkspaceId, context, { silent: true });
+      await refreshAutomationActionHandoffs(targetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {

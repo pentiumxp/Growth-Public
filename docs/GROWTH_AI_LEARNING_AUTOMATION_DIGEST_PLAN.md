@@ -30,7 +30,8 @@ Backend status:
   `learning-automation-failure-policy-service`,
   `automation-failure-policies.js`, and
   `/api/v1/growth/automation/failure-policies` routes;
-- Growth-owned action handoff backend is implemented locally through
+- Growth-owned action handoff backend and embedded Owner UI are implemented
+  locally through
   `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
 - embedded digest read/refresh/review UI is implemented in the Owner generation
   panel for persisted digest rows. Digest creation UI, platform Action

@@ -799,6 +799,30 @@
     return "Owner reviewed automation digest.";
   }
 
+  function createAutomationActionHandoffQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationActionHandoffPayload({ context = {}, workspaceId = "", digest = {} } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      digest_id: clean(digest.digestId || digest.digest_id),
+      summary: `Owner requested bounded action handoff for reviewed digest ${clean(digest.digestId || digest.digest_id) || "digest"}.`,
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationActionHandoffDeliverPayload({ context = {}, workspaceId = "", handoff = {} } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      handoff_id: clean(handoff.handoffId || handoff.handoff_id),
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
     const plan = context.suggestedPlan || {};
     const defaults = context.generationDefaults || {};
@@ -1085,6 +1109,135 @@
         ${automationDigestRows(holder, escapeHtml)}
       </div>
       ${automationDigestActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationActionHandoffStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "pending_delivery") return "待投递";
+    if (value === "not_delivered") return "未投递";
+    if (value === "delivered") return "已投递";
+    if (value === "delivery_failed") return "投递失败";
+    if (value === "delivery_pending") return "投递待定";
+    if (value === "created") return "已创建";
+    if (value === "failed") return "失败";
+    return value || "待处理";
+  }
+
+  function automationActionHandoffActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const handoff = result.handoff || {};
+    if (!status || status === "idle") return "";
+    const resultStatus = clean(result.deliveryStatus || handoff.deliveryStatus || handoff.delivery_status || handoff.status);
+    const detail = status === "created"
+      ? `Handoff 已创建：${clean(handoff.handoffId || handoff.handoff_id) || "action handoff"}。`
+      : status === "delivered"
+        ? `Handoff 投递状态：${automationActionHandoffStatusText(resultStatus)}。`
+        : status === "submitting"
+          ? "正在通过 Growth action handoff service 写入。"
+          : error || "Handoff 操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-action-handoff-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationActionHandoffStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationActionHandoffRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const handoffs = asArray(data.handoffs).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取 action handoff。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">Action handoff 读取失败：${escapeHtml(clean(holder.error) || "automation_action_handoffs_failed")}</div>`;
+    if (!handoffs.length) return `<div class="learning-card-generation-proposal-empty">暂无 action handoff。复核 digest 后，可以创建平台提醒元数据。</div>`;
+    return handoffs.map((handoff) => {
+      const handoffId = clean(handoff.handoffId || handoff.handoff_id);
+      const digestId = clean(handoff.digestId || handoff.digest_id);
+      const deliveryStatus = clean(handoff.deliveryStatus || handoff.delivery_status || handoff.status);
+      const actionSummary = handoff.actionSummary || handoff.action_summary || {};
+      const actions = asArray(handoff.actions);
+      const blocked = asArray(handoff.blocked);
+      const actionCount = Number(actionSummary.requiredActions || actionSummary.required_actions || actions.length || 0) || 0;
+      const blockedCount = Number(actionSummary.blocked || blocked.length || 0) || 0;
+      const canDeliver = handoffId && deliveryStatus !== "delivered";
+      return `<div class="learning-card-generation-proposal-row" data-automation-action-handoff-row data-automation-action-handoff-id="${escapeHtml(handoffId)}">
+        <span>
+          <strong>${escapeHtml(handoffId || "action handoff")}</strong>
+          <small>${escapeHtml(`digest ${digestId || "unknown"} · actions ${actionCount} · blocked ${blockedCount}`)}</small>
+          <small>投递只创建平台 action metadata，不发布卡片、不调度。</small>
+        </span>
+        <em>${escapeHtml(automationActionHandoffStatusText(deliveryStatus))}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-action-handoff-deliver data-automation-action-handoff-id="${escapeHtml(handoffId)}" ${busy || !canDeliver ? "disabled" : ""}>投递</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationActionHandoffDigestRows(digestsHolder = {}, handoffsHolder = {}, escapeHtml = defaultEscapeHtml) {
+    const digests = asArray(digestsHolder.data?.digests).filter((digest) => clean(digest.status) === "reviewed").slice(0, 4);
+    const handoffs = asArray(handoffsHolder.data?.handoffs);
+    const existingDigestIds = new Set(handoffs.map((handoff) => clean(handoff.digestId || handoff.digest_id)).filter(Boolean));
+    const busy = handoffsHolder.actionStatus === "submitting";
+    if (!digests.length) return `<div class="learning-card-generation-proposal-empty">没有可创建 handoff 的已复核 digest。</div>`;
+    return digests.map((digest) => {
+      const digestId = clean(digest.digestId || digest.digest_id);
+      const summary = digest.summary || {};
+      const alreadyCreated = existingDigestIds.has(digestId);
+      const actionCount = Number(summary.requiredActions || summary.required_actions || asArray(digest.requiredActions || digest.required_actions).length || 0) || 0;
+      return `<div class="learning-card-generation-proposal-row" data-automation-action-handoff-digest-row data-automation-digest-id="${escapeHtml(digestId)}">
+        <span>
+          <strong>${escapeHtml(digestId || "reviewed digest")}</strong>
+          <small>${escapeHtml(`已复核 digest · required actions ${actionCount}`)}</small>
+        </span>
+        <em>${escapeHtml(alreadyCreated ? "已建 handoff" : "可创建")}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-action-handoff-create data-automation-digest-id="${escapeHtml(digestId)}" ${busy || alreadyCreated || !digestId ? "disabled" : ""}>创建 Handoff</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationActionHandoffPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationActionHandoffs || {};
+    const data = holder.data || {};
+    const handoffs = asArray(data.handoffs);
+    const pendingDelivery = handoffs.filter((item) => clean(item.deliveryStatus || item.delivery_status || item.status) !== "delivered").length;
+    const delivered = handoffs.filter((item) => clean(item.deliveryStatus || item.delivery_status || item.status) === "delivered").length;
+    const failed = handoffs.filter((item) => clean(item.deliveryStatus || item.delivery_status) === "delivery_failed").length;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const reason = status === "loading"
+      ? "正在读取 action handoff。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_action_handoffs_failed"
+        : pendingDelivery
+          ? "Owner 可以投递平台 action metadata；仍不会发布或调度。"
+          : "从已复核 digest 创建 handoff，作为平台提醒前的 Growth 记录。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-action-handoffs" data-automation-action-handoff-panel data-automation-action-handoff-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>行动 Handoff</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-action-handoff-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新 Handoff"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>待投递</small><strong>${escapeHtml(String(pendingDelivery))}</strong></span>
+        <span><small>已投递</small><strong>${escapeHtml(String(delivered))}</strong></span>
+        <span><small>失败</small><strong>${escapeHtml(String(failed))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationActionHandoffDigestRows(state.automationDigests || {}, holder, escapeHtml)}
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationActionHandoffRows(holder, escapeHtml)}
+      </div>
+      ${automationActionHandoffActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -2019,6 +2172,7 @@
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
+          ${automationActionHandoffPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -2063,6 +2217,9 @@
     createAutomationProposalQueryPayload,
     createAutomationDigestQueryPayload,
     createAutomationDigestReviewPayload,
+    createAutomationActionHandoffQueryPayload,
+    createAutomationActionHandoffPayload,
+    createAutomationActionHandoffDeliverPayload,
     createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,

@@ -39,8 +39,8 @@ deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
 Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
-proposal/digest/action/execution UI, real package review UI, and production
-release evidence collection.
+proposal/digest/action-handoff production evidence, execution/run/worker-target
+UI, real package review UI, and production release evidence collection.
 
 ## Objective
 
@@ -394,6 +394,7 @@ can be visually simple, but each panel has a service-backed responsibility:
 | Audit and next step | Show what changed after completion, whether the required audit evidence is present, and what Growth recommends next. | `ownerAudit`, `learning-cycles/completeness`, `nextCardRecommendation`, `recommendationLifecycle`, profile corrections. |
 | Proposal review | Show a stored supervised next-learning proposal for a completed auditable cycle, let Owner record `accepted`/`skipped`/`expired`/`superseded`, and keep actual card publication on an explicit publish action. | `automation/proposals`, `automation/proposals/:proposalId/decision`, `automation/proposals/:proposalId/publish`, `learning-cycles/completeness`, existing plan publish route. |
 | Automation digest review | Scheduling-adjacent panel that lists persisted dry-run digest packets, shows would-publish/blocked/skipped/manual-action counts, and lets Owner mark a pending digest `reviewed`, `archived`, or `superseded` without executing it. | Implemented backend `automation/digests`, `automation/digests/:digestId/review`, `automation/failure-policies`, `automation/failure-policies/readiness`, scheduler dry-run DTOs, proposal readback, audit completeness. The embedded UI currently supports read/refresh/review only; digest creation remains backend/CLI or a later explicit Owner UI action. |
+| Automation action handoff | Lists persisted handoff records, lets Owner create a handoff from a reviewed digest, and lets Owner deliver bounded platform action metadata. Delivery records `delivered` or `delivery_failed`; it must not publish cards, run scheduler actions, call Gateway, evaluate submissions, or mutate learner state. | Implemented backend `automation/action-handoffs`, `automation/action-handoffs/:handoffId/deliver`, reviewed digest gate, active failure-policy readiness, and Growth event boundary. Platform Action Inbox/Web Push product evidence remains a separate release gate. |
 | Cycle drilldown | Explain one generated card or evaluation as a bounded timeline. | `learning-cycles/audit` aggregate DTO. |
 
 The screen must keep child pressure low:
@@ -1063,6 +1064,7 @@ Add focused tests before broad regression runs:
 | UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
 | UI proposal review | creates supervised proposals from a selected historical cycle, lists proposals, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes, schedules, calls Gateway, evaluates, or delivers notifications after proposal creation or decision. Production visual/release evidence remains a separate release gate. |
 | UI automation digest review | lists persisted dry-run digests, shows would-publish/blocked/skipped/manual-action counts and bounded candidate state, keeps explicit publish manual, records digest `reviewed`/`archived`/`superseded` state, and never publishes, schedules, calls Gateway, evaluates, or notifies during digest refresh or review. Digest creation UI remains a later explicit Owner action. |
+| UI action handoff | lists persisted handoffs, shows reviewed-digest create rows and delivery status, calls handoff create/deliver routes only on explicit Owner click, and never publishes cards, schedules work, calls Gateway, evaluates, activates stage assessments, or treats notification delivery as release permission. |
 | UI correction action | calls `POST /api/v1/growth/profile-corrections`, refreshes context after success, and does not mutate Profile V2 optimistically in browser state |
 | UI evidence audit | renders evidence history from context or `GET /api/v1/growth/evidence/audit`; never displays raw answers, transcripts, prompts, model output, source bodies, private paths, or provider config |
 | UI profile-delta audit | render changed capability states from `GET /api/v1/growth/profile-delta-audits` persisted/public backend DTOs and never compute diffs from raw source payloads |
