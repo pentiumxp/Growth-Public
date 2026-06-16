@@ -819,11 +819,15 @@ Implemented backend shape:
   Release-readiness now preserves those bounded counters in
   `evidenceReadback.items[].ownerReviewStageSummary` for the
   `ownerReviewEvidence` item. That readback improves release audit visibility
-  only; it does not add a new pass gate, approve release, enable scheduling, or
-  publish cards. Release controls, inventory, dashboard, and package dashboard
-  summaries may carry only that compact stage-summary object so release
-  tooling can inspect stage counts without expanding the full evidence item
-  catalog or raw dependency ids.
+  only; it also preserves bounded `passedGateKeys`, `missingGateKeys`,
+  `passedGateCount`, `missingGateCount`, `requiredActionCount`, and
+  `nextAction` so Owner tooling can see the next remediation step without
+  inspecting raw dependency rows. It does not add a new pass gate, approve
+  release, enable scheduling, or publish cards. Release controls, inventory,
+  dashboard, and package dashboard summaries may carry only that compact
+  stage-summary object so release tooling can inspect stage counts, gate keys,
+  and next action without expanding the full evidence item catalog or raw
+  dependency ids.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;

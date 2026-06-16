@@ -187,6 +187,38 @@ function objectOnly(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
+function valueArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null || value === "") return [];
+  return [value];
+}
+
+function snakeCaseKey(key) {
+  return String(key || "").replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function fieldValue(source = {}, key) {
+  if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  return source[snakeCaseKey(key)];
+}
+
+function compactStringList(value, limit = 18, max = 140) {
+  return Array.from(new Set(valueArray(value).map((item) => compactEvidenceField(item, max)).filter(Boolean))).slice(0, limit);
+}
+
+function compactOwnerReviewNextAction(value = {}) {
+  const source = objectOnly(value);
+  const key = compactEvidenceField(fieldValue(source, "key"), 140);
+  const action = compactEvidenceField(fieldValue(source, "action"), 180);
+  const requiredActor = compactEvidenceField(fieldValue(source, "requiredActor") || source.actor || "owner", 80);
+  if (!key && !action) return null;
+  return Object.assign({},
+    key ? { key } : {},
+    action ? { action } : {},
+    requiredActor ? { requiredActor } : {}
+  );
+}
+
 function isSummaryOnlyEvidence(value = {}) {
   const privacyClass = cleanString(value.privacyClass || value.privacy_class);
   return value.summaryOnly === true || value.summary_only === true || privacyClass === "summary_only";
@@ -287,12 +319,20 @@ function ownerReviewStageSummary(value = {}) {
     reviewedWorkerTargetCount: numberField(source.reviewedWorkerTargetCount || source.reviewed_worker_target_count),
     pendingWorkerTargetReviewCount: numberField(source.pendingWorkerTargetReviewCount || source.pending_worker_target_review_count),
     disabledWorkerTargetCount: numberField(source.disabledWorkerTargetCount || source.disabled_worker_target_count),
+    passedGateCount: numberField(source.passedGateCount || source.passed_gate_count),
+    missingGateCount: numberField(source.missingGateCount || source.missing_gate_count),
+    requiredActionCount: numberField(source.requiredActionCount || source.required_action_count),
     failurePolicyReady: source.failurePolicyReady === true || source.failure_policy_ready === true,
-    failurePolicyStatus: compactEvidenceField(source.failurePolicyStatus || source.failure_policy_status, 120)
+    failurePolicyStatus: compactEvidenceField(source.failurePolicyStatus || source.failure_policy_status, 120),
+    passedGateKeys: compactStringList(source.passedGateKeys || source.passed_gate_keys),
+    missingGateKeys: compactStringList(source.missingGateKeys || source.missing_gate_keys),
+    nextAction: compactOwnerReviewNextAction(source.nextAction || source.next_action)
   };
   const hasEvidence = Object.entries(summary).some(([key, value]) => {
     if (key === "failurePolicyReady") return value === true;
     if (key === "failurePolicyStatus") return Boolean(value);
+    if (key === "passedGateKeys" || key === "missingGateKeys") return value.length > 0;
+    if (key === "nextAction") return Boolean(value);
     return Number(value) > 0;
   });
   return hasEvidence ? summary : null;

@@ -194,12 +194,14 @@ only bounded summary fields from that catalog, such as present/missing counts,
 source bundle ids/status/counts, and the Owner review stage-summary counters
 described below; they must not expose full evidence items.
 For `ownerReviewEvidence`, release-readiness may also project bounded
-`ownerReviewStageSummary` counters in the evidenceReadback item so release
-tooling can inspect proposal lifecycle plus downstream automation-stage counts
-without raw dependency ids. Downstream release controls, inventory, dashboard,
-and package dashboard summaries may carry only that compact summary object, not
-the full `evidenceReadback.items[]` catalog. This readback does not change
-readiness status, release approval, runtime config, or scheduler permission.
+`ownerReviewStageSummary` counters, passed/missing gate keys, gate counts,
+required action count, and next Owner action in the evidenceReadback item so
+release tooling can inspect proposal lifecycle plus downstream automation-stage
+counts without raw dependency ids. Downstream release controls, inventory,
+dashboard, and package dashboard summaries may carry only that compact summary
+object, not the full `evidenceReadback.items[]` catalog. This readback does not
+change readiness status, release approval, runtime config, or scheduler
+permission.
 Service-owned smoke/readback evidence such as stage-checkpoint, proposal,
 scheduler, planner, target-provisioning, daily-loop, cycle-history, Owner audit,
 profile-feedback, recommendation lifecycle, learner-cycle, scheduler dry-run,

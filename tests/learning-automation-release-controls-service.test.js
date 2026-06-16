@@ -15,6 +15,16 @@ const ownerReviewStageSummary = {
   publishedSchedulerExecutionCount: 1,
   completedSchedulerRunCount: 1,
   pendingWorkerTargetReviewCount: 1,
+  passedGateCount: 6,
+  missingGateCount: 3,
+  requiredActionCount: 3,
+  passedGateKeys: ["proposal_record_present", "digest_record_present"],
+  missingGateKeys: ["digest_owner_review_present", "action_handoff_delivered"],
+  nextAction: {
+    key: "digest_owner_review_present",
+    action: "review_automation_digest",
+    requiredActor: "owner"
+  },
   failurePolicyReady: true,
   failurePolicyStatus: "ready"
 };
@@ -345,6 +355,10 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
   assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.completedSchedulerRunCount, 1);
   assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.passedGateCount, 6);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.missingGateCount, 3);
+  assert.deepEqual(result.steps[0].evidenceReadback.ownerReviewStageSummary.missingGateKeys, ["digest_owner_review_present", "action_handoff_delivered"]);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.nextAction.key, "digest_owner_review_present");
   assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.failurePolicyStatus, "ready");
   assert.equal(result.steps[1].latestCollectionRunId, "lgacrn_ready_1");
   assert.equal(result.steps[1].packageRecordPresent, true);

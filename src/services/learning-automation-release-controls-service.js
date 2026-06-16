@@ -35,7 +35,10 @@ const OWNER_REVIEW_STAGE_SUMMARY_FIELDS = [
   "skippedSchedulerRunCount",
   "reviewedWorkerTargetCount",
   "pendingWorkerTargetReviewCount",
-  "disabledWorkerTargetCount"
+  "disabledWorkerTargetCount",
+  "passedGateCount",
+  "missingGateCount",
+  "requiredActionCount"
 ];
 
 function cleanString(value, max = 500) {
@@ -51,6 +54,12 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function valueArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null || value === "") return [];
+  return [value];
+}
+
 function unique(values = []) {
   return Array.from(new Set(values.map((value) => cleanString(value, 160)).filter(Boolean)));
 }
@@ -62,6 +71,23 @@ function snakeCaseKey(key) {
 function fieldValue(source = {}, key) {
   if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
   return source[snakeCaseKey(key)];
+}
+
+function compactStringList(value, limit = 18, max = 140) {
+  return Array.from(new Set(valueArray(value).map((item) => cleanString(item, max)).filter(Boolean))).slice(0, limit);
+}
+
+function compactNextAction(value = {}) {
+  const source = objectOnly(value);
+  const key = cleanString(fieldValue(source, "key"), 140);
+  const action = cleanString(fieldValue(source, "action"), 180);
+  const requiredActor = cleanString(fieldValue(source, "requiredActor") || source.actor || "owner", 80);
+  if (!key && !action) return null;
+  return Object.assign({},
+    key ? { key } : {},
+    action ? { action } : {},
+    requiredActor ? { requiredActor } : {}
+  );
 }
 
 function ownerReviewStageSummary(value = {}) {
@@ -88,13 +114,20 @@ function ownerReviewStageSummary(value = {}) {
   const failurePolicyReady = fieldValue(summary, "failurePolicyReady") === true;
   const failurePolicyStatus = cleanString(fieldValue(summary, "failurePolicyStatus"), 120);
   if (failurePolicyReady || failurePolicyStatus) hasSignal = true;
+  const passedGateKeys = compactStringList(fieldValue(summary, "passedGateKeys"));
+  const missingGateKeys = compactStringList(fieldValue(summary, "missingGateKeys"));
+  const nextAction = compactNextAction(fieldValue(summary, "nextAction"));
+  if (passedGateKeys.length || missingGateKeys.length || nextAction) hasSignal = true;
   if (!hasSignal) return null;
   return Object.assign({
     schemaVersion: "growth.learningAutomationReleaseReadback.ownerReviewStageSummary.v1",
     summaryOnly: true
   }, counters, {
     failurePolicyReady,
-    failurePolicyStatus
+    failurePolicyStatus,
+    passedGateKeys,
+    missingGateKeys,
+    nextAction
   });
 }
 

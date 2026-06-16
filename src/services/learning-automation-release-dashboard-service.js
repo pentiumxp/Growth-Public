@@ -36,7 +36,10 @@ const OWNER_REVIEW_STAGE_SUMMARY_FIELDS = [
   "skippedSchedulerRunCount",
   "reviewedWorkerTargetCount",
   "pendingWorkerTargetReviewCount",
-  "disabledWorkerTargetCount"
+  "disabledWorkerTargetCount",
+  "passedGateCount",
+  "missingGateCount",
+  "requiredActionCount"
 ];
 
 function cleanString(value, max = 160) {
@@ -75,6 +78,19 @@ function fieldValue(source = {}, key) {
   return source[snakeCaseKey(key)];
 }
 
+function compactNextAction(value = {}) {
+  const source = objectOnly(value);
+  const key = cleanString(fieldValue(source, "key"), 140);
+  const action = cleanString(fieldValue(source, "action"), 180);
+  const requiredActor = cleanString(fieldValue(source, "requiredActor") || source.actor || "owner", 80);
+  if (!key && !action) return null;
+  return Object.assign({},
+    key ? { key } : {},
+    action ? { action } : {},
+    requiredActor ? { requiredActor } : {}
+  );
+}
+
 function ownerReviewStageSummary(value = {}) {
   const readback = objectOnly(value);
   const direct = objectOnly(readback.ownerReviewStageSummary || readback.owner_review_stage_summary);
@@ -99,13 +115,20 @@ function ownerReviewStageSummary(value = {}) {
   const failurePolicyReady = fieldValue(summary, "failurePolicyReady") === true;
   const failurePolicyStatus = cleanString(fieldValue(summary, "failurePolicyStatus"), 120);
   if (failurePolicyReady || failurePolicyStatus) hasSignal = true;
+  const passedGateKeys = uniqueStrings(fieldValue(summary, "passedGateKeys"), 18);
+  const missingGateKeys = uniqueStrings(fieldValue(summary, "missingGateKeys"), 18);
+  const nextAction = compactNextAction(fieldValue(summary, "nextAction"));
+  if (passedGateKeys.length || missingGateKeys.length || nextAction) hasSignal = true;
   if (!hasSignal) return null;
   return Object.assign({
     schemaVersion: "growth.learningAutomationReleaseReadback.ownerReviewStageSummary.v1",
     summaryOnly: true
   }, counters, {
     failurePolicyReady,
-    failurePolicyStatus
+    failurePolicyStatus,
+    passedGateKeys,
+    missingGateKeys,
+    nextAction
   });
 }
 

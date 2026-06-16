@@ -13,6 +13,16 @@ const ownerReviewStageSummary = {
   publishedSchedulerExecutionCount: 2,
   completedSchedulerRunCount: 1,
   pendingWorkerTargetReviewCount: 1,
+  passedGateCount: 7,
+  missingGateCount: 2,
+  requiredActionCount: 2,
+  passedGateKeys: ["proposal_record_present", "digest_record_present"],
+  missingGateKeys: ["digest_owner_review_present", "worker_target_review_present"],
+  nextAction: {
+    key: "worker_target_review_present",
+    action: "review_scheduler_worker_target",
+    requiredActor: "owner"
+  },
   failurePolicyReady: true,
   failurePolicyStatus: "ready"
 };
@@ -267,12 +277,16 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.proposalCount, 6);
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.completedSchedulerRunCount, 1);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.missingGateCount, 2);
+  assert.deepEqual(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.missingGateKeys, ["digest_owner_review_present", "worker_target_review_present"]);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.nextAction.action, "review_scheduler_worker_target");
   assert.equal(result.artifactReadback.packages.latest.collectionRunId, "lgacrn_1");
   assert.equal(result.artifactReadback.packages.latest.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.summaryOnly, true);
   assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.ownerReviewStageSummary.proposalCount, 6);
+  assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.ownerReviewStageSummary.nextAction.key, "worker_target_review_present");
   assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.latestReadinessOwnerReviewStageSummary.proposalCount, 7);
   assert.equal(result.artifactReadback.releaseEvidence.latest.id, "lgarev_1");
   assert.equal(result.artifactReadback.releaseEvidence.latest.evidenceKey, "ownerDailyUiEvidence");

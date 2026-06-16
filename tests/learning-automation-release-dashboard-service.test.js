@@ -14,6 +14,16 @@ const ownerReviewStageSummary = {
   publishedSchedulerExecutionCount: 1,
   completedSchedulerRunCount: 1,
   pendingWorkerTargetReviewCount: 1,
+  passedGateCount: 6,
+  missingGateCount: 3,
+  requiredActionCount: 3,
+  passedGateKeys: ["proposal_record_present", "digest_record_present"],
+  missingGateKeys: ["digest_owner_review_present", "action_handoff_delivered"],
+  nextAction: {
+    key: "action_handoff_delivered",
+    action: "deliver_action_handoff",
+    requiredActor: "owner"
+  },
   failurePolicyReady: true,
   failurePolicyStatus: "ready"
 };
@@ -251,6 +261,9 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
   assert.equal(result.releaseDashboard.ownerReviewStageSummary.completedSchedulerRunCount, 1);
   assert.equal(result.releaseDashboard.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.missingGateCount, 3);
+  assert.deepEqual(result.releaseDashboard.ownerReviewStageSummary.missingGateKeys, ["digest_owner_review_present", "action_handoff_delivered"]);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.nextAction.key, "action_handoff_delivered");
   assert.equal(result.releaseDashboard.ownerReviewStageSummary.failurePolicyStatus, "ready");
   assert.equal(result.releaseDashboard.latestReadinessSnapshotId, "lgarsnap_1");
   assert.equal(result.releaseDashboard.latestReadinessEvidencePresentCount, 26);
@@ -278,6 +291,7 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleTaskCount, 8);
   assert.equal(result.releaseReadiness.evidenceReadback.ownerReviewStageSummary.proposalCount, 4);
   assert.equal(result.releaseReadiness.evidenceReadback.ownerReviewStageSummary.failurePolicyReady, true);
+  assert.equal(result.releaseReadiness.evidenceReadback.ownerReviewStageSummary.nextAction.action, "deliver_action_handoff");
   assert.equal(result.releaseControls.auditReadbackStatus, "ready");
   assert.equal(result.releaseInventory.artifactCount, 8);
   assert.equal(result.releaseInventory.releaseEvidenceRecordCount, 1);

@@ -153,6 +153,23 @@ function allEvidence() {
         reviewedWorkerTargetCount: 1,
         pendingWorkerTargetReviewCount: 1,
         disabledWorkerTargetCount: 1,
+        passedGateCount: 7,
+        missingGateCount: 2,
+        requiredActionCount: 2,
+        passedGateKeys: [
+          "proposal_record_present",
+          "digest_record_present",
+          "failure_policy_active"
+        ],
+        missingGateKeys: [
+          "digest_owner_review_present",
+          "worker_target_review_present"
+        ],
+        nextAction: {
+          key: "digest_owner_review_present",
+          action: "review_automation_digest",
+          requiredActor: "owner"
+        },
         failurePolicyReady: true,
         failurePolicyStatus: "ready"
       }
@@ -340,12 +357,26 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
   assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.completedSchedulerRunCount, 1);
   assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.passedGateCount, 7);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.missingGateCount, 2);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.requiredActionCount, 2);
+  assert.deepEqual(ownerReviewCheck.summary.ownerReviewStageSummary.missingGateKeys, [
+    "digest_owner_review_present",
+    "worker_target_review_present"
+  ]);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.nextAction.action, "review_automation_digest");
   assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.failurePolicyStatus, "ready");
   const ownerReviewReadback = result.evidenceReadback.items.find((item) => item.key === "ownerReviewEvidence");
   assert.equal(ownerReviewReadback.ownerReviewStageSummary.acceptedProposalCount, 1);
   assert.equal(ownerReviewReadback.ownerReviewStageSummary.digestRequiredActionCount, 1);
   assert.equal(ownerReviewReadback.ownerReviewStageSummary.blockedActionHandoffCount, 1);
   assert.equal(ownerReviewReadback.ownerReviewStageSummary.skippedSchedulerRunCount, 1);
+  assert.deepEqual(ownerReviewReadback.ownerReviewStageSummary.passedGateKeys, [
+    "proposal_record_present",
+    "digest_record_present",
+    "failure_policy_active"
+  ]);
+  assert.equal(ownerReviewReadback.ownerReviewStageSummary.nextAction.key, "digest_owner_review_present");
   assert.equal(JSON.stringify(result.evidenceReadback).includes("lgaprop_"), false);
   assert.equal(JSON.stringify(result.evidenceReadback).includes("lgadig_"), false);
   assert.equal(JSON.stringify(result.evidenceReadback).includes("lgahand_"), false);

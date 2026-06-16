@@ -140,8 +140,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   bundle readback, present/missing counts, missing check keys, and bounded
   per-check evidence references. For `ownerReviewEvidence`, the readback item
   now also carries bounded `ownerReviewStageSummary` counters from the release
-  evidence bundle summary without raw dependency ids; this is audit visibility
-  only and does not change readiness pass semantics or scheduler permission.
+  evidence bundle summary, plus bounded passed/missing gate keys, gate counts,
+  required action count, and next Owner action without raw dependency ids; this
+  is audit visibility only and does not change readiness pass semantics or
+  scheduler permission.
   Owner snapshots persist that readback in
   `learning_growth_automation_release_readiness.evidence_readback_json`, and
   repository privacy scanning rejects private path/token-like values even when a
@@ -171,8 +173,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   owner-decision, and proposal execution statuses; only `accepted` proposals
   satisfy the accepted-proposal gate. Its release evidence bundle summary also
   projects downstream digest, action-handoff, scheduler execution, scheduler
-  run, worker-target, and failure-policy stage counts without raw dependency
-  rows or ids. The supervised automation P5-P9 SQLite
+  run, worker-target, and failure-policy stage counts, gate keys, gate counts,
+  required action count, and next action without raw dependency rows or ids.
+  The supervised automation P5-P9 SQLite
   repository chain now
   applies repository-level privacy scanning for privacy-risk keys, private
   path/token-looking string values, and non-summary privacy classes before any
