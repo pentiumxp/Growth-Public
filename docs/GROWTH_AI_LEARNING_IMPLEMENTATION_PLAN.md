@@ -143,7 +143,13 @@ AI-driven loop:
   evaluation into one summary-only collection pass without package records,
   release decisions, runtime config, scheduler permission, deployment, or card
   publication. Optional writes can delegate only to the existing collection-run
-  audit row with explicit Owner/write authorization;
+  audit row with explicit Owner/write authorization. The facade has been
+  deployed to Mac production at Growth commit `2178bdc86b97`; production
+  no-write smoke must be interpreted as collection-path evidence, not release
+  approval. A subset run can pass bundle and audit while release-readiness
+  remains incomplete because product UI/visual, platform action,
+  target-provisioning, stage-checkpoint, and completed-cycle evidence are still
+  missing;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one

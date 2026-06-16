@@ -118,7 +118,11 @@ Growth already has substantial backend foundation:
   release approval records, persisted release evidence records, and a
   summary-only release evidence collection pass facade that can compose bundle,
   bundle audit, release-readiness, and collection-run readback without creating
-  packages or release decisions.
+  packages or release decisions. The release evidence collection facade is now
+  deployed to Mac production at Growth commit `2178bdc86b97` and has bounded
+  no-write production smoke evidence for the non-model `learning_loop_state`
+  subset: bundle and audit pass, release-readiness remains incomplete, no
+  collection-run record is written, and scheduler permission remains false.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:
@@ -437,7 +441,12 @@ Use the Growth-owned release-readiness boundary:
   exposes the same service boundary for plugin UI/workbench orchestration. It
   is not a release package, release decision, runtime config enablement,
   scheduler permission, deployment, publication, generation, evaluation, or
-  learner-state mutation.
+  learner-state mutation. In production, run the CLI through the production
+  service user when it needs production key-file access; the development shell
+  user is expected to receive key-file permission errors. A no-write subset
+  such as `--task learning_loop_state --required-task learning_loop_state`
+  is valid collection-path smoke evidence when the goal is to prove the facade
+  and readback chain without model variance or missing UI/release evidence.
 - release collection-run CLI:
   `npm run smoke:release-collection-run -- --release-evidence-bundle-file <bundle.json> --release-evidence-bundle-audit-file <audit.json> --release-readiness-file <readiness.json> --json`.
   This delegates through the normal service graph to

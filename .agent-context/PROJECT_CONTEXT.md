@@ -399,6 +399,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   present. It does not create release package records, release decisions,
   approvals, activation/runtime enablement rows, scheduler permission,
   deployment, publication, generation, evaluation, or learner-state mutation.
+  The facade is deployed in Mac production at commit `2178bdc86b97`. A
+  production no-write smoke run as `hermes-host` with the launchd Growth env
+  proved the `learning_loop_state` collection subset can build a summary-only
+  bundle, pass bundle audit, evaluate release-readiness as incomplete, evaluate
+  collection-run readback, keep `collectionRunWritten=false`, and keep
+  `writefulSchedulingAllowed=false`. Full release readiness remains incomplete
+  until product UI/visual, platform action, target provisioning,
+  stage-checkpoint, and completed-cycle/profile-feedback evidence are present.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

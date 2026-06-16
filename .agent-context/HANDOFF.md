@@ -9,6 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T15:36+08:00 - Release Evidence Collection Production Deploy
+
+- Status: deployed and production-smoked. Growth commit `2178bdc86b97`
+  (`Add release evidence collection facade`) was deployed to Mac production
+  through the central Home AI deploy script. Overall Growth closed-loop MVP
+  progress is about `85%` after this slice: the backend release evidence
+  collection facade is now present in production and can be exercised without
+  writes, while full release readiness still needs product UI/visual evidence,
+  target provisioning evidence, stage-checkpoint evidence, platform action
+  evidence, and completed-cycle/profile-feedback evidence.
+- Production deployment:
+  - command:
+    `cd /Users/hermes-dev/HermesMobileDev/app && npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file /Users/xuxin/.homeai-qa/sudo-password --json`;
+  - deploy result `ok=true`, `target=plugin:growth`, `sourceRef.commit=2178bdc86b97`, `sourceRef.dirty=false`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T073058Z-plugin-growth-manual`;
+  - deploy excluded `data/` and `runtime/`, restored `hermes-host:staff`,
+    restarted only `com.hermesmobile.plugin.growth`, and passed the plugin
+    manifest health check;
+  - deploy validation included codex shared-auth permission repair, launchd
+    print, manifest health, and codex-auth profile audit with
+    `codexIssueCount=0`.
+- Production readback:
+  - `GET http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` returned
+    `id=growth`, `title=成长`, `kind=embedded_app`, `entry_url=/?embed=hermes`,
+    six manifest actions, and `mcp_toolset=growth`;
+  - launchd environment readback confirms Growth runs with
+    `GROWTH_DATA_OWNER=plugin`, production SQLite under the Growth plugin data
+    root, and Gateway authoring/evaluation through the Responses endpoint with
+    token values referenced only by file path.
+- Production no-write smoke:
+  - a raw direct shell smoke without workspace scope correctly returned
+    `release_evidence_collection_workspace_required`;
+  - the scoped full default collection for `workspaceId=weixin_stephen`,
+    `learnerId=fanfan`, `domainPackId=uk_hk_curriculum_foundation`,
+    `domain=science`, `subject=science`, `horizon=daily_plan` returned bounded
+    `growth.learningAutomationReleaseEvidenceCollection.v1` output and stayed
+    advisory/no-write. It reported missing release evidence and no scheduler
+    permission;
+  - the same smoke had to run as `hermes-host` because production key files are
+    not readable by the development shell user. No key contents were printed or
+    copied;
+  - standalone production planner readiness smoke with the launchd Gateway env
+    passed and produced one daily science draft summary;
+  - the no-model `learning_loop_state` release-evidence-collection subset
+    passed the bundle and bundle-audit steps (`taskCount=1`, `passedCount=1`,
+    `blockedCount=0`), returned `status=incomplete` only because full release
+    readiness evidence is intentionally missing, and kept
+    `collectionRunWritten=false` and `writefulSchedulingAllowed=false`.
+- Validation passed before deploy:
+  - Growth `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - Growth focused release evidence collection/route/architecture tests
+    (`89/89`);
+  - Growth `npm run check`;
+  - Growth `npm test` (`814/814`);
+  - Growth `git diff --check`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok=true`, `mode=plan`, `sourceRef.dirty=false`;
+  - Home AI app `git diff --check`;
+  - Growth CodeGraph status: `351` JavaScript files, `4,719` nodes,
+    `18,893` edges.
+- AI Ops:
+  - intake classified this as H1, deployment required, visual lane not
+    required;
+  - evidence record:
+    `evidence-d1944876-ae95-487a-a7db-d50023eb9ad8`.
+
 ## 2026-06-16T15:23+08:00 - Release Evidence Collection Pass Facade
 
 - Status: implemented, documented, and validated. This backend-only slice adds
