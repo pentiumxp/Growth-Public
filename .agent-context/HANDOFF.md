@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T11:46+08:00 - Central Visual Evidence Private Value Guard
+
+- Status: implemented and full-Harness validated locally. This slice hardens
+  the Growth-owned central visual evidence ingestion boundary used by release
+  readiness and release evidence bundles. It does not change UI, run a real
+  Appium visual scenario, deploy, call Gateway/model vendors, publish
+  plans/cards, generate cards, evaluate submissions, execute scheduler actions,
+  run scheduler ticks, deliver notifications, emit platform events, activate
+  stage assessments, mutate learner state, flip runtime config, grant scheduler
+  permission, or write production data.
+- Scope:
+  - `learning-automation-central-visual-evidence-service` now scans public
+    scope and projected public visual summaries for private path/token-looking
+    values before returning release evidence;
+  - raw Home AI visual harness artifact paths remain accepted only as input for
+    deriving screenshot basenames/booleans, because central harness artifacts
+    naturally carry local artifact paths;
+  - failed DTOs are redacted before they can be consumed by release bundles or
+    release-readiness readbacks;
+  - service, smoke, and architecture Harness now prove private-value rejection
+    and no raw private path exposure from failure summaries.
+- Focused validation passed:
+  - `node --check src/services/learning-automation-central-visual-evidence-service.js tests/learning-automation-central-visual-evidence-service.test.js tests/growth-central-visual-evidence-smoke-script.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-central-visual-evidence-service.test.js tests/growth-central-visual-evidence-smoke-script.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`91/91`);
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`.
+- Broad and central validation passed:
+  - `npm test` (`787/787`);
+  - Home AI app `node tests/ios-pwa-live-debug-server.test.js`;
+  - Home AI app `node tests/ios-pwa-visual-harness.test.js`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `node scripts/ai-ops-control-plane.js lane allocate --plugin-id growth --requester codex-growth-central-visual-20260616-1146 --json`
+    allocated `ios-pwa-1` / `http://127.0.0.1:19073/`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app AI Ops evidence ledger appended
+    `evidence-dfd58c3b-7588-4882-a083-c0080bd51738`;
+  - CodeGraph status reported 343 JavaScript files indexed, 4533 nodes, and
+    18061 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth central visual evidence private value guard; backend release evidence service docs and harness only; no UI deploy" --json`
+    classified this release-evidence/visual-toolchain boundary slice as H1.
+  - A visual lane was allocated because the evidence type belongs to the
+    central visual toolchain. This slice did not run the real
+    `embedded-plugin-shell` visual scenario and should not be treated as
+    product visual pass evidence.
+  - The Home AI app deploy plan still reported unrelated dirty app files from
+    another workspace state. They were not modified by this Growth slice.
+- Progress calibration:
+  - Card-generation/daily-card user flow remains about 80-85% complete.
+  - Full AI-driven Growth closed-loop MVP progress is now about 73-75%:
+    release-evidence privacy is tighter, while richer Owner UI, real central
+    visual artifacts, production release evidence, and multi-workspace/domain
+    product rollout remain unfinished.
+
 ## 2026-06-16T11:34+08:00 - Release Workbench Action Endpoint-Scoped Dependencies
 
 - Status: implemented and full-Harness validated locally. This slice tightens

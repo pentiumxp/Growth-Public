@@ -851,6 +851,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   has a Growth-owned read-only ingestion boundary through
   `npm run smoke:central-visual-evidence`; the real production artifact still
   must be produced by the Home AI central visual toolchain before release.
+  The ingestion service accepts raw Home AI visual artifact paths only as input
+  for deriving basenames/booleans; public scope and projected public visual
+  summaries are scanned for private path/token-looking values, and failed DTOs
+  are redacted before release-bundle or readiness consumers see them.
   Plan publication failure visibility is now durable: `learning_growth_plan_drafts`
   stores bounded latest publish-attempt status/error/stage, the publisher writes
   failed or policy-blocked attempts without marking drafts published, and plan

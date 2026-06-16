@@ -6,6 +6,7 @@ const CENTRAL_VISUAL_EVIDENCE_SCHEMA = "growth.learningAutomationCentralVisualEv
 const DEFAULT_PLUGIN_ID = "growth";
 const DEFAULT_SCENARIO = "embedded-plugin-shell";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 function cleanString(value, max = 180) {
   return String(value || "").trim().slice(0, max);
@@ -31,6 +32,31 @@ function scanPrivacy(value, pathName = "$", findings = []) {
     if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
   }
   return findings;
+}
+
+function scanPrivateValues(value, pathName = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(pathName);
+    return findings;
+  }
+  if (!value || typeof value !== "object") return findings;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanPrivateValues(item, `${pathName}[${index}]`, findings));
+    return findings;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    scanPrivateValues(child, `${pathName}.${key}`, findings);
+  }
+  return findings;
+}
+
+function redactPrivateValues(value) {
+  if (typeof value === "string") {
+    return PRIVATE_VALUE_PATTERN.test(value) ? "[private_value_redacted]" : value;
+  }
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(redactPrivateValues);
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, redactPrivateValues(child)]));
 }
 
 function publicScope(input = {}) {
@@ -181,11 +207,13 @@ function createLearningAutomationCentralVisualEvidenceService(options = {}) {
       return { ok: false, error: "central_visual_evidence_workspace_required" };
     }
     const privacyFindings = scanPrivacy(input).slice(0, 8);
-    if (privacyFindings.length) {
+    const scopePrivateValueFindings = scanPrivateValues(scope).slice(0, 8);
+    if (privacyFindings.length || scopePrivateValueFindings.length) {
       return {
         ok: false,
         error: "central_visual_evidence_privacy_failed",
-        privacyFindings
+        privacyFindings,
+        privateValueFindings: scopePrivateValueFindings
       };
     }
     const payload = evidencePayload(input, readFile);
@@ -217,14 +245,18 @@ function createLearningAutomationCentralVisualEvidenceService(options = {}) {
       };
     }
     const projected = publicVisualEvidence(evidence, scope, payload.evidenceFile);
+    const projectionPrivateValueFindings = scanPrivateValues(projected).slice(0, 8);
+    const publicProjected = redactPrivateValues(projected);
     const scenarioOk = projected.scenario === scope.scenario;
     const pluginOk = projected.pluginId === scope.pluginId;
     const screenshotOk = projected.screenshotPresent;
-    const pass = projected.status === "pass" && scenarioOk && pluginOk && screenshotOk;
+    const privateValueOk = projectionPrivateValueFindings.length === 0;
+    const pass = projected.status === "pass" && scenarioOk && pluginOk && screenshotOk && privateValueOk;
     const missingRequired = [];
     if (!pluginOk) missingRequired.push("matching_plugin_id");
     if (!scenarioOk) missingRequired.push("matching_visual_scenario");
     if (!screenshotOk) missingRequired.push("visual_screenshot_artifact");
+    if (!privateValueOk) missingRequired.push("no_private_value_leaks");
     if (projected.status !== "pass") missingRequired.push("passing_visual_assertions");
     return {
       ok: pass,
@@ -243,8 +275,9 @@ function createLearningAutomationCentralVisualEvidenceService(options = {}) {
       scenario: scope.scenario,
       status: pass ? "pass" : "blocked",
       readyForReleaseEvidence: pass,
-      visualEvidence: projected,
+      visualEvidence: publicProjected,
       missingRequired,
+      privateValueFindings: projectionPrivateValueFindings,
       centralBoundary: {
         summaryOnly: true,
         homeAiOwnsVisualHarness: true,

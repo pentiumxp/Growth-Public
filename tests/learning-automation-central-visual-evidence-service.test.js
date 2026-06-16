@@ -59,6 +59,7 @@ test("central visual evidence service validates Home AI embedded-plugin visual s
   assert.equal(result.visualEvidence.failedAssertionCount, 0);
   assert.equal(result.centralBoundary.homeAiOwnsVisualHarness, true);
   assert.equal(result.centralBoundary.growthRunsNoAppium, true);
+  assert.deepEqual(result.privateValueFindings, []);
   assert.equal(JSON.stringify(result).includes("/Users/xuxin/.homeai-qa"), false);
   assert.equal(JSON.stringify(result).includes("debug-url-secret"), false);
 });
@@ -128,6 +129,36 @@ test("central visual evidence service rejects privacy-risk fields and unavailabl
   });
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "central_visual_evidence_privacy_failed");
+
+  const privateScopeValue = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    domain: "Bearer local-token",
+    evidence: {
+      ok: true,
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      screenshotPresent: true
+    }
+  });
+  assert.equal(privateScopeValue.ok, false);
+  assert.equal(privateScopeValue.error, "central_visual_evidence_privacy_failed");
+  assert.deepEqual(privateScopeValue.privateValueFindings, ["$.domain"]);
+
+  const privateProjectedValue = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    evidence: {
+      ok: true,
+      source: "/Users/example/.homeai-qa/private-source.json",
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      screenshotPresent: true
+    }
+  });
+  assert.equal(privateProjectedValue.ok, false);
+  assert.equal(privateProjectedValue.status, "blocked");
+  assert.equal(privateProjectedValue.error, "central_visual_evidence_incomplete");
+  assert.deepEqual(privateProjectedValue.privateValueFindings, ["$.source"]);
+  assert.ok(privateProjectedValue.missingRequired.includes("no_private_value_leaks"));
 
   const noReader = createLearningAutomationCentralVisualEvidenceService().evaluate({
     workspaceId: "weixin_fanfan",

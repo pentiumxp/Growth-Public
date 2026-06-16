@@ -1938,6 +1938,11 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(centralVisualScript, /executeOnce/);
   assert.doesNotMatch(centralVisualScript, /runOnce/);
 
+  const centralVisualService = read(path.join("src", "services", "learning-automation-central-visual-evidence-service.js"));
+  assert.match(centralVisualService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(centralVisualService, /scanPrivateValues/);
+  assert.match(centralVisualService, /no_private_value_leaks/);
+
   const bundleAuditScript = read(path.join("scripts", "smoke-growth-release-evidence-bundle-audit.js"));
   assert.match(bundleAuditScript, /readEnv/);
   assert.match(bundleAuditScript, /createServices/);

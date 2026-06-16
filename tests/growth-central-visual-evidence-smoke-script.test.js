@@ -117,3 +117,34 @@ test("central visual evidence smoke script returns summary-only visual evidence"
     assert.equal(JSON.stringify(output).includes("access-key"), false);
   });
 });
+
+test("central visual evidence smoke script rejects private values from public summaries", () => {
+  withTempVisualEvidence(({ dir, evidencePath }) => {
+    fs.writeFileSync(evidencePath, JSON.stringify({
+      ok: true,
+      source: "/Users/example/.homeai-qa/private-visual-source.json",
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      screenshotPresent: true,
+      assertions: [{ name: "visible", status: "pass" }]
+    }), "utf8");
+
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--central-visual-evidence-file", evidencePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: path.join(dir, "growth-learning.sqlite3")
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = parseStdout(result);
+    assert.equal(output.ok, false);
+    assert.equal(output.error, "central_visual_evidence_incomplete");
+    assert.deepEqual(output.privateValueFindings, ["$.source"]);
+    assert.ok(output.missingRequired.includes("no_private_value_leaks"));
+    assert.equal(JSON.stringify(output).includes("/Users/example"), false);
+  });
+});
