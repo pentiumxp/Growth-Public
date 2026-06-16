@@ -238,9 +238,14 @@ The next implementation slices should be:
    item, explicitly publish one card, and refresh board/context/loop state
    without Codex. Owner can also apply a domain-pack/subject selector and
    explicitly create/update target provision rows through the Growth service
-   facade. This Owner-loop path is deployed and production smoke validated, but
-   Fanfan science still requires explicit Owner provisioning before draft/
-   publish. The remaining closure is formal checkpoint production evidence and
+   facade. The compact ordinary-card recipe policy now supports
+   `daily_english_v1`, `daily_science_v1`, and
+   `daily_subject_practice_v1`; subject-scoped recipe generation remains
+   guarded by target provisioning, graph planning, graph-node evidence
+   requirements, Gateway authoring validation, and transactional publishing.
+   This Owner-loop path is deployed and production smoke validated, but Fanfan
+   science still requires explicit Owner provisioning before draft/publish.
+   The remaining closure is formal checkpoint production evidence and
    proposal/digest/action/execution surfaces.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio

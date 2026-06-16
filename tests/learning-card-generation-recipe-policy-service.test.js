@@ -13,6 +13,8 @@ test("card generation recipe policy exposes daily English context without raw in
   assert.equal(result.ok, true);
   assert.equal(result.selectedRecipeId, "daily_english_v1");
   assert.equal(result.recipes[0].id, "daily_english_v1");
+  assert.equal(result.recipes.some((recipe) => recipe.id === "daily_science_v1"), true);
+  assert.equal(result.recipes.some((recipe) => recipe.id === "daily_subject_practice_v1"), true);
   assert.equal(result.recipes[0].domain, "english");
   assert.equal(result.recipes[0].cardRole, "practice");
   assert.equal(result.completionPolicy.mode, "daily_score_once");
@@ -41,6 +43,52 @@ test("card generation recipe policy normalizes recipe-only daily generation inpu
   assert.equal(result.input.cardRole, undefined);
   assert.equal(result.input.difficultyBand, undefined);
   assert.equal(result.input.completionPolicy.mode, "daily_score_once");
+  assert.equal(result.input.completionPolicy.passScoreRequired, false);
+});
+
+test("card generation recipe policy normalizes daily science generation input", () => {
+  const service = createLearningCardGenerationRecipePolicyService();
+
+  const result = service.normalizeGenerationInput({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    recipeId: "daily_science_v1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.applies, true);
+  assert.equal(result.recipeId, "daily_science_v1");
+  assert.equal(result.recipe.domain, "science");
+  assert.equal(result.recipe.subject, "science");
+  assert.equal(result.input.domain, "science");
+  assert.equal(result.input.subject, "science");
+  assert.equal(result.input.cardSchemaVersion, "growth.card.authoring.v1");
+  assert.equal(result.input.completionPolicy.mode, "daily_score_once");
+  assert.deepEqual(result.recipe.evidenceRequirements, ["short_answer", "science_reasoning", "self_reflection_optional"]);
+});
+
+test("card generation recipe policy can use selected subject scope for generic daily practice", () => {
+  const service = createLearningCardGenerationRecipePolicyService();
+
+  const context = service.context({
+    recipeId: "daily_subject_practice_v1",
+    domain: "math",
+    subject: "mathematics"
+  });
+  const result = service.normalizeGenerationInput({
+    workspaceId: "weixin_child",
+    recipeId: "daily_subject_practice_v1",
+    domain: "math",
+    subject: "mathematics"
+  });
+
+  assert.equal(context.selectedRecipeId, "daily_subject_practice_v1");
+  assert.equal(context.generationDefaults.domain, "math");
+  assert.equal(context.generationDefaults.subject, "mathematics");
+  assert.equal(result.ok, true);
+  assert.equal(result.recipeId, "daily_subject_practice_v1");
+  assert.equal(result.input.domain, "math");
+  assert.equal(result.input.subject, "mathematics");
   assert.equal(result.input.completionPolicy.passScoreRequired, false);
 });
 

@@ -546,6 +546,49 @@ test("card generation can choose the next daily English target when Owner submit
   }
 });
 
+test("card generation can use a generic daily practice recipe for a selected subject", async () => {
+  const { dbPath, gatewayCalls, generationService } = setup({
+    gatewayResponse() {
+      return {
+        json: {
+          output_text: JSON.stringify(validDraft({
+            cardRole: "practice",
+            title: "Ratio intro daily practice",
+            targetNodeIds: ["kg_ratio_intro"]
+          }))
+        }
+      };
+    }
+  });
+
+  const result = await generationService.generateCard({
+    workspaceId: "weixin_child",
+    learnerId: "weixin_child",
+    programId: "program_1",
+    recipeId: "daily_subject_practice_v1",
+    domain: "math",
+    subject: "mathematics"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.recipeId, "daily_subject_practice_v1");
+  assert.equal(result.learningGraphPlan.domain, "math");
+  assert.equal(result.learningGraphPlan.subject, "mathematics");
+  assert.equal(result.learningGraphPlan.cardSequence[0].cardRole, "practice");
+  assert.equal(gatewayCalls[0].input.learningGraphPlan.subject, "mathematics");
+  assert.equal(gatewayCalls[0].input.cardRole, "practice");
+  assert.deepEqual(gatewayCalls[0].input.evidenceRequirements, ["explain_ratio_comparison"]);
+
+  const db = new DatabaseSync(dbPath);
+  try {
+    const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
+    assert.equal(card.domain, "math");
+    assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
+  } finally {
+    db.close();
+  }
+});
+
 test("card generation can choose the next target from the latest trajectory recommendation", async () => {
   const { dbPath, gatewayCalls, generationService } = setup({
     gatewayResponse() {

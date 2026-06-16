@@ -1,6 +1,8 @@
 "use strict";
 
 const DAILY_ENGLISH_RECIPE_ID = "daily_english_v1";
+const DAILY_SCIENCE_RECIPE_ID = "daily_science_v1";
+const DAILY_SUBJECT_PRACTICE_RECIPE_ID = "daily_subject_practice_v1";
 const DAILY_CARD_SCHEMA_VERSION = "growth.card.authoring.v1";
 
 function cleanString(value) {
@@ -47,6 +49,49 @@ function dailyEnglishRecipe() {
   };
 }
 
+function dailyScienceRecipe() {
+  return {
+    id: DAILY_SCIENCE_RECIPE_ID,
+    label: "日常科学卡",
+    domain: "science",
+    subject: "science",
+    defaultCardRole: "practice",
+    defaultDifficultyBand: "foundation",
+    cardSchemaVersion: DAILY_CARD_SCHEMA_VERSION,
+    completionPolicy: "daily_score_once",
+    completionPolicyDetail: dailyScoreOnceCompletionPolicy(),
+    durationMinutes: { min: 10, max: 15 },
+    evidenceRequirements: ["short_answer", "science_reasoning", "self_reflection_optional"],
+    rewardMode: "score_proportional"
+  };
+}
+
+function dailySubjectPracticeRecipe(input = {}) {
+  const domain = cleanString(input.domain);
+  const subject = cleanString(input.subject) || domain;
+  return {
+    id: DAILY_SUBJECT_PRACTICE_RECIPE_ID,
+    label: "日常练习卡",
+    domain,
+    subject,
+    defaultCardRole: "practice",
+    defaultDifficultyBand: "foundation",
+    cardSchemaVersion: DAILY_CARD_SCHEMA_VERSION,
+    completionPolicy: "daily_score_once",
+    completionPolicyDetail: dailyScoreOnceCompletionPolicy(),
+    durationMinutes: { min: 10, max: 15 },
+    evidenceRequirements: ["short_answer", "self_reflection_optional"],
+    rewardMode: "score_proportional"
+  };
+}
+
+function recipeById(recipeId, input = {}) {
+  if (recipeId === DAILY_ENGLISH_RECIPE_ID) return dailyEnglishRecipe();
+  if (recipeId === DAILY_SCIENCE_RECIPE_ID) return dailyScienceRecipe();
+  if (recipeId === DAILY_SUBJECT_PRACTICE_RECIPE_ID) return dailySubjectPracticeRecipe(input);
+  return null;
+}
+
 function recipeIdFromInput(input = {}) {
   return cleanString(input.recipeId || input.recipe_id || input.selectedRecipeId || input.selected_recipe_id);
 }
@@ -76,13 +121,15 @@ function publicRecipe(recipe = {}) {
 function normalizeDailyGenerationInput(input = {}, recipe = dailyEnglishRecipe()) {
   const workspaceId = cleanString(input.workspaceId || input.workspace_id);
   const learnerId = cleanString(input.learnerId || input.learner_id || workspaceId);
+  const domain = cleanString(input.domain) || cleanString(recipe.domain);
+  const subject = cleanString(input.subject) || cleanString(recipe.subject) || domain;
   return Object.assign({}, input, {
     recipeId: recipe.id,
     workspaceId,
     learnerId,
     programId: cleanString(input.programId || input.program_id),
-    domain: cleanString(input.domain) || recipe.domain,
-    subject: cleanString(input.subject) || recipe.subject,
+    domain,
+    subject,
     cardSchemaVersion: cleanString(input.cardSchemaVersion || input.card_schema_version) || recipe.cardSchemaVersion,
     completionPolicy: dailyScoreOnceCompletionPolicy()
   });
@@ -90,7 +137,11 @@ function normalizeDailyGenerationInput(input = {}, recipe = dailyEnglishRecipe()
 
 function createLearningCardGenerationRecipePolicyService() {
   function recipes() {
-    return [publicRecipe(dailyEnglishRecipe())];
+    return [
+      publicRecipe(dailyEnglishRecipe()),
+      publicRecipe(dailyScienceRecipe()),
+      publicRecipe(dailySubjectPracticeRecipe())
+    ];
   }
 
   function resolveRecipe(input = {}) {
@@ -103,10 +154,10 @@ function createLearningCardGenerationRecipePolicyService() {
       };
     }
     const recipeId = recipeIdFromInput(input) || DAILY_ENGLISH_RECIPE_ID;
-    if (recipeId !== DAILY_ENGLISH_RECIPE_ID) {
+    const recipe = recipeById(recipeId, input);
+    if (!recipe) {
       return unavailable("unsupported_card_generation_recipe", { recipeId });
     }
-    const recipe = dailyEnglishRecipe();
     return {
       ok: true,
       applies: true,
@@ -161,6 +212,8 @@ function createLearningCardGenerationRecipePolicyService() {
   return {
     context,
     dailyEnglishRecipe,
+    dailyScienceRecipe,
+    dailySubjectPracticeRecipe,
     dailyScoreOnceCompletionPolicy,
     normalizeGenerationInput,
     recipes,
@@ -170,8 +223,12 @@ function createLearningCardGenerationRecipePolicyService() {
 
 module.exports = {
   DAILY_ENGLISH_RECIPE_ID,
+  DAILY_SCIENCE_RECIPE_ID,
+  DAILY_SUBJECT_PRACTICE_RECIPE_ID,
   createLearningCardGenerationRecipePolicyService,
   dailyEnglishRecipe,
+  dailyScienceRecipe,
+  dailySubjectPracticeRecipe,
   dailyScoreOnceCompletionPolicy,
   isStageAssessmentInput
 };

@@ -418,10 +418,12 @@ summary-only request.
 The service-owned runtime path is:
 
 1. `learning-card-generation-recipe-policy-service` normalizes the requested
-   recipe. For V1 daily English, the browser only needs to submit
-   `recipe_id=daily_english_v1`, the target workspace, learner id, and card
-   schema version. The service supplies English domain/subject defaults and
-   the `daily_score_once` policy without forcing a graph target, role, or
+   recipe. For V1 ordinary daily cards, the browser can submit a compact
+   recipe request (`daily_english_v1`, `daily_science_v1`, or
+   `daily_subject_practice_v1`) with the target workspace, learner id, and
+   selected domain/subject when the recipe is subject-scoped. The service
+   supplies safe domain/subject defaults, card schema version, and the
+   `daily_score_once` policy without forcing a graph target, role, or
    difficulty before learner profile/trajectory selection runs;
 2. If Owner or caller supplied a target, `learning-graph-plan-service` uses
    that explicit graph target. If a daily generation request omits a target,
@@ -516,12 +518,17 @@ superseded-by trajectory id, and lifecycle timestamps; it is not allowed to
 show raw answers, transcripts, prompts, hidden answer keys, model output,
 private file paths, source-document bodies, or internal source refs.
 
-Planner-backed non-English daily cards should enter through a validated plan
-draft, not by asking the browser to submit a free-form topic. The normal
-sequence is context with `graphOptions`, draft plan, Owner preview, explicit
-publish, card authoring, learner evidence, evaluation, ledger/Profile V2
-update, and next recommendation. Direct compact recipe generation remains
-valid for `daily_english_v1` while the planner UI is being added.
+Planner-backed non-English daily cards should still enter through a validated
+plan draft when the Owner is choosing a broader objective or sequence, not by
+asking the browser to submit a free-form topic. The normal sequence is context
+with `graphOptions`, draft plan, Owner preview, explicit publish, card
+authoring, learner evidence, evaluation, ledger/Profile V2 update, and next
+recommendation. Direct compact recipe generation is valid for
+`daily_english_v1`, `daily_science_v1`, and `daily_subject_practice_v1` only
+as a low-pressure daily-card shortcut; it still goes through target
+provisioning, graph planning, graph evidence requirements, Gateway authoring,
+validation, and transactional card publishing. Recipe defaults must not
+override a selected graph node's evidence requirements.
 
 ## Gateway Response Modes
 

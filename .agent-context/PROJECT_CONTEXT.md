@@ -32,8 +32,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   async evaluation processing, per-card Growth learning coin settlement, and
   bounded completion/mastery/review event emission. It also owns native
   knowledge-graph import/planning/binding and Gateway-backed card generation
-  from graph plans plus historical SQLite summaries. New generated daily cards
-  use `daily_score_once`: one submission stage, one evaluation stage, one
+  from graph plans plus historical SQLite summaries. Compact ordinary-card
+  recipe generation now supports `daily_english_v1`, `daily_science_v1`, and
+  `daily_subject_practice_v1` while preserving target provisioning, graph
+  planning, graph-node evidence requirements, Gateway authoring validation, and
+  transactional publishing as separate service boundaries. New generated daily
+  cards use `daily_score_once`: one submission stage, one evaluation stage, one
   reflection stage, completion after the first evaluation, and
   score-proportional rewards without a pass-line gate. Ordinary generated daily
   cards validate `expectedTimeMinutes` within 10-15 minutes and persist
