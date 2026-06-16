@@ -3,6 +3,7 @@
 const SOURCE = "growth-learning-recommendation-lifecycle-service";
 const SCHEMA_VERSION = "growth.recommendationLifecycle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
+const PRIVATE_VALUE_PATTERN = /\b(Bearer\s+|sk-[A-Za-z0-9_-]{8,}|xox[baprs]-|gh[pousr]_[A-Za-z0-9_]{8,}|AIza[A-Za-z0-9_-]{8,}|\/Users\/|C:\\Users\\)/i;
 
 function cleanString(value, max = 240) {
   return String(value ?? "").trim().slice(0, max);
@@ -24,6 +25,10 @@ function clampLimit(value, fallback = 12) {
 }
 
 function scanPrivacy(value, path = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(path);
+    return findings;
+  }
   if (!value || typeof value !== "object") return findings;
   if (Array.isArray(value)) {
     value.forEach((item, index) => scanPrivacy(item, `${path}[${index}]`, findings));
@@ -32,7 +37,7 @@ function scanPrivacy(value, path = "$", findings = []) {
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
-    if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
+    scanPrivacy(child, childPath, findings);
   }
   return findings;
 }
@@ -109,8 +114,11 @@ function lifecycleItem(trajectory = {}) {
     updatedAt: cleanString(trajectory.updatedAt, 80),
     statusUpdatedAt: cleanString(recommendation.statusUpdatedAt || recommendation.status_updated_at, 80),
     acceptedAt: cleanString(recommendation.acceptedAt || recommendation.accepted_at, 80),
+    skippedAt: cleanString(recommendation.skippedAt || recommendation.skipped_at, 80),
+    expiredAt: cleanString(recommendation.expiredAt || recommendation.expired_at, 80),
     supersededAt: cleanString(recommendation.supersededAt || recommendation.superseded_at, 80),
     supersededByTrajectoryId: cleanString(recommendation.supersededByTrajectoryId || recommendation.superseded_by_trajectory_id, 140),
+    decisionReasonCode: cleanString(recommendation.decisionReasonCode || recommendation.reasonCode || recommendation.reason_code, 120),
     summaryOnly: true
   };
 }
@@ -132,6 +140,8 @@ function buildSummary(items = []) {
     lifecycleCount: items.length,
     pendingCount: countsByStatus.pending || 0,
     acceptedCount: countsByStatus.accepted || 0,
+    skippedCount: countsByStatus.skipped || 0,
+    expiredCount: countsByStatus.expired || 0,
     supersededCount: countsByStatus.superseded || 0,
     missingCount: countsByStatus.missing || 0,
     statusCounts: countsByStatus,
@@ -140,8 +150,20 @@ function buildSummary(items = []) {
     latestTargetNodeIds: uniqueStrings(latest.targetNodeIds).slice(0, 12),
     hasPending: Boolean(countsByStatus.pending),
     hasAccepted: Boolean(countsByStatus.accepted),
+    hasSkipped: Boolean(countsByStatus.skipped),
+    hasExpired: Boolean(countsByStatus.expired),
     hasSuperseded: Boolean(countsByStatus.superseded)
   };
+}
+
+function reviewScope(input = {}) {
+  const scope = publicScope(input);
+  return Object.assign({}, scope, {
+    status: cleanString(input.status || input.decision || input.recommendationStatus || input.recommendation_status, 80).toLowerCase(),
+    reviewedBy: cleanString(input.reviewedBy || input.reviewed_by || input.actorWorkspaceId || input.actor_workspace_id, 120),
+    decisionReasonCode: cleanString(input.decisionReasonCode || input.decision_reason_code || input.reasonCode || input.reason_code, 120),
+    statusUpdatedAt: cleanString(input.statusUpdatedAt || input.status_updated_at || input.reviewedAt || input.reviewed_at, 80)
+  });
 }
 
 function createLearningRecommendationLifecycleService(options = {}) {
@@ -199,14 +221,105 @@ function createLearningRecommendationLifecycleService(options = {}) {
     };
   }
 
+  function reviewRecommendation(input = {}) {
+    const scope = reviewScope(input);
+    if (!scope.workspaceId) {
+      return { ok: false, source: SOURCE, error: "recommendation_lifecycle_workspace_required" };
+    }
+    const privacyFindings = scanPrivacy(input);
+    if (privacyFindings.length) {
+      return {
+        ok: false,
+        source: SOURCE,
+        error: "recommendation_lifecycle_privacy_failed",
+        privacyFindings
+      };
+    }
+    if (!["skipped", "expired"].includes(scope.status)) {
+      return {
+        ok: false,
+        source: SOURCE,
+        error: "recommendation_lifecycle_review_status_invalid",
+        allowedStatuses: ["skipped", "expired"]
+      };
+    }
+    if (!scope.trajectoryId && !scope.taskCardId && !scope.sourceEvaluationId) {
+      return {
+        ok: false,
+        source: SOURCE,
+        error: "recommendation_lifecycle_selector_required",
+        acceptedSelectors: ["trajectoryId", "taskCardId", "sourceEvaluationId"]
+      };
+    }
+    if (!repository || typeof repository.markTrajectoryRecommendationReviewed !== "function") {
+      return { ok: false, source: SOURCE, available: false, error: "recommendation_lifecycle_repository_unavailable" };
+    }
+    const result = repository.markTrajectoryRecommendationReviewed({
+      trajectoryId: scope.trajectoryId,
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      programId: scope.programId,
+      sourceTaskCardId: scope.taskCardId,
+      sourceEvaluationId: scope.sourceEvaluationId,
+      status: scope.status,
+      reviewedBy: scope.reviewedBy,
+      decisionReasonCode: scope.decisionReasonCode,
+      statusUpdatedAt: scope.statusUpdatedAt
+    });
+    if (!result?.ok) {
+      return Object.assign({
+        ok: false,
+        source: SOURCE,
+        schemaVersion: SCHEMA_VERSION,
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        workspaceId: scope.workspaceId,
+        learnerId: scope.learnerId,
+        programId: scope.programId
+      }, result || { error: "recommendation_lifecycle_review_failed" });
+    }
+    const item = lifecycleItem(result.trajectory);
+    const output = {
+      ok: true,
+      source: SOURCE,
+      schemaVersion: SCHEMA_VERSION,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      workspaceId: scope.workspaceId,
+      learnerId: scope.learnerId,
+      programId: scope.programId,
+      operation: "review",
+      status: item.status,
+      previousStatus: cleanString(result.previousStatus, 80),
+      duplicate: Boolean(result.duplicate),
+      lifecycle: [item],
+      recommendation: item,
+      summary: buildSummary([item]),
+      writePerformed: true,
+      writesPerformed: true
+    };
+    const outputPrivacyFindings = scanPrivacy(output);
+    if (outputPrivacyFindings.length) {
+      return {
+        ok: false,
+        source: SOURCE,
+        error: "recommendation_lifecycle_output_privacy_failed",
+        privacyFindings: outputPrivacyFindings
+      };
+    }
+    return output;
+  }
+
   return {
-    listLifecycle
+    listLifecycle,
+    reviewRecommendation
   };
 }
 
 module.exports = {
   SCHEMA_VERSION,
   createLearningRecommendationLifecycleService,
+  reviewScope,
   publicScope,
   lifecycleItem
 };

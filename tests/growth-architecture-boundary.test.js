@@ -124,6 +124,8 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(services, /nextTargetService: learningCardNextTargetService/);
 
   const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /recommendations\/lifecycle\/review/);
+  assert.match(routes, /reviewRecommendation/);
   assert.doesNotMatch(routes, /projectForNextCard/);
   assert.doesNotMatch(routes, /markRecommendationAccepted/);
   assert.doesNotMatch(routes, /markTrajectoryRecommendationAccepted/);
@@ -1572,10 +1574,14 @@ test("Growth learning operating loop foundation stays service-owned", () => {
 
   const recommendationLifecycle = read(path.join("src", "services", "learning-recommendation-lifecycle-service.js"));
   assert.match(recommendationLifecycle, /listLifecycle/);
+  assert.match(recommendationLifecycle, /reviewRecommendation/);
   assert.match(recommendationLifecycle, /listRecentTrajectory/);
+  assert.match(recommendationLifecycle, /markTrajectoryRecommendationReviewed/);
   assert.match(recommendationLifecycle, /growth\.recommendationLifecycle\.v1/);
   assert.match(recommendationLifecycle, /privacyClass: "summary_only"/);
   assert.match(recommendationLifecycle, /writesPerformed: false/);
+  assert.match(recommendationLifecycle, /writesPerformed: true/);
+  assert.match(recommendationLifecycle, /recommendation_lifecycle_review_status_invalid/);
   assert.doesNotMatch(recommendationLifecycle, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
   assert.doesNotMatch(recommendationLifecycle, /recordCardTrajectory|markTrajectoryRecommendationAccepted/);
   assert.doesNotMatch(recommendationLifecycle, /learning_growth_card_trajectories/);

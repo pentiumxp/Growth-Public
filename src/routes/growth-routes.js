@@ -410,6 +410,21 @@ function normalizeRecommendationLifecycleInput(url, target) {
   };
 }
 
+function normalizeRecommendationLifecycleReviewInput(body, workspaceId, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || workspaceId,
+    programId: body.programId || body.program_id || "",
+    trajectoryId: body.trajectoryId || body.trajectory_id || body.id || "",
+    taskCardId: body.taskCardId || body.task_card_id || body.sourceTaskCardId || body.source_task_card_id || "",
+    sourceEvaluationId: body.sourceEvaluationId || body.source_evaluation_id || body.evaluationId || body.evaluation_id || "",
+    status: body.status || body.decision || body.recommendationStatus || body.recommendation_status || "",
+    decisionReasonCode: body.decisionReasonCode || body.decision_reason_code || body.reasonCode || body.reason_code || "",
+    statusUpdatedAt: body.statusUpdatedAt || body.status_updated_at || body.reviewedAt || body.reviewed_at || "",
+    reviewedBy: requestedWorkspaceId(request, url, "")
+  };
+}
+
 function normalizeAutomationProposalListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1557,6 +1572,18 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/recommendations/lifecycle") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningRecommendationLifecycleService.listLifecycle(normalizeRecommendationLifecycleInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/recommendations/lifecycle/review") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_recommendation_lifecycle_owner_required", "Recommendation lifecycle review requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const result = services.learningRecommendationLifecycleService.reviewRecommendation(
+      normalizeRecommendationLifecycleReviewInput(body, serviceWorkspaceId, request, url)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

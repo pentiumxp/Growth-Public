@@ -8,7 +8,8 @@ const { DatabaseSync } = require("node:sqlite");
 const {
   createLearningRecommendationLifecycleService,
   lifecycleItem,
-  publicScope
+  publicScope,
+  reviewScope
 } = require("../src/services/learning-recommendation-lifecycle-service");
 const { createMasteryProfileRepository } = require("../src/stores/growth-learning-sqlite/mastery-profile");
 
@@ -172,6 +173,146 @@ test("recommendation lifecycle service filters by status, node, and source selec
   });
 });
 
+test("recommendation lifecycle service records Owner skipped and expired decisions", () => {
+  withTrajectoryDb(({ repository }) => {
+    seedTrajectories(repository);
+    const service = createLearningRecommendationLifecycleService({ repository });
+
+    const skipped = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      trajectoryId: "lgtraj_pending",
+      status: "skipped",
+      reviewedBy: "weixin_stephen",
+      decisionReasonCode: "too_much_pressure_today",
+      statusUpdatedAt: "2026-06-16T04:00:00.000Z"
+    });
+    assert.equal(skipped.ok, true);
+    assert.equal(skipped.schemaVersion, "growth.recommendationLifecycle.v1");
+    assert.equal(skipped.privacyClass, "summary_only");
+    assert.equal(skipped.writePerformed, true);
+    assert.equal(skipped.previousStatus, "pending");
+    assert.equal(skipped.recommendation.status, "skipped");
+    assert.equal(skipped.recommendation.skippedAt, "2026-06-16T04:00:00.000Z");
+    assert.equal(skipped.recommendation.decisionReasonCode, "too_much_pressure_today");
+    assert.equal(JSON.stringify(skipped).includes("Bounded summary only."), false);
+
+    const duplicate = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      trajectoryId: "lgtraj_pending",
+      status: "skipped"
+    });
+    assert.equal(duplicate.ok, true);
+    assert.equal(duplicate.duplicate, true);
+
+    const expiring = repository.recordCardTrajectory({
+      id: "lgtraj_expiring",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      taskCardId: "ltask_source_expiring",
+      sourceEvaluationId: "eval_expiring",
+      strategy: "repair",
+      difficultyBand: "foundation",
+      targetNodeIds: ["kg_science_variables"],
+      nextRecommendation: {
+        status: "pending",
+        strategy: "repair",
+        cardRole: "practice",
+        targetNodeIds: ["kg_science_variables"],
+        reason: "Retire this stale candidate if Owner does not want it."
+      },
+      createdAt: "2026-06-16T04:05:00.000Z"
+    });
+    assert.equal(expiring.ok, true);
+    const expired = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      sourceEvaluationId: "eval_expiring",
+      status: "expired",
+      reviewedBy: "weixin_stephen",
+      decisionReasonCode: "stale_after_owner_review",
+      statusUpdatedAt: "2026-06-16T04:10:00.000Z"
+    });
+    assert.equal(expired.ok, true);
+    assert.equal(expired.recommendation.status, "expired");
+    assert.equal(expired.recommendation.expiredAt, "2026-06-16T04:10:00.000Z");
+
+    const accepted = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      trajectoryId: "lgtraj_accepted",
+      status: "expired"
+    });
+    assert.equal(accepted.ok, false);
+    assert.equal(accepted.error, "trajectory_recommendation_already_accepted");
+
+    const lifecycle = service.listLifecycle({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      limit: 10
+    });
+    assert.equal(lifecycle.summary.pendingCount, 0);
+    assert.equal(lifecycle.summary.skippedCount, 1);
+    assert.equal(lifecycle.summary.expiredCount, 1);
+    assert.equal(lifecycle.summary.acceptedCount, 1);
+    assert.equal(lifecycle.summary.supersededCount, 1);
+    assert.equal(lifecycle.summary.hasSkipped, true);
+    assert.equal(lifecycle.summary.hasExpired, true);
+  });
+});
+
+test("recommendation lifecycle review fails closed for invalid status, missing selector, and private values", () => {
+  withTrajectoryDb(({ repository }) => {
+    seedTrajectories(repository);
+    const service = createLearningRecommendationLifecycleService({ repository });
+
+    const invalidStatus = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      trajectoryId: "lgtraj_pending",
+      status: "accepted"
+    });
+    assert.equal(invalidStatus.ok, false);
+    assert.equal(invalidStatus.error, "recommendation_lifecycle_review_status_invalid");
+
+    const missingSelector = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      status: "skipped"
+    });
+    assert.equal(missingSelector.ok, false);
+    assert.equal(missingSelector.error, "recommendation_lifecycle_selector_required");
+
+    const privacy = service.reviewRecommendation({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      trajectoryId: "lgtraj_pending",
+      status: "skipped",
+      decisionReasonCode: "Bearer local-token"
+    });
+    assert.equal(privacy.ok, false);
+    assert.equal(privacy.error, "recommendation_lifecycle_privacy_failed");
+    assert.deepEqual(privacy.privacyFindings, ["$.decisionReasonCode"]);
+    assert.equal(JSON.stringify(privacy).includes("local-token"), false);
+
+    const repositoryPrivacy = repository.markTrajectoryRecommendationReviewed({
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      trajectoryId: "lgtraj_pending",
+      status: "skipped",
+      decisionReasonCode: "Bearer repository-token"
+    });
+    assert.equal(repositoryPrivacy.ok, false);
+    assert.equal(repositoryPrivacy.error, "trajectory_recommendation_review_privacy_failed");
+    assert.deepEqual(repositoryPrivacy.privacyFindings, ["$.decisionReasonCode"]);
+  });
+});
+
 test("recommendation lifecycle service fails closed for missing scope, repository, and privacy-risk input", () => {
   const missingScope = createLearningRecommendationLifecycleService({
     repository: { listRecentTrajectory: () => [] }
@@ -210,6 +351,13 @@ test("recommendation lifecycle pure helpers normalize scope and lifecycle item",
     status: ["pending", "accepted"],
     limit: 50
   });
+  assert.equal(reviewScope({
+    workspace_id: "weixin_fanfan",
+    trajectory_id: "lgtraj_1",
+    decision: "skipped",
+    reason_code: "too_much_pressure_today",
+    reviewed_by: "weixin_stephen"
+  }).status, "skipped");
   assert.equal(lifecycleItem({
     id: "lgtraj_1",
     workspaceId: "weixin_fanfan",

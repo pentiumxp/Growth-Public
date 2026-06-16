@@ -39,7 +39,10 @@ The loop is:
     suggestions;
 14. after a trajectory recommendation successfully publishes a generated card,
     mark that recommendation `accepted` so later generations do not reuse the
-    same pending recommendation.
+    same pending recommendation;
+15. if the Owner decides a pending recommendation should not be used, mark it
+    `skipped` or `expired` through the Growth recommendation lifecycle service
+    so the loop remains auditable without forcing a retry or generating a card.
 
 The Owner generation surface must make the loop observable. It should show the
 selected learner's bounded profile/trajectory projection, explicit
@@ -181,12 +184,19 @@ generic graph suggestion.
 - `learning-recommendation-lifecycle-service`
   - reads persisted card trajectory recommendation lifecycle rows through the
     mastery-profile repository;
-  - exposes summary-only pending/accepted/superseded readback through
+  - exposes summary-only pending/accepted/skipped/expired/superseded readback through
     `GET /api/v1/growth/recommendations/lifecycle` and
     `npm run smoke:recommendation-lifecycle`;
+  - exposes Owner-only `POST /api/v1/growth/recommendations/lifecycle/review`
+    for explicit `skipped` or `expired` decisions on pending recommendations;
+  - rejects attempts to mark recommendations accepted, overwrite accepted or
+    superseded recommendations, or submit private keys/token-like values;
   - feeds release evidence as `productionRecommendationLifecycleSmokeEvidence`;
-  - performs no writes, does not call Gateway, and does not publish, evaluate,
-    schedule, notify, activate stage assessments, or mutate learner state.
+  - keeps the smoke CLI no-write; accepted-status writes remain owned by the
+    card-generation publish path;
+  - does not call Gateway, publish, generate, evaluate, schedule, notify,
+    activate stage assessments, or mutate learner state outside the explicit
+    lifecycle status row update.
 - `learning-next-card-strategy-service`
   - reads mastery summary, recent trajectory, and experience signals;
   - chooses one bounded strategy from `repair`, `stabilize`, `transfer`,
@@ -519,8 +529,9 @@ Focused harnesses must cover:
   source card/evaluation;
 - recommendation projection prefers the latest pending trajectory next
   recommendation before recomputing a profile strategy;
-- consumed trajectory recommendations are skipped, and generation marks the
-  selected trajectory recommendation accepted after the published card commits;
+- skipped, expired, accepted, and superseded trajectory recommendations are not
+  reused as pending candidates, and generation marks the selected trajectory
+  recommendation accepted after the published card commits;
 - recipe policy accepts compact `daily_english_v1` generation input while
   keeping graph target, role, difficulty, and completion-policy internals in
   service-owned code;

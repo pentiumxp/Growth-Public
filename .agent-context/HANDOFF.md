@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T20:45+08:00 - Recommendation Lifecycle Owner Decisions
+
+- Status: implemented, tested, and ready to commit/push in this turn; not
+  deployed per Owner instruction to deploy after the broader slice is complete.
+- Change intent:
+  - pending trajectory `nextRecommendation` rows can now be explicitly marked
+    `skipped` or `expired` through the Growth recommendation lifecycle service;
+  - `accepted` remains owned by successful card-generation publish, and
+    `superseded` remains owned by newer trajectory creation;
+  - this gives the AI learning loop an auditable low-pressure way to retire a
+    candidate without forcing a retry, generating a card, or losing the
+    recommendation history.
+- Code/service changes:
+  - `learning-recommendation-lifecycle-service.reviewRecommendation()` returns
+    bounded `growth.recommendationLifecycle.v1` DTOs, rejects invalid statuses,
+    missing selectors, private keys, token/private-path-like values, accepted
+    overrides, and superseded overrides;
+  - `mastery-profile` repository now owns
+    `markTrajectoryRecommendationReviewed()` for pending-to-skipped/expired
+    status updates in `next_recommendation_json`, with repository-level
+    private-value rejection for reviewed-by and decision reason fields;
+  - `POST /api/v1/growth/recommendations/lifecycle/review` is Owner-only,
+    visible-target scoped, workspace-bearer authorized, and delegates only to
+    the lifecycle service;
+  - `npm run smoke:recommendation-lifecycle` remains no-write and continues to
+    call only `listLifecycle`.
+- Harness/docs:
+  - added service/SQLite coverage for skipped, expired, duplicate, accepted
+    override, invalid status, missing selector, and private value failures;
+  - added route coverage for Owner-only recommendation lifecycle review;
+  - extended architecture guards for the new service and route boundaries;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_CARD_LOOP.md`, and
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation:
+  - focused recommendation lifecycle / route / architecture / AI-loop tests
+    passed with `107/107`;
+  - required syntax checks for touched JS/test files passed;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - full Growth `npm test` passed with `844/844`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,827 nodes, 19,283 edges.
+- AI Ops evidence:
+  - intake/required-checks returned H3 by changed paths, but this was handled
+    with stricter H1/H2-style state-flow validation because it touches
+    recommendation lifecycle persistence;
+  - implementation/test evidence:
+    `evidence-bbcfff63-da71-43a2-9e4e-75592c19fe89`.
+- Boundary:
+  - no Gateway/model call, card generation, plan publication, evaluation,
+    scheduler execution, notification/handoff delivery, stage activation,
+    runtime config mutation, learner evidence mutation, or deployment was
+    performed;
+  - the only durable business write added is a bounded lifecycle status update
+    on an existing trajectory recommendation row.
+
 ## 2026-06-16T20:26+08:00 - Release Ladder Smoke Privacy Projection Harness
 
 - Status: implemented, tested, committed/pushed in this turn, and not deployed
