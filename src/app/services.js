@@ -71,6 +71,7 @@ const { createLearningProfileDeltaService } = require("../services/learning-prof
 const { createLearningProfileFeedbackEvidenceService } = require("../services/learning-profile-feedback-evidence-service");
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../services/learning-profile-v2-service");
+const { createLearningStageCheckpointControlsService } = require("../services/learning-stage-checkpoint-controls-service");
 const { createLearningStageAssessmentService } = require("../services/learning-stage-assessment-service");
 const { createLearningTargetProvisioningService } = require("../services/learning-target-provisioning-service");
 const { createGrowthMcpExecutor } = require("../mcp/growth-mcp-schemas");
@@ -197,6 +198,9 @@ function createServices(config) {
     repository: growthLearningStore.stageAssessmentCycleRepository,
     profileProjectionService: learningProfileProjectionService,
     cardGenerationService: learningCardGenerationService
+  });
+  const learningStageCheckpointControlsService = createLearningStageCheckpointControlsService({
+    stageAssessmentService: learningStageAssessmentService
   });
   const learningPlannerContextService = createLearningPlannerContextService({
     evidenceLedgerService: learningEvidenceLedgerService,
@@ -543,6 +547,7 @@ function createServices(config) {
     learningProfileFeedbackEvidenceService,
     learningProfileProjectionService,
     learningProfileV2Service,
+    learningStageCheckpointControlsService,
     learningStageAssessmentService,
     learningTargetProvisioningService,
     pluginService: createHermesPluginService({ config, workspaceStore })

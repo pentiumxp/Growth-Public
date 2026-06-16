@@ -254,6 +254,39 @@ function normalizeDailyLoopQueryInput(url, target, request) {
   };
 }
 
+function normalizeStageCheckpointControlsInput(url, target, request) {
+  const targetNodeIds = csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || "");
+  const assessmentCoverageNodeIds = csvStrings(
+    url.searchParams.get("assessmentCoverageNodeIds")
+    || url.searchParams.get("assessment_coverage_node_ids")
+    || url.searchParams.get("assessmentCoverage")
+    || url.searchParams.get("assessment_coverage")
+    || ""
+  );
+  const targetNodeId = url.searchParams.get("targetNodeId")
+    || url.searchParams.get("target_node_id")
+    || assessmentCoverageNodeIds[0]
+    || targetNodeIds[0]
+    || "";
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    growthWorkspaceId: target.growthWorkspaceId,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    subjectId: url.searchParams.get("subjectId") || url.searchParams.get("subject_id") || url.searchParams.get("subject") || "",
+    capabilityClusterId: url.searchParams.get("capabilityClusterId") || url.searchParams.get("capability_cluster_id") || "",
+    targetNodeId,
+    targetNodeIds: targetNodeIds.length ? targetNodeIds : undefined,
+    assessmentCoverageNodeIds: assessmentCoverageNodeIds.length ? assessmentCoverageNodeIds : targetNodeIds,
+    requestedBy: String(request.headers["x-hermes-plugin-workspace-id"] || requestedWorkspaceId(request, url, ""))
+  };
+}
+
 function normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, extra = {}) {
   return Object.assign({
     workspaceId,
@@ -1409,6 +1442,17 @@ async function handleGrowthRoute(request, response, url, services) {
     }
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningLoopStateService.state(normalizeDailyLoopQueryInput(url, target, request));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/stage-assessments/controls") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_stage_checkpoint_controls_owner_required", "Stage checkpoint controls require Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningStageCheckpointControlsService.controls(
+      normalizeStageCheckpointControlsInput(url, target, request)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

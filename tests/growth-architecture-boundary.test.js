@@ -3225,6 +3225,9 @@ test("Growth stage assessment activation stays service-owned", () => {
   const services = read(path.join("src", "app", "services.js"));
   assert.match(services, /createLearningStageAssessmentService/);
   assert.match(services, /learningStageAssessmentService/);
+  assert.match(services, /createLearningStageCheckpointControlsService/);
+  assert.match(services, /learningStageCheckpointControlsService/);
+  assert.match(services, /stageAssessmentService: learningStageAssessmentService/);
   assert.match(services, /stageAssessmentCycleRepository/);
 
   const stageService = read(path.join("src", "services", "learning-stage-assessment-service.js"));
@@ -3233,10 +3236,39 @@ test("Growth stage assessment activation stays service-owned", () => {
   assert.match(stageService, /activateStageAssessment/);
   assert.match(stageService, /stage_assessment/);
 
+  const controlsService = read(path.join("src", "services", "learning-stage-checkpoint-controls-service.js"));
+  assert.match(controlsService, /growth\.stageCheckpointControls\.v1/);
+  assert.match(controlsService, /privacyClass: "summary_only"/);
+  assert.match(controlsService, /summaryOnly: true/);
+  assert.match(controlsService, /stageAssessmentService\.stageReadiness/);
+  assert.match(controlsService, /dailyPlanDirectPublicationAllowed: false/);
+  assert.match(controlsService, /activate_stage_assessment/);
+  assert.match(controlsService, /learner_challenge_route/);
+  assert.match(controlsService, /stage_checkpoint_controls_privacy_failed/);
+  assert.doesNotMatch(controlsService, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(controlsService, /learning_growth_/);
+  assert.doesNotMatch(controlsService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(controlsService, /publishPlanItem/);
+  assert.doesNotMatch(controlsService, /generateCard/);
+  assert.doesNotMatch(controlsService, /evaluateSubmission/);
+  assert.doesNotMatch(controlsService, /executeOnce/);
+  assert.doesNotMatch(controlsService, /runOnce/);
+  assert.doesNotMatch(controlsService, /deliverHandoff/);
+  assert.doesNotMatch(controlsService, /activateStageAssessment/);
+
+  const controlsHarness = read(path.join("tests", "learning-stage-checkpoint-controls-service.test.js"));
+  assert.match(controlsHarness, /summary-only Owner activation controls/);
+  assert.match(controlsHarness, /blocks activation action during cooldown/);
+  assert.match(controlsHarness, /fails closed for privacy risk and missing dependencies/);
+
   const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /stage-assessments\/controls/);
   assert.match(routes, /stage-assessments\/eligibility/);
   assert.match(routes, /stage-assessments\/activate/);
   assert.match(routes, /stage-assessments\/challenge/);
+  assert.match(routes, /learningStageCheckpointControlsService\.controls/);
+  assert.match(routes, /growth_stage_checkpoint_controls_owner_required/);
+  assert.doesNotMatch(routes, /stageReadiness/);
   assert.doesNotMatch(routes, /learning_growth_stage_assessment_cycles/);
   assert.doesNotMatch(routes, /generateCard\(Object\.assign/);
 });

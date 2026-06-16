@@ -131,7 +131,10 @@ evidence are not closed:
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
-- stage-checkpoint UI remains separate future work;
+- stage-checkpoint browser UI remains separate future work, but the backend
+  Owner controls read model now exists through
+  `learning-stage-checkpoint-controls-service` and Owner-only
+  `GET /api/v1/growth/stage-assessments/controls`;
 - proposal/digest/action/execution/run/worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual evidence exists for the Growth plugin shell;
@@ -204,7 +207,7 @@ The missing product capability is the browser-operable learning loop:
 | A1: Owner daily planning UI | Owner can create one daily card from persisted context through the plugin UI, apply target domain-pack/subject scope, and explicitly provision a visible target before planning. Older-cycle selection and release evidence remain. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, `POST /api/v1/growth/domain-pack-provisions` for explicit target provision, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
 | A2: Learner daily evidence UI | Learner can finish the generated card with one submit, one evaluation, and one optional reflection. | Reuse generated-card detail flow, audio evidence, one-box-per-stage state, and visible failed-evaluation recovery. | No pass-line retry gate and no extra competing submission boxes. |
 | A3: Owner audit/correction UI | Owner can see why the card happened, what changed, and how to correct future profile evidence. | Render plan/evidence/profile-delta/cycle/completeness/correction DTOs and write corrections through `learning-owner-correction-service`. | No browser-side Profile V2 computation and no raw transcript/prompt viewer. |
-| A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher. |
+| A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-checkpoint-controls-service` for summary-only controls and `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher; no activation/generation from the controls read model. |
 | A5: Generalized target selector | The same workflow can target another visible and provisioned learner/domain. | Preserve actor/target separation and target-workspace-owned rows. | No fallback to Fanfan constants for non-sample targets. |
 
 The preferred next package is A1 plus the minimum A2/A3 wiring needed to prove

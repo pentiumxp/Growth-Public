@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T03:00Z - Stage Checkpoint Controls Read Model
+
+- Status: implemented and validated locally. This slice adds a summary-only
+  Owner controls read model for formal stage checkpoints. It does not deploy,
+  call Gateway/model vendors, write SQLite, publish plans/cards, evaluate
+  submissions, execute scheduler actions, run scheduler ticks, deliver
+  notifications, activate stage assessments, mutate learner state, or change
+  runtime config.
+- Scope:
+  - added `learning-stage-checkpoint-controls-service` returning
+    `growth.stageCheckpointControls.v1` with bounded readiness evidence,
+    cooldown state, policy flags, and route templates for refresh, Owner
+    activation, and learner challenge;
+  - wired the service through `src/app/services.js`;
+  - added Owner-only
+    `GET /api/v1/growth/stage-assessments/controls`, with Growth
+    visible-target scope and bounded query normalization;
+  - kept actual eligibility, activation, completion, card generation, and
+    cooldown writes owned by `learning-stage-assessment-service`;
+  - tightened syntax coverage to include the new runtime service and keep
+    `public/app.js` covered by `npm run check`.
+- Changed files:
+  - `src/services/learning-stage-checkpoint-controls-service.js`;
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `tests/learning-stage-checkpoint-controls-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json`;
+  - Growth architecture/next-stage/closed-loop/platform-pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - `node --check src/services/learning-stage-checkpoint-controls-service.js`;
+  - `node --check src/app/services.js`;
+  - `node --check src/routes/growth-routes.js`;
+  - `node --check tests/learning-stage-checkpoint-controls-service.test.js`;
+  - `node --check tests/growth-routes.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - focused stage controls/stage assessment/route/architecture:
+    `node --test tests/learning-stage-checkpoint-controls-service.test.js tests/learning-stage-assessment-service.test.js tests/growth-stage-assessment-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`90/90`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`191/191` runtime JavaScript files covered);
+  - `npm test` (`765/765`);
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported the Growth index up to date;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops intake classified the slice as H3 with no visual or deployment lane
+    required;
+  - AI Ops evidence ledger append id:
+    `evidence-4a5964f3-9405-4c60-bae1-8fbf0a4b0382`.
+- Remaining product work:
+  - render the controls DTO in the embedded Owner stage-checkpoint browser UI;
+  - wire the browser activation action to the existing Owner-only activation
+    route with visible progress/error states;
+  - collect central visual evidence before any production UI release.
+
 ## 2026-06-16T02:00Z - Learning Loop Recommendation Evidence Trace
 
 - Status: implemented and validated locally. This slice extends the no-write

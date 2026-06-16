@@ -44,7 +44,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Stage assessment cards are separate formal cards: activation is owned by
   `learning-stage-assessment-service`, formal evaluation writes higher-weight
   mastery evidence across declared assessment coverage nodes, and completed
-  assessment cycles move into cooldown. The next target architecture is the
+  assessment cycles move into cooldown. Owner checkpoint controls are now
+  exposed as a separate summary-only read model through
+  `learning-stage-checkpoint-controls-service` and Owner-only
+  `GET /api/v1/growth/stage-assessments/controls`; that read model delegates
+  only to `learning-stage-assessment-service.stageReadiness()` and cannot
+  activate assessments, publish plans, generate cards, call Gateway, inspect
+  SQLite tables, or mutate learner state. The next target architecture is the
   Growth-owned AI learning operating loop documented in
   `docs/GROWTH_LEARNING_OPERATING_LOOP.md`: evidence ledger, Profile V2,
   Gateway-backed planner, post-evaluation profile-delta audit,
@@ -765,6 +771,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   planning action. It is no-write, summary-only, and does not call
   Gateway, publish plans, generate cards, evaluate submissions, run schedulers,
   deliver notifications, activate stage assessments, or inspect SQLite tables.
+  The Owner stage-checkpoint controls read is now implemented through
+  `learning-stage-checkpoint-controls-service` and Owner-only
+  `GET /api/v1/growth/stage-assessments/controls`. It projects
+  `growth.stageCheckpointControls.v1`, bounded readiness evidence, cooldown
+  status, policy flags, and route templates for refresh, Owner activation, and
+  learner challenge without performing any write or activation itself.
   `npm run smoke:daily-loop` now provides a controlled local/production smoke
   entry for the same service boundary: preview is the default no-write
   operation, while `--operation draft` and `--operation publish` are rejected
@@ -827,8 +839,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `domain_pack_fanfan_cambridge_pathway_v1` / `science` and published one
   Owner-supervised daily card; production learner-cycle writes remain gated
   behind explicit Owner-provided learner evidence.
-  Older-cycle selection over the implemented current-cycle drilldown, formal
-  stage-checkpoint UI, proposal/digest/action/execution UI, real production
+  Older-cycle selection over the implemented current-cycle drilldown, browser
+  formal stage-checkpoint UI over the implemented controls read model,
+  proposal/digest/action/execution UI, real production
   platform Action Inbox/Web Push receipt evidence, and full automation release
   review remain future slices.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push

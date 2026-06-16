@@ -5974,6 +5974,34 @@ test("growth stage assessment routes require workspace authorization and delegat
         return { ok: true, cycle: { cycleId: "cycle_1", status: "active" }, published: { taskCardId: "stage_1" } };
       }
     },
+    learningStageCheckpointControlsService: {
+      controls(input) {
+        calls.push({ type: "controls", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.stageCheckpointControls.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          target: {
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            label: input.label
+          },
+          summary: {
+            status: "ready_for_owner_activation",
+            readyForOwnerActivation: true
+          },
+          actions: [{
+            key: "activate_stage_assessment",
+            enabled: true,
+            route: {
+              method: "POST",
+              path: "/api/v1/growth/stage-assessments/activate"
+            }
+          }]
+        };
+      }
+    },
     growthEventService: {},
     growthService: {}
   });
@@ -6102,6 +6130,49 @@ test("growth stage assessment routes require workspace authorization and delegat
     assert.equal(calls[2].input.workspaceId, "test");
     assert.equal(calls[2].input.learnerId, "test");
     assert.equal(calls[2].input.activationSource, "executor_challenge");
+
+    const deniedControls = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan`, {
+      headers: {
+        authorization: "Bearer workspace-key",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "growth:test"
+      }
+    });
+    assert.equal(deniedControls.status, 403);
+    assert.equal((await deniedControls.json()).error.code, "growth_stage_checkpoint_controls_owner_required");
+
+    const controls = await fetch(`${baseUrl}/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=node_1,node_2&assessmentCoverageNodeIds=node_1,node_2`, {
+      headers: {
+        authorization: "Bearer workspace-key",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      }
+    });
+    assert.equal(controls.status, 200);
+    const controlsBody = await controls.json();
+    assert.equal(controlsBody.schemaVersion, "growth.stageCheckpointControls.v1");
+    assert.equal(controlsBody.privacyClass, "summary_only");
+    assert.equal(controlsBody.summary.status, "ready_for_owner_activation");
+    assert.deepEqual(calls[3], {
+      type: "controls",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        growthWorkspaceId: undefined,
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        subjectId: "science",
+        capabilityClusterId: "",
+        targetNodeId: "node_1",
+        targetNodeIds: ["node_1", "node_2"],
+        assessmentCoverageNodeIds: ["node_1", "node_2"],
+        requestedBy: "owner"
+      }
+    });
   } finally {
     await close(server);
   }
