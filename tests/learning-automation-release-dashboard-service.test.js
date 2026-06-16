@@ -5,6 +5,19 @@ const {
   createLearningAutomationReleaseDashboardService
 } = require("../src/services/learning-automation-release-dashboard-service");
 
+const ownerReviewStageSummary = {
+  proposalCount: 4,
+  acceptedProposalCount: 1,
+  proposedProposalCount: 1,
+  digestRequiredActionCount: 2,
+  blockedActionHandoffCount: 1,
+  publishedSchedulerExecutionCount: 1,
+  completedSchedulerRunCount: 1,
+  pendingWorkerTargetReviewCount: 1,
+  failurePolicyReady: true,
+  failurePolicyStatus: "ready"
+};
+
 function createService(overrides = {}, calls = []) {
   return createLearningAutomationReleaseDashboardService(Object.assign({
     releaseReadinessService: {
@@ -43,6 +56,12 @@ function createService(overrides = {}, calls = []) {
               taskCount: 8,
               passCount: 6
             },
+            items: [{
+              key: "ownerReviewEvidence",
+              checkKey: "owner_review_evidence",
+              evidencePresent: true,
+              ownerReviewStageSummary
+            }],
             writefulSchedulingAllowed: false,
             runtimeConfigChange: false,
             configChangeApplied: false
@@ -99,6 +118,10 @@ function createService(overrides = {}, calls = []) {
             latestReadinessEvidencePresentCount: 26,
             latestReadinessEvidenceMissingCount: 1,
             latestReadinessEvidenceSourceBundleId: "bundle_dashboard_snapshot",
+            latestReadinessOwnerReviewStageSummary: Object.assign({}, ownerReviewStageSummary, {
+              proposalCount: 5,
+              acceptedProposalCount: 2
+            }),
             latestCollectionRunId: input.collectionRunId,
             latestPackageId: "lgapkg_1",
             latestPackageStepCount: 6,
@@ -127,7 +150,11 @@ function createService(overrides = {}, calls = []) {
                   summaryOnly: true,
                   presentCount: 26,
                   missingCount: 1,
-                  sourceBundleId: "bundle_dashboard_snapshot"
+                  sourceBundleId: "bundle_dashboard_snapshot",
+                  ownerReviewStageSummary: Object.assign({}, ownerReviewStageSummary, {
+                    proposalCount: 5,
+                    acceptedProposalCount: 2
+                  })
                 }
               },
               statuses: ["ready_for_release_review"]
@@ -218,10 +245,19 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.readinessEvidencePresentCount, 21);
   assert.equal(result.releaseDashboard.readinessEvidenceMissingCount, 6);
   assert.equal(result.releaseDashboard.readinessEvidenceSourceBundleId, "bundle_dashboard_current");
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.proposalCount, 4);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.digestRequiredActionCount, 2);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.blockedActionHandoffCount, 1);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.completedSchedulerRunCount, 1);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(result.releaseDashboard.ownerReviewStageSummary.failurePolicyStatus, "ready");
   assert.equal(result.releaseDashboard.latestReadinessSnapshotId, "lgarsnap_1");
   assert.equal(result.releaseDashboard.latestReadinessEvidencePresentCount, 26);
   assert.equal(result.releaseDashboard.latestReadinessEvidenceMissingCount, 1);
   assert.equal(result.releaseDashboard.latestReadinessEvidenceSourceBundleId, "bundle_dashboard_snapshot");
+  assert.equal(result.releaseDashboard.latestReadinessOwnerReviewStageSummary.proposalCount, 5);
+  assert.equal(result.releaseDashboard.latestReadinessOwnerReviewStageSummary.acceptedProposalCount, 2);
   assert.equal(result.releaseDashboard.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseDashboard.latestPackageId, "lgapkg_1");
   assert.equal(result.releaseDashboard.latestPackageStepCount, 6);
@@ -240,6 +276,8 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.deepEqual(result.releaseReadiness.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
   assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleId, "bundle_dashboard_current");
   assert.equal(result.releaseReadiness.evidenceReadback.sourceBundleTaskCount, 8);
+  assert.equal(result.releaseReadiness.evidenceReadback.ownerReviewStageSummary.proposalCount, 4);
+  assert.equal(result.releaseReadiness.evidenceReadback.ownerReviewStageSummary.failurePolicyReady, true);
   assert.equal(result.releaseControls.auditReadbackStatus, "ready");
   assert.equal(result.releaseInventory.artifactCount, 8);
   assert.equal(result.releaseInventory.releaseEvidenceRecordCount, 1);

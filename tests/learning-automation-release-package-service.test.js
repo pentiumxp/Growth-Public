@@ -7,6 +7,18 @@ const {
   scopeFrom
 } = require("../src/services/learning-automation-release-package-service");
 
+const ownerReviewStageSummary = {
+  proposalCount: 8,
+  acceptedProposalCount: 3,
+  digestRequiredActionCount: 2,
+  blockedActionHandoffCount: 1,
+  publishedSchedulerExecutionCount: 2,
+  completedSchedulerRunCount: 1,
+  pendingWorkerTargetReviewCount: 1,
+  failurePolicyReady: true,
+  failurePolicyStatus: "ready"
+};
+
 function scope(overrides = {}) {
   return Object.assign({
     workspaceId: "weixin_fanfan",
@@ -180,6 +192,10 @@ function dashboard(overrides = {}) {
       latestReadinessEvidencePresentCount: 1,
       latestReadinessEvidenceMissingCount: 29,
       latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
+      ownerReviewStageSummary,
+      latestReadinessOwnerReviewStageSummary: Object.assign({}, ownerReviewStageSummary, {
+        proposalCount: 9
+      }),
       latestCollectionRunId: "lgacrn_ready_1",
       latestPackageId: "lgapkg_ready_1",
       missingRecordKinds: ["runtime_enablement"],
@@ -477,6 +493,9 @@ test("release package service records summary-only package records behind explic
   assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidencePresentCount, 1);
   assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidenceMissingCount, 29);
   assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
+  assert.equal(calls.saved.releaseDashboardSummary.ownerReviewStageSummary.proposalCount, 8);
+  assert.equal(calls.saved.releaseDashboardSummary.ownerReviewStageSummary.digestRequiredActionCount, 2);
+  assert.equal(calls.saved.releaseDashboardSummary.latestReadinessOwnerReviewStageSummary.proposalCount, 9);
   assert.deepEqual(calls.saved.releaseDashboardSummary.persistedEvidenceKeys, ["ownerReviewEvidence"]);
   assert.equal(JSON.stringify(calls.saved).includes("artifacts"), false);
   assert.equal(JSON.stringify(calls.saved).includes("productionPlannerReadinessEvidence"), false);

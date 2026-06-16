@@ -4,6 +4,40 @@ const RELEASE_DASHBOARD_SCHEMA = "growth.learningAutomationReleaseDashboard.v1";
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
+const OWNER_REVIEW_STAGE_SUMMARY_FIELDS = [
+  "proposalCount",
+  "acceptedProposalCount",
+  "proposedProposalCount",
+  "skippedProposalCount",
+  "expiredProposalCount",
+  "supersededProposalCount",
+  "ownerDecisionProposalCount",
+  "proposalExecutionCount",
+  "publishedProposalExecutionCount",
+  "blockedProposalExecutionCount",
+  "failedProposalExecutionCount",
+  "digestCount",
+  "reviewedDigestCount",
+  "pendingDigestCount",
+  "digestRequiredActionCount",
+  "digestBlockedCandidateCount",
+  "actionHandoffCount",
+  "deliveredHandoffCount",
+  "pendingHandoffDeliveryCount",
+  "actionHandoffActionCount",
+  "blockedActionHandoffCount",
+  "schedulerExecutionCount",
+  "publishedSchedulerExecutionCount",
+  "blockedSchedulerExecutionCount",
+  "failedSchedulerExecutionCount",
+  "schedulerRunCount",
+  "completedSchedulerRunCount",
+  "blockedSchedulerRunCount",
+  "skippedSchedulerRunCount",
+  "reviewedWorkerTargetCount",
+  "pendingWorkerTargetReviewCount",
+  "disabledWorkerTargetCount"
+];
 
 function cleanString(value, max = 160) {
   return String(value || "").trim().slice(0, max);
@@ -30,6 +64,49 @@ function uniqueStrings(values, max = 24) {
     if (out.length >= max) break;
   }
   return out;
+}
+
+function snakeCaseKey(key) {
+  return String(key || "").replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function fieldValue(source = {}, key) {
+  if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  return source[snakeCaseKey(key)];
+}
+
+function ownerReviewStageSummary(value = {}) {
+  const readback = objectOnly(value);
+  const direct = objectOnly(readback.ownerReviewStageSummary || readback.owner_review_stage_summary);
+  const ownerItem = asArray(readback.items || readback.evidenceItems || readback.evidence_items)
+    .map(objectOnly)
+    .find((item) => {
+      const key = cleanString(item.key || item.evidenceKey || item.evidence_key, 160);
+      const checkKey = cleanString(item.checkKey || item.check_key, 160);
+      return key === "ownerReviewEvidence" || key === "owner_review_evidence" || checkKey === "owner_review_evidence";
+    });
+  const summary = Object.keys(direct).length
+    ? direct
+    : objectOnly(ownerItem?.ownerReviewStageSummary || ownerItem?.owner_review_stage_summary);
+  if (!Object.keys(summary).length) return null;
+  const counters = {};
+  let hasSignal = false;
+  for (const key of OWNER_REVIEW_STAGE_SUMMARY_FIELDS) {
+    const number = Number(fieldValue(summary, key) || 0) || 0;
+    counters[key] = number;
+    if (number > 0) hasSignal = true;
+  }
+  const failurePolicyReady = fieldValue(summary, "failurePolicyReady") === true;
+  const failurePolicyStatus = cleanString(fieldValue(summary, "failurePolicyStatus"), 120);
+  if (failurePolicyReady || failurePolicyStatus) hasSignal = true;
+  if (!hasSignal) return null;
+  return Object.assign({
+    schemaVersion: "growth.learningAutomationReleaseReadback.ownerReviewStageSummary.v1",
+    summaryOnly: true
+  }, counters, {
+    failurePolicyReady,
+    failurePolicyStatus
+  });
 }
 
 function scanPrivacyKeys(value, path = "", findings = [], seen = new Set()) {
@@ -149,6 +226,7 @@ function evidenceReadbackSummary(value = {}) {
     sourceBundleStatus: cleanString(readback.sourceBundleStatus || readback.source_bundle_status || sourceBundle.status, 120),
     sourceBundleTaskCount: Number(readback.sourceBundleTaskCount || readback.source_bundle_task_count || sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
     sourceBundlePassCount: Number(readback.sourceBundlePassCount || readback.source_bundle_pass_count || sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    ownerReviewStageSummary: ownerReviewStageSummary(readback) || undefined,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -276,6 +354,7 @@ function inventorySummary(inventory = {}) {
     latestReadinessEvidencePresentCount: Number(summary.latestReadinessEvidencePresentCount || 0) || 0,
     latestReadinessEvidenceMissingCount: Number(summary.latestReadinessEvidenceMissingCount || 0) || 0,
     latestReadinessEvidenceSourceBundleId: cleanString(summary.latestReadinessEvidenceSourceBundleId, 180),
+    latestReadinessOwnerReviewStageSummary: objectOnly(summary.latestReadinessOwnerReviewStageSummary),
     latestPackageId: cleanString(summary.latestPackageId, 180),
     latestPackageStepCount: Number(summary.latestPackageStepCount || 0) || 0,
     latestPackageDashboardStatus: cleanString(summary.latestPackageDashboardStatus, 120),
@@ -328,10 +407,12 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     readinessEvidencePresentCount: readinessPart.evidenceReadback.presentCount,
     readinessEvidenceMissingCount: readinessPart.evidenceReadback.missingCount,
     readinessEvidenceSourceBundleId: readinessPart.evidenceReadback.sourceBundleId,
+    ownerReviewStageSummary: readinessPart.evidenceReadback.ownerReviewStageSummary || null,
     latestReadinessSnapshotId: inventoryPart.latestReadinessSnapshotId,
     latestReadinessEvidencePresentCount: inventoryPart.latestReadinessEvidencePresentCount,
     latestReadinessEvidenceMissingCount: inventoryPart.latestReadinessEvidenceMissingCount,
     latestReadinessEvidenceSourceBundleId: inventoryPart.latestReadinessEvidenceSourceBundleId,
+    latestReadinessOwnerReviewStageSummary: inventoryPart.latestReadinessOwnerReviewStageSummary || null,
     latestCollectionRunId: inventoryPart.latestCollectionRunId,
     latestPackageId: inventoryPart.latestPackageId,
     latestPackageStepCount: inventoryPart.latestPackageStepCount,

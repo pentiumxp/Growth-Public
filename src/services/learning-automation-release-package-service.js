@@ -309,6 +309,8 @@ function dashboardSummaryFromPackage(dashboard = {}) {
     latestReadinessEvidencePresentCount: Number(releaseDashboard.latestReadinessEvidencePresentCount || releaseDashboard.latest_readiness_evidence_present_count || 0) || 0,
     latestReadinessEvidenceMissingCount: Number(releaseDashboard.latestReadinessEvidenceMissingCount || releaseDashboard.latest_readiness_evidence_missing_count || 0) || 0,
     latestReadinessEvidenceSourceBundleId: cleanString(releaseDashboard.latestReadinessEvidenceSourceBundleId || releaseDashboard.latest_readiness_evidence_source_bundle_id, 180),
+    ownerReviewStageSummary: objectOnly(releaseDashboard.ownerReviewStageSummary || releaseDashboard.owner_review_stage_summary),
+    latestReadinessOwnerReviewStageSummary: objectOnly(releaseDashboard.latestReadinessOwnerReviewStageSummary || releaseDashboard.latest_readiness_owner_review_stage_summary),
     latestPackageId: cleanString(releaseDashboard.latestPackageId || releaseDashboard.latest_package_id, 160),
     latestDecisionId: cleanString(releaseDashboard.latestDecisionId || releaseDashboard.latest_decision_id, 160),
     latestActivationId: cleanString(releaseDashboard.latestActivationId || releaseDashboard.latest_activation_id, 160),

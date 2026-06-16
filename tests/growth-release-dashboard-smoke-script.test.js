@@ -144,6 +144,23 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
       "--domain-pack-id", "uk_hk_curriculum_foundation",
       "--domain", "science",
       "--subject", "science",
+      "--evidence-json", JSON.stringify({
+        ownerReviewEvidence: {
+          ok: true,
+          summaryOnly: true,
+          summary: {
+            proposalCount: 4,
+            acceptedProposalCount: 1,
+            digestRequiredActionCount: 2,
+            blockedActionHandoffCount: 1,
+            publishedSchedulerExecutionCount: 1,
+            completedSchedulerRunCount: 1,
+            pendingWorkerTargetReviewCount: 1,
+            failurePolicyReady: true,
+            failurePolicyStatus: "ready"
+          }
+        }
+      }),
       "--write-snapshot",
       "--created-by", "weixin_owner",
       "--created-at", "2026-06-15T18:10:00.000Z"
@@ -172,8 +189,11 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
     assert.equal(readiness.snapshot.evidenceReadback.summaryOnly, true);
     assert.equal(output.operation, "dashboard");
     assert.equal(output.releaseDashboard.latestReadinessSnapshotId, readiness.snapshot.readinessId);
-    assert.equal(output.releaseDashboard.latestReadinessEvidencePresentCount, 0);
-    assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 32);
+    assert.equal(output.releaseDashboard.latestReadinessEvidencePresentCount, 1);
+    assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 31);
+    assert.equal(output.releaseDashboard.latestReadinessOwnerReviewStageSummary.proposalCount, 4);
+    assert.equal(output.releaseDashboard.latestReadinessOwnerReviewStageSummary.digestRequiredActionCount, 2);
+    assert.equal(output.releaseDashboard.latestReadinessOwnerReviewStageSummary.failurePolicyStatus, "ready");
     assert.equal(output.releaseDashboard.releaseEvidenceRecordCount, 1);
     assert.equal(output.releaseDashboard.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.releaseDashboard.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
@@ -181,7 +201,7 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
     assert.equal(output.releaseDashboard.latestReleaseEvidenceStatus, "pass");
     assert.equal(output.releaseInventory.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.artifactReadback.snapshots.latestId, readiness.snapshot.readinessId);
-    assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 32);
+    assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 31);
     assert.equal(output.artifactReadback.releaseEvidence.latestId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.artifactReadback.releaseEvidence.latestEvidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.writefulSchedulingAllowed, false);

@@ -107,6 +107,15 @@ counts visible to release tooling without copying raw dependency ids or rows.
 It does not change the pass/fail semantics of the `owner_review_evidence`
 check and does not grant scheduler or publish permission.
 
+Release controls, release inventory, release dashboard, and package dashboard
+summary readbacks may project the compact `ownerReviewStageSummary` object
+from release-readiness evidence readback so Owner/release tooling can inspect
+stage counts without expanding the full evidence item catalog. These downstream
+projections remain summary-only. They must not carry proposal, digest,
+handoff, execution, run, worker-target, or policy row ids, and they must not be
+treated as UI evidence, release approval, runtime config, scheduler
+permission, or publication permission.
+
 The same evidence key can also be recorded through the release evidence record
 boundary as `owner_review_evidence`. Persisted pass records are projected back
 into release-readiness through the canonical `ownerReviewEvidence` key.
@@ -161,6 +170,11 @@ the bounded `ownerReviewEvidence.summary` and
 `evidenceReadback.items[].ownerReviewStageSummary` projections preserve digest,
 action-handoff, scheduler execution, scheduler run, worker-target, and
 failure-policy counts without carrying raw dependency ids.
+
+Release controls/dashboard/inventory/package harnesses must prove the compact
+stage-summary readback can flow from persisted readiness snapshots into their
+bounded summaries without copying full `evidenceReadback.items[]` entries or
+raw dependency ids.
 
 ## Current Product Gap
 

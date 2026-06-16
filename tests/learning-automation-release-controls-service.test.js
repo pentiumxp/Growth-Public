@@ -7,6 +7,18 @@ const {
   createLearningAutomationReleaseControlsService
 } = require("../src/services/learning-automation-release-controls-service");
 
+const ownerReviewStageSummary = {
+  proposalCount: 3,
+  acceptedProposalCount: 1,
+  digestRequiredActionCount: 1,
+  blockedActionHandoffCount: 1,
+  publishedSchedulerExecutionCount: 1,
+  completedSchedulerRunCount: 1,
+  pendingWorkerTargetReviewCount: 1,
+  failurePolicyReady: true,
+  failurePolicyStatus: "ready"
+};
+
 function readiness(overrides = {}) {
   return Object.assign({
     ok: true,
@@ -32,6 +44,12 @@ function readiness(overrides = {}) {
         taskCount: 8,
         passCount: 8
       },
+      items: [{
+        key: "ownerReviewEvidence",
+        checkKey: "owner_review_evidence",
+        evidencePresent: true,
+        ownerReviewStageSummary
+      }],
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
@@ -321,6 +339,13 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.steps[0].evidenceReadback.missingCount, 0);
   assert.equal(result.steps[0].evidenceReadback.sourceBundleId, "bundle_ready_1");
   assert.equal(result.steps[0].evidenceReadback.sourceBundleTaskCount, 8);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.proposalCount, 3);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.digestRequiredActionCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.blockedActionHandoffCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.completedSchedulerRunCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(result.steps[0].evidenceReadback.ownerReviewStageSummary.failurePolicyStatus, "ready");
   assert.equal(result.steps[1].latestCollectionRunId, "lgacrn_ready_1");
   assert.equal(result.steps[1].packageRecordPresent, true);
   assert.equal(result.steps[1].latestPackageId, "lgapkg_ready_1");

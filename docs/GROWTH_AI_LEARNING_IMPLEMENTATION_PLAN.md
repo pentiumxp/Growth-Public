@@ -779,7 +779,10 @@ Implemented backend shape:
   `evidenceReadback.items[].ownerReviewStageSummary` for the
   `ownerReviewEvidence` item. That readback improves release audit visibility
   only; it does not add a new pass gate, approve release, enable scheduling, or
-  publish cards.
+  publish cards. Release controls, inventory, dashboard, and package dashboard
+  summaries may carry only that compact stage-summary object so release
+  tooling can inspect stage counts without expanding the full evidence item
+  catalog or raw dependency ids.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -830,7 +833,8 @@ Implemented backend shape:
   only bounded latest-package dashboard summary fields (`status`,
   `nextAction.key`, `requiredActionCount`, `stepCount`,
   readiness-evidence present/missing counts, source bundle id, latest readiness
-  snapshot id, latest snapshot evidence counts, and persisted evidence keys)
+  snapshot id, latest snapshot evidence counts, compact Owner review
+  stage-summary counters when present, and persisted evidence keys)
   instead of raw package artifacts. Visible-target scoped
   `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an

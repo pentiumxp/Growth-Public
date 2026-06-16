@@ -5,6 +5,18 @@ const {
   createLearningAutomationReleaseInventoryService
 } = require("../src/services/learning-automation-release-inventory-service");
 
+const ownerReviewStageSummary = {
+  proposalCount: 6,
+  acceptedProposalCount: 2,
+  digestRequiredActionCount: 3,
+  blockedActionHandoffCount: 1,
+  publishedSchedulerExecutionCount: 2,
+  completedSchedulerRunCount: 1,
+  pendingWorkerTargetReviewCount: 1,
+  failurePolicyReady: true,
+  failurePolicyStatus: "ready"
+};
+
 function createService(overrides = {}, calls = []) {
   return createLearningAutomationReleaseInventoryService(Object.assign({
     releaseReadinessService: {
@@ -31,6 +43,12 @@ function createService(overrides = {}, calls = []) {
                 taskCount: 8,
                 passCount: 7
               },
+              items: [{
+                key: "ownerReviewEvidence",
+                checkKey: "owner_review_evidence",
+                evidencePresent: true,
+                ownerReviewStageSummary
+              }],
               writefulSchedulingAllowed: false,
               runtimeConfigChange: false,
               configChangeApplied: false
@@ -98,6 +116,10 @@ function createService(overrides = {}, calls = []) {
               controlsStatus: "manual_runtime_config_required",
               inventoryStatus: "manual_runtime_config_required",
               requiredActionCount: 1,
+              ownerReviewStageSummary,
+              latestReadinessOwnerReviewStageSummary: Object.assign({}, ownerReviewStageSummary, {
+                proposalCount: 7
+              }),
               nextAction: {
                 key: "enable_runtime_config_manually",
                 action: "perform_platform_runtime_config_enablement",
@@ -220,6 +242,9 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.releaseInventory.latestReadinessEvidencePresentCount, 26);
   assert.equal(result.releaseInventory.latestReadinessEvidenceMissingCount, 1);
   assert.equal(result.releaseInventory.latestReadinessEvidenceSourceBundleId, "bundle_inventory_1");
+  assert.equal(result.releaseInventory.latestReadinessOwnerReviewStageSummary.proposalCount, 6);
+  assert.equal(result.releaseInventory.latestReadinessOwnerReviewStageSummary.digestRequiredActionCount, 3);
+  assert.equal(result.releaseInventory.latestReadinessOwnerReviewStageSummary.failurePolicyReady, true);
   assert.equal(result.releaseInventory.latestCollectionRunId, "lgacrn_1");
   assert.equal(result.releaseInventory.latestPackageId, "lgapkg_1");
   assert.equal(result.releaseInventory.latestPackageStepCount, 6);
@@ -240,11 +265,15 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 1);
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.sourceBundleId, "bundle_inventory_1");
   assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.sourceBundleTaskCount, 8);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.proposalCount, 6);
+  assert.equal(result.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.completedSchedulerRunCount, 1);
   assert.equal(result.artifactReadback.packages.latest.collectionRunId, "lgacrn_1");
   assert.equal(result.artifactReadback.packages.latest.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.artifactReadback.packages.latest.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.summaryOnly, true);
+  assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.ownerReviewStageSummary.proposalCount, 6);
+  assert.equal(result.artifactReadback.packages.latest.releaseDashboardSummary.latestReadinessOwnerReviewStageSummary.proposalCount, 7);
   assert.equal(result.artifactReadback.releaseEvidence.latest.id, "lgarev_1");
   assert.equal(result.artifactReadback.releaseEvidence.latest.evidenceKey, "ownerDailyUiEvidence");
   assert.equal(result.artifactReadback.releaseEvidence.latest.checkKey, "owner_daily_ui_evidence");

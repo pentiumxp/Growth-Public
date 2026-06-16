@@ -1047,6 +1047,10 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseControlsService, /packageRecordPresent/);
   assert.match(automationReleaseControlsService, /evidenceReadbackSummary/);
   assert.match(automationReleaseControlsService, /sourceBundleTaskCount/);
+  assert.match(automationReleaseControlsService, /ownerReviewStageSummary/);
+  assert.match(automationReleaseControlsService, /blockedActionHandoffCount/);
+  assert.match(automationReleaseControlsService, /publishedSchedulerExecutionCount/);
+  assert.match(automationReleaseControlsService, /pendingWorkerTargetReviewCount/);
   assert.match(automationReleaseControlsService, /configChangeApplied: false/);
   assert.match(automationReleaseControlsService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseControlsService, /runtimeConfigChange: false/);
@@ -2238,6 +2242,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /latestPackageDashboardStatus/);
   assert.match(releaseInventoryService, /evidenceReadbackSummary/);
   assert.match(releaseInventoryService, /latestReadinessEvidencePresentCount/);
+  assert.match(releaseInventoryService, /latestReadinessOwnerReviewStageSummary/);
+  assert.match(releaseInventoryService, /ownerReviewStageSummary/);
   assert.match(releaseInventoryService, /latestReleaseEvidenceRecordId/);
   assert.match(releaseInventoryService, /releaseEvidenceRecordCount/);
   assert.doesNotMatch(releaseInventoryService, /require\(["']\.\.\/stores/);
@@ -2262,6 +2268,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseDashboardService, /latestPackageDashboardStatus/);
   assert.match(releaseDashboardService, /evidenceReadbackSummary/);
   assert.match(releaseDashboardService, /readinessEvidencePresentCount/);
+  assert.match(releaseDashboardService, /ownerReviewStageSummary/);
+  assert.match(releaseDashboardService, /latestReadinessOwnerReviewStageSummary/);
   assert.match(releaseDashboardService, /persistedEvidenceKeys/);
   assert.match(releaseDashboardService, /latestReleaseEvidenceRecordId/);
   assert.match(releaseDashboardService, /releaseEvidenceRecordCount/);
@@ -2575,6 +2583,8 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(service, /releaseDashboardSummary/);
   assert.match(service, /readinessEvidencePresentCount/);
   assert.match(service, /latestReadinessEvidenceMissingCount/);
+  assert.match(service, /ownerReviewStageSummary/);
+  assert.match(service, /latestReadinessOwnerReviewStageSummary/);
   assert.match(service, /persistedEvidenceKeys/);
   assert.match(service, /repository\.savePackage/);
   assert.match(service, /repository\.listPackages/);

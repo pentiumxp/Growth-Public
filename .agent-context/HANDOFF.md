@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T14:35+08:00 - Downstream Owner Review Stage Summary Readback
+
+- Status: implemented, documented, and validated. This backend-only slice
+  carries the compact `ownerReviewStageSummary` from release-readiness
+  `evidenceReadback` into downstream release controls, inventory, dashboard,
+  and package dashboard summaries. Overall Growth closed-loop MVP progress is
+  about `82%`: release audit readback is more complete, but product-specific
+  Owner automation UI, central visual evidence, production evidence
+  collection, and broader rollout remain open.
+- Scope:
+  - release controls readiness steps now project compact Owner review stage
+    counters from `evidenceReadback`;
+  - release inventory projects latest readiness snapshot stage counters and
+    latest package dashboard stage counters without exposing full evidence
+    items;
+  - release dashboard projects current and latest readiness stage counters into
+    bounded dashboard summaries;
+  - release package records preserve those compact counters in
+    `releaseDashboardSummary`;
+  - smoke harnesses prove persisted readiness snapshot counters flow through
+    inventory/dashboard readbacks;
+  - no release pass semantics, release approval, runtime config, scheduler
+    permission, Gateway/model call, publication, evaluation, notification,
+    stage activation, or learner-state mutation was added.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Harness updated:
+  - `tests/learning-automation-release-controls-service.test.js`;
+  - `tests/learning-automation-release-dashboard-service.test.js`;
+  - `tests/learning-automation-release-inventory-service.test.js`;
+  - `tests/learning-automation-release-package-service.test.js`;
+  - `tests/growth-release-dashboard-smoke-script.test.js`;
+  - `tests/growth-release-inventory-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - focused release readback tests (`65/65`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - targeted `node --check` for changed service/test files;
+  - `git diff --check`;
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `npm test` (`803/803`);
+  - `codegraph sync && codegraph status` reported up-to-date index with
+    `347` JavaScript files, `4,662` nodes, and `18,683` edges;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - Intake command:
+    `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release controls/dashboard/inventory owner-review stage summary readback projection; backend service docs harness only; no production deploy" --json`.
+  - AI Ops classified the slice as H1 and did not require the visual lane.
+  - AI Ops evidence record:
+    `evidence-f0fed0c2-c535-4a16-ac8d-f0ed7055068a`.
+  - The Home AI app deploy plan reported unrelated dirty files
+    `public/app-platform-status-ui.js` and
+    `public/app-shared-directory-ui.js`; they were not modified by this Growth
+    slice.
+
 ## 2026-06-16T14:17+08:00 - Release-Readiness Owner Review Stage Readback
 
 - Status: implemented, documented, and validated. This backend-only slice

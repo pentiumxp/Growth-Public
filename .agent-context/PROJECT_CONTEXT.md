@@ -143,8 +143,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   repository privacy scanning rejects private path/token-like values even when a
   caller bypasses the service. Release controls, inventory, and dashboard
   readbacks now project bounded evidenceReadback summaries only, including
-  present/missing counts and source bundle ids/status/counts, without exposing
-  full evidence items or changing release/runtime state. It now treats
+  present/missing counts, source bundle ids/status/counts, and the compact
+  `ownerReviewStageSummary` when present, without exposing full evidence items
+  or changing release/runtime state. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle
@@ -362,7 +363,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--write-package-record --allow-write`; package records include bounded
   `releaseDashboardSummary` in `release_dashboard_summary_json`, including
   readiness-evidence present/missing counts, source bundle id, latest readiness
-  snapshot id, latest snapshot evidence counts, and persisted evidence keys.
+  snapshot id, latest snapshot evidence counts, compact Owner review
+  stage-summary counters when present, and persisted evidence keys.
   The
   release review, authorization, closure, controls, inventory, and dashboard
   readbacks project that dashboard summary as latest-package dashboard status,

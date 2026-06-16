@@ -3,6 +3,40 @@
 const RELEASE_INVENTORY_SCHEMA = "growth.learningAutomationReleaseInventory.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
+const OWNER_REVIEW_STAGE_SUMMARY_FIELDS = [
+  "proposalCount",
+  "acceptedProposalCount",
+  "proposedProposalCount",
+  "skippedProposalCount",
+  "expiredProposalCount",
+  "supersededProposalCount",
+  "ownerDecisionProposalCount",
+  "proposalExecutionCount",
+  "publishedProposalExecutionCount",
+  "blockedProposalExecutionCount",
+  "failedProposalExecutionCount",
+  "digestCount",
+  "reviewedDigestCount",
+  "pendingDigestCount",
+  "digestRequiredActionCount",
+  "digestBlockedCandidateCount",
+  "actionHandoffCount",
+  "deliveredHandoffCount",
+  "pendingHandoffDeliveryCount",
+  "actionHandoffActionCount",
+  "blockedActionHandoffCount",
+  "schedulerExecutionCount",
+  "publishedSchedulerExecutionCount",
+  "blockedSchedulerExecutionCount",
+  "failedSchedulerExecutionCount",
+  "schedulerRunCount",
+  "completedSchedulerRunCount",
+  "blockedSchedulerRunCount",
+  "skippedSchedulerRunCount",
+  "reviewedWorkerTargetCount",
+  "pendingWorkerTargetReviewCount",
+  "disabledWorkerTargetCount"
+];
 
 function cleanString(value, max = 180) {
   return String(value || "").trim().slice(0, max);
@@ -18,6 +52,49 @@ function objectOnly(value) {
 
 function unique(values = []) {
   return Array.from(new Set(asArray(values).map((value) => cleanString(value, 160)).filter(Boolean)));
+}
+
+function snakeCaseKey(key) {
+  return String(key || "").replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function fieldValue(source = {}, key) {
+  if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  return source[snakeCaseKey(key)];
+}
+
+function ownerReviewStageSummary(value = {}) {
+  const readback = objectOnly(value);
+  const direct = objectOnly(readback.ownerReviewStageSummary || readback.owner_review_stage_summary);
+  const ownerItem = asArray(readback.items || readback.evidenceItems || readback.evidence_items)
+    .map(objectOnly)
+    .find((item) => {
+      const key = cleanString(item.key || item.evidenceKey || item.evidence_key, 160);
+      const checkKey = cleanString(item.checkKey || item.check_key, 160);
+      return key === "ownerReviewEvidence" || key === "owner_review_evidence" || checkKey === "owner_review_evidence";
+    });
+  const summary = Object.keys(direct).length
+    ? direct
+    : objectOnly(ownerItem?.ownerReviewStageSummary || ownerItem?.owner_review_stage_summary);
+  if (!Object.keys(summary).length) return null;
+  const counters = {};
+  let hasSignal = false;
+  for (const key of OWNER_REVIEW_STAGE_SUMMARY_FIELDS) {
+    const number = Number(fieldValue(summary, key) || 0) || 0;
+    counters[key] = number;
+    if (number > 0) hasSignal = true;
+  }
+  const failurePolicyReady = fieldValue(summary, "failurePolicyReady") === true;
+  const failurePolicyStatus = cleanString(fieldValue(summary, "failurePolicyStatus"), 120);
+  if (failurePolicyReady || failurePolicyStatus) hasSignal = true;
+  if (!hasSignal) return null;
+  return Object.assign({
+    schemaVersion: "growth.learningAutomationReleaseReadback.ownerReviewStageSummary.v1",
+    summaryOnly: true
+  }, counters, {
+    failurePolicyReady,
+    failurePolicyStatus
+  });
 }
 
 function boundedLimit(value, fallback = 5) {
@@ -134,6 +211,8 @@ function packageDashboardFields(record = {}) {
       controlsStatus: cleanString(dashboard.controlsStatus || dashboard.controls_status, 120),
       inventoryStatus: cleanString(dashboard.inventoryStatus || dashboard.inventory_status, 120),
       requiredActionCount: Number(dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
+      ownerReviewStageSummary: objectOnly(dashboard.ownerReviewStageSummary || dashboard.owner_review_stage_summary),
+      latestReadinessOwnerReviewStageSummary: objectOnly(dashboard.latestReadinessOwnerReviewStageSummary || dashboard.latest_readiness_owner_review_stage_summary),
       nextAction: nextAction.key ? {
         key: cleanString(nextAction.key, 140),
         action: cleanString(nextAction.action || nextAction.type || nextAction.reason, 180),
@@ -161,6 +240,7 @@ function evidenceReadbackSummary(record = {}) {
     sourceBundleStatus: cleanString(sourceBundle.status, 120),
     sourceBundleTaskCount: Number(sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
     sourceBundlePassCount: Number(sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    ownerReviewStageSummary: ownerReviewStageSummary(readback) || undefined,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -376,9 +456,10 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         missingRecordKinds: summaries.filter((summary) => summary.status === "records_missing").map((summary) => summary.kind),
         blockedRecordKinds: summaries.filter((summary) => summary.ok === false).map((summary) => summary.kind),
         latestReadinessSnapshotId: cleanString(latestSnapshot.id, 180),
-        latestReadinessEvidencePresentCount: Number(latestSnapshotEvidenceReadback.presentCount || 0) || 0,
-        latestReadinessEvidenceMissingCount: Number(latestSnapshotEvidenceReadback.missingCount || 0) || 0,
-        latestReadinessEvidenceSourceBundleId: cleanString(latestSnapshotEvidenceReadback.sourceBundleId, 180),
+    latestReadinessEvidencePresentCount: Number(latestSnapshotEvidenceReadback.presentCount || 0) || 0,
+    latestReadinessEvidenceMissingCount: Number(latestSnapshotEvidenceReadback.missingCount || 0) || 0,
+    latestReadinessEvidenceSourceBundleId: cleanString(latestSnapshotEvidenceReadback.sourceBundleId, 180),
+    latestReadinessOwnerReviewStageSummary: latestSnapshotEvidenceReadback.ownerReviewStageSummary || null,
         latestCollectionRunId: cleanString(summaries.find((summary) => summary.kind === "release_collection_run")?.latest?.id, 180),
         latestPackageId: cleanString(summaries.find((summary) => summary.kind === "release_package")?.latest?.id, 180),
         latestPackageStepCount: Number(latestPackage.latestPackageStepCount || 0) || 0,

@@ -3,6 +3,40 @@
 const RELEASE_CONTROLS_SCHEMA = "growth.learningAutomationReleaseControls.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
+const OWNER_REVIEW_STAGE_SUMMARY_FIELDS = [
+  "proposalCount",
+  "acceptedProposalCount",
+  "proposedProposalCount",
+  "skippedProposalCount",
+  "expiredProposalCount",
+  "supersededProposalCount",
+  "ownerDecisionProposalCount",
+  "proposalExecutionCount",
+  "publishedProposalExecutionCount",
+  "blockedProposalExecutionCount",
+  "failedProposalExecutionCount",
+  "digestCount",
+  "reviewedDigestCount",
+  "pendingDigestCount",
+  "digestRequiredActionCount",
+  "digestBlockedCandidateCount",
+  "actionHandoffCount",
+  "deliveredHandoffCount",
+  "pendingHandoffDeliveryCount",
+  "actionHandoffActionCount",
+  "blockedActionHandoffCount",
+  "schedulerExecutionCount",
+  "publishedSchedulerExecutionCount",
+  "blockedSchedulerExecutionCount",
+  "failedSchedulerExecutionCount",
+  "schedulerRunCount",
+  "completedSchedulerRunCount",
+  "blockedSchedulerRunCount",
+  "skippedSchedulerRunCount",
+  "reviewedWorkerTargetCount",
+  "pendingWorkerTargetReviewCount",
+  "disabledWorkerTargetCount"
+];
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -19,6 +53,49 @@ function asArray(value) {
 
 function unique(values = []) {
   return Array.from(new Set(values.map((value) => cleanString(value, 160)).filter(Boolean)));
+}
+
+function snakeCaseKey(key) {
+  return String(key || "").replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function fieldValue(source = {}, key) {
+  if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  return source[snakeCaseKey(key)];
+}
+
+function ownerReviewStageSummary(value = {}) {
+  const readback = objectOnly(value);
+  const direct = objectOnly(readback.ownerReviewStageSummary || readback.owner_review_stage_summary);
+  const ownerItem = asArray(readback.items || readback.evidenceItems || readback.evidence_items)
+    .map(objectOnly)
+    .find((item) => {
+      const key = cleanString(item.key || item.evidenceKey || item.evidence_key, 160);
+      const checkKey = cleanString(item.checkKey || item.check_key, 160);
+      return key === "ownerReviewEvidence" || key === "owner_review_evidence" || checkKey === "owner_review_evidence";
+    });
+  const summary = Object.keys(direct).length
+    ? direct
+    : objectOnly(ownerItem?.ownerReviewStageSummary || ownerItem?.owner_review_stage_summary);
+  if (!Object.keys(summary).length) return null;
+  const counters = {};
+  let hasSignal = false;
+  for (const key of OWNER_REVIEW_STAGE_SUMMARY_FIELDS) {
+    const number = Number(fieldValue(summary, key) || 0) || 0;
+    counters[key] = number;
+    if (number > 0) hasSignal = true;
+  }
+  const failurePolicyReady = fieldValue(summary, "failurePolicyReady") === true;
+  const failurePolicyStatus = cleanString(fieldValue(summary, "failurePolicyStatus"), 120);
+  if (failurePolicyReady || failurePolicyStatus) hasSignal = true;
+  if (!hasSignal) return null;
+  return Object.assign({
+    schemaVersion: "growth.learningAutomationReleaseReadback.ownerReviewStageSummary.v1",
+    summaryOnly: true
+  }, counters, {
+    failurePolicyReady,
+    failurePolicyStatus
+  });
 }
 
 function scanPrivacyKeys(value, pathName = "$", findings = []) {
@@ -199,6 +276,7 @@ function evidenceReadbackSummary(readback = {}) {
     sourceBundleStatus: cleanString(sourceBundle.status, 120),
     sourceBundleTaskCount: Number(sourceBundle.taskCount || sourceBundle.task_count || 0) || 0,
     sourceBundlePassCount: Number(sourceBundle.passCount || sourceBundle.pass_count || 0) || 0,
+    ownerReviewStageSummary: ownerReviewStageSummary(value) || undefined,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
