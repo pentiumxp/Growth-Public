@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:35+08:00 - Release Preflight Audit Report Boundary
+
+- Status: implemented, documented, full-Harness validated locally, and ready
+  for commit/push; no production deployment in this slice.
+- Change intent:
+  - add a final Growth-owned backend preflight review boundary after release
+    dashboard/workbench/closure but before any Owner activation/runtime work;
+  - let Owner tooling evaluate and optionally persist a summary-only preflight
+    report without using Codex as the operational UI;
+  - keep the result advisory and prevent it from being mistaken for Home AI
+    central visual evidence, runtime-config enablement, scheduler permission,
+    or production deployment.
+- Scope:
+  - added `learning-automation-release-preflight-service`, composing only
+    release-dashboard, release-workbench, and release-closure summaries;
+  - added `automation-release-preflight-reports.js` and
+    `learning_growth_automation_release_preflight_reports` for explicit
+    Owner-authorized summary-only audit rows;
+  - added visible-target scoped
+    `GET /api/v1/growth/automation/release-preflight`,
+    `GET /api/v1/growth/automation/release-preflight-reports`, and Owner-only
+    `POST /api/v1/growth/automation/release-preflight-reports`;
+  - added `npm run smoke:release-preflight`, which defaults to no-write
+    `evaluate`, supports read-only `list`, and requires `--operation record`
+    plus `--allow-write` before writing;
+  - wired the service and repository through the normal composition root and
+    added syntax-check coverage.
+- Boundary notes:
+  - preflight DTOs keep `readyForProductionDeploy=false`; the positive signals
+    are only advisory `readyForProductionDeployReview` and
+    `readyForOwnerReleaseActivation`;
+  - the service does not run smoke tasks internally, call Gateway/model vendors,
+    publish plans/cards, generate/evaluate cards, execute scheduler actions, run
+    scheduler ticks, deliver notifications, activate stage assessments, mutate
+    learner state, flip runtime config, grant scheduler permission, inspect
+    SQLite directly from the service, deploy, or act as a Home AI release
+    switch;
+  - the repository rejects privacy-risk keys, private path/token-looking values,
+    non-summary privacy classes, and unsupported status values before
+    persistence.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-preflight-service.test.js tests/learning-automation-release-preflight-repository.test.js tests/growth-release-preflight-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `93/93`;
+  - `git diff --check`;
+  - `npm test` passed `903/903`;
+  - `codegraph sync && codegraph status` reported index up to date with
+    `370` files, `5,175` nodes, and `22,334` edges, plus the existing
+    earlier-engine advisory.
+- Remaining next-step candidates:
+  - collect real Home AI central visual/UI summary artifacts and platform
+    Action Inbox/Web Push evidence for production release gates;
+  - collect real production controlled daily-loop/profile-feedback/learner-cycle
+    evidence, explicit release approvals, and package/review/activation/runtime
+    records over production inputs;
+  - keep scheduler/runtime writeful execution disabled until the remaining
+    release gates and Owner approvals exist.
+
 ## 2026-06-17T06:55+08:00 - Explicit Package Build-And-Record Workbench Action
 
 - Status: implemented, documented, full-Harness validated locally, committed as

@@ -392,6 +392,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   write authorization. The facade does not build packages itself, run smoke tasks
   internally, call Gateway/model providers, publish, schedule, mutate runtime
   config, grant scheduler permission, or mutate learner state.
+  Growth now also has `learning-automation-release-preflight-service`,
+  `automation-release-preflight-reports.js`,
+  `learning_growth_automation_release_preflight_reports`,
+  `GET /api/v1/growth/automation/release-preflight`,
+  `GET /api/v1/growth/automation/release-preflight-reports`, Owner-only
+  `POST /api/v1/growth/automation/release-preflight-reports`, and
+  `npm run smoke:release-preflight`. This is a summary-only final backend
+  release preflight audit boundary over release-dashboard, release-workbench,
+  and release-closure DTOs. It can persist only Owner-authorized preflight
+  report rows, keeps `readyForProductionDeploy=false`, and never applies runtime
+  config, grants scheduler permission, runs smoke tasks internally, calls
+  Gateway/model providers, publishes, evaluates, schedules, deploys, or mutates
+  learner state.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised

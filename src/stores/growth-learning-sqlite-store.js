@@ -17,6 +17,7 @@ const { createLearningAutomationProposalRepository } = require("./growth-learnin
 const { createLearningAutomationReleaseCollectionRunRepository } = require("./growth-learning-sqlite/automation-release-collection-runs");
 const { createLearningAutomationReleaseDecisionRepository } = require("./growth-learning-sqlite/automation-release-decisions");
 const { createLearningAutomationReleasePackageRepository } = require("./growth-learning-sqlite/automation-release-packages");
+const { createLearningAutomationReleasePreflightReportRepository } = require("./growth-learning-sqlite/automation-release-preflight-reports");
 const { createLearningAutomationReleaseApprovalRepository } = require("./growth-learning-sqlite/automation-release-approvals");
 const { createLearningAutomationReleaseEvidenceRepository } = require("./growth-learning-sqlite/automation-release-evidence");
 const { createLearningAutomationReleaseActivationRepository } = require("./growth-learning-sqlite/automation-release-activations");
@@ -76,6 +77,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const learningAutomationReleaseCollectionRunRepository = createLearningAutomationReleaseCollectionRunRepository({ open });
   const learningAutomationReleaseDecisionRepository = createLearningAutomationReleaseDecisionRepository({ open });
   const learningAutomationReleasePackageRepository = createLearningAutomationReleasePackageRepository({ open });
+  const learningAutomationReleasePreflightReportRepository = createLearningAutomationReleasePreflightReportRepository({ open });
   const learningAutomationReleaseApprovalRepository = createLearningAutomationReleaseApprovalRepository({ open });
   const learningAutomationReleaseEvidenceRepository = createLearningAutomationReleaseEvidenceRepository({ open });
   const learningAutomationReleaseActivationRepository = createLearningAutomationReleaseActivationRepository({ open });
@@ -174,6 +176,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     learningAutomationReleaseCollectionRunRepository,
     learningAutomationReleaseDecisionRepository,
     learningAutomationReleasePackageRepository,
+    learningAutomationReleasePreflightReportRepository,
     learningAutomationReleaseApprovalRepository,
     learningAutomationReleaseEvidenceRepository,
     learningAutomationReleaseActivationRepository,

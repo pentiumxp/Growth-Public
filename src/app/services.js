@@ -31,6 +31,7 @@ const { createLearningAutomationReleaseEvidenceBundleService } = require("../ser
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseInventoryService } = require("../services/learning-automation-release-inventory-service");
 const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
+const { createLearningAutomationReleasePreflightService } = require("../services/learning-automation-release-preflight-service");
 const { createLearningAutomationReleaseReadinessService } = require("../services/learning-automation-release-readiness-service");
 const { createLearningAutomationReleaseReviewService } = require("../services/learning-automation-release-review-service");
 const { createLearningAutomationReleaseWorkbenchActionService } = require("../services/learning-automation-release-workbench-action-service");
@@ -410,6 +411,12 @@ function createServices(config) {
     releaseInventoryService: learningAutomationReleaseInventoryService,
     releaseDashboardService: learningAutomationReleaseDashboardService
   });
+  const learningAutomationReleasePreflightService = createLearningAutomationReleasePreflightService({
+    releaseDashboardService: learningAutomationReleaseDashboardService,
+    releaseWorkbenchService: learningAutomationReleaseWorkbenchService,
+    releaseClosureService: learningAutomationReleaseClosureService,
+    repository: growthLearningStore.learningAutomationReleasePreflightReportRepository
+  });
   const learningAutomationReleaseEvidenceArtifactManifestService = createLearningAutomationReleaseEvidenceArtifactManifestService();
   const learningAutomationReleaseEvidenceArtifactTemplateService = createLearningAutomationReleaseEvidenceArtifactTemplateService({
     releaseWorkbenchService: learningAutomationReleaseWorkbenchService
@@ -563,6 +570,7 @@ function createServices(config) {
     learningAutomationReleaseInventoryService,
     learningAutomationReleasePackageBuildService,
     learningAutomationReleasePackageService,
+    learningAutomationReleasePreflightService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,
     learningAutomationReleaseWorkbenchActionService,

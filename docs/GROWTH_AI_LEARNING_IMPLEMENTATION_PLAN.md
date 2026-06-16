@@ -1024,6 +1024,20 @@ Implemented backend shape:
   tables, run smoke tasks, call Gateway, publish, generate, evaluate, schedule,
   notify, activate stage assessments, mutate learner state, or flip runtime
   config.
+- `npm run smoke:release-preflight` delegates to
+  `learning-automation-release-preflight-service.evaluate` by default and
+  returns a no-write `growth.learningAutomationReleasePreflight.v1` readback
+  for final backend release review. It composes release-dashboard,
+  release-workbench, and release-closure summaries, can list persisted preflight
+  reports, and can write a summary-only
+  `learning_growth_automation_release_preflight_reports` row only with
+  `--operation record --allow-write` or the Owner-only HTTP route. It keeps
+  `readyForProductionDeploy=false`; `readyForProductionDeployReview` and
+  `readyForOwnerReleaseActivation` remain advisory evidence and do not replace
+  Home AI central visual, deployment, or runtime-config gates. It does not run
+  smoke tasks internally, call Gateway, publish, generate, evaluate, schedule,
+  notify, activate stage assessments, mutate learner state, flip runtime config,
+  grant scheduler permission, or deploy.
 - `npm run smoke:release-activation` delegates to
   `learning-automation-release-activation-service.preflight` by default and
   returns a no-write `growth.learningAutomationReleaseActivation.v1` preflight

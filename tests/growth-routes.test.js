@@ -5039,6 +5039,184 @@ test("growth automation release workbench route returns visible-target Owner act
   }
 });
 
+test("growth automation release preflight routes evaluate, list, and record Owner reports", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      },
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        assert.equal(authorizationToken, "workspace-key");
+        assert.equal(workspaceId, "weixin_stephen");
+        return { ok: true, hermes_workspace_id: "weixin_stephen" };
+      }
+    },
+    learningAutomationReleasePreflightService: {
+      evaluate(input) {
+        calls.push(["evaluate", input]);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleasePreflight.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "ready_for_owner_release_activation",
+          releasePreflight: {
+            summaryOnly: true,
+            status: "ready_for_owner_release_activation",
+            readyForProductionDeploy: false,
+            readyForProductionDeployReview: true
+          },
+          writefulSchedulingAllowed: false
+        };
+      },
+      listReports(input) {
+        calls.push(["list", input]);
+        return {
+          ok: true,
+          schemaVersion: "growth.learningAutomationReleasePreflightReportList.v1",
+          workspaceId: input.workspaceId,
+          count: 1,
+          reports: [{
+            preflightReportId: "lgarpf_route_1",
+            status: "ready_for_owner_release_activation",
+            privacyClass: "summary_only"
+          }],
+          writefulSchedulingAllowed: false
+        };
+      },
+      recordReport(input) {
+        calls.push(["record", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          schemaVersion: "growth.learningAutomationReleasePreflight.v1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "ready_for_owner_release_activation",
+          report: {
+            preflightReportId: "lgarpf_route_1",
+            status: "ready_for_owner_release_activation",
+            privacyClass: "summary_only"
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const evaluated = await fetch(`${baseUrl}/api/v1/growth/automation/release-preflight?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&activationGates=writeful_execution&requiredApprovalKey=writefulExecutionApproval&limit=4`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(evaluated.status, 200);
+    const evaluatedBody = await evaluated.json();
+    assert.equal(evaluatedBody.schemaVersion, "growth.learningAutomationReleasePreflight.v1");
+    assert.equal(evaluatedBody.releasePreflight.readyForProductionDeploy, false);
+
+    const listed = await fetch(`${baseUrl}/api/v1/growth/automation/release-preflight-reports?workspaceId=growth:weixin_fanfan&learnerId=fanfan&collectionRunId=lgacrn_route_1&status=ready_for_owner_release_activation`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(listed.status, 200);
+    assert.equal((await listed.json()).reports[0].preflightReportId, "lgarpf_route_1");
+
+    const recorded = await fetch(`${baseUrl}/api/v1/growth/automation/release-preflight-reports`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        collection_run_id: "lgacrn_route_1",
+        allow_write_preflight: true,
+        requested_by: "owner"
+      })
+    });
+    assert.equal(recorded.status, 201);
+    assert.equal((await recorded.json()).report.preflightReportId, "lgarpf_route_1");
+
+    assert.deepEqual(calls.map((call) => call[0]), ["evaluate", "list", "record"]);
+    assert.deepEqual(calls[0][1], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "",
+      domainPackId: "",
+      domain: "",
+      subject: "",
+      horizon: "",
+      collectionRunId: "lgacrn_route_1",
+      status: "",
+      limit: "4",
+      ownerDailyUiEvidence: false,
+      ownerAuditUiEvidence: false,
+      stageCheckpointEvidence: false,
+      stageCheckpointControlsEvidence: false,
+      proposalReviewUiEvidence: false,
+      automationDigestUiEvidence: false,
+      automationActionHandoffUiEvidence: false,
+      schedulerExecutionUiEvidence: false,
+      schedulerRunUiEvidence: false,
+      schedulerWorkerTargetUiEvidence: false,
+      releaseWorkbenchSmokeEvidence: false,
+      ownerReviewEvidence: false,
+      requiredApprovalKeys: ["writefulExecutionApproval"],
+      activationGates: ["writeful_execution"],
+      enablementStatus: "",
+      activationRecordLimit: "",
+      runtimeEnablementRecordLimit: ""
+    });
+    assert.equal(calls[2][1].workspaceId, "weixin_fanfan");
+    assert.equal(calls[2][1].allowWritePreflight, true);
+    assert.equal(calls[2][1].ownerAuthorizedWrite, true);
+    assert.equal(calls[2][1].requestedBy, "owner");
+
+    const deniedRecord = await fetch(`${baseUrl}/api/v1/growth/automation/release-preflight-reports`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen" })
+    });
+    assert.equal(deniedRecord.status, 403);
+    assert.equal((await deniedRecord.json()).error.code, "growth_automation_release_preflight_owner_required");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth automation release artifact template route returns visible-target manifest template", async () => {
   const calls = [];
   const server = createServer({

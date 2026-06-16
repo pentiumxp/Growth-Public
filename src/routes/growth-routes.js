@@ -715,8 +715,50 @@ function normalizeAutomationReleaseWorkbenchInput(url, target) {
   return normalizeAutomationReleaseDashboardInput(url, target);
 }
 
+function normalizeAutomationReleasePreflightInput(url, target) {
+  return normalizeAutomationReleaseWorkbenchInput(url, target);
+}
+
 function normalizeAutomationReleaseArtifactTemplateInput(url, target) {
   return normalizeAutomationReleaseWorkbenchInput(url, target);
+}
+
+function normalizeAutomationReleasePreflightRecordInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.runId || body.run_id,
+    status: body.status,
+    limit: body.limit,
+    requiredApprovalKeys: body.requiredApprovalKeys || body.required_approval_keys,
+    activationGates: body.activationGates || body.activation_gates,
+    activationRecordLimit: body.activationRecordLimit || body.activation_record_limit,
+    runtimeEnablementRecordLimit: body.runtimeEnablementRecordLimit || body.runtime_enablement_record_limit,
+    ownerDailyUiEvidence: body.ownerDailyUiEvidence || body.owner_daily_ui_evidence,
+    ownerAuditUiEvidence: body.ownerAuditUiEvidence || body.owner_audit_ui_evidence,
+    stageCheckpointEvidence: body.stageCheckpointEvidence || body.stage_checkpoint_evidence,
+    stageCheckpointControlsEvidence: body.stageCheckpointControlsEvidence || body.stage_checkpoint_controls_evidence,
+    proposalReviewUiEvidence: body.proposalReviewUiEvidence || body.proposal_review_ui_evidence,
+    automationDigestUiEvidence: body.automationDigestUiEvidence || body.automation_digest_ui_evidence,
+    automationActionHandoffUiEvidence: body.automationActionHandoffUiEvidence || body.automation_action_handoff_ui_evidence,
+    schedulerExecutionUiEvidence: body.schedulerExecutionUiEvidence || body.scheduler_execution_ui_evidence,
+    schedulerRunUiEvidence: body.schedulerRunUiEvidence || body.scheduler_run_ui_evidence,
+    schedulerWorkerTargetUiEvidence: body.schedulerWorkerTargetUiEvidence || body.scheduler_worker_target_ui_evidence,
+    releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence,
+    ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence,
+    allowWritePreflight: body.allowWritePreflight === true || body.allow_write_preflight === true,
+    ownerAuthorizedWrite: true,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    createdBy: body.createdBy || body.created_by || body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    createdAt: body.createdAt || body.created_at
+  };
 }
 
 function normalizeAutomationOwnerReviewEvidenceInput(url, target) {
@@ -1723,6 +1765,18 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-preflight") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleasePreflightService.evaluate(normalizeAutomationReleasePreflightInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-preflight-reports") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleasePreflightService.listReports(normalizeAutomationReleasePreflightInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-artifact-template") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseEvidenceArtifactTemplateService.template(
@@ -2138,6 +2192,19 @@ async function handleGrowthRoute(request, response, url, services) {
     );
     const result = services.learningAutomationReleaseWorkbenchActionService.recordAction(
       input
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-preflight-reports") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_preflight_owner_required", "Automation release preflight reports require Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleasePreflightService.recordReport(
+      normalizeAutomationReleasePreflightRecordInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }
