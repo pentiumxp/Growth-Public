@@ -11,10 +11,10 @@
 
 ## 2026-06-16T17:29+08:00 - UI Evidence Validator Harness Slice
 
-- Status: implemented locally; validation is in progress. This slice adds a
-  Growth-owned validator for release-readiness UI evidence artifacts. It does
-  not mark any production UI evidence gate complete by itself and does not
-  write release evidence records.
+- Status: implemented, tested, pushed, deployed, and production-smoked. This
+  slice adds a Growth-owned validator for release-readiness UI evidence
+  artifacts. It does not mark any production UI evidence gate complete by
+  itself and does not write release evidence records.
 - Added:
   - `learning-automation-ui-evidence-service`;
   - `npm run smoke:ui-evidence`;
@@ -38,10 +38,46 @@
     generate, evaluate, execute scheduler actions, deliver notifications,
     activate stage assessments, mutate learner state, inspect SQLite directly,
     or persist release evidence.
+- Validation:
+  - focused tests passed:
+    `node --test tests/learning-automation-ui-evidence-service.test.js
+    tests/growth-ui-evidence-smoke-script.test.js
+    tests/learning-automation-release-evidence-service.test.js
+    tests/growth-automation-release-evidence-smoke-script.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `npm run check` passed;
+  - full Growth `npm test` passed with `825/825`;
+  - `git diff --check` passed;
+  - CodeGraph was current after edits with 355 indexed files.
+- Commit/deploy:
+  - commit: `c1a46803048d` (`Add UI release evidence validator`);
+  - pushed to `origin/main` and `public/main`;
+  - deployed through the central Home AI Mac plugin deploy path;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T093418Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - manifest health check passed on attempt 2;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+- Production smoke:
+  - ran `scripts/smoke-growth-ui-evidence.js` as `hermes-host` in production
+    with a synthetic inline summary artifact for `ownerDailyUiEvidence`;
+  - output returned `schemaVersion=growth.learningAutomationUiEvidence.v1`,
+    `status=pass`, `readyForReleaseEvidence=true`, and summary-only boundary
+    flags;
+  - this proves the production code path is available only. It is not a real
+    Home AI visual artifact, was not persisted through release evidence, and
+    must not be counted as satisfying `owner_daily_ui_evidence`.
 - Next:
-  - finish focused validation;
-  - if validation passes, commit/push and deploy through the central Home AI
-    plugin deploy path.
+  - real UI evidence gates still require real central visual/UI artifacts and
+    explicit persistence through `npm run smoke:release-evidence -- --operation
+    record --allow-write ...`;
+  - production release-readiness still remains incomplete because UI evidence,
+    real completed-cycle/profile-feedback evidence, platform action receipt
+    evidence, controlled daily-loop write evidence, and explicit release
+    approvals are not all present.
 
 ## 2026-06-16T17:17+08:00 - Growth Plugin Redeploy at Current Completed State
 
