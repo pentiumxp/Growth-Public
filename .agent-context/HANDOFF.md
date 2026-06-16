@@ -11,8 +11,8 @@
 
 ## 2026-06-17T10:45+08:00 - Inline Artifact Manifest Workbench Action
 
-- Status: implemented, documented, and full-Harness validated locally;
-  commit/push follows this handoff update. Not deployed in this slice.
+- Status: implemented, documented, full-Harness validated locally, committed,
+  and pushed to `origin/main` and `public/main`; not deployed in this slice.
 - Change intent:
   - let product/Owner tooling use the generated release artifact manifest
     template without returning to Codex or a CLI-only file path flow;
