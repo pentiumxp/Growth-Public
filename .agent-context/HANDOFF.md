@@ -11,8 +11,9 @@
 
 ## 2026-06-16T22:48+08:00 - Automation Action Handoff Owner UI Controls
 
-- Status: implemented and locally validated; pending commit/push. Not deployed
-  per Owner instruction to deploy after the broader slice is complete.
+- Status: implemented, locally validated, and committed as
+  `8087e98 Add automation action handoff Owner UI controls`; pending push. Not
+  deployed per Owner instruction to deploy after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation action
     handoff rows for the selected Growth target;
