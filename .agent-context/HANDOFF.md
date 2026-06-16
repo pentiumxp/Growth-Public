@@ -11,8 +11,8 @@
 
 ## 2026-06-17T04:16+08:00 - Release Decision Latest Ready Collection Run Auto-Selection
 
-- Status: implemented and focused Harness validated locally. Commit/push
-  follows the final gate run for this slice. This slice is not deployed because
+- Status: implemented, locally validated, committed, and pushed to both
+  configured Growth remotes as `65d5c26`. This slice is not deployed because
   the user deferred production deployment until the broader Growth target is
   complete.
 - Change intent:
@@ -84,7 +84,7 @@
   - test evidence ledger record:
     `evidence-185a6bcd-63c0-4dee-9304-5c20970e7af8`.
 - Remaining gates:
-  - commit and push to both configured Growth remotes.
+  - no production deployment in this slice.
 
 ## 2026-06-17T04:02+08:00 - Release Package Build Record Write Closure
 
