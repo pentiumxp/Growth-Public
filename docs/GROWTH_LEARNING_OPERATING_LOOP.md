@@ -1727,11 +1727,13 @@ Implementation progress on 2026-06-15:
   existing collection-run audit record only when both `--write-collection-run`
   and `--allow-write` are present. It can also persist a summarized package
   audit record in `learning_growth_automation_release_packages` only with
-  `--write-package-record --allow-write` or the Owner-only package-record
+  `--write-package-record --allow-write`, the Owner-only package build route
+  when explicit write flags are supplied, or the Owner-only package-record
   route. Package record APIs list through visible-target scoped
-  `GET /api/v1/growth/automation/release-packages` and record only an existing
-  summary-only artifact through `POST /api/v1/growth/automation/release-packages`;
-  HTTP must not run smoke tasks. It is not release approval, runtime config
+  `GET /api/v1/growth/automation/release-packages`, can explicitly build through
+  `POST /api/v1/growth/automation/release-packages/build`, and record an
+  existing summary-only artifact through `POST /api/v1/growth/automation/release-packages`;
+  the record route must not run smoke tasks. It is not release approval, runtime config
   enablement, deployment, scheduler permission, or card publication.
 - after a collection run exists, `npm run smoke:release-decision` can evaluate
   or persist one sanitized `growth.learningAutomationReleaseDecision.v1`

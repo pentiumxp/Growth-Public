@@ -3892,6 +3892,8 @@ test("growth automation release readiness routes are visible-target scoped and s
         required_approval_keys: ["writefulExecutionApproval"],
         owner_daily_ui_evidence: true,
         scheduler_worker_target_ui_evidence: true,
+        write_collection_run: true,
+        write_package_record: true,
         created_at: "2026-06-16T10:20:00.000Z"
       })
     });
@@ -3951,9 +3953,10 @@ test("growth automation release readiness routes are visible-target scoped and s
         requestedBy: "weixin_stephen",
         createdBy: "weixin_stephen",
         createdAt: "2026-06-16T10:20:00.000Z",
-        writeCollectionRun: false,
-        writePackageRecord: false,
-        allowWritePackage: false
+        writeCollectionRun: true,
+        writePackageRecord: true,
+        allowWritePackage: true,
+        ownerAuthorizedWrite: true
       }
     });
 

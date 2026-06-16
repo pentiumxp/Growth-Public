@@ -35,7 +35,10 @@ two-step browser flow: Owner first builds a summary-only
 `growth.learningAutomationReleasePackage.v1` candidate through
 `POST /api/v1/growth/automation/release-packages/build`, then records that
 candidate through the workbench action facade. A placeholder route body is
-never enough to record a package. Central `embedded-plugin-shell` visual evidence passed for
+never enough to record a package. The build route remains no-write by default
+for this UI path, while backend/CLI callers may request package audit
+persistence only with explicit write flags and Owner or `--allow-write`
+authorization. Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
@@ -126,7 +129,8 @@ selected learner target, not the iframe's Owner workspace.
    through `POST /api/v1/growth/automation/release-workbench/actions`. For
    `release_package`, it first delegates package candidate construction to the
    Owner-only `POST /api/v1/growth/automation/release-packages/build` route and
-   records only the returned summary-only package artifact. It must not run
+   records only the returned summary-only package artifact. The default browser
+   path does not ask the build route to write package records. It must not run
    smoke scripts in the browser, flip runtime config, schedule work, notify
    users, call Gateway, or mutate learner state directly.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
@@ -406,7 +410,9 @@ The release workbench panel does not grant scheduling permission. It does not
 apply runtime config, publish cards, call Gateway, notify users, or mutate
 learner state. Package candidate building is delegated only to
 `POST /api/v1/growth/automation/release-packages/build`; the browser does not
-run smoke scripts or construct package internals itself. Runtime enablement
+run smoke scripts or construct package internals itself, and it records package
+audit rows through the advertised workbench action only after a real candidate
+exists. Runtime enablement
 action records are audit/readback records only; external configuration
 verification still happens outside Growth and must be represented as bounded
 summary evidence before scheduler execution can proceed.

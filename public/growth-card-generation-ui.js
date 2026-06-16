@@ -611,6 +611,12 @@
       required_task_ids: asArray(routeBody.required_task_ids || routeBody.requiredTaskIds || ["planner_readiness", "scheduler_dry_run"]).map(clean).filter(Boolean),
       activation_gates: asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean)
     });
+    if (routeBody.write_collection_run === true || routeBody.writeCollectionRun === true || routeBody.record_collection_run === true || routeBody.recordCollectionRun === true) {
+      payload.write_collection_run = true;
+    }
+    if (routeBody.write_package_record === true || routeBody.writePackageRecord === true || routeBody.record_package === true || routeBody.recordPackage === true) {
+      payload.write_package_record = true;
+    }
     return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
       if (Array.isArray(value)) return value.length > 0;
       return typeof value === "object" ? Boolean(value) : clean(value);

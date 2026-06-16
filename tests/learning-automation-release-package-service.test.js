@@ -233,7 +233,7 @@ function serviceWith(records = {}) {
       };
     };
   }
-  return createLearningAutomationReleasePackageService({
+  const options = {
     now: () => new Date("2026-06-16T05:00:00.000Z"),
     evidenceBundleService: {
       buildBundle(input) {
@@ -270,7 +270,31 @@ function serviceWith(records = {}) {
         return dashboardValue;
       }
     }
-  });
+  };
+  if (!records.omitPackageRepository) {
+    options.repository = records.repository || {
+      savePackage(input) {
+        records.packageRecordInput = input;
+        return {
+          ok: true,
+          duplicate: false,
+          package: Object.assign({}, input, {
+            packageId: "lgapkg_written_1"
+          })
+        };
+      },
+      listPackages(input) {
+        records.packageListInput = input;
+        return [{
+          packageId: "lgapkg_written_1",
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: input.status || "ready_for_release_review"
+        }];
+      }
+    };
+  }
+  return createLearningAutomationReleasePackageService(options);
 }
 
 test("release package service composes bundle, audit, readiness, collection run, controls, and dashboard", () => {
@@ -434,6 +458,54 @@ test("release package service fails closed when write mode has no collection rec
 
   assert.equal(result.ok, false);
   assert.equal(result.error, "release_package_collection_run_record_unavailable");
+});
+
+test("release package service records package audit rows during explicit build write", () => {
+  const denied = serviceWith().buildPackage(Object.assign(scope(), {
+    writePackageRecord: true
+  }));
+  assert.equal(denied.ok, false);
+  assert.equal(denied.error, "release_package_write_not_allowed");
+  assert.equal(denied.requiredFlag, "--allow-write");
+  assert.equal(denied.writePackageRecord, true);
+
+  const records = {};
+  const written = serviceWith(records).buildPackage(Object.assign(scope(), {
+    writeCollectionRun: true,
+    writePackageRecord: true,
+    allowWritePackage: true,
+    requestedBy: "owner"
+  }));
+  assert.equal(written.ok, true);
+  assert.equal(written.packageOk, true);
+  assert.equal(written.record.ok, true);
+  assert.equal(written.record.package.packageId, "lgapkg_written_1");
+  assert.equal(written.package.writePackageRecord, true);
+  assert.equal(written.package.summary.collectionRunWritten, true);
+  assert.equal(written.package.summary.packageRecordRequested, true);
+  assert.equal(written.package.summary.packageRecordWritten, true);
+  assert.equal(written.package.summary.packageRecordId, "lgapkg_written_1");
+  assert.equal(records.packageRecordInput.collectionRunId, "lgacrn_written_1");
+  assert.equal(records.packageRecordInput.packageSummary.packageRecordRequested, true);
+  assert.equal(records.packageRecordInput.packageSummary.writefulSchedulingAllowed, false);
+  assert.equal(records.packageRecordInput.releaseDashboardSummary.summaryOnly, true);
+  assert.equal(JSON.stringify(records.packageRecordInput).includes("artifacts"), false);
+  assert.equal(JSON.stringify(records.packageRecordInput).includes("productionPlannerReadinessEvidence"), false);
+});
+
+test("release package service keeps build artifact visible when package record repository is unavailable", () => {
+  const result = serviceWith({ omitPackageRepository: true }).buildPackage(Object.assign(scope(), {
+    writePackageRecord: true,
+    allowWritePackage: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.package.schemaVersion, RELEASE_PACKAGE_SCHEMA);
+  assert.equal(result.package.summary.packageRecordRequested, true);
+  assert.equal(result.package.summary.packageRecordWritten, false);
+  assert.equal(result.record.ok, false);
+  assert.equal(result.record.error, "release_package_repository_unavailable");
 });
 
 test("release package service records summary-only package records behind explicit write gate", () => {

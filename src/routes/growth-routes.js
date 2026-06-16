@@ -1007,9 +1007,10 @@ function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, 
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
     createdBy: body.createdBy || body.created_by || requestedWorkspaceId(request, url, ""),
     createdAt: body.createdAt || body.created_at,
-    writeCollectionRun: false,
-    writePackageRecord: false,
-    allowWritePackage: false
+    writeCollectionRun: body.writeCollectionRun === true || body.write_collection_run === true || body.recordCollectionRun === true || body.record_collection_run === true,
+    writePackageRecord: body.writePackageRecord === true || body.write_package_record === true || body.recordPackage === true || body.record_package === true,
+    allowWritePackage: true,
+    ownerAuthorizedWrite: true
   };
 }
 

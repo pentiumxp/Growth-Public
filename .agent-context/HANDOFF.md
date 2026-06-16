@@ -9,11 +9,95 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-17T04:18+08:00 - Release Evidence Collection Record Persistence
+## 2026-06-17T04:02+08:00 - Release Package Build Record Write Closure
 
 - Status: implemented and locally validated. Commit/push follows this handoff
   update. This slice is not deployed because the user deferred production
   deployment until the broader Growth target is complete.
+- Change intent:
+  - make `learning-automation-release-package-service.buildPackage` honor the
+    existing explicit `writePackageRecord` contract, instead of leaving package
+    audit persistence split between the service and CLI glue;
+  - keep the Owner UI default package flow as two-step no-write candidate build
+    plus record action, avoiding duplicate package writes;
+  - allow backend/CLI/API callers to persist collection-run and/or package
+    audit rows only when explicit write flags and Owner/`--allow-write`
+    authorization are present.
+- Scope:
+  - `buildPackage` now records the just-built summary-only package audit row
+    through the same package repository path when `writePackageRecord` and
+    write authorization are explicit;
+  - build output now includes bounded `packageRecordRequested`,
+    `packageRecordWritten`, `packageRecordId`, `packageOk`, and `record`
+    readback without storing raw package artifacts in the record row;
+  - `POST /api/v1/growth/automation/release-packages/build` now forwards
+    explicit `write_collection_run` and `write_package_record` flags from the
+    Owner-only route normalizer;
+  - `scripts/build-growth-release-package.js` now delegates to the app service
+    graph's `learningAutomationReleasePackageBuildService` instead of creating
+    a separate package/bundle service path and then manually calling
+    `recordPackage`;
+  - the browser payload helper emits package build write flags only when a
+    service-provided preparation route explicitly sets them; current workbench
+    package actions still default to candidate build followed by package record
+    action.
+- Boundary notes:
+  - no Gateway/model-vendor calls;
+  - no Home AI old Growth server imports;
+  - no publication, card generation, evaluation, scheduler execution, scheduler
+    ticks, notifications, stage activation, runtime config mutation, deployment,
+    or learner-state mutation;
+  - package record persistence still delegates only to the existing
+    `learningAutomationReleasePackageRepository` through
+    `learning-automation-release-package-service`.
+- Docs changed:
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation passed:
+  - syntax checks passed for touched runtime JS files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js tests/learning-automation-release-workbench-service.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `129/129`;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` with `requiredCount=35`;
+  - docs/architecture Harness:
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - full Growth `npm test` passed `864/864`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 4,999 nodes, 21,510 edges, index up
+    to date, with the existing earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - required app-side checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - the app deploy plan reported a clean source tree.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-fb2100f7-d18a-4518-b750-e69c3a6ed25f`.
+- Remaining gates:
+  - commit and push to both configured Growth remotes;
+  - no production deployment in this slice.
+
+## 2026-06-17T04:18+08:00 - Release Evidence Collection Record Persistence
+
+- Status: implemented, locally validated, committed, and pushed to both
+  configured Growth remotes as `67b0865`. This slice is not deployed because
+  the user deferred production deployment until the broader Growth target is
+  complete.
 - Change intent:
   - let Owner-triggered release evidence collection persist real pass
     release-evidence records from the generated release evidence bundle, so
@@ -96,7 +180,6 @@
   - test evidence ledger record:
     `evidence-c4eb80d8-ffe2-47c1-a695-44a95e47bef6`.
 - Remaining gates:
-  - commit and push to both configured Growth remotes;
   - no production deployment in this slice.
 
 ## 2026-06-17T03:30+08:00 - Profile Feedback Completed-Cycle Auto-Selection

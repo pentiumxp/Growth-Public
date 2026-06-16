@@ -359,11 +359,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   If no supported task can be derived, the workbench falls back to the bounded
   `learning_loop_state` task. A returned collection artifact completes the UI
   action even when release-readiness remains `incomplete`.
-  `release_package` is two-step UI glue: Owner must first build a summary-only
-  `growth.learningAutomationReleasePackage.v1` candidate through
-  `POST /api/v1/growth/automation/release-packages/build`, then record that
+  `release_package` remains two-step UI glue by default: Owner first builds a
+  summary-only `growth.learningAutomationReleasePackage.v1` candidate through
+  `POST /api/v1/growth/automation/release-packages/build`, then records that
   exact candidate through the workbench action facade. A workbench placeholder
-  body cannot create a package record. The frontend harness explicitly covers
+  body cannot create a package record. The build service/API/CLI can also
+  persist a package audit record only when explicit `write_package_record` /
+  `--write-package-record` plus write authorization is supplied. The frontend
+  harness explicitly covers
   `release_approval`, `release_evidence_collection`, and `release_package`
   action templates: approval payloads must contain only advertised
   approval/config gate fields, collection payloads must contain only bounded
@@ -411,8 +414,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   package candidate build from the plugin HTTP boundary. The build route uses a
   build-capable package service instance wired to the release evidence bundle
   service's injected runner plus bundle-audit/readiness/collection-run/
-  controls/dashboard services; it can return blocked summary-only candidates
-  for Owner audit but does not persist package records. Owner-only
+  controls/dashboard services; it defaults to no-write and can return blocked
+  summary-only candidates for Owner audit, while explicit write flags may
+  persist only the collection-run row and/or package audit record through their
+  owning services. Owner-only
   `POST /api/v1/growth/automation/release-packages` records existing package
   artifacts only and does not run package smoke tasks. The package boundary
   never flips runtime config, grants scheduler permission, calls Gateway,

@@ -2693,16 +2693,13 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(appServices, /spawnSync/);
 
   const script = read(path.join("scripts", "build-growth-release-package.js"));
-  assert.match(script, /createLearningAutomationReleasePackageService/);
-  assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
-  assert.match(script, /spawnSync/);
   assert.match(script, /createServices/);
-  assert.match(script, /learningAutomationReleaseEvidenceBundleAuditService/);
-  assert.match(script, /learningAutomationReleaseReadinessService/);
-  assert.match(script, /learningAutomationReleaseCollectionRunService/);
-  assert.match(script, /learningAutomationReleaseControlsService/);
-  assert.match(script, /learningAutomationReleaseDashboardService/);
-  assert.match(script, /learningAutomationReleasePackageService\.recordPackage/);
+  assert.match(script, /learningAutomationReleasePackageBuildService/);
+  assert.match(script, /service\.buildPackage/);
+  assert.doesNotMatch(script, /createLearningAutomationReleasePackageService/);
+  assert.doesNotMatch(script, /createLearningAutomationReleaseEvidenceBundleService/);
+  assert.doesNotMatch(script, /spawnSync/);
+  assert.doesNotMatch(script, /learningAutomationReleasePackageService\.recordPackage/);
   assert.match(script, /--write-collection-run/);
   assert.match(script, /--write-package-record/);
   assert.match(script, /--allow-write/);
@@ -2738,6 +2735,8 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(service, /latestReadinessEvidenceMissingCount/);
   assert.match(service, /ownerReviewStageSummary/);
   assert.match(service, /latestReadinessOwnerReviewStageSummary/);
+  assert.match(service, /packageRecordRequested/);
+  assert.match(service, /packageRecordWritten/);
   assert.match(service, /persistedEvidenceKeys/);
   assert.match(service, /repository\.savePackage/);
   assert.match(service, /repository\.listPackages/);

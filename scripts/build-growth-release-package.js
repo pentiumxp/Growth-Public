@@ -3,15 +3,8 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { spawnSync } = require("node:child_process");
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
-const {
-  createLearningAutomationReleaseEvidenceBundleService
-} = require("../src/services/learning-automation-release-evidence-bundle-service");
-const {
-  createLearningAutomationReleasePackageService
-} = require("../src/services/learning-automation-release-package-service");
 const {
   inputFromArgs: bundleInputFromArgs,
   requiredApprovalKeys,
@@ -98,54 +91,29 @@ async function main() {
   const args = process.argv.slice(2);
   const pretty = hasFlag(args, "--json") || hasFlag(args, "--pretty");
   const failOnBlocked = hasFlag(args, "--fail-on-blocked") || hasFlag(args, "--failOnBlocked");
-  const repoRoot = path.join(__dirname, "..");
   const input = inputFromArgs(args);
   const services = createServices(readEnv(process.env));
-  const evidenceBundleService = createLearningAutomationReleaseEvidenceBundleService({
-    repoRoot,
-    runCommand(command, commandArgs, options) {
-      return spawnSync(command, commandArgs, Object.assign({}, options, {
-        env: process.env,
-        encoding: "utf8"
-      }));
-    }
-  });
-  const service = createLearningAutomationReleasePackageService({
-    evidenceBundleService,
-    evidenceBundleAuditService: services.learningAutomationReleaseEvidenceBundleAuditService,
-    releaseReadinessService: services.learningAutomationReleaseReadinessService,
-    releaseCollectionRunService: services.learningAutomationReleaseCollectionRunService,
-    releaseControlsService: services.learningAutomationReleaseControlsService,
-    releaseDashboardService: services.learningAutomationReleaseDashboardService
-  });
+  const service = services.learningAutomationReleasePackageBuildService || services.learningAutomationReleasePackageService;
   const result = service.buildPackage(input);
-  const recordResult = input.writePackageRecord && result.package
-    ? services.learningAutomationReleasePackageService.recordPackage(Object.assign({}, input, {
-      releasePackage: result.package
-    }))
-    : null;
-  const finalResult = recordResult
-    ? Object.assign({}, result, { ok: result.ok && recordResult.ok, packageOk: result.ok, record: recordResult })
-    : result;
   const outputFile = outputFileFromArgs(args);
   if (outputFile && result.package) {
     const writtenPath = writeJsonFile(outputFile, result.package);
     if (hasFlag(args, "--result-json")) {
       process.stdout.write(formatResult({
-        ok: finalResult.ok,
+        ok: result.ok,
         outputFile: writtenPath,
         summary: result.summary,
-        record: recordResult || undefined
+        record: result.record || undefined
       }, pretty));
     } else {
       process.stdout.write(formatResult(result.package, pretty));
     }
   } else if (hasFlag(args, "--result-json")) {
-    process.stdout.write(formatResult(finalResult, pretty));
+    process.stdout.write(formatResult(result, pretty));
   } else {
     process.stdout.write(formatResult(result.package || result, pretty));
   }
-  process.exitCode = recordResult && !recordResult.ok ? 1 : (failOnBlocked && !result.ok ? 1 : 0);
+  process.exitCode = result.record && result.record.ok === false ? 1 : (failOnBlocked && !result.ok ? 1 : 0);
 }
 
 if (require.main === module) {

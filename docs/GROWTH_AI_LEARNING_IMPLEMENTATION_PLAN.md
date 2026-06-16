@@ -901,6 +901,9 @@ Implemented backend shape:
   stage-summary counters when present, and persisted evidence keys)
   instead of raw package artifacts. Visible-target scoped
   `GET /api/v1/growth/automation/release-packages` lists those records;
+  Owner-only `POST /api/v1/growth/automation/release-packages/build` defaults
+  to no-write but can persist the collection-run row and/or package audit row
+  only when explicit write flags are supplied;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an
   existing summary-only package artifact only and does not run smoke tasks. The
   package is not release approval, runtime config enablement, scheduler

@@ -198,6 +198,9 @@ function buildSummary(status, steps, options, collectionRun) {
     readyForReleaseReview: collectionRun.readyForReleaseReview === true,
     collectionRunId: collectionRunIdFrom(collectionRun),
     collectionRunWritten: options.writeCollectionRun && collectionRunIdFrom(collectionRun) ? true : false,
+    packageRecordRequested: options.writePackageRecord === true,
+    packageRecordWritten: false,
+    packageRecordId: "",
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -478,6 +481,7 @@ function createLearningAutomationReleasePackageService(options = {}) {
       configChangeApplied: false,
       schedulerPermissionGranted: false,
       writeCollectionRun: optionBag.writeCollectionRun,
+      writePackageRecord: optionBag.writePackageRecord,
       steps,
       summary: buildSummary(status, steps, optionBag, collectionRun),
       artifacts: {
@@ -497,11 +501,24 @@ function createLearningAutomationReleasePackageService(options = {}) {
         privateValueFindings
       });
     }
+    const recordResult = optionBag.writePackageRecord
+      ? recordPackage(Object.assign({}, input, scope, {
+        releasePackage,
+        allowWritePackage: true,
+        ownerAuthorizedWrite: true
+      }))
+      : null;
+    if (recordResult) {
+      releasePackage.summary.packageRecordWritten = recordResult.ok === true;
+      releasePackage.summary.packageRecordId = cleanString(recordResult.package?.packageId || recordResult.package?.package_id, 160);
+    }
     return {
-      ok: releasePackage.ok,
+      ok: releasePackage.ok && (!recordResult || recordResult.ok === true),
       source: "growth-learning-automation-release-package-service",
       package: releasePackage,
-      summary: releasePackage.summary
+      summary: releasePackage.summary,
+      packageOk: releasePackage.ok,
+      record: recordResult || undefined
     };
   }
 
