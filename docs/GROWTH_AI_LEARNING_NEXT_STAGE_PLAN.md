@@ -135,14 +135,18 @@ Growth already has substantial backend foundation:
   return `activationState=dormant` and `insufficient_recent_practice`, and the
   Owner activation action remains disabled until enough recent ordinary
   practice exists.
-  As of 2026-06-16, production Fanfan science also has 20 persisted
+  As of 2026-06-16, production Fanfan science also has 21 persisted
   summary-only release evidence keys plus one active failure policy
   (`lgafpol_4b530ed66506435f61`) created and activated through
-  `npm run smoke:failure-policy` with explicit `--allow-write`. The policy is
-  summary-only, keeps manual Owner retry, sets automatic retries to zero, and
-  keeps `writefulSchedulingAllowed=false`. The active-policy check now passes
-  in `npm run smoke:release-readiness`; release-readiness remains incomplete
-  with `pass=25` and `missing=18`.
+  `npm run smoke:failure-policy` with explicit `--allow-write`. The active
+  policy is summary-only, keeps manual Owner retry, sets automatic retries to
+  zero, and keeps `writefulSchedulingAllowed=false`. Central Home AI iOS PWA
+  visual evidence for `embedded-plugin-shell --plugin-id growth` is also
+  persisted as `centralVisualEvidence` from screenshot artifact
+  `ios-pwa-visual-embedded-plugin-shell-growth-20260616T090608Z.png`.
+  The active-policy and central-visual checks now pass in
+  `npm run smoke:release-readiness`; release-readiness remains incomplete with
+  `pass=26` and `missing=17`.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:
@@ -176,19 +180,20 @@ automation surfaces are not closed:
   `superseded`, digest/action/execution/run/worker-target UI remains future
   work;
 - platform Action Inbox/Web Push evidence is not complete;
-- central embedded-plugin visual evidence exists for the Growth plugin shell;
-  product-specific mobile/dark checks remain covered locally until the
-  production release smoke is run;
+- central embedded-plugin visual release evidence exists for the Growth plugin
+  shell. Product-specific mobile/dark checks for Owner generation, audit,
+  digest/action, scheduler execution/run, and worker-target UI still need their
+  own UI/release evidence before those gates can pass;
 - production backend read-only/default-disabled evidence now covers planner
   readiness, daily-loop preview, learning-loop state, cycle history, Owner
   audit, learner-cycle audit, target provisioning, stage checkpoint evidence,
   stage checkpoint controls, scheduler dry-run, recommendation lifecycle,
   proposal/action/execution/run/worker/worker-target readback, release
-  workbench readback, Owner review readback, and active failure-policy
-  readiness. Remaining release gates are product UI/visual evidence, reviewed
-  digest/action/worker-target workflow state, profile feedback from a real
-  completed cycle, controlled daily-loop write evidence, platform action
-  receipt evidence, central visual release evidence, and explicit release
+  workbench readback, Owner review readback, active failure-policy readiness,
+  and central embedded-plugin visual evidence. Remaining release gates are
+  product UI/visual evidence, reviewed digest/action/worker-target workflow
+  state, profile feedback from a real completed cycle, controlled daily-loop
+  write evidence, platform action receipt evidence, and explicit release
   approvals;
 - background writeful scheduling remains blocked.
 

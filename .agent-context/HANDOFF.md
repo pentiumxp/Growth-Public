@@ -14554,3 +14554,66 @@
     reviewed digest/action handoff/worker-target evidence, profile-feedback
     evidence, platform action evidence, or central visual evidence unless the
     corresponding real product workflow or Owner approval exists.
+
+## 2026-06-16T09:15Z - Growth deployed and central visual release evidence persisted
+
+- Status:
+  - Deployed current Growth source through the central Home AI Mac deploy
+    script, then closed the central embedded-plugin visual release evidence
+    gate for the Growth shell.
+  - No scheduler, runtime config, learner evidence, card generation,
+    evaluation, stage activation, Action Inbox/Web Push delivery, or release
+    approval was enabled or fabricated.
+- Deployment:
+  - deployed source ref `eccfc54c75a8` from
+    `/Users/hermes-dev/HermesMobileDev/plugins/growth`;
+  - target `plugin:growth`;
+  - backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T090709Z-plugin-growth-manual`;
+  - restarted `com.hermesmobile.plugin.growth`;
+  - manifest health passed;
+  - codex-auth profile audit returned `codexIssueCount=0` with existing
+    non-Codex issue count.
+- Central visual evidence:
+  - Home AI central live-debug/Appium chain initially failed because the iOS
+    PWA had an expired Access Key and the Growth iframe shell could not open;
+  - the PWA was re-authenticated through the central live-debug lane by reading
+    the production Owner key from its secret file into memory only. The key was
+    not printed, committed, logged in docs, or passed as a command-line
+    argument;
+  - central harness command shape:
+    `npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/ --timeout-ms 70000 --wait-ms 2500 --json`;
+  - harness result passed with `assertionCount=6`,
+    screenshot artifact
+    `ios-pwa-visual-embedded-plugin-shell-growth-20260616T090608Z.png`,
+    screenshot bytes `130854`, client version
+    `20260616-directory-delete-v776`, shell rect `402x628`, and frame rect
+    `402x628`;
+  - Growth central visual evidence smoke over the bounded summary artifact
+    returned `status=pass` and `readyForReleaseEvidence=true`;
+  - persisted release evidence record
+    `lgarev_935949bdc0e4b927ec` for canonical evidence key
+    `centralVisualEvidence` / check key `central_visual_evidence`.
+- Release-readiness readback after central visual persistence:
+  - release-readiness remains `incomplete`;
+  - summary counts are now `pass=26`, `missing=17`;
+  - `central_visual_evidence` is `pass`;
+  - `writefulSchedulingAllowed=false`.
+- Remaining missing checks:
+  - Owner daily UI evidence;
+  - Owner audit UI evidence;
+  - proposal review UI evidence;
+  - automation digest UI evidence;
+  - reviewed automation digest;
+  - delivered action handoff;
+  - automation action handoff UI evidence;
+  - scheduler execution UI evidence;
+  - scheduler run UI evidence;
+  - scheduler worker-target UI evidence;
+  - reviewed enabled worker target;
+  - production profile-feedback smoke from a real completed learning cycle;
+  - controlled daily-loop write smoke;
+  - platform action evidence;
+  - writeful execution release approval;
+  - background scheduler release approval;
+  - background worker release approval.
