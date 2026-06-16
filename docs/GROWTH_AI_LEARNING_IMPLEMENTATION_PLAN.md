@@ -1163,8 +1163,13 @@ Remaining release gaps:
   a first-class `releasePackageReviewUiEvidence` /
   `release_package_review_ui_evidence` gate for the package review row, but that
   gate still needs a real summary UI/visual artifact with candidate-build,
-  candidate-status, and record-package-action coverage before it can pass. These
-  backend/UI affordances do not replace product UI or central visual evidence.
+  candidate-status, and record-package-action coverage before it can pass in
+  production. Local Harness now proves that a validated
+  release-package-review UI evidence summary can be recorded through
+  `npm run smoke:release-evidence` into a temporary Growth SQLite database and
+  read back from the release-evidence bag, but that fixture does not replace a
+  real Home AI visual/UI artifact. These backend/UI affordances do not replace
+  product UI or central visual evidence.
   The current proposal selected-cycle create/review/publish panel and release
   package review flow still need central visual/release evidence before they are
   treated as production-complete;

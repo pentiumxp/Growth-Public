@@ -9,6 +9,50 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:43+08:00 - Release Package Review UI Evidence Persistence Harness
+
+- Status: implemented and locally validated. The changes for this section are
+  committed in git history and pushed to both configured Growth remotes
+  (`origin` and `public`).
+- Change intent:
+  - close a backend/Harness gap for the release package review UI evidence
+    gate without claiming production visual completion;
+  - prove that a validated summary-only `releasePackageReviewUiEvidence`
+    artifact can flow through `npm run smoke:release-evidence` semantics into
+    a temporary Growth SQLite database and read back from the release-evidence
+    bag;
+  - keep the requirement for a real Home AI visual/UI artifact before
+    production release readiness can treat the package review UI as complete.
+- Scope:
+  - `tests/growth-automation-release-evidence-smoke-script.test.js` now has a
+    focused temporary-SQLite record/bag readback scenario for
+    `release_package_review_ui_evidence`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md` now distinguish local persistence
+    Harness coverage from production UI/visual evidence.
+- Boundary notes:
+  - no runtime code changes;
+  - no production visual artifact generated;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - `node --test tests/growth-automation-release-evidence-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js tests/learning-automation-ui-evidence-service.test.js tests/growth-ui-evidence-smoke-script.test.js`
+    passed `23/23`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run --silent check` passed with `runtimeCount=201` and
+    `checkedCount=201`.
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 5,004 nodes, 21,577 edges, and an
+    up-to-date index, with the existing earlier-engine reindex notice.
+- Remaining gates:
+  - no production deployment in this slice.
+
 ## 2026-06-17T04:35+08:00 - Release Workbench UI Document Consistency Closure
 
 - Status: implemented and locally validated. The documentation consistency

@@ -64,6 +64,54 @@ function validOwnerDailyUiEvidence() {
   };
 }
 
+function validReleasePackageReviewUiEvidence() {
+  return {
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "releasePackageReviewUiEvidence",
+    checkKey: "release_package_review_ui_evidence",
+    uiGate: "release_package_review",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      checkKey: "release_package_review_ui_evidence",
+      uiGate: "release_package_review",
+      status: "pass",
+      route: "/?embed=hermes#generate",
+      screenshotPresent: true,
+      domEvidencePresent: true,
+      screenshotArtifactName: "growth-release-package-review.png",
+      coverage: [
+        "package_candidate_build",
+        "package_candidate_status",
+        "record_package_action"
+      ],
+      requiredCoverage: [
+        "package_candidate_build",
+        "package_candidate_status",
+        "record_package_action"
+      ],
+      missingCoverage: [],
+      assertionCount: 2,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  };
+}
+
 test("automation release evidence smoke script parses default read-only list input", () => {
   const args = [
     "--workspace-id", "weixin_fanfan",
@@ -192,6 +240,70 @@ test("automation release evidence smoke script can record against a temporary SQ
     assert.equal(bagOutput.ok, true);
     assert.equal(bagOutput.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
     assert.equal(bagOutput.evidence.ownerDailyUiEvidence.evidenceRecordId, recordOutput.evidence.evidenceRecordId);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("automation release evidence smoke script records release package review UI evidence into SQLite", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-automation-release-evidence-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  try {
+    const record = spawnSync(process.execPath, [
+      scriptPath,
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain-pack-id", "uk_hk_curriculum_foundation",
+      "--domain", "science",
+      "--subject", "science",
+      "--evidence-key", "release_package_review_ui_evidence",
+      "--evidence-json", JSON.stringify(validReleasePackageReviewUiEvidence()),
+      "--recorded-by", "weixin_owner",
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    assert.equal(record.status, 0, record.stderr || record.stdout);
+    const recordOutput = JSON.parse(record.stdout);
+    assert.equal(recordOutput.ok, true);
+    assert.equal(recordOutput.operation, "record");
+    assert.equal(recordOutput.evidence.evidenceKey, "releasePackageReviewUiEvidence");
+    assert.equal(recordOutput.evidence.checkKey, "release_package_review_ui_evidence");
+    assert.equal(recordOutput.evidence.evidence.uiGate, "release_package_review");
+    assert.equal(recordOutput.evidence.evidence.readyForReleaseEvidence, true);
+    assert.equal(recordOutput.evidence.evidence.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+    assert.equal(recordOutput.evidence.evidence.writefulSchedulingAllowed, false);
+    assert.equal(recordOutput.evidence.evidence.runtimeConfigChange, false);
+
+    const bag = spawnSync(process.execPath, [
+      scriptPath,
+      "--operation", "bag",
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    assert.equal(bag.status, 0, bag.stderr || bag.stdout);
+    const bagOutput = JSON.parse(bag.stdout);
+    assert.equal(bagOutput.ok, true);
+    assert.equal(bagOutput.evidence.releasePackageReviewUiEvidence.evidenceRecordId, recordOutput.evidence.evidenceRecordId);
+    assert.equal(bagOutput.evidence.releasePackageReviewUiEvidence.uiGate, "release_package_review");
+    assert.equal(bagOutput.evidence.releasePackageReviewUiEvidence.readyForReleaseEvidence, true);
+    assert.equal(JSON.stringify(bagOutput).includes("/Users/"), false);
+    assert.equal(JSON.stringify(bagOutput).includes("access-key"), false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
