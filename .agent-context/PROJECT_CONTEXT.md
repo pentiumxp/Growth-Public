@@ -311,7 +311,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   action facade over that workbench. The facade reads the workbench first,
   requires the requested endpoint to be advertised, then delegates only to
   existing release evidence, release approval, release package-record, release
-  activation, or runtime enablement record services. It stores/passes only
+  activation, or runtime enablement record services. It requires only the
+  selected endpoint's write service instead of requiring every possible
+  release-workbench action dependency at construction time. It stores/passes only
   summary-only bounded action/evidence/approval/decision data and does not
   build packages, create readiness snapshots, record collection runs, record
   release decisions, call Gateway/model providers, publish, schedule, mutate

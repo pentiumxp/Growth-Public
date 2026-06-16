@@ -9,6 +9,61 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T11:34+08:00 - Release Workbench Action Endpoint-Scoped Dependencies
+
+- Status: implemented and full-Harness validated locally. This slice tightens
+  the final release workbench action facade so a write operation requires only
+  the selected endpoint's write service after the workbench advertises that
+  endpoint. It does not deploy, call Gateway/model vendors, publish plans/cards,
+  generate cards, evaluate submissions, execute scheduler actions, run scheduler
+  ticks, deliver notifications, emit platform events, activate stage
+  assessments, mutate learner state, flip runtime config, grant scheduler
+  permission, or change product UI.
+- Scope:
+  - `learning-automation-release-workbench-action-service` now checks the
+    workbench read model first, verifies the selected endpoint template, then
+    requires only the endpoint-specific write dependency
+    (`release_evidence`, `release_approval`, `release_package`,
+    `release_activation`, or `runtime_enablement`);
+  - the same facade now rejects private path/token-looking values in addition
+    to privacy-risk keys before delegating to any write service;
+  - Harness now proves an instance with only workbench plus release-evidence
+    services can record release evidence but fails closed for release-package
+    actions, and architecture/docs guard the endpoint-scoped dependency rule.
+- Focused validation passed:
+  - `node --check src/services/learning-automation-release-workbench-action-service.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`88/88`);
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`.
+- Broad and central validation passed:
+  - `npm test` (`786/786`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - CodeGraph status reported 343 JavaScript files indexed, 4530 nodes, and
+    18052 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release workbench action selected-endpoint dependency boundary; backend service docs and harness only; no production deploy" --json`
+    classified this backend/service boundary slice as H1 and required app-side
+    deploy script, production status smoke, architecture-harness map,
+    diff hygiene, and plan-only deployment checks.
+  - The Home AI app deploy plan still reported unrelated dirty app files from
+    another workspace state. They were not modified by this Growth slice.
+- Progress calibration:
+  - The narrower card-generation/daily-card user flow remains about 80-85%
+    complete.
+  - The full AI-driven Growth closed-loop MVP denominator is broader:
+    AI-generated daily cards, stage assessment cards, Profile V2 feedback,
+    Owner audit/correction, release/readiness evidence, central visual evidence,
+    production proof, and multi-workspace/domain-pack rollout. On that broader
+    denominator the current overall progress is about 72-74%, not lower because
+    work regressed, but because the scope being measured is larger.
+
 ## 2026-06-16T11:26+08:00 - P10 Release/Runtime Repository Privacy Guard Consistency
 
 - Status: implemented and full-Harness validated locally. This slice makes the

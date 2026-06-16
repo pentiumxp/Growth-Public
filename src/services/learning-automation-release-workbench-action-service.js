@@ -3,7 +3,7 @@
 const RELEASE_WORKBENCH_ACTION_SCHEMA = "growth.learningAutomationReleaseWorkbenchAction.v1";
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
-const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
+const PRIVATE_VALUE_RE = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 const SUPPORTED_ENDPOINTS = Object.freeze([
   "release_evidence",
@@ -94,6 +94,15 @@ function requireMethod(scope, key, service, method) {
     return unavailable(`learning_automation_release_workbench_action_${key}_unavailable`, scope);
   }
   return null;
+}
+
+function requireEndpointService(scope, endpointKey, services) {
+  if (endpointKey === "release_evidence") return requireMethod(scope, "release_evidence", services.releaseEvidenceService, "recordEvidence");
+  if (endpointKey === "release_approval") return requireMethod(scope, "release_approval", services.releaseApprovalService, "recordApproval");
+  if (endpointKey === "release_package") return requireMethod(scope, "release_package", services.releasePackageService, "recordPackage");
+  if (endpointKey === "release_activation") return requireMethod(scope, "release_activation", services.releaseActivationService, "recordActivation");
+  if (endpointKey === "runtime_enablement") return requireMethod(scope, "runtime_enablement", services.runtimeEnablementService, "recordEnablement");
+  return unavailable("release_workbench_action_endpoint_unsupported", scope, { endpointKey });
 }
 
 function actionFrom(input = {}) {
@@ -203,13 +212,8 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
 
     const endpointKey = endpointKeyFrom(input);
     if (!endpointKey) return unavailable("release_workbench_action_endpoint_required", scope, { supportedEndpointKeys: SUPPORTED_ENDPOINTS });
-    const missing = requireMethod(scope, "workbench", releaseWorkbenchService, "workbench")
-      || requireMethod(scope, "release_evidence", releaseEvidenceService, "recordEvidence")
-      || requireMethod(scope, "release_approval", releaseApprovalService, "recordApproval")
-      || requireMethod(scope, "release_package", releasePackageService, "recordPackage")
-      || requireMethod(scope, "release_activation", releaseActivationService, "recordActivation")
-      || requireMethod(scope, "runtime_enablement", runtimeEnablementService, "recordEnablement");
-    if (missing) return missing;
+    const missingWorkbench = requireMethod(scope, "workbench", releaseWorkbenchService, "workbench");
+    if (missingWorkbench) return missingWorkbench;
 
     const workbench = releaseWorkbenchService.workbench(Object.assign({}, input, scope));
     if (!workbench?.ok) {
@@ -229,6 +233,8 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
       releaseActivationService,
       runtimeEnablementService
     };
+    const missing = requireEndpointService(scope, endpointKey, services);
+    if (missing) return missing;
     const result = callWriteService(endpointKey, input, scope, services);
     if (!result?.ok) {
       return Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {

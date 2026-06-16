@@ -2246,6 +2246,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /RELEASE_WORKBENCH_ACTION_SCHEMA/);
   assert.match(releaseWorkbenchActionService, /growth\.learningAutomationReleaseWorkbenchAction\.v1/);
   assert.match(releaseWorkbenchActionService, /releaseWorkbenchService\.workbench/);
+  assert.match(releaseWorkbenchActionService, /requireEndpointService/);
   assert.match(releaseWorkbenchActionService, /releaseEvidenceService\.recordEvidence/);
   assert.match(releaseWorkbenchActionService, /releaseApprovalService\.recordApproval/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.recordPackage/);

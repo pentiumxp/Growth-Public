@@ -128,6 +128,48 @@ test("release workbench action records evidence through the existing evidence se
   assert.equal(calls[1][1].evidence.summaryOnly, true);
 });
 
+test("release workbench action requires only the selected endpoint write service", () => {
+  const calls = [];
+  const service = createLearningAutomationReleaseWorkbenchActionService({
+    releaseWorkbenchService: {
+      workbench(input) {
+        calls.push(["workbench", input]);
+        return workbenchResult();
+      }
+    },
+    releaseEvidenceService: {
+      recordEvidence(input) {
+        calls.push(["release_evidence", input]);
+        return {
+          ok: true,
+          evidence: {
+            evidenceRecordId: "lgarev_selected_only",
+            status: "pass"
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.actionRecord.recordId, "lgarev_selected_only");
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence"]);
+
+  const missingPackage = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_package",
+    releasePackage: { summaryOnly: true }
+  });
+  assert.equal(missingPackage.ok, false);
+  assert.equal(missingPackage.error, "learning_automation_release_workbench_action_release_package_unavailable");
+});
+
 test("release workbench action records package artifacts only through package record service", () => {
   const { service, calls } = serviceWith();
   const releasePackage = {
@@ -190,4 +232,15 @@ test("release workbench action fails closed for missing endpoint, blocked workbe
   });
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "release_workbench_action_privacy_failed");
+  assert.equal(privacy.privacyFindings.includes("privacy_key:rawPrompt"), true);
+
+  const privateValue = serviceWith().service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: { artifactId: "/Users/example/.homeai-qa/private-output.json" }
+  });
+  assert.equal(privateValue.ok, false);
+  assert.equal(privateValue.error, "release_workbench_action_privacy_failed");
+  assert.equal(privateValue.privacyFindings.includes("private_value:evidence.artifactId"), true);
 });
