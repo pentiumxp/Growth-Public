@@ -84,6 +84,14 @@ test("automation release evidence service returns evidence bag for release-readi
     evidence: { evidenceId: "target_provisioning_1", source: "target_provisioning_smoke" }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "stage_checkpoint_controls_evidence",
+    evidence: { evidenceId: "stage_controls_1", source: "stage_checkpoint_controls_smoke" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "release_workbench_smoke_evidence",
+    evidence: { evidenceId: "release_workbench_1", source: "release_workbench_smoke" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "production_recommendation_lifecycle_smoke_evidence",
     evidence: { evidenceId: "recommendation_lifecycle_1", source: "recommendation_lifecycle_smoke" }
   }));
@@ -96,13 +104,15 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "owner_visual_harness");
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");
   assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");
+  assert.equal(bag.evidence.stageCheckpointControlsEvidence.source, "stage_checkpoint_controls_smoke");
+  assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.source, "release_workbench_smoke");
   assert.equal(bag.writefulSchedulingAllowed, false);
 });
 
@@ -132,4 +142,6 @@ test("automation release evidence service rejects invalid evidence keys and priv
   assert.equal(canonicalReleaseEvidenceKey("central_visual_evidence"), "centralVisualEvidence");
   assert.equal(canonicalReleaseEvidenceKey("owner_review_evidence"), "ownerReviewEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_recommendation_lifecycle_smoke_evidence"), "productionRecommendationLifecycleSmokeEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("stage_checkpoint_controls_evidence"), "stageCheckpointControlsEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("release_workbench_smoke_evidence"), "releaseWorkbenchSmokeEvidence");
 });

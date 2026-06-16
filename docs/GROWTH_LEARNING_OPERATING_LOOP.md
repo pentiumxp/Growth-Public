@@ -1679,7 +1679,10 @@ Implementation progress on 2026-06-15:
   `npm run smoke:release-evidence`. The CLI defaults to read-only list/bag and
   requires explicit `--allow-write` for record. Active `pass` records are
   projected into release-readiness before one-off evidence flags or bundle
-  inputs are evaluated. This removes Codex hand-spliced JSON from the normal
+  inputs are evaluated, including persisted stage-checkpoint controls evidence
+  (`stageCheckpointControlsEvidence`) and release-workbench smoke evidence
+  (`releaseWorkbenchSmokeEvidence`) that are also required by the
+  release-readiness check list. This removes Codex hand-spliced JSON from the normal
   release evidence collection path while keeping the boundary summary-only and
   unable to grant scheduler permission. Release inventory and dashboard read
   models must read these records only through the release evidence service and

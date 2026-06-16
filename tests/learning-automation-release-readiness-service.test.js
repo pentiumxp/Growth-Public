@@ -521,9 +521,25 @@ test("automation release readiness service can use persisted release evidence re
               evidenceRecordId: "lgarev_owner_daily_1",
               observedAt: "2026-06-16T10:45:00.000Z",
               source: "growth_release_evidence_record"
+            },
+            stageCheckpointControlsEvidence: {
+              ok: true,
+              status: "pass",
+              evidenceId: "lgarev_stage_controls_1",
+              evidenceRecordId: "lgarev_stage_controls_1",
+              observedAt: "2026-06-16T10:46:00.000Z",
+              source: "growth_release_evidence_record"
+            },
+            releaseWorkbenchSmokeEvidence: {
+              ok: true,
+              status: "pass",
+              evidenceId: "lgarev_release_workbench_1",
+              evidenceRecordId: "lgarev_release_workbench_1",
+              observedAt: "2026-06-16T10:47:00.000Z",
+              source: "growth_release_evidence_record"
             }
           },
-          evidenceKeys: ["ownerDailyUiEvidence"]
+          evidenceKeys: ["ownerDailyUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]
         };
       }
     }
@@ -534,10 +550,14 @@ test("automation release readiness service can use persisted release evidence re
   assert.equal(result.ok, true);
   assert.equal(result.status, "incomplete");
   assert.equal(result.checks.find((item) => item.key === "owner_daily_ui_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "stage_checkpoint_controls_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "release_workbench_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "owner_audit_ui_evidence").status, "missing");
-  assert.deepEqual(result.releaseReview.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
-  assert.deepEqual(result.evidence.persistedEvidenceKeys, ["ownerDailyUiEvidence"]);
+  assert.deepEqual(result.releaseReview.persistedEvidenceKeys, ["ownerDailyUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
+  assert.deepEqual(result.evidence.persistedEvidenceKeys, ["ownerDailyUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(result.evidenceReadback.presentEvidenceKeys.includes("ownerDailyUiEvidence"), true);
+  assert.equal(result.evidenceReadback.presentEvidenceKeys.includes("stageCheckpointControlsEvidence"), true);
+  assert.equal(result.evidenceReadback.presentEvidenceKeys.includes("releaseWorkbenchSmokeEvidence"), true);
   const ownerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
   assert.equal(ownerDailyEvidence.evidencePresent, true);
   assert.equal(ownerDailyEvidence.evidenceId, "lgarev_owner_daily_1");

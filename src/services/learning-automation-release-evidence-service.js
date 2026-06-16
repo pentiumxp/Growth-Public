@@ -4,6 +4,7 @@ const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "ownerDailyUiEvidence",
   "ownerAuditUiEvidence",
   "stageCheckpointEvidence",
+  "stageCheckpointControlsEvidence",
   "proposalReviewUiEvidence",
   "productionProposalSmokeEvidence",
   "automationDigestUiEvidence",
@@ -30,6 +31,7 @@ const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "releaseEvidenceBundleAudit",
   "platformActionEvidence",
   "centralVisualEvidence",
+  "releaseWorkbenchSmokeEvidence",
   "ownerReviewEvidence"
 ]);
 
@@ -37,6 +39,7 @@ const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
   ownerDailyUiEvidence: "owner_daily_ui_evidence",
   ownerAuditUiEvidence: "owner_audit_ui_evidence",
   stageCheckpointEvidence: "stage_checkpoint_evidence",
+  stageCheckpointControlsEvidence: "stage_checkpoint_controls_evidence",
   proposalReviewUiEvidence: "proposal_review_ui_evidence",
   productionProposalSmokeEvidence: "production_proposal_smoke_evidence",
   automationDigestUiEvidence: "automation_digest_ui_evidence",
@@ -63,6 +66,7 @@ const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
   releaseEvidenceBundleAudit: "release_evidence_bundle_audit",
   platformActionEvidence: "platform_action_evidence",
   centralVisualEvidence: "central_visual_evidence",
+  releaseWorkbenchSmokeEvidence: "release_workbench_smoke_evidence",
   ownerReviewEvidence: "owner_review_evidence"
 });
 
