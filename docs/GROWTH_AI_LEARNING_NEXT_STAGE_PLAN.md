@@ -645,6 +645,16 @@ Use the Growth-owned release-readiness boundary:
   The default operation is read-only list. `bag` is a read-only projection for
   release-readiness. `record` requires explicit `--allow-write` and writes
   one summary-only approval record for one config gate.
+- release artifact-template smoke CLI:
+  `npm run smoke:release-artifact-template -- --workspace-id <workspace> --learner-id <learner> --json`.
+  The CLI is no-write and reads only through the release workbench service. It
+  emits a bounded `growth.learningAutomationReleaseEvidenceArtifactTemplate.v1`
+  DTO with missing central-visual/UI artifact slots and a blank
+  `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
+  Home AI central visual/UI summary artifact files. It does not run visual
+  tooling, call Gateway, persist release evidence, write collection runs, apply
+  runtime config, or widen to default UI tasks when no visual/UI evidence is
+  missing.
 - release authorization smoke CLI:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes

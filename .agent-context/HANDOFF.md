@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T09:20+08:00 - Release Evidence Artifact Manifest Template
+
+- Status: implemented and locally validated; not deployed in this slice.
+- Change intent:
+  - reduce the final Home AI central visual/UI artifact handoff to a
+    Growth-generated, machine-readable template instead of relying on humans or
+    Codex to remember every transient evidence-file key;
+  - keep Growth as a summary-only consumer of Home AI central visual/UI
+    artifacts and keep the manifest parser plus UI/visual validators as the
+    only acceptance path.
+- Scope:
+  - added
+    `learning-automation-release-evidence-artifact-template-service`;
+  - added `npm run smoke:release-artifact-template` through
+    `scripts/smoke-growth-release-artifact-template.js`;
+  - wired the service into `src/app/services.js` behind
+    `learningAutomationReleaseWorkbenchService`;
+  - the template service reads release workbench summary only, maps missing
+    `central_visual_evidence` plus registered UI evidence/check keys into
+    bounded artifact slots, and emits a blank
+    `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template;
+  - the template deliberately does not widen to default release-evidence
+    collection tasks when no visual/UI evidence is missing.
+- Boundary notes:
+  - no Home AI visual harness, Appium, live browser, central visual lane, or
+    browser UI validation ran in this plugin workspace;
+  - no release evidence, collection-run, package, approval, activation, or
+    runtime enablement row is written by the template helper;
+  - no raw local artifact path is emitted by the generated template DTO;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - `node --test tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/learning-automation-release-evidence-artifact-manifest-service.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js`
+    passed `29/29`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=205` and
+    `checkedCount=205`;
+  - `npm test` passed `887/887`.
+- Remaining gates:
+  - real Home AI visual/UI summary artifacts still need to be collected through
+    the central Home AI visual toolchain before release readiness can be final;
+  - the generated template must be filled with those central artifacts and fed
+    back through the existing `--release-evidence-artifact-manifest-file`
+    path;
+  - production deployment remains separate and should happen only after the
+    user explicitly asks for deployment.
+
 ## 2026-06-17T08:35+08:00 - Release Evidence Artifact Manifest Input
 
 - Status: implemented and locally validated; not deployed in this slice.
