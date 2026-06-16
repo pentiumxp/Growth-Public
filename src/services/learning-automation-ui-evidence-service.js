@@ -28,6 +28,13 @@ const UI_GATE_SPECS = Object.freeze({
     label: "Proposal review UI evidence",
     requiredCoverage: ["proposal_list", "owner_decision", "status_readback"]
   },
+  releasePackageReviewUiEvidence: {
+    evidenceKey: "releasePackageReviewUiEvidence",
+    checkKey: "release_package_review_ui_evidence",
+    uiGate: "release_package_review",
+    label: "Release package review UI evidence",
+    requiredCoverage: ["package_candidate_build", "package_candidate_status", "record_package_action"]
+  },
   automationDigestUiEvidence: {
     evidenceKey: "automationDigestUiEvidence",
     checkKey: "automation_digest_ui_evidence",

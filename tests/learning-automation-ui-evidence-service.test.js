@@ -74,6 +74,35 @@ test("UI evidence service validates a summary-only Owner daily UI artifact", () 
   assert.equal(JSON.stringify(result).includes("/Users/xuxin/.homeai-qa"), false);
 });
 
+test("UI evidence service validates release package review UI coverage", () => {
+  const service = createService();
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    evidenceKey: "release_package_review_ui_evidence",
+    evidence: {
+      ok: true,
+      evidenceKey: "releasePackageReviewUiEvidence",
+      uiGate: "release_package_review",
+      domEvidencePresent: true,
+      coverage: [
+        "package_candidate_build",
+        "package_candidate_status",
+        "record_package_action"
+      ],
+      assertions: [{ name: "package candidate and record controls visible", status: "pass" }]
+    }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.evidenceKey, "releasePackageReviewUiEvidence");
+  assert.equal(result.checkKey, "release_package_review_ui_evidence");
+  assert.equal(result.uiGate, "release_package_review");
+  assert.equal(result.readyForReleaseEvidence, true);
+  assert.deepEqual(result.uiEvidence.missingCoverage, []);
+  assert.equal(result.uiEvidence.domEvidencePresent, true);
+});
+
 test("UI evidence service rejects missing gate, coverage gaps, and failed assertions", () => {
   const service = createService();
   const missing = service.evaluate({

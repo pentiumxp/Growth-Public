@@ -124,6 +124,41 @@ test("UI evidence smoke script returns summary-only UI evidence", () => {
   });
 });
 
+test("UI evidence smoke script validates release package review gate", () => {
+  withTempEvidence(({ dir, evidencePath }) => {
+    fs.writeFileSync(evidencePath, JSON.stringify({
+      ok: true,
+      evidenceKey: "releasePackageReviewUiEvidence",
+      uiGate: "release_package_review",
+      domAssertions: [{ name: "build and record buttons", status: "pass" }],
+      coverage: [
+        "package_candidate_build",
+        "package_candidate_status",
+        "record_package_action"
+      ]
+    }), "utf8");
+
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--evidence-key", "release_package_review_ui_evidence",
+      "--ui-evidence-file", evidencePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: path.join(dir, "growth-learning.sqlite3")
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = parseStdout(result);
+    assert.equal(output.ok, true);
+    assert.equal(output.evidenceKey, "releasePackageReviewUiEvidence");
+    assert.equal(output.checkKey, "release_package_review_ui_evidence");
+    assert.equal(output.uiGate, "release_package_review");
+    assert.deepEqual(output.uiEvidence.missingCoverage, []);
+  });
+});
+
 test("UI evidence smoke script rejects private projected values", () => {
   withTempEvidence(({ dir, evidencePath }) => {
     fs.writeFileSync(evidencePath, JSON.stringify({

@@ -260,6 +260,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-daily-ui-evidence", "ownerDailyUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-audit-ui-evidence", "ownerAuditUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--proposal-review-ui-evidence", "proposalReviewUiEvidence");
+  applyDeprecatedUiEvidenceFlag(args, evidence, "--release-package-review-ui-evidence", "releasePackageReviewUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-digest-ui-evidence", "automationDigestUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-action-handoff-ui-evidence", "automationActionHandoffUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-execution-ui-evidence", "schedulerExecutionUiEvidence");

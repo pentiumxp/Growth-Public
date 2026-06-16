@@ -42,8 +42,9 @@ passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
 Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
 proposal/digest/action-handoff/scheduler-execution/scheduler-run/worker-target
-production evidence, central visual evidence for release package review UI, and
-production release evidence collection.
+production evidence, a real `releasePackageReviewUiEvidence` artifact for the
+release package review UI, central visual evidence for that UI, and production
+release evidence collection.
 
 ## Objective
 
@@ -522,6 +523,13 @@ npm run ios:pwa:visual -- \
   If the visual toolchain fails at the Appium, WDA, WebView attach, or live
   debug server layer, classify and recover that layer per the central platform
   contract before treating the result as UI evidence.
+
+- The release package review row has its own release-readiness UI evidence gate:
+  `releasePackageReviewUiEvidence` / `release_package_review_ui_evidence`.
+  The summary artifact must cover package candidate build, package candidate
+  status, and record package action before it can be persisted as pass release
+  evidence. A successful candidate build or package record alone is not the UI
+  evidence artifact.
 
 ## V1 Controls
 

@@ -169,7 +169,7 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
     assert.equal(output.ok, true);
     assert.equal(output.releaseInventory.latestReadinessSnapshotId, readiness.snapshot.readinessId);
     assert.equal(output.releaseInventory.latestReadinessEvidencePresentCount, 1);
-    assert.equal(output.releaseInventory.latestReadinessEvidenceMissingCount, 31);
+    assert.equal(output.releaseInventory.latestReadinessEvidenceMissingCount, 32);
     assert.equal(output.releaseInventory.latestReadinessOwnerReviewStageSummary.proposalCount, 5);
     assert.equal(output.releaseInventory.latestReadinessOwnerReviewStageSummary.acceptedProposalCount, 2);
     assert.equal(output.releaseInventory.latestReadinessOwnerReviewStageSummary.failurePolicyStatus, "ready");
@@ -180,7 +180,7 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
     assert.equal(output.releaseInventory.latestReleaseEvidenceStatus, "pass");
     assert.equal(output.artifactReadback.snapshots.latest.id, readiness.snapshot.readinessId);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.summaryOnly, true);
-    assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 31);
+    assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 32);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.missingCheckKeys.includes("owner_review_evidence"), false);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.ownerReviewStageSummary.digestRequiredActionCount, 2);
     assert.equal(output.artifactReadback.releaseEvidence.latest.id, releaseEvidence.evidence.evidenceRecordId);

@@ -196,6 +196,7 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release evidence bundle, explicit summary evidence JSON, or a persisted
   release-evidence record projection. It accepts
   `--automation-digest-ui-evidence`,
+  `--release-package-review-ui-evidence`,
   `--automation-action-handoff-ui-evidence`,
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
   `--scheduler-worker-target-ui-evidence` only as deprecated UI evidence flag
@@ -215,7 +216,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   assertions, screenshot or DOM evidence, and a private-value-safe public
   projection; it does not run Appium, the Home AI visual harness, Gateway,
   scheduler actions, generation, evaluation, notification delivery, stage
-  activation, learner-state writes, or release evidence persistence. The
+  activation, learner-state writes, or release evidence persistence. It now
+  includes the `releasePackageReviewUiEvidence` /
+  `release_package_review_ui_evidence` gate for the release package review row;
+  that gate requires package candidate build, candidate status, and record
+  package action coverage before pass release evidence can be persisted. The
   deprecated `--release-workbench-evidence` flag now returns blocked
   remediation metadata instead of passing evidence; valid final Owner
   action-template readback evidence must come from `npm run

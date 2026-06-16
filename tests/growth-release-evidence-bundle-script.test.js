@@ -200,6 +200,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--activation-record-limit", "7",
     "--runtime-enablement-record-limit", "6",
     "--owner-daily-ui-evidence",
+    "--release-package-review-ui-evidence",
     "--automation-digest-ui-evidence",
     "--scheduler-worker-target-ui-evidence",
     "--output-file", "/tmp/release-evidence.json"
@@ -262,6 +263,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     ownerAuditUiEvidence: false,
     stageCheckpointEvidence: false,
     proposalReviewUiEvidence: false,
+    releasePackageReviewUiEvidence: true,
     automationDigestUiEvidence: true,
     automationActionHandoffUiEvidence: false,
     schedulerExecutionUiEvidence: false,
@@ -992,6 +994,7 @@ test("release evidence bundle script collects optional release-controls readback
       "--required-approval-key", "writefulExecutionApproval",
       "--activation-record-limit", "7",
       "--runtime-enablement-record-limit", "6",
+      "--release-package-review-ui-evidence",
       "--automation-digest-ui-evidence",
       "--task", "release_controls",
       "--output-file", bundlePath,
@@ -1015,6 +1018,7 @@ test("release evidence bundle script collects optional release-controls readback
     assert.equal(fileBundle.scope.activationRecordLimit, 7);
     assert.equal(fileBundle.scope.runtimeEnablementRecordLimit, 6);
     assert.equal(fileBundle.scope.automationDigestUiEvidence, true);
+    assert.equal(fileBundle.scope.releasePackageReviewUiEvidence, true);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);

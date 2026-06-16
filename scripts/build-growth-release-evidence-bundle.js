@@ -133,6 +133,7 @@ function inputFromArgs(args) {
     ownerAuditUiEvidence: hasFlag(args, "--owner-audit-ui-evidence") || hasFlag(args, "--ownerAuditUiEvidence"),
     stageCheckpointEvidence: hasFlag(args, "--stage-checkpoint-evidence") || hasFlag(args, "--stageCheckpointEvidence"),
     proposalReviewUiEvidence: hasFlag(args, "--proposal-review-ui-evidence") || hasFlag(args, "--proposalReviewUiEvidence"),
+    releasePackageReviewUiEvidence: hasFlag(args, "--release-package-review-ui-evidence") || hasFlag(args, "--releasePackageReviewUiEvidence"),
     automationDigestUiEvidence: hasFlag(args, "--automation-digest-ui-evidence") || hasFlag(args, "--automationDigestUiEvidence"),
     automationActionHandoffUiEvidence: hasFlag(args, "--automation-action-handoff-ui-evidence") || hasFlag(args, "--automationActionHandoffUiEvidence"),
     schedulerExecutionUiEvidence: hasFlag(args, "--scheduler-execution-ui-evidence") || hasFlag(args, "--schedulerExecutionUiEvidence"),

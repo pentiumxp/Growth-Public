@@ -1112,6 +1112,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseEvidenceService, /listEvidence/);
   assert.match(automationReleaseEvidenceService, /evidenceBag/);
   assert.match(automationReleaseEvidenceService, /UI_RELEASE_EVIDENCE_KEYS/);
+  assert.match(automationReleaseEvidenceService, /releasePackageReviewUiEvidence/);
+  assert.match(automationReleaseEvidenceService, /release_package_review_ui_evidence/);
   assert.match(automationReleaseEvidenceService, /validateUiReleaseEvidencePass/);
   assert.match(automationReleaseEvidenceService, /uiEvidenceService\.evaluate/);
   assert.match(automationReleaseEvidenceService, /compactUiBagFields/);
@@ -1286,6 +1288,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationUiEvidenceService, /evaluate/);
   assert.match(automationUiEvidenceService, /UI_GATE_SPECS/);
   assert.match(automationUiEvidenceService, /ownerDailyUiEvidence/);
+  assert.match(automationUiEvidenceService, /releasePackageReviewUiEvidence/);
+  assert.match(automationUiEvidenceService, /release_package_review/);
   assert.match(automationUiEvidenceService, /requiredCoverage/);
   assert.match(automationUiEvidenceService, /growthRunsNoVisualTooling/);
   assert.match(automationUiEvidenceService, /homeAiOwnsVisualHarness/);
@@ -1632,6 +1636,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /release_readiness_smoke_bundle_privacy_failed/);
   assert.match(script, /--stage-checkpoint-controls-evidence/);
   assert.match(script, /--automation-digest-ui-evidence/);
+  assert.match(script, /--release-package-review-ui-evidence/);
   assert.match(script, /--production-proposal-smoke-evidence/);
   assert.match(script, /--automation-action-handoff-ui-evidence/);
   assert.match(script, /--scheduler-execution-ui-evidence/);
@@ -1667,6 +1672,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
     "stageCheckpointEvidence",
     "stageCheckpointControlsEvidence",
     "productionProposalSmokeEvidence",
+    "releasePackageReviewUiEvidence",
     "automationDigestUiEvidence",
     "productionActionHandoffSmokeEvidence",
     "productionSchedulerExecutionSmokeEvidence",
@@ -1728,6 +1734,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /fails closed for privacy-risk evidence bundle input/);
   assert.match(scriptHarness, /stageCheckpointControlsEvidence/);
   assert.match(scriptHarness, /automationDigestUiEvidence/);
+  assert.match(scriptHarness, /releasePackageReviewUiEvidence/);
   assert.match(scriptHarness, /productionProposalSmokeEvidence/);
   assert.match(scriptHarness, /automationActionHandoffUiEvidence/);
   assert.match(scriptHarness, /schedulerExecutionUiEvidence/);
@@ -1776,6 +1783,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /automationDigestUiEvidence/);
   assert.match(releaseReadinessService, /automation_digest_ui_evidence/);
   assert.match(releaseReadinessService, /complete_automation_digest_ui/);
+  assert.match(releaseReadinessService, /releasePackageReviewUiEvidence/);
+  assert.match(releaseReadinessService, /release_package_review_ui_evidence/);
+  assert.match(releaseReadinessService, /complete_release_package_review_ui/);
   assert.match(releaseReadinessService, /productionProposalSmokeEvidence/);
   assert.match(releaseReadinessService, /production_proposal_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_proposal_smoke/);

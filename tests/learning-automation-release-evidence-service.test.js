@@ -91,6 +91,47 @@ function validOwnerDailyUiEvidence(overrides = {}) {
   }, overrides);
 }
 
+function validReleasePackageReviewUiEvidence(overrides = {}) {
+  const spec = UI_GATE_SPECS.releasePackageReviewUiEvidence;
+  return Object.assign({
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "releasePackageReviewUiEvidence",
+    checkKey: spec.checkKey,
+    uiGate: spec.uiGate,
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      checkKey: spec.checkKey,
+      uiGate: spec.uiGate,
+      status: "pass",
+      route: "/?embed=hermes#generate",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: "growth-release-package-review.png",
+      coverage: spec.requiredCoverage,
+      requiredCoverage: spec.requiredCoverage,
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  }, overrides);
+}
+
 test("automation release evidence service canonicalizes release evidence keys and records non-UI summary-only evidence", () => {
   const { calls, service } = createService();
 
@@ -203,6 +244,10 @@ test("automation release evidence service returns evidence bag for release-readi
     evidence: { evidenceId: "release_workbench_1", source: "release_workbench_smoke" }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "release_package_review_ui_evidence",
+    evidence: validReleasePackageReviewUiEvidence()
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "production_recommendation_lifecycle_smoke_evidence",
     evidence: { evidenceId: "recommendation_lifecycle_1", source: "recommendation_lifecycle_smoke" }
   }));
@@ -215,7 +260,7 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releasePackageReviewUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
   assert.equal(bag.evidence.ownerDailyUiEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
@@ -225,6 +270,8 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.deepEqual(bag.evidence.ownerDailyUiEvidence.uiEvidence.missingCoverage, []);
   assert.equal(bag.evidence.ownerDailyUiEvidence.uiEvidence.failedAssertionCount, 0);
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
+  assert.equal(bag.evidence.releasePackageReviewUiEvidence.uiGate, "release_package_review");
+  assert.equal(bag.evidence.releasePackageReviewUiEvidence.readyForReleaseEvidence, true);
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");
   assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");

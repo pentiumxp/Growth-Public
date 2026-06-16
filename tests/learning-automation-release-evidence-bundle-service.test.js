@@ -83,6 +83,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
     ownerAuditUiEvidence: false,
     stageCheckpointEvidence: false,
     proposalReviewUiEvidence: false,
+    releasePackageReviewUiEvidence: false,
     automationDigestUiEvidence: false,
     automationActionHandoffUiEvidence: false,
     schedulerExecutionUiEvidence: false,

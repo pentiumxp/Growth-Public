@@ -9,6 +9,66 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T01:35+08:00 - Release Package Review UI Evidence Gate
+
+- Status: implemented locally, fully validated, and pushed after validation.
+  This slice was not deployed because the user deferred deployment.
+- Change intent:
+  - make the release package review row a first-class release-readiness UI
+    evidence gate instead of leaving it as an undocumented UI-only affordance;
+  - require the same validated UI evidence path as the other Growth release UI
+    gates before a pass record can satisfy readiness;
+  - keep release-readiness advisory-only and preserve
+    `writefulSchedulingAllowed=false`.
+- Scope:
+  - `learning-automation-ui-evidence-service` now defines
+    `releasePackageReviewUiEvidence` with UI gate `release_package_review` and
+    required coverage for package candidate build, candidate status, and record
+    package action;
+  - `learning-automation-release-readiness-service` now requires
+    `release_package_review_ui_evidence` with action
+    `complete_release_package_review_ui`;
+  - `learning-automation-release-evidence-service` now treats
+    `releasePackageReviewUiEvidence` as a canonical UI release evidence key and
+    maps it to `release_package_review_ui_evidence`;
+  - release-readiness and release-evidence-bundle scripts now carry the
+    deprecated `--release-package-review-ui-evidence` flag only as blocked
+    remediation metadata, not as pass evidence;
+  - release controls/dashboard/inventory/package readbacks and tests now expect
+    the additional evidence key in present/missing counts.
+- Docs changed:
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation:
+  - focused release/UI evidence Harness passed `96/96`;
+  - failed-count regression Harness for controls/dashboard/inventory/package and
+    release-evidence-bundle service passed `36/36` after old count updates;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check` passed in Growth;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `847/847`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,931 nodes, 20,702 edges, index up
+    to date, with the existing optional earlier-engine reindex notice;
+  - Home AI AI Ops intake classified the task as H1 because of release/deploy
+    wording, but production deployment was intentionally not run. Non-deploy app
+    checks passed: deployment script syntax, deployment script Harness,
+    production-status Harness, architecture-code-test-harness-map, app
+    `git diff --check`, and Growth service/script syntax from the app workspace.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-519709c6-7fde-49fe-bef7-51ca5753546b`.
+- Remaining gates:
+  - this creates the gate and local Harness coverage but does not create a real
+    central Home AI visual/UI artifact for the release package review row;
+  - production release readiness still needs real UI/visual/platform evidence
+    collection and the later deployment pass.
+
 ## 2026-06-17T01:20+08:00 - Release Package Review UI Two-Step Flow
 
 - Status: implemented locally and fully validated. This slice was not deployed.
