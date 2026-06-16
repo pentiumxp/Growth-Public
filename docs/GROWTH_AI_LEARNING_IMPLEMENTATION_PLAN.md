@@ -148,8 +148,11 @@ AI-driven loop:
   no-write smoke must be interpreted as collection-path evidence, not release
   approval. A subset run can pass bundle and audit while release-readiness
   remains incomplete because product UI/visual, platform action,
-  target-provisioning, stage-checkpoint, and completed-cycle evidence are still
-  missing;
+  stage-checkpoint, and completed-cycle evidence are still missing.
+  Production Fanfan science target-provisioning evidence uses
+  `domain_pack_fanfan_cambridge_pathway_v1`; that subset now passes through the
+  Fanfan `sample_default` target path without writing a provision or
+  collection-run record;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one

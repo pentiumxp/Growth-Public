@@ -8,6 +8,7 @@ test("growth-specific docs are available in the Growth plugin workspace", () => 
   const result = checkGrowthDocsLocality();
   assert.deepEqual(result.missing, []);
   assert.deepEqual(result.forbiddenPointers, []);
+  assert.deepEqual(result.stalePlaybookDomainPackMarkers, []);
   assert.equal(result.ok, true);
   assert.ok(result.requiredCount >= 20);
 });

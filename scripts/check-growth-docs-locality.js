@@ -71,6 +71,20 @@ const CURRENT_DOCS = Object.freeze([
   "docs/HOME_AI_PLATFORM_CONTRACT.md"
 ]);
 
+const PLAYBOOK_DOCS = Object.freeze([
+  "docs/GROWTH_LEARNING_OPERATING_LOOP.md",
+  "docs/GROWTH_AI_LEARNING_ROADMAP.md",
+  "docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md",
+  "docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md"
+]);
+
+const FORBIDDEN_PLAYBOOK_DOMAIN_PACK_MARKERS = Object.freeze([
+  "domainPackId=uk_hk_curriculum_foundation",
+  "--domain-pack-id uk_hk_curriculum_foundation",
+  "\"domainPackId\": \"uk_hk_curriculum_foundation\"",
+  "\"selectedDomainPackId\": \"uk_hk_curriculum_foundation\""
+]);
+
 function read(relPath) {
   return fs.readFileSync(path.join(ROOT, relPath), "utf8");
 }
@@ -78,6 +92,7 @@ function read(relPath) {
 function checkGrowthDocsLocality() {
   const missing = REQUIRED_DOCS.filter((relPath) => !fs.existsSync(path.join(ROOT, relPath)));
   const forbiddenPointers = [];
+  const stalePlaybookDomainPackMarkers = [];
   for (const relPath of CURRENT_DOCS) {
     if (!fs.existsSync(path.join(ROOT, relPath))) continue;
     const text = read(relPath);
@@ -85,11 +100,21 @@ function checkGrowthDocsLocality() {
       if (text.includes(marker)) forbiddenPointers.push({ file: relPath, marker });
     }
   }
+  for (const relPath of PLAYBOOK_DOCS) {
+    if (!fs.existsSync(path.join(ROOT, relPath))) continue;
+    const text = read(relPath);
+    for (const marker of FORBIDDEN_PLAYBOOK_DOMAIN_PACK_MARKERS) {
+      if (text.includes(marker)) stalePlaybookDomainPackMarkers.push({ file: relPath, marker });
+    }
+  }
   return {
-    ok: missing.length === 0 && forbiddenPointers.length === 0,
+    ok: missing.length === 0
+      && forbiddenPointers.length === 0
+      && stalePlaybookDomainPackMarkers.length === 0,
     requiredCount: REQUIRED_DOCS.length,
     missing,
-    forbiddenPointers
+    forbiddenPointers,
+    stalePlaybookDomainPackMarkers
   };
 }
 

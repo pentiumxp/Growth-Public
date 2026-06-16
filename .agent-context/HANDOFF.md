@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T16:05+08:00 - Target Provisioning Release Evidence Parameter Closure
+
+- Status: implemented, production-verified, and documented. This backend/docs
+  slice closes the release-readiness `target_provisioning` evidence gap for
+  the Fanfan science sample by correcting the production domain-pack selector
+  used in Growth playbooks and adding docs-locality regression coverage.
+  Overall Growth closed-loop MVP progress is about `86%` after this slice:
+  target-provisioning release evidence is no longer blocked by a stale
+  parameter, while product UI/visual evidence, platform action evidence,
+  stage-checkpoint evidence, and completed-cycle/profile-feedback production
+  evidence still remain open.
+- Diagnosis:
+  - production Growth graph readback exposes the current UK/HK curriculum
+    foundation domain pack as `domain_pack_fanfan_cambridge_pathway_v1`;
+  - the older `uk_hk_curriculum_foundation` value was still present in current
+    playbook docs and caused production release-evidence collection to report
+    `learning_domain_pack_not_provisioned`;
+  - the service/database path did not require a production provision write for
+    the Fanfan sample because `learning-target-provisioning-service` correctly
+    resolves the selected Fanfan target through `sample_default`.
+- Changes:
+  - updated current Growth playbook/UI docs to use
+    `domain_pack_fanfan_cambridge_pathway_v1` for the production Fanfan
+    science sample;
+  - extended `scripts/check-growth-docs-locality.js` so current Growth
+    playbook docs fail if they reintroduce stale production domain-pack
+    markers;
+  - updated `tests/growth-docs-locality.test.js` for the new guard.
+- Production no-write evidence:
+  - as `hermes-host`, `npm run smoke:target-provisioning` equivalent with
+    `workspaceId=weixin_stephen`, `learnerId=fanfan`,
+    `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
+    and `subject=science` returned `ok=true`, `mode=sample_default`,
+    `targetEnabled=true`, `domainPackCount=1`, and `subjectCount=9`;
+  - `npm run smoke:release-evidence-collection` equivalent with only
+    `--task target_provisioning --required-task target_provisioning` returned
+    bounded summary-only `productionTargetProvisioningSmokeEvidence` with
+    `status=pass`, bundle `taskCount=1`, bundle `passedCount=1`, audit
+    `status=pass`, `collectionRunWritten=false`, and
+    `writefulSchedulingAllowed=false`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - focused Growth backend/docs harness set covering target provisioning,
+    release-evidence bundle/collection, and architecture boundaries;
+  - full Growth regression: `npm test` (`814/814` passing);
+  - Growth `npm run check`;
+  - Home AI central platform/deploy/harness required checks from the app
+    workspace, including the plan-mode `deploy:macos -- --target home-ai`
+    contract check;
+  - production target-provisioning no-write smoke as `hermes-host`;
+  - production target-provisioning release-evidence-collection subset as
+    `hermes-host`.
+
 ## 2026-06-16T15:36+08:00 - Release Evidence Collection Production Deploy
 
 - Status: deployed and production-smoked. Growth commit `2178bdc86b97`

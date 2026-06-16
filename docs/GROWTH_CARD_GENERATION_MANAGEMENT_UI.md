@@ -424,7 +424,7 @@ smoke with the same target selectors:
 npm run smoke:planner-readiness -- \
   --workspace-id weixin_stephen \
   --learner-id fanfan \
-  --domain-pack-id uk_hk_curriculum_foundation \
+  --domain-pack-id domain_pack_fanfan_cambridge_pathway_v1 \
   --domain science \
   --subject science \
   --horizon daily_plan \
@@ -692,7 +692,7 @@ Recommended context response:
     "ok": true,
     "targetEnabled": true,
     "mode": "sample_default",
-    "selectedDomainPackId": "uk_hk_curriculum_foundation",
+    "selectedDomainPackId": "domain_pack_fanfan_cambridge_pathway_v1",
     "selectedDomain": "science",
     "selectedSubject": "science",
     "error": ""
@@ -715,20 +715,20 @@ Recommended context response:
   "graphOptions": {
     "ok": true,
     "available": true,
-    "selectedDomainPackId": "uk_hk_curriculum_foundation",
+    "selectedDomainPackId": "domain_pack_fanfan_cambridge_pathway_v1",
     "selectedDomain": "science",
     "selectedSubject": "science",
     "subjects": ["science", "physics"],
     "domainPacks": [
       {
-        "domainPackId": "uk_hk_curriculum_foundation",
+        "domainPackId": "domain_pack_fanfan_cambridge_pathway_v1",
         "importId": "kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1",
-        "domain": "science",
-        "title": "UK/HK Curriculum Foundation",
+        "domain": "cross_subject_curriculum",
+        "title": "Fanfan Cambridge Lower Secondary to IGCSE and A Level pathway seed",
         "version": "2026-05-27-v1",
         "nodeCount": 294,
-        "subjectCount": 2,
-        "subjects": ["science", "physics"]
+        "subjectCount": 9,
+        "subjects": ["cross_subject", "english", "mathematics", "science", "english_esl", "biology", "chemistry", "physics", "computer_science"]
       }
     ]
   },

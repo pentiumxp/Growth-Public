@@ -432,7 +432,7 @@ operation.
 
 1. Load `GET /api/v1/growth/card-generation/context` for the Fanfan target
    workspace with bounded selectors such as `learnerId=fanfan`,
-   `domainPackId=uk_hk_curriculum_foundation`, `domain=science`,
+   `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
    `subject=science`, `horizon=daily_plan`, and `availableMinutes=15`.
 2. Inspect readiness:
    - `graphOptions` shows provisioned graph/domain-pack and subject choices;
@@ -869,7 +869,7 @@ The planner model input must be structured and summary-only:
     "allowedCardRoles": ["teaching", "practice", "repair", "stretch"]
   },
   "knowledgeGraph": {
-    "domainPackId": "uk_hk_curriculum_foundation",
+    "domainPackId": "domain_pack_fanfan_cambridge_pathway_v1",
     "candidateNodes": [
       {
         "nodeId": "science-force-basic",

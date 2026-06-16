@@ -190,7 +190,8 @@ Actor and target:
 - target learner workspace: Fanfan's Growth target returned by
   `GET /api/v1/growth/view-targets`;
 - learner id: `fanfan`;
-- domain pack: UK/HK curriculum foundation;
+- domain pack: UK/HK curriculum foundation
+  (`domain_pack_fanfan_cambridge_pathway_v1`);
 - domain and subject: `science`;
 - horizon: `daily_plan`;
 - available time: `15` minutes.
@@ -873,7 +874,7 @@ Production planner UI enablement additionally requires:
 npm run smoke:planner-readiness -- \
   --workspace-id weixin_stephen \
   --learner-id fanfan \
-  --domain-pack-id uk_hk_curriculum_foundation \
+  --domain-pack-id domain_pack_fanfan_cambridge_pathway_v1 \
   --domain science \
   --subject science \
   --horizon daily_plan \

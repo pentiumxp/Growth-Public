@@ -123,6 +123,10 @@ Growth already has substantial backend foundation:
   no-write production smoke evidence for the non-model `learning_loop_state`
   subset: bundle and audit pass, release-readiness remains incomplete, no
   collection-run record is written, and scheduler permission remains false.
+  The production Fanfan science `target_provisioning` subset also passes when
+  the current native graph domain pack id
+  `domain_pack_fanfan_cambridge_pathway_v1` is used; the stale
+  `uk_hk_curriculum_foundation` value must not be used in current playbooks.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:
@@ -883,7 +887,8 @@ The first complete browser path should prove this sample:
 - actor: Owner;
 - target learner workspace: Fanfan target returned by Growth view targets;
 - learner id: `fanfan`;
-- domain pack: UK/HK curriculum foundation;
+- domain pack: UK/HK curriculum foundation
+  (`domain_pack_fanfan_cambridge_pathway_v1`);
 - domain: `science`;
 - subject: `science`;
 - horizon: `daily_plan`;
@@ -923,7 +928,7 @@ becomes future planning evidence, not a required retry loop.
 | Evidence/profile/audit | Evidence ledger, evidence audit, Profile V2, profile-delta audit, correction, cycle audit, completeness, stale evidence, privacy tests, `tests/growth-owner-audit-smoke-script.test.js`, and `npm run smoke:owner-audit`; the smoke now returns cycle audit, completeness, evidence audit, profile-delta audit, and correction DTOs by default, while correction writes remain explicitly gated. Audit-completeness privacy projection must block raw/private DTO keys but must not fail solely because safe public text values contain words such as token, transcript, secret, prompt, or cookie. |
 | Stage assessment | Readiness, activation, coverage, completion, cooldown, direct daily-publish blocking, `tests/growth-stage-assessment-smoke-script.test.js`, and `npm run smoke:stage-assessment`; the CLI defaults to read-only readiness and requires explicit `--allow-write` for eligibility, activation, or completion evidence. |
 | Stage checkpoint controls | Summary-only Owner controls DTO, Owner generation-panel controls rendering and action gating, `tests/learning-stage-checkpoint-controls-service.test.js`, `tests/growth-stage-checkpoint-controls-smoke-script.test.js`, `tests/growth-frontend-adapter.test.js`, `npm run smoke:stage-checkpoint-controls`, default release-bundle task `stage_checkpoint_controls`, release-readiness key `stage_checkpoint_controls_evidence`, and architecture coverage for no Gateway, direct repository, generation, publication, evaluation, scheduler, notification, stage activation, learner-state mutation, or browser-side eligibility recomputation from the controls boundary. |
-| Multi-workspace target | Visible-target allow/deny, explicit provision enablement, cross-subject domain-pack plus subject-domain selection, wrong-subject blocking, target-workspace row ownership, `tests/growth-target-provisioning-smoke-script.test.js`, `npm run smoke:target-provisioning`, the default release-bundle `target_provisioning` task, `productionTargetProvisioningSmokeEvidence`, release-readiness key `production_target_provisioning_smoke_evidence`, and no actor/target mixing. |
+| Multi-workspace target | Visible-target allow/deny, explicit provision enablement, cross-subject domain-pack plus subject-domain selection, wrong-subject blocking, target-workspace row ownership, `tests/growth-target-provisioning-smoke-script.test.js`, `npm run smoke:target-provisioning`, the default release-bundle `target_provisioning` task, `productionTargetProvisioningSmokeEvidence`, release-readiness key `production_target_provisioning_smoke_evidence`, and no actor/target mixing. Production Fanfan science evidence must use `domain_pack_fanfan_cambridge_pathway_v1`; `tests/growth-docs-locality.test.js` and `node scripts/check-growth-docs-locality.js` fail current playbook docs that reintroduce stale production domain-pack markers. |
 | Proposal | Repository/service/route tests, `tests/growth-automation-proposal-smoke-script.test.js`, `npm run smoke:proposal`, the completed-cycle proposal evidence in `tests/learning-card-ai-loop-harness.test.js`, repository-level privacy-risk key and private path/token-looking value rejection, read-only list by default, explicit `--allow-write` for create/review/publish, and architecture guard for no Gateway, direct plan publisher, direct card generation, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler dry-run | Service tests, `tests/growth-scheduler-dry-run-smoke-script.test.js`, `npm run smoke:scheduler-dry-run`, the Fanfan science completed-cycle candidate in `tests/learning-card-ai-loop-harness.test.js`, and architecture guard for no Gateway, publication, evaluation, execution, scheduler tick, stage activation, notification, learner-state mutation, or direct repository access from the CLI. |
 | Digest | Repository/service/route tests, `tests/growth-automation-digest-smoke-script.test.js`, `npm run smoke:digest`, the Fanfan science completed-cycle digest in `tests/learning-card-ai-loop-harness.test.js`, repository-level privacy-risk key and private path/token-looking value rejection, read-only list/get by default, explicit `--allow-write` for create/review, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
