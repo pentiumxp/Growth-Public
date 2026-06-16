@@ -1,6 +1,6 @@
 # Growth Card Generation Management UI
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 This document defines the Growth-owned Owner UI for generating learning cards
 inside the Growth plugin.
@@ -366,6 +366,11 @@ action facade. It must not send raw visual logs, screenshots, transcripts,
 private local paths, provider config, raw prompts, model output, access tokens,
 or raw smoke output. Success and failure are rendered in the same panel; a
 record action cannot be a silent no-op.
+
+For `release_approval`, the embedded UI sends only the advertised approval key
+and config gate plus summary-only action metadata. It must not send
+`writefulSchedulingAllowed`, runtime config values, private evidence payloads,
+or any field that implies scheduler permission.
 
 The panel intentionally does not record `release_package`. The
 `learning-automation-release-workbench-action-service` can delegate package
@@ -1062,7 +1067,7 @@ Add focused tests before broad regression runs:
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
-| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/activation/runtime enablement endpoints without package placeholders |
+| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate` and without `writefulSchedulingAllowed`, raw prompts, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |

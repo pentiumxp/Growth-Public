@@ -9,13 +9,53 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T00:31+08:00 - Release Workbench Approval UI Payload Harness
+
+- Status: implemented locally and fully validated; this handoff entry is part
+  of the current slice commit.
+- Change intent:
+  - the existing Owner `生成` tab release workbench already supports advertised
+    `release_approval` actions through the generic release-workbench action
+    facade;
+  - this slice closes the missing frontend Harness/documentation proof that
+    approval actions construct only summary-only approval payloads and do not
+    imply scheduler permission.
+- Files changed:
+  - `tests/growth-frontend-adapter.test.js` now renders a
+    `release_approval` Owner action, asserts its endpoint button, and asserts
+    the generated payload contains `approval_key` / `config_gate` while
+    omitting `writefulSchedulingAllowed`, raw prompts, and transcripts;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` documents the approval
+    payload boundary and Harness coverage;
+  - `.agent-context/PROJECT_CONTEXT.md` records the durable UI/Harness fact.
+- Validation:
+  - `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed `1/1`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `845/845`;
+  - Home AI AI Ops H3 required checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node --check ../plugins/growth/tests/growth-frontend-adapter.test.js`,
+    and app `git diff --check`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,923 nodes, 20,119 edges, index up
+    to date, with the existing optional earlier-engine reindex notice.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-e2801952-616b-43b0-9845-2e60b37d2039`.
+
 ## 2026-06-17T00:26+08:00 - Platform Action Evidence Dual Receipt Gate
 
 - Status: implemented locally, fully validated, committed, and pushed to both
   `origin/main` and `public/main`.
 - Commits pushed:
   - `ce0cbe8 Require dual platform action receipts`;
-  - `6741093 Update dual receipt handoff status`.
+  - `6741093 Update dual receipt handoff status`;
+  - `3a15609 Record dual receipt push status`.
 - Change intent:
   - platform action release evidence now requires a delivered Growth event
     outbox `growth.automation.action_required` receipt containing both an

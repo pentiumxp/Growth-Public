@@ -959,7 +959,7 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       status: "blocked",
       releaseWorkbench: {
         status: "blocked",
-        ownerActionCount: 2,
+        ownerActionCount: 3,
         missingEvidenceKeys: ["visual_smoke"],
         missingApprovalKeys: ["writefulExecutionApproval"],
         missingRecordKinds: ["runtime_enablement"],
@@ -974,6 +974,20 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             body: {
               evidence_key: "visual_smoke",
               check_key: "visual_smoke"
+            }
+          }
+        }, {
+          key: "writefulExecutionApproval",
+          action: "record_release_approval",
+          requiredActor: "owner",
+          label: "Record release approval for writeful execution",
+          source: "missing_approval",
+          endpointKey: "release_approval",
+          externalActionRequired: true,
+          route: {
+            body: {
+              approval_key: "writefulExecutionApproval",
+              config_gate: "writefulExecutionApproval"
             }
           }
         }, {
@@ -1572,8 +1586,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-workbench-status="blocked"/);
   assert.match(html, /发布工作台/);
   assert.match(html, /Record release evidence for visual_smoke/);
+  assert.match(html, /Record release approval for writeful execution/);
   assert.match(html, /data-release-workbench-action/);
   assert.match(html, /data-release-workbench-endpoint-key="release_evidence"/);
+  assert.match(html, /data-release-workbench-endpoint-key="release_approval"/);
   assert.match(html, /已写入 release_evidence 记录：lgrelevd_1/);
   assert.match(html, /data-card-generation-target-provisioning/);
   assert.match(html, /data-card-generation-domain-pack/);
@@ -1660,6 +1676,37 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     evidence_key: "visual_smoke",
     check_key: "visual_smoke"
   });
+  assert.equal(Object.hasOwn(releasePayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releasePayload, "transcript"), false);
+
+  const releaseApprovalPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    action: context.releaseWorkbench.releaseWorkbench.ownerActions[1]
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseApprovalPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    endpoint_key: "release_approval",
+    action_key: "writefulExecutionApproval",
+    requested_by: "owner",
+    action: {
+      key: "writefulExecutionApproval",
+      action: "record_release_approval",
+      endpointKey: "release_approval",
+      source: "missing_approval",
+      summaryOnly: true
+    },
+    approval_key: "writefulExecutionApproval",
+    config_gate: "writefulExecutionApproval",
+    status: "active"
+  });
+  assert.equal(Object.hasOwn(releaseApprovalPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseApprovalPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releaseApprovalPayload, "writefulSchedulingAllowed"), false);
 
   const proposalQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalQueryPayload({
     context,

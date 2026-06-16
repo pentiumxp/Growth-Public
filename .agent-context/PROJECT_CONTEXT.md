@@ -337,7 +337,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `release_evidence`, `release_approval`, `release_activation`, and
   `runtime_enablement` actions from the plugin UI. It intentionally does not
   record `release_package` from the workbench template because package record
-  writes require a real release package artifact, not a placeholder body.
+  writes require a real release package artifact, not a placeholder body. The
+  frontend harness explicitly covers `release_approval` action templates:
+  payloads must contain only the advertised approval/config gate fields and
+  summary-only action metadata, and must not include `writefulSchedulingAllowed`,
+  raw prompts, transcripts, private evidence, or runtime config values.
   Missing-package workbench actions now include a bounded preparation route for
   Owner-triggered release package candidate build before any package-record
   write.
