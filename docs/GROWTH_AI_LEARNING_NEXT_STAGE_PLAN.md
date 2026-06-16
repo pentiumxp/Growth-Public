@@ -1052,7 +1052,10 @@ and activation readbacks are public release-control DTOs, so they must scan
 public inputs, dependency outputs, and final public DTOs for private path or
 token-looking values. Activation must apply the same rule to saved activation
 output and list readback. Harness coverage must include service-level failures
-and smoke-script failures that return only finding paths, not private values.
+and smoke-script failures that return only finding paths, not private values;
+release review and release authorization smoke coverage must include parsed
+public-scope private values before any production release evidence package can
+claim the ladder is privacy-complete.
 
 ## Definition Of Done
 

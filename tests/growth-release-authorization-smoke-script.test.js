@@ -93,3 +93,33 @@ test("release authorization smoke script runs no-write authorization against a t
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("release authorization smoke script rejects private values from parsed public scope", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-authorization-privacy-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  try {
+    new DatabaseSync(dbPath).close();
+    const stdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-authorization.js"),
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--domain", "Bearer local-token",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    const output = JSON.parse(stdout);
+    assert.equal(output.operation, "authorize");
+    assert.equal(output.ok, false);
+    assert.equal(output.error, "learning_automation_release_authorization_privacy_failed");
+    assert.deepEqual(output.privateValueFindings, ["$.domain"]);
+    assert.equal(JSON.stringify(output).includes("local-token"), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

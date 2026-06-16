@@ -9,6 +9,49 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T20:26+08:00 - Release Ladder Smoke Privacy Projection Harness
+
+- Status: implemented, tested, committed/pushed in this turn, and not deployed
+  per Owner instruction to deploy after the broader slice is complete.
+- Change intent:
+  - release review and release authorization smoke-script harnesses now prove
+    parsed public-scope private values fail closed before service writes;
+  - public failure DTOs must expose only bounded finding paths such as
+    `$.domain` and must not echo the private token/value;
+  - this completes the missing smoke-script side of the release ladder privacy
+    sub-contract already enforced inside the review/authorization services.
+- Harness/docs:
+  - added parsed public-scope private-value projection tests in
+    `tests/growth-release-review-smoke-script.test.js`;
+  - added parsed public-scope private-value projection tests in
+    `tests/growth-release-authorization-smoke-script.test.js`;
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md` and
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md` so the release review and
+    authorization smoke gates require finding-path-only privacy failures.
+- Validation:
+  - focused release review/authorization smoke tests passed with `12/12`;
+  - focused release ladder smoke/service/architecture tests passed with `57/57`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - full Growth `npm test` passed with `841/841`;
+  - `git diff --check` passed after the handoff update;
+  - CodeGraph status after edits: 355 files, 4,819 nodes, 19,236 edges.
+- AI Ops evidence:
+  - intake classified the keyworded release task as H1 deployment, but no
+    deployment path was touched; required-checks returned H3 by changed path;
+    this slice was handled as an H2 contract/projection harness under the
+    center harness matrix.
+  - implementation/test evidence:
+    `evidence-ee2512c1-fae9-4cf7-9bd6-3ad8f7fc4548`.
+- Boundary:
+  - no runtime service code changed;
+  - no Gateway call, model call, scheduling, release activation, publication,
+    learner mutation, runtime config mutation, or deployment was performed;
+  - tests write only temporary SQLite databases and assert public failure
+    projections are summary-only.
+
 ## 2026-06-16T20:13+08:00 - Release Readiness Summary-Only Evidence Object Contract
 
 - Status: implemented, tested, committed/pushed in this turn, and not deployed
