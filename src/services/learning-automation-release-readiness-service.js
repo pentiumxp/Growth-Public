@@ -101,8 +101,14 @@ function mergeReleaseApprovals(input = {}, persisted = {}) {
 
 function evidenceOk(input = {}, key) {
   const value = evidenceValue(input, key);
-  if (value && typeof value === "object") return value.ok === true || value.status === "pass" || value.present === true;
+  if (releaseEvidenceObjectPasses(value)) return true;
   return false;
+}
+
+function releaseEvidenceObjectPasses(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const passes = value.ok === true || value.status === "pass" || value.present === true;
+  return passes && isSummaryOnlyEvidence(value);
 }
 
 function evidenceValue(input = {}, key) {
@@ -136,6 +142,9 @@ function evidenceProvided(input = {}, key) {
 function evidenceFailureReason(value = {}) {
   if (value === true) return "validated_release_evidence_object_required";
   if (!value || typeof value !== "object") return "release_evidence_not_passing";
+  if ((value.ok === true || value.status === "pass" || value.present === true) && !isSummaryOnlyEvidence(value)) {
+    return "release_evidence_summary_only_required";
+  }
   return boundedString(
     value.invalidReason
       || value.invalid_reason

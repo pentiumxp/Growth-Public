@@ -211,7 +211,10 @@ The service-level evidence contract also rejects bare boolean `true` values
 from downstream release review, authorization, closure, controls, inventory,
 dashboard, or workbench readbacks with
 `validated_release_evidence_object_required`; explicit approval booleans remain
-limited to the separate release-approval path.
+limited to the separate release-approval path. Passing-looking service-owned
+evidence objects must also be summary-only (`summaryOnly=true`,
+`summary_only=true`, or `privacyClass=summary_only`); otherwise the service
+blocks them with `release_evidence_summary_only_required`.
 `releaseWorkbenchSmokeEvidence` is a Growth-local readiness input for the Owner
 action-template read model and may come from the non-default `release_workbench`
 release-bundle task, explicit summary evidence JSON, or a validated persisted

@@ -153,7 +153,9 @@ Growth already has substantial backend foundation:
   authorization, closure, activation, controls, inventory, dashboard, and
   workbench readbacks cannot satisfy readiness from legacy boolean flags.
   Explicit release approval booleans remain separate Owner approval inputs and
-  do not count as smoke/readback evidence.
+  do not count as smoke/readback evidence. Passing-looking service-owned
+  evidence objects must still be summary-only; otherwise release-readiness
+  blocks them with `release_evidence_summary_only_required`.
 
 The product is not complete because production release evidence and later
 automation surfaces are not closed:
@@ -1031,6 +1033,12 @@ becomes future planning evidence, not a required retry loop.
 | Docs | `node scripts/check-growth-docs-locality.js` and `node --test tests/growth-docs-locality.test.js`. |
 | Broad local gate | `npm run check`, `npm test`, and `git diff --check` before commit/deploy. `scripts/check-growth-syntax-coverage.js` and `tests/growth-architecture-boundary.test.js` must keep `npm run check` covering every runtime JavaScript file under `scripts/`, `src/`, and `public/`. |
 | Production UI release | Central Home AI embedded-plugin visual harness and AI Ops evidence ledger. |
+
+Release-readiness harness coverage also includes the service-owned evidence
+object contract: passing-looking non-UI smoke/readback evidence without
+`summaryOnly=true`, `summary_only=true`, or `privacyClass=summary_only` is
+blocked with `release_evidence_summary_only_required`, while explicit release
+approval booleans remain confined to the separate approval path.
 
 Central visual evidence sub-contract: Growth may read Home AI visual harness
 artifacts only to derive summary fields such as plugin id, scenario,

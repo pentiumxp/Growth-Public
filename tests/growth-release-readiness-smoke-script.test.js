@@ -82,6 +82,16 @@ function validUiEvidence(evidenceKey, overrides = {}) {
   }, overrides);
 }
 
+function validReleaseEvidence(evidenceId, overrides = {}) {
+  return Object.assign({
+    ok: true,
+    status: "pass",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceId
+  }, overrides);
+}
+
 function deprecatedUiFlag(evidenceKey) {
   return {
     ok: false,
@@ -226,6 +236,22 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
 test("release readiness smoke script accepts versioned evidence bundle files with explicit overrides", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-readiness-bundle-"));
   const bundlePath = path.join(dir, "release-evidence-bundle.json");
+  const bundleStageCheckpointEvidence = validReleaseEvidence("bundle_stage_smoke");
+  const bundleStageCheckpointControlsEvidence = validReleaseEvidence("bundle_stage_controls");
+  const bundlePlatformActionEvidence = validReleaseEvidence("bundle_platform_action");
+  const bundleOwnerReviewEvidence = validReleaseEvidence("bundle_owner_review", {
+    dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
+    summary: {
+      acceptedProposalCount: 1,
+      digestRequiredActionCount: 1,
+      blockedActionHandoffCount: 1,
+      publishedSchedulerExecutionCount: 1,
+      completedSchedulerRunCount: 1,
+      pendingWorkerTargetReviewCount: 1,
+      failurePolicyStatus: "ready"
+    }
+  });
+  const inlineCentralVisualEvidence = validReleaseEvidence("inline_visual");
   fs.writeFileSync(bundlePath, JSON.stringify({
     schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
     summaryOnly: true,
@@ -245,26 +271,13 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       horizon: "weekly_plan",
       limit: 3
     },
-      evidence: {
-        ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
-        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
-        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
-        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
-        ownerReviewEvidence: {
-          ok: true,
-          evidenceId: "bundle_owner_review",
-          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
-          summary: {
-            acceptedProposalCount: 1,
-            digestRequiredActionCount: 1,
-            blockedActionHandoffCount: 1,
-            publishedSchedulerExecutionCount: 1,
-            completedSchedulerRunCount: 1,
-            pendingWorkerTargetReviewCount: 1,
-            failurePolicyStatus: "ready"
-          }
-        }
-      },
+    evidence: {
+      ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
+      stageCheckpointEvidence: bundleStageCheckpointEvidence,
+      stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
+      platformActionEvidence: bundlePlatformActionEvidence,
+      ownerReviewEvidence: bundleOwnerReviewEvidence
+    },
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" }
     },
@@ -281,7 +294,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
           limit: 9
         },
         evidence: {
-          centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
+          centralVisualEvidence: inlineCentralVisualEvidence
         },
         releaseApproval: {
           backgroundSchedulerApproval: { approved: true, evidenceId: "inline_scheduler_approval" }
@@ -314,24 +327,11 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       },
       evidence: {
         ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
-        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
-        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
-        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
-        ownerReviewEvidence: {
-          ok: true,
-          evidenceId: "bundle_owner_review",
-          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
-          summary: {
-            acceptedProposalCount: 1,
-            digestRequiredActionCount: 1,
-            blockedActionHandoffCount: 1,
-            publishedSchedulerExecutionCount: 1,
-            completedSchedulerRunCount: 1,
-            pendingWorkerTargetReviewCount: 1,
-            failurePolicyStatus: "ready"
-          }
-        },
-        centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
+        stageCheckpointEvidence: bundleStageCheckpointEvidence,
+        stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
+        platformActionEvidence: bundlePlatformActionEvidence,
+        ownerReviewEvidence: bundleOwnerReviewEvidence,
+        centralVisualEvidence: inlineCentralVisualEvidence
       },
       releaseApproval: {
         writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" },
@@ -342,24 +342,11 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     });
     assert.deepEqual(evidenceFromArgs(args), {
       ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
-      stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
-      stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
-      platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
-      ownerReviewEvidence: {
-        ok: true,
-        evidenceId: "bundle_owner_review",
-        dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
-        summary: {
-          acceptedProposalCount: 1,
-          digestRequiredActionCount: 1,
-          blockedActionHandoffCount: 1,
-          publishedSchedulerExecutionCount: 1,
-          completedSchedulerRunCount: 1,
-          pendingWorkerTargetReviewCount: 1,
-          failurePolicyStatus: "ready"
-        }
-      },
-      centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
+      stageCheckpointEvidence: bundleStageCheckpointEvidence,
+      stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
+      platformActionEvidence: bundlePlatformActionEvidence,
+      ownerReviewEvidence: bundleOwnerReviewEvidence,
+      centralVisualEvidence: inlineCentralVisualEvidence,
       ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
     });
     assert.deepEqual(releaseApprovalFromArgs(args), {
@@ -378,24 +365,11 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       limit: 9,
       evidence: {
         ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "bundle_daily_ui" }),
-        stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
-        stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
-        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
-        ownerReviewEvidence: {
-          ok: true,
-          evidenceId: "bundle_owner_review",
-          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
-          summary: {
-            acceptedProposalCount: 1,
-            digestRequiredActionCount: 1,
-            blockedActionHandoffCount: 1,
-            publishedSchedulerExecutionCount: 1,
-            completedSchedulerRunCount: 1,
-            pendingWorkerTargetReviewCount: 1,
-            failurePolicyStatus: "ready"
-          }
-        },
-        centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
+        stageCheckpointEvidence: bundleStageCheckpointEvidence,
+        stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
+        platformActionEvidence: bundlePlatformActionEvidence,
+        ownerReviewEvidence: bundleOwnerReviewEvidence,
+        centralVisualEvidence: inlineCentralVisualEvidence,
         ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
       },
       evidenceBundleReadback: {

@@ -100,7 +100,10 @@ backend boundaries:
   rejects bare boolean `true` evidence as blocked with
   `validated_release_evidence_object_required`, so downstream release review,
   authorization, closure, controls, inventory, dashboard, and workbench scripts
-  cannot turn legacy CLI flags into passing readiness evidence. Explicit
+  cannot turn legacy CLI flags into passing readiness evidence. Passing-looking
+  service-owned evidence objects also must declare `summaryOnly=true`,
+  `summary_only=true`, or `privacyClass=summary_only`; otherwise they are
+  blocked with `release_evidence_summary_only_required`. Explicit
   release approval booleans remain a separate Owner approval input and are not
   smoke/readback evidence.
   Release collection runs are separate summary-only audit
@@ -468,7 +471,9 @@ must be supplied through `--evidence-json`, a
 release-evidence record projection. The legacy boolean flags for those gates
 emit blocked remediation metadata and cannot satisfy release-readiness. Provided
 but non-passing release evidence is reported as `blocked` with bounded
-`invalidReason` readback. The deprecated `--release-workbench-evidence` flag
+`invalidReason` readback; passing-looking evidence without a summary-only marker
+is blocked with `release_evidence_summary_only_required`. The deprecated
+`--release-workbench-evidence` flag
 preserves its historical remediation code but still cannot satisfy
 `releaseWorkbenchSmokeEvidence`. Because the release-readiness service itself
 rejects bare boolean evidence, downstream release review, authorization,

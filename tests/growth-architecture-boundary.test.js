@@ -1740,9 +1740,12 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /fails closed for privacy-risk evidence input/);
 
   const releaseReadinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
-  const evidenceOkBody = releaseReadinessService.match(/function evidenceOk[\s\S]*?\n}\n\nfunction evidenceValue/)[0];
+  const evidenceOkBody = releaseReadinessService.match(/function evidenceOk[\s\S]*?\n}\n\nfunction releaseEvidenceObjectPasses/)[0];
+  const releaseEvidenceObjectPassesBody = releaseReadinessService.match(/function releaseEvidenceObjectPasses[\s\S]*?\n}\n\nfunction evidenceValue/)[0];
   assert.doesNotMatch(evidenceOkBody, /value === true/);
+  assert.match(releaseEvidenceObjectPassesBody, /isSummaryOnlyEvidence\(value\)/);
   assert.match(releaseReadinessService, /validated_release_evidence_object_required/);
+  assert.match(releaseReadinessService, /release_evidence_summary_only_required/);
   assert.match(releaseReadinessService, /function releaseApproved[\s\S]*?value === true/);
   assert.match(releaseReadinessService, /buildReleaseReview/);
   assert.match(releaseReadinessService, /buildEvidenceReadback/);

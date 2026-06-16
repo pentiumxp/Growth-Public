@@ -9,9 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T20:13+08:00 - Release Readiness Summary-Only Evidence Object Contract
+
+- Status: implemented, tested, committed/pushed in this turn, and not deployed
+  per Owner instruction to deploy only after the broader slice is complete.
+- Change intent:
+  - `learning-automation-release-readiness-service.evidenceOk()` now accepts
+    service-owned smoke/readback evidence only through
+    `releaseEvidenceObjectPasses()`;
+  - a passing-looking release evidence object (`ok=true`, `status=pass`, or
+    `present=true`) must also be summary-only through `summaryOnly=true`,
+    `summary_only=true`, or `privacyClass=summary_only`;
+  - passing-looking objects without a summary-only marker are treated as
+    provided but blocked with
+    `invalidReason=release_evidence_summary_only_required`;
+  - bare boolean `true` remains blocked with
+    `validated_release_evidence_object_required`;
+  - explicit release approval booleans remain confined to the separate
+    `releaseApproved()` approval path and are not smoke/readback evidence.
+- Harness/docs:
+  - release-readiness service tests now use explicit summary-only release
+    evidence fixtures for valid non-UI smoke/readback evidence;
+  - added service coverage for a passing-looking
+    `productionPlannerReadinessEvidence` object that lacks the summary-only
+    marker;
+  - release-readiness smoke script tests now pass summary-only release evidence
+    through bundle-file and inline evidence JSON paths;
+  - architecture guard now requires the service-level object pass helper to call
+    `isSummaryOnlyEvidence(value)` and preserve the
+    `release_evidence_summary_only_required` blocked reason;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Validation:
+  - focused release-readiness/script/architecture tests passed with `58/58`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `git diff --check` passed;
+  - full Growth `npm test` passed with `839/839`;
+  - CodeGraph status after sync: 355 files, 4,819 nodes, 19,234 edges, index
+    up to date.
+- AI Ops evidence:
+  - required-checks returned H3 by path classification, but this was handled as
+    an H2 release evidence contract slice under the center harness matrix;
+  - implementation/test evidence:
+    `evidence-c9cea488-bfaf-4bf6-81ab-e23a84e7dd44`.
+- Boundary:
+  - release-readiness remains advisory evidence only and always keeps
+    `writefulSchedulingAllowed=false`;
+  - this change does not run smoke tasks, call Gateway, publish/generate/evaluate
+    cards, activate stage assessments, schedule work, deliver notifications,
+    mutate learner state, mutate runtime config, or deploy.
+
 ## 2026-06-16T19:49+08:00 - Release Readiness Boolean Evidence Service Hardening
 
-- Status: implemented, tested, and ready to commit/push. Not deployed per
+- Status: implemented, tested, pushed, and not deployed per
   Owner instruction to deploy only after a broader completed slice is ready.
 - Change intent:
   - `learning-automation-release-readiness-service.evidenceOk()` no longer
@@ -48,6 +103,9 @@
 - AI Ops evidence:
   - implementation/test evidence:
     `evidence-02c63ea7-1645-4336-8d7e-e901374da3bb`.
+- Commit:
+  - `2543fa403829` (`Harden release readiness boolean evidence`), pushed to
+    `origin/main` and `public/main`.
 - Boundary:
   - release-readiness remains advisory evidence only and always keeps
     `writefulSchedulingAllowed=false`;

@@ -67,42 +67,50 @@ function persistedUiEvidence(evidenceKey, overrides = {}) {
   }, overrides);
 }
 
+function validReleaseEvidence(evidenceId, overrides = {}) {
+  return Object.assign({
+    ok: true,
+    status: "pass",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceId
+  }, overrides);
+}
+
 function allEvidence() {
   return {
     ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily" }),
     ownerAuditUiEvidence: validUiEvidence("ownerAuditUiEvidence", { evidenceId: "ui_audit" }),
-    stageCheckpointEvidence: { ok: true, evidenceId: "stage_sep" },
-    stageCheckpointControlsEvidence: { ok: true, evidenceId: "stage_controls" },
+    stageCheckpointEvidence: validReleaseEvidence("stage_sep"),
+    stageCheckpointControlsEvidence: validReleaseEvidence("stage_controls"),
     proposalReviewUiEvidence: validUiEvidence("proposalReviewUiEvidence", { evidenceId: "proposal_ui" }),
-    productionProposalSmokeEvidence: { ok: true, evidenceId: "proposal_smoke" },
+    productionProposalSmokeEvidence: validReleaseEvidence("proposal_smoke"),
     automationDigestUiEvidence: validUiEvidence("automationDigestUiEvidence", { evidenceId: "digest_ui" }),
     automationActionHandoffUiEvidence: validUiEvidence("automationActionHandoffUiEvidence", { evidenceId: "action_handoff_ui" }),
     schedulerExecutionUiEvidence: validUiEvidence("schedulerExecutionUiEvidence", { evidenceId: "scheduler_execution_ui" }),
     schedulerRunUiEvidence: validUiEvidence("schedulerRunUiEvidence", { evidenceId: "scheduler_run_ui" }),
     schedulerWorkerTargetUiEvidence: validUiEvidence("schedulerWorkerTargetUiEvidence", { evidenceId: "scheduler_worker_target_ui" }),
-    productionActionHandoffSmokeEvidence: { ok: true, evidenceId: "action_handoff_smoke" },
-    productionSchedulerExecutionSmokeEvidence: { ok: true, evidenceId: "scheduler_execution_smoke" },
-    productionSchedulerRunSmokeEvidence: { ok: true, evidenceId: "scheduler_run_smoke" },
-    productionSchedulerWorkerTargetSmokeEvidence: { ok: true, evidenceId: "scheduler_worker_target_smoke" },
-    productionSchedulerWorkerSmokeEvidence: { ok: true, evidenceId: "scheduler_worker_smoke" },
-    productionPlannerReadinessEvidence: { ok: true, evidenceId: "planner_smoke" },
-    productionTargetProvisioningSmokeEvidence: { ok: true, evidenceId: "target_provisioning_smoke" },
-    productionDailyLoopPreviewSmokeEvidence: { ok: true, evidenceId: "daily_loop_preview_smoke" },
-    productionLearningLoopStateSmokeEvidence: { ok: true, evidenceId: "learning_loop_state_smoke" },
-    productionCycleHistorySmokeEvidence: { ok: true, evidenceId: "cycle_history_smoke" },
-    productionOwnerAuditSmokeEvidence: { ok: true, evidenceId: "owner_audit_smoke" },
-    productionProfileFeedbackSmokeEvidence: { ok: true, evidenceId: "profile_feedback_smoke" },
-    productionRecommendationLifecycleSmokeEvidence: { ok: true, evidenceId: "recommendation_lifecycle_smoke" },
-    productionDailyLoopWriteSmokeEvidence: { ok: true, evidenceId: "daily_loop_write_smoke" },
-    productionLearnerCycleSmokeEvidence: { ok: true, evidenceId: "learner_cycle_smoke" },
-    productionSchedulerDryRunSmokeEvidence: { ok: true, evidenceId: "scheduler_dry_run_smoke" },
-    releaseEvidenceBundleAudit: { ok: true, evidenceId: "release_bundle_audit" },
-    platformActionEvidence: { ok: true, evidenceId: "platform_action" },
-    centralVisualEvidence: { ok: true, evidenceId: "visual" },
-    releaseWorkbenchSmokeEvidence: { ok: true, evidenceId: "release_workbench" },
-    ownerReviewEvidence: {
-      ok: true,
-      evidenceId: "owner_review_evidence",
+    productionActionHandoffSmokeEvidence: validReleaseEvidence("action_handoff_smoke"),
+    productionSchedulerExecutionSmokeEvidence: validReleaseEvidence("scheduler_execution_smoke"),
+    productionSchedulerRunSmokeEvidence: validReleaseEvidence("scheduler_run_smoke"),
+    productionSchedulerWorkerTargetSmokeEvidence: validReleaseEvidence("scheduler_worker_target_smoke"),
+    productionSchedulerWorkerSmokeEvidence: validReleaseEvidence("scheduler_worker_smoke"),
+    productionPlannerReadinessEvidence: validReleaseEvidence("planner_smoke"),
+    productionTargetProvisioningSmokeEvidence: validReleaseEvidence("target_provisioning_smoke"),
+    productionDailyLoopPreviewSmokeEvidence: validReleaseEvidence("daily_loop_preview_smoke"),
+    productionLearningLoopStateSmokeEvidence: validReleaseEvidence("learning_loop_state_smoke"),
+    productionCycleHistorySmokeEvidence: validReleaseEvidence("cycle_history_smoke"),
+    productionOwnerAuditSmokeEvidence: validReleaseEvidence("owner_audit_smoke"),
+    productionProfileFeedbackSmokeEvidence: validReleaseEvidence("profile_feedback_smoke"),
+    productionRecommendationLifecycleSmokeEvidence: validReleaseEvidence("recommendation_lifecycle_smoke"),
+    productionDailyLoopWriteSmokeEvidence: validReleaseEvidence("daily_loop_write_smoke"),
+    productionLearnerCycleSmokeEvidence: validReleaseEvidence("learner_cycle_smoke"),
+    productionSchedulerDryRunSmokeEvidence: validReleaseEvidence("scheduler_dry_run_smoke"),
+    releaseEvidenceBundleAudit: validReleaseEvidence("release_bundle_audit"),
+    platformActionEvidence: validReleaseEvidence("platform_action"),
+    centralVisualEvidence: validReleaseEvidence("visual"),
+    releaseWorkbenchSmokeEvidence: validReleaseEvidence("release_workbench"),
+    ownerReviewEvidence: validReleaseEvidence("owner_review_evidence", {
       dependencyIds: [
         "lgaprop_internal_1",
         "lgadig_internal_1",
@@ -147,7 +155,7 @@ function allEvidence() {
         failurePolicyReady: true,
         failurePolicyStatus: "ready"
       }
-    }
+    })
   };
 }
 
@@ -358,12 +366,9 @@ test("automation release readiness prefers bundled evidence over default false f
     stageCheckpointEvidence: false,
     proposalReviewUiEvidence: false,
     evidence: {
-      stageCheckpointEvidence: {
-        ok: true,
-        status: "pass",
-        evidenceId: "stage_sep_from_bundle",
+      stageCheckpointEvidence: validReleaseEvidence("stage_sep_from_bundle", {
         taskId: "stage_assessment"
-      },
+      }),
       proposalReviewUiEvidence: {
         ...validUiEvidence("proposalReviewUiEvidence"),
         ok: true,
@@ -601,22 +606,16 @@ test("automation release readiness service can use persisted release evidence re
               observedAt: "2026-06-16T10:45:00.000Z",
               source: "growth_release_evidence_record"
             },
-            stageCheckpointControlsEvidence: {
-              ok: true,
-              status: "pass",
-              evidenceId: "lgarev_stage_controls_1",
+            stageCheckpointControlsEvidence: validReleaseEvidence("lgarev_stage_controls_1", {
               evidenceRecordId: "lgarev_stage_controls_1",
               observedAt: "2026-06-16T10:46:00.000Z",
               source: "growth_release_evidence_record"
-            },
-            releaseWorkbenchSmokeEvidence: {
-              ok: true,
-              status: "pass",
-              evidenceId: "lgarev_release_workbench_1",
+            }),
+            releaseWorkbenchSmokeEvidence: validReleaseEvidence("lgarev_release_workbench_1", {
               evidenceRecordId: "lgarev_release_workbench_1",
               observedAt: "2026-06-16T10:47:00.000Z",
               source: "growth_release_evidence_record"
-            }
+            })
           },
           evidenceKeys: ["ownerDailyUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]
         };
@@ -673,6 +672,33 @@ test("automation release readiness service blocks provided non-passing release e
   assert.equal(readback.evidencePresent, false);
   assert.equal(readback.invalidReason, "validated_release_workbench_evidence_required");
   assert.equal(readback.evidenceId, "release_workbench_deprecated_flag");
+});
+
+test("automation release readiness service blocks passing-looking evidence without summary-only marker", () => {
+  const { service } = createService();
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: {
+      productionPlannerReadinessEvidence: {
+        ok: true,
+        status: "pass",
+        evidenceId: "planner_without_summary_only"
+      }
+    }
+  }));
+
+  const planner = result.checks.find((item) => item.key === "production_planner_readiness_evidence");
+  const readback = result.evidenceReadback.items.find((item) => item.key === "productionPlannerReadinessEvidence");
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "blocked");
+  assert.equal(planner.status, "blocked");
+  assert.equal(planner.summary.evidenceProvided, true);
+  assert.equal(planner.summary.evidencePresent, false);
+  assert.equal(planner.summary.invalidReason, "release_evidence_summary_only_required");
+  assert.equal(planner.requiredAction.action, "run_production_planner_readiness_smoke");
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("production_planner_readiness_evidence"), true);
+  assert.equal(readback.evidencePresent, false);
+  assert.equal(readback.invalidReason, "release_evidence_summary_only_required");
+  assert.equal(readback.evidenceId, "planner_without_summary_only");
 });
 
 test("automation release readiness service blocks provided non-passing Owner review evidence", () => {

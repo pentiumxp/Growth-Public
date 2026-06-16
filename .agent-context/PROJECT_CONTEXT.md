@@ -239,7 +239,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--evidence-json`, a versioned
   `growth.learningAutomationReleaseEvidenceBundle.v1` artifact through
   `--evidence-bundle-file` / `--evidence-bundle-json`, or a persisted pass
-  release-evidence record projection. Release-readiness still performs its
+  release-evidence record projection. Passing-looking service-owned evidence
+  objects must also carry `summaryOnly=true`, `summary_only=true`, or
+  `privacyClass=summary_only`; otherwise release-readiness blocks them with
+  `release_evidence_summary_only_required`. Release-readiness still performs its
   internal no-write scheduler dry-run safety check from the release-readiness
   service. Growth now also has
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
