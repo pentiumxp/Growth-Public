@@ -60,6 +60,8 @@
   - Home AI central H1 required checks from AI Ops, including Gateway runtime
     tests, Mac deploy-script checks, architecture-code-test-harness-map,
     plan-mode `deploy:macos -- --target home-ai`, and app `git diff --check`.
+  - AI Ops evidence record:
+    `evidence-fb6305d2-415a-4735-a5dd-213f49fd378c`.
 - Production deployment:
   - Growth commit `f5cd3cd18197` was pushed to `origin/main` and
     `public/main`, then deployed through the central Home AI Mac deploy script;
