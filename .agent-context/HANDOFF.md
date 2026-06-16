@@ -9,11 +9,89 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:16+08:00 - Release Decision Latest Ready Collection Run Auto-Selection
+
+- Status: implemented and focused Harness validated locally. Commit/push
+  follows the final gate run for this slice. This slice is not deployed because
+  the user deferred production deployment until the broader Growth target is
+  complete.
+- Change intent:
+  - remove the remaining Codex hand-spliced JSON requirement from Owner release
+    decision recording when a ready persisted collection run already exists;
+  - keep the approved-decision rule strict: `approved` still requires a
+    summary-only `ready_for_release_review` collection run;
+  - keep release decision advisory and record-only, with no runtime config
+    mutation or scheduler permission.
+- Scope:
+  - `learning-automation-release-decision-service` now accepts explicit
+    `autoSelectLatestReadyCollectionRun` /
+    `auto_select_latest_ready_collection_run`;
+  - when requested and no collection-run artifact is supplied, the decision
+    service reads the latest persisted ready collection run through
+    `learning-automation-release-collection-run-service.listRuns`, then applies
+    the same validation and repository write path;
+  - the normal app service graph injects the collection-run service into the
+    decision service;
+  - `scripts/smoke-growth-release-decision.js`,
+    `scripts/smoke-growth-release-workbench-action.js`, route normalizers, the
+    release workbench decision route template, and the workbench action facade
+    all carry the explicit auto-select flag;
+  - release workbench action still verifies the endpoint is advertised and
+    delegates the actual lookup/validation/write only to the decision service.
+- Boundary notes:
+  - no Gateway/model-vendor calls;
+  - no Home AI old Growth server imports;
+  - no package building, release evidence collection, activation, runtime
+    enablement, scheduler execution/ticks, notifications, stage activation,
+    deployment, card generation, evaluation, or learner-state mutation;
+  - release decision persistence still delegates only to
+    `learningAutomationReleaseDecisionRepository`.
+- Docs changed:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation passed so far:
+  - syntax checks passed for touched runtime JS files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-decision-service.test.js tests/growth-release-decision-smoke-script.test.js tests/learning-automation-release-workbench-action-service.test.js tests/learning-automation-release-workbench-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js`
+    passed `71/71`.
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` with `requiredCount=35`;
+  - docs/architecture Harness:
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - full Growth `npm test` passed `865/865`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 5,003 nodes, 21,563 edges, index up
+    to date, with the existing earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - required app-side checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node --check /Users/hermes-dev/HermesMobileDev/plugins/growth/src/services/learning-automation-release-decision-service.js`,
+    `node --check /Users/hermes-dev/HermesMobileDev/plugins/growth/src/routes/growth-routes.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - the app deploy plan reported a clean Home AI source tree.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-185a6bcd-63c0-4dee-9304-5c20970e7af8`.
+- Remaining gates:
+  - commit and push to both configured Growth remotes.
+
 ## 2026-06-17T04:02+08:00 - Release Package Build Record Write Closure
 
-- Status: implemented and locally validated. Commit/push follows this handoff
-  update. This slice is not deployed because the user deferred production
-  deployment until the broader Growth target is complete.
+- Status: implemented, locally validated, committed, and pushed to both
+  configured Growth remotes as `5973d78`. This slice is not deployed because
+  the user deferred production deployment until the broader Growth target is
+  complete.
 - Change intent:
   - make `learning-automation-release-package-service.buildPackage` honor the
     existing explicit `writePackageRecord` contract, instead of leaving package
@@ -89,7 +167,6 @@
   - test evidence ledger record:
     `evidence-fb2100f7-d18a-4518-b750-e69c3a6ed25f`.
 - Remaining gates:
-  - commit and push to both configured Growth remotes;
   - no production deployment in this slice.
 
 ## 2026-06-17T04:18+08:00 - Release Evidence Collection Record Persistence

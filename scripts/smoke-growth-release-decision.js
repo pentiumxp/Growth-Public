@@ -107,6 +107,10 @@ function inputFromArgs(args) {
     subject: firstArgValue(args, ["--subject"], ""),
     horizon: firstArgValue(args, ["--horizon"], "daily_plan") || "daily_plan",
     collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--run-id", "--runId"], ""),
+    autoSelectLatestReadyCollectionRun: hasFlag(args, "--auto-select-latest-ready-collection-run")
+      || hasFlag(args, "--autoSelectLatestReadyCollectionRun")
+      || hasFlag(args, "--auto-select-ready-collection-run")
+      || hasFlag(args, "--autoSelectReadyCollectionRun"),
     status: firstArgValue(args, ["--status", "--decision", "--decision-status", "--decisionStatus"], ""),
     releaseCollectionRunFile: runFile ? path.basename(runFile) : "",
     releaseCollectionRun: collectionRunFromArgs(args),
@@ -127,7 +131,7 @@ function validateOperationInput(operation, input = {}, allowWrite = false) {
     return { ok: false, error: "release_decision_smoke_write_not_allowed" };
   }
   if (!input.workspaceId) return { ok: false, error: "release_decision_smoke_workspace_required" };
-  if (operation !== "list" && !input.collectionRunId && !input.releaseCollectionRun) {
+  if (operation !== "list" && !input.collectionRunId && !input.releaseCollectionRun && input.autoSelectLatestReadyCollectionRun !== true) {
     return { ok: false, error: "release_decision_smoke_collection_run_required" };
   }
   return { ok: true };

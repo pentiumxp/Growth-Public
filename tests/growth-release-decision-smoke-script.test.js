@@ -64,6 +64,7 @@ test("release decision smoke script parses bounded selectors and defaults to eva
       "--learner-id", "fanfan",
       "--program-id", "program_science",
       "--collection-run-file", runPath,
+      "--auto-select-latest-ready-collection-run",
       "--status", "approved",
       "--limit", "5"
     ];
@@ -76,6 +77,7 @@ test("release decision smoke script parses bounded selectors and defaults to eva
     assert.equal(input.programId, "program_science");
     assert.equal(input.releaseCollectionRunFile, "collection-run.json");
     assert.equal(input.releaseCollectionRun.runId, "lgacrn_ready_1");
+    assert.equal(input.autoSelectLatestReadyCollectionRun, true);
     assert.equal(input.status, "approved");
     assert.equal(input.limit, 5);
   });
@@ -94,6 +96,13 @@ test("release decision smoke script requires explicit write flag for record", ()
 
   const allowed = validateOperationInput("record", input, true);
   assert.equal(allowed.ok, true);
+
+  const autoSelected = validateOperationInput("record", {
+    workspaceId: "weixin_fanfan",
+    status: "approved",
+    autoSelectLatestReadyCollectionRun: true
+  }, true);
+  assert.equal(autoSelected.ok, true);
 });
 
 test("release decision smoke script delegates operations to service only", () => {

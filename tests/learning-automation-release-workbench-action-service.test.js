@@ -301,14 +301,14 @@ test("release workbench action records readiness snapshot, collection run, and r
   const decision = service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_decision",
-    collectionRunId: "lgacrn_1",
     status: "approved",
-    releaseCollectionRun: { schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1", summaryOnly: true },
     requestedBy: "owner"
   });
   assert.equal(decision.ok, true);
   assert.equal(decision.actionRecord.recordId, "lgadec_1");
   assert.equal(decision.writefulSchedulingAllowed, false);
+  assert.equal(calls[5][1].autoSelectLatestReadyCollectionRun, true);
+  assert.equal(calls[5][1].releaseCollectionRun, undefined);
   assert.deepEqual(calls.map((call) => call[0]), [
     "workbench",
     "release_readiness_snapshot",

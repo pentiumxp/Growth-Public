@@ -3386,6 +3386,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         domain: "science",
         subject: "science",
         horizon: "daily_plan",
+        auto_select_latest_ready_collection_run: true,
         status: "approved",
         release_collection_run: {
           schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1",
@@ -3413,6 +3414,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         subject: "science",
         horizon: "daily_plan",
         collectionRunId: undefined,
+        autoSelectLatestReadyCollectionRun: true,
         status: "approved",
         releaseCollectionRun: {
           schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1",
@@ -5100,6 +5102,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      requiredTaskIds: [],
 	      requiredApprovalKeys: [],
 	      collectionRunId: undefined,
+	      autoSelectLatestReadyCollectionRun: false,
 	      endpointKey: "release_evidence",
       actionKey: undefined,
       action: undefined,
@@ -5183,6 +5186,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      requiredTaskIds: ["learning_loop_state"],
 	      requiredApprovalKeys: [],
 	      collectionRunId: undefined,
+	      autoSelectLatestReadyCollectionRun: false,
 	      endpointKey: "release_evidence_collection",
 	      actionKey: "release_collection_run",
 	      action: undefined,

@@ -130,6 +130,9 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(collectionAction.route.body.write_collection_run, true);
   assert.equal(collectionAction.route.body.write_release_evidence_records, true);
   assert.equal(collectionAction.route.body.auto_select_latest_completed_cycle, true);
+  const decisionRoute = result.releaseWorkbench.recordRoutes.find((route) => route.key === "release_decision");
+  assert.equal(decisionRoute.route.body.auto_select_latest_ready_collection_run, true);
+  assert.equal(decisionRoute.route.body.status, "approved");
   assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual"]);
   assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
   assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, ["owner_daily_ui_evidence"]);

@@ -319,6 +319,7 @@ function recordRoutes(scope = {}, collectionTasks = {}) {
         learner_id: scope.learnerId,
         program_id: scope.programId,
         collection_run_id: scope.collectionRunId,
+        auto_select_latest_ready_collection_run: true,
         status: "approved",
         decision_summary: { summaryOnly: true }
       })

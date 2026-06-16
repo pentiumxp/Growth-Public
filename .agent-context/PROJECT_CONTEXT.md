@@ -481,7 +481,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--allow-write`/`--write-record`, and exposes visible-target scoped
   `GET /api/v1/growth/automation/release-decisions` plus Owner-only
   `POST /api/v1/growth/automation/release-decisions`. Approved decisions
-  require a ready summary-only collection run and remain advisory:
+  require a ready summary-only collection run. With explicit
+  `--auto-select-latest-ready-collection-run` /
+  `auto_select_latest_ready_collection_run`, the decision service reads the
+  latest persisted `ready_for_release_review` collection run through
+  `learning-automation-release-collection-run-service.listRuns`, then applies
+  the same validation and persistence boundary so Owner workbench actions do
+  not require Codex-spliced collection-run JSON. Decisions remain advisory:
   `writefulSchedulingAllowed=false`, no runtime config flip, and no scheduler
   permission. Growth now also has `npm run smoke:release-review` and
   visible-target scoped `GET /api/v1/growth/automation/release-review`, a

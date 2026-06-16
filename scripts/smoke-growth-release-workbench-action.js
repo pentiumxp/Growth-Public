@@ -75,6 +75,10 @@ function inputFromArgs(args) {
     requiredTaskIds: listArg(args, ["--required-task", "--required-task-id", "--requiredTaskId"], ["--required-tasks", "--required-task-ids", "--requiredTasks", "--requiredTaskIds"]),
     requiredApprovalKeys: listArg(args, ["--required-approval-key", "--requiredApprovalKey"], ["--required-approval-keys", "--requiredApprovalKeys"]),
     collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--run-id", "--runId"], ""),
+    autoSelectLatestReadyCollectionRun: hasFlag(args, "--auto-select-latest-ready-collection-run")
+      || hasFlag(args, "--autoSelectLatestReadyCollectionRun")
+      || hasFlag(args, "--auto-select-ready-collection-run")
+      || hasFlag(args, "--autoSelectReadyCollectionRun"),
     endpointKey: firstArgValue(args, ["--endpoint-key", "--endpointKey"], ""),
     actionKey: firstArgValue(args, ["--action-key", "--actionKey", "--key"], ""),
     status: firstArgValue(args, ["--status", "--decision", "--decision-status", "--decisionStatus"], ""),

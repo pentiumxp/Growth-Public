@@ -310,7 +310,8 @@ function createServices(config) {
     repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository
   });
   const learningAutomationReleaseDecisionService = createLearningAutomationReleaseDecisionService({
-    repository: growthLearningStore.learningAutomationReleaseDecisionRepository
+    repository: growthLearningStore.learningAutomationReleaseDecisionRepository,
+    collectionRunService: learningAutomationReleaseCollectionRunService
   });
   const learningAutomationReleasePackageService = createLearningAutomationReleasePackageService({
     repository: growthLearningStore.learningAutomationReleasePackageRepository

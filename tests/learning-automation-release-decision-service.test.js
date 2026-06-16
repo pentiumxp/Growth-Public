@@ -97,6 +97,71 @@ test("release decision service evaluates and records approved summary-only decis
   assert.equal(saved[0].decision.writefulSchedulingAllowed, false);
 });
 
+test("release decision service can auto-select the latest ready collection run", () => {
+  const saved = [];
+  const lookups = [];
+  const service = createLearningAutomationReleaseDecisionService({
+    collectionRunService: {
+      listRuns(input) {
+        lookups.push(input);
+        return {
+          ok: true,
+          count: 1,
+          runs: [readyCollectionRun({ runId: "lgacrn_ready_auto_1" })]
+        };
+      }
+    },
+    repository: {
+      saveDecision(input) {
+        saved.push(input);
+        return {
+          ok: true,
+          duplicate: false,
+          decision: Object.assign({ decisionId: "lgard_auto_1" }, input)
+        };
+      }
+    }
+  });
+
+  const evaluated = service.evaluateDecision({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    status: "approved",
+    autoSelectLatestReadyCollectionRun: true,
+    decidedBy: "weixin_owner"
+  });
+
+  assert.equal(evaluated.ok, true);
+  assert.equal(evaluated.collectionRunAutoSelected, true);
+  assert.equal(evaluated.autoSelection.status, "selected");
+  assert.equal(evaluated.collectionRunSummary.collectionRunId, "lgacrn_ready_auto_1");
+  assert.deepEqual(lookups[0], {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "",
+    domain: "",
+    subject: "",
+    horizon: "daily_plan",
+    collectionRunId: "",
+    status: "ready_for_release_review",
+    limit: 1
+  });
+
+  const recorded = service.recordDecision({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    status: "approved",
+    autoSelectLatestReadyCollectionRun: true,
+    decidedBy: "weixin_owner"
+  });
+  assert.equal(recorded.ok, true);
+  assert.equal(recorded.decision.decisionId, "lgard_auto_1");
+  assert.equal(saved[0].collectionRunAutoSelected, true);
+  assert.equal(saved[0].collectionRunSummary.collectionRunId, "lgacrn_ready_auto_1");
+});
+
 test("release decision service blocks approved decisions unless the collection run is ready", () => {
   const service = createLearningAutomationReleaseDecisionService();
 
@@ -129,6 +194,14 @@ test("release decision service blocks approved decisions unless the collection r
   assert.equal(blockedDecision.ok, true);
   assert.equal(blockedDecision.status, "blocked");
   assert.equal(blockedDecision.writefulSchedulingAllowed, false);
+
+  const missingAutoRun = service.evaluateDecision({
+    workspaceId: "weixin_fanfan",
+    status: "approved",
+    autoSelectLatestReadyCollectionRun: true
+  });
+  assert.equal(missingAutoRun.ok, false);
+  assert.equal(missingAutoRun.error, "learning_automation_release_decision_collection_run_service_unavailable");
 });
 
 test("release decision service rejects privacy-risk collection run payloads", () => {

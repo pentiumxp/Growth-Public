@@ -60,6 +60,10 @@ function artifactFromInput(input = {}, names = []) {
   return null;
 }
 
+function booleanFlag(input = {}, names = []) {
+  return names.some((name) => input[name] === true || input[name] === "true" || input[name] === 1 || input[name] === "1");
+}
+
 function fileNameFromInput(input = {}, names = []) {
   for (const name of names) {
     const value = cleanString(input[name], 500);
@@ -131,6 +135,70 @@ function collectionRunSummary(collectionRun = {}, fileName = "") {
     blockedCheckKeys: uniqueSorted(releaseReview.blockedCheckKeys || readinessSummary.blockedCheckKeys),
     missingEvidenceKeys: uniqueSorted(releaseReview.missingEvidenceKeys || readinessSummary.missingEvidenceKeys),
     persistedApprovalKeys: uniqueSorted(releaseReview.persistedApprovalKeys || readinessSummary.persistedApprovalKeys)
+  };
+}
+
+function autoSelectRequested(input = {}) {
+  return booleanFlag(input, [
+    "autoSelectLatestReadyCollectionRun",
+    "auto_select_latest_ready_collection_run",
+    "autoSelectReadyCollectionRun",
+    "auto_select_ready_collection_run"
+  ]);
+}
+
+function collectionRunLookupScope(input = {}, scope = {}) {
+  const collectionRunId = collectionRunIdFrom(input);
+  return Object.assign({}, scope, {
+    collectionRunId,
+    status: collectionRunId ? "" : "ready_for_release_review",
+    limit: 1
+  });
+}
+
+function resolveCollectionRunFromService(collectionRunService, input = {}, scope = {}) {
+  if (!autoSelectRequested(input)) return { collectionRun: null, autoSelection: null };
+  const summary = {
+    schemaVersion: "growth.learningAutomationReleaseDecision.collectionRunAutoSelection.v1",
+    summaryOnly: true,
+    requested: true,
+    strategy: "latest_ready_collection_run",
+    collectionRunId: collectionRunIdFrom(input),
+    status: "blocked"
+  };
+  if (!collectionRunService || typeof collectionRunService.listRuns !== "function") {
+    return {
+      collectionRun: null,
+      autoSelection: Object.assign({}, summary, {
+        error: "learning_automation_release_decision_collection_run_service_unavailable"
+      })
+    };
+  }
+  const result = collectionRunService.listRuns(collectionRunLookupScope(input, scope));
+  if (!result?.ok) {
+    return {
+      collectionRun: null,
+      autoSelection: Object.assign({}, summary, {
+        error: result?.error || "learning_automation_release_decision_collection_run_lookup_failed"
+      })
+    };
+  }
+  const run = asArray(result.runs)[0] || null;
+  if (!run) {
+    return {
+      collectionRun: null,
+      autoSelection: Object.assign({}, summary, {
+        error: "learning_automation_release_decision_ready_collection_run_not_found"
+      })
+    };
+  }
+  return {
+    collectionRun: run,
+    autoSelection: Object.assign({}, summary, {
+      status: "selected",
+      collectionRunId: collectionRunIdFrom({}, run),
+      candidateCount: Number(result.count || asArray(result.runs).length || 0) || 0
+    })
   };
 }
 
@@ -211,15 +279,22 @@ function validationErrors(scope, collectionRun, collectionRunId, status) {
 
 function createLearningAutomationReleaseDecisionService(options = {}) {
   const repository = options.repository || null;
+  const collectionRunService = options.collectionRunService || null;
 
   function evaluateDecision(input = {}) {
-    const collectionRun = artifactFromInput(input, [
+    const inputCollectionRun = artifactFromInput(input, [
       "releaseCollectionRun",
       "release_collection_run",
       "collectionRun",
       "collection_run",
       "run"
     ]);
+    const initialScope = scopeFrom(input, objectOnly(inputCollectionRun));
+    const resolved = inputCollectionRun
+      ? { collectionRun: inputCollectionRun, autoSelection: null }
+      : resolveCollectionRunFromService(collectionRunService, input, initialScope);
+    const collectionRun = resolved.collectionRun;
+    const autoSelection = resolved.autoSelection;
     const scope = scopeFrom(input, objectOnly(collectionRun));
     const status = decisionStatusFrom(input);
     const collectionRunId = collectionRunIdFrom(input, objectOnly(collectionRun));
@@ -232,6 +307,17 @@ function createLearningAutomationReleaseDecisionService(options = {}) {
         error: "learning_automation_release_decision_privacy_failed",
         privacyFindings,
         privateValueFindings
+      };
+    }
+    if (autoSelection?.error) {
+      return {
+        ok: false,
+        status: "blocked",
+        error: autoSelection.error,
+        workspaceId: scope.workspaceId,
+        learnerId: scope.learnerId,
+        collectionRunId,
+        autoSelection
       };
     }
     const missingRequired = validationErrors(scope, collectionRun, collectionRunId, status);
@@ -270,6 +356,8 @@ function createLearningAutomationReleaseDecisionService(options = {}) {
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       collectionRunSummary: collectionSummary,
+      collectionRunAutoSelected: autoSelection?.status === "selected",
+      autoSelection,
       releaseReview,
       decision: decisionSummary(input, status, collectionSummary),
       evidenceSummary: evidenceSummary(status, collectionSummary),

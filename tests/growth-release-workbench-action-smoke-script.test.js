@@ -57,6 +57,7 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--required-tasks", "learning_loop_state",
     "--required-approval-key", "writefulExecutionApproval",
     "--activation-gates", "writeful_execution,background_scheduler",
+    "--auto-select-latest-ready-collection-run",
     "--write-collection-run",
     "--write-release-evidence-records",
     "--release-evidence-bundle-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true }),
@@ -76,6 +77,7 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.deepEqual(input.requiredTaskIds, ["planner_readiness", "learning_loop_state"]);
   assert.deepEqual(input.requiredApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(input.activationGates, ["writeful_execution", "background_scheduler"]);
+  assert.equal(input.autoSelectLatestReadyCollectionRun, true);
   assert.equal(input.writeCollectionRun, true);
   assert.equal(input.writeReleaseEvidenceRecords, true);
   assert.equal(input.releaseEvidenceBundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");

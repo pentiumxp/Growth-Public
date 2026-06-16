@@ -185,7 +185,9 @@ function callWriteService(endpointKey, input, scope, services) {
     return services.releaseCollectionRunService.recordRun(base);
   }
   if (endpointKey === "release_decision") {
-    return services.releaseDecisionService.recordDecision(base);
+    return services.releaseDecisionService.recordDecision(Object.assign({}, base, {
+      autoSelectLatestReadyCollectionRun: true
+    }));
   }
   if (endpointKey === "release_package") {
     const releasePackage = input.releasePackage || input.release_package || input.package;
