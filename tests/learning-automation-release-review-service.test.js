@@ -177,6 +177,13 @@ test("release review reports approved state from latest decision and ready packa
           requiredActor: "owner"
         },
         latestPackageId: "lgapkg_ready",
+        readinessEvidencePresentCount: 30,
+        readinessEvidenceMissingCount: 0,
+        readinessEvidenceSourceBundleId: "lgerb_ready",
+        latestReadinessSnapshotId: "lgrrs_ready",
+        latestReadinessEvidencePresentCount: 30,
+        latestReadinessEvidenceMissingCount: 0,
+        latestReadinessEvidenceSourceBundleId: "lgerb_snapshot",
         writefulSchedulingAllowed: false,
         runtimeConfigChange: false,
         configChangeApplied: false
@@ -200,13 +207,23 @@ test("release review reports approved state from latest decision and ready packa
   assert.equal(result.latestPackage.packageSummary.summaryOnly, true);
   assert.equal(result.latestPackage.stepSummary.stepCount, 6);
   assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(result.latestPackage.releaseDashboardSummary.readinessEvidencePresentCount, 30);
+  assert.equal(result.latestPackage.releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.packageReadback.latestPackageStepCount, 6);
   assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidencePresentCount, 30);
+  assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceMissingCount, 0);
+  assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceSourceBundleId, "lgerb_ready");
+  assert.equal(result.packageReadback.latestPackageDashboardLatestReadinessEvidencePresentCount, 30);
+  assert.equal(result.packageReadback.latestPackageDashboardLatestReadinessEvidenceMissingCount, 0);
+  assert.equal(result.packageReadback.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.packageReadback.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.releaseReview.latestPackageId, "lgapkg_ready");
   assert.equal(result.releaseReview.packageRecordStatus, "ready_for_release_review");
   assert.equal(result.releaseReview.latestPackageStepCount, 6);
   assert.equal(result.releaseReview.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseReview.latestPackageDashboardReadinessEvidencePresentCount, 30);
+  assert.equal(result.releaseReview.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.releaseReview.latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.releaseReview.requiredActionCount, 0);

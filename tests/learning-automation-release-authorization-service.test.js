@@ -51,6 +51,14 @@ function approvedReview(overrides = {}) {
         summaryOnly: true,
         status: "manual_runtime_config_required",
         requiredActionCount: 1,
+        readinessEvidencePresentCount: 30,
+        readinessEvidenceMissingCount: 0,
+        readinessEvidenceSourceBundleId: "lgerb_ready_1",
+        latestReadinessSnapshotId: "lgrrs_ready_1",
+        latestReadinessEvidencePresentCount: 30,
+        latestReadinessEvidenceMissingCount: 0,
+        latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
+        persistedEvidenceKeys: ["ownerReviewEvidence"],
         nextAction: {
           key: "enable_runtime_config_manually",
           action: "perform_platform_runtime_config_enablement",
@@ -71,6 +79,12 @@ function approvedReview(overrides = {}) {
       latestPackageStepCount: 6,
       latestPackageDashboardStatus: "manual_runtime_config_required",
       latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+      latestPackageDashboardReadinessEvidencePresentCount: 30,
+      latestPackageDashboardReadinessEvidenceMissingCount: 0,
+      latestPackageDashboardReadinessEvidenceSourceBundleId: "lgerb_ready_1",
+      latestPackageDashboardLatestReadinessEvidencePresentCount: 30,
+      latestPackageDashboardLatestReadinessEvidenceMissingCount: 0,
+      latestPackageDashboardLatestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestPackageDashboardRequiredActionCount: 1,
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
@@ -88,6 +102,12 @@ function approvedReview(overrides = {}) {
       latestPackageStepCount: 6,
       latestPackageDashboardStatus: "manual_runtime_config_required",
       latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
+      latestPackageDashboardReadinessEvidencePresentCount: 30,
+      latestPackageDashboardReadinessEvidenceMissingCount: 0,
+      latestPackageDashboardReadinessEvidenceSourceBundleId: "lgerb_ready_1",
+      latestPackageDashboardLatestReadinessEvidencePresentCount: 30,
+      latestPackageDashboardLatestReadinessEvidenceMissingCount: 0,
+      latestPackageDashboardLatestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestPackageDashboardRequiredActionCount: 1
     },
     approvalSummary: {
@@ -141,11 +161,17 @@ test("release authorization grants summary-only execution authorization after ap
   assert.equal(result.review.latestPackageStepCount, 6);
   assert.equal(result.review.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.review.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.review.latestPackageDashboardReadinessEvidencePresentCount, 30);
+  assert.equal(result.review.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
   assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceMissingCount, 0);
+  assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceSourceBundleId, "lgerb_ready_1");
   assert.equal(result.packageReadback.latestPackageDashboardRequiredActionCount, 1);
   assert.equal(result.latestPackage.packageId, "lgapkg_ready_1");
   assert.equal(result.latestPackage.stepSummary.stepCount, 6);
   assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(result.latestPackage.releaseDashboardSummary.readinessEvidencePresentCount, 30);
+  assert.deepEqual(result.latestPackage.releaseDashboardSummary.persistedEvidenceKeys, ["ownerReviewEvidence"]);
   assert.equal(result.latestPackage.writefulSchedulingAllowed, false);
   assert.equal(records.reviewInput.collectionRunId, "lgacrn_ready_1");
 });

@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T10:51+08:00 - Release Package Dashboard Readiness Evidence Summary
+
+- Status: implemented and full-Harness validated locally. This slice preserves
+  bounded release-readiness evidence summaries from release dashboard readback
+  through persisted release package audit records, release review,
+  authorization, and closure. It does not deploy, call Gateway/model vendors,
+  publish plans/cards, generate cards, evaluate submissions, execute scheduler
+  actions, run scheduler ticks, deliver notifications, emit platform events,
+  activate stage assessments, mutate learner state, write new business state
+  outside explicit release package audit records, flip runtime config, grant
+  scheduler permission, or change product UI.
+- Scope:
+  - `learning-automation-release-package-service` now writes bounded
+    `releaseDashboardSummary` readiness evidence fields into the existing
+    `release_dashboard_summary_json` audit summary: present/missing counts,
+    source bundle id, latest readiness snapshot id, latest snapshot evidence
+    counts, and persisted evidence keys. No table schema changed.
+  - `learning-automation-release-review-service`,
+    `learning-automation-release-authorization-service`, and
+    `learning-automation-release-closure-service` now preserve those bounded
+    package dashboard fields through `latestPackage`, `packageReadback`, and
+    final review/authorization/closure DTOs.
+  - Release package, repository, review, authorization, closure, architecture
+    boundary, and release package CLI Harness tests now assert the readback
+    chain. Growth architecture, next-stage, implementation, platform-pointer,
+    project context, and this handoff were updated.
+- Focused validation passed:
+  - `node --check src/services/learning-automation-release-package-service.js src/services/learning-automation-release-review-service.js src/services/learning-automation-release-authorization-service.js src/services/learning-automation-release-closure-service.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-package-service.test.js tests/learning-automation-release-package-repository.test.js tests/growth-release-package-script.test.js tests/learning-automation-release-review-service.test.js tests/learning-automation-release-authorization-service.test.js tests/learning-automation-release-closure-service.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`67/67`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - direct `node scripts/build-growth-release-package.js --write-package-record --allow-write`
+    temp-DB smoke wrote a summary-only audit row with `recordOk=true`,
+    `packageStatus=blocked`, `readinessEvidencePresentCount=0`,
+    `readinessEvidenceMissingCount=30`, `writefulSchedulingAllowed=false`,
+    and `runtimeConfigChange=false`.
+- Broad and central validation passed:
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`784/784`);
+  - `git diff --check`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - CodeGraph status reported 343 JavaScript files indexed, 4519 nodes, and
+    18035 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release package dashboard readiness evidence summary wiring; local backend docs and harness only; no production deploy" --json`
+    classified this local backend release/readiness slice as H1 and required a
+    Mac deployment plan. No production deploy command was run because this
+    continuation is local backend/docs/Harness work and no deployment was
+    requested in this turn.
+- Progress calibration:
+  - Previous 80% estimates referred to a narrower release/readiness backend or
+    card-flow denominator. Using the full AI-driven Growth closed-loop MVP
+    denominator, including product UI, central visual evidence, release audit
+    closure, runtime enablement review, and multi-workspace generalization, the
+    current overall progress is about 70-72%. Backend/service/Harness progress
+    is higher; product UI/visual evidence and operational release closure are
+    the remaining large denominator.
+
 ## 2026-06-16T10:31+08:00 - Owner Review Evidence In Release Bundle/Readiness
 
 - Status: implemented and full-Harness validated locally. This slice wires

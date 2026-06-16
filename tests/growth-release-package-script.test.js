@@ -173,6 +173,8 @@ test("release package script can write a summary-only package record to Growth S
     assert.equal(output.record.package.releaseDashboardSummary.runtimeConfigChange, false);
     assert.equal(output.record.package.releaseDashboardSummary.summaryOnly, true);
     assert.equal(output.record.package.releaseDashboardSummary.status.length > 0, true);
+    assert.equal(output.record.package.releaseDashboardSummary.readinessEvidencePresentCount, 0);
+    assert.equal(output.record.package.releaseDashboardSummary.readinessEvidenceMissingCount, 30);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {
@@ -182,6 +184,8 @@ test("release package script can write a summary-only package record to Growth S
       assert.equal(JSON.parse(row.step_summary_json).stepCount, 6);
       assert.equal(JSON.parse(row.release_dashboard_summary_json).runtimeConfigChange, false);
       assert.equal(JSON.parse(row.release_dashboard_summary_json).summaryOnly, true);
+      assert.equal(JSON.parse(row.release_dashboard_summary_json).readinessEvidencePresentCount, 0);
+      assert.equal(JSON.parse(row.release_dashboard_summary_json).readinessEvidenceMissingCount, 30);
     } finally {
       db.close();
     }

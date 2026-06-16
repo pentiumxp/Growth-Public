@@ -328,12 +328,16 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `automation-release-packages.js` into
   `learning_growth_automation_release_packages` only with
   `--write-package-record --allow-write`; package records include bounded
-  `releaseDashboardSummary` in `release_dashboard_summary_json`. The
+  `releaseDashboardSummary` in `release_dashboard_summary_json`, including
+  readiness-evidence present/missing counts, source bundle id, latest readiness
+  snapshot id, latest snapshot evidence counts, and persisted evidence keys.
+  The
   release review, authorization, closure, controls, inventory, and dashboard
   readbacks project that dashboard summary as latest-package dashboard status,
-  next-action key, required-action count, and step count without exposing raw
-  package artifacts; after an approved release decision, release review and
-  authorization require a matching readable package audit record with
+  next-action key, required-action count, step count, and bounded readiness
+  evidence count/source readbacks without exposing raw package artifacts; after
+  an approved release decision, release review and authorization require a
+  matching readable package audit record with
   `packageRecordStatus=ready_for_release_review`, while package dashboard
   fields remain readback only. The
   visible-target scoped

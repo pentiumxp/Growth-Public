@@ -2486,6 +2486,9 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(service, /releaseDashboardService\.dashboard/);
   assert.match(service, /release_dashboard/);
   assert.match(service, /releaseDashboardSummary/);
+  assert.match(service, /readinessEvidencePresentCount/);
+  assert.match(service, /latestReadinessEvidenceMissingCount/);
+  assert.match(service, /persistedEvidenceKeys/);
   assert.match(service, /repository\.savePackage/);
   assert.match(service, /repository\.listPackages/);
   assert.match(service, /release_package_write_not_allowed/);
@@ -2508,12 +2511,25 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.doesNotMatch(service, /activateStageAssessment/);
   assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
+  const reviewService = read(path.join("src", "services", "learning-automation-release-review-service.js"));
+  assert.match(reviewService, /latestPackageDashboardReadinessEvidencePresentCount/);
+  assert.match(reviewService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+
+  const authorizationService = read(path.join("src", "services", "learning-automation-release-authorization-service.js"));
+  assert.match(authorizationService, /latestPackageDashboardReadinessEvidencePresentCount/);
+  assert.match(authorizationService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+
+  const closureService = read(path.join("src", "services", "learning-automation-release-closure-service.js"));
+  assert.match(closureService, /latestPackageDashboardReadinessEvidencePresentCount/);
+  assert.match(closureService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+
   const serviceHarness = read(path.join("tests", "learning-automation-release-package-service.test.js"));
   assert.match(serviceHarness, /composes bundle, audit, readiness, collection run, controls, and dashboard/);
   assert.match(serviceHarness, /keeps blocked release evidence explicit/);
   assert.match(serviceHarness, /rejects private paths/);
   assert.match(serviceHarness, /requires explicit allow-write/);
   assert.match(serviceHarness, /records summary-only package records/);
+  assert.match(serviceHarness, /readinessEvidencePresentCount/);
 
   const scriptHarness = read(path.join("tests", "growth-release-package-script.test.js"));
   assert.match(scriptHarness, /parses package, bundle, and audit options/);
@@ -2521,6 +2537,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(scriptHarness, /fails closed for package-record write without allow-write/);
   assert.match(scriptHarness, /writes summary-only package output/);
   assert.match(scriptHarness, /write a summary-only package record/);
+  assert.match(scriptHarness, /readinessEvidenceMissingCount/);
 
   const routeHarness = read(path.join("tests", "growth-routes.test.js"));
   assert.match(routeHarness, /release-packages\/build/);
@@ -2530,6 +2547,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   const repositoryHarness = read(path.join("tests", "learning-automation-release-package-repository.test.js"));
   assert.match(repositoryHarness, /saves and lists summary-only package records/);
   assert.match(repositoryHarness, /rejects privacy risks/);
+  assert.match(repositoryHarness, /readinessEvidenceSourceBundleId/);
 });
 
 test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {

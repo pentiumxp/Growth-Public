@@ -787,8 +787,10 @@ Implemented backend shape:
   repository migrates `release_dashboard_summary_json` for persisted dashboard
   readback. Release review, controls, inventory, and dashboard readbacks expose
   only bounded latest-package dashboard summary fields (`status`,
-  `nextAction.key`, `requiredActionCount`, and `stepCount`) instead of raw
-  package artifacts. Visible-target scoped
+  `nextAction.key`, `requiredActionCount`, `stepCount`,
+  readiness-evidence present/missing counts, source bundle id, latest readiness
+  snapshot id, latest snapshot evidence counts, and persisted evidence keys)
+  instead of raw package artifacts. Visible-target scoped
   `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an
   existing summary-only package artifact only and does not run smoke tasks. The
@@ -817,8 +819,9 @@ Implemented backend shape:
   non-ready package statuses surface package-specific remediation actions and
   block authorization. When the package record contains
   `releaseDashboardSummary`, review also returns `packageReadback` and
-  `releaseReview.latestPackageDashboard*` summary fields for controls and UI
-  readback. It does not write repositories or tables, run smoke tasks, call
+  `releaseReview.latestPackageDashboard*` summary fields, including bounded
+  readiness-evidence readback counts/source ids, for controls and UI readback.
+  It does not write repositories or tables, run smoke tasks, call
   Gateway, publish, generate, evaluate, schedule, notify, activate stage
   assessments, mutate learner state, or flip runtime config.
 - `npm run smoke:release-authorization` delegates to
@@ -828,7 +831,8 @@ Implemented backend shape:
   service, requires approved review, ready collection run, approved decision,
   and active `writefulExecutionApproval`, and now preserves bounded
   `packageReadback`, `latestPackage.stepSummary.stepCount`, and
-  `latestPackage.releaseDashboardSummary` for Owner/audit readback. A matching
+  `latestPackage.releaseDashboardSummary`, including readiness-evidence
+  readback counts/source ids, for Owner/audit readback. A matching
   readable package audit record must be `ready_for_release_review`; package
   dashboard status remains readback only and is not an additional
   authorization condition. It does not write repositories or tables, run smoke
@@ -839,7 +843,8 @@ Implemented backend shape:
   no-write `growth.learningAutomationReleaseClosure.v1` readback for Owner
   release closure. It composes release-review plus release-authorization
   summaries, exposes package-record readback status, `latestPackage`,
-  `packageReadback`, package dashboard summary fields, `backendEvidenceComplete`,
+  `packageReadback`, package dashboard summary fields including
+  readiness-evidence readback counts/source ids, `backendEvidenceComplete`,
   `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
   required actions, and one next action. It does not write repositories or
   tables, run smoke tasks, call Gateway, publish, generate, evaluate, schedule,

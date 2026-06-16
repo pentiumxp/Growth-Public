@@ -97,10 +97,18 @@ function samplePackage(overrides = {}) {
         action: "perform_platform_runtime_config_enablement",
         requiredActor: "owner"
       },
+      readinessEvidencePresentCount: 2,
+      readinessEvidenceMissingCount: 28,
+      readinessEvidenceSourceBundleId: "lgerb_ready_1",
+      latestReadinessSnapshotId: "lgrrs_ready_1",
+      latestReadinessEvidencePresentCount: 1,
+      latestReadinessEvidenceMissingCount: 29,
+      latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestCollectionRunId: "lgacrn_ready_1",
       missingRecordKinds: ["runtime_enablement"],
       missingCheckKeys: ["runtime_enablement"],
       persistedApprovalKeys: ["writefulExecutionApproval"],
+      persistedEvidenceKeys: ["ownerReviewEvidence"],
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
@@ -127,6 +135,10 @@ test("automation release package repository saves and lists summary-only package
     assert.equal(saved.package.releaseControlsSummary.runtimeConfigChange, false);
     assert.equal(saved.package.releaseDashboardSummary.runtimeConfigChange, false);
     assert.equal(saved.package.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
+    assert.equal(saved.package.releaseDashboardSummary.readinessEvidencePresentCount, 2);
+    assert.equal(saved.package.releaseDashboardSummary.readinessEvidenceMissingCount, 28);
+    assert.equal(saved.package.releaseDashboardSummary.latestReadinessEvidenceMissingCount, 29);
+    assert.deepEqual(saved.package.releaseDashboardSummary.persistedEvidenceKeys, ["ownerReviewEvidence"]);
     assert.equal(JSON.stringify(saved.package).includes("/Users/"), false);
 
     const duplicate = repository.savePackage(samplePackage());
@@ -150,6 +162,8 @@ test("automation release package repository saves and lists summary-only package
     assert.equal(listed[0].packageId, saved.package.packageId);
     assert.equal(listed[0].stepSummary.stepCount, 6);
     assert.equal(listed[0].releaseDashboardSummary.status, "manual_runtime_config_required");
+    assert.equal(listed[0].releaseDashboardSummary.readinessEvidenceSourceBundleId, "lgerb_ready_1");
+    assert.equal(listed[0].releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
   });
 });
 

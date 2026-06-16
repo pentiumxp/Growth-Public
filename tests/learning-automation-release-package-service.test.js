@@ -173,12 +173,20 @@ function dashboard(overrides = {}) {
         action: "perform_platform_runtime_config_enablement",
         requiredActor: "owner"
       },
+      readinessEvidencePresentCount: 2,
+      readinessEvidenceMissingCount: 28,
+      readinessEvidenceSourceBundleId: "lgerb_ready_1",
+      latestReadinessSnapshotId: "lgrrs_ready_1",
+      latestReadinessEvidencePresentCount: 1,
+      latestReadinessEvidenceMissingCount: 29,
+      latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestCollectionRunId: "lgacrn_ready_1",
       latestPackageId: "lgapkg_ready_1",
       missingRecordKinds: ["runtime_enablement"],
       missingCheckKeys: ["runtime_enablement"],
       missingEvidenceKeys: ["scheduler_worker_target_ui"],
       persistedApprovalKeys: ["writefulExecutionApproval"],
+      persistedEvidenceKeys: ["ownerReviewEvidence"],
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
@@ -463,6 +471,13 @@ test("release package service records summary-only package records behind explic
   assert.equal(calls.saved.releaseControlsSummary.runtimeConfigChange, false);
   assert.equal(calls.saved.releaseDashboardSummary.status, "manual_runtime_config_required");
   assert.equal(calls.saved.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
+  assert.equal(calls.saved.releaseDashboardSummary.readinessEvidencePresentCount, 2);
+  assert.equal(calls.saved.releaseDashboardSummary.readinessEvidenceMissingCount, 28);
+  assert.equal(calls.saved.releaseDashboardSummary.readinessEvidenceSourceBundleId, "lgerb_ready_1");
+  assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidencePresentCount, 1);
+  assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidenceMissingCount, 29);
+  assert.equal(calls.saved.releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
+  assert.deepEqual(calls.saved.releaseDashboardSummary.persistedEvidenceKeys, ["ownerReviewEvidence"]);
   assert.equal(JSON.stringify(calls.saved).includes("artifacts"), false);
   assert.equal(JSON.stringify(calls.saved).includes("productionPlannerReadinessEvidence"), false);
 

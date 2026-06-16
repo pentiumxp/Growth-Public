@@ -302,6 +302,13 @@ function dashboardSummaryFromPackage(dashboard = {}) {
       requiredActor: cleanString(nextAction.requiredActor || nextAction.required_actor, 80)
     } : null,
     latestCollectionRunId: cleanString(releaseDashboard.latestCollectionRunId || releaseDashboard.latest_collection_run_id, 160),
+    readinessEvidencePresentCount: Number(releaseDashboard.readinessEvidencePresentCount || releaseDashboard.readiness_evidence_present_count || 0) || 0,
+    readinessEvidenceMissingCount: Number(releaseDashboard.readinessEvidenceMissingCount || releaseDashboard.readiness_evidence_missing_count || 0) || 0,
+    readinessEvidenceSourceBundleId: cleanString(releaseDashboard.readinessEvidenceSourceBundleId || releaseDashboard.readiness_evidence_source_bundle_id, 180),
+    latestReadinessSnapshotId: cleanString(releaseDashboard.latestReadinessSnapshotId || releaseDashboard.latest_readiness_snapshot_id, 180),
+    latestReadinessEvidencePresentCount: Number(releaseDashboard.latestReadinessEvidencePresentCount || releaseDashboard.latest_readiness_evidence_present_count || 0) || 0,
+    latestReadinessEvidenceMissingCount: Number(releaseDashboard.latestReadinessEvidenceMissingCount || releaseDashboard.latest_readiness_evidence_missing_count || 0) || 0,
+    latestReadinessEvidenceSourceBundleId: cleanString(releaseDashboard.latestReadinessEvidenceSourceBundleId || releaseDashboard.latest_readiness_evidence_source_bundle_id, 180),
     latestPackageId: cleanString(releaseDashboard.latestPackageId || releaseDashboard.latest_package_id, 160),
     latestDecisionId: cleanString(releaseDashboard.latestDecisionId || releaseDashboard.latest_decision_id, 160),
     latestActivationId: cleanString(releaseDashboard.latestActivationId || releaseDashboard.latest_activation_id, 160),
@@ -313,6 +320,7 @@ function dashboardSummaryFromPackage(dashboard = {}) {
     missingEvidenceKeys: uniqueStrings(releaseDashboard.missingEvidenceKeys || releaseDashboard.missing_evidence_keys || []),
     missingApprovalKeys: uniqueStrings(releaseDashboard.missingApprovalKeys || releaseDashboard.missing_approval_keys || []),
     persistedApprovalKeys: uniqueStrings(releaseDashboard.persistedApprovalKeys || releaseDashboard.persisted_approval_keys || []),
+    persistedEvidenceKeys: uniqueStrings(releaseDashboard.persistedEvidenceKeys || releaseDashboard.persisted_evidence_keys || []),
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
