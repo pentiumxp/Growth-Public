@@ -2,6 +2,9 @@
 
 const path = require("node:path");
 const { UI_GATE_SPECS } = require("./learning-automation-ui-evidence-service");
+const {
+  UI_EVIDENCE_COLLECTION_TASKS
+} = require("./learning-automation-ui-evidence-task-registry");
 
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
@@ -135,13 +138,14 @@ const TASK_DEFINITIONS = Object.freeze([
     script: "scripts/smoke-growth-central-visual-evidence.js",
     commandName: "npm run smoke:central-visual-evidence"
   },
-  {
-    taskId: "release_package_review_ui",
-    evidenceKey: "releasePackageReviewUiEvidence",
+  ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => ({
+    taskId: task.taskId,
+    evidenceKey: task.evidenceKey,
     script: "scripts/smoke-growth-ui-evidence.js",
     commandName: "npm run smoke:ui-evidence",
-    uiEvidenceKey: "releasePackageReviewUiEvidence"
-  },
+    uiEvidenceKey: task.evidenceKey,
+    uiEvidenceFileField: task.fileField
+  })),
   {
     taskId: "scheduler_dry_run",
     evidenceKey: "productionSchedulerDryRunSmokeEvidence",
@@ -337,7 +341,7 @@ function publicScope(input = {}) {
   const targetNodeIds = uniqueStrings(input.targetNodeIds || input.target_node_ids || []);
   const dailyLoopWriteOperation = cleanString(input.dailyLoopWriteOperation || input.daily_loop_write_operation || "draft", 40).toLowerCase() || "draft";
   const learnerCycleOperation = cleanString(input.learnerCycleOperation || input.learner_cycle_operation || "audit", 40).toLowerCase() || "audit";
-  return {
+  const scope = {
     workspaceId,
     learnerId: cleanString(input.learnerId || input.learner_id || workspaceId, 120),
     programId: cleanString(input.programId || input.program_id, 120),
@@ -364,7 +368,6 @@ function publicScope(input = {}) {
     visualPluginId: cleanString(input.visualPluginId || input.visual_plugin_id || input.pluginId || input.plugin_id || "growth", 80) || "growth",
     visualScenario: cleanString(input.visualScenario || input.visual_scenario || input.scenario || "embedded-plugin-shell", 120) || "embedded-plugin-shell",
     centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500),
-    releasePackageReviewUiEvidenceFile: cleanString(input.releasePackageReviewUiEvidenceFile || input.release_package_review_ui_evidence_file || "", 500),
     activationGates: uniqueStrings(input.activationGates || input.activation_gates || []),
     requiredApprovalKeys: uniqueStrings(input.requiredApprovalKeys || input.required_approval_keys || []),
     activationRecordLimit: clampRecordLimit(input.activationRecordLimit || input.activation_record_limit || 20, 20),
@@ -380,15 +383,21 @@ function publicScope(input = {}) {
     schedulerRunUiEvidence: booleanFlag(input.schedulerRunUiEvidence || input.scheduler_run_ui_evidence),
     schedulerWorkerTargetUiEvidence: booleanFlag(input.schedulerWorkerTargetUiEvidence || input.scheduler_worker_target_ui_evidence)
   };
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    scope[task.fileField] = cleanString(input[task.fileField] || input[task.fileBodyField] || "", 500);
+  }
+  return scope;
 }
 
 function publicBundleScope(scope = {}) {
   const output = Object.assign({}, scope, {
-    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile),
-    releasePackageReviewUiEvidenceFilePresent: Boolean(scope.releasePackageReviewUiEvidenceFile)
+    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile)
   });
   delete output.centralVisualEvidenceFile;
-  delete output.releasePackageReviewUiEvidenceFile;
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    output[`${task.fileField}Present`] = Boolean(scope[task.fileField]);
+    delete output[task.fileField];
+  }
   return output;
 }
 
@@ -1065,9 +1074,10 @@ function taskSpecificArgs(task, scope) {
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
   }
-  if (task.taskId === "release_package_review_ui") {
-    args.push("--evidence-key", task.uiEvidenceKey || "releasePackageReviewUiEvidence");
-    if (scope.releasePackageReviewUiEvidenceFile) args.push("--ui-evidence-file", scope.releasePackageReviewUiEvidenceFile);
+  if (task.uiEvidenceKey) {
+    args.push("--evidence-key", task.uiEvidenceKey);
+    const evidenceFile = scope[task.uiEvidenceFileField];
+    if (evidenceFile) args.push("--ui-evidence-file", evidenceFile);
   }
   if (task.taskId === "owner_review_evidence") {
     if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));

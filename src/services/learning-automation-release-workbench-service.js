@@ -1,6 +1,11 @@
 "use strict";
 
 const RELEASE_WORKBENCH_SCHEMA = "growth.learningAutomationReleaseWorkbench.v1";
+const {
+  UI_EVIDENCE_COLLECTION_TASKS,
+  UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
+  UI_EVIDENCE_FILE_FIELDS
+} = require("./learning-automation-ui-evidence-task-registry");
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
@@ -20,7 +25,7 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
   "proposal",
   "platform_action",
   "central_visual",
-  "release_package_review_ui",
+  ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => task.taskId),
   "scheduler_dry_run",
   "action_handoff",
   "scheduler_execution",
@@ -51,7 +56,7 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
   production_scheduler_dry_run_smoke_evidence: "scheduler_dry_run",
   platform_action_evidence: "platform_action",
   central_visual_evidence: "central_visual",
-  release_package_review_ui_evidence: "release_package_review_ui",
+  ...UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
   release_workbench_smoke_evidence: "release_workbench",
   owner_review_evidence: "owner_review_evidence"
 });
@@ -61,8 +66,7 @@ const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
-  "releasePackageReviewUiEvidenceFile",
-  "release_package_review_ui_evidence_file"
+  ...UI_EVIDENCE_FILE_FIELDS
 ]);
 
 function cleanString(value, max = 160) {
@@ -272,8 +276,9 @@ function releaseEvidenceCollectionBody(scope = {}, taskIds = [], requiredTaskIds
   if (asArray(taskIds).includes("central_visual")) {
     body.central_visual_evidence_file = "";
   }
-  if (asArray(taskIds).includes("release_package_review_ui")) {
-    body.release_package_review_ui_evidence_file = "";
+  const selectedTaskIds = new Set(asArray(taskIds));
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    if (selectedTaskIds.has(task.taskId)) body[task.fileBodyField] = "";
   }
   return body;
 }

@@ -9,6 +9,50 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T06:35+08:00 - Registry-Driven UI Evidence Collection Tasks
+
+- Status: implemented and locally validated; not deployed in this slice.
+- Change intent:
+  - close the remaining Owner workbench collection gap where only
+    `release_package_review_ui` could be collected automatically while the
+    release-readiness validator already defined nine UI evidence gates;
+  - keep Growth as a summary-only consumer of Home AI visual/UI artifacts,
+    without running visual tooling in the plugin workspace.
+- Scope:
+  - added `learning-automation-ui-evidence-task-registry`, deriving the nine
+    UI collection tasks and transient `*_ui_evidence_file` field names from
+    `UI_GATE_SPECS`;
+  - release evidence bundle, collection, workbench, action service, CLI, route,
+    and Owner UI payload code now consume that registry instead of the prior
+    release-package-only branch;
+  - release-readiness route normalization now carries the digest, action
+    handoff, scheduler execution, scheduler run, and worker-target UI evidence
+    fields in addition to the older UI evidence fields;
+  - public bundle scope strips raw evidence file paths and exposes only
+    `...FilePresent` booleans; action/workbench privacy scans redact only the
+    whitelisted transient evidence-file fields and still reject private paths
+    elsewhere.
+- Boundary notes:
+  - no Home AI visual harness, Appium, live browser, or central visual lane ran
+    in this plugin workspace;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - focused Harness:
+    `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `176/176`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=202` and
+    `checkedCount=202`;
+  - `npm test` passed `872/872`.
+- Remaining gates:
+  - real Home AI visual/UI summary artifacts still need to be collected for
+    release readiness;
+  - production deployment remains separate and should happen only after the
+    user explicitly asks for deployment.
+
 ## 2026-06-17T05:20+08:00 - Release Evidence Collection UI Record Preservation
 
 - Status: implemented and locally validated.

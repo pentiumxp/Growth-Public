@@ -1,6 +1,9 @@
 const fs = require("node:fs");
 const { bearerFrom, readJson, routeError, sendJson } = require("./http-utils");
 const { listGrowthMcpSchemas } = require("../mcp/growth-mcp-schemas");
+const {
+  UI_EVIDENCE_COLLECTION_TASKS
+} = require("../services/learning-automation-ui-evidence-task-registry");
 
 const DEFAULT_JSON_LIMIT_BYTES = 1024 * 1024;
 const SUBMISSION_JSON_LIMIT_BYTES = 16 * 1024 * 1024;
@@ -724,7 +727,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
   const releaseApproval = merged.releaseApproval || merged.release_approval || merged.approvals
     ? releaseApprovalFromBody(merged)
     : undefined;
-  return {
+  return Object.assign({
     workspaceId,
     learnerId: merged.learnerId || merged.learner_id || target?.workspaceId || workspaceId,
     displayName: target?.label || merged.displayName || merged.display_name,
@@ -759,7 +762,6 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     releaseReadinessFile: merged.releaseReadinessFile || merged.release_readiness_file || merged.readinessFile || merged.readiness_file,
     releaseCollectionRunFile: merged.releaseCollectionRunFile || merged.release_collection_run_file || merged.collectionRunFile || merged.collection_run_file || merged.runFile || merged.run_file,
     centralVisualEvidenceFile: merged.centralVisualEvidenceFile || merged.central_visual_evidence_file,
-    releasePackageReviewUiEvidenceFile: merged.releasePackageReviewUiEvidenceFile || merged.release_package_review_ui_evidence_file,
     releasePackage: merged.releasePackage || merged.release_package || merged.package,
     activationDecision: merged.activationDecision || merged.activation_decision || merged.ownerActivationDecision || merged.owner_activation_decision,
     enablementDecision: merged.enablementDecision || merged.enablement_decision || merged.ownerEnablementDecision || merged.owner_enablement_decision,
@@ -781,7 +783,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     writeReleaseEvidenceRecords: merged.writeReleaseEvidenceRecords === true || merged.write_release_evidence_records === true || merged.recordReleaseEvidenceRecords === true || merged.record_release_evidence_records === true,
     allowWriteCollection: true,
     ownerAuthorizedWrite: true
-  };
+  }, uiEvidenceFileInputFromBody(merged));
 }
 
 function normalizeAutomationRuntimeEnablementRecordInput(body, workspaceId, target, request, url) {
@@ -824,6 +826,11 @@ function readinessEvidenceFromBody(body = {}) {
     platformActionEvidence: body.platformActionEvidence || body.platform_action_evidence || evidence.platformActionEvidence || evidence.platform_action_evidence,
     centralVisualEvidence: body.centralVisualEvidence || body.central_visual_evidence || evidence.centralVisualEvidence || evidence.central_visual_evidence,
     releasePackageReviewUiEvidence: body.releasePackageReviewUiEvidence || body.release_package_review_ui_evidence || evidence.releasePackageReviewUiEvidence || evidence.release_package_review_ui_evidence,
+    automationDigestUiEvidence: body.automationDigestUiEvidence || body.automation_digest_ui_evidence || evidence.automationDigestUiEvidence || evidence.automation_digest_ui_evidence,
+    automationActionHandoffUiEvidence: body.automationActionHandoffUiEvidence || body.automation_action_handoff_ui_evidence || evidence.automationActionHandoffUiEvidence || evidence.automation_action_handoff_ui_evidence,
+    schedulerExecutionUiEvidence: body.schedulerExecutionUiEvidence || body.scheduler_execution_ui_evidence || evidence.schedulerExecutionUiEvidence || evidence.scheduler_execution_ui_evidence,
+    schedulerRunUiEvidence: body.schedulerRunUiEvidence || body.scheduler_run_ui_evidence || evidence.schedulerRunUiEvidence || evidence.scheduler_run_ui_evidence,
+    schedulerWorkerTargetUiEvidence: body.schedulerWorkerTargetUiEvidence || body.scheduler_worker_target_ui_evidence || evidence.schedulerWorkerTargetUiEvidence || evidence.scheduler_worker_target_ui_evidence,
     releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence || evidence.releaseWorkbenchSmokeEvidence || evidence.release_workbench_smoke_evidence,
     ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence || evidence.ownerReviewEvidence || evidence.owner_review_evidence || evidence.automationOwnerReviewEvidence || evidence.automation_owner_review_evidence
   });
@@ -840,6 +847,11 @@ function readinessEvidenceFromQuery(url) {
     platformActionEvidence: truthy(url.searchParams.get("platformActionEvidence") || url.searchParams.get("platform_action_evidence")),
     centralVisualEvidence: truthy(url.searchParams.get("centralVisualEvidence") || url.searchParams.get("central_visual_evidence")),
     releasePackageReviewUiEvidence: truthy(url.searchParams.get("releasePackageReviewUiEvidence") || url.searchParams.get("release_package_review_ui_evidence")),
+    automationDigestUiEvidence: truthy(url.searchParams.get("automationDigestUiEvidence") || url.searchParams.get("automation_digest_ui_evidence")),
+    automationActionHandoffUiEvidence: truthy(url.searchParams.get("automationActionHandoffUiEvidence") || url.searchParams.get("automation_action_handoff_ui_evidence")),
+    schedulerExecutionUiEvidence: truthy(url.searchParams.get("schedulerExecutionUiEvidence") || url.searchParams.get("scheduler_execution_ui_evidence")),
+    schedulerRunUiEvidence: truthy(url.searchParams.get("schedulerRunUiEvidence") || url.searchParams.get("scheduler_run_ui_evidence")),
+    schedulerWorkerTargetUiEvidence: truthy(url.searchParams.get("schedulerWorkerTargetUiEvidence") || url.searchParams.get("scheduler_worker_target_ui_evidence")),
     releaseWorkbenchSmokeEvidence: truthy(url.searchParams.get("releaseWorkbenchSmokeEvidence") || url.searchParams.get("release_workbench_smoke_evidence") || url.searchParams.get("releaseWorkbenchEvidence") || url.searchParams.get("release_workbench_evidence")),
     ownerReviewEvidence: truthy(url.searchParams.get("ownerReviewEvidence") || url.searchParams.get("owner_review_evidence") || url.searchParams.get("automationOwnerReviewEvidence") || url.searchParams.get("automation_owner_review_evidence"))
   };
@@ -968,7 +980,7 @@ function normalizeAutomationReleasePackageInput(body, workspaceId, target, reque
 }
 
 function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, request, url) {
-  return {
+  return Object.assign({
     workspaceId,
     learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
     displayName: target?.label || body.displayName || body.display_name,
@@ -1010,7 +1022,6 @@ function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, 
     releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence,
     ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence,
     centralVisualEvidenceFile: body.centralVisualEvidenceFile || body.central_visual_evidence_file,
-    releasePackageReviewUiEvidenceFile: body.releasePackageReviewUiEvidenceFile || body.release_package_review_ui_evidence_file,
     evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
     releaseApproval: releaseApprovalFromBody(body),
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
@@ -1020,7 +1031,7 @@ function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, 
     writePackageRecord: body.writePackageRecord === true || body.write_package_record === true || body.recordPackage === true || body.record_package === true,
     allowWritePackage: true,
     ownerAuthorizedWrite: true
-  };
+  }, uiEvidenceFileInputFromBody(body));
 }
 
 function normalizeAutomationReleaseEvidenceCollectionInput(body, workspaceId, target, request, url) {
@@ -1303,6 +1314,14 @@ function csvStrings(value = "") {
 function listFromBodyValue(value) {
   if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean);
   return csvStrings(value);
+}
+
+function uiEvidenceFileInputFromBody(body = {}) {
+  const output = {};
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    output[task.fileField] = body[task.fileField] || body[task.fileBodyField];
+  }
+  return output;
 }
 
 function normalizeProfileCorrectionListInput(url, target) {

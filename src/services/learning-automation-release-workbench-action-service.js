@@ -1,14 +1,16 @@
 "use strict";
 
 const RELEASE_WORKBENCH_ACTION_SCHEMA = "growth.learningAutomationReleaseWorkbenchAction.v1";
+const {
+  UI_EVIDENCE_FILE_FIELDS
+} = require("./learning-automation-ui-evidence-task-registry");
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
-  "releasePackageReviewUiEvidenceFile",
-  "release_package_review_ui_evidence_file"
+  ...UI_EVIDENCE_FILE_FIELDS
 ]);
 
 const SUPPORTED_ENDPOINTS = Object.freeze([

@@ -204,14 +204,16 @@ test("release workbench action records evidence through the existing evidence se
 test("release workbench action runs evidence collection even when readiness remains incomplete", () => {
   const { service, calls } = serviceWith();
   const releasePackageReviewUiEvidenceFile = "/Users/hermes-dev/.homeai-qa/release-package-review-ui.json";
+  const schedulerRunUiEvidenceFile = "/Users/hermes-dev/.homeai-qa/scheduler-run-ui.json";
   const result = service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence_collection",
     actionKey: "release_collection_run",
-    tasks: ["learning_loop_state", "release_package_review_ui"],
-    requiredTaskIds: ["learning_loop_state", "release_package_review_ui"],
+    tasks: ["learning_loop_state", "release_package_review_ui", "scheduler_run_ui"],
+    requiredTaskIds: ["learning_loop_state", "release_package_review_ui", "scheduler_run_ui"],
     releasePackageReviewUiEvidenceFile,
+    schedulerRunUiEvidenceFile,
     writeCollectionRun: true,
     writeReleaseEvidenceRecords: true,
     requestedBy: "owner"
@@ -225,9 +227,10 @@ test("release workbench action runs evidence collection even when readiness rema
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
   assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence_collection"]);
-  assert.deepEqual(calls[1][1].tasks, ["learning_loop_state", "release_package_review_ui"]);
-  assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state", "release_package_review_ui"]);
+  assert.deepEqual(calls[1][1].tasks, ["learning_loop_state", "release_package_review_ui", "scheduler_run_ui"]);
+  assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state", "release_package_review_ui", "scheduler_run_ui"]);
   assert.equal(calls[1][1].releasePackageReviewUiEvidenceFile, releasePackageReviewUiEvidenceFile);
+  assert.equal(calls[1][1].schedulerRunUiEvidenceFile, schedulerRunUiEvidenceFile);
   assert.equal(calls[1][1].writeCollectionRun, true);
   assert.equal(calls[1][1].writeReleaseEvidenceRecords, true);
   assert.equal(calls[1][1].allowWriteCollection, true);

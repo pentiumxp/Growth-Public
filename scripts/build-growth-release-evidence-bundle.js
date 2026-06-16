@@ -6,6 +6,9 @@ const { spawnSync } = require("node:child_process");
 const {
   createLearningAutomationReleaseEvidenceBundleService
 } = require("../src/services/learning-automation-release-evidence-bundle-service");
+const {
+  UI_EVIDENCE_COLLECTION_TASKS
+} = require("../src/services/learning-automation-ui-evidence-task-registry");
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -95,9 +98,21 @@ function requiredApprovalKeys(args) {
   ]);
 }
 
+function uiEvidenceFileInputFromArgs(args) {
+  const output = {};
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    const names = [task.fileFlag, `--${task.fileField}`];
+    if (task.evidenceKey === "releasePackageReviewUiEvidence") {
+      names.push("--ui-evidence-file", "--uiEvidenceFile");
+    }
+    output[task.fileField] = firstArgValue(args, names, "");
+  }
+  return output;
+}
+
 function inputFromArgs(args) {
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], "");
-  return {
+  return Object.assign({
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -127,7 +142,6 @@ function inputFromArgs(args) {
     visualPluginId: firstArgValue(args, ["--visual-plugin-id", "--visualPluginId", "--plugin-id", "--pluginId"], "growth") || "growth",
     visualScenario: firstArgValue(args, ["--visual-scenario", "--visualScenario", "--scenario"], "embedded-plugin-shell") || "embedded-plugin-shell",
     centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
-    releasePackageReviewUiEvidenceFile: firstArgValue(args, ["--release-package-review-ui-evidence-file", "--releasePackageReviewUiEvidenceFile"], ""),
     activationGates: activationGates(args),
     requiredApprovalKeys: requiredApprovalKeys(args),
     activationRecordLimit: recordLimitArg(args, ["--activation-record-limit", "--activationRecordLimit"], 20),
@@ -142,7 +156,7 @@ function inputFromArgs(args) {
     schedulerExecutionUiEvidence: hasFlag(args, "--scheduler-execution-ui-evidence") || hasFlag(args, "--schedulerExecutionUiEvidence"),
     schedulerRunUiEvidence: hasFlag(args, "--scheduler-run-ui-evidence") || hasFlag(args, "--schedulerRunUiEvidence"),
     schedulerWorkerTargetUiEvidence: hasFlag(args, "--scheduler-worker-target-ui-evidence") || hasFlag(args, "--schedulerWorkerTargetUiEvidence")
-  };
+  }, uiEvidenceFileInputFromArgs(args));
 }
 
 function outputFileFromArgs(args) {

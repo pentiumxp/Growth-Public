@@ -7,6 +7,18 @@
     return Array.isArray(value) ? value : [];
   }
 
+  const UI_EVIDENCE_FILE_FIELDS = Object.freeze([
+    "owner_daily_ui_evidence_file",
+    "owner_audit_ui_evidence_file",
+    "proposal_review_ui_evidence_file",
+    "release_package_review_ui_evidence_file",
+    "automation_digest_ui_evidence_file",
+    "automation_action_handoff_ui_evidence_file",
+    "scheduler_execution_ui_evidence_file",
+    "scheduler_run_ui_evidence_file",
+    "scheduler_worker_target_ui_evidence_file"
+  ]);
+
   function defaultEscapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -667,7 +679,9 @@
         payload.auto_select_latest_completed_cycle = true;
       }
       payload.central_visual_evidence_file = clean(routeBody.central_visual_evidence_file || routeBody.centralVisualEvidenceFile);
-      payload.release_package_review_ui_evidence_file = clean(routeBody.release_package_review_ui_evidence_file || routeBody.releasePackageReviewUiEvidenceFile);
+      for (const field of UI_EVIDENCE_FILE_FIELDS) {
+        payload[field] = clean(routeBody[field]);
+      }
     }
     if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
       payload.release_package = releasePackage;

@@ -7,6 +7,9 @@ const {
 const {
   UI_GATE_SPECS
 } = require("./learning-automation-ui-evidence-service");
+const {
+  UI_EVIDENCE_FILE_FIELDS
+} = require("./learning-automation-ui-evidence-task-registry");
 
 const RELEASE_EVIDENCE_COLLECTION_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.v1";
 const RELEASE_EVIDENCE_RECORDS_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.records.v1";
@@ -15,8 +18,7 @@ const UI_EVIDENCE_KEY_SET = new Set(Object.keys(UI_GATE_SPECS));
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
-  "releasePackageReviewUiEvidenceFile",
-  "release_package_review_ui_evidence_file"
+  ...UI_EVIDENCE_FILE_FIELDS
 ]);
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;

@@ -78,7 +78,15 @@ test("release evidence bundle service normalizes scope and task args", () => {
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
     centralVisualEvidenceFile: "",
+    ownerDailyUiEvidenceFile: "",
+    ownerAuditUiEvidenceFile: "",
+    proposalReviewUiEvidenceFile: "",
     releasePackageReviewUiEvidenceFile: "",
+    automationDigestUiEvidenceFile: "",
+    automationActionHandoffUiEvidenceFile: "",
+    schedulerExecutionUiEvidenceFile: "",
+    schedulerRunUiEvidenceFile: "",
+    schedulerWorkerTargetUiEvidenceFile: "",
     activationGates: [],
     requiredApprovalKeys: [],
     activationRecordLimit: 20,
@@ -981,6 +989,71 @@ test("release evidence bundle service collects explicit release package review U
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-ui-evidence.js"));
   assert.ok(calls[0].args.includes("--evidence-key"));
   assert.ok(calls[0].args.includes("releasePackageReviewUiEvidence"));
+  assert.ok(calls[0].args.includes("--ui-evidence-file"));
+  assert.ok(calls[0].args.includes(evidenceFile));
+});
+
+test("release evidence bundle service collects any registered UI evidence task without leaking file paths", () => {
+  const evidenceFile = "/Users/hermes-dev/.homeai-qa/scheduler-run-ui.json";
+  const { calls, service } = createServiceWithRunner((command, args) => {
+    const evidenceKey = args[args.indexOf("--evidence-key") + 1];
+    assert.equal(evidenceKey, "schedulerRunUiEvidence");
+    return {
+      status: 0,
+      stdout: JSON.stringify({
+        ok: true,
+        source: "growth-learning-automation-ui-evidence-service",
+        schemaVersion: "growth.learningAutomationUiEvidence.v1",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        evidenceKey,
+        checkKey: "scheduler_run_ui_evidence",
+        uiGate: "scheduler_run",
+        status: "pass",
+        readyForReleaseEvidence: true,
+        uiEvidence: {
+          source: "home-ai-ios-pwa-visual-harness",
+          evidenceKey,
+          checkKey: "scheduler_run_ui_evidence",
+          uiGate: "scheduler_run",
+          status: "pass",
+          screenshotPresent: true,
+          domEvidencePresent: true,
+          evidenceFilePresent: true,
+          evidenceFileName: "scheduler-run-ui.json",
+          coverage: ["run_history", "default_disabled", "partial_failure_state"],
+          requiredCoverage: ["run_history", "default_disabled", "partial_failure_state"],
+          assertionCount: 3,
+          failedAssertionCount: 0
+        },
+        uiEvidenceBoundary: {
+          summaryOnly: true,
+          growthReadsOnlyEvidenceArtifacts: true,
+          growthRunsNoVisualTooling: true,
+          homeAiOwnsVisualHarness: true,
+          noLearnerStateMutation: true,
+          noModelCalls: true
+        },
+        missingRequired: []
+      })
+    };
+  });
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["scheduler_run_ui"],
+    schedulerRunUiEvidenceFile: evidenceFile
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["schedulerRunUiEvidence"]);
+  assert.equal(result.bundle.evidence.schedulerRunUiEvidence.checkKey, "scheduler_run_ui_evidence");
+  assert.equal(result.bundle.evidence.schedulerRunUiEvidence.uiGate, "scheduler_run");
+  assert.equal(result.bundle.scope.schedulerRunUiEvidenceFilePresent, true);
+  assert.equal(result.bundle.scope.schedulerRunUiEvidenceFile, undefined);
+  assert.equal(JSON.stringify(result.bundle).includes(evidenceFile), false);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-ui-evidence.js"));
   assert.ok(calls[0].args.includes("--ui-evidence-file"));
   assert.ok(calls[0].args.includes(evidenceFile));
 });

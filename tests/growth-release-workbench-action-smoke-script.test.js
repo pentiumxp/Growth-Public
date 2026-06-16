@@ -67,6 +67,7 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--release-decision-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseDecision.v1", summaryOnly: true }),
     "--central-visual-evidence-file", "/tmp/central-visual.json",
     "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
+    "--scheduler-run-ui-evidence-file", "/tmp/scheduler-run-ui.json",
     "--evidence-json", JSON.stringify({ evidenceId: "ui_1" }),
     "--requested-by", "owner"
   ]);
@@ -89,6 +90,7 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.releaseDecision.schemaVersion, "growth.learningAutomationReleaseDecision.v1");
   assert.equal(input.centralVisualEvidenceFile, "/tmp/central-visual.json");
   assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
+  assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
 });

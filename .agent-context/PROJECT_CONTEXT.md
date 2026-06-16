@@ -26,6 +26,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GROWTH_REGISTRATION_KEY_PATH`.
 - Workspace binding: `.hermes-growth/config.json` and
   `.hermes-growth/access-key.txt`.
+- Release UI evidence collection is registry-driven for the nine Growth
+  release UI gates: owner daily, owner audit, proposal review, release package
+  review, automation digest, automation action handoff, scheduler execution,
+  scheduler run, and scheduler worker target. Owner workbench collection
+  actions may forward only transient `*_ui_evidence_file` summary-artifact
+  inputs to the bundle/collection services; public artifacts expose only
+  bounded validator summaries and `...FilePresent` booleans, never raw local
+  artifact paths.
 - Current implementation owns plugin SQLite read projections, migrated audio
   playback, historical audio BLOB backfill tooling, workspace-bound read-only
   MCP tools, workspace-bearer submission/reflection evidence write endpoints,

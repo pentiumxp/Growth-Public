@@ -3,6 +3,9 @@
 
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
+const {
+  UI_EVIDENCE_COLLECTION_TASKS
+} = require("../src/services/learning-automation-ui-evidence-task-registry");
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -57,12 +60,24 @@ function parseJsonArg(args, names, fallback = undefined) {
   return JSON.parse(raw);
 }
 
+function uiEvidenceFileInputFromArgs(args) {
+  const output = {};
+  for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
+    const names = [task.fileFlag, `--${task.fileField}`];
+    if (task.evidenceKey === "releasePackageReviewUiEvidence") {
+      names.push("--ui-evidence-file", "--uiEvidenceFile");
+    }
+    output[task.fileField] = firstArgValue(args, names, "");
+  }
+  return output;
+}
+
 function inputFromArgs(args) {
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], "");
   const activationGate = firstArgValue(args, ["--activation-gate", "--activationGate"], "");
   const activationGates = splitCsv(firstArgValue(args, ["--activation-gates", "--activationGates"], ""))
     .concat(activationGate ? [activationGate] : []);
-  return {
+  return Object.assign({
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -91,7 +106,6 @@ function inputFromArgs(args) {
     releaseCollectionRun: parseJsonArg(args, ["--release-collection-run-json", "--releaseCollectionRunJson", "--collection-run-json", "--collectionRunJson", "--run-json", "--runJson"], undefined),
     releaseDecision: parseJsonArg(args, ["--release-decision-json", "--releaseDecisionJson", "--decision-json", "--decisionJson"], undefined),
     centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
-    releasePackageReviewUiEvidenceFile: firstArgValue(args, ["--release-package-review-ui-evidence-file", "--releasePackageReviewUiEvidenceFile", "--ui-evidence-file", "--uiEvidenceFile"], ""),
     releasePackage: parseJsonArg(args, ["--release-package-json", "--releasePackageJson"], undefined),
     action: parseJsonArg(args, ["--action-json", "--actionJson"], undefined),
     evidence: parseJsonArg(args, ["--evidence-json", "--evidenceJson"], undefined),
@@ -106,7 +120,7 @@ function inputFromArgs(args) {
     recordedBy: firstArgValue(args, ["--recorded-by", "--recordedBy", "--approved-by", "--approvedBy"], ""),
     recordedAt: firstArgValue(args, ["--recorded-at", "--recordedAt", "--approved-at", "--approvedAt"], ""),
     createdAt: firstArgValue(args, ["--created-at", "--createdAt"], "")
-  };
+  }, uiEvidenceFileInputFromArgs(args));
 }
 
 function validateInput(input = {}, allowWrite = false) {
