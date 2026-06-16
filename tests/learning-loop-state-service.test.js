@@ -323,7 +323,9 @@ test("learning loop state projects a summary-only ready-to-draft state", () => {
     learnerId: "fanfan",
     programId: "program_science",
     domain: "science",
-    subject: "science"
+    subject: "science",
+    taskCardId: "ltask_science_1",
+    evaluationId: "eval_science_1"
   });
 
   assert.equal(result.ok, true);

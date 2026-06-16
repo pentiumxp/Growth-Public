@@ -42,6 +42,7 @@ const { createLearningPlanOrchestratorService } = require("../src/services/learn
 const { createLearningPlanPublisherService } = require("../src/services/learning-plan-publisher-service");
 const { createLearningPlanValidationService } = require("../src/services/learning-plan-validation-service");
 const { createLearningPlannerContextService } = require("../src/services/learning-planner-context-service");
+const { createLearningRewardAuditService } = require("../src/services/learning-reward-audit-service");
 const { createLearningStageAssessmentService } = require("../src/services/learning-stage-assessment-service");
 const { createLearningTargetProvisioningService } = require("../src/services/learning-target-provisioning-service");
 const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
@@ -869,8 +870,12 @@ function createLoopHarness() {
     cardGenerationService: generationService,
     now: () => new Date("2026-06-14T08:12:00.000Z")
   });
+  const rewardAuditService = createLearningRewardAuditService({
+    repository: store
+  });
   const loopStateService = createLearningLoopStateService({
     dailyLoopService,
+    rewardAuditService,
     stageAssessmentService
   });
   const profileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
@@ -1217,7 +1222,10 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
     assert.equal(profileFeedbackEvidence.summary.cycleComplete, true);
     assert.equal(profileFeedbackEvidence.summary.profileDeltaCount >= 1, true);
     assert.equal(profileFeedbackEvidence.summary.evidenceCount >= 1, true);
+    assert.equal(profileFeedbackEvidence.summary.rewardSettlementCount >= 1, true);
+    assert.equal(profileFeedbackEvidence.summary.totalRewardCoins > 0, true);
     assert.equal(profileFeedbackEvidence.summary.nextAction, "draft_daily_plan");
+    assert.equal(profileFeedbackEvidence.loopState.reward.available, true);
     assert.equal(profileFeedbackEvidence.recommendation.strategy, "repair");
     assert.equal(profileFeedbackEvidence.recommendation.targetNodeId, SCIENCE_NODE_ID);
     assert.equal(JSON.stringify(profileFeedbackEvidence).includes(RAW_MARKER), false);

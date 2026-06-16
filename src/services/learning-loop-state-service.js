@@ -11,7 +11,8 @@ function asArray(value) {
 }
 
 function uniqueStrings(values = []) {
-  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 120)).filter(Boolean)));
+  const source = Array.isArray(values) ? values : String(values || "").split(",");
+  return Array.from(new Set(source.map((value) => cleanString(value, 120)).filter(Boolean)));
 }
 
 function scanPrivacy(value, path = "$", findings = []) {

@@ -141,7 +141,63 @@ function recommendationSummary(recommendation = {}) {
   };
 }
 
+function rewardSummaryFromLoopState(loopState = {}) {
+  const recommendationEvidence = loopState.recommendationEvidence && typeof loopState.recommendationEvidence === "object"
+    ? loopState.recommendationEvidence
+    : {};
+  const rewardTrace = loopState.rewardTrace && typeof loopState.rewardTrace === "object"
+    ? loopState.rewardTrace
+    : recommendationEvidence.rewardTrace && typeof recommendationEvidence.rewardTrace === "object"
+      ? recommendationEvidence.rewardTrace
+      : {};
+  const traceSummary = rewardTrace.summary && typeof rewardTrace.summary === "object" ? rewardTrace.summary : {};
+  const stateSummary = loopState.summary && typeof loopState.summary === "object" ? loopState.summary : {};
+  const auditTrace = loopState.auditTrace && typeof loopState.auditTrace === "object"
+    ? loopState.auditTrace
+    : recommendationEvidence.auditTrace && typeof recommendationEvidence.auditTrace === "object"
+      ? recommendationEvidence.auditTrace
+      : {};
+  const evidenceTrace = recommendationEvidence.evidenceTrace && typeof recommendationEvidence.evidenceTrace === "object"
+    ? recommendationEvidence.evidenceTrace
+    : {};
+  const evidenceSummary = recommendationEvidence.summary && typeof recommendationEvidence.summary === "object"
+    ? recommendationEvidence.summary
+    : {};
+  const rewardSettlements = asArray(rewardTrace.rewardSettlements || auditTrace.rewardSettlements);
+  const rewardSettlementIds = uniqueStrings([
+    ...asArray(rewardTrace.rewardSettlementIds),
+    ...asArray(evidenceTrace.rewardSettlementIds),
+    ...rewardSettlements.map((item) => item.rewardSettlementId || item.id)
+  ]).slice(0, 12);
+  const rewardSettlementCount = Number(
+    stateSummary.rewardSettlementCount
+      || evidenceSummary.rewardSettlementCount
+      || traceSummary.rewardSettlementCount
+      || rewardSettlements.length
+      || rewardSettlementIds.length
+      || 0
+  ) || 0;
+  const totalRewardCoins = Number(
+    stateSummary.totalRewardCoins
+      || evidenceSummary.totalRewardCoins
+      || traceSummary.totalCoinAmount
+      || traceSummary.totalRewardCoins
+      || 0
+  ) || 0;
+  return {
+    available: rewardTrace.available === true || rewardSettlementCount > 0 || rewardSettlementIds.length > 0 || totalRewardCoins > 0,
+    ok: rewardTrace.ok !== false,
+    rewardSettlementCount,
+    settledCount: Number(traceSummary.settledCount || 0) || 0,
+    totalRewardCoins,
+    currency: cleanString(traceSummary.currency, 24),
+    latestRewardSettlementId: cleanString(traceSummary.latestRewardSettlementId, 120),
+    rewardSettlementIds
+  };
+}
+
 function loopStateSummary(loopState = {}) {
+  const reward = rewardSummaryFromLoopState(loopState);
   return {
     available: loopState.ok === true,
     status: cleanString(loopState.status, 80),
@@ -152,7 +208,8 @@ function loopStateSummary(loopState = {}) {
       targetNodeId: cleanString(loopState.nextAction?.targetNodeId, 120)
     },
     auditComplete: Boolean(loopState.audit?.complete),
-    missingRequired: uniqueStrings(loopState.audit?.missingRequired || loopState.summary?.missingRequired).slice(0, 12)
+    missingRequired: uniqueStrings(loopState.audit?.missingRequired || loopState.summary?.missingRequired).slice(0, 12),
+    reward
   };
 }
 
@@ -423,6 +480,8 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         profileDeltaCount: profileDelta.count,
         profileEvidenceCount: profile.evidenceCount,
         profileWeaknessCount: profile.weaknessCount,
+        rewardSettlementCount: nextLoopState.reward.rewardSettlementCount,
+        totalRewardCoins: nextLoopState.reward.totalRewardCoins,
         recommendationMode: nextRecommendation.mode,
         recommendationStrategy: nextRecommendation.strategy,
         loopStatus: nextLoopState.status,

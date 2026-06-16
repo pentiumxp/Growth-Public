@@ -120,7 +120,14 @@ test("release evidence bundle service builds summary-only bundle from no-write s
       ok: true,
       source: path.basename(args[0]),
       operation: "readiness",
-      summary: { candidateCount: 1 }
+      summary: args[0].endsWith("smoke-growth-profile-feedback.js")
+        ? {
+          readyForNextPlan: true,
+          rewardSettlementCount: 1,
+          totalRewardCoins: 42,
+          nextAction: "draft_daily_plan"
+        }
+        : { candidateCount: 1 }
     })
   }));
 
@@ -158,6 +165,9 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
+  assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.rewardSettlementCount, 1);
+  assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.totalRewardCoins, 42);
+  assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.nextAction, "draft_daily_plan");
   assert.equal(result.bundle.summary.taskCount, 11);
   assert.equal(result.bundle.summary.blockedCount, 0);
   assert.equal(calls.length, 11);

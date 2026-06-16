@@ -111,6 +111,28 @@ function completeDependencies(overrides = {}) {
           audit: {
             complete: true,
             missingRequired: []
+          },
+          rewardTrace: {
+            available: true,
+            ok: true,
+            rewardSettlements: [{
+              rewardSettlementId: "lrwd_daily_1",
+              taskCardId: "ltask_science_daily_1",
+              evaluationId: "leval_daily_1",
+              coinAmount: 42,
+              idempotencyKey: "must not leak"
+            }],
+            summary: {
+              rewardSettlementCount: 1,
+              settledCount: 1,
+              totalCoinAmount: 42,
+              currency: "growth_coin",
+              latestRewardSettlementId: "lrwd_daily_1"
+            }
+          },
+          summary: {
+            rewardSettlementCount: 1,
+            totalRewardCoins: 42
           }
         };
       }
@@ -175,10 +197,16 @@ test("profile feedback evidence service proves a completed cycle can drive the n
   assert.equal(result.summary.readyForNextPlan, true);
   assert.equal(result.summary.evidenceCount, 1);
   assert.equal(result.summary.profileDeltaCount, 1);
+  assert.equal(result.summary.rewardSettlementCount, 1);
+  assert.equal(result.summary.totalRewardCoins, 42);
   assert.equal(result.summary.recommendationMode, "trajectory");
   assert.equal(result.summary.nextAction, "draft_daily_plan");
+  assert.equal(result.loopState.reward.available, true);
+  assert.equal(result.loopState.reward.rewardSettlementCount, 1);
+  assert.deepEqual(result.loopState.reward.rewardSettlementIds, ["lrwd_daily_1"]);
   assert.deepEqual(result.summary.missingRequired, []);
   assert.equal(JSON.stringify(result).includes("must not leak"), false);
+  assert.equal(JSON.stringify(result).includes("idempotencyKey"), false);
   assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
   assert.deepEqual(calls.map((call) => call.type), [
     "completeness",

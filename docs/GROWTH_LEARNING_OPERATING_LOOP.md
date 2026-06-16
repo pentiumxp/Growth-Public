@@ -794,6 +794,10 @@ It returns:
   totals, plan draft ids, profile-delta ids, correction ids, Profile V2
   summaries, and recommendation lifecycle rows.
 
+Scalar completed-cycle selectors such as `taskCardId` and `evaluationId` are
+normalized before reward-audit readback, so CLI/HTTP callers can supply either
+single values or arrays without dropping reward settlement evidence.
+
 Routes and smoke:
 
 - Owner-only `GET /api/v1/growth/learning-loop/state`;
@@ -1632,7 +1636,11 @@ Implementation progress on 2026-06-15:
   call the read-only cycle-history service for bounded selector discovery only.
   The bundle then carries summary-only `selectorDiscovery` counts and a
   remediation `nextAction` such as `produce_completed_daily_cycle`; it must not
-  convert an absent production cycle into passing release evidence. The
+  convert an absent production cycle into passing release evidence.
+  Passing profile-feedback evidence also carries the next loop-state reward
+  readback summary, including `rewardSettlementCount` and `totalRewardCoins`;
+  the release evidence bundle preserves those fields for release review instead
+  of reading reward tables directly. The
   default `recommendation_lifecycle` task maps to
   `productionRecommendationLifecycleSmokeEvidence` and proves the pending,
   accepted, and superseded next-card recommendation lifecycle can be read from

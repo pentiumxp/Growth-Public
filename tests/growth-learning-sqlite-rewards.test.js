@@ -194,6 +194,51 @@ test("reward repository lists bounded reward settlements by task and evaluation"
   });
 });
 
+test("reward repository preserves camelCase service-context fields in reward settlements", () => {
+  withRewardDb(({ repository }) => {
+    const result = repository.settleEvaluationReward({
+      evaluation: {
+        evaluationId: "eval_camel_context",
+        status: "completed",
+        score: 48,
+        passed: false
+      },
+      taskCard: {
+        taskCardId: "card_1",
+        learnerId: "learner_1",
+        workspaceId: "weixin_child",
+        programId: "program_1",
+        rewardCapCoins: 125,
+        raw_json: "{}"
+      },
+      submission: {
+        submissionId: "sub_camel",
+        sessionId: "session_camel",
+        learnerId: "learner_1",
+        workspaceId: "weixin_child",
+        programId: "program_1"
+      },
+      settledAt: "2026-06-11T03:00:00.000Z"
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.settlement.workspaceId, "weixin_child");
+    assert.equal(result.settlement.learnerId, "learner_1");
+    assert.equal(result.settlement.programId, "program_1");
+    assert.equal(result.settlement.taskCardId, "card_1");
+    assert.equal(result.settlement.coinAmount, 60);
+
+    const listed = repository.listRewardSettlements({
+      workspaceId: "weixin_child",
+      learnerId: "learner_1",
+      programId: "program_1",
+      evaluationIds: ["eval_camel_context"]
+    });
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].evaluationId, "eval_camel_context");
+  });
+});
+
 test("reward repository reports and clears learning coin balance idempotently", () => {
   withRewardDb(({ repository }) => {
     repository.settleEvaluationReward({

@@ -457,6 +457,8 @@ function summaryFromSmoke(value = {}) {
     summary.selectorCandidateCount = Number(value.summary.selectorCandidateCount || 0) || 0;
     summary.completeCycleCount = Number(value.summary.completeCycleCount || 0) || 0;
     summary.cycleCount = Number(value.summary.cycleCount || 0) || 0;
+    summary.rewardSettlementCount = Number(value.summary.rewardSettlementCount || 0) || 0;
+    summary.totalRewardCoins = Number(value.summary.totalRewardCoins || 0) || 0;
   }
   const requiredActions = requiredActionsFromChecks(value.checks);
   if (requiredActions.length) {

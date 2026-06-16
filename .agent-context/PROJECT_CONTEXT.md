@@ -965,7 +965,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only `growth.learningLoopState.recommendationEvidence.v1` so
   Owner/release tooling can explain the next recommendation from persisted
   summary links, including reward settlement ids/coin totals, without rejoining
-  raw tables or model output. The AI-loop harness now covers
+  raw tables or model output. Reward-audit selectors such as `taskCardId` and
+  `evaluationId` are normalized from scalar or array inputs before readback.
+  `learning-profile-feedback-evidence-service` now projects bounded reward
+  settlement count and total learning-coin amount from the next loop-state
+  readback, and the release evidence bundle keeps those summary fields in
+  `productionProfileFeedbackSmokeEvidence`. The reward repository accepts both
+  snake_case and camelCase service-context fields when settling daily-card
+  rewards. The AI-loop harness now covers
   post-cycle readback from a completed Fanfan science daily card into the next
   planning action. It is no-write, summary-only, and does not call
   Gateway, publish plans, generate cards, evaluate submissions, run schedulers,

@@ -159,7 +159,15 @@ function createRewardRepository({ open }) {
 
       const now = cleanString(input.settledAt || input.now) || new Date().toISOString();
       const score = Math.max(0, Math.min(100, numberValue(evaluation.score)));
-      const rewardCapCoins = Math.max(0, Math.round(numberValue(taskCard.reward_cap_coins || taskCard.configured_reward_coins || taskCard.default_reward_coins || 100)));
+      const rewardCapCoins = Math.max(0, Math.round(numberValue(
+        taskCard.reward_cap_coins
+          || taskCard.rewardCapCoins
+          || taskCard.configured_reward_coins
+          || taskCard.configuredRewardCoins
+          || taskCard.default_reward_coins
+          || taskCard.defaultRewardCoins
+          || 100
+      )));
       const coinAmount = Math.max(0, Math.round((rewardCapCoins * score) / 100));
       const settlementId = stableRewardSettlementId(evaluationId);
       const idempotencyKey = `growth-plugin:evaluation:${evaluationId}:learning-coin`;
@@ -187,11 +195,11 @@ function createRewardRepository({ open }) {
       };
       const values = {
         id: settlementId,
-        learner_id: cleanString(taskCard.learner_id || submission.learner_id || input.workspaceId),
-        workspace_id: cleanString(taskCard.workspace_id || submission.workspace_id || input.workspaceId),
-        program_id: cleanString(taskCard.program_id || submission.program_id),
-        task_card_id: cleanString(taskCard.id || submission.task_card_id || input.taskCardId),
-        session_id: cleanString(submission.session_id) || stableSessionId(cleanString(submission.id || input.submissionId || evaluationId)),
+        learner_id: cleanString(taskCard.learner_id || taskCard.learnerId || submission.learner_id || submission.learnerId || input.learnerId || input.learner_id || input.workspaceId),
+        workspace_id: cleanString(taskCard.workspace_id || taskCard.workspaceId || submission.workspace_id || submission.workspaceId || input.workspaceId || input.workspace_id),
+        program_id: cleanString(taskCard.program_id || taskCard.programId || submission.program_id || submission.programId || input.programId || input.program_id),
+        task_card_id: cleanString(taskCard.id || taskCard.taskCardId || taskCard.task_card_id || submission.task_card_id || submission.taskCardId || input.taskCardId || input.task_card_id),
+        session_id: cleanString(submission.session_id || submission.sessionId) || stableSessionId(cleanString(submission.id || submission.submissionId || input.submissionId || input.submission_id || evaluationId)),
         evaluation_id: evaluationId,
         status,
         coin_amount: coinAmount,
