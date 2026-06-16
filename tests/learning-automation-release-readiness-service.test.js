@@ -42,6 +42,7 @@ function allEvidence() {
     productionCycleHistorySmokeEvidence: { ok: true, evidenceId: "cycle_history_smoke" },
     productionOwnerAuditSmokeEvidence: { ok: true, evidenceId: "owner_audit_smoke" },
     productionProfileFeedbackSmokeEvidence: { ok: true, evidenceId: "profile_feedback_smoke" },
+    productionRecommendationLifecycleSmokeEvidence: { ok: true, evidenceId: "recommendation_lifecycle_smoke" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, evidenceId: "daily_loop_write_smoke" },
     productionLearnerCycleSmokeEvidence: { ok: true, evidenceId: "learner_cycle_smoke" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, evidenceId: "scheduler_dry_run_smoke" },
@@ -188,7 +189,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.evidenceReadback.schemaVersion, "growth.learningAutomationReleaseReadiness.evidenceReadback.v1");
   assert.equal(result.evidenceReadback.summaryOnly, true);
-  assert.equal(result.evidenceReadback.presentCount, 31);
+  assert.equal(result.evidenceReadback.presentCount, 32);
   assert.equal(result.evidenceReadback.missingCount, 0);
   assert.equal(result.evidenceReadback.writefulSchedulingAllowed, false);
   assert.equal(result.evidenceReadback.sourceBundle, null);
@@ -213,6 +214,7 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.checks.find((item) => item.key === "production_cycle_history_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_owner_audit_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_profile_feedback_smoke_evidence").status, "pass");
+  assert.equal(result.checks.find((item) => item.key === "production_recommendation_lifecycle_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_daily_loop_write_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_learner_cycle_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_worker_smoke_evidence").status, "pass");
@@ -255,8 +257,9 @@ test("automation release readiness service reports missing evidence without enab
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("active_failure_policy"), false);
   assert.equal(result.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
   assert.equal(result.evidenceReadback.presentCount, 0);
-  assert.equal(result.evidenceReadback.missingCount, 31);
+  assert.equal(result.evidenceReadback.missingCount, 32);
   assert.equal(result.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
+  assert.equal(result.evidenceReadback.missingCheckKeys.includes("production_recommendation_lifecycle_smoke_evidence"), true);
   const missingOwnerDailyEvidence = result.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence");
   assert.equal(missingOwnerDailyEvidence.evidencePresent, false);
   assert.equal(missingOwnerDailyEvidence.checkStatus, "missing");
@@ -489,7 +492,7 @@ test("automation release readiness service creates summary-only snapshots and li
   assert.equal(created.snapshot.status, "ready_for_release_review");
   assert.equal(created.snapshot.summary.writefulSchedulingAllowed, false);
   assert.equal(created.snapshot.evidenceReadback.summaryOnly, true);
-  assert.equal(created.snapshot.evidenceReadback.presentCount, 31);
+  assert.equal(created.snapshot.evidenceReadback.presentCount, 32);
   assert.equal(calls.at(-1).type, "saveSnapshot");
   assert.equal(calls.at(-1).input.privacyClass, "summary_only");
   assert.equal(calls.at(-1).input.releaseReview.requiredActionCount, 0);

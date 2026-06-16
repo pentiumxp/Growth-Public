@@ -178,6 +178,15 @@ generic graph suggestion.
     trajectory recommendation is available;
   - never returns raw learner answers, transcripts, prompts, answer keys, raw
     model output, source refs, or private paths.
+- `learning-recommendation-lifecycle-service`
+  - reads persisted card trajectory recommendation lifecycle rows through the
+    mastery-profile repository;
+  - exposes summary-only pending/accepted/superseded readback through
+    `GET /api/v1/growth/recommendations/lifecycle` and
+    `npm run smoke:recommendation-lifecycle`;
+  - feeds release evidence as `productionRecommendationLifecycleSmokeEvidence`;
+  - performs no writes, does not call Gateway, and does not publish, evaluate,
+    schedule, notify, activate stage assessments, or mutate learner state.
 - `learning-next-card-strategy-service`
   - reads mastery summary, recent trajectory, and experience signals;
   - chooses one bounded strategy from `repair`, `stabilize`, `transfer`,

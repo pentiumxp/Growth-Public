@@ -392,6 +392,24 @@ function normalizeLearningCycleHistoryInput(url, target) {
   });
 }
 
+function normalizeRecommendationLifecycleInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    trajectoryId: url.searchParams.get("trajectoryId") || url.searchParams.get("trajectory_id") || url.searchParams.get("id") || "",
+    taskCardId: url.searchParams.get("taskCardId") || url.searchParams.get("task_card_id") || url.searchParams.get("sourceTaskCardId") || url.searchParams.get("source_task_card_id") || "",
+    sourceEvaluationId: url.searchParams.get("sourceEvaluationId") || url.searchParams.get("source_evaluation_id") || url.searchParams.get("evaluationId") || url.searchParams.get("evaluation_id") || "",
+    generatedTaskCardId: url.searchParams.get("generatedTaskCardId") || url.searchParams.get("generated_task_card_id") || "",
+    generatedLearningGraphPlanId: url.searchParams.get("generatedLearningGraphPlanId") || url.searchParams.get("generated_learning_graph_plan_id") || url.searchParams.get("learningGraphPlanId") || url.searchParams.get("learning_graph_plan_id") || "",
+    status: url.searchParams.get("status") || "",
+    targetNodeIds: csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || url.searchParams.get("nodeIds") || ""),
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
 function normalizeAutomationProposalListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1504,6 +1522,12 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-cycles/history") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningCycleHistoryService.listCycleHistory(normalizeLearningCycleHistoryInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/recommendations/lifecycle") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningRecommendationLifecycleService.listLifecycle(normalizeRecommendationLifecycleInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

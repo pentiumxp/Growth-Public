@@ -343,6 +343,99 @@ test("growth profile-delta audit route is limited to visible targets", async () 
   }
 });
 
+test("growth recommendation lifecycle route is limited to visible targets", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningRecommendationLifecycleService: {
+      listLifecycle(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          schemaVersion: "growth.recommendationLifecycle.v1",
+          privacyClass: "summary_only",
+          count: 1,
+          lifecycle: [{
+            trajectoryId: input.trajectoryId,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            sourceTaskCardId: input.taskCardId,
+            sourceEvaluationId: input.sourceEvaluationId,
+            status: input.status,
+            targetNodeIds: input.targetNodeIds,
+            summaryOnly: true
+          }],
+          summary: {
+            lifecycleCount: 1,
+            pendingCount: 1
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const ownerResponse = await fetch(`${baseUrl}/api/v1/growth/recommendations/lifecycle?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&trajectoryId=lgtraj_route_1&taskCardId=ltask_route_1&sourceEvaluationId=eval_route_1&generatedTaskCardId=ltask_next&generatedLearningGraphPlanId=lgp_next&status=pending&targetNodeIds=kg_science_fair_test,kg_science_variables&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(ownerResponse.status, 200);
+    const ownerBody = await ownerResponse.json();
+    assert.equal(ownerBody.lifecycle[0].trajectoryId, "lgtraj_route_1");
+    assert.equal(JSON.stringify(ownerBody).includes("rawAnswer"), false);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      trajectoryId: "lgtraj_route_1",
+      taskCardId: "ltask_route_1",
+      sourceEvaluationId: "eval_route_1",
+      generatedTaskCardId: "ltask_next",
+      generatedLearningGraphPlanId: "lgp_next",
+      status: "pending",
+      targetNodeIds: ["kg_science_fair_test", "kg_science_variables"],
+      limit: "5"
+    });
+
+    const memberResponse = await fetch(`${baseUrl}/api/v1/growth/recommendations/lifecycle?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberResponse.status, 403);
+    assert.equal((await memberResponse.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth evidence audit route is limited to visible targets", async () => {
   const calls = [];
   const server = createServer({

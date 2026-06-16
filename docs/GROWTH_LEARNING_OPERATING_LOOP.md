@@ -1599,6 +1599,7 @@ Implementation progress on 2026-06-15:
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
   default-disabled smoke CLIs, includes no-write cycle-history evidence,
   read-only Owner audit evidence, no-write profile-feedback evidence, read-only
+  recommendation-lifecycle evidence, read-only
   learner-cycle audit, no-write target-provisioning evidence, read-only
   stage-assessment readiness, proposal smoke, platform action receipt evidence,
   central visual artifact evidence, and read-only release approval bag
@@ -1607,6 +1608,10 @@ Implementation progress on 2026-06-15:
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
   completed-cycle selector can read back audit completeness, persisted evidence,
   persisted profile delta, Profile V2, recommendation, and next loop state. The
+  default `recommendation_lifecycle` task maps to
+  `productionRecommendationLifecycleSmokeEvidence` and proves the pending,
+  accepted, and superseded next-card recommendation lifecycle can be read from
+  persisted card trajectories without Gateway calls or writes. The
   default `cycle_history` task maps to
   `productionCycleHistorySmokeEvidence` and proves bounded historical-cycle
   selection through the read-only cycle-history service. The default

@@ -72,6 +72,7 @@ const { createLearningProfileDeltaService } = require("../services/learning-prof
 const { createLearningProfileFeedbackEvidenceService } = require("../services/learning-profile-feedback-evidence-service");
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../services/learning-profile-v2-service");
+const { createLearningRecommendationLifecycleService } = require("../services/learning-recommendation-lifecycle-service");
 const { createLearningStageCheckpointControlsService } = require("../services/learning-stage-checkpoint-controls-service");
 const { createLearningStageAssessmentService } = require("../services/learning-stage-assessment-service");
 const { createLearningTargetProvisioningService } = require("../services/learning-target-provisioning-service");
@@ -141,6 +142,9 @@ function createServices(config) {
     repository: growthLearningStore.masteryProfileRepository
   });
   const learningCardTrajectoryService = createLearningCardTrajectoryService({
+    repository: growthLearningStore.masteryProfileRepository
+  });
+  const learningRecommendationLifecycleService = createLearningRecommendationLifecycleService({
     repository: growthLearningStore.masteryProfileRepository
   });
   const learningExperienceSignalService = createLearningExperienceSignalService({
@@ -559,6 +563,7 @@ function createServices(config) {
     learningProfileFeedbackEvidenceService,
     learningProfileProjectionService,
     learningProfileV2Service,
+    learningRecommendationLifecycleService,
     learningStageCheckpointControlsService,
     learningStageAssessmentService,
     learningTargetProvisioningService,

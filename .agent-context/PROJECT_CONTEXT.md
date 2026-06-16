@@ -512,6 +512,18 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   recommendation, and next loop-state readback without Gateway calls, plan
   publication, card generation, evaluation, scheduling, stage activation,
   direct repository access, SQLite writes, or learner-state mutation. The Owner
+  Recommendation lifecycle readback now also has
+  `learning-recommendation-lifecycle-service`,
+  `GET /api/v1/growth/recommendations/lifecycle`, and
+  `npm run smoke:recommendation-lifecycle`. This is a summary-only no-write
+  readback over persisted card trajectory recommendation lifecycle rows:
+  pending, accepted, superseded, source card/evaluation, generated card/plan,
+  bounded target nodes, and aggregate counts. It feeds release evidence as
+  `productionRecommendationLifecycleSmokeEvidence` /
+  `production_recommendation_lifecycle_smoke_evidence`, rejects write flags in
+  the smoke CLI, and does not call Gateway, publish, generate, evaluate,
+  schedule, notify, activate stage assessments, inspect SQLite tables directly
+  outside the repository, or mutate learner state. The Owner
   `生成` tab now reads the same
   `GET /api/v1/growth/learning-loop/state` route after generation context load
   and exposes a minimal supervised daily-loop operation path: `规划下一张`

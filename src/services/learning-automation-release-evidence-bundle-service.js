@@ -14,6 +14,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "cycle_history",
   "owner_audit",
   "profile_feedback",
+  "recommendation_lifecycle",
   "learner_cycle",
   "target_provisioning",
   "stage_assessment",
@@ -73,6 +74,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionProfileFeedbackSmokeEvidence",
     script: "scripts/smoke-growth-profile-feedback.js",
     commandName: "npm run smoke:profile-feedback"
+  },
+  {
+    taskId: "recommendation_lifecycle",
+    evidenceKey: "productionRecommendationLifecycleSmokeEvidence",
+    script: "scripts/smoke-growth-recommendation-lifecycle.js",
+    commandName: "npm run smoke:recommendation-lifecycle"
   },
   {
     taskId: "learner_cycle",
@@ -647,6 +654,25 @@ function targetProvisioningSummaryFromSmoke(value = {}) {
   };
 }
 
+function recommendationLifecycleSummaryFromSmoke(value = {}) {
+  const summary = value.summary && typeof value.summary === "object" && !Array.isArray(value.summary)
+    ? value.summary
+    : {};
+  return {
+    source: cleanString(value.source || "growth-learning-recommendation-lifecycle-service", 160),
+    status: cleanString(value.status || (value.ok === true ? "pass" : ""), 120),
+    operation: cleanString(value.operation || "list", 80),
+    lifecycleCount: Number(summary.lifecycleCount || value.count || 0) || 0,
+    pendingCount: Number(summary.pendingCount || 0) || 0,
+    acceptedCount: Number(summary.acceptedCount || 0) || 0,
+    supersededCount: Number(summary.supersededCount || 0) || 0,
+    missingCount: Number(summary.missingCount || 0) || 0,
+    latestTrajectoryId: cleanString(summary.latestTrajectoryId || summary.latest_trajectory_id, 140),
+    latestStatus: cleanString(summary.latestStatus || summary.latest_status, 80),
+    latestTargetNodeIds: uniqueStrings(summary.latestTargetNodeIds || summary.latest_target_node_ids || []).slice(0, 12)
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
@@ -654,6 +680,7 @@ function summaryForTask(task, value) {
   if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
   if (task.taskId === "owner_review_evidence") return ownerReviewSummaryFromSmoke(value);
   if (task.taskId === "target_provisioning") return targetProvisioningSummaryFromSmoke(value);
+  if (task.taskId === "recommendation_lifecycle") return recommendationLifecycleSummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 

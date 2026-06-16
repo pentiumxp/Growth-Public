@@ -97,6 +97,60 @@ function withProvisionedTargetDb(callback) {
   });
 }
 
+function withRecommendationLifecycleDb(callback) {
+  return withTempDb(({ dir, dbPath }) => {
+    const setup = new DatabaseSync(dbPath);
+    try {
+      setup.exec(`
+        CREATE TABLE IF NOT EXISTS learning_growth_card_trajectories (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL,
+          learner_id TEXT NOT NULL,
+          program_id TEXT NOT NULL,
+          task_card_id TEXT NOT NULL,
+          source_evaluation_id TEXT NOT NULL DEFAULT '',
+          strategy TEXT NOT NULL DEFAULT '',
+          difficulty_band TEXT NOT NULL DEFAULT '',
+          target_node_ids_json TEXT NOT NULL DEFAULT '[]',
+          performance_summary TEXT NOT NULL DEFAULT '',
+          confirmed_strengths_json TEXT NOT NULL DEFAULT '[]',
+          remaining_weaknesses_json TEXT NOT NULL DEFAULT '[]',
+          mastery_changes_json TEXT NOT NULL DEFAULT '[]',
+          next_recommendation_json TEXT NOT NULL DEFAULT '{}',
+          raw_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      `);
+    } finally {
+      setup.close();
+    }
+    const store = createGrowthLearningSqliteStore({ dbPath });
+    const recorded = store.masteryProfileRepository.recordCardTrajectory({
+      id: "lgtraj_release_lifecycle_pending",
+      workspaceId: "smoke_workspace",
+      learnerId: "smoke_learner",
+      programId: "smoke_program",
+      taskCardId: "ltask_release_lifecycle_source",
+      sourceEvaluationId: "eval_release_lifecycle_source",
+      strategy: "repair",
+      difficultyBand: "foundation",
+      targetNodeIds: ["kg_release_lifecycle_science"],
+      performanceSummary: "PRIVATE SUMMARY MUST NOT APPEAR",
+      nextRecommendation: {
+        status: "pending",
+        strategy: "repair",
+        cardRole: "practice",
+        targetNodeIds: ["kg_release_lifecycle_science"],
+        reason: "Use one summary-only recommendation lifecycle smoke card."
+      },
+      createdAt: "2026-06-16T03:40:00.000Z"
+    });
+    assert.equal(recorded.ok, true);
+    return callback({ dir, dbPath });
+  });
+}
+
 function runScript(args, env = {}) {
   return spawnSync(process.execPath, [scriptPath, ...args], {
     cwd: repoRoot,
@@ -433,6 +487,41 @@ test("release evidence bundle script writes target-provisioning release evidence
     assert.equal(evidence.summary.selectedTargetNodeCount, 1);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script writes recommendation lifecycle release evidence from no-write smoke", () => {
+  withRecommendationLifecycleDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "recommendation-lifecycle-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--target-node-id", "kg_release_lifecycle_science",
+      "--task", "recommendation_lifecycle",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    const evidence = fileBundle.evidence.productionRecommendationLifecycleSmokeEvidence;
+    assert.equal(evidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(evidence.smoke, "npm run smoke:recommendation-lifecycle");
+    assert.equal(evidence.status, "pass");
+    assert.equal(evidence.summary.source, "growth-learning-recommendation-lifecycle-service");
+    assert.equal(evidence.summary.operation, "list");
+    assert.equal(evidence.summary.lifecycleCount, 1);
+    assert.equal(evidence.summary.pendingCount, 1);
+    assert.equal(evidence.summary.latestTrajectoryId, "lgtraj_release_lifecycle_pending");
+    assert.deepEqual(evidence.summary.latestTargetNodeIds, ["kg_release_lifecycle_science"]);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("PRIVATE SUMMARY"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
   });
 });

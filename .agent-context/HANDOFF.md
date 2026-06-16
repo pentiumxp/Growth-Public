@@ -9,6 +9,81 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T12:52+08:00 - Recommendation Lifecycle Readback Release Evidence
+
+- Status: implemented and focused-Harness validated locally. This slice adds a
+  service-owned, summary-only recommendation lifecycle readback so Owner,
+  automation review, and release tooling can inspect pending/accepted/
+  superseded next-card recommendations from persisted card trajectories without
+  Codex or direct SQLite reads.
+- Scope:
+  - added `learning-recommendation-lifecycle-service`, wired through
+    `src/app/services.js`, backed by `masteryProfileRepository.listRecentTrajectory`;
+  - added visible-target HTTP read route
+    `GET /api/v1/growth/recommendations/lifecycle`;
+  - added `npm run smoke:recommendation-lifecycle` through
+    `scripts/smoke-growth-recommendation-lifecycle.js`; it is list-only and
+    rejects `--allow-write`;
+  - release evidence bundle now includes default task
+    `recommendation_lifecycle`, maps bounded smoke output to
+    `productionRecommendationLifecycleSmokeEvidence`, and stores only counts,
+    latest trajectory/status, and latest target node ids;
+  - release readiness now requires
+    `production_recommendation_lifecycle_smoke_evidence`, so the current
+    release-readiness evidence count is `32`;
+  - release evidence service canonicalizes and reads persisted pass records for
+    `productionRecommendationLifecycleSmokeEvidence`.
+- Boundaries:
+  - no Gateway/model-vendor calls, no publication/generation/evaluation,
+    no scheduler execution/tick, no notification delivery, no stage activation,
+    no learner-state mutation, and no Home AI old Growth server import;
+  - route remains HTTP glue over visible-target scope;
+  - smoke scripts instantiate the normal Growth service graph and do not import
+    stores directly.
+- Harness added/updated:
+  - `tests/learning-recommendation-lifecycle-service.test.js`;
+  - `tests/growth-recommendation-lifecycle-smoke-script.test.js`;
+  - route coverage in `tests/growth-routes.test.js`;
+  - release readiness/evidence/bundle service and script tests for the new
+    evidence key/default task;
+  - release controls/dashboard/inventory/package smoke tests updated from 31
+    to 32 release-readiness evidence checks;
+  - architecture guards updated for the service, smoke script, readiness flag,
+    evidence key, bundle task, and no-write/no-Gateway boundaries.
+- Focused validation passed:
+  - `node --test tests/learning-recommendation-lifecycle-service.test.js tests/growth-recommendation-lifecycle-smoke-script.test.js tests/growth-routes.test.js`
+    (`53/53`);
+  - `node --test tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js`
+    (`18/18`);
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-architecture-boundary.test.js`
+    (`71/71` after fixing the temporary SQLite seed schema in the script
+    harness).
+- Docs updated:
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_CARD_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Full validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `git diff --check`;
+  - `npm test` (`802/802`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `git diff --check`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment.
+- CodeGraph status after edits: `347` JavaScript files, `4,605` nodes,
+  `18,323` edges.
+- Home AI app remains dirty with unrelated native-notification/Web Push files;
+  they were not changed by this Growth slice.
+
 ## 2026-06-16T12:29+08:00 - Target Provisioning Release Evidence Integration
 
 - Status: implemented, documented, and full-Harness validated locally. This

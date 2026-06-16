@@ -1530,6 +1530,22 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(targetProvisioning, /learning_target_not_provisioned/);
   assert.doesNotMatch(targetProvisioning, /rawAnswer/);
 
+  const recommendationLifecycle = read(path.join("src", "services", "learning-recommendation-lifecycle-service.js"));
+  assert.match(recommendationLifecycle, /listLifecycle/);
+  assert.match(recommendationLifecycle, /listRecentTrajectory/);
+  assert.match(recommendationLifecycle, /growth\.recommendationLifecycle\.v1/);
+  assert.match(recommendationLifecycle, /privacyClass: "summary_only"/);
+  assert.match(recommendationLifecycle, /writesPerformed: false/);
+  assert.doesNotMatch(recommendationLifecycle, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(recommendationLifecycle, /recordCardTrajectory|markTrajectoryRecommendationAccepted/);
+  assert.doesNotMatch(recommendationLifecycle, /learning_growth_card_trajectories/);
+  assert.doesNotMatch(recommendationLifecycle, /rawAnswer:/);
+  assert.doesNotMatch(recommendationLifecycle, /rawPrompt:/);
+
+  const masteryProfileRepository = read(path.join("src", "stores", "growth-learning-sqlite", "mastery-profile.js"));
+  assert.match(masteryProfileRepository, /listRecentTrajectory/);
+  assert.match(masteryProfileRepository, /map\(publicTrajectory\)/);
+
   const ownerCorrection = read(path.join("src", "services", "learning-owner-correction-service.js"));
   assert.match(ownerCorrection, /recordCorrection/);
   assert.match(ownerCorrection, /listCorrections/);
@@ -1574,6 +1590,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /--production-scheduler-worker-smoke-evidence/);
   assert.match(script, /--production-planner-readiness-evidence/);
   assert.match(script, /--production-target-provisioning-smoke-evidence/);
+  assert.match(script, /--production-recommendation-lifecycle-smoke-evidence/);
   assert.match(script, /--production-daily-loop-preview-smoke-evidence/);
   assert.match(script, /--production-cycle-history-smoke-evidence/);
   assert.match(script, /--production-daily-loop-write-smoke-evidence/);
@@ -1596,6 +1613,16 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.doesNotMatch(script, /learningAutomationSchedulerService|\.dryRun/);
   assert.doesNotMatch(script, /deliverHandoff/);
   assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const recommendationLifecycleSmoke = read(path.join("scripts", "smoke-growth-recommendation-lifecycle.js"));
+  assert.match(recommendationLifecycleSmoke, /learningRecommendationLifecycleService/);
+  assert.match(recommendationLifecycleSmoke, /listLifecycle/);
+  assert.match(recommendationLifecycleSmoke, /recommendation_lifecycle_smoke_write_not_supported/);
+  assert.match(recommendationLifecycleSmoke, /workspace_id_required/);
+  assert.doesNotMatch(recommendationLifecycleSmoke, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(recommendationLifecycleSmoke, /learning_growth_/);
+  assert.doesNotMatch(recommendationLifecycleSmoke, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(recommendationLifecycleSmoke, /recordCardTrajectory|markTrajectoryRecommendationAccepted|generateCard|evaluateSubmission/);
 
   const scriptHarness = read(path.join("tests", "growth-release-readiness-smoke-script.test.js"));
   assert.match(scriptHarness, /without writing a snapshot by default/);
@@ -1623,6 +1650,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionLearningLoopStateSmokeEvidence/);
   assert.match(scriptHarness, /productionCycleHistorySmokeEvidence/);
   assert.match(scriptHarness, /productionOwnerAuditSmokeEvidence/);
+  assert.match(scriptHarness, /productionRecommendationLifecycleSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopWriteSmokeEvidence/);
   assert.match(scriptHarness, /productionLearnerCycleSmokeEvidence/);
   assert.match(scriptHarness, /productionSchedulerDryRunSmokeEvidence/);
@@ -1678,6 +1706,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionTargetProvisioningSmokeEvidence/);
   assert.match(releaseReadinessService, /production_target_provisioning_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_target_provisioning_smoke/);
+  assert.match(releaseReadinessService, /productionRecommendationLifecycleSmokeEvidence/);
+  assert.match(releaseReadinessService, /production_recommendation_lifecycle_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_recommendation_lifecycle_smoke/);
   assert.match(releaseReadinessService, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(releaseReadinessService, /production_daily_loop_preview_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_daily_loop_preview_smoke/);
@@ -2352,6 +2383,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /target_provisioning/);
   assert.match(service, /productionTargetProvisioningSmokeEvidence/);
   assert.match(service, /targetProvisioningSummaryFromSmoke/);
+  assert.match(service, /recommendation_lifecycle/);
+  assert.match(service, /productionRecommendationLifecycleSmokeEvidence/);
+  assert.match(service, /recommendationLifecycleSummaryFromSmoke/);
   assert.match(service, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(service, /productionLearningLoopStateSmokeEvidence/);
   assert.match(service, /smoke-growth-cycle-history\.js/);
@@ -2371,6 +2405,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /backgroundWorkerApproval/);
   assert.match(service, /smoke-growth-planner-readiness\.js/);
   assert.match(service, /smoke-growth-target-provisioning\.js/);
+  assert.match(service, /smoke-growth-recommendation-lifecycle\.js/);
   assert.match(service, /smoke-growth-daily-loop-preview\.js/);
   assert.match(service, /smoke-growth-daily-loop\.js/);
   assert.match(service, /smoke-growth-learner-cycle\.js/);

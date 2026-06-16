@@ -287,6 +287,7 @@ Implementation implication:
 | Profile V2 | What does Growth currently believe about the learner? | `learning-profile-v2-service`. |
 | Profile delta | What changed after this cycle and why? | `learning-profile-delta-service`, `profile-delta-audits.js`. |
 | Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? | `learning-profile-feedback-evidence-service`, `scripts/smoke-growth-profile-feedback.js`. |
+| Recommendation lifecycle | Which persisted next-card recommendation is pending, accepted, or superseded, and which generated card/plan accepted it? | `learning-recommendation-lifecycle-service`, `scripts/smoke-growth-recommendation-lifecycle.js`, `GET /api/v1/growth/recommendations/lifecycle`. |
 | Owner correction | What did Owner confirm or correct? | `learning-owner-correction-service`, evidence ledger correction rows. |
 | Cycle audit | Can this card/evaluation/plan cycle explain itself? | `learning-cycle-audit-service`. |
 | Cycle history | Which previous cycle should Owner inspect next? | `learning-cycle-history-service`, `scripts/smoke-growth-cycle-history.js`. |
@@ -712,6 +713,7 @@ Implemented backend shape:
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
   cycle-history readback, read-only Owner audit readback, read-only
+  profile-feedback evidence, read-only recommendation-lifecycle readback,
   learner-cycle audit, target-provisioning readback, stage-assessment
   readiness, proposal smoke, platform action evidence, read-only release
   approval bag projection, and
@@ -722,7 +724,15 @@ Implemented backend shape:
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
   collecting stage-checkpoint evidence. The default `owner_audit` task maps
   no-write `npm run smoke:owner-audit` output to
-  `productionOwnerAuditSmokeEvidence`. The default `learner_cycle` task
+  `productionOwnerAuditSmokeEvidence`. The default `profile_feedback` task
+  maps no-write completed-cycle feedback readback to
+  `productionProfileFeedbackSmokeEvidence`. The default
+  `recommendation_lifecycle` task delegates to
+  `npm run smoke:recommendation-lifecycle`, maps to
+  `productionRecommendationLifecycleSmokeEvidence`, and proves pending,
+  accepted, and superseded next-card recommendations can be read from
+  persisted trajectories without Gateway calls or writes. The default
+  `learner_cycle` task
   allows only no-write `audit` and maps to
   `productionLearnerCycleSmokeEvidence`; use direct
   `npm run smoke:learner-cycle` for any Owner-requested write operation

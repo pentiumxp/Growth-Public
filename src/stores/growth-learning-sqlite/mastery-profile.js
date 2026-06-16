@@ -516,7 +516,23 @@ function createMasteryProfileRepository({ open } = {}) {
     });
   }
 
+  function listRecentTrajectory(input = {}) {
+    return withDb(true, (db) => {
+      if (!tableExists(db, "learning_growth_card_trajectories")) {
+        return [];
+      }
+      return selectByWorkspace(
+        db,
+        "learning_growth_card_trajectories",
+        input,
+        "updated_at DESC",
+        input.trajectoryLimit || input.limit || 12
+      ).map(publicTrajectory);
+    });
+  }
+
   return {
+    listRecentTrajectory,
     markTrajectoryRecommendationAccepted,
     projectForNextCard,
     recordCardTrajectory,

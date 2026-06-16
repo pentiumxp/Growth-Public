@@ -32,6 +32,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("owner_audit"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("target_provisioning"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("recommendation_lifecycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("stage_checkpoint_controls"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
@@ -263,6 +264,61 @@ test("release evidence bundle service collects target-provisioning smoke as boun
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-target-provisioning.js"));
   assert.ok(calls[0].args.includes("--target-node-id"));
   assert.ok(calls[0].args.includes("kg_biology_cells"));
+});
+
+test("release evidence bundle service collects recommendation lifecycle smoke as bounded evidence", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      operation: "list",
+      source: "growth-learning-recommendation-lifecycle-service",
+      count: 3,
+      summary: {
+        lifecycleCount: 3,
+        pendingCount: 1,
+        acceptedCount: 1,
+        supersededCount: 1,
+        latestTrajectoryId: "lgtraj_latest",
+        latestStatus: "pending",
+        latestTargetNodeIds: ["kg_science_variables"]
+      },
+      lifecycle: [{
+        trajectoryId: "lgtraj_latest",
+        status: "pending",
+        reason: "Bounded reason only."
+      }]
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    targetNodeIds: ["kg_science_variables"],
+    tasks: ["recommendation_lifecycle"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["productionRecommendationLifecycleSmokeEvidence"]);
+  const evidence = result.bundle.evidence.productionRecommendationLifecycleSmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.smoke, "npm run smoke:recommendation-lifecycle");
+  assert.equal(evidence.summary.source, "growth-learning-recommendation-lifecycle-service");
+  assert.equal(evidence.summary.operation, "list");
+  assert.equal(evidence.summary.lifecycleCount, 3);
+  assert.equal(evidence.summary.pendingCount, 1);
+  assert.equal(evidence.summary.acceptedCount, 1);
+  assert.equal(evidence.summary.supersededCount, 1);
+  assert.equal(evidence.summary.latestTrajectoryId, "lgtraj_latest");
+  assert.deepEqual(evidence.summary.latestTargetNodeIds, ["kg_science_variables"]);
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("rawPrompt"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("Bounded reason only."), false);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-recommendation-lifecycle.js"));
+  assert.ok(calls[0].args.includes("--target-node-id"));
+  assert.ok(calls[0].args.includes("kg_science_variables"));
 });
 
 test("release evidence bundle service keeps blocked smoke as bounded evidence", () => {

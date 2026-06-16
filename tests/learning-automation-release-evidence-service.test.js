@@ -84,6 +84,10 @@ test("automation release evidence service returns evidence bag for release-readi
     evidence: { evidenceId: "target_provisioning_1", source: "target_provisioning_smoke" }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_recommendation_lifecycle_smoke_evidence",
+    evidence: { evidenceId: "recommendation_lifecycle_1", source: "recommendation_lifecycle_smoke" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_audit_ui_evidence",
     status: "blocked",
     evidence: { evidenceId: "owner_audit_blocked_1" }
@@ -92,11 +96,12 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionTargetProvisioningSmokeEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "owner_visual_harness");
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
+  assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");
   assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");
   assert.equal(bag.writefulSchedulingAllowed, false);
 });
@@ -126,4 +131,5 @@ test("automation release evidence service rejects invalid evidence keys and priv
 
   assert.equal(canonicalReleaseEvidenceKey("central_visual_evidence"), "centralVisualEvidence");
   assert.equal(canonicalReleaseEvidenceKey("owner_review_evidence"), "ownerReviewEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("production_recommendation_lifecycle_smoke_evidence"), "productionRecommendationLifecycleSmokeEvidence");
 });

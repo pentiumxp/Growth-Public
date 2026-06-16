@@ -73,6 +73,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-cycle-history-smoke-evidence",
     "--production-owner-audit-smoke-evidence",
     "--production-profile-feedback-smoke-evidence",
+    "--production-recommendation-lifecycle-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
     "--production-learner-cycle-smoke-evidence",
     "--production-scheduler-dry-run-smoke-evidence",
@@ -112,6 +113,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionCycleHistorySmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionOwnerAuditSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionRecommendationLifecycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
@@ -155,6 +157,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       productionCycleHistorySmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionOwnerAuditSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+      productionRecommendationLifecycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
       productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
@@ -341,6 +344,7 @@ test("release readiness smoke script evaluates readiness without writing a snaps
     assert.equal(output.releaseReview.nextAction.action, "complete_owner_daily_ui_visual_validation");
     assert.equal(output.releaseReview.missingEvidenceKeys.includes("production_owner_audit_smoke_evidence"), true);
     assert.equal(output.releaseReview.missingEvidenceKeys.includes("production_target_provisioning_smoke_evidence"), true);
+    assert.equal(output.releaseReview.missingEvidenceKeys.includes("production_recommendation_lifecycle_smoke_evidence"), true);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
