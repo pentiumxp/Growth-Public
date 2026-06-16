@@ -80,6 +80,10 @@ test("automation release evidence service returns evidence bag for release-readi
     evidence: { evidenceId: "owner_review_1", source: "owner_review_smoke" }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_target_provisioning_smoke_evidence",
+    evidence: { evidenceId: "target_provisioning_1", source: "target_provisioning_smoke" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_audit_ui_evidence",
     status: "blocked",
     evidence: { evidenceId: "owner_audit_blocked_1" }
@@ -88,11 +92,12 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionTargetProvisioningSmokeEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "owner_visual_harness");
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
+  assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");
   assert.equal(bag.writefulSchedulingAllowed, false);
 });
 

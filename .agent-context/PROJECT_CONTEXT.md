@@ -554,7 +554,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   delegates only to `learning-target-provisioning-service`, defaults to
   read-only resolve, requires explicit `--allow-write` for provision writes,
   and covers cross-subject domain-pack plus subject-domain selection such as
-  `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science`. Formal checkpoint operational
+  `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science`. It is now
+  also part of the default release evidence bundle as `target_provisioning`,
+  maps to `productionTargetProvisioningSmokeEvidence`, and feeds
+  release-readiness as `production_target_provisioning_smoke_evidence` so
+  multi-workspace/domain-pack rollout cannot pass release review without
+  bounded target-resolution evidence. Formal checkpoint operational
   evidence is now available through `npm run smoke:stage-assessment`; it
   defaults to read-only `learning-stage-assessment-service.stageReadiness`,
   while `eligibility`, `activate`, and `complete` require explicit
@@ -601,7 +606,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `domain`, and `subject`, and a non-sample provisioned science vertical
   harness that proves unprovisioned blocking, explicit provision enablement,
   wrong-subject blocking, and target-workspace scoped plan/card/evidence/
-  Profile V2/profile-delta rows.
+  Profile V2/profile-delta rows. The same target-resolution evidence is now
+  collected by the default release evidence bundle and represented in
+  release-readiness before any production scheduling decision.
   Evidence-ledger audit readback is now implemented through
   `learning-evidence-audit-service` and visible-target scoped
   `GET /api/v1/growth/evidence/audit`, with filters for learner, program,

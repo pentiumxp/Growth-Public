@@ -712,8 +712,9 @@ Implemented backend shape:
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact
   from selected no-write/default-disabled smoke CLIs, including read-only
   cycle-history readback, read-only Owner audit readback, read-only
-  learner-cycle audit, stage-assessment readiness, proposal smoke, platform
-  action evidence, read-only release approval bag projection, and
+  learner-cycle audit, target-provisioning readback, stage-assessment
+  readiness, proposal smoke, platform action evidence, read-only release
+  approval bag projection, and
   backend Owner automation review evidence from
   `npm run smoke:owner-review-evidence` in the default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
@@ -726,6 +727,10 @@ Implemented backend shape:
   `productionLearnerCycleSmokeEvidence`; use direct
   `npm run smoke:learner-cycle` for any Owner-requested write operation
   because learner submissions/reflections must not pass through the bundle.
+  The default `target_provisioning` task delegates to
+  `npm run smoke:target-provisioning`, maps to
+  `productionTargetProvisioningSmokeEvidence`, and proves the selected visible
+  learner/domain-pack/subject/node can resolve without writing a provision.
   The default `platform_action` task maps
   `npm run smoke:platform-action-evidence` output to `platformActionEvidence`
   from delivered Growth outbox receipts without reading Home AI internal
@@ -947,7 +952,9 @@ Required behavior:
   `npm run smoke:scheduler-worker`, production planner readiness
   smoke evidence from `npm run smoke:planner-readiness`, production
   daily-loop preview smoke evidence from
-  `npm run smoke:daily-loop-preview`, production learning-loop state smoke
+  `npm run smoke:daily-loop-preview`, production target-provisioning smoke
+  evidence from `npm run smoke:target-provisioning` or the default
+  `target_provisioning` release-bundle task, production learning-loop state smoke
   evidence from `npm run smoke:learning-loop-state`, production cycle-history
   smoke evidence from `npm run smoke:cycle-history` or the default
   `cycle_history` release-bundle task, production Owner audit smoke evidence
@@ -1009,6 +1016,7 @@ Required harness:
 - `tests/learning-automation-release-collection-run-repository.test.js`;
 - `tests/learning-automation-release-collection-run-service.test.js`;
 - `tests/learning-automation-release-readiness-service.test.js`;
+- `tests/growth-target-provisioning-smoke-script.test.js`;
 - `tests/growth-platform-action-evidence-smoke-script.test.js`;
 - `tests/growth-central-visual-evidence-smoke-script.test.js`;
 - `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`;

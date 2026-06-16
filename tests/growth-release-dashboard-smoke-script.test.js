@@ -112,7 +112,7 @@ test("release dashboard smoke script runs no-write read model against a temporar
     assert.equal(output.releaseDashboard.summaryOnly, true);
     assert.equal(output.releaseDashboard.status, "release_evidence_required");
     assert.equal(output.releaseDashboard.readinessEvidencePresentCount, 0);
-    assert.equal(output.releaseDashboard.readinessEvidenceMissingCount, 30);
+    assert.equal(output.releaseDashboard.readinessEvidenceMissingCount, 31);
     assert.equal(output.releaseReadiness.evidenceReadback.summaryOnly, true);
     assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_review_evidence"), true);
@@ -173,7 +173,7 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
     assert.equal(output.operation, "dashboard");
     assert.equal(output.releaseDashboard.latestReadinessSnapshotId, readiness.snapshot.readinessId);
     assert.equal(output.releaseDashboard.latestReadinessEvidencePresentCount, 0);
-    assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 30);
+    assert.equal(output.releaseDashboard.latestReadinessEvidenceMissingCount, 31);
     assert.equal(output.releaseDashboard.releaseEvidenceRecordCount, 1);
     assert.equal(output.releaseDashboard.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.releaseDashboard.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
@@ -181,7 +181,7 @@ test("release dashboard smoke script reads persisted readiness snapshot evidence
     assert.equal(output.releaseDashboard.latestReleaseEvidenceStatus, "pass");
     assert.equal(output.releaseInventory.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.artifactReadback.snapshots.latestId, readiness.snapshot.readinessId);
-    assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 30);
+    assert.equal(output.artifactReadback.snapshots.latestEvidenceReadbackMissingCount, 31);
     assert.equal(output.artifactReadback.releaseEvidence.latestId, releaseEvidence.evidence.evidenceRecordId);
     assert.equal(output.artifactReadback.releaseEvidence.latestEvidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.writefulSchedulingAllowed, false);

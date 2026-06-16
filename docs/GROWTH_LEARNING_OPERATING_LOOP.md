@@ -1599,8 +1599,9 @@ Implementation progress on 2026-06-15:
   `npm run smoke:release-evidence-bundle`, which runs selected no-write or
   default-disabled smoke CLIs, includes no-write cycle-history evidence,
   read-only Owner audit evidence, no-write profile-feedback evidence, read-only
-  learner-cycle audit, read-only stage-assessment readiness, proposal smoke,
-  platform action receipt evidence, central visual artifact evidence, and read-only release approval bag
+  learner-cycle audit, no-write target-provisioning evidence, read-only
+  stage-assessment readiness, proposal smoke, platform action receipt evidence,
+  central visual artifact evidence, and read-only release approval bag
   projection by default, and emits
   only summary evidence. The default `profile_feedback` task maps to
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
@@ -1623,7 +1624,10 @@ Implementation progress on 2026-06-15:
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner
-  evidence. Controlled daily-loop draft/publish smoke
+  evidence. The default `target_provisioning` task maps to
+  `productionTargetProvisioningSmokeEvidence` and proves the selected visible
+  learner/domain-pack/subject/node resolves through the target-provisioning
+  service without writing provisions or exposing raw graph content. Controlled daily-loop draft/publish smoke
   can be added only with the explicit non-default `daily_loop_write` task plus
   `--allow-write-evidence`, and the builder then delegates to the existing
   daily-loop smoke write gate instead of importing daily-loop services. The

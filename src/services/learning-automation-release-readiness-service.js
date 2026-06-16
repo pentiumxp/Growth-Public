@@ -571,6 +571,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       } : {}),
       presentCheck(inputWithReleaseEvidence, "productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence", "Production scheduler worker smoke", "run_production_scheduler_worker_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionPlannerReadinessEvidence", "production_planner_readiness_evidence", "Production planner readiness smoke", "run_production_planner_readiness_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionTargetProvisioningSmokeEvidence", "production_target_provisioning_smoke_evidence", "Production target-provisioning smoke", "run_production_target_provisioning_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence", "Production daily-loop preview smoke", "run_production_daily_loop_preview_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence", "Production learning-loop state smoke", "run_production_learning_loop_state_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence", "Production cycle-history smoke", "run_production_cycle_history_smoke"),

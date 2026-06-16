@@ -199,6 +199,7 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--production-scheduler-worker-target-smoke-evidence")) evidence.productionSchedulerWorkerTargetSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-scheduler-worker-smoke-evidence")) evidence.productionSchedulerWorkerSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-planner-readiness-evidence")) evidence.productionPlannerReadinessEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--production-target-provisioning-smoke-evidence")) evidence.productionTargetProvisioningSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-daily-loop-preview-smoke-evidence")) evidence.productionDailyLoopPreviewSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-learning-loop-state-smoke-evidence")) evidence.productionLearningLoopStateSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--production-cycle-history-smoke-evidence")) evidence.productionCycleHistorySmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };

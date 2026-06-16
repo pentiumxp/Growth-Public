@@ -31,6 +31,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("cycle_history"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("owner_audit"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("target_provisioning"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("stage_checkpoint_controls"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
@@ -214,6 +215,54 @@ test("release evidence bundle service blocks learner-cycle write operations from
   assert.equal(evidence.summary.operation, "full");
   assert.equal(evidence.summary.useDirectSmoke, "npm run smoke:learner-cycle");
   assert.equal(JSON.stringify(result.bundle).includes("learner answer"), false);
+});
+
+test("release evidence bundle service collects target-provisioning smoke as bounded multi-workspace evidence", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-target-provisioning-service",
+      mode: "explicit_provision",
+      targetEnabled: true,
+      selectedDomainPackId: "domain_pack_science",
+      selectedDomain: "science",
+      selectedSubject: "biology",
+      selectedTargetNodeIds: ["kg_biology_cells"],
+      graphOptions: {
+        available: true,
+        domainPacks: [{ domainPackId: "domain_pack_science", title: "Science" }],
+        subjects: ["biology", "chemistry"]
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_alice",
+    learnerId: "alice",
+    domainPackId: "domain_pack_science",
+    domain: "science",
+    subject: "biology",
+    targetNodeIds: ["kg_biology_cells"],
+    tasks: ["target_provisioning"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.status, "pass");
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.smoke, "npm run smoke:target-provisioning");
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.mode, "explicit_provision");
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.targetEnabled, true);
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.selectedDomainPackId, "domain_pack_science");
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.selectedSubject, "biology");
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.selectedTargetNodeCount, 1);
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.domainPackCount, 1);
+  assert.equal(result.bundle.evidence.productionTargetProvisioningSmokeEvidence.summary.subjectCount, 2);
+  assert.equal(JSON.stringify(result.bundle).includes("stdout"), false);
+  assert.equal(JSON.stringify(result.bundle).includes("rawPrompt"), false);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-target-provisioning.js"));
+  assert.ok(calls[0].args.includes("--target-node-id"));
+  assert.ok(calls[0].args.includes("kg_biology_cells"));
 });
 
 test("release evidence bundle service keeps blocked smoke as bounded evidence", () => {
@@ -769,6 +818,7 @@ test("release evidence bundle service fails closed for missing workspace, invali
   assert.equal(invalidTask.error, "release_evidence_bundle_task_invalid");
   assert.deepEqual(invalidTask.invalidTaskIds, ["unknown_task"]);
   assert.ok(invalidTask.allowedTaskIds.includes("learner_cycle"));
+  assert.ok(invalidTask.allowedTaskIds.includes("target_provisioning"));
   assert.ok(invalidTask.allowedTaskIds.includes("daily_loop_write"));
 
   const privacy = createServiceWithRunner(() => ({

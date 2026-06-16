@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T12:29+08:00 - Target Provisioning Release Evidence Integration
+
+- Status: implemented, documented, and full-Harness validated locally. This
+  slice integrates multi-workspace/domain-pack target provisioning into the
+  release evidence/readiness ladder. It does not change UI, deploy, call
+  Gateway/model vendors, publish plans/cards, generate cards, evaluate
+  submissions, execute scheduler actions, run scheduler ticks, deliver
+  notifications, emit platform events, activate stage assessments, mutate
+  learner state, flip runtime config, grant scheduler permission, or write
+  production data.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes default
+    task `target_provisioning`, delegates through the injected runner to
+    `scripts/smoke-growth-target-provisioning.js`, and maps bounded smoke
+    output into `productionTargetProvisioningSmokeEvidence`;
+  - `learning-automation-release-readiness-service` now requires
+    `production_target_provisioning_smoke_evidence` before all-pass release
+    review;
+  - `learning-automation-release-evidence-service` can read persisted pass
+    records under the canonical
+    `production_target_provisioning_smoke_evidence` key;
+  - release bundle summaries keep only bounded source/status/mode/domain-pack/
+    domain/subject/node-count/option-count fields, not raw graph content, raw
+    prompts, raw model output, private paths, or provider config.
+- Harness added/updated:
+  - release-readiness, release-evidence, release-bundle service tests cover the
+    new evidence key and default task;
+  - release-bundle script tests seed a minimal target-provisioned graph in a
+    temporary SQLite DB and prove no-write `smoke:target-provisioning` output
+    becomes bounded release evidence;
+  - release controls/dashboard/inventory/package smoke tests now expect 31
+    release-readiness evidence checks;
+  - architecture guards require the readiness flag, evidence key, default task,
+    summary mapper, and target-provisioning smoke script boundary.
+- Validation passed:
+  - focused syntax and focused release/target harness:
+    `node --check ...` and `node --test ...` (`98/98`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `git diff --check`;
+  - `npm test` (`792/792`);
+  - Home AI app `node tests/hermes-plugin-service.test.js`;
+  - Home AI app `node tests/hermes-plugin-authorization-service.test.js`;
+  - Home AI app `node tests/plugin-capability-activation-service.test.js`;
+  - Home AI app `node tests/plugin-workspace-platform-contract-check.test.js`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth target-provisioning release evidence integration; backend readiness bundle docs and harness only; no UI deploy" --json`
+    classified this backend/release-evidence slice as H1.
+  - AI Ops evidence ledger appended
+    `evidence-c7e19709-49ea-41f3-888f-579ff9034040`.
+  - The Home AI app deploy plan still reported unrelated dirty native
+    notification/Web Push files from another workspace state. They were not
+    modified by this Growth slice.
+  - CodeGraph status after edits reported 343 JavaScript files indexed, 4546
+    nodes, and 18127 edges.
+- Progress calibration:
+  - Card-generation/daily-card user flow remains about 80-85% complete.
+  - Full AI-driven Growth closed-loop MVP progress is about 75-77%: multi-
+    workspace target evidence is now part of release review, while richer
+    Owner UI, production central visual artifacts, planner-backed product
+    workflow polish, and broader domain rollout remain unfinished.
+
 ## 2026-06-16T12:05+08:00 - Release Ladder Private Value Guard Consistency
 
 - Status: implemented, documented, and full-Harness validated locally. This

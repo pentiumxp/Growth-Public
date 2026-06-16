@@ -5,10 +5,14 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
+const { createGrowthLearningSqliteStore } = require("../src/stores/growth-learning-sqlite-store");
 
 const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "build-growth-release-evidence-bundle.js");
 const releaseApprovalScriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-release-approval.js");
+
+const TARGET_PROVISION_DOMAIN_PACK_ID = "domain_pack_release_target_provisioning";
+const TARGET_PROVISION_NODE_ID = "kg_release_target_provisioning_science";
 
 const {
   activationGates,
@@ -28,6 +32,69 @@ function withTempDb(callback) {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function targetProvisioningGraphPack() {
+  return {
+    schemaVersion: "hermes.learningGraphSeed.v0.1",
+    importId: "kg_import_release_target_provisioning",
+    version: "2026-06-16-test",
+    privacyClass: "summary_only",
+    sourceDocuments: [{
+      sourceRef: "public:release-target-provisioning-smoke",
+      title: "Release target provisioning smoke summary",
+      localPath: ""
+    }],
+    domainPacks: [{
+      domainPackId: TARGET_PROVISION_DOMAIN_PACK_ID,
+      domain: "science",
+      title: "Release Target Provisioning Science",
+      sourceKind: "owner_manual",
+      version: "2026-06-16-test",
+      ownerWorkspaceId: "owner",
+      visibility: "private_seed",
+      importStatus: "validated_seed"
+    }],
+    nodes: [{
+      nodeId: TARGET_PROVISION_NODE_ID,
+      domain: "science",
+      nodeType: "strand",
+      title: "Release Target Provisioning Science",
+      stage: "lower_secondary",
+      subject: "biology",
+      curriculum: "test",
+      sourceKind: "owner_manual",
+      sourceRef: "public:release-target-provisioning-smoke",
+      version: "2026-06-16-test",
+      privacyClass: "summary_only",
+      learningOutcomes: ["Use bounded target-provisioning release evidence."],
+      evidenceRequired: ["Resolve a provisioned science target."]
+    }],
+    edges: []
+  };
+}
+
+function withProvisionedTargetDb(callback) {
+  return withTempDb(({ dir, dbPath }) => {
+    const store = createGrowthLearningSqliteStore({ dbPath });
+    store.learningGraphRepository.importPack({
+      pack: targetProvisioningGraphPack(),
+      validation: { validation: {}, warnings: [] },
+      sourceFile: "release-target-provisioning-graph.json",
+      sourceSha256: "release-target-provisioning-sha256"
+    });
+    store.domainPackProvisionRepository.upsertProvision({
+      workspaceId: "smoke_workspace",
+      learnerId: "smoke_learner",
+      programId: "smoke_program",
+      domainPackId: TARGET_PROVISION_DOMAIN_PACK_ID,
+      domain: "science",
+      subject: "biology",
+      status: "active",
+      source: "release_evidence_bundle_test"
+    });
+    return callback({ dir, dbPath });
+  });
 }
 
 function runScript(args, env = {}) {
@@ -175,6 +242,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("owner_audit"));
   assert.ok(output.allowedTaskIds.includes("profile_feedback"));
   assert.ok(output.allowedTaskIds.includes("learner_cycle"));
+  assert.ok(output.allowedTaskIds.includes("target_provisioning"));
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("stage_checkpoint_controls"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
@@ -330,6 +398,43 @@ test("release evidence bundle script blocks learner-cycle write operations befor
   assert.deepEqual(bundle.evidence.productionLearnerCycleSmokeEvidence.allowedOperations, ["audit"]);
   assert.equal(bundle.evidence.productionLearnerCycleSmokeEvidence.summary.useDirectSmoke, "npm run smoke:learner-cycle");
   assert.equal(JSON.stringify(bundle).includes("stdout"), false);
+});
+
+test("release evidence bundle script writes target-provisioning release evidence from no-write smoke", () => {
+  withProvisionedTargetDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "target-provisioning-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain-pack-id", TARGET_PROVISION_DOMAIN_PACK_ID,
+      "--domain", "science",
+      "--subject", "biology",
+      "--target-node-id", TARGET_PROVISION_NODE_ID,
+      "--task", "target_provisioning",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    const evidence = fileBundle.evidence.productionTargetProvisioningSmokeEvidence;
+    assert.equal(evidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(evidence.smoke, "npm run smoke:target-provisioning");
+    assert.equal(evidence.status, "pass");
+    assert.equal(evidence.summary.source, "growth-learning-target-provisioning-service");
+    assert.equal(evidence.summary.mode, "explicit_provision");
+    assert.equal(evidence.summary.targetEnabled, true);
+    assert.equal(evidence.summary.selectedDomainPackId, TARGET_PROVISION_DOMAIN_PACK_ID);
+    assert.equal(evidence.summary.selectedSubject, "biology");
+    assert.equal(evidence.summary.selectedTargetNodeCount, 1);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
 });
 
 test("release evidence bundle script exposes controlled daily-loop write evidence only as explicit blocked task by default", () => {

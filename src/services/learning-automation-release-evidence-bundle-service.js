@@ -15,6 +15,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "owner_audit",
   "profile_feedback",
   "learner_cycle",
+  "target_provisioning",
   "stage_assessment",
   "stage_checkpoint_controls",
   "proposal",
@@ -78,6 +79,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearnerCycleSmokeEvidence",
     script: "scripts/smoke-growth-learner-cycle.js",
     commandName: "npm run smoke:learner-cycle"
+  },
+  {
+    taskId: "target_provisioning",
+    evidenceKey: "productionTargetProvisioningSmokeEvidence",
+    script: "scripts/smoke-growth-target-provisioning.js",
+    commandName: "npm run smoke:target-provisioning"
   },
   {
     taskId: "daily_loop_write",
@@ -619,12 +626,34 @@ function ownerReviewSummaryFromSmoke(value = {}) {
   };
 }
 
+function targetProvisioningSummaryFromSmoke(value = {}) {
+  const graphOptions = value.graphOptions && typeof value.graphOptions === "object" && !Array.isArray(value.graphOptions)
+    ? value.graphOptions
+    : {};
+  return {
+    source: cleanString(value.source || "growth-learning-target-provisioning-service", 160),
+    status: cleanString(value.status || (value.ok === true ? "pass" : ""), 120),
+    mode: cleanString(value.mode, 120),
+    targetEnabled: value.targetEnabled === true,
+    selectedDomainPackId: cleanString(value.selectedDomainPackId || value.selected_domain_pack_id, 160),
+    selectedDomain: cleanString(value.selectedDomain || value.selected_domain, 120),
+    selectedSubject: cleanString(value.selectedSubject || value.selected_subject, 120),
+    selectedTargetNodeCount: uniqueStrings(value.selectedTargetNodeIds || value.selected_target_node_ids || []).length,
+    graphOptionsAvailable: graphOptions.available === true,
+    domainPackCount: Array.isArray(graphOptions.domainPacks || graphOptions.domain_packs)
+      ? (graphOptions.domainPacks || graphOptions.domain_packs).length
+      : 0,
+    subjectCount: Array.isArray(graphOptions.subjects) ? graphOptions.subjects.length : 0
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
   if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
   if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
   if (task.taskId === "owner_review_evidence") return ownerReviewSummaryFromSmoke(value);
+  if (task.taskId === "target_provisioning") return targetProvisioningSummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
