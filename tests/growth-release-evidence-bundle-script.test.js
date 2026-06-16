@@ -401,7 +401,7 @@ test("release evidence bundle script writes bounded learner-cycle audit evidence
   });
 });
 
-test("release evidence bundle script records missing profile-feedback closure as bounded evidence", () => {
+test("release evidence bundle script records missing profile-feedback selector diagnostics as bounded evidence", () => {
   withTempDb(({ dir, dbPath }) => {
     const bundlePath = path.join(dir, "profile-feedback-bundle.json");
     const result = runScript([
@@ -411,7 +411,6 @@ test("release evidence bundle script records missing profile-feedback closure as
       "--domain", "science",
       "--subject", "science",
       "--target-node-id", "kg_science_fair_test",
-      "--task-card-id", "ltask_missing_daily_1",
       "--task", "profile_feedback",
       "--output-file", bundlePath,
       "--json"
@@ -426,8 +425,13 @@ test("release evidence bundle script records missing profile-feedback closure as
     assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.smoke, "npm run smoke:profile-feedback");
     assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.status, "blocked");
     assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.source, "growth-learning-profile-feedback-evidence-service");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.error, "profile_feedback_cycle_selector_required");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.nextAction, "produce_completed_daily_cycle");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.selectorDiscovery.status, "no_completed_cycle");
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.selectorDiscovery.candidateCount, 0);
+    assert.equal(fileBundle.evidence.productionProfileFeedbackSmokeEvidence.summary.requiredActions[0].action, "produce_completed_daily_cycle");
     assert.deepEqual(fileBundle.summary.failedTaskIds, ["profile_feedback"]);
-    assert.equal(fileBundle.scope.taskCardId, "ltask_missing_daily_1");
+    assert.equal(fileBundle.scope.taskCardId, "");
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
   });

@@ -558,7 +558,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   completeness, persisted evidence, persisted profile delta, Profile V2,
   recommendation, and next loop-state readback without Gateway calls, plan
   publication, card generation, evaluation, scheduling, stage activation,
-  direct repository access, SQLite writes, or learner-state mutation. The Owner
+  direct repository access, SQLite writes, or learner-state mutation. When no
+  selector is supplied, the same service may call the read-only
+  `learning-cycle-history-service` for bounded selector discovery only and then
+  fails closed with `selectorDiscovery.status`, selector/cycle counts, and a
+  remediation `nextAction` such as `produce_completed_daily_cycle`; release
+  bundles preserve that summary in
+  `productionProfileFeedbackSmokeEvidence.summary` without passing release
+  evidence or fabricating learner history. The Owner
   Recommendation lifecycle readback now also has
   `learning-recommendation-lifecycle-service`,
   `GET /api/v1/growth/recommendations/lifecycle`, and

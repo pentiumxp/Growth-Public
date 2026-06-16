@@ -114,6 +114,40 @@ function completeDependencies(overrides = {}) {
           }
         };
       }
+    },
+    cycleHistoryService: {
+      listCycleHistory(input) {
+        calls.push({ type: "cycleHistory", input });
+        return overrides.cycleHistory || {
+          ok: true,
+          available: true,
+          summary: {
+            cycleCount: 1,
+            completeCount: 1,
+            readyForAutomationCount: 1,
+            latestActivityAt: "2026-06-16T08:00:00.000Z"
+          },
+          cycles: [{
+            cycleId: "cycle_science_1",
+            status: "ready_for_profile_feedback",
+            latestActivityAt: "2026-06-16T08:00:00.000Z",
+            selectors: {
+              planDraftId: "lgplan_science_1",
+              taskCardId: "ltask_science_daily_1",
+              evaluationId: "leval_daily_1",
+              profileDeltaId: "lgpdelta_daily_1",
+              evidenceId: "lgevd_daily_1",
+              sourceId: "leval_daily_1",
+              targetNodeIds: ["kg_science_fair_test"]
+            },
+            completeness: {
+              complete: true,
+              readyForAutomation: true
+            },
+            rawPrompt: "must not leak"
+          }]
+        };
+      }
     }
   };
   return { calls, services };
@@ -169,7 +203,46 @@ test("profile feedback evidence service requires a completed-cycle selector", ()
   assert.equal(result.status, "missing");
   assert.equal(result.error, "profile_feedback_cycle_selector_required");
   assert.deepEqual(result.summary.missingRequired, ["cycle_selector_present"]);
-  assert.equal(calls.length, 0);
+  assert.equal(result.selectorDiscovery.status, "candidate_available");
+  assert.equal(result.summary.selectorCandidateCount, 1);
+  assert.equal(result.summary.completeCycleCount, 1);
+  assert.equal(result.summary.nextAction, "supply_completed_cycle_selector");
+  assert.equal(result.checks[0].requiredAction.action, "supply_completed_cycle_selector");
+  assert.equal(result.selectorDiscovery.candidates[0].taskCardId, "ltask_science_daily_1");
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
+  assert.deepEqual(calls.map((call) => call.type), ["cycleHistory"]);
+});
+
+test("profile feedback evidence service reports no completed cycle candidates without fabricating release evidence", () => {
+  const { calls, services } = completeDependencies({
+    cycleHistory: {
+      ok: true,
+      available: true,
+      summary: {
+        cycleCount: 0,
+        completeCount: 0,
+        readyForAutomationCount: 0,
+        latestActivityAt: ""
+      },
+      cycles: []
+    }
+  });
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    targetNodeIds: ["kg_science_fair_test"]
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "profile_feedback_cycle_selector_required");
+  assert.equal(result.selectorDiscovery.status, "no_completed_cycle");
+  assert.equal(result.summary.cycleCount, 0);
+  assert.equal(result.summary.completeCycleCount, 0);
+  assert.equal(result.summary.nextAction, "produce_completed_daily_cycle");
+  assert.equal(result.checks[0].requiredAction.action, "produce_completed_daily_cycle");
+  assert.deepEqual(calls.map((call) => call.type), ["cycleHistory"]);
 });
 
 test("profile feedback evidence service reports missing profile feedback without passing release evidence", () => {

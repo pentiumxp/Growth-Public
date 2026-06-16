@@ -309,7 +309,7 @@ Implementation implication:
 | Evidence ledger | What summary evidence should profile use? | `learning-evidence-ledger-service`, `evidence-ledger.js`. |
 | Profile V2 | What does Growth currently believe about the learner? | `learning-profile-v2-service`. |
 | Profile delta | What changed after this cycle and why? | `learning-profile-delta-service`, `profile-delta-audits.js`. |
-| Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? | `learning-profile-feedback-evidence-service`, `scripts/smoke-growth-profile-feedback.js`. |
+| Profile feedback evidence | Did the completed cycle produce enough persisted, summary-only readback to drive the next plan? If no completed-cycle selector is supplied, can the system prove whether a bounded selector candidate exists without writing learner state? | `learning-profile-feedback-evidence-service`, `learning-cycle-history-service` for no-write selector discovery only, `scripts/smoke-growth-profile-feedback.js`. |
 | Recommendation lifecycle | Which persisted next-card recommendation is pending, accepted, or superseded, and which generated card/plan accepted it? | `learning-recommendation-lifecycle-service`, `scripts/smoke-growth-recommendation-lifecycle.js`, `GET /api/v1/growth/recommendations/lifecycle`. |
 | Owner correction | What did Owner confirm or correct? | `learning-owner-correction-service`, evidence ledger correction rows. |
 | Cycle audit | Can this card/evaluation/plan cycle explain itself? | `learning-cycle-audit-service`. |
@@ -384,6 +384,7 @@ Required harness:
 - `npm run smoke:daily-loop-preview -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --task-card-id <taskCardId> --evaluation-id <evaluationId> --json`;
+- `npm run smoke:profile-feedback -- --workspace-id <workspace> --learner-id <learner> --target-node-id <nodeId> --json` for the fail-closed selector-discovery path when no completed-cycle selector exists;
 - `npm run smoke:daily-loop -- --operation draft --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <planDraftId> --item-id <itemId> --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - central Home AI embedded-plugin visual harness before production release.

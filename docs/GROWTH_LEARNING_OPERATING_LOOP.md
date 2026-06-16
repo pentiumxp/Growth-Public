@@ -1613,7 +1613,12 @@ Implementation progress on 2026-06-15:
   only summary evidence. The default `profile_feedback` task maps to
   `productionProfileFeedbackSmokeEvidence` and fails closed unless a bounded
   completed-cycle selector can read back audit completeness, persisted evidence,
-  persisted profile delta, Profile V2, recommendation, and next loop state. The
+  persisted profile delta, Profile V2, recommendation, and next loop state.
+  If no completed-cycle selector is supplied, the profile-feedback service may
+  call the read-only cycle-history service for bounded selector discovery only.
+  The bundle then carries summary-only `selectorDiscovery` counts and a
+  remediation `nextAction` such as `produce_completed_daily_cycle`; it must not
+  convert an absent production cycle into passing release evidence. The
   default `recommendation_lifecycle` task maps to
   `productionRecommendationLifecycleSmokeEvidence` and proves the pending,
   accepted, and superseded next-card recommendation lifecycle can be read from

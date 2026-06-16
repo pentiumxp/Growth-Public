@@ -9,6 +9,65 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T16:15+08:00 - Profile Feedback Selector Discovery Diagnostics
+
+- Status: implemented locally, documented, and validated; production deploy is
+  the next step. This H1 backend/docs slice does not close the
+  `production_profile_feedback_smoke_evidence` gate because production Fanfan
+  currently has no completed-cycle selector to verify. It instead closes the
+  diagnostic gap: profile-feedback release evidence now says whether a bounded
+  selector candidate exists and what Owner action is required next, without
+  fabricating learner evidence.
+- Production read-only finding before the code change:
+  - `npm run smoke:cycle-history` equivalent as `hermes-host` for
+    `workspaceId=weixin_stephen`, `learnerId=fanfan`,
+    `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
+    `subject=science`, and
+    `targetNodeId=kg_ls_science_scientific_enquiry_plan_investigative_work`
+    returned `cycleCount=0`, `completeCount=0`,
+    `readyForAutomationCount=0`;
+  - the wider Fanfan-only cycle-history readback also returned `cycleCount=0`;
+  - the existing profile-feedback smoke correctly failed with
+    `profile_feedback_cycle_selector_required`;
+  - the release-evidence-collection subset for `profile_feedback` stayed
+    advisory/no-write and blocked, but its bounded bundle summary did not yet
+    expose enough selector-discovery detail for Owner/release tooling.
+- Changes:
+  - `learning-profile-feedback-evidence-service` now optionally calls the
+    read-only `learning-cycle-history-service` only when no completed-cycle
+    selector is supplied, and returns bounded `selectorDiscovery` with
+    candidate/cycle counts, compact candidate selectors when present, and a
+    remediation `nextAction` such as `produce_completed_daily_cycle`;
+  - `src/app/services.js` wires the existing cycle-history service into the
+    profile-feedback evidence service;
+  - `learning-automation-release-evidence-bundle-service` keeps bounded smoke
+    diagnostics in `productionProfileFeedbackSmokeEvidence.summary`, including
+    `missingRequired`, `requiredActions`, `selectorDiscovery`, and selector
+    counts, while still excluding stdout/raw payloads;
+  - Growth docs now record that no production completed-cycle evidence may be
+    fabricated; profile-feedback release evidence stays blocked until a real
+    completed daily cycle exists.
+- Validation passed so far:
+  - `node --test tests/learning-profile-feedback-evidence-service.test.js`;
+  - `node --test tests/growth-profile-feedback-smoke-script.test.js`;
+  - `node --test tests/growth-release-evidence-bundle-script.test.js`;
+  - focused cycle-history / release-bundle / release-readiness /
+    release-collection / architecture tests;
+  - `node scripts/check-growth-docs-locality.js`;
+  - Growth `npm run check`;
+  - full Growth `npm test` (`816/816` passing);
+  - Growth `git diff --check`;
+  - Home AI central H1 required checks from AI Ops, including Gateway runtime
+    tests, Mac deploy-script checks, architecture-code-test-harness-map,
+    plan-mode `deploy:macos -- --target home-ai`, and app `git diff --check`.
+- Next:
+  - commit and deploy this Growth plugin change;
+  - re-run production no-write `profile_feedback` release-evidence-collection
+    subset and verify it reports selector-discovery metadata with
+    `nextAction=produce_completed_daily_cycle`;
+  - the actual profile-feedback release gate remains open until Owner creates
+    or selects a real completed daily learning cycle.
+
 ## 2026-06-16T16:00+08:00 - Stage Checkpoint Release Evidence Mapping Closure
 
 - Status: implemented, deployed, production-verified, and documented. This H1

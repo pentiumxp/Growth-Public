@@ -156,6 +156,63 @@ function loopStateSummary(loopState = {}) {
   };
 }
 
+function selectorFromCycle(cycle = {}) {
+  const selectors = cycle.selectors || {};
+  return {
+    cycleId: cleanString(cycle.cycleId, 160),
+    status: cleanString(cycle.status, 80),
+    latestActivityAt: cleanString(cycle.latestActivityAt, 80),
+    planDraftId: cleanString(selectors.planDraftId, 120),
+    taskCardId: cleanString(selectors.taskCardId, 120),
+    evaluationId: cleanString(selectors.evaluationId, 120),
+    profileDeltaId: cleanString(selectors.profileDeltaId, 120),
+    evidenceId: cleanString(selectors.evidenceId, 120),
+    sourceId: cleanString(selectors.sourceId, 120),
+    targetNodeIds: uniqueStrings(selectors.targetNodeIds).slice(0, 12),
+    complete: Boolean(cycle.completeness?.complete),
+    readyForAutomation: Boolean(cycle.completeness?.readyForAutomation)
+  };
+}
+
+function selectorDiscoverySummary(result = {}) {
+  if (!result?.ok) {
+    return {
+      available: false,
+      status: "unavailable",
+      error: cleanString(result?.error || "profile_feedback_cycle_history_unavailable", 160),
+      cycleCount: 0,
+      completeCount: 0,
+      readyForAutomationCount: 0,
+      candidateCount: 0,
+      candidates: []
+    };
+  }
+  const cycles = asArray(result.cycles);
+  const candidates = cycles
+    .filter((cycle) => cycle.completeness?.complete || cycle.completeness?.readyForAutomation)
+    .map(selectorFromCycle)
+    .filter((selector) => selector.taskCardId || selector.evaluationId || selector.profileDeltaId || selector.evidenceId || selector.planDraftId || selector.sourceId)
+    .slice(0, 5);
+  return {
+    available: true,
+    status: candidates.length ? "candidate_available" : "no_completed_cycle",
+    cycleCount: Number(result.summary?.cycleCount || cycles.length || 0) || 0,
+    completeCount: Number(result.summary?.completeCount || cycles.filter((cycle) => cycle.completeness?.complete).length || 0) || 0,
+    readyForAutomationCount: Number(result.summary?.readyForAutomationCount || cycles.filter((cycle) => cycle.completeness?.readyForAutomation).length || 0) || 0,
+    latestActivityAt: cleanString(result.summary?.latestActivityAt, 80),
+    partialFailureCount: Number(result.summary?.partialFailureCount || asArray(result.partialFailures).length || 0) || 0,
+    candidateCount: candidates.length,
+    candidates
+  };
+}
+
+function actionForSelectorDiscovery(discovery = {}) {
+  if (discovery.available === false) return "inspect_cycle_history_service";
+  if (discovery.candidateCount > 0) return "supply_completed_cycle_selector";
+  if (discovery.cycleCount > 0) return "complete_cycle_audit";
+  return "produce_completed_daily_cycle";
+}
+
 function check(key, status, summary = {}, requiredAction = "") {
   return {
     key,
@@ -180,6 +237,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
   const profileV2Service = options.profileV2Service || null;
   const recommendationService = options.recommendationService || null;
   const loopStateService = options.loopStateService || null;
+  const cycleHistoryService = options.cycleHistoryService || null;
 
   function evaluate(input = {}) {
     const scope = publicScope(input);
@@ -196,6 +254,17 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
       };
     }
     if (!hasCycleSelector(scope)) {
+      const cycleHistory = callService(
+        cycleHistoryService,
+        "listCycleHistory",
+        Object.assign({}, scope, {
+          includeCompleteness: true,
+          limit: Math.min(scope.limit, 5)
+        }),
+        "profile_feedback_cycle_history_unavailable"
+      );
+      const selectorDiscovery = selectorDiscoverySummary(cycleHistory);
+      const requiredAction = actionForSelectorDiscovery(selectorDiscovery);
       return {
         ok: false,
         source: "growth-learning-profile-feedback-evidence-service",
@@ -208,12 +277,19 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         checks: [
           check("cycle_selector_present", "missing", {
             label: "Completed-cycle selector",
-            acceptedSelectors: ["planDraftId", "taskCardId", "evaluationId", "profileDeltaId", "evidenceId", "sourceId"]
-          }, "supply_completed_cycle_selector")
+            acceptedSelectors: ["planDraftId", "taskCardId", "evaluationId", "profileDeltaId", "evidenceId", "sourceId"],
+            selectorDiscovery
+          }, requiredAction)
         ],
+        selectorDiscovery,
         summary: {
           missingRequired: ["cycle_selector_present"],
-          readyForNextPlan: false
+          readyForNextPlan: false,
+          selectorDiscoveryStatus: selectorDiscovery.status,
+          selectorCandidateCount: selectorDiscovery.candidateCount,
+          completeCycleCount: selectorDiscovery.completeCount,
+          cycleCount: selectorDiscovery.cycleCount,
+          nextAction: requiredAction
         }
       };
     }

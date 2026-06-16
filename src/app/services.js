@@ -480,7 +480,8 @@ function createServices(config) {
     profileDeltaAuditService: learningProfileDeltaAuditService,
     profileV2Service: learningProfileV2Service,
     recommendationService: learningCardRecommendationService,
-    loopStateService: learningLoopStateService
+    loopStateService: learningLoopStateService,
+    cycleHistoryService: learningCycleHistoryService
   });
   const growthEvaluationService = createGrowthEvaluationService({
     learningStore: growthLearningStore,

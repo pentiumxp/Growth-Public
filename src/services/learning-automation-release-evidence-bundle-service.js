@@ -216,6 +216,10 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(values.map((value) => cleanString(value, 120)).filter(Boolean)));
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function clampLimit(value, fallback = 12) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
@@ -370,6 +374,47 @@ function publicBundleScope(scope = {}) {
   return output;
 }
 
+function publicRequiredAction(action = {}, fallbackKey = "") {
+  if (!action || typeof action !== "object" || Array.isArray(action)) return null;
+  const output = {
+    key: cleanString(action.key || fallbackKey, 120),
+    action: cleanString(action.action, 120),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || "owner", 80),
+    endpoint: cleanString(action.endpoint, 180)
+  };
+  if (!output.action) return null;
+  if (!output.endpoint) delete output.endpoint;
+  return output;
+}
+
+function requiredActionsFromChecks(checks = []) {
+  return asArray(checks)
+    .map((check) => {
+      const action = publicRequiredAction(check.requiredAction, check.key);
+      if (!action) return null;
+      return Object.assign({}, action, {
+        status: cleanString(check.status, 80),
+        label: cleanString(check.summary?.label, 120)
+      });
+    })
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function publicSelectorDiscovery(discovery = {}) {
+  if (!discovery || typeof discovery !== "object" || Array.isArray(discovery)) return null;
+  return {
+    available: discovery.available !== false,
+    status: cleanString(discovery.status, 80),
+    error: cleanString(discovery.error, 160),
+    cycleCount: Number(discovery.cycleCount || 0) || 0,
+    completeCount: Number(discovery.completeCount || 0) || 0,
+    readyForAutomationCount: Number(discovery.readyForAutomationCount || 0) || 0,
+    candidateCount: Number(discovery.candidateCount || 0) || 0,
+    latestActivityAt: cleanString(discovery.latestActivityAt, 80)
+  };
+}
+
 function summaryFromSmoke(value = {}) {
   const summary = {};
   const scalarKeys = [
@@ -401,7 +446,20 @@ function summaryFromSmoke(value = {}) {
   }
   if (value.summary && typeof value.summary === "object") {
     summary.summaryKeys = Object.keys(value.summary).slice(0, 12).map((key) => cleanString(key, 80));
+    summary.missingRequired = uniqueStrings(asArray(value.summary.missingRequired)).slice(0, 12);
+    summary.nextAction = cleanString(value.summary.nextAction, 120);
+    summary.selectorDiscoveryStatus = cleanString(value.summary.selectorDiscoveryStatus, 80);
+    summary.selectorCandidateCount = Number(value.summary.selectorCandidateCount || 0) || 0;
+    summary.completeCycleCount = Number(value.summary.completeCycleCount || 0) || 0;
+    summary.cycleCount = Number(value.summary.cycleCount || 0) || 0;
   }
+  const requiredActions = requiredActionsFromChecks(value.checks);
+  if (requiredActions.length) {
+    summary.requiredActionCount = requiredActions.length;
+    summary.requiredActions = requiredActions;
+  }
+  const selectorDiscovery = publicSelectorDiscovery(value.selectorDiscovery || value.checks?.[0]?.summary?.selectorDiscovery);
+  if (selectorDiscovery) summary.selectorDiscovery = selectorDiscovery;
   return summary;
 }
 
