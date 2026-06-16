@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T18:35+08:00 - Release-Readiness UI Evidence Input Hardening
+
+- Status: implemented, tested, pushed, deployed, and production-smoked. This
+  H2 backend/docs/harness slice tightens the release-readiness one-off UI
+  evidence input boundary.
+- Change intent:
+  - release-readiness UI gates now accept only
+    `growth.learningAutomationUiEvidence.v1` validator summaries or validated
+    persisted release-evidence record projections;
+  - deprecated UI evidence flag aliases such as `--owner-daily-ui-evidence`
+    now produce blocked remediation metadata instead of direct `{ok:true}`
+    evidence;
+  - direct unvalidated `{ok:true}` UI evidence can no longer satisfy
+    release-readiness gates;
+  - release-evidence bag readback preserves the validator schema/projection
+    fields needed for readiness to verify persisted UI rows.
+- Boundary:
+  - release-readiness remains advisory evidence only and always keeps
+    `writefulSchedulingAllowed=false`;
+  - the readiness CLI and service do not run visual tooling, call Gateway,
+    generate/evaluate cards, publish plans, schedule work, deliver
+    notifications, activate stage assessments, mutate learner state, or act as
+    a release switch;
+  - blocked/missing UI records can still exist as explicit non-pass audit
+    state, but only validated pass UI summaries can count for UI gates.
+- Validation:
+  - focused service/script/evidence/architecture/docs-locality tests passed
+    with `65/65`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `npm run check` passed;
+  - full Growth `npm test` passed with `832/832`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `git diff --check` passed;
+  - CodeGraph status after sync: 355 files, 4,809 nodes, 19,195 edges, index
+    up to date.
+- Commit/deploy:
+  - commit: `9cbe37e25805` (`Harden release-readiness UI evidence input`);
+  - pushed to `origin/main` and `public/main`;
+  - deployed through the central Home AI Mac plugin deploy path;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T102531Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - manifest health check passed on attempt 2;
+  - codex shared-auth repair passed;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+- Production smoke:
+  - ran deployed `scripts/smoke-growth-release-readiness.js` as `hermes-host`
+    under `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - used an initialized temporary SQLite DB under `/tmp`, removed after the
+    run, with no production Growth SQLite writes;
+  - deprecated `--owner-daily-ui-evidence` returned `ok=true`,
+    `status=blocked`, check `owner_daily_ui_evidence.status=blocked`,
+    `invalidReason=ui_evidence_validator_schema_required`, and
+    `requiredAction.action=provide_validated_ui_evidence_summary`.
+- AI Ops evidence:
+  - implementation/test evidence:
+    `evidence-1528839d-73f1-492d-a631-7973e2e5cbdf`;
+  - deploy/production-smoke evidence:
+    `evidence-003db34c-dca2-4b5e-94d5-4c931cfe1d28`.
+- Next:
+  - real readiness completion still requires central Home AI visual/UI artifacts
+    persisted through release evidence, production completed-cycle/profile
+    feedback evidence, platform Action Inbox/Web Push evidence, controlled
+    daily-loop evidence, and explicit release approvals.
+
 ## 2026-06-16T18:00+08:00 - UI Release Evidence Persistence Hardening
 
 - Status: implemented, tested, pushed, deployed, and production-smoked. This H2
