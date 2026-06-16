@@ -2773,6 +2773,43 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleaseEvidenceCollectionService: {
+      collect(input) {
+        calls.push({ type: "collectReleaseEvidence", input });
+        return {
+          ok: false,
+          source: "growth-learning-automation-release-evidence-collection-service",
+          collection: {
+            schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            programId: input.programId,
+            domainPackId: input.domainPackId,
+            domain: input.domain,
+            subject: input.subject,
+            horizon: input.horizon,
+            status: "blocked",
+            writeCollectionRun: input.writeCollectionRun === true,
+            summary: {
+              schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.summary.v1",
+              summaryOnly: true,
+              stepCount: 4,
+              collectionRunWritten: input.writeCollectionRun === true,
+              writefulSchedulingAllowed: false
+            },
+            steps: [],
+            artifacts: {}
+          },
+          summary: {
+            stepCount: 4,
+            collectionRunWritten: input.writeCollectionRun === true,
+            writefulSchedulingAllowed: false
+          }
+        };
+      }
+    },
     learningAutomationReleaseReviewService: {
       review(input) {
         calls.push({ type: "releaseReview", input });
@@ -3797,6 +3834,93 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const evidenceCollection = await fetch(`${baseUrl}/api/v1/growth/automation/release-evidence-collections/run`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        tasks: ["planner_readiness"],
+        required_task_ids: "planner_readiness",
+        write_collection_run: true,
+        owner_daily_ui_evidence: true,
+        created_at: "2026-06-16T10:30:00.000Z"
+      })
+    });
+    assert.equal(evidenceCollection.status, 200);
+    const evidenceCollectionBody = await evidenceCollection.json();
+    assert.equal(evidenceCollectionBody.collection.schemaVersion, "growth.learningAutomationReleaseEvidenceCollection.v1");
+    assert.equal(evidenceCollectionBody.collection.writeCollectionRun, true);
+    assert.equal(evidenceCollectionBody.collection.summary.collectionRunWritten, true);
+    assert.deepEqual(calls[20], {
+      type: "collectReleaseEvidence",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        availableMinutes: undefined,
+        targetNodeIds: [],
+        tasks: ["planner_readiness"],
+        requiredTaskIds: ["planner_readiness"],
+        requiredApprovalKeys: [],
+        activationGates: [],
+        activationRecordLimit: undefined,
+        runtimeEnablementRecordLimit: undefined,
+        collectionRunId: undefined,
+        taskCardId: undefined,
+        planDraftId: undefined,
+        evaluationId: undefined,
+        profileDeltaId: undefined,
+        evidenceId: undefined,
+        correctionId: undefined,
+        sourceId: undefined,
+        learnerCycleOperation: undefined,
+        dailyLoopWriteOperation: undefined,
+        ownerDailyUiEvidence: true,
+        ownerAuditUiEvidence: undefined,
+        stageCheckpointEvidence: undefined,
+        stageCheckpointControlsEvidence: undefined,
+        proposalReviewUiEvidence: undefined,
+        automationDigestUiEvidence: undefined,
+        automationActionHandoffUiEvidence: undefined,
+        schedulerExecutionUiEvidence: undefined,
+        schedulerRunUiEvidence: undefined,
+        schedulerWorkerTargetUiEvidence: undefined,
+        releaseWorkbenchSmokeEvidence: undefined,
+        ownerReviewEvidence: undefined,
+        evidence: undefined,
+        releaseApproval: {
+          writefulExecutionApproval: undefined,
+          backgroundSchedulerApproval: undefined,
+          backgroundWorkerApproval: undefined
+        },
+        requestedBy: "weixin_stephen",
+        createdBy: "weixin_stephen",
+        createdAt: "2026-06-16T10:30:00.000Z",
+        writeCollectionRun: true,
+        writePackageRecord: false,
+        allowWritePackage: false,
+        allowWriteCollection: true,
+        ownerAuthorizedWrite: true
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -3897,6 +4021,22 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedPackageBuild.status, 403);
     assert.equal((await deniedPackageBuild.json()).error.code, "growth_automation_release_package_build_owner_required");
+
+    const deniedEvidenceCollection = await fetch(`${baseUrl}/api/v1/growth/automation/release-evidence-collections/run`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_stephen",
+        tasks: ["planner_readiness"]
+      })
+    });
+    assert.equal(deniedEvidenceCollection.status, 403);
+    assert.equal((await deniedEvidenceCollection.json()).error.code, "growth_automation_release_evidence_collection_owner_required");
 
     const deniedActivationCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations`, {
       method: "POST",

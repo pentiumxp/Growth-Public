@@ -388,6 +388,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   never flips runtime config, grants scheduler permission, calls Gateway,
   publishes, evaluates, schedules, delivers notifications, activates stage
   assessments, mutates learner state, or deploys.
+  Growth now also has `npm run smoke:release-evidence-collection`,
+  `learning-automation-release-evidence-collection-service`, and Owner-only
+  `POST /api/v1/growth/automation/release-evidence-collections/run` for an
+  explicit summary-only release evidence collection pass. The service composes
+  release evidence bundle build, bundle self-audit, release-readiness
+  evaluation, and collection-run readback through the normal service graph. It
+  can optionally write only the existing collection-run audit row when
+  `--write-collection-run --allow-write` or Owner route authorization is
+  present. It does not create release package records, release decisions,
+  approvals, activation/runtime enablement rows, scheduler permission,
+  deployment, publication, generation, evaluation, or learner-state mutation.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

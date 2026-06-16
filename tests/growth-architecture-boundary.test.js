@@ -2647,6 +2647,53 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(routeHarness, /release-packages\/build/);
   assert.match(routeHarness, /buildReleasePackage/);
   assert.match(routeHarness, /growth_automation_release_package_build_owner_required/);
+  assert.match(packageJson, /smoke:release-evidence-collection/);
+
+  const collectionService = read(path.join("src", "services", "learning-automation-release-evidence-collection-service.js"));
+  assert.match(collectionService, /createLearningAutomationReleaseEvidenceCollectionService/);
+  assert.match(collectionService, /evidenceBundleService\.buildBundle/);
+  assert.match(collectionService, /evidenceBundleAuditService\.evaluate/);
+  assert.match(collectionService, /releaseReadinessService\.evaluateReadiness/);
+  assert.match(collectionService, /releaseCollectionRunService\.evaluateRun/);
+  assert.match(collectionService, /releaseCollectionRunService\.recordRun/);
+  assert.match(collectionService, /release_evidence_collection_write_not_allowed/);
+  assert.match(collectionService, /writefulSchedulingAllowed: false/);
+  assert.match(collectionService, /runtimeConfigChange: false/);
+  assert.match(collectionService, /schedulerPermissionGranted: false/);
+  assert.doesNotMatch(collectionService, /spawnSync/);
+  assert.doesNotMatch(collectionService, /require\(["']node:child_process/);
+  assert.doesNotMatch(collectionService, /repository\./);
+  assert.doesNotMatch(collectionService, /recordPackage/);
+  assert.doesNotMatch(collectionService, /recordDecision/);
+  assert.doesNotMatch(collectionService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(collectionService, /publishPlanItem/);
+  assert.doesNotMatch(collectionService, /publishAcceptedProposal/);
+  assert.doesNotMatch(collectionService, /generateCard/);
+  assert.doesNotMatch(collectionService, /evaluateSubmission/);
+  assert.doesNotMatch(collectionService, /executeOnce/);
+  assert.doesNotMatch(collectionService, /runOnce/);
+  assert.doesNotMatch(collectionService, /deliverHandoff/);
+  assert.doesNotMatch(collectionService, /activateStageAssessment/);
+
+  const collectionScript = read(path.join("scripts", "smoke-growth-release-evidence-collection.js"));
+  assert.match(collectionScript, /learningAutomationReleaseEvidenceCollectionService\.collect/);
+  assert.match(collectionScript, /--write-collection-run/);
+  assert.match(collectionScript, /--allow-write/);
+  assert.doesNotMatch(collectionScript, /learningAutomationReleasePackageService\.recordPackage/);
+  assert.doesNotMatch(collectionScript, /publishAcceptedProposal|generateCard|evaluateSubmission|executeOnce|runOnce|deliverHandoff|activateStageAssessment/);
+
+  const collectionHarness = read(path.join("tests", "learning-automation-release-evidence-collection-service.test.js"));
+  assert.match(collectionHarness, /composes bundle, audit, readiness, and collection run/);
+  assert.match(collectionHarness, /gates collection-run writes/);
+  assert.match(collectionHarness, /rejects privacy-risk input and artifacts/);
+
+  const collectionScriptHarness = read(path.join("tests", "growth-release-evidence-collection-smoke-script.test.js"));
+  assert.match(collectionScriptHarness, /fails closed for write without allow-write/);
+  assert.match(collectionScriptHarness, /record a summary-only collection run/);
+
+  assert.match(routeHarness, /release-evidence-collections\/run/);
+  assert.match(routeHarness, /collectReleaseEvidence/);
+  assert.match(routeHarness, /growth_automation_release_evidence_collection_owner_required/);
 
   const repositoryHarness = read(path.join("tests", "learning-automation-release-package-repository.test.js"));
   assert.match(repositoryHarness, /saves and lists summary-only package records/);

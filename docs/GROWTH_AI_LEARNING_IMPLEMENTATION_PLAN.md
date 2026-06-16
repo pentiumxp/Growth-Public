@@ -138,6 +138,12 @@ AI-driven loop:
   `learning_growth_automation_release_readiness.evidence_readback_json`. This
   boundary is advisory, keeps `writefulSchedulingAllowed=false`, and is not a
   runtime release switch;
+- release evidence collection backend/CLI/API for composing the release
+  evidence bundle, bundle audit, release-readiness, and collection-run
+  evaluation into one summary-only collection pass without package records,
+  release decisions, runtime config, scheduler permission, deployment, or card
+  publication. Optional writes can delegate only to the existing collection-run
+  audit row with explicit Owner/write authorization;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one
@@ -803,6 +809,20 @@ Implemented backend shape:
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1` as external
   `releaseEvidenceBundleAudit` input. It does not run smoke tasks or embed
   itself into the bundle being audited.
+- `npm run smoke:release-evidence-collection` delegates to
+  `learning-automation-release-evidence-collection-service` and runs one
+  explicit release evidence collection pass through the normal service graph.
+  It builds the release evidence bundle, audits that bundle, evaluates
+  release-readiness, and evaluates a collection-run readback into
+  `growth.learningAutomationReleaseEvidenceCollection.v1`. It defaults to
+  no-write; `--write-collection-run --allow-write` may persist only the
+  existing collection-run audit row. The Owner-only
+  `POST /api/v1/growth/automation/release-evidence-collections/run` route
+  exposes the same boundary from the plugin API. This facade is useful when
+  Owner/release tooling needs a structured collection pass without building or
+  recording a release package, and it must not record package rows, record
+  release decisions, flip runtime config, grant scheduler permission, deploy,
+  publish, generate, evaluate submissions, or mutate learner state.
 - `npm run smoke:release-collection-run` delegates to
   `learning-automation-release-collection-run-service` and records a
   summary-only audit of one completed release evidence collection pass after a

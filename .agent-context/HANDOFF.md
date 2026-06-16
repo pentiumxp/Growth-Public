@@ -9,6 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T15:23+08:00 - Release Evidence Collection Pass Facade
+
+- Status: implemented, documented, and validated. This backend-only slice adds
+  a Service First release evidence collection facade so Owner/release tooling
+  can run one structured collection pass without using Codex to hand-splice
+  bundle, audit, readiness, and collection-run DTOs. Overall Growth
+  closed-loop MVP progress is about `84%` after this slice: the release
+  evidence backend path is more operable, while product-specific Owner
+  automation UI polish, real production evidence collection, and broader
+  rollout remain open.
+- Scope:
+  - added `learning-automation-release-evidence-collection-service`, which
+    composes release evidence bundle build, bundle audit, release-readiness,
+    and collection-run readback into
+    `growth.learningAutomationReleaseEvidenceCollection.v1`;
+  - added `npm run smoke:release-evidence-collection` through
+    `scripts/smoke-growth-release-evidence-collection.js`;
+  - added Owner-only
+    `POST /api/v1/growth/automation/release-evidence-collections/run`;
+  - optional persistence can write only the existing collection-run audit row
+    when `--write-collection-run --allow-write` or Owner route authorization is
+    present;
+  - no release package record, release decision, approval, activation/runtime
+    enablement row, Gateway/model call, publication, evaluation, scheduler
+    execution/tick, notification delivery, stage activation, runtime config
+    mutation, scheduler permission grant, learner-state mutation, or production
+    deploy was added.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Harness updated:
+  - `tests/learning-automation-release-evidence-collection-service.test.js`;
+  - `tests/growth-release-evidence-collection-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `package.json` check/script coverage.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - focused release evidence collection/route/architecture harnesses
+    (`89/89`);
+  - `npm run check` (`198/198` runtime JavaScript files covered);
+  - `npm test` (`814/814`);
+  - `git diff --check`;
+  - CodeGraph status reported an up-to-date Growth index with `351`
+    JavaScript files, `4,719` nodes, and `18,893` edges;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, `sourceRef.dirty=false`, and did not execute
+    deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - Intake command:
+    `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release evidence collection orchestration without Codex: backend service/CLI/docs/harness only; no UI and no production deploy" --json`.
+  - AI Ops classified the slice as H1 and did not require the visual lane.
+  - AI Ops evidence record:
+    `evidence-b2bff88d-8667-4e99-afbd-db833809d138`.
+
 ## 2026-06-16T14:56+08:00 - Release Workbench Action Record-Route Parity
 
 - Status: implemented, documented, and validated. This backend-only slice

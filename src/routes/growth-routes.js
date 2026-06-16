@@ -990,6 +990,17 @@ function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, 
   };
 }
 
+function normalizeAutomationReleaseEvidenceCollectionInput(body, workspaceId, target, request, url) {
+  const input = normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, request, url);
+  return Object.assign({}, input, {
+    writeCollectionRun: body.writeCollectionRun === true || body.write_collection_run === true || body.recordCollectionRun === true || body.record_collection_run === true,
+    allowWriteCollection: true,
+    writePackageRecord: false,
+    allowWritePackage: false,
+    ownerAuthorizedWrite: true
+  });
+}
+
 function normalizeAutomationReleaseApprovalListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1953,6 +1964,19 @@ async function handleGrowthRoute(request, response, url, services) {
       normalizeAutomationReleaseDecisionInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-evidence-collections/run") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_evidence_collection_owner_required", "Automation release evidence collection requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningAutomationReleaseEvidenceCollectionService.collect(
+      normalizeAutomationReleaseEvidenceCollectionInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.collection ? 200 : 400, result);
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-packages/build") {
