@@ -21,7 +21,11 @@ test("release workbench composes release services into Owner action templates wi
             status: "release_evidence_required",
             requiredActionCount: 2,
             missingCheckKeys: ["owner_daily_ui_evidence"],
-            missingEvidenceKeys: ["owner_daily_ui_evidence"],
+            missingEvidenceKeys: [
+              "owner_daily_ui_evidence",
+              "production_profile_feedback_smoke_evidence",
+              "production_daily_loop_write_smoke_evidence"
+            ],
             nextAction: {
               key: "owner_daily_ui_evidence",
               action: "record_release_evidence",
@@ -77,7 +81,7 @@ test("release workbench composes release services into Owner action templates wi
           releaseDashboard: {
             status: "manual_runtime_config_required",
             requiredActionCount: 3,
-            missingEvidenceKeys: ["central_visual_evidence"],
+            missingEvidenceKeys: ["central_visual_evidence", "platform_action_evidence"],
             nextAction: {
               key: "manual_config_change",
               action: "enable_runtime_config",
@@ -118,9 +122,15 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(collectionAction.action, "run_release_evidence_collection");
   assert.equal(collectionAction.requiresPreparation, false);
   assert.equal(collectionAction.route.path, "/api/v1/growth/automation/release-evidence-collections/run");
-  assert.deepEqual(collectionAction.route.body.tasks, ["learning_loop_state"]);
-  assert.deepEqual(collectionAction.route.body.required_task_ids, ["learning_loop_state"]);
+  assert.deepEqual(collectionAction.route.body.tasks, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(collectionAction.route.body.required_task_ids, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(collectionAction.collectionTaskIds, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(collectionAction.writeGatedCollectionTaskIds, ["daily_loop_write"]);
+  assert.deepEqual(collectionAction.unsupportedCollectionKeys, ["owner_daily_ui_evidence"]);
   assert.equal(collectionAction.route.body.write_collection_run, true);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual"]);
+  assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
+  assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, ["owner_daily_ui_evidence"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
   const packageAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_package");
   assert.equal(packageAction.requiresPreparation, true);
@@ -134,7 +144,13 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_authorization"), true);
   assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "release_evidence_collection"), true);
   assert.equal(result.releaseWorkbench.recordRoutes.some((route) => route.key === "runtime_enablement"), true);
-  assert.deepEqual(result.releaseWorkbench.missingEvidenceKeys.sort(), ["central_visual_evidence", "owner_daily_ui_evidence"].sort());
+  assert.deepEqual(result.releaseWorkbench.missingEvidenceKeys.sort(), [
+    "central_visual_evidence",
+    "owner_daily_ui_evidence",
+    "platform_action_evidence",
+    "production_daily_loop_write_smoke_evidence",
+    "production_profile_feedback_smoke_evidence"
+  ].sort());
   assert.deepEqual(result.releaseWorkbench.missingApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(result.releaseWorkbench.missingRecordKinds, ["release_collection_run", "release_package", "runtime_enablement"]);
   assert.equal(result.configChangeApplied, false);

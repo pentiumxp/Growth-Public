@@ -16555,3 +16555,83 @@
     explicit release approvals;
   - keep scheduler/runtime writeful execution disabled until remaining release
     gates and Owner approvals exist.
+
+## 2026-06-16T19:13Z - Release workbench collection tasks derive from missing evidence
+
+- Status:
+  - Implemented and validated local Growth backend/docs/harness slice:
+    this commit (`Derive release workbench collection tasks from evidence gaps`).
+  - No production deploy was executed. Home AI AI Ops classified the wording as
+    H1 because the task context includes deployment/release boundaries, but the
+    actual work was a Growth-only read-model/docs/harness change plus plan-only
+    central deploy validation.
+  - Broad progress estimate for the AI-learning backend closure is now around
+    79%: Owner release tooling can now generate a more complete no-write
+    evidence-collection action from current release gaps, but real production
+    evidence, UI/visual gates, approvals, and runtime enablement remain open.
+- Implemented behavior:
+  - `learning-automation-release-workbench-service` now derives the advertised
+    `release_evidence_collection` task body from supported missing release
+    evidence/check keys instead of always advertising only
+    `learning_loop_state`.
+  - Supported no-write collection tasks include profile feedback, platform
+    action, central visual, proposal, scheduler/readback, target provisioning,
+    stage checkpoint, Owner audit, Owner-review evidence, and release-workbench
+    readback tasks when their matching release evidence is missing.
+  - Unsupported UI/manual evidence keys are surfaced as
+    `unsupportedReleaseEvidenceCollectionKeys`, and write-gated evidence such as
+    `daily_loop_write` is surfaced as
+    `writeGatedReleaseEvidenceCollectionTasks` instead of being sent through the
+    default Owner action button.
+  - If no supported task can be derived, the workbench keeps the previous
+    bounded `learning_loop_state` fallback. The workbench remains read-only and
+    does not run smoke tasks, spawn commands, call Gateway, publish, evaluate,
+    schedule, mutate runtime config, grant scheduler permission, or mutate
+    learner state.
+  - The embedded Owner UI already sends `tasks` / `required_task_ids` from the
+    backend action template; frontend harness coverage now proves the payload no
+    longer regresses to the old single-task default when the template advertises
+    multiple missing-evidence-derived tasks.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Growth validation passed:
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - focused release/workbench harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/learning-automation-release-evidence-collection-service.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `140/140`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `npm run check` passed with `runtimeCount=201`, `checkedCount=201`;
+  - `npm test` passed `857/857`;
+  - plugin `git diff --check` passed;
+  - `codegraph sync` reported already up to date and `codegraph status`
+    reported index up to date, with the existing earlier-engine reindex
+    advisory.
+- Home AI AI Ops validation passed:
+  - read the requested deployment, production access/closure, docs index,
+    harness map, required-matrix, and test-matrix docs;
+  - passed `node --check scripts/deploy-macos-production.js`;
+  - passed `node tests/macos-production-deploy-script.test.js`;
+  - passed `node tests/production-status-smoke-harness.test.js`;
+  - passed `node tests/architecture-code-test-harness-map.test.js`;
+  - passed `npm run --silent deploy:macos -- --target home-ai --json` in
+    plan-only mode;
+  - passed app-side `git diff --check`;
+  - appended AI Ops evidence record
+    `evidence-5e219733-f4f1-4b13-bb24-675c3a4f0879`.
+- Remaining next-step candidates:
+  - collect real production `profile_feedback` evidence from a completed
+    Fanfan learning cycle and feed it through the new workbench collection
+    action path;
+  - collect product UI/central visual evidence for Owner daily, Owner audit,
+    proposal review, automation digest, action handoff, scheduler execution/run,
+    worker target, and release package review surfaces;
+  - create/review real digest, action handoff, and worker-target production
+    evidence instead of relying only on backend readbacks;
+  - collect platform action evidence, controlled daily-loop write evidence, and
+    explicit release approvals;
+  - keep scheduler/runtime writeful execution disabled until remaining release
+    gates and Owner approvals exist.

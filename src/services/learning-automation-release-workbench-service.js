@@ -5,6 +5,57 @@ const RELEASE_WORKBENCH_SCHEMA = "growth.learningAutomationReleaseWorkbench.v1";
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
 const RELEASE_EVIDENCE_COLLECTION_TASKS = Object.freeze(["learning_loop_state"]);
+const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
+  "planner_readiness",
+  "daily_loop_preview",
+  "learning_loop_state",
+  "cycle_history",
+  "owner_audit",
+  "profile_feedback",
+  "recommendation_lifecycle",
+  "learner_cycle",
+  "target_provisioning",
+  "stage_assessment",
+  "stage_checkpoint_controls",
+  "proposal",
+  "platform_action",
+  "central_visual",
+  "scheduler_dry_run",
+  "action_handoff",
+  "scheduler_execution",
+  "scheduler_run",
+  "scheduler_worker_target",
+  "scheduler_worker",
+  "owner_review_evidence",
+  "release_workbench"
+]);
+const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
+  stage_checkpoint_evidence: "stage_assessment",
+  stage_checkpoint_controls_evidence: "stage_checkpoint_controls",
+  production_proposal_smoke_evidence: "proposal",
+  production_action_handoff_smoke_evidence: "action_handoff",
+  production_scheduler_execution_smoke_evidence: "scheduler_execution",
+  production_scheduler_run_smoke_evidence: "scheduler_run",
+  production_scheduler_worker_target_smoke_evidence: "scheduler_worker_target",
+  production_scheduler_worker_smoke_evidence: "scheduler_worker",
+  production_planner_readiness_evidence: "planner_readiness",
+  production_target_provisioning_smoke_evidence: "target_provisioning",
+  production_daily_loop_preview_smoke_evidence: "daily_loop_preview",
+  production_learning_loop_state_smoke_evidence: "learning_loop_state",
+  production_cycle_history_smoke_evidence: "cycle_history",
+  production_owner_audit_smoke_evidence: "owner_audit",
+  production_profile_feedback_smoke_evidence: "profile_feedback",
+  production_recommendation_lifecycle_smoke_evidence: "recommendation_lifecycle",
+  production_learner_cycle_smoke_evidence: "learner_cycle",
+  production_scheduler_dry_run_smoke_evidence: "scheduler_dry_run",
+  platform_action_evidence: "platform_action",
+  central_visual_evidence: "central_visual",
+  release_workbench_smoke_evidence: "release_workbench",
+  owner_review_evidence: "owner_review_evidence"
+});
+const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
+  production_daily_loop_write_smoke_evidence: "daily_loop_write"
+});
 
 function cleanString(value, max = 160) {
   return String(value || "").trim().slice(0, max);
@@ -158,7 +209,35 @@ function readRoutes() {
   ];
 }
 
-function recordRoutes(scope = {}) {
+function collectionTaskPlan(keys = []) {
+  const safeTaskSet = new Set();
+  const writeGatedTaskSet = new Set();
+  const unsupported = [];
+  for (const key of uniqueStrings(keys, 64)) {
+    const taskId = RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+    if (taskId) {
+      safeTaskSet.add(taskId);
+      continue;
+    }
+    const writeGatedTaskId = WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+    if (writeGatedTaskId) {
+      writeGatedTaskSet.add(writeGatedTaskId);
+      continue;
+    }
+    unsupported.push(key);
+  }
+  const taskIds = RELEASE_EVIDENCE_COLLECTION_TASK_ORDER.filter((taskId) => safeTaskSet.has(taskId));
+  return {
+    taskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
+    requiredTaskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
+    writeGatedTaskIds: Array.from(writeGatedTaskSet),
+    unsupportedKeys: unsupported
+  };
+}
+
+function recordRoutes(scope = {}, collectionTasks = {}) {
+  const taskIds = asArray(collectionTasks.taskIds).length ? collectionTasks.taskIds : RELEASE_EVIDENCE_COLLECTION_TASKS;
+  const requiredTaskIds = asArray(collectionTasks.requiredTaskIds).length ? collectionTasks.requiredTaskIds : taskIds;
   return [
     {
       key: "release_readiness_snapshot",
@@ -205,8 +284,8 @@ function recordRoutes(scope = {}) {
         domain: scope.domain,
         subject: scope.subject,
         horizon: scope.horizon,
-        tasks: RELEASE_EVIDENCE_COLLECTION_TASKS,
-        required_task_ids: RELEASE_EVIDENCE_COLLECTION_TASKS,
+        tasks: taskIds,
+        required_task_ids: requiredTaskIds,
         write_collection_run: true
       })
     },
@@ -296,11 +375,11 @@ function endpointForAction(action = {}) {
   return "";
 }
 
-function ownerAction(action = {}, scope = {}, source = "") {
+function ownerAction(action = {}, scope = {}, source = "", collectionTasks = {}) {
   const summary = actionSummary(action);
   if (!summary) return null;
   const endpointKey = endpointForAction(summary);
-  const route = recordRoutes(scope).find((item) => item.key === endpointKey)?.route || null;
+  const route = recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null;
   const externalActionRequired = endpointKey === "runtime_enablement"
     && /manual_config|enable_runtime_config/.test(summary.action || summary.key);
   return {
@@ -343,7 +422,7 @@ function actionsFromMissingApprovals(keys = [], scope = {}) {
   }, scope, "missing_approval")).filter(Boolean);
 }
 
-function actionsFromMissingRecords(kinds = [], scope = {}) {
+function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {}) {
   return uniqueStrings(kinds, 12).map((kind) => {
     const endpointKey = kind === "release_collection_run" ? "release_evidence_collection" : actionKeyForRecordKind(kind);
     if (!endpointKey) return null;
@@ -370,9 +449,12 @@ function actionsFromMissingRecords(kinds = [], scope = {}) {
       label: endpointKey === "release_evidence_collection" ? "Run release evidence collection" : `Record ${kind}`,
       source: "missing_record",
       endpointKey,
-      route: recordRoutes(scope).find((item) => item.key === endpointKey)?.route || null,
+      route: recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null,
       requiresPreparation: Boolean(preparationRoute),
       preparationRoute,
+      collectionTaskIds: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.taskIds) : [],
+      writeGatedCollectionTaskIds: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.writeGatedTaskIds) : [],
+      unsupportedCollectionKeys: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.unsupportedKeys) : [],
       externalActionRequired: endpointKey === "runtime_enablement",
       externalAction: endpointKey === "runtime_enablement" ? {
         kind: "external",
@@ -487,13 +569,14 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
       ...controlsSummary.missingApprovalKeys,
       ...dashboardSummary.missingApprovalKeys
     ]);
+    const collectionTasks = collectionTaskPlan([...missingEvidenceKeys, ...missingCheckKeys]);
     const ownerActions = dedupeActions([
-      ownerAction(dashboardSummary.nextAction, scope, "release_dashboard"),
-      ownerAction(controlsSummary.nextAction, scope, "release_controls"),
-      ownerAction(readinessSummary.nextAction, scope, "release_readiness"),
+      ownerAction(dashboardSummary.nextAction, scope, "release_dashboard", collectionTasks),
+      ownerAction(controlsSummary.nextAction, scope, "release_controls", collectionTasks),
+      ownerAction(readinessSummary.nextAction, scope, "release_readiness", collectionTasks),
       ...actionsFromMissingEvidence(missingEvidenceKeys.length ? missingEvidenceKeys : missingCheckKeys, scope),
       ...actionsFromMissingApprovals(missingApprovalKeys, scope),
-      ...actionsFromMissingRecords(inventorySummary.missingRecordKinds, scope)
+      ...actionsFromMissingRecords(inventorySummary.missingRecordKinds, scope, collectionTasks)
     ]);
     const status = deriveStatus(dashboard, controls, readiness);
     return Object.assign({}, scope, {
@@ -511,7 +594,11 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
         ownerActionCount: ownerActions.length,
         ownerActions,
         readRoutes: readRoutes(),
-        recordRoutes: recordRoutes(scope),
+        recordRoutes: recordRoutes(scope, collectionTasks),
+        releaseEvidenceCollectionTasks: collectionTasks.taskIds,
+        releaseEvidenceCollectionRequiredTaskIds: collectionTasks.requiredTaskIds,
+        writeGatedReleaseEvidenceCollectionTasks: collectionTasks.writeGatedTaskIds,
+        unsupportedReleaseEvidenceCollectionKeys: collectionTasks.unsupportedKeys,
         readiness: readinessSummary,
         controls: controlsSummary,
         dashboard: dashboardSummary,

@@ -524,14 +524,21 @@ Use the Growth-owned release-readiness boundary:
   service user when it needs production key-file access; the development shell
   user is expected to receive key-file permission errors. A no-write subset
   such as `--task learning_loop_state --required-task learning_loop_state`
-  is valid collection-path smoke evidence when the goal is to prove the facade
-  and readback chain without model variance or missing UI/release evidence.
-  The release workbench now advertises missing `release_collection_run` records
-  as `release_evidence_collection` actions so Owner can trigger the same
-  collection service from the embedded plugin UI through
-  `POST /api/v1/growth/automation/release-workbench/actions`; the action
-  facade treats a returned collection artifact as a completed action even when
-  the collection DTO reports `status=incomplete`.
+  remains valid collection-path smoke evidence when the goal is to prove the
+  facade and readback chain without model variance or missing UI/release
+  evidence. The release workbench advertises missing `release_collection_run`
+  records as `release_evidence_collection` actions so Owner can trigger the
+  same collection service from the embedded plugin UI through
+  `POST /api/v1/growth/automation/release-workbench/actions`. The advertised
+  route body is derived from supported missing release evidence keys, for
+  example profile feedback, platform action, central visual, proposal,
+  scheduler, and Owner-review evidence; unsupported UI/manual evidence keys are
+  reported as unsupported collection keys, and write-gated tasks such as
+  `daily_loop_write` are reported separately rather than sent through the
+  default Owner button. If no supported task can be derived, the workbench falls
+  back to the bounded `learning_loop_state` task. The action facade treats a
+  returned collection artifact as a completed action even when the collection
+  DTO reports `status=incomplete`.
 - release collection-run CLI:
   `npm run smoke:release-collection-run -- --release-evidence-bundle-file <bundle.json> --release-evidence-bundle-audit-file <audit.json> --release-readiness-file <readiness.json> --json`.
   This delegates through the normal service graph to
@@ -738,8 +745,11 @@ Use the Growth-owned release-readiness boundary:
   `release_evidence_collection`, `release_package`, `release_activation`, and
   `runtime_enablement` endpoints. It is UI glue over existing services. For
   `release_evidence_collection`, the UI sends bounded collection tasks and
-  `write_collection_run=true` from the backend action template; it sends no raw
-  prompt/transcript payloads and does not grant scheduling permission. For
+  `write_collection_run=true` from the backend action template. Those task ids
+  come from the workbench's missing-evidence-derived no-write plan; UI/manual
+  evidence and write-gated evidence are surfaced for Owner review but are not
+  auto-collected by the normal button. The UI sends no raw prompt/transcript
+  payloads and does not grant scheduling permission. For
   `release_package`, Owner first builds a summary-only
   candidate through `POST /api/v1/growth/automation/release-packages/build`;
   the record action remains blocked until that real

@@ -350,9 +350,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `release_package`, `release_activation`, and `runtime_enablement` actions from
   the plugin UI. For a missing `release_collection_run`, the workbench advertises
   `release_evidence_collection`; the action facade delegates to
-  `learning-automation-release-evidence-collection-service.collect`, and a
-  returned collection artifact completes the UI action even when release-readiness
-  remains `incomplete`.
+  `learning-automation-release-evidence-collection-service.collect`, and the
+  advertised route body is now derived from supported missing release evidence
+  keys such as profile feedback, platform action, central visual, proposal,
+  scheduler, and Owner-review evidence. UI/manual evidence keys remain visible as
+  unsupported collection keys, while write-gated tasks such as `daily_loop_write`
+  are reported separately instead of being sent through the default Owner button.
+  If no supported task can be derived, the workbench falls back to the bounded
+  `learning_loop_state` task. A returned collection artifact completes the UI
+  action even when release-readiness remains `incomplete`.
   `release_package` is two-step UI glue: Owner must first build a summary-only
   `growth.learningAutomationReleasePackage.v1` candidate through
   `POST /api/v1/growth/automation/release-packages/build`, then record that
