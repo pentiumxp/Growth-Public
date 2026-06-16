@@ -11,9 +11,11 @@
 
 ## 2026-06-17T02:00+08:00 - Release Workbench Action Collection CLI Closure
 
-- Status: implemented locally and fully validated. Commit and push are the next
-  step in this continuation. This slice was not deployed because the user
-  deferred deployment until the broader Growth target is complete.
+- Status: implemented locally, fully validated, committed, and pushed to both
+  `origin/main` and `public/main`. This slice was not deployed because the
+  user deferred deployment until the broader Growth target is complete.
+- Commit:
+  - `2104d62 Close release workbench collection action CLI`.
 - Change intent:
   - close the remaining gap between the Owner release workbench action facade
     and its operational smoke CLI for `release_evidence_collection`;
@@ -72,7 +74,6 @@
   - test evidence ledger record:
     `evidence-d4a3353c-bc15-4587-adcd-83a50174af1c`.
 - Remaining gates:
-  - commit and push this validated slice;
   - no production deployment in this slice.
 
 ## 2026-06-17T01:49+08:00 - Release Evidence Collection Workbench Action
