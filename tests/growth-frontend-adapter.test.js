@@ -1050,6 +1050,9 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /Next low-pressure science card/);
   assert.match(html, /data-automation-proposal-review/);
   assert.match(html, /data-automation-proposal-status="accepted"/);
+  assert.match(html, /data-automation-proposal-status="skipped"/);
+  assert.match(html, /data-automation-proposal-status="expired"/);
+  assert.match(html, /data-automation-proposal-status="superseded"/);
   assert.match(html, /data-automation-proposal-publish/);
   assert.match(html, /建议已记录为 已接受/);
   assert.match(html, /Accepted evidence repair card/);
@@ -1178,6 +1181,44 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     reviewed_by: "owner",
     proposal_id: "lgauto_proposed_1"
   });
+  const expiredProposalDecisionPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalDecisionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    proposal: context.automationProposals.proposals[0],
+    status: "expired"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(expiredProposalDecisionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "expired",
+    reason: "Owner expired stale supervised next-card proposal.",
+    reviewed_by: "owner",
+    proposal_id: "lgauto_proposed_1"
+  });
+  const supersededProposalDecisionPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalDecisionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    proposal: context.automationProposals.proposals[0],
+    status: "superseded"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(supersededProposalDecisionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "superseded",
+    reason: "Owner superseded supervised next-card proposal.",
+    reviewed_by: "owner",
+    proposal_id: "lgauto_proposed_1"
+  });
+  assert.equal(Object.hasOwn(expiredProposalDecisionPayload, "raw_answer"), false);
+  assert.equal(Object.hasOwn(supersededProposalDecisionPayload, "raw_prompt"), false);
 
   const proposalPublishPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalPublishPayload({
     context,
@@ -2197,7 +2238,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260616-recommendation-lifecycle-ui-v1";
+  const staticVersion = "20260616-proposal-lifecycle-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",

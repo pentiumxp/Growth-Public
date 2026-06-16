@@ -185,9 +185,9 @@ automation surfaces are not closed:
   separation/controls subset is closed when a valid `targetNodeIds` coverage
   selector is supplied;
 - proposal selected-cycle create/list/review/accepted-publish UI now has a
-  minimal Owner panel over existing proposal routes, while `expired`/
-  `superseded`, digest/action/execution/run/worker-target UI remains future
-  work;
+  minimal Owner panel over existing proposal routes, including terminal
+  `expired` and `superseded` proposal decisions. Digest/action/execution/run
+  and worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual release evidence exists for the Growth plugin
   shell. Product-specific mobile/dark checks for Owner generation, audit,

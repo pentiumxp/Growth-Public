@@ -15131,6 +15131,10 @@ body.task-markdown-preview-open {
     flex: 1 1 120px;
   }
 
+  .learning-card-generation-proposal-actions button {
+    flex: 1 1 86px;
+  }
+
   .learning-card-generation-lifecycle-actions button {
     flex: 1 1 96px;
   }

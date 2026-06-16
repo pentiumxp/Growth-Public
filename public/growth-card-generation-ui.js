@@ -738,12 +738,21 @@
 
   function createAutomationProposalDecisionPayload({ context = {}, workspaceId = "", proposal = {}, status = "", reason = "" } = {}) {
     const scope = automationProposalScopeFromContext(context, workspaceId);
+    const targetStatus = clean(status);
     return Object.fromEntries(Object.entries(Object.assign({}, scope, {
-      status: clean(status),
-      reason: clean(reason) || (clean(status) === "accepted" ? "Owner accepted supervised next-card proposal." : "Owner skipped supervised next-card proposal."),
+      status: targetStatus,
+      reason: clean(reason) || automationProposalDecisionReason(targetStatus),
       reviewed_by: "owner",
       proposal_id: clean(proposal.proposalId || proposal.proposal_id)
     })).filter(([, value]) => clean(value)));
+  }
+
+  function automationProposalDecisionReason(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "accepted") return "Owner accepted supervised next-card proposal.";
+    if (value === "expired") return "Owner expired stale supervised next-card proposal.";
+    if (value === "superseded") return "Owner superseded supervised next-card proposal.";
+    return "Owner skipped supervised next-card proposal.";
   }
 
   function createAutomationProposalPublishPayload({ context = {}, workspaceId = "", proposal = {} } = {}) {
@@ -873,6 +882,8 @@
         <div class="learning-card-generation-proposal-actions">
           <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="accepted" ${busy || !isProposed ? "disabled" : ""}>接受</button>
           <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="skipped" ${busy || !isProposed ? "disabled" : ""}>跳过</button>
+          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="expired" ${busy || !isProposed ? "disabled" : ""}>过期</button>
+          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="superseded" ${busy || !isProposed ? "disabled" : ""}>替代</button>
           <button type="button" class="primary" data-automation-proposal-publish data-automation-proposal-id="${escapeHtml(proposalId)}" ${busy || !canPublish ? "disabled" : ""}>${busy && canPublish ? "发布中" : executionStatus === "published" ? "已发布" : "发布"}</button>
         </div>
       </div>`;

@@ -3841,6 +3841,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createAutomationProposalCreatePayload/);
   assert.match(generationUi, /data-automation-proposal-create/);
   assert.match(generationUi, /data-automation-proposal-review/);
+  assert.match(generationUi, /data-automation-proposal-status="expired"/);
+  assert.match(generationUi, /data-automation-proposal-status="superseded"/);
+  assert.match(generationUi, /automationProposalDecisionReason/);
   assert.match(generationUi, /data-automation-proposal-publish/);
 
   const apiClient = read(path.join("public", "growth-api-client.js"));

@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T22:18+08:00 - Automation Proposal Lifecycle Owner UI Controls
+
+- Status: implemented and validated locally; not deployed per Owner instruction
+  to deploy only after the broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now exposes all service-supported
+    automation proposal review decisions: `accepted`, `skipped`, `expired`,
+    and `superseded`;
+  - `expired` and `superseded` are terminal Owner review states only. They do
+    not expose a publish action, schedule work, call Gateway, evaluate
+    submissions, or mutate recommendation lifecycle rows;
+  - accepted proposal publication remains a separate explicit Owner action
+    through the existing proposal publish route.
+- Code/UI changes:
+  - `public/growth-card-generation-ui.js` adds default proposal decision
+    reasons for `expired` and `superseded` and renders `过期` / `替代` buttons
+    beside the existing `接受` / `跳过` review controls;
+  - `public/growth-homeai-legacy.css` adds a mobile flex guard for the expanded
+    proposal decision button set;
+  - `public/index.html` static asset version is bumped to
+    `20260616-proposal-lifecycle-ui-v1`;
+  - no route, service, repository, Gateway, scheduler, or database schema code
+    changed because the existing backend proposal decision boundary already
+    supports the four statuses.
+- Harness/docs:
+  - updated `tests/growth-frontend-adapter.test.js` for four proposal status
+    controls and summary-only default decision payloads;
+  - updated `tests/growth-architecture-boundary.test.js` so the UI adapter
+    keeps proposal lifecycle choices in the frontend adapter layer while
+    backend enforcement remains service-owned;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - `node --check public/growth-card-generation-ui.js` passed;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed `1/1`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - `node --test tests/learning-automation-proposal-repository.test.js
+    tests/learning-automation-proposal-service.test.js
+    tests/growth-automation-proposal-smoke-script.test.js
+    tests/growth-routes.test.js` passed `64/64`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - full Growth `npm test` passed with `844/844`;
+  - `git diff --check` passed;
+  - static asset version consistency check passed for
+    `20260616-proposal-lifecycle-ui-v1` with 13 references and no
+    `20260616-recommendation-lifecycle-ui-v1` references;
+  - CodeGraph status after edits: 355 files, 4,838 nodes, 19,646 edges, index
+    up to date.
+- AI Ops evidence:
+  - intake returned deployment-oriented H1 because the task text contained
+    `no deploy`, but changed-file required-checks for touched frontend/docs
+    files returned H3 and no deployment requirement; this slice was still
+    handled as H2 because it affects Owner-visible workflow projection;
+  - evidence ledger record:
+    `evidence-80c0ee5a-3900-43c9-bf23-ab445e38f5a0`.
+- Visual/tooling note:
+  - Browser plugin `iab` was unavailable, and local Playwright/Chromium was not
+    installed, so no live screenshot or Playwright fallback screenshot was
+    captured in this local slice;
+  - machine-verifiable layout/contrast coverage came from
+    `tests/growth-embedded-layout.test.js`. This is not final production visual
+    release evidence.
+- Boundary:
+  - no Gateway/model call, card generation, plan publication, evaluation,
+    scheduler execution/run/tick, notification/handoff delivery, stage
+    activation, runtime config mutation, database schema change, or deployment
+    was performed.
+
 ## 2026-06-16T21:10+08:00 - Recommendation Lifecycle Owner UI Controls
 
 - Status: implemented, validated, and committed/pushed as

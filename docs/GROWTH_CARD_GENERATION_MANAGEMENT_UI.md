@@ -638,9 +638,11 @@ publication fails, and does not schedule future work. The current embedded
 Owner panel implements the selected-cycle create/read/review/accepted-publish
 part of this boundary: it creates a proposal from the selected historical
 cycle's service-provided selectors, lists proposals for the selected visible
-target and scoped learner/domain-pack/subject, records `accepted` or `skipped`,
-and calls the accepted proposal publish route only after explicit Owner action.
-It still does not expose proposal `expired`/`superseded` decision controls.
+target and scoped learner/domain-pack/subject, records `accepted`, `skipped`,
+`expired`, or `superseded`, and calls the accepted proposal publish route only
+after explicit Owner action. Expired and superseded proposal decisions are
+terminal review states only; they must not expose a publish action, schedule
+work, or mutate recommendation lifecycle rows.
 Recommendation lifecycle decisions are separate: the same Owner generation
 surface can mark a pending next-card recommendation `skipped` or `expired`
 through `POST /api/v1/growth/recommendations/lifecycle/review`, then refreshes
@@ -1059,7 +1061,7 @@ Add focused tests before broad regression runs:
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
 | UI recommendation lifecycle review | renders pending recommendation `跳过` / `过期` actions, constructs summary-only review payloads from service-provided selectors, calls `reviewGrowthRecommendationLifecycle`, refreshes context after success, and never marks `accepted`, publishes/generates cards, calls Gateway, evaluates, schedules, or delivers notifications |
 | UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
-| UI proposal review | current slice creates supervised proposals from a selected historical cycle, lists proposals, shows bounded rationale and required Owner publish action, records `accepted`/`skipped` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision. A later slice must cover `expired`/`superseded` decisions and production visual/release evidence. |
+| UI proposal review | creates supervised proposals from a selected historical cycle, lists proposals, shows bounded rationale and required Owner publish action, records `accepted`/`skipped`/`expired`/`superseded` decisions, can call explicit accepted-proposal publish, and never auto-publishes, schedules, calls Gateway, evaluates, or delivers notifications after proposal creation or decision. Production visual/release evidence remains a separate release gate. |
 | UI automation digest review | later panel lists persisted dry-run digests, shows would-publish/blocked/skipped counts, keeps explicit publish manual, records digest review/archive/supersede state, and never publishes or notifies during digest creation or review |
 | UI correction action | calls `POST /api/v1/growth/profile-corrections`, refreshes context after success, and does not mutate Profile V2 optimistically in browser state |
 | UI evidence audit | renders evidence history from context or `GET /api/v1/growth/evidence/audit`; never displays raw answers, transcripts, prompts, model output, source bodies, private paths, or provider config |
