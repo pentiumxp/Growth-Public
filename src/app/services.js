@@ -1,4 +1,6 @@
 const fs = require("node:fs");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const { createGrowthService } = require("../services/growth-service");
 const { createGrowthEvaluationService } = require("../services/growth-evaluation-service");
 const { createGrowthEventService } = require("../services/growth-event-service");
@@ -21,6 +23,7 @@ const { createLearningAutomationReleaseCollectionRunService } = require("../serv
 const { createLearningAutomationReleaseControlsService } = require("../services/learning-automation-release-controls-service");
 const { createLearningAutomationReleaseDashboardService } = require("../services/learning-automation-release-dashboard-service");
 const { createLearningAutomationReleaseDecisionService } = require("../services/learning-automation-release-decision-service");
+const { createLearningAutomationReleaseEvidenceBundleService } = require("../services/learning-automation-release-evidence-bundle-service");
 const { createLearningAutomationReleaseEvidenceBundleAuditService } = require("../services/learning-automation-release-evidence-bundle-audit-service");
 const { createLearningAutomationReleaseInventoryService } = require("../services/learning-automation-release-inventory-service");
 const { createLearningAutomationReleasePackageService } = require("../services/learning-automation-release-package-service");
@@ -77,6 +80,7 @@ const { createGrowthSnapshotStore } = require("../stores/growth-snapshot-store")
 const { createJsonWorkspaceStore } = require("../stores/json-workspace-store");
 
 function createServices(config) {
+  const repoRoot = path.join(__dirname, "..", "..");
   const workspaceStore = createJsonWorkspaceStore({ filePath: config.workspaceStorePath });
   const growthSnapshotStore = createGrowthSnapshotStore({ filePath: config.snapshotStorePath });
   const growthLearningStore = createGrowthLearningSqliteStore({
@@ -264,6 +268,15 @@ function createServices(config) {
   const learningAutomationReleaseEvidenceBundleAuditService = createLearningAutomationReleaseEvidenceBundleAuditService({
     readFile: fs.readFileSync
   });
+  const learningAutomationReleaseEvidenceBundleService = createLearningAutomationReleaseEvidenceBundleService({
+    repoRoot,
+    runCommand(command, commandArgs, options) {
+      return spawnSync(command, commandArgs, Object.assign({}, options, {
+        env: process.env,
+        encoding: "utf8"
+      }));
+    }
+  });
   const learningAutomationSchedulerWorkerTargetService = createLearningAutomationSchedulerWorkerTargetService({
     repository: growthLearningStore.learningAutomationSchedulerWorkerTargetRepository,
     targetProvisioningService: learningTargetProvisioningService
@@ -352,6 +365,15 @@ function createServices(config) {
     releaseReadinessService: learningAutomationReleaseReadinessService,
     releaseControlsService: learningAutomationReleaseControlsService,
     releaseInventoryService: learningAutomationReleaseInventoryService
+  });
+  const learningAutomationReleasePackageBuildService = createLearningAutomationReleasePackageService({
+    evidenceBundleService: learningAutomationReleaseEvidenceBundleService,
+    evidenceBundleAuditService: learningAutomationReleaseEvidenceBundleAuditService,
+    releaseReadinessService: learningAutomationReleaseReadinessService,
+    releaseCollectionRunService: learningAutomationReleaseCollectionRunService,
+    releaseControlsService: learningAutomationReleaseControlsService,
+    releaseDashboardService: learningAutomationReleaseDashboardService,
+    repository: growthLearningStore.learningAutomationReleasePackageRepository
   });
   const learningAutomationReleaseWorkbenchService = createLearningAutomationReleaseWorkbenchService({
     releaseReadinessService: learningAutomationReleaseReadinessService,
@@ -483,8 +505,10 @@ function createServices(config) {
     learningAutomationReleaseDashboardService,
     learningAutomationReleaseDecisionService,
     learningAutomationReleaseEvidenceService,
+    learningAutomationReleaseEvidenceBundleService,
     learningAutomationReleaseEvidenceBundleAuditService,
     learningAutomationReleaseInventoryService,
+    learningAutomationReleasePackageBuildService,
     learningAutomationReleasePackageService,
     learningAutomationReleaseReadinessService,
     learningAutomationReleaseReviewService,

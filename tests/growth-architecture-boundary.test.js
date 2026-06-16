@@ -356,10 +356,14 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /learningAutomationReleaseDecisionService\.listDecisions/);
   assert.match(routes, /learningAutomationReleaseDecisionService\.recordDecision/);
   assert.match(routes, /automation\/release-packages/);
+  assert.match(routes, /automation\/release-packages\/build/);
   assert.match(routes, /normalizeAutomationReleasePackageListInput/);
   assert.match(routes, /normalizeAutomationReleasePackageInput/);
+  assert.match(routes, /normalizeAutomationReleasePackageBuildInput/);
   assert.match(routes, /learningAutomationReleasePackageService\.listPackages/);
   assert.match(routes, /learningAutomationReleasePackageService\.recordPackage/);
+  assert.match(routes, /learningAutomationReleasePackageBuildService/);
+  assert.match(routes, /packageBuildService\.buildPackage/);
   assert.match(routes, /automation\/release-review/);
   assert.match(routes, /normalizeAutomationReleaseReviewInput/);
   assert.match(routes, /learningAutomationReleaseReviewService\.review/);
@@ -2371,6 +2375,14 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(packageJson, /build-growth-release-package\.js/);
   assert.match(packageJson, /learning-automation-release-package-service\.js/);
 
+  const appServices = read(path.join("src", "app", "services.js"));
+  assert.match(appServices, /createLearningAutomationReleaseEvidenceBundleService/);
+  assert.match(appServices, /learningAutomationReleaseEvidenceBundleService/);
+  assert.match(appServices, /learningAutomationReleasePackageBuildService/);
+  assert.match(appServices, /evidenceBundleService: learningAutomationReleaseEvidenceBundleService/);
+  assert.match(appServices, /releaseDashboardService: learningAutomationReleaseDashboardService/);
+  assert.match(appServices, /spawnSync/);
+
   const script = read(path.join("scripts", "build-growth-release-package.js"));
   assert.match(script, /createLearningAutomationReleasePackageService/);
   assert.match(script, /createLearningAutomationReleaseEvidenceBundleService/);
@@ -2448,6 +2460,11 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(scriptHarness, /fails closed for package-record write without allow-write/);
   assert.match(scriptHarness, /writes summary-only package output/);
   assert.match(scriptHarness, /write a summary-only package record/);
+
+  const routeHarness = read(path.join("tests", "growth-routes.test.js"));
+  assert.match(routeHarness, /release-packages\/build/);
+  assert.match(routeHarness, /buildReleasePackage/);
+  assert.match(routeHarness, /growth_automation_release_package_build_owner_required/);
 
   const repositoryHarness = read(path.join("tests", "learning-automation-release-package-repository.test.js"));
   assert.match(repositoryHarness, /saves and lists summary-only package records/);

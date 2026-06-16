@@ -851,6 +851,55 @@ function normalizeAutomationReleasePackageInput(body, workspaceId, target, reque
   };
 }
 
+function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon || "daily_plan",
+    availableMinutes: body.availableMinutes || body.available_minutes,
+    targetNodeIds: listFromBodyValue(body.targetNodeIds || body.target_node_ids || body.nodeIds || body.node_ids),
+    tasks: listFromBodyValue(body.tasks || body.taskIds || body.task_ids),
+    requiredTaskIds: listFromBodyValue(body.requiredTaskIds || body.required_task_ids || body.requiredTasks || body.required_tasks),
+    requiredApprovalKeys: listFromBodyValue(body.requiredApprovalKeys || body.required_approval_keys),
+    activationGates: listFromBodyValue(body.activationGates || body.activation_gates || body.activationGate || body.activation_gate),
+    activationRecordLimit: body.activationRecordLimit || body.activation_record_limit,
+    runtimeEnablementRecordLimit: body.runtimeEnablementRecordLimit || body.runtime_enablement_record_limit,
+    collectionRunId: body.collectionRunId || body.collection_run_id || body.runId || body.run_id,
+    taskCardId: body.taskCardId || body.task_card_id,
+    planDraftId: body.planDraftId || body.plan_draft_id,
+    evaluationId: body.evaluationId || body.evaluation_id,
+    profileDeltaId: body.profileDeltaId || body.profile_delta_id,
+    evidenceId: body.evidenceId || body.evidence_id,
+    correctionId: body.correctionId || body.correction_id,
+    sourceId: body.sourceId || body.source_id,
+    learnerCycleOperation: body.learnerCycleOperation || body.learner_cycle_operation,
+    dailyLoopWriteOperation: body.dailyLoopWriteOperation || body.daily_loop_write_operation,
+    ownerDailyUiEvidence: body.ownerDailyUiEvidence || body.owner_daily_ui_evidence,
+    ownerAuditUiEvidence: body.ownerAuditUiEvidence || body.owner_audit_ui_evidence,
+    stageCheckpointEvidence: body.stageCheckpointEvidence || body.stage_checkpoint_evidence,
+    proposalReviewUiEvidence: body.proposalReviewUiEvidence || body.proposal_review_ui_evidence,
+    automationDigestUiEvidence: body.automationDigestUiEvidence || body.automation_digest_ui_evidence,
+    automationActionHandoffUiEvidence: body.automationActionHandoffUiEvidence || body.automation_action_handoff_ui_evidence,
+    schedulerExecutionUiEvidence: body.schedulerExecutionUiEvidence || body.scheduler_execution_ui_evidence,
+    schedulerRunUiEvidence: body.schedulerRunUiEvidence || body.scheduler_run_ui_evidence,
+    schedulerWorkerTargetUiEvidence: body.schedulerWorkerTargetUiEvidence || body.scheduler_worker_target_ui_evidence,
+    evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
+    releaseApproval: releaseApprovalFromBody(body),
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    createdBy: body.createdBy || body.created_by || requestedWorkspaceId(request, url, ""),
+    createdAt: body.createdAt || body.created_at,
+    writeCollectionRun: false,
+    writePackageRecord: false,
+    allowWritePackage: false
+  };
+}
+
 function normalizeAutomationReleaseApprovalListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1114,6 +1163,11 @@ function csvStrings(value = "") {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function listFromBodyValue(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean);
+  return csvStrings(value);
 }
 
 function normalizeProfileCorrectionListInput(url, target) {
@@ -1786,6 +1840,20 @@ async function handleGrowthRoute(request, response, url, services) {
       normalizeAutomationReleaseDecisionInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-packages/build") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_package_build_owner_required", "Automation release package build requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const packageBuildService = services.learningAutomationReleasePackageBuildService || services.learningAutomationReleasePackageService;
+    const result = packageBuildService.buildPackage(
+      normalizeAutomationReleasePackageBuildInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.package ? 200 : 400, result);
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/release-packages") {

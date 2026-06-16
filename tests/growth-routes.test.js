@@ -2633,6 +2633,53 @@ test("growth automation release readiness routes are visible-target scoped and s
         };
       }
     },
+    learningAutomationReleasePackageBuildService: {
+      buildPackage(input) {
+        calls.push({ type: "buildReleasePackage", input });
+        return {
+          ok: false,
+          source: "growth-learning-automation-release-package-service",
+          package: {
+            schemaVersion: "growth.learningAutomationReleasePackage.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            programId: input.programId,
+            domainPackId: input.domainPackId,
+            domain: input.domain,
+            subject: input.subject,
+            horizon: input.horizon,
+            status: "blocked",
+            summary: {
+              schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+              summaryOnly: true,
+              stepCount: 6,
+              blockedCount: 1,
+              writefulSchedulingAllowed: false
+            },
+            steps: [{
+              key: "release_evidence_bundle",
+              status: "blocked",
+              summaryOnly: true,
+              writefulSchedulingAllowed: false
+            }],
+            artifacts: {
+              releaseEvidenceBundle: { summaryOnly: true },
+              releaseReadiness: { summaryOnly: true }
+            },
+            writefulSchedulingAllowed: false,
+            runtimeConfigChange: false,
+            configChangeApplied: false
+          },
+          summary: {
+            summaryOnly: true,
+            status: "blocked",
+            writefulSchedulingAllowed: false
+          }
+        };
+      }
+    },
     learningAutomationReleaseReviewService: {
       review(input) {
         calls.push({ type: "releaseReview", input });
@@ -3546,6 +3593,90 @@ test("growth automation release readiness routes are visible-target scoped and s
       }
     });
 
+    const packageBuild = await fetch(`${baseUrl}/api/v1/growth/automation/release-packages/build`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        tasks: ["planner_readiness", "scheduler_dry_run"],
+        required_task_ids: "planner_readiness,scheduler_dry_run",
+        activation_gates: "writeful_execution",
+        required_approval_keys: ["writefulExecutionApproval"],
+        owner_daily_ui_evidence: true,
+        scheduler_worker_target_ui_evidence: true,
+        created_at: "2026-06-16T10:20:00.000Z"
+      })
+    });
+    assert.equal(packageBuild.status, 200);
+    const packageBuildBody = await packageBuild.json();
+    assert.equal(packageBuildBody.package.schemaVersion, "growth.learningAutomationReleasePackage.v1");
+    assert.equal(packageBuildBody.package.status, "blocked");
+    assert.equal(packageBuildBody.package.writefulSchedulingAllowed, false);
+    assert.deepEqual(calls[19], {
+      type: "buildReleasePackage",
+      input: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        displayName: "凡凡",
+        label: "凡凡",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        availableMinutes: undefined,
+        targetNodeIds: [],
+        tasks: ["planner_readiness", "scheduler_dry_run"],
+        requiredTaskIds: ["planner_readiness", "scheduler_dry_run"],
+        requiredApprovalKeys: ["writefulExecutionApproval"],
+        activationGates: ["writeful_execution"],
+        activationRecordLimit: undefined,
+        runtimeEnablementRecordLimit: undefined,
+        collectionRunId: undefined,
+        taskCardId: undefined,
+        planDraftId: undefined,
+        evaluationId: undefined,
+        profileDeltaId: undefined,
+        evidenceId: undefined,
+        correctionId: undefined,
+        sourceId: undefined,
+        learnerCycleOperation: undefined,
+        dailyLoopWriteOperation: undefined,
+        ownerDailyUiEvidence: true,
+        ownerAuditUiEvidence: undefined,
+        stageCheckpointEvidence: undefined,
+        proposalReviewUiEvidence: undefined,
+        automationDigestUiEvidence: undefined,
+        automationActionHandoffUiEvidence: undefined,
+        schedulerExecutionUiEvidence: undefined,
+        schedulerRunUiEvidence: undefined,
+        schedulerWorkerTargetUiEvidence: true,
+        evidence: undefined,
+        releaseApproval: {
+          writefulExecutionApproval: undefined,
+          backgroundSchedulerApproval: undefined,
+          backgroundWorkerApproval: undefined
+        },
+        requestedBy: "weixin_stephen",
+        createdBy: "weixin_stephen",
+        createdAt: "2026-06-16T10:20:00.000Z",
+        writeCollectionRun: false,
+        writePackageRecord: false,
+        allowWritePackage: false
+      }
+    });
+
     const deniedCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-readiness/snapshots`, {
       method: "POST",
       headers: {
@@ -3630,6 +3761,22 @@ test("growth automation release readiness routes are visible-target scoped and s
     });
     assert.equal(deniedPackageCreate.status, 403);
     assert.equal((await deniedPackageCreate.json()).error.code, "growth_automation_release_package_owner_required");
+
+    const deniedPackageBuild = await fetch(`${baseUrl}/api/v1/growth/automation/release-packages/build`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_stephen",
+        tasks: ["planner_readiness"]
+      })
+    });
+    assert.equal(deniedPackageBuild.status, 403);
+    assert.equal((await deniedPackageBuild.json()).error.code, "growth_automation_release_package_build_owner_required");
 
     const deniedActivationCreate = await fetch(`${baseUrl}/api/v1/growth/automation/release-activations`, {
       method: "POST",

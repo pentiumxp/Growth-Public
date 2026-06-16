@@ -113,6 +113,13 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_approval"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
+  const packageAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_package");
+  assert.equal(packageAction.requiresPreparation, true);
+  assert.equal(packageAction.preparationRoute.method, "POST");
+  assert.equal(packageAction.preparationRoute.path, "/api/v1/growth/automation/release-packages/build");
+  assert.equal(packageAction.preparationRoute.body.workspace_id, "fanfan");
+  assert.deepEqual(packageAction.preparationRoute.body.tasks, ["planner_readiness", "scheduler_dry_run"]);
+  assert.deepEqual(packageAction.preparationRoute.body.activation_gates, ["writeful_execution"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "runtime_enablement"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.externalActionRequired === true), true);
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_authorization"), true);

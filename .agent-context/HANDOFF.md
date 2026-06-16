@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T01:00Z - Owner Release Package Build Boundary
+
+- Status: implemented and focused-Harness validated locally. This slice adds a
+  backend HTTP boundary for Owner-triggered release package candidate build. It
+  does not deploy, apply runtime config, grant scheduler permission, call
+  Gateway/model vendors, publish cards/plans, evaluate submissions, execute
+  scheduler actions, run scheduler ticks, deliver notifications, activate stage
+  assessments, mutate learner state, or record a package row by itself.
+- Scope:
+  - `src/app/services.js` now creates
+    `learningAutomationReleaseEvidenceBundleService` with an injected command
+    runner and a separate build-capable
+    `learningAutomationReleasePackageBuildService` after release-dashboard
+    construction, avoiding a circular dependency with package record/list
+    readbacks;
+  - `POST /api/v1/growth/automation/release-packages/build` is Owner-only,
+    workspace-bearer authorized, visible-target scoped, and delegates to
+    `learningAutomationReleasePackageBuildService.buildPackage`;
+  - the build route returns a summary-only `growth.learningAutomationReleasePackage.v1`
+    candidate when available, including blocked candidates for audit, and keeps
+    `writeCollectionRun=false`, `writePackageRecord=false`, and
+    `allowWritePackage=false`;
+  - `learning-automation-release-workbench-service` now adds a bounded
+    `preparationRoute` to missing `release_package` actions so UI tooling can
+    build a real candidate before recording a package artifact.
+- Changed files:
+  - `src/app/services.js`;
+  - `src/routes/growth-routes.js`;
+  - `src/services/learning-automation-release-workbench-service.js`;
+  - `tests/learning-automation-release-workbench-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - Growth architecture/next-stage/platform pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - `node --check src/app/services.js`;
+  - `node --check src/routes/growth-routes.js`;
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - focused route/service/architecture Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`78/78`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`190/190` runtime JavaScript files covered);
+  - `npm test` (`761/761`);
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops intake classified the slice as H3 with no visual or deployment lane
+    required;
+  - AI Ops evidence ledger append id:
+    `evidence-0c2e32e6-283f-4730-9e22-79c06bb18e49`.
+- Remaining product work:
+  - add embedded package review UI if Owner should build and record release
+    packages without Codex/CLI;
+  - keep package record writes behind real package artifacts and existing
+    Owner-only `release-workbench/actions` or `release-packages` record routes;
+  - collect central iOS visual/release evidence before any production UI or
+    automation release enablement.
+
 ## 2026-06-16T00:00Z - Release Workbench Embedded Owner UI
 
 - Status: implemented and validated locally. This slice adds embedded Owner UI

@@ -270,6 +270,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `runtime_enablement` actions from the plugin UI. It intentionally does not
   record `release_package` from the workbench template because package record
   writes require a real release package artifact, not a placeholder body.
+  Missing-package workbench actions now include a bounded preparation route for
+  Owner-triggered release package candidate build before any package-record
+  write.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only
@@ -300,12 +303,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   fields remain readback only. The
   visible-target scoped
   `GET /api/v1/growth/automation/release-packages` and Owner-only
-  `POST /api/v1/growth/automation/release-packages` expose record readback and
-  recording for existing package artifacts only. The package boundary never
-  runs smoke tasks inside HTTP, flips runtime config, grants scheduler
-  permission, calls Gateway, publishes, evaluates, schedules, delivers
-  notifications, activates stage assessments, mutates learner state, or
-  deploys.
+  `POST /api/v1/growth/automation/release-packages/build` expose explicit
+  package candidate build from the plugin HTTP boundary. The build route uses a
+  build-capable package service instance wired to the release evidence bundle
+  service's injected runner plus bundle-audit/readiness/collection-run/
+  controls/dashboard services; it can return blocked summary-only candidates
+  for Owner audit but does not persist package records. Owner-only
+  `POST /api/v1/growth/automation/release-packages` records existing package
+  artifacts only and does not run package smoke tasks. The package boundary
+  never flips runtime config, grants scheduler permission, calls Gateway,
+  publishes, evaluates, schedules, delivers notifications, activates stage
+  assessments, mutates learner state, or deploys.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

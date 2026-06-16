@@ -329,6 +329,20 @@ function actionsFromMissingRecords(kinds = [], scope = {}) {
   return uniqueStrings(kinds, 12).map((kind) => {
     const endpointKey = actionKeyForRecordKind(kind);
     if (!endpointKey) return null;
+    const preparationRoute = endpointKey === "release_package"
+      ? routeTemplate("/api/v1/growth/automation/release-packages/build", {
+        workspace_id: scope.workspaceId,
+        learner_id: scope.learnerId,
+        program_id: scope.programId,
+        domain_pack_id: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
+        tasks: ["planner_readiness", "scheduler_dry_run"],
+        required_task_ids: ["planner_readiness", "scheduler_dry_run"],
+        activation_gates: ["writeful_execution"]
+      })
+      : null;
     return {
       schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
       summaryOnly: true,
@@ -339,6 +353,8 @@ function actionsFromMissingRecords(kinds = [], scope = {}) {
       source: "missing_record",
       endpointKey,
       route: recordRoutes(scope).find((item) => item.key === endpointKey)?.route || null,
+      requiresPreparation: Boolean(preparationRoute),
+      preparationRoute,
       externalActionRequired: endpointKey === "runtime_enablement",
       externalAction: endpointKey === "runtime_enablement" ? {
         kind: "external",
