@@ -58,6 +58,7 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--required-approval-key", "writefulExecutionApproval",
     "--activation-gates", "writeful_execution,background_scheduler",
     "--write-collection-run",
+    "--write-release-evidence-records",
     "--release-evidence-bundle-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true }),
     "--release-evidence-bundle-audit-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1", summaryOnly: true }),
     "--release-readiness-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseReadiness.v1", summaryOnly: true }),
@@ -76,6 +77,7 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.deepEqual(input.requiredApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(input.activationGates, ["writeful_execution", "background_scheduler"]);
   assert.equal(input.writeCollectionRun, true);
+  assert.equal(input.writeReleaseEvidenceRecords, true);
   assert.equal(input.releaseEvidenceBundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
   assert.equal(input.releaseEvidenceBundleAudit.schemaVersion, "growth.learningAutomationReleaseEvidenceBundleAudit.v1");
   assert.equal(input.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
@@ -135,6 +137,7 @@ test("release workbench action smoke script can run evidence collection through 
       "--task", "planner_readiness",
       "--required-task", "planner_readiness",
       "--write-collection-run",
+      "--write-release-evidence-records",
       "--requested-by", "owner",
       "--allow-write",
       "--json"
@@ -156,6 +159,8 @@ test("release workbench action smoke script can run evidence collection through 
     assert.match(output.actionRecord.recordId, /^lgacrn_/);
     assert.equal(output.writeResult.collection.schemaVersion, "growth.learningAutomationReleaseEvidenceCollection.v1");
     assert.equal(output.writeResult.collection.summary.collectionRunWritten, true);
+    assert.equal(typeof output.writeResult.collection.summary.releaseEvidenceRecordAttemptedCount, "number");
+    assert.equal(output.writeResult.collection.writeReleaseEvidenceRecords, true);
     assert.equal(output.writeResult.collection.writefulSchedulingAllowed, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);

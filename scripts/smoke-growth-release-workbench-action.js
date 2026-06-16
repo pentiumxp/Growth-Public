@@ -94,6 +94,7 @@ function inputFromArgs(args) {
     activationDecision: parseJsonArg(args, ["--activation-decision-json", "--activationDecisionJson"], undefined),
     enablementDecision: parseJsonArg(args, ["--enablement-decision-json", "--enablementDecisionJson"], undefined),
     writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun") || hasFlag(args, "--record-collection-run"),
+    writeReleaseEvidenceRecords: hasFlag(args, "--write-release-evidence-records") || hasFlag(args, "--writeReleaseEvidenceRecords") || hasFlag(args, "--record-release-evidence-records"),
     note: firstArgValue(args, ["--note", "--summary"], ""),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], ""),
     recordedBy: firstArgValue(args, ["--recorded-by", "--recordedBy", "--approved-by", "--approvedBy"], ""),

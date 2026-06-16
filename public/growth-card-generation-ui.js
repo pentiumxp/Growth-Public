@@ -652,6 +652,7 @@
       payload.tasks = asArray(routeBody.tasks || ["learning_loop_state"]).map(clean).filter(Boolean);
       payload.required_task_ids = asArray(routeBody.required_task_ids || routeBody.requiredTaskIds || payload.tasks).map(clean).filter(Boolean);
       payload.write_collection_run = routeBody.write_collection_run === true || routeBody.writeCollectionRun === true || routeBody.record_collection_run === true || routeBody.recordCollectionRun === true;
+      payload.write_release_evidence_records = routeBody.write_release_evidence_records === true || routeBody.writeReleaseEvidenceRecords === true || routeBody.record_release_evidence_records === true || routeBody.recordReleaseEvidenceRecords === true;
       if (routeBody.auto_select_completed_cycle === true || routeBody.autoSelectCompletedCycle === true) {
         payload.auto_select_completed_cycle = true;
       }

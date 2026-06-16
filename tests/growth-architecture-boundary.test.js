@@ -2809,6 +2809,10 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(collectionService, /releaseReadinessService\.evaluateReadiness/);
   assert.match(collectionService, /releaseCollectionRunService\.evaluateRun/);
   assert.match(collectionService, /releaseCollectionRunService\.recordRun/);
+  assert.match(collectionService, /releaseEvidenceService\.recordEvidence/);
+  assert.match(collectionService, /writeReleaseEvidenceRecords/);
+  assert.match(collectionService, /release_evidence_collection_record_service_unavailable/);
+  assert.match(collectionService, /releaseEvidenceBundleAudit/);
   assert.match(collectionService, /release_evidence_collection_write_not_allowed/);
   assert.match(collectionService, /writefulSchedulingAllowed: false/);
   assert.match(collectionService, /runtimeConfigChange: false/);
@@ -2831,6 +2835,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   const collectionScript = read(path.join("scripts", "smoke-growth-release-evidence-collection.js"));
   assert.match(collectionScript, /learningAutomationReleaseEvidenceCollectionService\.collect/);
   assert.match(collectionScript, /--write-collection-run/);
+  assert.match(collectionScript, /--write-release-evidence-records/);
   assert.match(collectionScript, /--allow-write/);
   assert.doesNotMatch(collectionScript, /learningAutomationReleasePackageService\.recordPackage/);
   assert.doesNotMatch(collectionScript, /publishAcceptedProposal|generateCard|evaluateSubmission|executeOnce|runOnce|deliverHandoff|activateStageAssessment/);
@@ -2838,11 +2843,19 @@ test("Growth release package builder stays summary-only orchestration over relea
   const collectionHarness = read(path.join("tests", "learning-automation-release-evidence-collection-service.test.js"));
   assert.match(collectionHarness, /composes bundle, audit, readiness, and collection run/);
   assert.match(collectionHarness, /gates collection-run writes/);
+  assert.match(collectionHarness, /gates release evidence record writes/);
+  assert.match(collectionHarness, /surfaces release evidence record failures/);
   assert.match(collectionHarness, /rejects privacy-risk input and artifacts/);
 
   const collectionScriptHarness = read(path.join("tests", "growth-release-evidence-collection-smoke-script.test.js"));
   assert.match(collectionScriptHarness, /fails closed for write without allow-write/);
+  assert.match(collectionScriptHarness, /release evidence record write without allow-write/);
   assert.match(collectionScriptHarness, /record a summary-only collection run/);
+
+  const releaseWorkbenchService = read(path.join("src", "services", "learning-automation-release-workbench-service.js"));
+  assert.match(releaseWorkbenchService, /write_release_evidence_records: true/);
+  const releaseWorkbenchUi = read(path.join("public", "growth-card-generation-ui.js"));
+  assert.match(releaseWorkbenchUi, /write_release_evidence_records/);
 
   assert.match(routeHarness, /release-evidence-collections\/run/);
   assert.match(routeHarness, /collectReleaseEvidence/);

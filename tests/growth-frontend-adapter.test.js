@@ -1042,7 +1042,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
               tasks: ["profile_feedback", "platform_action", "central_visual"],
               required_task_ids: ["profile_feedback", "platform_action", "central_visual"],
               auto_select_latest_completed_cycle: true,
-              write_collection_run: true
+              write_collection_run: true,
+              write_release_evidence_records: true
             }
           }
         }, {
@@ -1822,7 +1823,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     tasks: ["profile_feedback", "platform_action", "central_visual"],
     required_task_ids: ["profile_feedback", "platform_action", "central_visual"],
     auto_select_latest_completed_cycle: true,
-    write_collection_run: true
+    write_collection_run: true,
+    write_release_evidence_records: true
   });
   assert.equal(Object.hasOwn(releaseCollectionPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseCollectionPayload, "transcript"), false);

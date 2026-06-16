@@ -53,6 +53,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
     "--required-tasks", "scheduler_dry_run",
     "--auto-select-latest-completed-cycle",
     "--write-collection-run",
+    "--write-release-evidence-records",
     "--allow-write",
     "--requested-by", "owner",
     "--created-at", "2026-06-16T07:00:00.000Z",
@@ -66,6 +67,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
   assert.equal(input.workspaceId, "weixin_fanfan");
   assert.equal(input.learnerId, "fanfan");
   assert.equal(input.writeCollectionRun, true);
+  assert.equal(input.writeReleaseEvidenceRecords, true);
   assert.equal(input.allowWriteCollection, true);
   assert.equal(input.autoSelectLatestCompletedCycle, true);
 });
@@ -83,6 +85,21 @@ test("release evidence collection script fails closed for write without allow-wr
   assert.equal(output.ok, false);
   assert.equal(output.error, "release_evidence_collection_write_not_allowed");
   assert.equal(output.requiredFlag, "--allow-write");
+});
+
+test("release evidence collection script fails closed for release evidence record write without allow-write", () => {
+  const result = runScript([
+    "--workspace-id", "smoke_workspace",
+    "--task", "planner_readiness",
+    "--required-task", "planner_readiness",
+    "--write-release-evidence-records",
+    "--json"
+  ]);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const output = parseStdout(result);
+  assert.equal(output.ok, false);
+  assert.equal(output.error, "release_evidence_collection_write_not_allowed");
+  assert.equal(output.writeReleaseEvidenceRecords, true);
 });
 
 test("release evidence collection script writes summary-only collection output", () => {

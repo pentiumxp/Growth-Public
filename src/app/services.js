@@ -398,7 +398,8 @@ function createServices(config) {
     evidenceBundleService: learningAutomationReleaseEvidenceBundleService,
     evidenceBundleAuditService: learningAutomationReleaseEvidenceBundleAuditService,
     releaseReadinessService: learningAutomationReleaseReadinessService,
-    releaseCollectionRunService: learningAutomationReleaseCollectionRunService
+    releaseCollectionRunService: learningAutomationReleaseCollectionRunService,
+    releaseEvidenceService: learningAutomationReleaseEvidenceService
   });
   const learningAutomationReleaseWorkbenchService = createLearningAutomationReleaseWorkbenchService({
     releaseReadinessService: learningAutomationReleaseReadinessService,

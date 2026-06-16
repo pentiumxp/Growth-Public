@@ -229,7 +229,25 @@ test("automation release evidence service returns evidence bag for release-readi
   }));
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_review_evidence",
-    evidence: { evidenceId: "owner_review_1", source: "owner_review_smoke" }
+    evidence: {
+      evidenceId: "owner_review_1",
+      source: "owner_review_smoke",
+      ownerReviewStageSummary: {
+        acceptedProposalCount: 1,
+        reviewedDigestCount: 1,
+        deliveredHandoffCount: 1,
+        publishedSchedulerExecutionCount: 1,
+        completedSchedulerRunCount: 1,
+        passedGateCount: 7,
+        missingGateCount: 2,
+        missingGateKeys: ["digest_owner_review_present"],
+        nextAction: {
+          key: "digest_owner_review_present",
+          action: "review_automation_digest",
+          requiredActor: "owner"
+        }
+      }
+    }
   }));
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "production_target_provisioning_smoke_evidence",
@@ -273,6 +291,11 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.uiGate, "release_package_review");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.readyForReleaseEvidence, true);
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
+  assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.acceptedProposalCount, 1);
+  assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.deliveredHandoffCount, 1);
+  assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.passedGateCount, 7);
+  assert.deepEqual(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.missingGateKeys, ["digest_owner_review_present"]);
+  assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.nextAction.action, "review_automation_digest");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");
   assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");
   assert.equal(bag.evidence.stageCheckpointControlsEvidence.source, "stage_checkpoint_controls_smoke");

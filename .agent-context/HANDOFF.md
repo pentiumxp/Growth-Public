@@ -9,6 +9,96 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:18+08:00 - Release Evidence Collection Record Persistence
+
+- Status: implemented and locally validated. Commit/push follows this handoff
+  update. This slice is not deployed because the user deferred production
+  deployment until the broader Growth target is complete.
+- Change intent:
+  - let Owner-triggered release evidence collection persist real pass
+    release-evidence records from the generated release evidence bundle, so
+    later release-readiness evaluations can consume them through the existing
+    persisted evidence bag;
+  - keep collection no-write by default and keep every write explicit;
+  - keep release-evidence record validation/persistence owned by
+    `learning-automation-release-evidence-service`.
+- Scope:
+  - `learning-automation-release-evidence-collection-service` now accepts
+    `writeReleaseEvidenceRecords` /
+    `write_release_evidence_records`;
+  - `writeReleaseEvidenceRecords` is blocked unless
+    `allowWriteCollection` / `--allow-write` or Owner route/workbench
+    authorization is present;
+  - when explicitly authorized, the collection service extracts canonical pass
+    summary evidence from the release evidence bundle plus
+    `releaseEvidenceBundleAudit` and delegates each write only to
+    `releaseEvidenceService.recordEvidence`;
+  - collection artifacts now include
+    `artifacts.releaseEvidenceRecords` plus bounded attempted/recorded/
+    duplicate/blocked counts in the summary;
+  - record failures make the collection artifact `blocked` instead of
+    fabricating readiness;
+  - `learning-automation-release-evidence-service.evidenceBag()` preserves
+    the compact `ownerReviewStageSummary` for persisted `ownerReviewEvidence`
+    records, and release-readiness now reads that compact summary from the
+    persisted record projection;
+  - Owner workbench record-route templates advertise
+    `write_release_evidence_records=true` for `release_evidence_collection`;
+  - Owner UI action payloads, direct collection route normalization, direct
+    collection CLI, and workbench-action CLI all forward the explicit write
+    flag.
+- Boundary notes:
+  - no Gateway/model-vendor calls;
+  - no Home AI old Growth server imports;
+  - no card generation, publication, evaluation, scheduler execution, stage
+    activation, notification delivery, runtime config mutation, package record,
+    release decision, approval, or deployment;
+  - collection service owns no repository/table and cannot write release
+    evidence except through `learningAutomationReleaseEvidenceService`.
+- Docs changed:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation passed:
+  - syntax checks passed for touched runtime JS files;
+  - `node --test tests/learning-automation-release-evidence-collection-service.test.js tests/learning-automation-release-evidence-service.test.js tests/learning-automation-release-readiness-service.test.js`
+    passed `30/30`;
+  - `node --test tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js`
+    passed `98/98`.
+  - wider focused Harness:
+    `node --test tests/learning-automation-release-evidence-collection-service.test.js tests/learning-automation-release-evidence-service.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-frontend-adapter.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `161/161`;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` with `requiredCount=35`;
+  - docs/architecture Harness:
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - full Growth `npm test` passed `862/862`;
+  - `git diff --check` passed in Growth and app;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 357 files, 4,999 nodes, 21,485 edges, index up
+    to date, with the existing earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - required app-side checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - the app deploy plan reported unrelated existing dirty files under app docs,
+    static UI, and tests; they were not touched by this Growth slice.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-c4eb80d8-ffe2-47c1-a695-44a95e47bef6`.
+- Remaining gates:
+  - commit and push to both configured Growth remotes;
+  - no production deployment in this slice.
+
 ## 2026-06-17T03:30+08:00 - Profile Feedback Completed-Cycle Auto-Selection
 
 - Status: implemented locally, fully validated, and ready for commit/push.

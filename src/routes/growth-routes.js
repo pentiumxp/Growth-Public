@@ -775,6 +775,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     decidedAt: merged.decidedAt || merged.decided_at,
     createdAt: merged.createdAt || merged.created_at,
     writeCollectionRun: merged.writeCollectionRun === true || merged.write_collection_run === true || merged.recordCollectionRun === true || merged.record_collection_run === true,
+    writeReleaseEvidenceRecords: merged.writeReleaseEvidenceRecords === true || merged.write_release_evidence_records === true || merged.recordReleaseEvidenceRecords === true || merged.record_release_evidence_records === true,
     allowWriteCollection: true,
     ownerAuthorizedWrite: true
   };
@@ -1016,6 +1017,7 @@ function normalizeAutomationReleaseEvidenceCollectionInput(body, workspaceId, ta
   const input = normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, request, url);
   return Object.assign({}, input, {
     writeCollectionRun: body.writeCollectionRun === true || body.write_collection_run === true || body.recordCollectionRun === true || body.record_collection_run === true,
+    writeReleaseEvidenceRecords: body.writeReleaseEvidenceRecords === true || body.write_release_evidence_records === true || body.recordReleaseEvidenceRecords === true || body.record_release_evidence_records === true,
     allowWriteCollection: true,
     writePackageRecord: false,
     allowWritePackage: false,

@@ -134,6 +134,26 @@ function serviceWith(records = {}) {
       };
     };
   }
+  const releaseEvidenceService = records.omitRecordEvidenceService ? null : {
+    recordEvidence(input) {
+      records.releaseEvidenceRecordInputs = records.releaseEvidenceRecordInputs || [];
+      records.releaseEvidenceRecordInputs.push(input);
+      if (typeof records.recordEvidenceResult === "function") {
+        return records.recordEvidenceResult(input);
+      }
+      return {
+        ok: true,
+        duplicate: Boolean(records.duplicateEvidenceRecords),
+        evidence: {
+          evidenceRecordId: `lgarev_${input.evidenceKey}`,
+          evidenceKey: input.evidenceKey,
+          status: input.status || "pass",
+          evidence: input.evidence,
+          observedAt: input.observedAt
+        }
+      };
+    }
+  };
   return createLearningAutomationReleaseEvidenceCollectionService({
     now: () => new Date("2026-06-16T07:00:00.000Z"),
     evidenceBundleService: {
@@ -158,7 +178,8 @@ function serviceWith(records = {}) {
         return readinessValue;
       }
     },
-    releaseCollectionRunService
+    releaseCollectionRunService,
+    releaseEvidenceService
   });
 }
 
@@ -192,6 +213,7 @@ test("release evidence collection service composes bundle, audit, readiness, and
   assert.equal(records.readinessInput.evidence.productionPlannerReadinessEvidence.evidenceId, "planner_ready");
   assert.equal(records.readinessInput.releaseApproval.writefulExecutionApproval.status, "approved");
   assert.equal(records.collectionInput.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
+  assert.equal(records.releaseEvidenceRecordInputs, undefined);
   assert.equal(JSON.stringify(result.collection).includes("stdout"), false);
 });
 
@@ -214,6 +236,83 @@ test("release evidence collection service gates collection-run writes", () => {
   assert.equal(written.collection.summary.collectionRunId, "lgacrn_written_1");
 });
 
+test("release evidence collection service gates release evidence record writes", () => {
+  const denied = serviceWith().collect(Object.assign(scope(), {
+    writeReleaseEvidenceRecords: true
+  }));
+  assert.equal(denied.ok, false);
+  assert.equal(denied.error, "release_evidence_collection_write_not_allowed");
+  assert.equal(denied.writeReleaseEvidenceRecords, true);
+
+  const records = {};
+  const written = serviceWith(records).collect(Object.assign(scope(), {
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(written.ok, true);
+  assert.equal(written.collection.writeReleaseEvidenceRecords, true);
+  assert.deepEqual(written.collection.steps.map((step) => step.key), [
+    "release_evidence_bundle",
+    "release_evidence_bundle_audit",
+    "release_readiness",
+    "release_collection_run",
+    "release_evidence_records"
+  ]);
+  assert.deepEqual(records.releaseEvidenceRecordInputs.map((input) => input.evidenceKey), [
+    "productionPlannerReadinessEvidence",
+    "releaseEvidenceBundleAudit"
+  ]);
+  assert.equal(records.releaseEvidenceRecordInputs[0].workspaceId, "weixin_fanfan");
+  assert.equal(records.releaseEvidenceRecordInputs[0].collectionRunId, "lgacrn_written_1");
+  assert.equal(records.releaseEvidenceRecordInputs[0].evidence.privacyClass, "summary_only");
+  assert.equal(records.releaseEvidenceRecordInputs[0].evidence.summaryOnly, true);
+  assert.equal(records.releaseEvidenceRecordInputs[1].evidence.readyForReleaseEvidence, true);
+  assert.equal(written.collection.artifacts.releaseEvidenceRecords.status, "pass");
+  assert.equal(written.collection.summary.releaseEvidenceRecordsWritten, true);
+  assert.equal(written.collection.summary.releaseEvidenceRecordAttemptedCount, 2);
+  assert.equal(written.collection.summary.releaseEvidenceRecordRecordedCount, 2);
+  assert.equal(written.collection.summary.releaseEvidenceRecordBlockedCount, 0);
+  assert.deepEqual(written.collection.artifacts.releaseEvidenceRecords.evidenceKeys, [
+    "productionPlannerReadinessEvidence",
+    "releaseEvidenceBundleAudit"
+  ]);
+});
+
+test("release evidence collection service surfaces release evidence record failures", () => {
+  const records = {
+    recordEvidenceResult(input) {
+      if (input.evidenceKey === "releaseEvidenceBundleAudit") {
+        return { ok: false, error: "release_evidence_record_rejected" };
+      }
+      return {
+        ok: true,
+        evidence: {
+          evidenceRecordId: `lgarev_${input.evidenceKey}`,
+          evidenceKey: input.evidenceKey,
+          status: "pass",
+          evidence: input.evidence
+        }
+      };
+    }
+  };
+  const result = serviceWith(records).collect(Object.assign(scope(), {
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true
+  }));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.collection.status, "blocked");
+  assert.equal(result.collection.artifacts.releaseEvidenceRecords.status, "blocked");
+  assert.equal(result.collection.artifacts.releaseEvidenceRecords.blockedCount, 1);
+  assert.deepEqual(result.collection.artifacts.releaseEvidenceRecords.errors, [{
+    evidenceKey: "releaseEvidenceBundleAudit",
+    error: "release_evidence_record_rejected"
+  }]);
+});
+
 test("release evidence collection service fails closed without record boundary", () => {
   const result = serviceWith({ omitRecordRun: true }).collect(Object.assign(scope(), {
     writeCollectionRun: true,
@@ -222,6 +321,16 @@ test("release evidence collection service fails closed without record boundary",
 
   assert.equal(result.ok, false);
   assert.equal(result.error, "release_evidence_collection_run_record_unavailable");
+});
+
+test("release evidence collection service fails closed without release evidence record boundary", () => {
+  const result = serviceWith({ omitRecordEvidenceService: true }).collect(Object.assign(scope(), {
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true
+  }));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "release_evidence_collection_record_service_unavailable");
 });
 
 test("release evidence collection service keeps blocked collection evidence explicit", () => {

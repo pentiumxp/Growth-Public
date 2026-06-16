@@ -426,7 +426,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   evaluation, and collection-run readback through the normal service graph. It
   can optionally write only the existing collection-run audit row when
   `--write-collection-run --allow-write` or Owner route authorization is
-  present. It does not create release package records, release decisions,
+  present. It can also explicitly persist pass summary evidence from the
+  bundle, plus the bundle self-audit, into the existing
+  `learning_growth_automation_release_evidence` table only through
+  `learning-automation-release-evidence-service.recordEvidence` when
+  `--write-release-evidence-records --allow-write` or Owner route/workbench
+  authorization is present. The service owns no evidence repository and keeps
+  release-evidence record failures visible in the collection artifact instead
+  of fabricating readiness. It does not create release package records, release decisions,
   approvals, activation/runtime enablement rows, scheduler permission,
   deployment, publication, generation, evaluation, or learner-state mutation.
   The facade is deployed in Mac production at commit `2178bdc86b97`. A

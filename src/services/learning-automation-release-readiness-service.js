@@ -285,7 +285,7 @@ function uiEvidenceSummaryValidation(value = {}, evidenceKey, checkKey) {
 }
 
 function ownerReviewStageSummary(value = {}) {
-  const source = objectOnly(value.summary || value.automationOwnerReviewEvidence || value.automation_owner_review_evidence || value);
+  const source = objectOnly(value.ownerReviewStageSummary || value.owner_review_stage_summary || value.summary || value.automationOwnerReviewEvidence || value.automation_owner_review_evidence || value);
   const summary = {
     proposalCount: numberField(source.proposalCount || source.proposal_count),
     acceptedProposalCount: numberField(source.acceptedProposalCount || source.accepted_proposal_count),

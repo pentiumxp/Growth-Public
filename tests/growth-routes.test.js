@@ -2908,11 +2908,15 @@ test("growth automation release readiness routes are visible-target scoped and s
             horizon: input.horizon,
             status: "blocked",
             writeCollectionRun: input.writeCollectionRun === true,
+            writeReleaseEvidenceRecords: input.writeReleaseEvidenceRecords === true,
             summary: {
               schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.summary.v1",
               summaryOnly: true,
               stepCount: 4,
               collectionRunWritten: input.writeCollectionRun === true,
+              releaseEvidenceRecordsWritten: input.writeReleaseEvidenceRecords === true,
+              releaseEvidenceRecordAttemptedCount: input.writeReleaseEvidenceRecords === true ? 1 : 0,
+              releaseEvidenceRecordRecordedCount: input.writeReleaseEvidenceRecords === true ? 1 : 0,
               writefulSchedulingAllowed: false
             },
             steps: [],
@@ -2921,6 +2925,9 @@ test("growth automation release readiness routes are visible-target scoped and s
           summary: {
             stepCount: 4,
             collectionRunWritten: input.writeCollectionRun === true,
+            releaseEvidenceRecordsWritten: input.writeReleaseEvidenceRecords === true,
+            releaseEvidenceRecordAttemptedCount: input.writeReleaseEvidenceRecords === true ? 1 : 0,
+            releaseEvidenceRecordRecordedCount: input.writeReleaseEvidenceRecords === true ? 1 : 0,
             writefulSchedulingAllowed: false
           }
         };
@@ -3969,6 +3976,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         tasks: ["planner_readiness"],
         required_task_ids: "planner_readiness",
         write_collection_run: true,
+        write_release_evidence_records: true,
         owner_daily_ui_evidence: true,
         created_at: "2026-06-16T10:30:00.000Z"
       })
@@ -3977,7 +3985,9 @@ test("growth automation release readiness routes are visible-target scoped and s
     const evidenceCollectionBody = await evidenceCollection.json();
     assert.equal(evidenceCollectionBody.collection.schemaVersion, "growth.learningAutomationReleaseEvidenceCollection.v1");
     assert.equal(evidenceCollectionBody.collection.writeCollectionRun, true);
+    assert.equal(evidenceCollectionBody.collection.writeReleaseEvidenceRecords, true);
     assert.equal(evidenceCollectionBody.collection.summary.collectionRunWritten, true);
+    assert.equal(evidenceCollectionBody.collection.summary.releaseEvidenceRecordsWritten, true);
     assert.deepEqual(calls[20], {
       type: "collectReleaseEvidence",
       input: {
@@ -4030,6 +4040,7 @@ test("growth automation release readiness routes are visible-target scoped and s
         createdBy: "weixin_stephen",
         createdAt: "2026-06-16T10:30:00.000Z",
         writeCollectionRun: true,
+        writeReleaseEvidenceRecords: true,
         writePackageRecord: false,
         allowWritePackage: false,
         allowWriteCollection: true,
@@ -5119,11 +5130,12 @@ test("growth automation release workbench action route is Owner-write and visibl
       recordedAt: undefined,
       approvedAt: undefined,
 	      decidedAt: undefined,
-	      createdAt: undefined,
-	      writeCollectionRun: false,
-	      allowWriteCollection: true,
-	      ownerAuthorizedWrite: true
-	    });
+      createdAt: undefined,
+      writeCollectionRun: false,
+      writeReleaseEvidenceRecords: false,
+      allowWriteCollection: true,
+      ownerAuthorizedWrite: true
+    });
 
 	    const collectionResponse = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
 	      method: "POST",
@@ -5145,6 +5157,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	        tasks: ["learning_loop_state"],
 	        required_task_ids: "learning_loop_state",
 	        write_collection_run: true,
+	        write_release_evidence_records: true,
 	        requested_by: "weixin_owner",
 	        created_at: "2026-06-16T10:40:00.000Z"
 	      })
@@ -5213,6 +5226,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      decidedAt: undefined,
 	      createdAt: "2026-06-16T10:40:00.000Z",
 	      writeCollectionRun: true,
+	      writeReleaseEvidenceRecords: true,
 	      allowWriteCollection: true,
 	      ownerAuthorizedWrite: true
 	    });

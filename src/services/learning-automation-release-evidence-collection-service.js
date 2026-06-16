@@ -1,6 +1,13 @@
 "use strict";
 
+const {
+  RELEASE_EVIDENCE_KEYS,
+  canonicalReleaseEvidenceKey
+} = require("./learning-automation-release-evidence-service");
+
 const RELEASE_EVIDENCE_COLLECTION_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.v1";
+const RELEASE_EVIDENCE_RECORDS_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.records.v1";
+const RELEASE_EVIDENCE_KEY_SET = new Set(RELEASE_EVIDENCE_KEYS);
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 
@@ -36,9 +43,11 @@ function scopeFrom(input = {}) {
 }
 
 function collectionOptions(input = {}) {
+  const allowWriteCollection = booleanFlag(input.allowWriteCollection || input.allow_write_collection || input.allowWrite || input.allow_write || input.ownerAuthorizedWrite || input.owner_authorized_write);
   return {
     writeCollectionRun: booleanFlag(input.writeCollectionRun || input.write_collection_run || input.recordCollectionRun || input.record_collection_run || input.writeRun || input.write_run),
-    allowWriteCollection: booleanFlag(input.allowWriteCollection || input.allow_write_collection || input.allowWrite || input.allow_write || input.ownerAuthorizedWrite || input.owner_authorized_write)
+    writeReleaseEvidenceRecords: booleanFlag(input.writeReleaseEvidenceRecords || input.write_release_evidence_records || input.recordReleaseEvidenceRecords || input.record_release_evidence_records || input.writeEvidenceRecords || input.write_evidence_records),
+    allowWriteCollection
   };
 }
 
@@ -135,6 +144,222 @@ function collectionRunIdFrom(value = {}) {
   return cleanString(value.runId || value.run_id || value.collectionRunId || value.collection_run_id, 160);
 }
 
+function evidenceStatus(value = {}) {
+  return cleanString(value.status || value.summary?.status || (value.ok === true || value.present === true ? "pass" : ""), 80).toLowerCase();
+}
+
+function evidencePasses(value = {}) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value)
+    && (value.ok === true || value.present === true || evidenceStatus(value) === "pass" || value.readyForReleaseEvidence === true));
+}
+
+function boundedArray(value = [], max = 20) {
+  return Array.isArray(value)
+    ? value.map((item) => cleanString(item, 160)).filter(Boolean).slice(0, max)
+    : [];
+}
+
+function compactOwnerReviewNextAction(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const action = cleanString(value.action, 160);
+  const key = cleanString(value.key, 160);
+  if (!action && !key) return null;
+  return Object.fromEntries(Object.entries({
+    key,
+    action,
+    requiredActor: cleanString(value.requiredActor || value.required_actor || "owner", 80)
+  }).filter(([, item]) => item !== ""));
+}
+
+function compactOwnerReviewStageSummary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const summary = {
+    proposedProposalCount: Number(value.proposedProposalCount || value.proposed_proposal_count || 0) || 0,
+    acceptedProposalCount: Number(value.acceptedProposalCount || value.accepted_proposal_count || 0) || 0,
+    skippedProposalCount: Number(value.skippedProposalCount || value.skipped_proposal_count || 0) || 0,
+    expiredProposalCount: Number(value.expiredProposalCount || value.expired_proposal_count || 0) || 0,
+    supersededProposalCount: Number(value.supersededProposalCount || value.superseded_proposal_count || 0) || 0,
+    digestCount: Number(value.digestCount || value.digest_count || 0) || 0,
+    reviewedDigestCount: Number(value.reviewedDigestCount || value.reviewed_digest_count || 0) || 0,
+    digestRequiredActionCount: Number(value.digestRequiredActionCount || value.digest_required_action_count || 0) || 0,
+    actionHandoffCount: Number(value.actionHandoffCount || value.action_handoff_count || 0) || 0,
+    deliveredHandoffCount: Number(value.deliveredHandoffCount || value.delivered_handoff_count || 0) || 0,
+    schedulerExecutionCount: Number(value.schedulerExecutionCount || value.scheduler_execution_count || 0) || 0,
+    publishedSchedulerExecutionCount: Number(value.publishedSchedulerExecutionCount || value.published_scheduler_execution_count || 0) || 0,
+    schedulerRunCount: Number(value.schedulerRunCount || value.scheduler_run_count || 0) || 0,
+    completedSchedulerRunCount: Number(value.completedSchedulerRunCount || value.completed_scheduler_run_count || 0) || 0,
+    reviewedWorkerTargetCount: Number(value.reviewedWorkerTargetCount || value.reviewed_worker_target_count || 0) || 0,
+    pendingWorkerTargetReviewCount: Number(value.pendingWorkerTargetReviewCount || value.pending_worker_target_review_count || 0) || 0,
+    passedGateCount: Number(value.passedGateCount || value.passed_gate_count || 0) || 0,
+    missingGateCount: Number(value.missingGateCount || value.missing_gate_count || 0) || 0,
+    requiredActionCount: Number(value.requiredActionCount || value.required_action_count || 0) || 0,
+    failurePolicyReady: value.failurePolicyReady === true || value.failure_policy_ready === true,
+    failurePolicyStatus: cleanString(value.failurePolicyStatus || value.failure_policy_status, 120),
+    passedGateKeys: boundedArray(value.passedGateKeys || value.passed_gate_keys),
+    missingGateKeys: boundedArray(value.missingGateKeys || value.missing_gate_keys),
+    nextAction: compactOwnerReviewNextAction(value.nextAction || value.next_action)
+  };
+  const hasEvidence = Object.entries(summary).some(([key, item]) => {
+    if (key === "failurePolicyReady") return item === true;
+    if (key === "failurePolicyStatus" || key === "nextAction") return Boolean(item);
+    if (key === "passedGateKeys" || key === "missingGateKeys") return item.length > 0;
+    return Number(item) > 0;
+  });
+  return hasEvidence ? summary : null;
+}
+
+function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
+  const source = objectOnly(value);
+  const ownerReviewSummary = evidenceKey === "ownerReviewEvidence"
+    ? compactOwnerReviewStageSummary(source.ownerReviewStageSummary || source.owner_review_stage_summary || source.summary || source.ownerReview || source.owner_review)
+    : null;
+  return Object.fromEntries(Object.entries(Object.assign({
+    schemaVersion: cleanString(source.schemaVersion || source.schema_version || "growth.learningAutomationReleaseEvidenceRecord.collectionEvidence.v1", 180),
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey,
+    status: "pass",
+    ok: true,
+    present: true,
+    source: cleanString(source.source || "growth_release_evidence_collection", 180),
+    evidenceId: cleanString(source.evidenceId || source.evidence_id || source.id, 180),
+    artifactId: cleanString(source.artifactId || source.artifact_id, 180),
+    runId: cleanString(source.runId || source.run_id, 180),
+    taskId: cleanString(source.taskId || source.task_id || extra.taskId, 180),
+    observedAt: cleanString(source.observedAt || source.observed_at || source.checkedAt || source.checked_at || source.createdAt || source.created_at || extra.observedAt, 120),
+    readyForReleaseEvidence: source.readyForReleaseEvidence === true || source.ready_for_release_evidence === true || extra.readyForReleaseEvidence === true,
+    ownerReviewStageSummary: ownerReviewSummary || undefined
+  }, extra)).filter(([, item]) => item !== undefined && item !== ""));
+}
+
+function releaseEvidenceCandidates(scope, input, bundle, audit, collectionRun, createdAt) {
+  const evidence = objectOnly(bundle.evidence);
+  const taskByEvidenceKey = new Map();
+  for (const task of Array.isArray(bundle.tasks) ? bundle.tasks : []) {
+    const taskObject = objectOnly(task);
+    const key = canonicalReleaseEvidenceKey(taskObject.evidenceKey || taskObject.evidence_key || taskObject.key);
+    if (key) taskByEvidenceKey.set(key, taskObject);
+  }
+  const candidates = [];
+  const seen = new Set();
+  function add(rawKey, value, extra = {}) {
+    const evidenceKey = canonicalReleaseEvidenceKey(rawKey);
+    if (!evidenceKey || !RELEASE_EVIDENCE_KEY_SET.has(evidenceKey) || seen.has(evidenceKey)) return;
+    if (!evidencePasses(value)) return;
+    seen.add(evidenceKey);
+    const task = taskByEvidenceKey.get(evidenceKey) || {};
+    const observedAt = cleanString(value.observedAt || value.observed_at || value.checkedAt || value.checked_at || value.createdAt || value.created_at || createdAt, 120);
+    candidates.push(Object.assign({}, scope, {
+      evidenceKey,
+      status: "pass",
+      observedAt,
+      recordedAt: createdAt,
+      recordedBy: cleanString(input.recordedBy || input.recorded_by || input.createdBy || input.created_by || input.requestedBy || input.requested_by, 120),
+      requestedBy: cleanString(input.requestedBy || input.requested_by, 120),
+      collectionRunId: collectionRunIdFrom(collectionRun),
+      evidence: compactEvidenceSummary(value, evidenceKey, Object.assign({
+        taskId: task.taskId || task.task_id || extra.taskId,
+        observedAt,
+        collectionRunId: collectionRunIdFrom(collectionRun),
+        releaseEvidenceCollectionSource: true
+      }, extra))
+    }));
+  }
+  Object.entries(evidence).forEach(([key, value]) => add(key, objectOnly(value)));
+  if (audit && typeof audit === "object") {
+    add("releaseEvidenceBundleAudit", audit, {
+      taskId: "release_evidence_bundle_audit",
+      readyForReleaseEvidence: audit.readyForReleaseEvidence === true
+    });
+  }
+  return candidates.slice(0, 80);
+}
+
+function releaseEvidenceRecordSummary(result = {}) {
+  return {
+    evidenceKey: cleanString(result.evidenceKey || result.evidence_key, 160),
+    status: cleanString(result.status, 80),
+    evidenceRecordId: cleanString(result.evidenceRecordId || result.evidence_record_id, 180),
+    duplicate: result.duplicate === true
+  };
+}
+
+function recordReleaseEvidenceRecords({
+  scope,
+  input,
+  optionBag,
+  bundle,
+  audit,
+  collectionRun,
+  createdAt,
+  releaseEvidenceService
+}) {
+  if (!optionBag.writeReleaseEvidenceRecords) {
+    return {
+      schemaVersion: RELEASE_EVIDENCE_RECORDS_SCHEMA,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "skipped",
+      writeReleaseEvidenceRecords: false,
+      attemptedCount: 0,
+      recordedCount: 0,
+      duplicateCount: 0,
+      blockedCount: 0,
+      evidenceKeys: [],
+      evidenceRecords: [],
+      errors: []
+    };
+  }
+  if (!releaseEvidenceService || typeof releaseEvidenceService.recordEvidence !== "function") {
+    return unavailable("release_evidence_collection_record_service_unavailable", scope, {
+      schemaVersion: RELEASE_EVIDENCE_RECORDS_SCHEMA,
+      writeReleaseEvidenceRecords: true
+    });
+  }
+  const candidates = releaseEvidenceCandidates(scope, input, bundle, audit, collectionRun, createdAt);
+  const evidenceRecords = [];
+  const errors = [];
+  for (const candidate of candidates) {
+    const result = releaseEvidenceService.recordEvidence(candidate);
+    if (result?.ok) {
+      evidenceRecords.push(Object.assign(
+        releaseEvidenceRecordSummary(result.evidence || {}),
+        {
+          evidenceKey: candidate.evidenceKey,
+          duplicate: result.duplicate === true
+        }
+      ));
+    } else {
+      errors.push({
+        evidenceKey: candidate.evidenceKey,
+        error: cleanString(result?.error || "release_evidence_record_failed", 180)
+      });
+    }
+  }
+  const duplicateCount = evidenceRecords.filter((record) => record.duplicate).length;
+  const blockedCount = errors.length;
+  const status = blockedCount ? "blocked" : (candidates.length ? "pass" : "incomplete");
+  return {
+    schemaVersion: RELEASE_EVIDENCE_RECORDS_SCHEMA,
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status,
+    ok: status === "pass",
+    writeReleaseEvidenceRecords: true,
+    attemptedCount: candidates.length,
+    recordedCount: evidenceRecords.length,
+    duplicateCount,
+    blockedCount,
+    evidenceKeys: evidenceRecords.map((record) => record.evidenceKey).filter(Boolean).sort(),
+    evidenceRecords: evidenceRecords.slice(0, 80),
+    errors: errors.slice(0, 20),
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false,
+    schedulerPermissionGranted: false
+  };
+}
+
 function readinessInput(scope, input, bundle, audit) {
   const evidence = Object.assign({}, objectOnly(bundle.evidence), objectOnly(input.evidence || input.evidence_summary), {
     releaseEvidenceBundleAudit: audit
@@ -148,14 +373,16 @@ function readinessInput(scope, input, bundle, audit) {
 }
 
 function deriveCollectionStatus(steps = [], collectionRun = {}) {
-  if (collectionRun.readyForReleaseReview === true) return "ready_for_release_review";
   if (steps.some((step) => step.status === "blocked")) return "blocked";
+  if (steps.some((step) => step.status === "incomplete")) return "incomplete";
+  if (collectionRun.readyForReleaseReview === true) return "ready_for_release_review";
   return "incomplete";
 }
 
-function buildSummary(status, steps, options, collectionRun) {
+function buildSummary(status, steps, options, collectionRun, releaseEvidenceRecords) {
   const passedCount = steps.filter((step) => step.status === "pass").length;
   const blockedCount = steps.filter((step) => step.status === "blocked").length;
+  const recordSummary = objectOnly(releaseEvidenceRecords);
   return {
     schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.summary.v1",
     summaryOnly: true,
@@ -167,6 +394,11 @@ function buildSummary(status, steps, options, collectionRun) {
     readyForReleaseReview: collectionRun.readyForReleaseReview === true,
     collectionRunId: collectionRunIdFrom(collectionRun),
     collectionRunWritten: options.writeCollectionRun && collectionRunIdFrom(collectionRun) ? true : false,
+    releaseEvidenceRecordsWritten: options.writeReleaseEvidenceRecords && Number(recordSummary.recordedCount || 0) > 0,
+    releaseEvidenceRecordAttemptedCount: Number(recordSummary.attemptedCount || 0) || 0,
+    releaseEvidenceRecordRecordedCount: Number(recordSummary.recordedCount || 0) || 0,
+    releaseEvidenceRecordDuplicateCount: Number(recordSummary.duplicateCount || 0) || 0,
+    releaseEvidenceRecordBlockedCount: Number(recordSummary.blockedCount || 0) || 0,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false,
@@ -179,16 +411,18 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
   const evidenceBundleAuditService = options.evidenceBundleAuditService || null;
   const releaseReadinessService = options.releaseReadinessService || null;
   const releaseCollectionRunService = options.releaseCollectionRunService || null;
+  const releaseEvidenceService = options.releaseEvidenceService || null;
   const now = options.now || (() => new Date());
 
   function collect(input = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("release_evidence_collection_workspace_required", scope);
     const optionBag = collectionOptions(input);
-    if (optionBag.writeCollectionRun && !optionBag.allowWriteCollection) {
+    if ((optionBag.writeCollectionRun || optionBag.writeReleaseEvidenceRecords) && !optionBag.allowWriteCollection) {
       return unavailable("release_evidence_collection_write_not_allowed", scope, {
         requiredFlag: "--allow-write",
-        writeCollectionRun: true
+        writeCollectionRun: optionBag.writeCollectionRun,
+        writeReleaseEvidenceRecords: optionBag.writeReleaseEvidenceRecords
       });
     }
     const inputPrivacyFindings = scanPrivacyKeys(input).slice(0, 16);
@@ -214,6 +448,9 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
     if (optionBag.writeCollectionRun && typeof releaseCollectionRunService.recordRun !== "function") {
       return unavailable("release_evidence_collection_run_record_unavailable", scope);
     }
+    if (optionBag.writeReleaseEvidenceRecords && (!releaseEvidenceService || typeof releaseEvidenceService.recordEvidence !== "function")) {
+      return unavailable("release_evidence_collection_record_service_unavailable", scope);
+    }
 
     const createdAt = cleanString(input.createdAt || input.created_at, 80) || nowIso(now);
     const bundleResult = evidenceBundleService.buildBundle(Object.assign({}, input, scope, { createdAt }));
@@ -227,6 +464,14 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
     const readiness = bundle
       ? releaseReadinessService.evaluateReadiness(readinessInput(scope, input, bundle, audit))
       : unavailable("release_evidence_collection_readiness_skipped", scope);
+    const dependencyPrivacyFindings = scanPrivacyKeys({ bundle, audit, readiness }).slice(0, 16);
+    const dependencyPrivateValueFindings = scanPrivateValues({ bundle, audit, readiness }).slice(0, 16);
+    if (dependencyPrivacyFindings.length || dependencyPrivateValueFindings.length) {
+      return unavailable("release_evidence_collection_privacy_failed", scope, {
+        privacyFindings: dependencyPrivacyFindings,
+        privateValueFindings: dependencyPrivateValueFindings
+      });
+    }
     const runInput = bundle
       ? Object.assign({}, input, scope, {
         releaseEvidenceBundle: bundle,
@@ -242,12 +487,36 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
         : releaseCollectionRunService.evaluateRun(runInput)
       : unavailable("release_evidence_collection_run_skipped", scope);
     const collectionRun = collectionRunArtifact(runResult);
+    const releaseEvidenceRecords = bundle
+      ? recordReleaseEvidenceRecords({
+        scope,
+        input,
+        optionBag,
+        bundle,
+        audit,
+        collectionRun,
+        createdAt,
+        releaseEvidenceService
+      })
+      : recordReleaseEvidenceRecords({
+        scope,
+        input,
+        optionBag,
+        bundle: {},
+        audit: {},
+        collectionRun: {},
+        createdAt,
+        releaseEvidenceService
+      });
     const steps = [
       publicStep("release_evidence_bundle", "Release evidence bundle", bundle || bundleResult, bundleResult.ok === true),
       publicStep("release_evidence_bundle_audit", "Release evidence bundle audit", audit, audit.ok === true),
       publicStep("release_readiness", "Release readiness", readiness, readiness.ok === true),
       publicStep("release_collection_run", "Release collection run", collectionRun, collectionRun.ok === true)
     ];
+    if (optionBag.writeReleaseEvidenceRecords) {
+      steps.push(publicStep("release_evidence_records", "Release evidence records", releaseEvidenceRecords, releaseEvidenceRecords.ok === true));
+    }
     const status = deriveCollectionStatus(steps, collectionRun);
     const collection = Object.assign({}, scope, {
       ok: status === "ready_for_release_review",
@@ -264,13 +533,15 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
       configChangeApplied: false,
       schedulerPermissionGranted: false,
       writeCollectionRun: optionBag.writeCollectionRun,
+      writeReleaseEvidenceRecords: optionBag.writeReleaseEvidenceRecords,
       steps,
-      summary: buildSummary(status, steps, optionBag, collectionRun),
+      summary: buildSummary(status, steps, optionBag, collectionRun, releaseEvidenceRecords),
       artifacts: {
         releaseEvidenceBundle: bundle,
         releaseEvidenceBundleAudit: audit,
         releaseReadiness: readiness,
-        releaseCollectionRun: collectionRun
+        releaseCollectionRun: collectionRun,
+        releaseEvidenceRecords
       }
     });
     const privacyFindings = scanPrivacyKeys(collection).slice(0, 16);

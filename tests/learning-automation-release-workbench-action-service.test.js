@@ -211,6 +211,7 @@ test("release workbench action runs evidence collection even when readiness rema
     tasks: ["learning_loop_state"],
     requiredTaskIds: ["learning_loop_state"],
     writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
     requestedBy: "owner"
   });
 
@@ -225,6 +226,7 @@ test("release workbench action runs evidence collection even when readiness rema
   assert.deepEqual(calls[1][1].tasks, ["learning_loop_state"]);
   assert.deepEqual(calls[1][1].requiredTaskIds, ["learning_loop_state"]);
   assert.equal(calls[1][1].writeCollectionRun, true);
+  assert.equal(calls[1][1].writeReleaseEvidenceRecords, true);
   assert.equal(calls[1][1].allowWriteCollection, true);
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });

@@ -254,6 +254,68 @@ function compactUiBagFields(record = {}, evidence = {}) {
   };
 }
 
+function compactOwnerReviewNextAction(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const action = cleanString(value.action, 160);
+  const key = cleanString(value.key, 160);
+  if (!action && !key) return null;
+  return Object.fromEntries(Object.entries({
+    key,
+    action,
+    requiredActor: cleanString(value.requiredActor || value.required_actor || "owner", 80)
+  }).filter(([, item]) => item !== ""));
+}
+
+function compactOwnerReviewStageSummary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const summary = {
+    proposedProposalCount: Number(value.proposedProposalCount || value.proposed_proposal_count || 0) || 0,
+    acceptedProposalCount: Number(value.acceptedProposalCount || value.accepted_proposal_count || 0) || 0,
+    skippedProposalCount: Number(value.skippedProposalCount || value.skipped_proposal_count || 0) || 0,
+    expiredProposalCount: Number(value.expiredProposalCount || value.expired_proposal_count || 0) || 0,
+    supersededProposalCount: Number(value.supersededProposalCount || value.superseded_proposal_count || 0) || 0,
+    digestCount: Number(value.digestCount || value.digest_count || 0) || 0,
+    reviewedDigestCount: Number(value.reviewedDigestCount || value.reviewed_digest_count || 0) || 0,
+    digestRequiredActionCount: Number(value.digestRequiredActionCount || value.digest_required_action_count || 0) || 0,
+    actionHandoffCount: Number(value.actionHandoffCount || value.action_handoff_count || 0) || 0,
+    deliveredHandoffCount: Number(value.deliveredHandoffCount || value.delivered_handoff_count || 0) || 0,
+    schedulerExecutionCount: Number(value.schedulerExecutionCount || value.scheduler_execution_count || 0) || 0,
+    publishedSchedulerExecutionCount: Number(value.publishedSchedulerExecutionCount || value.published_scheduler_execution_count || 0) || 0,
+    schedulerRunCount: Number(value.schedulerRunCount || value.scheduler_run_count || 0) || 0,
+    completedSchedulerRunCount: Number(value.completedSchedulerRunCount || value.completed_scheduler_run_count || 0) || 0,
+    reviewedWorkerTargetCount: Number(value.reviewedWorkerTargetCount || value.reviewed_worker_target_count || 0) || 0,
+    pendingWorkerTargetReviewCount: Number(value.pendingWorkerTargetReviewCount || value.pending_worker_target_review_count || 0) || 0,
+    passedGateCount: Number(value.passedGateCount || value.passed_gate_count || 0) || 0,
+    missingGateCount: Number(value.missingGateCount || value.missing_gate_count || 0) || 0,
+    requiredActionCount: Number(value.requiredActionCount || value.required_action_count || 0) || 0,
+    failurePolicyReady: value.failurePolicyReady === true || value.failure_policy_ready === true,
+    failurePolicyStatus: cleanString(value.failurePolicyStatus || value.failure_policy_status, 120),
+    passedGateKeys: compactStringArray(value.passedGateKeys || value.passed_gate_keys),
+    missingGateKeys: compactStringArray(value.missingGateKeys || value.missing_gate_keys),
+    nextAction: compactOwnerReviewNextAction(value.nextAction || value.next_action)
+  };
+  const hasEvidence = Object.entries(summary).some(([key, item]) => {
+    if (key === "failurePolicyReady") return item === true;
+    if (key === "failurePolicyStatus" || key === "nextAction") return Boolean(item);
+    if (key === "passedGateKeys" || key === "missingGateKeys") return item.length > 0;
+    return Number(item) > 0;
+  });
+  return hasEvidence ? summary : null;
+}
+
+function compactOwnerReviewBagFields(record = {}, evidence = {}) {
+  const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
+  if (evidenceKey !== "ownerReviewEvidence") return {};
+  const summary = compactOwnerReviewStageSummary(
+    evidence.ownerReviewStageSummary
+      || evidence.owner_review_stage_summary
+      || evidence.summary
+      || evidence.ownerReview
+      || evidence.owner_review
+  );
+  return summary ? { ownerReviewStageSummary: summary } : {};
+}
+
 function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "", uiEvidenceService = null }) {
   if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
     return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
@@ -303,7 +365,7 @@ function compactBagEntry(record = {}) {
     artifactId: cleanString(evidence.artifactId || evidence.artifact_id, 180),
     runId: cleanString(evidence.runId || evidence.run_id, 180),
     taskId: cleanString(evidence.taskId || evidence.task_id, 180)
-  }, compactUiBagFields(record, evidence));
+  }, compactUiBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence));
 }
 
 function createLearningAutomationReleaseEvidenceService(options = {}) {

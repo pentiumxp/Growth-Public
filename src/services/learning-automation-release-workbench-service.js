@@ -246,7 +246,8 @@ function releaseEvidenceCollectionBody(scope = {}, taskIds = [], requiredTaskIds
     horizon: scope.horizon,
     tasks: taskIds,
     required_task_ids: requiredTaskIds,
-    write_collection_run: true
+    write_collection_run: true,
+    write_release_evidence_records: true
   };
   if (asArray(taskIds).includes("profile_feedback")) {
     body.auto_select_latest_completed_cycle = true;

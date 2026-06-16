@@ -34,6 +34,7 @@ function inputFromArgs(args) {
   const input = packageInputFromArgs(args);
   return Object.assign({}, input, {
     writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun") || hasFlag(args, "--record-collection-run"),
+    writeReleaseEvidenceRecords: hasFlag(args, "--write-release-evidence-records") || hasFlag(args, "--writeReleaseEvidenceRecords") || hasFlag(args, "--record-release-evidence-records"),
     allowWriteCollection: hasFlag(args, "--allow-write") || hasFlag(args, "--allowWrite"),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy", "--created-by", "--createdBy"], "") || input.requestedBy,
     createdBy: firstArgValue(args, ["--created-by", "--createdBy", "--requested-by", "--requestedBy"], "") || input.createdBy,
