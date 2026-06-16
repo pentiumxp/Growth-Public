@@ -619,7 +619,7 @@ Minimum harness by boundary:
 | --- | --- |
 | Model boundary | Fake Gateway valid stream, valid JSON, empty output, invalid JSON, timeout, privacy-risk output, and repair failure. |
 | Service boundary | Focused service tests for policy, validation, idempotency, dependency calls, and visible failure. |
-| Repository boundary | Transaction rollback, schema migration, idempotency, summary-only privacy class, and privacy-risk key rejection. |
+| Repository boundary | Transaction rollback, schema migration, idempotency, summary-only privacy class, privacy-risk key rejection, and private path/token-looking value rejection where the repository persists automation or release evidence. |
 | Route boundary | Owner/workspace authorization, visible-target allow/deny, bounded input normalization, and route-as-glue architecture. |
 | Vertical loop | Fanfan science daily path from plan draft to card publish, learner evidence, evaluation, ledger, Profile V2, profile delta, profile-feedback evidence, and next loop-state readback. |
 | Profile feedback evidence | `tests/learning-profile-feedback-evidence-service.test.js`, `tests/growth-profile-feedback-smoke-script.test.js`, the Fanfan science post-cycle assertion in `tests/learning-card-ai-loop-harness.test.js`, and `npm run smoke:profile-feedback` prove completed-cycle audit/evidence/profile-delta/Profile V2/recommendation/next-state readback without Gateway calls or writes. |

@@ -155,7 +155,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release evidence bundle task, the `--owner-review-evidence` readiness flag,
   or a persisted `owner_review_evidence` release evidence record. This evidence
   proves backend readback only and does not replace product UI or visual
-  evidence. It now also has
+  evidence. The supervised automation P5-P9 SQLite repository chain now
+  applies repository-level privacy scanning for privacy-risk keys, private
+  path/token-looking string values, and non-summary privacy classes before any
+  automation evidence persists. The covered repositories are proposal, digest,
+  failure policy, action handoff, scheduler execution, scheduler run, worker
+  target, and worker lease. This is a database-boundary hardening slice only:
+  it does not enable scheduler execution, publish accepted proposals, call
+  Gateway, generate/evaluate cards, activate stage assessments, flip runtime
+  config, or deliver platform actions. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
   `--stage-checkpoint-evidence` after

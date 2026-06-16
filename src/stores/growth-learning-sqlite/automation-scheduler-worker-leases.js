@@ -10,6 +10,7 @@ const {
 const { stableLearningAutomationSchedulerWorkerLeaseId } = require("./identifiers");
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body)/i;
+const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token)/i;
 const INTERNAL_LEASE_KEYS = new Set(["leaseToken", "lease_token"]);
 
 function jsonText(value) {
@@ -22,6 +23,10 @@ function boundedText(value, max = 360) {
 }
 
 function scanPrivacyKeys(value, path = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(path);
+    return findings;
+  }
   if (!value || typeof value !== "object") return findings;
   if (Array.isArray(value)) {
     value.forEach((item, index) => scanPrivacyKeys(item, `${path}[${index}]`, findings));
@@ -30,7 +35,7 @@ function scanPrivacyKeys(value, path = "$", findings = []) {
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}.${key}`;
     if (!INTERNAL_LEASE_KEYS.has(key) && PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
-    if (child && typeof child === "object") scanPrivacyKeys(child, childPath, findings);
+    scanPrivacyKeys(child, childPath, findings);
   }
   return findings;
 }

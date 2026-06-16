@@ -251,6 +251,15 @@ test("automation proposal repository rejects privacy-risk keys and non-summary p
     assert.equal(privacyRisk.error, "learning_automation_proposal_privacy_failed");
     assert.equal(privacyRisk.privacyFindings.includes("$.rationale.rawPrompt"), true);
 
+    const privacyValue = repository.saveProposal(sampleProposal({
+      rationale: {
+        artifactId: "/Users/example/private-proposal.json"
+      }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_proposal_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.rationale.artifactId"), true);
+
     const wrongClass = repository.saveProposal(sampleProposal({
       privacyClass: "raw_payload"
     }));

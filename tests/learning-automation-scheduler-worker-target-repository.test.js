@@ -112,6 +112,13 @@ test("automation scheduler worker target repository rejects privacy-risk fields,
     assert.equal(privacy.error, "learning_automation_scheduler_worker_target_privacy_failed");
     assert.equal(privacy.privacyFindings.includes("$.target.rawPrompt"), true);
 
+    const privacyValue = repository.saveTarget(sampleTarget({
+      target: { artifactId: "/Users/example/private-worker-target.json" }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_scheduler_worker_target_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.target.artifactId"), true);
+
     const privacyClass = repository.saveTarget(sampleTarget({
       privacyClass: "raw_private"
     }));

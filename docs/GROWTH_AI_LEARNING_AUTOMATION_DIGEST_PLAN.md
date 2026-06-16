@@ -143,7 +143,8 @@ Optional future review fields:
 
 Repository requirements:
 
-- reject privacy-risk keys before writing;
+- reject privacy-risk keys and private path/token-looking values before
+  writing;
 - reject any `privacy_class` other than `summary_only`;
 - use stable digest ids so duplicate equivalent dry-runs can be idempotent;
 - return public DTOs, not raw table rows;
@@ -361,7 +362,7 @@ Repository harness:
 - table creation and optional review-column migration;
 - idempotent digest creation for equivalent dry-run input;
 - summary-only privacy class enforcement;
-- privacy-risk key rejection;
+- privacy-risk key and private path/token-looking value rejection;
 - bounded public DTO projection;
 - rollback on failed insert/update.
 

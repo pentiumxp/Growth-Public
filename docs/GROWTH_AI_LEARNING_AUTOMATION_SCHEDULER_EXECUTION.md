@@ -141,7 +141,8 @@ Required public fields:
 | `privacy_class` | Must be `summary_only`. |
 | `created_at`, `updated_at` | Audit timestamps. |
 
-The repository rejects privacy-risk keys and non-summary privacy classes.
+The repository rejects privacy-risk keys, private path/token-looking values,
+and non-summary privacy classes.
 Public DTOs must not expose raw learner answers, transcripts, prompts, raw
 model output, answer keys, source-document bodies, private paths, secrets,
 tokens, cookies, or provider configuration.
@@ -279,8 +280,8 @@ Required assertions:
 - publish delegates only to
   `learning-automation-proposal-service.publishAcceptedProposal`;
 - failed publish records bounded failure metadata for explicit Owner retry;
-- repository migrates bounded columns, rejects privacy-risk keys, and enforces
-  `summary_only`;
+- repository migrates bounded columns, rejects privacy-risk keys and private
+  path/token-looking values, and enforces `summary_only`;
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
 - `npm run smoke:scheduler-execution` defaults to read-only list, requires
   `--allow-write` for execute, records default-disabled blocked state, and

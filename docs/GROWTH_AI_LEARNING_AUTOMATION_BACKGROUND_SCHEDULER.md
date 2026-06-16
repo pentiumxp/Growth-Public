@@ -398,7 +398,8 @@ Required public fields:
 | `privacy_class` | Must be `summary_only`. |
 | `created_at`, `updated_at` | Audit timestamps. |
 
-The repository must reject privacy-risk keys and non-summary privacy classes.
+The repository must reject privacy-risk keys, private path/token-looking
+values, and non-summary privacy classes.
 Public DTOs must not expose raw learner answers, transcripts, raw prompts, raw
 model output, answer keys, source-document bodies, private paths, credentials,
 cookies, tokens, or provider configuration.
@@ -423,9 +424,9 @@ Required public fields:
 | `privacy_class` | Must be `summary_only`. |
 | `created_at`, `updated_at`, `reviewed_at` | Audit timestamps. |
 
-The repository must reject privacy-risk keys and non-summary privacy classes,
-support listing by workspace, learner, subject, horizon, and status, and keep
-routes out of table internals.
+The repository must reject privacy-risk keys, private path/token-looking
+values, and non-summary privacy classes, support listing by workspace, learner,
+subject, horizon, and status, and keep routes out of table internals.
 
 Table: `learning_growth_automation_scheduler_worker_leases`.
 
@@ -450,6 +451,8 @@ Required public fields:
 The internal lease nonce is stored only to prevent stale-worker release races
 and is never projected in public DTOs. It is not an access key, launch token,
 Gateway token, cookie, password, or workspace credential.
+Claim and release payloads must reject private path/token-looking values before
+SQLite writes, while still allowing the internal lease nonce field names.
 
 ## Route Contract
 
@@ -646,7 +649,8 @@ Required and implemented assertions:
   `learning-automation-scheduler-execution-service.executeOnce`;
 - partial downstream execution becomes visible `partial` run state;
 - repository migrates bounded columns, supports domain/horizon filters,
-  rejects privacy-risk keys, and enforces `summary_only`;
+  rejects privacy-risk keys and private path/token-looking values, and enforces
+  `summary_only`;
 - routes enforce Owner writes, workspace bearer, and visible-target scope;
 - `npm run smoke:scheduler-run` defaults to read-only list, requires explicit
   `--allow-write` for run/tick, records default-disabled blocked state, and

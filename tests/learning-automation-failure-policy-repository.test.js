@@ -150,6 +150,13 @@ test("automation failure policy repository rejects privacy-risk keys and non-sum
     assert.equal(privacyRisk.error, "learning_automation_failure_policy_privacy_failed");
     assert.equal(privacyRisk.privacyFindings.includes("$.failurePolicy.rawPrompt"), true);
 
+    const privacyValue = repository.savePolicy(samplePolicy({
+      failurePolicy: { artifactId: "/Users/example/private-failure-policy.json" }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_failure_policy_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.failurePolicy.artifactId"), true);
+
     const wrongClass = repository.savePolicy(samplePolicy({
       privacyClass: "raw_payload"
     }));

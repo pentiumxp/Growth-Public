@@ -147,7 +147,8 @@ Minimum fields:
 
 Repository requirements:
 
-- reject privacy-risk keys before writing;
+- reject privacy-risk keys and private path/token-looking values before
+  writing;
 - reject any `privacy_class` other than `summary_only`;
 - use stable ids so equivalent create calls are idempotent;
 - migrate missing `review_json`, `reviewed_by`, `reviewed_at`, and
@@ -279,7 +280,7 @@ Repository harness:
 - table creation and review/policy-version column migration;
 - idempotent policy creation;
 - summary-only privacy-class enforcement;
-- privacy-risk key rejection;
+- privacy-risk key and private path/token-looking value rejection;
 - bounded public DTO projection;
 - invalid and conflicting review rejection.
 

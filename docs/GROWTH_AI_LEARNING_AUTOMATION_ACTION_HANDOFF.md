@@ -213,7 +213,8 @@ Repository rules:
 - `recordDelivery` may move `not_delivered` or `delivery_failed` to
   `delivered`, `delivery_failed`, or `delivery_pending`;
 - duplicate delivered records are idempotent;
-- privacy-risk keys and non-summary privacy classes are rejected;
+- privacy-risk keys, private path/token-looking values, and non-summary
+  privacy classes are rejected;
 - public DTOs are returned instead of raw table rows;
 - migration adds delivery/readiness columns before creating indexes.
 
@@ -281,8 +282,9 @@ node --test tests/learning-automation-action-handoff-repository.test.js \
 
 Coverage:
 
-- repository idempotency, summary-only privacy class, privacy-key rejection,
-  migration, delivery success, delivery failure, and duplicate delivery;
+- repository idempotency, summary-only privacy class, privacy-key and private
+  path/token-looking value rejection, migration, delivery success, delivery
+  failure, and duplicate delivery;
 - service reviewed-digest gate, active failure-policy gate, no-action gate,
   handoff persistence, event emission, missing event-service failure, and
   dropped/rejected delivery failure;

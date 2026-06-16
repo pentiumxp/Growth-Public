@@ -120,6 +120,13 @@ test("automation scheduler execution repository rejects privacy-risk fields and 
     assert.equal(privacy.ok, false);
     assert.equal(privacy.error, "learning_automation_scheduler_execution_privacy_failed");
 
+    const privacyValue = repository.recordExecution(sampleExecution({
+      execution: { artifactId: "/Users/example/private-scheduler-execution.json" }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_scheduler_execution_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.execution.artifactId"), true);
+
     const privacyClass = repository.recordExecution(sampleExecution({
       privacyClass: "raw_private"
     }));

@@ -179,6 +179,13 @@ test("automation digest repository rejects privacy-risk keys and non-summary pri
     assert.equal(privacyRisk.error, "learning_automation_digest_privacy_failed");
     assert.equal(privacyRisk.privacyFindings.includes("$.candidates[0].rawPrompt"), true);
 
+    const privacyValue = repository.saveDigest(sampleDigest({
+      candidates: [{ artifactId: "/Users/example/private-digest.json" }]
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_digest_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.candidates[0].artifactId"), true);
+
     const wrongClass = repository.saveDigest(sampleDigest({
       privacyClass: "raw_payload"
     }));

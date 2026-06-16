@@ -170,6 +170,16 @@ test("automation action handoff repository rejects privacy-risk fields and non-s
     assert.equal(privacy.ok, false);
     assert.equal(privacy.error, "learning_automation_action_handoff_privacy_failed");
 
+    const privacyValue = repository.saveHandoff(sampleHandoff({
+      actions: [{
+        proposalId: "lgauto_ready",
+        artifactId: "/Users/example/private-handoff.json"
+      }]
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_action_handoff_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.actions[0].artifactId"), true);
+
     const privacyClass = repository.saveHandoff(sampleHandoff({
       privacyClass: "raw_private"
     }));

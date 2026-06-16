@@ -151,6 +151,13 @@ test("automation scheduler worker lease repository rejects privacy-risk fields, 
     assert.equal(privacy.error, "learning_automation_scheduler_worker_lease_privacy_failed");
     assert.equal(privacy.privacyFindings.includes("$.input.rawPrompt"), true);
 
+    const privacyValue = repository.claimLease(sampleLease({
+      input: { artifactId: "/Users/example/private-worker-lease.json" }
+    }));
+    assert.equal(privacyValue.ok, false);
+    assert.equal(privacyValue.error, "learning_automation_scheduler_worker_lease_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.input.artifactId"), true);
+
     const privacyClass = repository.claimLease(sampleLease({
       privacyClass: "raw_private"
     }));
@@ -165,6 +172,16 @@ test("automation scheduler worker lease repository rejects privacy-risk fields, 
     });
     assert.equal(invalidStatus.ok, false);
     assert.equal(invalidStatus.error, "learning_automation_scheduler_worker_lease_status_invalid");
+
+    const privateRelease = repository.releaseLease({
+      leaseId: claimed.lease.leaseId,
+      leaseToken: "lease-token-a",
+      status: "released",
+      summary: { artifactId: "/Users/example/private-worker-release.json" }
+    });
+    assert.equal(privateRelease.ok, false);
+    assert.equal(privateRelease.error, "learning_automation_scheduler_worker_lease_privacy_failed");
+    assert.equal(privateRelease.privacyFindings.includes("$.summary.artifactId"), true);
   });
 });
 

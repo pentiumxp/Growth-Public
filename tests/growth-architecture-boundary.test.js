@@ -1256,6 +1256,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationProposalRepository, /createLearningAutomationProposalRepository/);
   assert.match(automationProposalRepository, /summary_only/);
   assert.match(automationProposalRepository, /scanPrivacyKeys/);
+  assert.match(automationProposalRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationProposalRepository, /learning_automation_proposal_privacy_class_required/);
   assert.match(automationProposalRepository, /reviewProposal/);
   assert.match(automationProposalRepository, /getProposal/);
@@ -1269,6 +1270,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationDigestRepository, /createLearningAutomationDigestRepository/);
   assert.match(automationDigestRepository, /summary_only/);
   assert.match(automationDigestRepository, /scanPrivacyKeys/);
+  assert.match(automationDigestRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationDigestRepository, /learning_automation_digest_privacy_class_required/);
   assert.match(automationDigestRepository, /reviewDigest/);
   assert.match(automationDigestRepository, /getDigest/);
@@ -1280,6 +1282,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationActionHandoffRepository, /createLearningAutomationActionHandoffRepository/);
   assert.match(automationActionHandoffRepository, /summary_only/);
   assert.match(automationActionHandoffRepository, /scanPrivacyKeys/);
+  assert.match(automationActionHandoffRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationActionHandoffRepository, /learning_automation_action_handoff_privacy_class_required/);
   assert.match(automationActionHandoffRepository, /saveHandoff/);
   assert.match(automationActionHandoffRepository, /getHandoff/);
@@ -1292,6 +1295,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerExecutionRepository, /createLearningAutomationSchedulerExecutionRepository/);
   assert.match(automationSchedulerExecutionRepository, /summary_only/);
   assert.match(automationSchedulerExecutionRepository, /scanPrivacyKeys/);
+  assert.match(automationSchedulerExecutionRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationSchedulerExecutionRepository, /learning_automation_scheduler_execution_privacy_class_required/);
   assert.match(automationSchedulerExecutionRepository, /recordExecution/);
   assert.match(automationSchedulerExecutionRepository, /listExecutions/);
@@ -1304,6 +1308,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerRunRepository, /createLearningAutomationSchedulerRunRepository/);
   assert.match(automationSchedulerRunRepository, /summary_only/);
   assert.match(automationSchedulerRunRepository, /scanPrivacyKeys/);
+  assert.match(automationSchedulerRunRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationSchedulerRunRepository, /learning_automation_scheduler_run_privacy_class_required/);
   assert.match(automationSchedulerRunRepository, /recordRun/);
   assert.match(automationSchedulerRunRepository, /listRuns/);
@@ -1316,6 +1321,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerWorkerLeaseRepository, /createLearningAutomationSchedulerWorkerLeaseRepository/);
   assert.match(automationSchedulerWorkerLeaseRepository, /summary_only/);
   assert.match(automationSchedulerWorkerLeaseRepository, /scanPrivacyKeys/);
+  assert.match(automationSchedulerWorkerLeaseRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationSchedulerWorkerLeaseRepository, /claimLease/);
   assert.match(automationSchedulerWorkerLeaseRepository, /releaseLease/);
   assert.match(automationSchedulerWorkerLeaseRepository, /listLeases/);
@@ -1328,6 +1334,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationSchedulerWorkerTargetRepository, /createLearningAutomationSchedulerWorkerTargetRepository/);
   assert.match(automationSchedulerWorkerTargetRepository, /summary_only/);
   assert.match(automationSchedulerWorkerTargetRepository, /scanPrivacyKeys/);
+  assert.match(automationSchedulerWorkerTargetRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationSchedulerWorkerTargetRepository, /saveTarget/);
   assert.match(automationSchedulerWorkerTargetRepository, /reviewTarget/);
   assert.match(automationSchedulerWorkerTargetRepository, /listTargets/);
@@ -1440,6 +1447,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationFailurePolicyRepository, /createLearningAutomationFailurePolicyRepository/);
   assert.match(automationFailurePolicyRepository, /summary_only/);
   assert.match(automationFailurePolicyRepository, /scanPrivacyKeys/);
+  assert.match(automationFailurePolicyRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationFailurePolicyRepository, /learning_automation_failure_policy_privacy_class_required/);
   assert.match(automationFailurePolicyRepository, /reviewPolicy/);
   assert.match(automationFailurePolicyRepository, /getPolicy/);

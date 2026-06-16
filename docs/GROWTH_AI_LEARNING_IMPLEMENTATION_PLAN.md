@@ -173,7 +173,7 @@ amount of code that already exists.
 | W3: Audit, profile, and correction | Owner can explain what happened and adjust future learning evidence. | Evidence ledger, Profile V2, profile delta, cycle audit, selectable cycle history, audit completeness, correction read/write, privacy projection, next recommendation, post-cycle `growth.learningLoopState.v1`, `npm run smoke:cycle-history`, and `npm run smoke:owner-audit` are rendered or exercised from service DTOs. |
 | W4: Formal checkpoint | Stage assessment updates profile confidence without becoming ordinary daily pressure. | Stage readiness, coverage, activation, completion, cooldown, high-weight evidence, and direct daily-publish blocking are proven through `learning-stage-assessment-service`. |
 | W5: Generalized targets | The same loop runs outside the Fanfan sample. | Visible but unprovisioned targets fail closed; explicit provisioning enables; actor and target workspaces remain separate; graph provenance matches selected domain pack and subject. |
-| W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
+| W6: Supervised automation | Growth can propose and review repeated next actions without hiding Owner decisions. | Proposal, digest, failure policy, action handoff, Owner-explicit execution, scheduler run, worker target, and worker lease boundaries remain summary-only, reject privacy-risk keys plus private path/token-looking values before persistence, default-disabled where required, and forbidden from direct Gateway/card/stage mutation. |
 | W7: Release evidence and operations | A human can inspect whether production automation prerequisites are present. | Release-readiness checks plus persisted `evidenceReadback` and downstream controls/inventory/dashboard/workbench summary projection, platform Action Inbox/Web Push evidence, central visual evidence, production planner readiness smoke, production Owner audit smoke, production controlled daily-loop write smoke, production learner-cycle audit smoke, production scheduler dry-run evidence, reviewed worker targets, config approvals, docs, and broad harnesses are complete. |
 
 Sequencing rule:
@@ -610,6 +610,11 @@ Implemented backend behavior:
   review to `enabled`, `disabled`, or `archived`;
 - the worker prefers reviewed enabled persistent targets before the local
   `GROWTH_AUTOMATION_BACKGROUND_WORKER_TARGETS_JSON` fallback.
+- the P5-P9 automation repository chain rejects private path/token-looking
+  values as well as privacy-risk field names before writing summary-only
+  automation evidence into SQLite: proposal, digest, failure policy, action
+  handoff, scheduler execution, scheduler run, worker target, and worker
+  lease records.
 
 Required behavior before production enablement:
 
@@ -638,7 +643,10 @@ Required harness:
 - route tests in `tests/growth-routes.test.js`;
 - disabled-config, invalid-mode, no-delivered-actions, partial-execution,
   idempotency, reviewed-target create/review/list, lease/race, and privacy
-  tests;
+  tests, including repository-level private path/token-looking value rejection
+  for the full P5-P9 automation repository chain: proposal, digest, failure
+  policy, action handoff, scheduler execution, scheduler run, worker target,
+  and worker lease records;
 - architecture guard;
 - docs-locality checks;
 - production dry-run and central visual evidence before any production worker.

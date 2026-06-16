@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T11:20+08:00 - Automation Repository Privacy Value Guards
+
+- Status: implemented and full-Harness validated locally. This slice hardens
+  the supervised automation P5-P9 SQLite persistence chain so private path and
+  token-looking string values are rejected before summary-only automation
+  records can be saved. It does not deploy, call Gateway/model vendors, publish
+  plans/cards, generate cards, evaluate submissions, execute scheduler actions,
+  run scheduler ticks, deliver notifications, emit platform events, activate
+  stage assessments, mutate learner state, write business state outside the
+  explicit repository guard paths, flip runtime config, grant scheduler
+  permission, or change product UI.
+- Scope:
+  - `automation-proposals.js`, `automation-digests.js`,
+    `automation-failure-policies.js`, `automation-action-handoffs.js`,
+    `automation-scheduler-executions.js`,
+    `automation-scheduler-runs.js`,
+    `automation-scheduler-worker-targets.js`, and
+    `automation-scheduler-worker-leases.js` now reject privacy-risk keys,
+    private path/token-looking string values, and non-summary privacy classes
+    before persistence;
+  - worker lease records still allow internal lease nonce field names for
+    private repository operation, while public DTOs keep those values hidden and
+    value scanning still rejects private path/token-looking markers;
+  - repository tests, architecture boundary tests, Growth docs, the platform
+    pointer, project context, and this handoff now describe and cover the full
+    P5-P9 automation repository chain.
+- Focused validation passed:
+  - `node --test tests/learning-automation-proposal-repository.test.js tests/learning-automation-digest-repository.test.js tests/learning-automation-failure-policy-repository.test.js tests/learning-automation-action-handoff-repository.test.js tests/learning-automation-scheduler-execution-repository.test.js tests/learning-automation-scheduler-run-repository.test.js tests/learning-automation-scheduler-worker-target-repository.test.js tests/learning-automation-scheduler-worker-lease-repository.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`65/65`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`.
+- Broad and central validation passed:
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`785/785`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - CodeGraph status reported 343 JavaScript files indexed, 4529 nodes, and
+    18046 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth non-UI backend closed-loop completion slice; audit release evidence persistence and collection-run database guards; no production deploy" --json`
+    classified this local backend/database slice as H1 and required Mac deploy
+    script validation plus a plan-only deployment check.
+  - The Home AI app deploy plan reported unrelated dirty app files from another
+    workspace state. They were not modified by this Growth slice.
+- Progress calibration:
+  - The earlier 80% estimate used the narrower card-generation/daily-card or
+    release-readiness backend denominator. Using the full AI-driven Growth
+    closed-loop MVP denominator, the current overall progress remains about
+    70-72%. Backend/service/Harness coverage is higher; the remaining
+    denominator is mainly product-visible Owner UI, central visual evidence,
+    production release evidence closure, and broader multi-workspace/domain-pack
+    generalization.
+
 ## 2026-06-16T11:01+08:00 - Release Approval Privacy Value Guard
 
 - Status: implemented and full-Harness validated locally. This slice hardens
