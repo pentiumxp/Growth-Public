@@ -11,8 +11,9 @@
 
 ## 2026-06-16T22:34+08:00 - Automation Digest Owner UI Controls
 
-- Status: implemented and locally validated; pending commit/push. Not deployed
-  per Owner instruction to deploy after the broader slice is complete.
+- Status: implemented, locally validated, and committed/pushed as
+  `37cceae Add automation digest Owner UI controls`; not deployed per Owner
+  instruction to deploy after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation dry-run
     digest packets for the selected Growth target;
