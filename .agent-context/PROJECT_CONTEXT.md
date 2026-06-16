@@ -230,7 +230,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   that gate requires package candidate build, candidate status, and record
   package action coverage before pass release evidence can be persisted and
   consumed by release-readiness from persisted release-evidence records. The
-  deprecated `--release-workbench-evidence` flag now returns blocked
+  release evidence bundle now also has an explicit non-default
+  `release_package_review_ui` task that delegates to `npm run
+  smoke:ui-evidence` for this key, accepts
+  `--release-package-review-ui-evidence-file`, keeps only bounded validator
+  summary fields, and omits the raw artifact path from bundle output. Release
+  evidence collection can persist that bundle evidence with
+  `--write-release-evidence-records --allow-write` only through the existing
+  release-evidence service revalidation path. The deprecated
+  `--release-workbench-evidence` flag now returns blocked
   remediation metadata instead of passing evidence; valid final Owner
   action-template readback evidence must come from `npm run
   smoke:release-workbench` through explicit evidence JSON, the non-default
@@ -448,7 +456,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   authorization is present. For UI pass evidence from the bundle, the
   collection service preserves only the bounded UI validator projection fields
   during compaction so the release-evidence service can re-run the UI evidence
-  validator before saving a pass record. The service owns no evidence
+  validator before saving a pass record. The explicit
+  `release_package_review_ui` bundle task can flow through this facade from a
+  supplied summary UI artifact file; the raw artifact path is treated as
+  transient input, stripped from public artifacts, and never persisted. The
+  service owns no evidence
   repository and keeps release-evidence record failures visible in the
   collection artifact instead of fabricating readiness. It does not create
   release package records, release decisions,

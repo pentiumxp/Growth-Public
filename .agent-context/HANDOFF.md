@@ -17258,3 +17258,64 @@
     explicit release approvals;
   - keep scheduler/runtime writeful execution disabled until remaining release
     gates and Owner approvals exist.
+
+## 2026-06-16T21:21Z - Release package review UI evidence flows through bundle collection
+
+- Status:
+  - Implemented and validated local Growth backend/docs/harness slice:
+    this commit (`Add release package UI collection evidence`).
+  - No production deploy was executed.
+  - Broad progress estimate for the current backend release-evidence closure is
+    now about 97% when excluding new broad slice-test expansion. Remaining
+    work is mostly real production evidence, not local service code.
+- Implemented behavior:
+  - Added explicit non-default release evidence bundle task
+    `release_package_review_ui`. It delegates to
+    `scripts/smoke-growth-ui-evidence.js` with
+    `releasePackageReviewUiEvidence`, accepts
+    `--release-package-review-ui-evidence-file`, preserves only bounded
+    `growth.learningAutomationUiEvidence.v1` validator projection fields, and
+    strips the raw artifact path from bundle scope/output.
+  - `scripts/build-growth-release-evidence-bundle.js` now parses
+    `--release-package-review-ui-evidence-file`; the package and collection
+    CLIs inherit it through their existing argument parser chain.
+  - `learning-automation-release-evidence-collection-service` now treats known
+    evidence artifact file paths as transient inputs for privacy scanning. The
+    path can be used to read an artifact but is not exposed in collection
+    output or persisted release evidence.
+  - Release evidence collection can now persist a validated
+    `releasePackageReviewUiEvidence` bundle item through
+    `--write-release-evidence-records --allow-write`; the existing
+    `learning-automation-release-evidence-service` still re-runs the UI
+    validator before saving the pass row.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Growth validation passed:
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js`;
+  - `node --check src/services/learning-automation-release-evidence-collection-service.js`;
+  - `node --check scripts/build-growth-release-evidence-bundle.js`;
+  - focused bundle/collection smoke harness passed `48/48`;
+  - release/UI/readiness focused harness passed `106/106`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - docs/architecture harness passed `34/34`;
+  - `npm run --silent check` passed with `runtimeCount=201`,
+    `checkedCount=201`;
+  - `git diff --check` passed;
+  - `npm test` passed `870/870`;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - collect real Home AI visual/UI artifacts for the release package review
+    surface and other UI gates; local fixture evidence is not production
+    evidence;
+  - collect platform Action Inbox/Web Push evidence and controlled daily-loop
+    write evidence;
+  - collect/review explicit release approvals, then package/review/activation
+    evidence over real production inputs;
+  - keep scheduler/runtime writeful execution disabled until the remaining
+    release gates and Owner approvals exist.

@@ -195,6 +195,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--visual-plugin-id", "growth",
     "--visual-scenario", "embedded-plugin-shell",
     "--central-visual-evidence-file", "/tmp/central-visual.json",
+    "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
     "--activation-gate", "writeful_execution",
     "--activation-gates", "background_scheduler,background_worker",
     "--required-approval-key", "writefulExecutionApproval",
@@ -259,6 +260,7 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
     centralVisualEvidenceFile: "/tmp/central-visual.json",
+    releasePackageReviewUiEvidenceFile: "/tmp/release-package-review-ui.json",
     activationGates: ["writeful_execution", "background_scheduler", "background_worker"],
     requiredApprovalKeys: ["writefulExecutionApproval", "backgroundSchedulerApproval", "backgroundWorkerApproval"],
     activationRecordLimit: 7,
@@ -308,6 +310,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("proposal"));
   assert.ok(output.allowedTaskIds.includes("owner_review_evidence"));
   assert.ok(output.allowedTaskIds.includes("central_visual"));
+  assert.ok(output.allowedTaskIds.includes("release_package_review_ui"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
   assert.ok(output.allowedTaskIds.includes("release_controls"));
@@ -713,6 +716,62 @@ test("release evidence bundle script writes central visual evidence from central
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("/Users/xuxin/.homeai-qa"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
+test("release evidence bundle script writes explicit release package review UI evidence from UI artifact", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const uiEvidencePath = path.join(dir, "release-package-review-ui.json");
+    fs.writeFileSync(uiEvidencePath, JSON.stringify({
+      ok: true,
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      status: "pass",
+      checkedAt: "2026-06-16T08:00:00.000Z",
+      route: "/plugins/growth/release",
+      screen: "release-package-review",
+      screenshotArtifactName: "growth-release-package-review.png",
+      domAssertions: [{ name: "record-package-action", status: "pass" }],
+      coverage: ["package_candidate_build", "package_candidate_status", "record_package_action"],
+      assertions: [{ name: "release-package-review", status: "pass" }]
+    }), "utf8");
+    const bundlePath = path.join(dir, "release-package-review-ui-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "release_package_review_ui",
+      "--release-package-review-ui-evidence-file", uiEvidencePath,
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    const evidence = fileBundle.evidence.releasePackageReviewUiEvidence;
+    assert.equal(evidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(evidence.smoke, "npm run smoke:ui-evidence");
+    assert.equal(evidence.status, "pass");
+    assert.equal(evidence.schemaVersion, "growth.learningAutomationUiEvidence.v1");
+    assert.equal(evidence.privacyClass, "summary_only");
+    assert.equal(evidence.checkKey, "release_package_review_ui_evidence");
+    assert.equal(evidence.uiGate, "release_package_review");
+    assert.equal(evidence.readyForReleaseEvidence, true);
+    assert.equal(evidence.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+    assert.deepEqual(evidence.uiEvidence.missingCoverage || [], []);
+    assert.equal(evidence.uiEvidenceBoundary.growthRunsNoVisualTooling, true);
+    assert.equal(fileBundle.scope.releasePackageReviewUiEvidenceFilePresent, true);
+    assert.equal(fileBundle.scope.releasePackageReviewUiEvidenceFile, undefined);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes(uiEvidencePath), false);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
   });
 });

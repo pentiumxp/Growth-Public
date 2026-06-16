@@ -127,6 +127,7 @@ function inputFromArgs(args) {
     visualPluginId: firstArgValue(args, ["--visual-plugin-id", "--visualPluginId", "--plugin-id", "--pluginId"], "growth") || "growth",
     visualScenario: firstArgValue(args, ["--visual-scenario", "--visualScenario", "--scenario"], "embedded-plugin-shell") || "embedded-plugin-shell",
     centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
+    releasePackageReviewUiEvidenceFile: firstArgValue(args, ["--release-package-review-ui-evidence-file", "--releasePackageReviewUiEvidenceFile"], ""),
     activationGates: activationGates(args),
     requiredApprovalKeys: requiredApprovalKeys(args),
     activationRecordLimit: recordLimitArg(args, ["--activation-record-limit", "--activationRecordLimit"], 20),

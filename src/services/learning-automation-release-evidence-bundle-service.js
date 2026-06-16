@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("node:path");
+const { UI_GATE_SPECS } = require("./learning-automation-ui-evidence-service");
 
 const RELEASE_EVIDENCE_BUNDLE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
@@ -133,6 +134,13 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "centralVisualEvidence",
     script: "scripts/smoke-growth-central-visual-evidence.js",
     commandName: "npm run smoke:central-visual-evidence"
+  },
+  {
+    taskId: "release_package_review_ui",
+    evidenceKey: "releasePackageReviewUiEvidence",
+    script: "scripts/smoke-growth-ui-evidence.js",
+    commandName: "npm run smoke:ui-evidence",
+    uiEvidenceKey: "releasePackageReviewUiEvidence"
   },
   {
     taskId: "scheduler_dry_run",
@@ -356,6 +364,7 @@ function publicScope(input = {}) {
     visualPluginId: cleanString(input.visualPluginId || input.visual_plugin_id || input.pluginId || input.plugin_id || "growth", 80) || "growth",
     visualScenario: cleanString(input.visualScenario || input.visual_scenario || input.scenario || "embedded-plugin-shell", 120) || "embedded-plugin-shell",
     centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500),
+    releasePackageReviewUiEvidenceFile: cleanString(input.releasePackageReviewUiEvidenceFile || input.release_package_review_ui_evidence_file || "", 500),
     activationGates: uniqueStrings(input.activationGates || input.activation_gates || []),
     requiredApprovalKeys: uniqueStrings(input.requiredApprovalKeys || input.required_approval_keys || []),
     activationRecordLimit: clampRecordLimit(input.activationRecordLimit || input.activation_record_limit || 20, 20),
@@ -375,9 +384,11 @@ function publicScope(input = {}) {
 
 function publicBundleScope(scope = {}) {
   const output = Object.assign({}, scope, {
-    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile)
+    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile),
+    releasePackageReviewUiEvidenceFilePresent: Boolean(scope.releasePackageReviewUiEvidenceFile)
   });
   delete output.centralVisualEvidenceFile;
+  delete output.releasePackageReviewUiEvidenceFile;
   return output;
 }
 
@@ -832,6 +843,71 @@ function summaryForTask(task, value) {
   return summaryFromSmoke(value);
 }
 
+function uiEvidenceFieldsFromSmoke(value = {}, fallbackEvidenceKey = "") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const evidenceKey = cleanString(value.evidenceKey || value.evidence_key || fallbackEvidenceKey, 160);
+  const spec = UI_GATE_SPECS[evidenceKey] || {};
+  const uiEvidence = value.uiEvidence && typeof value.uiEvidence === "object" && !Array.isArray(value.uiEvidence)
+    ? value.uiEvidence
+    : {};
+  const uiEvidenceBoundary = value.uiEvidenceBoundary && typeof value.uiEvidenceBoundary === "object" && !Array.isArray(value.uiEvidenceBoundary)
+    ? value.uiEvidenceBoundary
+    : {};
+  const projectedUiEvidence = Object.fromEntries(Object.entries({
+    source: cleanString(uiEvidence.source || "growth-ui-evidence-harness", 120),
+    evidenceKey: cleanString(uiEvidence.evidenceKey || uiEvidence.evidence_key || evidenceKey, 160),
+    checkKey: cleanString(uiEvidence.checkKey || uiEvidence.check_key || spec.checkKey, 160),
+    uiGate: cleanString(uiEvidence.uiGate || uiEvidence.ui_gate || spec.uiGate, 120),
+    status: cleanString(uiEvidence.status || (value.ok === true ? "pass" : ""), 80),
+    checkedAt: cleanString(uiEvidence.checkedAt || uiEvidence.checked_at, 120),
+    clientVersion: cleanString(uiEvidence.clientVersion || uiEvidence.client_version, 120),
+    route: cleanString(uiEvidence.route || uiEvidence.path || uiEvidence.screenRoute || uiEvidence.screen_route, 180),
+    screen: cleanString(uiEvidence.screen || uiEvidence.view || uiEvidence.surface, 120),
+    screenshotPresent: uiEvidence.screenshotPresent === true || uiEvidence.screenshot_present === true,
+    domEvidencePresent: uiEvidence.domEvidencePresent === true || uiEvidence.dom_evidence_present === true,
+    screenshotArtifactName: path.basename(cleanString(uiEvidence.screenshotArtifactName || uiEvidence.screenshot_artifact_name, 180)),
+    evidenceFilePresent: uiEvidence.evidenceFilePresent === true || uiEvidence.evidence_file_present === true,
+    evidenceFileName: path.basename(cleanString(uiEvidence.evidenceFileName || uiEvidence.evidence_file_name, 180)),
+    coverage: uniqueStrings(asArray(uiEvidence.coverage || uiEvidence.coverage_ids || uiEvidence.coverageIds)).slice(0, 20),
+    requiredCoverage: uniqueStrings(asArray(uiEvidence.requiredCoverage || uiEvidence.required_coverage || spec.requiredCoverage)).slice(0, 20),
+    missingCoverage: uniqueStrings(asArray(uiEvidence.missingCoverage || uiEvidence.missing_coverage)).slice(0, 20),
+    assertionCount: Number(uiEvidence.assertionCount || uiEvidence.assertion_count || 0) || 0,
+    failedAssertionCount: Number(uiEvidence.failedAssertionCount || uiEvidence.failed_assertion_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    return item !== undefined && item !== "";
+  }));
+  const projectedBoundary = Object.fromEntries(Object.entries({
+    summaryOnly: uiEvidenceBoundary.summaryOnly === true || uiEvidenceBoundary.summary_only === true,
+    growthReadsOnlyEvidenceArtifacts: uiEvidenceBoundary.growthReadsOnlyEvidenceArtifacts === true || uiEvidenceBoundary.growth_reads_only_evidence_artifacts === true,
+    growthRunsNoVisualTooling: uiEvidenceBoundary.growthRunsNoVisualTooling === true || uiEvidenceBoundary.growth_runs_no_visual_tooling === true,
+    homeAiOwnsVisualHarness: uiEvidenceBoundary.homeAiOwnsVisualHarness === true || uiEvidenceBoundary.home_ai_owns_visual_harness === true,
+    noLearnerStateMutation: uiEvidenceBoundary.noLearnerStateMutation === true || uiEvidenceBoundary.no_learner_state_mutation === true,
+    noModelCalls: uiEvidenceBoundary.noModelCalls === true || uiEvidenceBoundary.no_model_calls === true
+  }).filter(([, item]) => item !== undefined));
+  return Object.fromEntries(Object.entries({
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 180),
+    privacyClass: cleanString(value.privacyClass || value.privacy_class || "summary_only", 80),
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    evidenceKey,
+    checkKey: cleanString(value.checkKey || value.check_key || spec.checkKey, 160),
+    uiGate: cleanString(value.uiGate || value.ui_gate || spec.uiGate, 120),
+    readyForReleaseEvidence: value.readyForReleaseEvidence === true || value.ready_for_release_evidence === true,
+    uiEvidence: projectedUiEvidence,
+    uiEvidenceBoundary: projectedBoundary,
+    missingRequired: Array.isArray(value.missingRequired || value.missing_required)
+      ? value.missingRequired || value.missing_required
+      : [],
+    privateValueFindingCount: Array.isArray(value.privateValueFindings || value.private_value_findings)
+      ? (value.privateValueFindings || value.private_value_findings).length
+      : Number(value.privateValueFindingCount || value.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function releaseApprovalTaskResult(task, taskResult, generatedAt) {
   const parsed = parseJsonOutput(taskResult.stdout);
   const parsedValue = parsed.ok ? parsed.value : {};
@@ -892,6 +968,9 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
     exitCode: taskResult.exitCode,
     summary: parsed.ok && !privacyFindings.length ? summaryForTask(task, parsedValue) : {}
   };
+  if (task.uiEvidenceKey && pass) {
+    Object.assign(evidence, uiEvidenceFieldsFromSmoke(parsedValue, task.uiEvidenceKey));
+  }
   if (!pass) {
     evidence.error = blockedError || "release_evidence_bundle_smoke_blocked";
   }
@@ -985,6 +1064,10 @@ function taskSpecificArgs(task, scope) {
     args.push("--plugin-id", scope.visualPluginId || "growth");
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
+  }
+  if (task.taskId === "release_package_review_ui") {
+    args.push("--evidence-key", task.uiEvidenceKey || "releasePackageReviewUiEvidence");
+    if (scope.releasePackageReviewUiEvidenceFile) args.push("--ui-evidence-file", scope.releasePackageReviewUiEvidenceFile);
   }
   if (task.taskId === "owner_review_evidence") {
     if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));

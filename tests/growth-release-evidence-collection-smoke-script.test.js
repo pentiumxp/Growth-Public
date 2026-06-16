@@ -51,6 +51,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
     "--tasks", "scheduler_dry_run",
     "--required-task", "planner_readiness",
     "--required-tasks", "scheduler_dry_run",
+    "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
     "--auto-select-latest-completed-cycle",
     "--write-collection-run",
     "--write-release-evidence-records",
@@ -70,6 +71,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
   assert.equal(input.writeReleaseEvidenceRecords, true);
   assert.equal(input.allowWriteCollection, true);
   assert.equal(input.autoSelectLatestCompletedCycle, true);
+  assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
 });
 
 test("release evidence collection script fails closed for write without allow-write", () => {
@@ -178,6 +180,77 @@ test("release evidence collection script can record a summary-only collection ru
       assert.equal(JSON.parse(row.summary_json).writefulSchedulingAllowed, false);
       assert.equal(JSON.parse(row.bundle_summary_json).summaryOnly, true);
       assert.equal(JSON.parse(row.readiness_summary_json).summaryOnly, true);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+test("release evidence collection script persists release package review UI evidence records", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const uiEvidencePath = path.join(dir, "release-package-review-ui.json");
+    fs.writeFileSync(uiEvidencePath, JSON.stringify({
+      ok: true,
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      status: "pass",
+      checkedAt: "2026-06-16T08:00:00.000Z",
+      route: "/plugins/growth/release",
+      screen: "release-package-review",
+      screenshotArtifactName: "growth-release-package-review.png",
+      domAssertions: [{ name: "record-package-action", status: "pass" }],
+      coverage: ["package_candidate_build", "package_candidate_status", "record_package_action"],
+      assertions: [{ name: "release-package-review", status: "pass" }]
+    }), "utf8");
+
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "release_package_review_ui",
+      "--required-task", "release_package_review_ui",
+      "--release-package-review-ui-evidence-file", uiEvidencePath,
+      "--write-release-evidence-records",
+      "--allow-write",
+      "--result-json",
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = parseStdout(result);
+    assert.equal(output.collection.artifacts.releaseEvidenceRecords.status, "pass");
+    assert.equal(output.collection.summary.releaseEvidenceRecordsWritten, true);
+    assert.ok(output.collection.artifacts.releaseEvidenceRecords.evidenceKeys.includes("releasePackageReviewUiEvidence"));
+    assert.ok(output.collection.artifacts.releaseEvidenceRecords.evidenceKeys.includes("releaseEvidenceBundleAudit"));
+    assert.equal(JSON.stringify(output).includes(uiEvidencePath), false);
+    assert.equal(JSON.stringify(output).includes("stdout"), false);
+    assert.equal(JSON.stringify(output).includes("/Users/"), false);
+
+    const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
+    try {
+      const row = db.prepare(`
+        SELECT * FROM learning_growth_automation_release_evidence
+        WHERE workspace_id = ? AND evidence_key = ?
+      `).get("smoke_workspace", "releasePackageReviewUiEvidence");
+      assert.equal(row.privacy_class, "summary_only");
+      assert.equal(row.check_key, "release_package_review_ui_evidence");
+      assert.equal(row.status, "pass");
+      const evidence = JSON.parse(row.evidence_json);
+      assert.equal(evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
+      assert.equal(evidence.validationSchemaVersion, "growth.learningAutomationUiEvidence.v1");
+      assert.equal(evidence.evidenceKey, "releasePackageReviewUiEvidence");
+      assert.equal(evidence.checkKey, "release_package_review_ui_evidence");
+      assert.equal(evidence.uiGate, "release_package_review");
+      assert.equal(evidence.readyForReleaseEvidence, true);
+      assert.equal(evidence.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+      assert.deepEqual(evidence.uiEvidence.missingCoverage || [], []);
+      assert.equal(evidence.uiEvidenceBoundary.homeAiOwnsVisualHarness, true);
+      assert.equal(JSON.stringify(evidence).includes(uiEvidencePath), false);
     } finally {
       db.close();
     }

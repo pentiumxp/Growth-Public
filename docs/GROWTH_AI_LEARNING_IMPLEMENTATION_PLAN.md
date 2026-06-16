@@ -802,6 +802,14 @@ Implemented backend shape:
   Appium or running `npm run ios:pwa:visual` inside Growth. The release bundle
   records only bounded visual summary fields and file-presence metadata, not
   raw local artifact paths.
+  The explicit non-default `release_package_review_ui` task maps
+  `npm run smoke:ui-evidence` output to `releasePackageReviewUiEvidence`.
+  It is selected only when the caller supplies that task and a summary
+  UI/visual artifact such as
+  `--release-package-review-ui-evidence-file <artifact>`. The bundle preserves
+  only bounded validator fields, records file presence without the raw path,
+  and does not run the Home AI visual harness or persist release evidence by
+  itself.
   The explicit non-default `release_workbench` task maps
   `npm run smoke:release-workbench` output into
   `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final
@@ -873,7 +881,11 @@ Implemented backend shape:
   `learning-automation-release-evidence-service`. UI evidence from the bundle
   remains validator-gated after collection compaction; the collection service
   must preserve only summary validator fields, not raw screenshots or private
-  artifact paths. The Owner-only
+  artifact paths. The explicit `release_package_review_ui` bundle task can be
+  supplied with `--release-package-review-ui-evidence-file`; collection treats
+  that file path as transient input, strips it from public artifacts, and
+  persists a pass record only after the release-evidence service revalidates
+  the compact UI summary. The Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` route
   exposes the same boundary from the plugin API. This facade is useful when
   Owner/release tooling needs a structured collection pass without building or
@@ -1182,8 +1194,14 @@ Remaining release gaps:
   `npm run smoke:release-evidence` into a temporary Growth SQLite database and
   read back from the release-evidence bag with top-level evidence/check keys
   that `npm run smoke:release-readiness` can consume as a passing
-  `release_package_review_ui_evidence` check, but that fixture does not
-  replace a real Home AI visual/UI artifact. These backend/UI affordances do
+  `release_package_review_ui_evidence` check. Local Harness also proves the
+  explicit `release_package_review_ui` bundle task can feed the
+  `npm run smoke:release-evidence-collection` CLI with
+  `--write-release-evidence-records --allow-write`, persist the same
+  validator-gated pass record into
+  `learning_growth_automation_release_evidence`, and omit the raw artifact path
+  from bundle/collection output. These fixtures do not replace a real Home AI
+  visual/UI artifact. These backend/UI affordances do
   not replace product UI or central visual evidence.
   The current proposal selected-cycle create/review/publish panel and release
   package review flow still need central visual/release evidence before they are

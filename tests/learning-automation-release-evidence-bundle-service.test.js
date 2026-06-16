@@ -37,6 +37,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("owner_review_evidence"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("release_package_review_ui"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_controls"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_inventory"), false);
@@ -77,6 +78,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
     centralVisualEvidenceFile: "",
+    releasePackageReviewUiEvidenceFile: "",
     activationGates: [],
     requiredApprovalKeys: [],
     activationRecordLimit: 20,
@@ -902,6 +904,85 @@ test("release evidence bundle service collects central visual evidence from read
   assert.ok(calls[0].args.includes("growth"));
   assert.ok(calls[0].args.includes("--scenario"));
   assert.ok(calls[0].args.includes("embedded-plugin-shell"));
+});
+
+test("release evidence bundle service collects explicit release package review UI evidence from read-only smoke", () => {
+  const evidenceFile = "/tmp/growth-release-package-review-ui.json";
+  const { calls, service } = createServiceWithRunner(() => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-ui-evidence-service",
+      schemaVersion: "growth.learningAutomationUiEvidence.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      evidenceKey: "releasePackageReviewUiEvidence",
+      checkKey: "release_package_review_ui_evidence",
+      uiGate: "release_package_review",
+      status: "pass",
+      readyForReleaseEvidence: true,
+      uiEvidence: {
+        source: "home-ai-ios-pwa-visual-harness",
+        evidenceKey: "releasePackageReviewUiEvidence",
+        checkKey: "release_package_review_ui_evidence",
+        uiGate: "release_package_review",
+        status: "pass",
+        checkedAt: "2026-06-16T08:00:00.000Z",
+        route: "/plugins/growth/release",
+        screen: "release-package-review",
+        screenshotPresent: true,
+        domEvidencePresent: true,
+        screenshotArtifactName: "growth-release-package-review.png",
+        evidenceFilePresent: true,
+        evidenceFileName: "growth-release-package-review-ui.json",
+        coverage: ["package_candidate_build", "package_candidate_status", "record_package_action"],
+        requiredCoverage: ["package_candidate_build", "package_candidate_status", "record_package_action"],
+        missingCoverage: [],
+        assertionCount: 3,
+        failedAssertionCount: 0
+      },
+      uiEvidenceBoundary: {
+        summaryOnly: true,
+        growthReadsOnlyEvidenceArtifacts: true,
+        growthRunsNoVisualTooling: true,
+        homeAiOwnsVisualHarness: true,
+        noLearnerStateMutation: true,
+        noModelCalls: true
+      },
+      missingRequired: []
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["release_package_review_ui"],
+    releasePackageReviewUiEvidenceFile: evidenceFile
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(Object.keys(result.bundle.evidence), ["releasePackageReviewUiEvidence"]);
+  const evidence = result.bundle.evidence.releasePackageReviewUiEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.schemaVersion, "growth.learningAutomationUiEvidence.v1");
+  assert.equal(evidence.checkKey, "release_package_review_ui_evidence");
+  assert.equal(evidence.uiGate, "release_package_review");
+  assert.equal(evidence.readyForReleaseEvidence, true);
+  assert.equal(evidence.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+  assert.deepEqual(evidence.uiEvidence.coverage, [
+    "package_candidate_build",
+    "package_candidate_status",
+    "record_package_action"
+  ]);
+  assert.equal(evidence.uiEvidenceBoundary.homeAiOwnsVisualHarness, true);
+  assert.equal(result.bundle.scope.releasePackageReviewUiEvidenceFilePresent, true);
+  assert.equal(result.bundle.scope.releasePackageReviewUiEvidenceFile, undefined);
+  assert.equal(JSON.stringify(result.bundle).includes(evidenceFile), false);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-ui-evidence.js"));
+  assert.ok(calls[0].args.includes("--evidence-key"));
+  assert.ok(calls[0].args.includes("releasePackageReviewUiEvidence"));
+  assert.ok(calls[0].args.includes("--ui-evidence-file"));
+  assert.ok(calls[0].args.includes(evidenceFile));
 });
 
 test("release evidence bundle service blocks controlled daily-loop write evidence unless explicitly allowed", () => {

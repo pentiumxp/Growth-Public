@@ -12,6 +12,12 @@ const RELEASE_EVIDENCE_COLLECTION_SCHEMA = "growth.learningAutomationReleaseEvid
 const RELEASE_EVIDENCE_RECORDS_SCHEMA = "growth.learningAutomationReleaseEvidenceCollection.records.v1";
 const RELEASE_EVIDENCE_KEY_SET = new Set(RELEASE_EVIDENCE_KEYS);
 const UI_EVIDENCE_KEY_SET = new Set(Object.keys(UI_GATE_SPECS));
+const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
+  "centralVisualEvidenceFile",
+  "central_visual_evidence_file",
+  "releasePackageReviewUiEvidenceFile",
+  "release_package_review_ui_evidence_file"
+]);
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 
@@ -83,6 +89,15 @@ function scanPrivateValues(value, pathName = "$", findings = []) {
     scanPrivateValues(child, `${pathName}.${key}`, findings);
   }
   return findings;
+}
+
+function inputForPrivacyScan(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(inputForPrivacyScan);
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [
+    key,
+    TRANSIENT_EVIDENCE_FILE_KEYS.has(key) ? "[transient_evidence_file]" : inputForPrivacyScan(child)
+  ]));
 }
 
 function unavailable(error, scope = {}, extra = {}) {
@@ -496,8 +511,9 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
         writeReleaseEvidenceRecords: optionBag.writeReleaseEvidenceRecords
       });
     }
-    const inputPrivacyFindings = scanPrivacyKeys(input).slice(0, 16);
-    const inputPrivateValueFindings = scanPrivateValues(input).slice(0, 16);
+    const inputPrivacyScope = inputForPrivacyScan(input);
+    const inputPrivacyFindings = scanPrivacyKeys(inputPrivacyScope).slice(0, 16);
+    const inputPrivateValueFindings = scanPrivateValues(inputPrivacyScope).slice(0, 16);
     if (inputPrivacyFindings.length || inputPrivateValueFindings.length) {
       return unavailable("release_evidence_collection_privacy_failed", scope, {
         privacyFindings: inputPrivacyFindings,
