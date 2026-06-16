@@ -16415,3 +16415,74 @@
   - writeful execution release approval;
   - background scheduler release approval;
   - background worker release approval.
+
+## 2026-06-16T18:50Z - Profile-feedback reward trace projection implemented locally
+
+- Status:
+  - Implemented and committed local Growth backend/docs/harness slice:
+    `ed45375` (`Project reward trace through profile feedback evidence`).
+  - No production deploy was executed.
+  - Progress estimate for the broad AI-learning backend closure remains around
+    72%: this closes one H2/H1-readback gap, while production profile-feedback
+    evidence from a real completed production learning cycle and the remaining
+    release-readiness gates are still open.
+- Implemented behavior:
+  - `learning-profile-feedback-evidence-service` now projects bounded reward
+    readback from the next loop-state DTO into
+    `growth.learningProfileFeedbackEvidence.v1`, including
+    `rewardSettlementCount`, `totalRewardCoins`, reward availability, and
+    bounded reward settlement ids.
+  - `learning-automation-release-evidence-bundle-service` preserves
+    `rewardSettlementCount` and `totalRewardCoins` from the default
+    `profile_feedback` task summary so release review can audit
+    score-to-reward closure without direct reward-table reads.
+  - `learning-loop-state-service` now normalizes scalar selectors such as
+    `taskCardId` and `evaluationId` before reward-audit readback.
+  - `growth-learning-sqlite/rewards.js` now accepts snake_case and camelCase
+    service-context fields for learner/workspace/program/task/session ids and
+    reward-cap values before persisting settlement rows.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Growth validation passed:
+  - `node scripts/check-growth-docs-locality.js`;
+  - targeted `node --check` for touched services/repository/tests;
+  - focused harness:
+    `node --test tests/learning-loop-state-service.test.js tests/learning-reward-audit-service.test.js tests/growth-learning-sqlite-rewards.test.js tests/learning-profile-feedback-evidence-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-learning-loop-state-smoke-script.test.js tests/growth-profile-feedback-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `152/152`;
+  - `npm run check` passed with `runtimeCount=201`, `checkedCount=201`;
+  - `npm test` passed `857/857`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date and `codegraph status`
+    reported index up to date, with the existing earlier-engine reindex
+    advisory.
+- Home AI AI Ops validation passed:
+  - intake classified the wording as H1 because the task mentioned deploy, but
+    the actual Growth slice did not deploy or mutate Home AI app code;
+  - read the requested Gateway/deployment/test-matrix docs;
+  - passed `node tests/gateway-run-lifecycle-service.test.js`;
+  - passed `node tests/gateway-run-start-service.test.js`;
+  - passed `node tests/gateway-run-stream-service.test.js`;
+  - passed `node tests/runtime-config-provider.test.js`;
+  - passed `node --check scripts/deploy-macos-production.js`;
+  - passed `node tests/macos-production-deploy-script.test.js`;
+  - passed `node tests/production-status-smoke-harness.test.js`;
+  - passed `node tests/architecture-code-test-harness-map.test.js`;
+  - passed `npm run --silent deploy:macos -- --target home-ai --json` in
+    plan-only mode;
+  - passed app-side `git diff --check`;
+  - appended AI Ops evidence record
+    `evidence-5e12667b-d7fb-42ac-a22b-fd5bd475b65d`.
+- Remaining next-step candidates:
+  - collect production `profile_feedback` smoke evidence from a real completed
+    production learning cycle, not a synthetic selector;
+  - continue closing release-readiness gaps: Owner daily UI, Owner audit UI,
+    proposal/digest/action/scheduler UI evidence, reviewed digest/action
+    handoff/worker target, platform action evidence, controlled daily-loop write
+    evidence, and release approvals;
+  - do not enable scheduler/runtime writeful execution until the remaining
+    release gates and Owner approvals exist.
