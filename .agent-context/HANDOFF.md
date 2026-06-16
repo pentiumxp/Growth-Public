@@ -9,11 +9,11 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-16T18:08+08:00 - UI Release Evidence Persistence Hardening
+## 2026-06-16T18:00+08:00 - UI Release Evidence Persistence Hardening
 
-- Status: implemented and locally verified; commit/deploy pending at this
-  handoff update. This H2 backend/docs/harness slice tightens persisted release
-  evidence records for UI gates.
+- Status: implemented, tested, pushed, deployed, and production-smoked. This H2
+  backend/docs/harness slice tightens persisted release evidence records for UI
+  gates.
 - Change intent:
   - pass records for `ownerDailyUiEvidence`, `ownerAuditUiEvidence`,
     `proposalReviewUiEvidence`, `automationDigestUiEvidence`,
@@ -43,6 +43,25 @@
   - `git diff --check` passed;
   - CodeGraph status after sync: 355 files, 4,792 nodes, 19,118 edges, index
     up to date.
+- Commit/deploy:
+  - commit: `9dd4985405a0` (`Harden UI release evidence persistence`);
+  - pushed to `origin/main` and `public/main`;
+  - deployed through the central Home AI Mac plugin deploy path;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T095840Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - manifest health check passed on attempt 2;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+- Production smoke:
+  - ran the deployed `scripts/smoke-growth-automation-release-evidence.js` as
+    `hermes-host` against a temporary DB under `/tmp`;
+  - attempted to record direct `{ok:true}` `ownerDailyUiEvidence`;
+  - bounded wrapper returned `ok=true`, `expectedFailureExit=1`, and
+    `error=learning_automation_release_evidence_ui_validation_failed`;
+  - no production Growth SQLite data was written.
+- AI Ops evidence:
+  - `evidence-1f301cea-0224-4ea9-8619-7ba3fee66313`.
 
 ## 2026-06-16T17:41+08:00 - Growth Plugin Redeploy at Current Head
 
