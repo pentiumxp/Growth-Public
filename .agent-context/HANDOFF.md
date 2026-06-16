@@ -11,8 +11,8 @@
 
 ## 2026-06-16T16:15+08:00 - Profile Feedback Selector Discovery Diagnostics
 
-- Status: implemented locally, documented, and validated; production deploy is
-  the next step. This H1 backend/docs slice does not close the
+- Status: implemented, pushed, deployed, production-verified, and documented.
+  This H1 backend/docs slice does not close the
   `production_profile_feedback_smoke_evidence` gate because production Fanfan
   currently has no completed-cycle selector to verify. It instead closes the
   diagnostic gap: profile-feedback release evidence now says whether a bounded
@@ -60,11 +60,30 @@
   - Home AI central H1 required checks from AI Ops, including Gateway runtime
     tests, Mac deploy-script checks, architecture-code-test-harness-map,
     plan-mode `deploy:macos -- --target home-ai`, and app `git diff --check`.
+- Production deployment:
+  - Growth commit `f5cd3cd18197` was pushed to `origin/main` and
+    `public/main`, then deployed through the central Home AI Mac deploy script;
+  - deploy result `ok=true`, `target=plugin:growth`,
+    `sourceRef.dirty=false`, backup
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T081724Z-plugin-growth-manual`,
+    restart label `com.hermesmobile.plugin.growth`, and manifest health pass.
+- Production post-deploy no-write evidence:
+  - `npm run smoke:profile-feedback` equivalent as `hermes-host` for the
+    Fanfan science scope returned the expected blocked result with
+    `error=profile_feedback_cycle_selector_required`,
+    `selectorDiscovery.status=no_completed_cycle`,
+    `selectorDiscovery.candidateCount=0`, `completeCycleCount=0`,
+    `cycleCount=0`, and `summary.nextAction=produce_completed_daily_cycle`;
+  - the `profile_feedback` release-evidence-collection subset returned
+    `status=blocked`, bundle `taskCount=1`, `passedCount=0`,
+    `blockedCount=1`, `collectionRunWritten=false`,
+    `writefulSchedulingAllowed=false`, and
+    `productionProfileFeedbackSmokeEvidence.summary` now includes
+    `missingRequired=["cycle_selector_present"]`,
+    `requiredActions[0].action=produce_completed_daily_cycle`,
+    `selectorDiscovery.status=no_completed_cycle`, and zero candidate/complete
+    cycle counts.
 - Next:
-  - commit and deploy this Growth plugin change;
-  - re-run production no-write `profile_feedback` release-evidence-collection
-    subset and verify it reports selector-discovery metadata with
-    `nextAction=produce_completed_daily_cycle`;
   - the actual profile-feedback release gate remains open until Owner creates
     or selects a real completed daily learning cycle.
 
