@@ -371,11 +371,17 @@ Use the Growth-owned release-readiness boundary:
   scope/evidence/approval fields are summary-only defaults; explicit CLI
   scope, `--evidence-json`, and `--release-approval-json` override them.
   Deprecated boolean evidence flags must not fabricate passing evidence when a
-  versioned smoke/bundle artifact exists. In particular,
-  `--release-workbench-evidence` now surfaces blocked remediation metadata and
-  cannot satisfy `releaseWorkbenchSmokeEvidence`; callers must provide the
-  bounded workbench smoke result through `--evidence-json`, a release evidence
-  bundle, or a validated persisted release-evidence record projection. When a
+  versioned smoke/bundle artifact exists. This applies to service-owned
+  smoke/readback evidence for stage checkpoint, proposal, scheduler, planner,
+  target provisioning, daily-loop, learning-loop state, cycle history, Owner
+  audit, profile feedback, recommendation lifecycle, learner cycle, scheduler
+  dry-run, release-bundle audit, platform action, central visual, release
+  workbench, and Owner review gates. Those legacy flags now surface blocked
+  remediation metadata and cannot satisfy release-readiness; callers must
+  provide the bounded smoke/readback result through `--evidence-json`, a release
+  evidence bundle, or a validated persisted release-evidence record projection.
+  `--release-workbench-evidence` preserves its historical remediation code but
+  is still blocked and cannot satisfy `releaseWorkbenchSmokeEvidence`. When a
   bundle is provided, the CLI passes bounded
   `evidenceBundleReadback` metadata into readiness. Service output includes
   `evidenceReadback`
@@ -790,9 +796,10 @@ The service aggregates summary-only readiness evidence:
   validated persisted release-evidence record projection;
 - backend Owner automation review evidence from
   `npm run smoke:owner-review-evidence`, the default release-bundle
-  `owner_review_evidence` task, the release-readiness
-  `--owner-review-evidence` flag, or a persisted `owner_review_evidence`
-  release evidence record;
+  `owner_review_evidence` task, explicit summary evidence JSON, or a persisted
+  `owner_review_evidence` release evidence record. The release-readiness
+  `--owner-review-evidence` flag is deprecated remediation metadata only and
+  cannot satisfy this gate;
 - explicit release approval for each config gate, either as bounded one-off
   readiness input or as a persisted summary-only approval record read through
   `learning-automation-release-approval-service`:

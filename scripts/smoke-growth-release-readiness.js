@@ -119,8 +119,52 @@ function deprecatedReleaseEvidenceFlag(evidenceKey, checkKey, error, requiredAct
   };
 }
 
+const DEPRECATED_RELEASE_EVIDENCE_FLAGS = [
+  ["--stage-checkpoint-evidence", "stageCheckpointEvidence", "stage_checkpoint_evidence"],
+  ["--stage-checkpoint-controls-evidence", "stageCheckpointControlsEvidence", "stage_checkpoint_controls_evidence"],
+  ["--production-proposal-smoke-evidence", "productionProposalSmokeEvidence", "production_proposal_smoke_evidence"],
+  ["--production-action-handoff-smoke-evidence", "productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence"],
+  ["--production-scheduler-execution-smoke-evidence", "productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence"],
+  ["--production-scheduler-run-smoke-evidence", "productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence"],
+  ["--production-scheduler-worker-target-smoke-evidence", "productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence"],
+  ["--production-scheduler-worker-smoke-evidence", "productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence"],
+  ["--production-planner-readiness-evidence", "productionPlannerReadinessEvidence", "production_planner_readiness_evidence"],
+  ["--production-target-provisioning-smoke-evidence", "productionTargetProvisioningSmokeEvidence", "production_target_provisioning_smoke_evidence"],
+  ["--production-daily-loop-preview-smoke-evidence", "productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence"],
+  ["--production-learning-loop-state-smoke-evidence", "productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence"],
+  ["--production-cycle-history-smoke-evidence", "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence"],
+  ["--production-owner-audit-smoke-evidence", "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence"],
+  ["--production-profile-feedback-smoke-evidence", "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence"],
+  ["--production-recommendation-lifecycle-smoke-evidence", "productionRecommendationLifecycleSmokeEvidence", "production_recommendation_lifecycle_smoke_evidence"],
+  ["--production-daily-loop-write-smoke-evidence", "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence"],
+  ["--production-learner-cycle-smoke-evidence", "productionLearnerCycleSmokeEvidence", "production_learner_cycle_smoke_evidence"],
+  ["--production-scheduler-dry-run-smoke-evidence", "productionSchedulerDryRunSmokeEvidence", "production_scheduler_dry_run_smoke_evidence"],
+  ["--release-evidence-bundle-audit", "releaseEvidenceBundleAudit", "release_evidence_bundle_audit"],
+  ["--platform-action-evidence", "platformActionEvidence", "platform_action_evidence"],
+  ["--central-visual-evidence", "centralVisualEvidence", "central_visual_evidence"],
+  [
+    "--release-workbench-evidence",
+    "releaseWorkbenchSmokeEvidence",
+    "release_workbench_smoke_evidence",
+    "validated_release_workbench_evidence_required",
+    "provide_validated_release_workbench_evidence"
+  ],
+  [["--owner-review-evidence", "--owner-review-evidence-smoke"], "ownerReviewEvidence", "owner_review_evidence"]
+];
+
 function applyDeprecatedUiEvidenceFlag(args, evidence, flagName, evidenceKey) {
   if (evidenceFlag(args, flagName)) evidence[evidenceKey] = deprecatedUiEvidenceFlag(evidenceKey);
+}
+
+function applyDeprecatedReleaseEvidenceFlag(args, evidence, flagNames, evidenceKey, checkKey, error, requiredAction) {
+  const names = Array.isArray(flagNames) ? flagNames : [flagNames];
+  if (!names.some((name) => evidenceFlag(args, name))) return;
+  evidence[evidenceKey] = deprecatedReleaseEvidenceFlag(
+    evidenceKey,
+    checkKey,
+    error || `validated_${checkKey}_required`,
+    requiredAction || `provide_validated_${checkKey}`
+  );
 }
 
 function approvalFlag(args, name) {
@@ -215,43 +259,15 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   const evidence = Object.assign({}, objectOnly(bundle.evidence), parseJsonArg(args, ["--evidence-json", "--evidenceJson"], {}));
   applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-daily-ui-evidence", "ownerDailyUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--owner-audit-ui-evidence", "ownerAuditUiEvidence");
-  if (evidenceFlag(args, "--stage-checkpoint-evidence")) evidence.stageCheckpointEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--stage-checkpoint-controls-evidence")) evidence.stageCheckpointControlsEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   applyDeprecatedUiEvidenceFlag(args, evidence, "--proposal-review-ui-evidence", "proposalReviewUiEvidence");
-  if (evidenceFlag(args, "--production-proposal-smoke-evidence")) evidence.productionProposalSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-digest-ui-evidence", "automationDigestUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--automation-action-handoff-ui-evidence", "automationActionHandoffUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-execution-ui-evidence", "schedulerExecutionUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-run-ui-evidence", "schedulerRunUiEvidence");
   applyDeprecatedUiEvidenceFlag(args, evidence, "--scheduler-worker-target-ui-evidence", "schedulerWorkerTargetUiEvidence");
-  if (evidenceFlag(args, "--production-action-handoff-smoke-evidence")) evidence.productionActionHandoffSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-scheduler-execution-smoke-evidence")) evidence.productionSchedulerExecutionSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-scheduler-run-smoke-evidence")) evidence.productionSchedulerRunSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-scheduler-worker-target-smoke-evidence")) evidence.productionSchedulerWorkerTargetSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-scheduler-worker-smoke-evidence")) evidence.productionSchedulerWorkerSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-planner-readiness-evidence")) evidence.productionPlannerReadinessEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-target-provisioning-smoke-evidence")) evidence.productionTargetProvisioningSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-daily-loop-preview-smoke-evidence")) evidence.productionDailyLoopPreviewSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-learning-loop-state-smoke-evidence")) evidence.productionLearningLoopStateSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-cycle-history-smoke-evidence")) evidence.productionCycleHistorySmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-owner-audit-smoke-evidence")) evidence.productionOwnerAuditSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-profile-feedback-smoke-evidence")) evidence.productionProfileFeedbackSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-recommendation-lifecycle-smoke-evidence")) evidence.productionRecommendationLifecycleSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-daily-loop-write-smoke-evidence")) evidence.productionDailyLoopWriteSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-learner-cycle-smoke-evidence")) evidence.productionLearnerCycleSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--production-scheduler-dry-run-smoke-evidence")) evidence.productionSchedulerDryRunSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--release-evidence-bundle-audit")) evidence.releaseEvidenceBundleAudit = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--platform-action-evidence")) evidence.platformActionEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--central-visual-evidence")) evidence.centralVisualEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--release-workbench-evidence")) {
-    evidence.releaseWorkbenchSmokeEvidence = deprecatedReleaseEvidenceFlag(
-      "releaseWorkbenchSmokeEvidence",
-      "release_workbench_smoke_evidence",
-      "validated_release_workbench_evidence_required",
-      "provide_validated_release_workbench_evidence"
-    );
+  for (const [flagNames, evidenceKey, checkKey, error, requiredAction] of DEPRECATED_RELEASE_EVIDENCE_FLAGS) {
+    applyDeprecatedReleaseEvidenceFlag(args, evidence, flagNames, evidenceKey, checkKey, error, requiredAction);
   }
-  if (evidenceFlag(args, "--owner-review-evidence") || evidenceFlag(args, "--owner-review-evidence-smoke")) evidence.ownerReviewEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   return evidence;
 }
 

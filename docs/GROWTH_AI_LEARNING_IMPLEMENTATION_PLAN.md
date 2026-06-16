@@ -795,7 +795,13 @@ Implemented backend shape:
   or deployment. The legacy `--release-workbench-evidence` readiness flag is a
   blocked remediation marker only; valid workbench evidence must come from the
   workbench smoke output through explicit evidence JSON, the release bundle, or
-  a persisted release-evidence record projection.
+  a persisted release-evidence record projection. The same rule now applies to
+  the other service-owned smoke/readback evidence flags: stage checkpoint,
+  proposal, scheduler, planner, target-provisioning, daily-loop,
+  learning-loop-state, cycle-history, Owner audit, profile-feedback,
+  recommendation lifecycle, learner-cycle, scheduler dry-run, release-bundle
+  audit, platform action, central visual, and Owner review boolean flags are
+  deprecated remediation inputs only and cannot fabricate passing evidence.
   The default `owner_review_evidence` task maps
   `npm run smoke:owner-review-evidence` output to `ownerReviewEvidence`.
   A passing owner-review task means the backend summary-only Owner automation
@@ -1057,10 +1063,12 @@ Required behavior:
   release-dashboard readback through the non-default `release_dashboard`
   release-bundle task, optional final release-workbench readback through the
   non-default `release_workbench` release-bundle task, explicit evidence JSON,
-  or persisted release-evidence record projection, Owner automation review evidence through
-  the default `owner_review_evidence` release-bundle task or
-  `--owner-review-evidence`, and explicit release approval records for each writeful
-  config gate;
+  or persisted release-evidence record projection, Owner automation review
+  evidence through the default `owner_review_evidence` release-bundle task,
+  explicit evidence JSON, or a persisted release-evidence record projection,
+  and explicit release approval records for each writeful config gate. The
+  legacy `--owner-review-evidence` readiness flag is deprecated remediation
+  metadata only and cannot satisfy Owner review evidence;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;
 - return a bounded `releaseReview` remediation plan derived from non-passing

@@ -1642,14 +1642,42 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(script, /release_readiness_smoke_invalid_json/);
   assert.match(script, /deprecatedUiEvidenceFlag/);
   assert.match(script, /deprecatedReleaseEvidenceFlag/);
+  assert.match(script, /DEPRECATED_RELEASE_EVIDENCE_FLAGS/);
+  assert.match(script, /validated_\$\{checkKey\}_required/);
   assert.match(script, /validated_ui_evidence_summary_required/);
-  assert.match(script, /validated_release_workbench_evidence_required/);
+  assert.match(script, /release_workbench_smoke_evidence/);
   assert.match(script, /release_readiness_smoke_flag_deprecated/);
-  assert.doesNotMatch(script, /ownerDailyUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
-  assert.doesNotMatch(script, /ownerAuditUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
-  assert.doesNotMatch(script, /automationDigestUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
-  assert.doesNotMatch(script, /schedulerExecutionUiEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
-  assert.doesNotMatch(script, /releaseWorkbenchSmokeEvidence\s*=\s*\{\s*ok:\s*true,\s*source:\s*"release_readiness_smoke_flag"/);
+  [
+    "ownerDailyUiEvidence",
+    "ownerAuditUiEvidence",
+    "stageCheckpointEvidence",
+    "stageCheckpointControlsEvidence",
+    "productionProposalSmokeEvidence",
+    "automationDigestUiEvidence",
+    "productionActionHandoffSmokeEvidence",
+    "productionSchedulerExecutionSmokeEvidence",
+    "productionSchedulerRunSmokeEvidence",
+    "productionSchedulerWorkerTargetSmokeEvidence",
+    "productionSchedulerWorkerSmokeEvidence",
+    "productionPlannerReadinessEvidence",
+    "productionTargetProvisioningSmokeEvidence",
+    "productionDailyLoopPreviewSmokeEvidence",
+    "productionLearningLoopStateSmokeEvidence",
+    "productionCycleHistorySmokeEvidence",
+    "productionOwnerAuditSmokeEvidence",
+    "productionProfileFeedbackSmokeEvidence",
+    "productionRecommendationLifecycleSmokeEvidence",
+    "productionDailyLoopWriteSmokeEvidence",
+    "productionLearnerCycleSmokeEvidence",
+    "productionSchedulerDryRunSmokeEvidence",
+    "releaseEvidenceBundleAudit",
+    "platformActionEvidence",
+    "centralVisualEvidence",
+    "releaseWorkbenchSmokeEvidence",
+    "ownerReviewEvidence"
+  ].forEach((evidenceKey) => {
+    assert.doesNotMatch(script, new RegExp(`${evidenceKey}\\s*=\\s*\\{\\s*ok:\\s*true,\\s*source:\\s*"release_readiness_smoke_flag"`));
+  });
   assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
   assert.doesNotMatch(script, /learning_growth_automation_release_readiness/);
   assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);

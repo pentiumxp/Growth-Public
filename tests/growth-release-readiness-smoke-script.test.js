@@ -94,17 +94,17 @@ function deprecatedUiFlag(evidenceKey) {
   };
 }
 
-function deprecatedReleaseWorkbenchFlag() {
-  return {
+function deprecatedReleaseFlag(evidenceKey, checkKey, overrides = {}) {
+  return Object.assign({
     ok: false,
     status: "blocked",
     source: "release_readiness_smoke_flag_deprecated",
-    evidenceKey: "releaseWorkbenchSmokeEvidence",
-    checkKey: "release_workbench_smoke_evidence",
-    error: "validated_release_workbench_evidence_required",
-    requiredAction: "provide_validated_release_workbench_evidence",
+    evidenceKey,
+    checkKey,
+    error: `validated_${checkKey}_required`,
+    requiredAction: `provide_validated_${checkKey}`,
     readyForReleaseEvidence: false
-  };
+  }, overrides);
 }
 
 test("release readiness smoke script parses bounded scope, evidence, and approval selectors", () => {
@@ -121,6 +121,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
       ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily_json" })
     }),
     "--owner-audit-ui-evidence",
+    "--stage-checkpoint-evidence",
     "--stage-checkpoint-controls-evidence",
     "--automation-digest-ui-evidence",
     "--production-proposal-smoke-evidence",
@@ -145,6 +146,8 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-learner-cycle-smoke-evidence",
     "--production-scheduler-dry-run-smoke-evidence",
     "--release-evidence-bundle-audit",
+    "--platform-action-evidence",
+    "--central-visual-evidence",
     "--release-workbench-evidence",
     "--owner-review-evidence",
     "--release-approval-json", JSON.stringify({
@@ -159,32 +162,38 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
   const expectedEvidence = {
     ownerDailyUiEvidence: validUiEvidence("ownerDailyUiEvidence", { evidenceId: "ui_daily_json" }),
     ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence"),
-    stageCheckpointControlsEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    stageCheckpointEvidence: deprecatedReleaseFlag("stageCheckpointEvidence", "stage_checkpoint_evidence"),
+    stageCheckpointControlsEvidence: deprecatedReleaseFlag("stageCheckpointControlsEvidence", "stage_checkpoint_controls_evidence"),
     automationDigestUiEvidence: deprecatedUiFlag("automationDigestUiEvidence"),
-    productionProposalSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    productionProposalSmokeEvidence: deprecatedReleaseFlag("productionProposalSmokeEvidence", "production_proposal_smoke_evidence"),
     automationActionHandoffUiEvidence: deprecatedUiFlag("automationActionHandoffUiEvidence"),
     schedulerExecutionUiEvidence: deprecatedUiFlag("schedulerExecutionUiEvidence"),
     schedulerRunUiEvidence: deprecatedUiFlag("schedulerRunUiEvidence"),
     schedulerWorkerTargetUiEvidence: deprecatedUiFlag("schedulerWorkerTargetUiEvidence"),
-    productionActionHandoffSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerExecutionSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerWorkerTargetSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerWorkerSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionPlannerReadinessEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionTargetProvisioningSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionDailyLoopPreviewSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionLearningLoopStateSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionCycleHistorySmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionOwnerAuditSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionProfileFeedbackSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionRecommendationLifecycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionDailyLoopWriteSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
-    releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" },
-    releaseWorkbenchSmokeEvidence: deprecatedReleaseWorkbenchFlag(),
-    ownerReviewEvidence: { ok: true, source: "release_readiness_smoke_flag" }
+    productionActionHandoffSmokeEvidence: deprecatedReleaseFlag("productionActionHandoffSmokeEvidence", "production_action_handoff_smoke_evidence"),
+    productionSchedulerExecutionSmokeEvidence: deprecatedReleaseFlag("productionSchedulerExecutionSmokeEvidence", "production_scheduler_execution_smoke_evidence"),
+    productionSchedulerRunSmokeEvidence: deprecatedReleaseFlag("productionSchedulerRunSmokeEvidence", "production_scheduler_run_smoke_evidence"),
+    productionSchedulerWorkerTargetSmokeEvidence: deprecatedReleaseFlag("productionSchedulerWorkerTargetSmokeEvidence", "production_scheduler_worker_target_smoke_evidence"),
+    productionSchedulerWorkerSmokeEvidence: deprecatedReleaseFlag("productionSchedulerWorkerSmokeEvidence", "production_scheduler_worker_smoke_evidence"),
+    productionPlannerReadinessEvidence: deprecatedReleaseFlag("productionPlannerReadinessEvidence", "production_planner_readiness_evidence"),
+    productionTargetProvisioningSmokeEvidence: deprecatedReleaseFlag("productionTargetProvisioningSmokeEvidence", "production_target_provisioning_smoke_evidence"),
+    productionDailyLoopPreviewSmokeEvidence: deprecatedReleaseFlag("productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence"),
+    productionLearningLoopStateSmokeEvidence: deprecatedReleaseFlag("productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence"),
+    productionCycleHistorySmokeEvidence: deprecatedReleaseFlag("productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence"),
+    productionOwnerAuditSmokeEvidence: deprecatedReleaseFlag("productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence"),
+    productionProfileFeedbackSmokeEvidence: deprecatedReleaseFlag("productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence"),
+    productionRecommendationLifecycleSmokeEvidence: deprecatedReleaseFlag("productionRecommendationLifecycleSmokeEvidence", "production_recommendation_lifecycle_smoke_evidence"),
+    productionDailyLoopWriteSmokeEvidence: deprecatedReleaseFlag("productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence"),
+    productionLearnerCycleSmokeEvidence: deprecatedReleaseFlag("productionLearnerCycleSmokeEvidence", "production_learner_cycle_smoke_evidence"),
+    productionSchedulerDryRunSmokeEvidence: deprecatedReleaseFlag("productionSchedulerDryRunSmokeEvidence", "production_scheduler_dry_run_smoke_evidence"),
+    releaseEvidenceBundleAudit: deprecatedReleaseFlag("releaseEvidenceBundleAudit", "release_evidence_bundle_audit"),
+    platformActionEvidence: deprecatedReleaseFlag("platformActionEvidence", "platform_action_evidence"),
+    centralVisualEvidence: deprecatedReleaseFlag("centralVisualEvidence", "central_visual_evidence"),
+    releaseWorkbenchSmokeEvidence: deprecatedReleaseFlag("releaseWorkbenchSmokeEvidence", "release_workbench_smoke_evidence", {
+      error: "validated_release_workbench_evidence_required",
+      requiredAction: "provide_validated_release_workbench_evidence"
+    }),
+    ownerReviewEvidence: deprecatedReleaseFlag("ownerReviewEvidence", "owner_review_evidence")
   };
 
   assert.equal(shouldWriteSnapshot(args), true);
@@ -515,6 +524,52 @@ test("release readiness smoke script blocks deprecated release workbench evidenc
     assert.equal(readback.evidencePresent, false);
     assert.equal(readback.invalidReason, "validated_release_workbench_evidence_required");
   });
+});
+
+test("release readiness smoke script blocks deprecated service-owned evidence flags", () => {
+  const cases = [
+    {
+      flag: "--production-planner-readiness-evidence",
+      checkKey: "production_planner_readiness_evidence",
+      evidenceKey: "productionPlannerReadinessEvidence"
+    },
+    {
+      flag: "--central-visual-evidence",
+      checkKey: "central_visual_evidence",
+      evidenceKey: "centralVisualEvidence"
+    },
+    {
+      flag: "--owner-review-evidence-smoke",
+      checkKey: "owner_review_evidence",
+      evidenceKey: "ownerReviewEvidence"
+    }
+  ];
+
+  for (const item of cases) {
+    withTempDb(({ dir, dbPath }) => {
+      const result = runScript([
+        "--workspace-id", "weixin_fanfan",
+        item.flag,
+        "--json"
+      ], {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      });
+
+      assert.equal(result.status, 0);
+      const output = parseStdout(result);
+      const check = output.checks.find((entry) => entry.key === item.checkKey);
+      assert.equal(output.ok, true);
+      assert.equal(output.status, "blocked");
+      assert.equal(check.status, "blocked");
+      assert.equal(check.summary.invalidReason, `validated_${item.checkKey}_required`);
+      assert.equal(check.requiredAction.action, `provide_validated_${item.checkKey}`);
+      assert.equal(output.releaseReview.blockedCheckKeys.includes(item.checkKey), true);
+      const readback = output.evidenceReadback.items.find((entry) => entry.key === item.evidenceKey);
+      assert.equal(readback.evidencePresent, false);
+      assert.equal(readback.invalidReason, `validated_${item.checkKey}_required`);
+    });
+  }
 });
 
 test("release readiness smoke script accepts validator UI evidence summaries through evidence JSON", () => {

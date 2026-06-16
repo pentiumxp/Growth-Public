@@ -157,8 +157,10 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release evidence bundle task. It now also treats backend Owner automation
   review evidence as `owner_review_evidence` after
   `npm run smoke:owner-review-evidence`, the default `owner_review_evidence`
-  release evidence bundle task, the `--owner-review-evidence` readiness flag,
-  or a persisted `owner_review_evidence` release evidence record. This evidence
+  release evidence bundle task, explicit summary evidence JSON, or a persisted
+  `owner_review_evidence` release evidence record. The legacy
+  `--owner-review-evidence` readiness flag is a deprecated remediation marker
+  and cannot satisfy the gate. This evidence
   proves backend readback only and does not replace product UI or visual
   evidence. Owner review evidence now also projects bounded proposal lifecycle
   counts for `proposed`, `accepted`, `skipped`, `expired`, `superseded`,
@@ -185,10 +187,14 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Activation and runtime enablement repositories additionally keep runtime
   mutation flags blocked. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
-  no-write readiness evaluation, accepts
-  `--stage-checkpoint-evidence` after
-  `npm run smoke:stage-assessment` has produced bounded read-only stage
-  checkpoint evidence, accepts
+  no-write readiness evaluation, accepts versioned explicit release evidence
+  through `--evidence-json`, release evidence bundles, or persisted
+  release-evidence record projections, and treats legacy boolean evidence flags
+  for service-owned smoke/readback gates as deprecated remediation markers that
+  return `blocked` instead of fabricating `{ok:true}` evidence. Valid stage
+  checkpoint evidence must come from `npm run smoke:stage-assessment`, a
+  release evidence bundle, explicit summary evidence JSON, or a persisted
+  release-evidence record projection. It accepts
   `--automation-digest-ui-evidence`,
   `--automation-action-handoff-ui-evidence`,
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
@@ -216,58 +222,21 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   smoke:release-workbench` through explicit evidence JSON, the non-default
   `release_workbench` release-bundle task, or a persisted release-evidence
   record projection. Provided but non-passing release evidence is reported as
-  blocked with bounded invalid-reason readback. It accepts
-  `--owner-review-evidence` as backend Owner automation
-  review readback evidence, accepts
-  `--production-proposal-smoke-evidence` after
-  `npm run smoke:proposal` has produced bounded read-only production proposal
-  evidence, accepts
-  `--production-action-handoff-smoke-evidence` after
-  `npm run smoke:action-handoff` has produced bounded Growth-side action
-  handoff smoke evidence, accepts
-  `--production-scheduler-execution-smoke-evidence` after
-  `npm run smoke:scheduler-execution` has produced bounded default-disabled
-  execution evidence, accepts `--production-scheduler-run-smoke-evidence`
-  after `npm run smoke:scheduler-run` has produced bounded default-disabled
-  run evidence, accepts `--production-scheduler-worker-target-smoke-evidence`
-  after `npm run smoke:scheduler-worker-target` has produced bounded reviewed
-  target evidence, accepts
-  `--production-scheduler-worker-smoke-evidence` after
-  `npm run smoke:scheduler-worker` has produced bounded production worker
-  smoke evidence, accepts
-  `--production-planner-readiness-evidence` after
-  `npm run smoke:planner-readiness` has produced bounded no-write production
-  planner readiness evidence, accepts
-  `--production-daily-loop-preview-smoke-evidence` after
-  `npm run smoke:daily-loop-preview` has produced bounded no-write production
-  daily-loop readiness evidence, accepts
-  `--production-learning-loop-state-smoke-evidence` after
-  `npm run smoke:learning-loop-state` has produced bounded no-write production
-  learning-loop state evidence, accepts
-  `--production-cycle-history-smoke-evidence` after
-  `npm run smoke:cycle-history` has produced bounded no-write production
-  cycle-history readback evidence, accepts
-  `--production-owner-audit-smoke-evidence` after
-  `npm run smoke:owner-audit` has produced bounded no-write Owner audit
-  readback evidence, accepts
-  `--production-profile-feedback-smoke-evidence` after
-  `npm run smoke:profile-feedback` has produced bounded no-write completed-cycle
-  profile-feedback evidence, accepts
-  `--production-daily-loop-write-smoke-evidence` as a bounded evidence flag
-  or from an explicit release evidence bundle `daily_loop_write` task,
-  accepts `--production-learner-cycle-smoke-evidence` after
-  `npm run smoke:learner-cycle` has produced bounded no-write production
-  learner-cycle audit evidence, or from the default release evidence bundle
-  `learner_cycle` task,
-  accepts `--production-scheduler-dry-run-smoke-evidence` after
-  `npm run smoke:scheduler-dry-run` has produced bounded no-write production
-  scheduler dry-run evidence, and also performs an internal no-write scheduler
-  dry-run safety check from the release-readiness service,
-  accepts versioned `growth.learningAutomationReleaseEvidenceBundle.v1`
-  evidence bundles through `--evidence-bundle-file` or
-  `--evidence-bundle-json`, and accepts external
-  `releaseEvidenceBundleAudit` evidence from
-  `npm run smoke:release-evidence-bundle-audit`. Growth now also has
+  blocked with bounded invalid-reason readback. The release-readiness CLI now
+  treats legacy boolean service-owned evidence flags for Owner review,
+  production proposal/action-handoff/scheduler/planner/target-provisioning,
+  daily-loop preview/write, learning-loop state, cycle-history, Owner audit,
+  profile-feedback, learner-cycle, scheduler dry-run, release-bundle audit,
+  platform action, central visual, stage checkpoint, stage-checkpoint controls,
+  and release workbench as deprecated remediation markers only. Those flags
+  return blocked metadata and cannot satisfy readiness. Valid evidence for
+  those gates must come from the corresponding smoke output supplied through
+  `--evidence-json`, a versioned
+  `growth.learningAutomationReleaseEvidenceBundle.v1` artifact through
+  `--evidence-bundle-file` / `--evidence-bundle-json`, or a persisted pass
+  release-evidence record projection. Release-readiness still performs its
+  internal no-write scheduler dry-run safety check from the release-readiness
+  service. Growth now also has
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,

@@ -293,7 +293,18 @@ function ownerReviewEvidenceCheck(input) {
   const evidenceKey = "ownerReviewEvidence";
   const checkKey = "owner_review_evidence";
   const label = "Owner automation review evidence readback";
+  const value = evidenceValue(input, evidenceKey);
   if (!evidenceOk(input, evidenceKey)) {
+    if (evidenceProvided(input, evidenceKey)) {
+      return check(checkKey, "blocked", Object.assign({
+        label,
+        evidenceKey,
+        evidencePresent: false,
+        evidenceProvided: true,
+        ownerReviewStageSummaryPresent: false,
+        invalidReason: evidenceFailureReason(value)
+      }, evidenceRef(input, evidenceKey)), evidenceRequiredAction(value, "run_owner_review_evidence_smoke"));
+    }
     return check(checkKey, "missing", {
       label,
       evidenceKey,
@@ -303,7 +314,7 @@ function ownerReviewEvidenceCheck(input) {
       requiredActor: "owner"
     });
   }
-  const summary = ownerReviewStageSummary(evidenceValue(input, evidenceKey));
+  const summary = ownerReviewStageSummary(value);
   return check(checkKey, "pass", Object.assign({
     label,
     evidenceKey,

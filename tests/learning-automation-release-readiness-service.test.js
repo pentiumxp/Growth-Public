@@ -675,6 +675,37 @@ test("automation release readiness service blocks provided non-passing release e
   assert.equal(readback.evidenceId, "release_workbench_deprecated_flag");
 });
 
+test("automation release readiness service blocks provided non-passing Owner review evidence", () => {
+  const { service } = createService();
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: {
+      ownerReviewEvidence: {
+        ok: false,
+        status: "blocked",
+        evidenceId: "owner_review_deprecated_flag",
+        source: "release_readiness_smoke_flag_deprecated",
+        error: "validated_owner_review_evidence_required",
+        requiredAction: "provide_validated_owner_review_evidence"
+      }
+    }
+  }));
+
+  const ownerReview = result.checks.find((item) => item.key === "owner_review_evidence");
+  const readback = result.evidenceReadback.items.find((item) => item.key === "ownerReviewEvidence");
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "blocked");
+  assert.equal(ownerReview.status, "blocked");
+  assert.equal(ownerReview.summary.evidenceProvided, true);
+  assert.equal(ownerReview.summary.evidencePresent, false);
+  assert.equal(ownerReview.summary.ownerReviewStageSummaryPresent, false);
+  assert.equal(ownerReview.summary.invalidReason, "validated_owner_review_evidence_required");
+  assert.equal(ownerReview.requiredAction.action, "provide_validated_owner_review_evidence");
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("owner_review_evidence"), true);
+  assert.equal(readback.evidencePresent, false);
+  assert.equal(readback.invalidReason, "validated_owner_review_evidence_required");
+  assert.equal(readback.evidenceId, "owner_review_deprecated_flag");
+});
+
 test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {
   const { service } = createService({
     config: {
