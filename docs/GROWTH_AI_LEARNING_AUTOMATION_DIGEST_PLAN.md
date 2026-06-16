@@ -32,8 +32,9 @@ Backend status:
   `/api/v1/growth/automation/failure-policies` routes;
 - Growth-owned action handoff backend is implemented locally through
   `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
-- embedded digest UI, platform Action Inbox/Web Push product evidence, and
-  writeful scheduling remain future work.
+- embedded digest read/refresh/review UI is implemented in the Owner generation
+  panel for persisted digest rows. Digest creation UI, platform Action
+  Inbox/Web Push product evidence, and writeful scheduling remain future work.
 
 ## Position In The Loop
 
@@ -336,7 +337,7 @@ private content.
 
 ## UI Contract
 
-The Owner UI should treat digest review as a later panel after proposal review.
+The Owner UI treats digest review as a panel after proposal review.
 
 Minimum UI responsibilities:
 
@@ -345,13 +346,14 @@ Minimum UI responsibilities:
   candidates;
 - show bounded candidate rationale and the explicit Owner action;
 - show why blocked candidates are blocked;
-- let Owner mark the digest reviewed, archived, or superseded;
+- let Owner mark a pending digest reviewed, archived, or superseded;
 - never auto-publish after digest creation or review;
 - keep mobile scroll and dark-mode contrast within the central visual
   contract.
 
-Digest UI is not required before the first Owner daily-card loop, but it is
-required before writeful scheduling or platform notification handoff.
+The implemented UI covers persisted digest listing and review only. Digest
+creation remains a later explicit Owner action. Digest UI evidence is required
+before writeful scheduling or platform notification handoff.
 
 ## Harness Contract
 
@@ -398,12 +400,14 @@ Architecture harness:
   execution, scheduler ticks, action handoff, stage assessment activation, or
   repositories directly.
 
-UI harness, when implemented:
+UI harness:
 
 - digest list renders counts and candidate state;
 - explicit publish action is displayed as manual and is not triggered by
   digest creation/review;
 - blocked reasons are visible;
+- review payloads are summary-only and can mark pending digests `reviewed`,
+  `archived`, or `superseded`;
 - mobile scroll reaches final controls;
 - dark mode contrast is readable.
 

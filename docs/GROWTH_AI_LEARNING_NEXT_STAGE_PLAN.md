@@ -186,8 +186,10 @@ automation surfaces are not closed:
   selector is supplied;
 - proposal selected-cycle create/list/review/accepted-publish UI now has a
   minimal Owner panel over existing proposal routes, including terminal
-  `expired` and `superseded` proposal decisions. Digest/action/execution/run
-  and worker-target UI remains future work;
+  `expired` and `superseded` proposal decisions. Digest read/refresh/review UI
+  now lists persisted dry-run packets and can mark pending digests `reviewed`,
+  `archived`, or `superseded` without executing them. Digest creation,
+  action/execution/run, and worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual release evidence exists for the Growth plugin
   shell. Product-specific mobile/dark checks for Owner generation, audit,

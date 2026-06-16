@@ -144,6 +144,23 @@
       return query ? `?${query}` : "";
     }
 
+    function automationDigestQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "limit", payload.limit || 6);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function cycleAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -249,6 +266,10 @@
 
     function fetchGrowthAutomationProposals(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("automation", "proposals")}${automationProposalQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function fetchGrowthAutomationDigests(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "digests")}${automationDigestQuery(targetWorkspaceId, payload)}`);
     }
 
     function createGrowthAutomationProposal(payload = {}, targetWorkspaceId = getWorkspaceId()) {
@@ -373,6 +394,14 @@
       }, payload));
     }
 
+    function reviewGrowthAutomationDigest(digestId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const id = clean(digestId);
+      if (!id) throw new Error("missing_digest_id");
+      return postJson(growthApiPath("automation", "digests", encodeURIComponent(id), "review"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function reviewGrowthRecommendationLifecycle(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("recommendations", "lifecycle", "review"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -394,6 +423,7 @@
       evaluateGrowthStageAssessment,
       createGrowthAutomationProposal,
       fetchCardGenerationContext,
+      fetchGrowthAutomationDigests,
       fetchGrowthAutomationProposals,
       fetchGrowthCycleAudit,
       fetchGrowthCycleCompleteness,
@@ -411,6 +441,7 @@
       publishGrowthDailyLoop,
       publishGrowthAutomationProposal,
       retryGrowthEvaluation,
+      reviewGrowthAutomationDigest,
       reviewGrowthAutomationProposal,
       reviewGrowthRecommendationLifecycle,
       resolveGrowthApiPath,

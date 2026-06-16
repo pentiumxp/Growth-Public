@@ -766,6 +766,39 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function createAutomationDigestQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationDigestReviewPayload({ context = {}, workspaceId = "", digest = {}, status = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const targetStatus = clean(status);
+    const selectedCandidateIds = asArray(digest.requiredActions)
+      .map((action = {}) => clean(action.candidateId || action.candidate_id))
+      .filter(Boolean);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      digest_id: clean(digest.digestId || digest.digest_id),
+      status: targetStatus,
+      selected_candidate_ids: selectedCandidateIds,
+      reason: automationDigestReviewReason(targetStatus),
+      reviewed_by: "owner"
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
+  function automationDigestReviewReason(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "reviewed") return "Owner reviewed automation digest without publishing.";
+    if (value === "archived") return "Owner archived automation digest without publishing.";
+    if (value === "superseded") return "Owner superseded automation digest without publishing.";
+    return "Owner reviewed automation digest.";
+  }
+
   function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
     const plan = context.suggestedPlan || {};
     const defaults = context.generationDefaults || {};
@@ -943,6 +976,115 @@
         ${automationProposalRows(holder, escapeHtml)}
       </div>
       ${automationProposalStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationDigestStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "pending") return "待复核";
+    if (value === "reviewed") return "已复核";
+    if (value === "archived") return "已归档";
+    if (value === "superseded") return "已替代";
+    if (value === "failed") return "失败";
+    return value || "待摘要";
+  }
+
+  function automationDigestActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const digest = result.digest || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "reviewed"
+      ? `Digest 已记录为 ${automationDigestStatusText(digest.status)}。`
+      : status === "submitting"
+        ? "正在通过 Growth automation digest service 写入。"
+        : error || "Digest 操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-digest-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationDigestStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationDigestRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const digests = asArray(data.digests).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取自动化 digest。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">自动化 digest 读取失败：${escapeHtml(clean(holder.error) || "automation_digests_failed")}</div>`;
+    if (!digests.length) return `<div class="learning-card-generation-proposal-empty">暂无自动化 digest。生成并接受 proposal 后，后端 dry-run digest 会显示在这里。</div>`;
+    return digests.map((digest) => {
+      const digestId = clean(digest.digestId || digest.digest_id);
+      const digestStatus = clean(digest.status);
+      const canReview = digestStatus === "pending";
+      const summary = digest.summary || {};
+      const requiredActions = asArray(digest.requiredActions || digest.required_actions);
+      const blocked = asArray(digest.blocked);
+      const candidates = asArray(digest.candidates);
+      const firstAction = requiredActions[0] || {};
+      const firstBlocked = blocked[0] || {};
+      const title = clean(digestId || "自动化 digest");
+      const detail = clean(firstAction.proposalId || firstAction.proposal_id || firstBlocked.reason || firstBlocked.decision || digest.createdAt || digest.created_at || "summary-only digest");
+      const counts = [
+        `would ${Number(summary.wouldPublish || summary.would_publish || 0) || 0}`,
+        `blocked ${Number(summary.blocked || 0) || 0}`,
+        `skipped ${Number(summary.skipped || 0) || 0}`,
+        `actions ${Number(summary.requiredActions || summary.required_actions || requiredActions.length || 0) || 0}`
+      ].join(" · ");
+      const target = clean(digest.subject || digest.domain || digest.domainPackId || digest.domain_pack_id || "bounded scope");
+      return `<div class="learning-card-generation-proposal-row" data-automation-digest-row data-automation-digest-id="${escapeHtml(digestId)}">
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+          <small>${escapeHtml(`${target} · ${counts}`)}</small>
+          ${candidates.length ? `<small>${escapeHtml(`候选 ${candidates.length} · 手动发布，不自动执行`)}</small>` : ""}
+        </span>
+        <em>${escapeHtml(digestStatus || "digest")}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-digest-review data-automation-digest-id="${escapeHtml(digestId)}" data-automation-digest-status="reviewed" ${busy || !canReview ? "disabled" : ""}>复核</button>
+          <button type="button" data-automation-digest-review data-automation-digest-id="${escapeHtml(digestId)}" data-automation-digest-status="archived" ${busy || !canReview ? "disabled" : ""}>归档</button>
+          <button type="button" data-automation-digest-review data-automation-digest-id="${escapeHtml(digestId)}" data-automation-digest-status="superseded" ${busy || !canReview ? "disabled" : ""}>替代</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationDigestPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationDigests || {};
+    const data = holder.data || {};
+    const digests = asArray(data.digests);
+    const pendingCount = digests.filter((item) => clean(item.status) === "pending").length;
+    const reviewedCount = digests.filter((item) => clean(item.status) === "reviewed").length;
+    const requiredActionCount = digests.reduce((total, item = {}) => total + asArray(item.requiredActions || item.required_actions).length, 0);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const reason = status === "loading"
+      ? "正在读取自动化 digest。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_digests_failed"
+        : pendingCount
+          ? "Owner 可以复核 digest，但不会自动发布或通知。"
+          : "暂无待复核 digest；刷新只读取已持久化摘要。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-digests" data-automation-digest-panel data-automation-digest-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>自动化 Digest</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-digest-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新 Digest"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>待复核</small><strong>${escapeHtml(String(pendingCount))}</strong></span>
+        <span><small>已复核</small><strong>${escapeHtml(String(reviewedCount))}</strong></span>
+        <span><small>手动动作</small><strong>${escapeHtml(String(requiredActionCount))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationDigestRows(holder, escapeHtml)}
+      </div>
+      ${automationDigestActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -1876,6 +2018,7 @@
           ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
+          ${automationDigestPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -1918,6 +2061,8 @@
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,
     createAutomationProposalQueryPayload,
+    createAutomationDigestQueryPayload,
+    createAutomationDigestReviewPayload,
     createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,

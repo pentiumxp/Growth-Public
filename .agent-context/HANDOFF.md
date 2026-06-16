@@ -9,6 +9,88 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T22:34+08:00 - Automation Digest Owner UI Controls
+
+- Status: implemented and locally validated; pending commit/push. Not deployed
+  per Owner instruction to deploy after the broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now lists persisted automation dry-run
+    digest packets for the selected Growth target;
+  - pending digests can be marked `reviewed`, `archived`, or `superseded`
+    from the Growth plugin interface;
+  - digest review remains read/review only. It does not create digests, publish
+    cards, send notifications, call Gateway, run scheduler workers, or execute
+    action handoffs.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationDigests()` and `reviewGrowthAutomationDigest()`,
+    including Home AI plugin proxy routing;
+  - `public/growth-card-generation-ui.js` adds summary-only digest query/review
+    payload builders, persisted digest counts, blocked/action state rows,
+    manual-publish wording, and `reviewed` / `archived` / `superseded`
+    buttons;
+  - `public/app.js` loads digest readbacks with the Owner generation context,
+    wires refresh/review buttons, and refreshes digest/release workbench
+    readbacks after review;
+  - `public/index.html` static asset version is bumped to
+    `20260616-automation-digest-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers API helpers, proxy paths,
+    Owner panel rendering, payload privacy, and app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for digest read/review helpers;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_DIGEST_PLAN.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - `node --check public/growth-api-client.js` passed;
+  - `node --check public/growth-card-generation-ui.js` passed;
+  - `node --check public/app.js` passed;
+  - `node --check tests/growth-frontend-adapter.test.js` passed;
+  - `node --check tests/growth-architecture-boundary.test.js` passed;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-digest-repository.test.js
+    tests/learning-automation-digest-service.test.js
+    tests/growth-automation-digest-smoke-script.test.js
+    tests/growth-routes.test.js` passed `60/60`;
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - Home AI H2 checks passed:
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/task-list-ui.test.js`,
+    `node tests/static-cache-version-harness.test.js`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,853 nodes, 19,561 edges, index
+    up to date.
+- AI Ops evidence:
+  - changed-file required-checks returned H2 with visual lane required;
+  - visual lane allocated:
+    `ios-pwa-3` / `http://127.0.0.1:19075/`;
+  - test evidence ledger record:
+    `evidence-0da46901-89af-417b-973d-03ea08e8fa00`;
+  - visual evidence ledger record:
+    `evidence-7811dbf8-8549-4bc5-a7a6-eb6bc616995c`.
+- Visual/tooling note:
+  - Browser plugin `iab` was unavailable, and local Playwright/Chromium was not
+    installed;
+  - the central iOS PWA lane was allocated, Appium and live debug server were
+    started, and `dark-growth-surfaces` was attempted;
+  - the harness stalled without artifact output. Appium logged repeated
+    RemoteDebugger `Empty page dictionary received`, so this is recorded as
+    failed visual evidence, not a visual pass.
+- Boundary:
+  - no Gateway/model call, card generation, plan publication, digest creation,
+    proposal publication, evaluation, scheduler execution/run/tick, platform
+    notification/action handoff, stage activation, database schema change,
+    runtime config mutation, production sync, or deployment was performed.
+
 ## 2026-06-16T22:18+08:00 - Automation Proposal Lifecycle Owner UI Controls
 
 - Status: implemented, validated, and committed/pushed as

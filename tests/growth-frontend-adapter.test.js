@@ -250,6 +250,17 @@ test("Growth API client exposes card generation context and write helpers", asyn
   await client.publishGrowthAutomationProposal("lgauto_proposed_1", {
     generation_key: "automation_proposal:lgauto_proposed_1"
   }, "weixin_fanfan");
+  await client.fetchGrowthAutomationDigests({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    status: "pending",
+    limit: 4
+  }, "weixin_fanfan");
+  await client.reviewGrowthAutomationDigest("lgadig_pending_1", {
+    status: "reviewed",
+    selected_candidate_ids: ["lgauto_ready_1:lgplan_next:plan_item_next"],
+    reason: "Owner reviewed digest."
+  }, "weixin_fanfan");
   await client.fetchGrowthStageCheckpointControls({
     learner_id: "fanfan",
     program_id: "program_science",
@@ -357,9 +368,17 @@ test("Growth API client exposes card generation context and write helpers", asyn
     workspace_id: "weixin_fanfan",
     generation_key: "automation_proposal:lgauto_proposed_1"
   });
-  assert.equal(calls[23].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
-  assert.equal(calls[24].path, "/api/v1/growth/recommendations/lifecycle/review");
+  assert.equal(calls[23].path, "/api/v1/growth/automation/digests?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&status=pending&limit=4");
+  assert.equal(calls[24].path, "/api/v1/growth/automation/digests/lgadig_pending_1/review");
   assert.deepEqual(JSON.parse(calls[24].options.body), {
+    workspace_id: "weixin_fanfan",
+    status: "reviewed",
+    selected_candidate_ids: ["lgauto_ready_1:lgplan_next:plan_item_next"],
+    reason: "Owner reviewed digest."
+  });
+  assert.equal(calls[25].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
+  assert.equal(calls[26].path, "/api/v1/growth/recommendations/lifecycle/review");
+  assert.deepEqual(JSON.parse(calls[26].options.body), {
     workspace_id: "weixin_fanfan",
     trajectory_id: "lgtraj_pending_1",
     status: "skipped",
@@ -399,6 +418,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.createGrowthAutomationProposal({ source_task_card_id: "ltask_1" }, "weixin_stephen");
   await client.reviewGrowthAutomationProposal("lgauto_1", { status: "skipped" }, "weixin_stephen");
   await client.publishGrowthAutomationProposal("lgauto_1", { requested_by: "owner" }, "weixin_stephen");
+  await client.fetchGrowthAutomationDigests({ learner_id: "fanfan", status: "reviewed" }, "weixin_stephen");
+  await client.reviewGrowthAutomationDigest("lgadig_1", { status: "archived" }, "weixin_stephen");
   await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
   await client.reviewGrowthRecommendationLifecycle({ trajectory_id: "lgtraj_1", status: "expired" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
@@ -422,9 +443,15 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   });
   assert.equal(calls[13].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/proposals/lgauto_1/decision");
   assert.equal(calls[14].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/proposals/lgauto_1/publish");
-  assert.equal(calls[15].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
-  assert.equal(calls[16].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/recommendations/lifecycle/review");
+  assert.equal(calls[15].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/digests?targetWorkspaceId=weixin_stephen&learnerId=fanfan&status=reviewed&limit=6");
+  assert.equal(calls[16].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/digests/lgadig_1/review");
   assert.deepEqual(JSON.parse(calls[16].options.body), {
+    workspace_id: "weixin_stephen",
+    status: "archived"
+  });
+  assert.equal(calls[17].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
+  assert.equal(calls[18].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/recommendations/lifecycle/review");
+  assert.deepEqual(JSON.parse(calls[18].options.body), {
     workspace_id: "weixin_stephen",
     trajectory_id: "lgtraj_1",
     status: "expired"
@@ -846,6 +873,68 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         execution: { status: "failed", error: "learning_plan_publish_generation_failed" }
       }]
     },
+    automationDigests: {
+      ok: true,
+      count: 1,
+      digests: [{
+        digestId: "lgadig_pending_1",
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        status: "pending",
+        summary: {
+          inspected: 2,
+          wouldPublish: 1,
+          blocked: 1,
+          skipped: 0,
+          requiredActions: 1
+        },
+        candidates: [{
+          candidateId: "lgauto_ready_1:lgplan_next:plan_item_next",
+          proposalId: "lgauto_ready_1",
+          planDraftId: "lgplan_next",
+          selectedItemId: "plan_item_next",
+          decision: "would_publish",
+          reason: "accepted_proposal_ready_for_explicit_publish",
+          targetNodeIds: ["kg_science_fair_test"],
+          dryRun: true,
+          writePlanned: false,
+          writesPerformed: false,
+          publishPlanned: false,
+          publishRequiresOwnerAction: true
+        }, {
+          candidateId: "lgauto_blocked_1:lgplan_blocked:plan_item_blocked",
+          proposalId: "lgauto_blocked_1",
+          planDraftId: "lgplan_blocked",
+          selectedItemId: "plan_item_blocked",
+          decision: "blocked_audit",
+          reason: "source_cycle_not_ready",
+          targetNodeIds: ["kg_science_old"],
+          dryRun: true,
+          writePlanned: false,
+          writesPerformed: false,
+          publishPlanned: false,
+          publishRequiresOwnerAction: false
+        }],
+        blocked: [{
+          candidateId: "lgauto_blocked_1:lgplan_blocked:plan_item_blocked",
+          proposalId: "lgauto_blocked_1",
+          decision: "blocked_audit",
+          reason: "source_cycle_not_ready"
+        }],
+        requiredActions: [{
+          candidateId: "lgauto_ready_1:lgplan_next:plan_item_next",
+          proposalId: "lgauto_ready_1",
+          endpoint: "/api/v1/growth/automation/proposals/lgauto_ready_1/publish"
+        }],
+        createdAt: "2026-06-16T10:00:00.000Z",
+        updatedAt: "2026-06-16T10:00:00.000Z"
+      }]
+    },
     completionPolicy: { mode: "daily_score_once" },
     historySummary: { learnerSummary: { recentCardCount: 6, completedRecentCardCount: 4, evaluationCount: 4, reflectionCount: 1 } }
   };
@@ -920,6 +1009,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             proposal: {
               proposalId: "lgauto_proposed_1",
               status: "accepted"
+            }
+          }
+        },
+        automationDigests: {
+          status: "ready",
+          data: context.automationDigests,
+          actionStatus: "reviewed",
+          actionResult: {
+            digest: {
+              digestId: "lgadig_pending_1",
+              status: "reviewed"
             }
           }
         },
@@ -1056,6 +1156,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-automation-proposal-publish/);
   assert.match(html, /建议已记录为 已接受/);
   assert.match(html, /Accepted evidence repair card/);
+  assert.match(html, /data-automation-digest-panel/);
+  assert.match(html, /自动化 Digest/);
+  assert.match(html, /data-automation-digest-refresh/);
+  assert.match(html, /data-automation-digest-review/);
+  assert.match(html, /data-automation-digest-status="reviewed"/);
+  assert.match(html, /data-automation-digest-status="archived"/);
+  assert.match(html, /data-automation-digest-status="superseded"/);
+  assert.match(html, /lgadig_pending_1/);
+  assert.match(html, /lgauto_ready_1/);
+  assert.match(html, /手动发布，不自动执行/);
+  assert.match(html, /Digest 已记录为 已复核/);
   assert.match(html, /data-release-workbench-panel/);
   assert.match(html, /data-release-workbench-status="blocked"/);
   assert.match(html, /发布工作台/);
@@ -1237,6 +1348,42 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     card_schema_version: "growth.card.authoring.v1",
     requested_by: "owner"
   });
+
+  const digestQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationDigestQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(digestQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    limit: 6
+  });
+
+  const digestReviewPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationDigestReviewPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    digest: context.automationDigests.digests[0],
+    status: "reviewed"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(digestReviewPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    digest_id: "lgadig_pending_1",
+    status: "reviewed",
+    selected_candidate_ids: ["lgauto_ready_1:lgplan_next:plan_item_next"],
+    reason: "Owner reviewed automation digest without publishing.",
+    reviewed_by: "owner"
+  });
+  assert.equal(Object.hasOwn(digestReviewPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(digestReviewPayload, "transcript"), false);
 
   const proposalCreatePayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalCreatePayload({
     context,
@@ -2238,7 +2385,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260616-proposal-lifecycle-ui-v1";
+  const staticVersion = "20260616-automation-digest-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -2304,6 +2451,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
   assert.match(source, /data-automation-proposal-publish/);
+  assert.match(source, /data-automation-digest-refresh/);
+  assert.match(source, /data-automation-digest-review/);
   assert.match(source, /data-recommendation-lifecycle-review/);
   assert.match(source, /function createOwnerCorrectionPayload/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
@@ -2315,6 +2464,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function reviewAutomationProposalFromUi/);
   assert.match(source, /function createAutomationProposalPublishPayload/);
   assert.match(source, /function publishAutomationProposalFromUi/);
+  assert.match(source, /function refreshAutomationDigests/);
+  assert.match(source, /function createAutomationDigestReviewPayload/);
+  assert.match(source, /function reviewAutomationDigestFromUi/);
   assert.match(source, /function createRecommendationLifecycleDecisionPayload/);
   assert.match(source, /function reviewRecommendationLifecycleFromUi/);
   assert.match(source, /function createCycleAuditQueryPayload/);
@@ -2325,6 +2477,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthAutomationDigests\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.reviewGrowthAutomationDigest\(digestId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthRecommendationLifecycle\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.provisionGrowthDomainPack\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleAudit\(payload, targetWorkspaceId\)/);
