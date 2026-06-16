@@ -39,6 +39,7 @@ const { createLearningAutomationSchedulerRunService } = require("../services/lea
 const { createLearningAutomationSchedulerService } = require("../services/learning-automation-scheduler-service");
 const { createLearningAutomationSchedulerWorkerService } = require("../services/learning-automation-scheduler-worker-service");
 const { createLearningAutomationSchedulerWorkerTargetService } = require("../services/learning-automation-scheduler-worker-target-service");
+const { createLearningAutomationUiEvidenceService } = require("../services/learning-automation-ui-evidence-service");
 const { createLearningCardAuthoringService } = require("../services/learning-card-authoring-service");
 const { createLearningCardAuthoringValidationService } = require("../services/learning-card-authoring-validation-service");
 const { createLearningCardEvaluationService } = require("../services/learning-card-evaluation-service");
@@ -273,6 +274,9 @@ function createServices(config) {
     outboxStore: growthEventOutboxStore
   });
   const learningAutomationCentralVisualEvidenceService = createLearningAutomationCentralVisualEvidenceService({
+    readFile: fs.readFileSync
+  });
+  const learningAutomationUiEvidenceService = createLearningAutomationUiEvidenceService({
     readFile: fs.readFileSync
   });
   const learningAutomationReleaseEvidenceBundleAuditService = createLearningAutomationReleaseEvidenceBundleAuditService({
@@ -552,6 +556,7 @@ function createServices(config) {
     learningAutomationSchedulerService,
     learningAutomationSchedulerWorkerService,
     learningAutomationSchedulerWorkerTargetService,
+    learningAutomationUiEvidenceService,
     learningCycleAuditService,
     learningCycleHistoryService,
     learningDailyLoopService,

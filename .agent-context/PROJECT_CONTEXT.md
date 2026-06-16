@@ -193,7 +193,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--automation-action-handoff-ui-evidence`,
   `--scheduler-execution-ui-evidence`, `--scheduler-run-ui-evidence`, and
   `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
-  flags, accepts
+  flags, and now has `npm run smoke:ui-evidence`, which validates an explicit
+  summary-only UI/visual artifact for a canonical UI evidence key before that
+  output is optionally persisted through the existing release-evidence record
+  path. The UI evidence validator requires matching gate metadata, required
+  coverage markers, passing assertions, screenshot or DOM evidence, and a
+  private-value-safe public projection; it does not run Appium, the Home AI
+  visual harness, Gateway, scheduler actions, generation, evaluation,
+  notification delivery, stage activation, learner-state writes, or release
+  evidence persistence. It accepts
   `--release-workbench-evidence` as final Owner action-template readback
   evidence, accepts `--owner-review-evidence` as backend Owner automation
   review readback evidence, accepts

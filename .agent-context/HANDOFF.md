@@ -9,6 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T17:29+08:00 - UI Evidence Validator Harness Slice
+
+- Status: implemented locally; validation is in progress. This slice adds a
+  Growth-owned validator for release-readiness UI evidence artifacts. It does
+  not mark any production UI evidence gate complete by itself and does not
+  write release evidence records.
+- Added:
+  - `learning-automation-ui-evidence-service`;
+  - `npm run smoke:ui-evidence`;
+  - service graph wiring through `src/app/services.js`;
+  - service and smoke-script harness tests;
+  - architecture guard coverage;
+  - docs in the Growth platform pointer, plugin architecture, and next-stage
+    plan.
+- Boundary:
+  - accepted canonical evidence keys are `ownerDailyUiEvidence`,
+    `ownerAuditUiEvidence`, `proposalReviewUiEvidence`,
+    `automationDigestUiEvidence`, `automationActionHandoffUiEvidence`,
+    `schedulerExecutionUiEvidence`, `schedulerRunUiEvidence`, and
+    `schedulerWorkerTargetUiEvidence`;
+  - input must be an explicit summary UI/visual artifact supplied by file,
+    inline JSON, or `GROWTH_UI_EVIDENCE_FILE`;
+  - validation requires matching gate metadata, required coverage markers,
+    passing assertions, screenshot or DOM evidence, and no private path/token
+    values in the public projection;
+  - the service must not run Home AI visual tooling, call Gateway, publish,
+    generate, evaluate, execute scheduler actions, deliver notifications,
+    activate stage assessments, mutate learner state, inspect SQLite directly,
+    or persist release evidence.
+- Next:
+  - finish focused validation;
+  - if validation passes, commit/push and deploy through the central Home AI
+    plugin deploy path.
+
+## 2026-06-16T17:17+08:00 - Growth Plugin Redeploy at Current Completed State
+
+- Status: deployed through the canonical Home AI Mac plugin deployment path.
+  This was a deployment-only slice for the already committed Growth state; no
+  Growth business logic changed in this step.
+- Source:
+  - development workspace:
+    `/Users/hermes-dev/HermesMobileDev/plugins/growth`;
+  - source ref: `51da3e821ca1`;
+  - source dirty state: `false`.
+- Deployment command shape:
+  - from `/Users/hermes-dev/HermesMobileDev/app`;
+  - `npm run --silent deploy:macos -- --plugin growth --source /Users/hermes-dev/HermesMobileDev/plugins/growth --execute --password-file <local password file> --json`.
+- Production result:
+  - target: `plugin:growth`;
+  - production path: `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T091638Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - health URL: `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest`;
+  - manifest health check passed on attempt 2.
+- Validation notes:
+  - launchd print passed and showed the Growth plugin running from
+    `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - manifest readback returned `id=growth`, `title=成长`,
+    `kind=embedded_app`, `entry_url=/?embed=hermes`, six manifest actions,
+    and `mcp_toolset=growth`;
+  - codex shared-auth permission repair passed;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+
 ## 2026-06-16T16:15+08:00 - Profile Feedback Selector Discovery Diagnostics
 
 - Status: implemented, pushed, deployed, production-verified, and documented.

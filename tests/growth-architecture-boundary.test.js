@@ -1263,6 +1263,27 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(automationCentralVisualEvidenceService, /generateCard/);
   assert.doesNotMatch(automationCentralVisualEvidenceService, /Gateway/);
   assert.doesNotMatch(automationCentralVisualEvidenceService, /activateStageAssessment/);
+
+  const automationUiEvidenceService = read(path.join("src", "services", "learning-automation-ui-evidence-service.js"));
+  assert.match(automationUiEvidenceService, /createLearningAutomationUiEvidenceService/);
+  assert.match(automationUiEvidenceService, /evaluate/);
+  assert.match(automationUiEvidenceService, /UI_GATE_SPECS/);
+  assert.match(automationUiEvidenceService, /ownerDailyUiEvidence/);
+  assert.match(automationUiEvidenceService, /requiredCoverage/);
+  assert.match(automationUiEvidenceService, /growthRunsNoVisualTooling/);
+  assert.match(automationUiEvidenceService, /homeAiOwnsVisualHarness/);
+  assert.match(automationUiEvidenceService, /summaryOnly: true/);
+  assert.doesNotMatch(automationUiEvidenceService, /spawnSync/);
+  assert.doesNotMatch(automationUiEvidenceService, /execFile|exec\(/);
+  assert.doesNotMatch(automationUiEvidenceService, /ios:pwa:visual/);
+  assert.doesNotMatch(automationUiEvidenceService, /fetch\(/);
+  assert.doesNotMatch(automationUiEvidenceService, /publishPlanItem/);
+  assert.doesNotMatch(automationUiEvidenceService, /publishAcceptedProposal/);
+  assert.doesNotMatch(automationUiEvidenceService, /recordExecution/);
+  assert.doesNotMatch(automationUiEvidenceService, /generateCard/);
+  assert.doesNotMatch(automationUiEvidenceService, /Gateway/);
+  assert.doesNotMatch(automationUiEvidenceService, /activateStageAssessment/);
+  assert.doesNotMatch(automationUiEvidenceService, /learning_growth_/);
   assert.doesNotMatch(automationCentralVisualEvidenceService, /learning_growth_/);
   assert.doesNotMatch(automationCentralVisualEvidenceService, /rawAnswer:/);
   assert.doesNotMatch(automationCentralVisualEvidenceService, /rawPrompt:/);
@@ -1782,6 +1803,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
     "node scripts/smoke-growth-central-visual-evidence.js"
   );
   assert.equal(
+    packageJson.scripts["smoke:ui-evidence"],
+    "node scripts/smoke-growth-ui-evidence.js"
+  );
+  assert.equal(
     packageJson.scripts["smoke:release-evidence-bundle-audit"],
     "node scripts/smoke-growth-release-evidence-bundle-audit.js"
   );
@@ -1865,6 +1890,7 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(packageJson.scripts.check, /node --check scripts\/build-growth-release-evidence-bundle\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-platform-action-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-central-visual-evidence\.js/);
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-ui-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-evidence-bundle-audit\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-automation-release-evidence\.js/);
   assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-release-collection-run\.js/);
@@ -1893,6 +1919,10 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(
     packageJson.scripts.check,
     /node --check src\/services\/learning-automation-central-visual-evidence-service\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-ui-evidence-service\.js/
   );
   assert.match(
     packageJson.scripts.check,
@@ -1998,10 +2028,29 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(centralVisualScript, /executeOnce/);
   assert.doesNotMatch(centralVisualScript, /runOnce/);
 
+  const uiEvidenceScript = read(path.join("scripts", "smoke-growth-ui-evidence.js"));
+  assert.match(uiEvidenceScript, /readEnv/);
+  assert.match(uiEvidenceScript, /createServices/);
+  assert.match(uiEvidenceScript, /learningAutomationUiEvidenceService/);
+  assert.match(uiEvidenceScript, /\.evaluate/);
+  assert.match(uiEvidenceScript, /--ui-evidence-file/);
+  assert.doesNotMatch(uiEvidenceScript, /spawnSync/);
+  assert.doesNotMatch(uiEvidenceScript, /ios:pwa:visual/);
+  assert.doesNotMatch(uiEvidenceScript, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(uiEvidenceScript, /publishPlanItem/);
+  assert.doesNotMatch(uiEvidenceScript, /generateCard/);
+  assert.doesNotMatch(uiEvidenceScript, /executeOnce/);
+  assert.doesNotMatch(uiEvidenceScript, /runOnce/);
+
   const centralVisualService = read(path.join("src", "services", "learning-automation-central-visual-evidence-service.js"));
   assert.match(centralVisualService, /PRIVATE_VALUE_PATTERN/);
   assert.match(centralVisualService, /scanPrivateValues/);
   assert.match(centralVisualService, /no_private_value_leaks/);
+
+  const uiEvidenceService = read(path.join("src", "services", "learning-automation-ui-evidence-service.js"));
+  assert.match(uiEvidenceService, /PRIVATE_VALUE_PATTERN/);
+  assert.match(uiEvidenceService, /scanPrivateValues/);
+  assert.match(uiEvidenceService, /no_private_value_leaks/);
 
   const bundleAuditScript = read(path.join("scripts", "smoke-growth-release-evidence-bundle-audit.js"));
   assert.match(bundleAuditScript, /readEnv/);
