@@ -13924,6 +13924,13 @@ body.task-markdown-preview-open {
   gap: 6px;
 }
 
+.learning-card-generation-proposal-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .learning-card-generation-proposal-empty {
   min-height: 52px;
   display: grid;
@@ -15095,6 +15102,14 @@ body.task-markdown-preview-open {
   .learning-card-generation-provisioning-actions button,
   .learning-card-generation-cycle-actions button {
     flex: 1 1 auto;
+  }
+
+  .learning-card-generation-proposal-head-actions {
+    justify-content: stretch;
+  }
+
+  .learning-card-generation-proposal-head-actions button {
+    flex: 1 1 120px;
   }
 
   .learning-card-generation-correction-form label {

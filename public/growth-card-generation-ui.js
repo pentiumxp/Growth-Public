@@ -709,6 +709,38 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function createAutomationProposalCreatePayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const selected = cycleSelectionPayload(selectedCycle || {});
+    const targetNodeIds = firstCleanArray(
+      selected.target_node_ids,
+      recommendation.targetNodeIds,
+      plan.targetNodeIds,
+      [recommendation.targetNodeId || plan.targetNodeId]
+    );
+    const payload = Object.assign({}, scope, {
+      available_minutes: firstCleanValue(defaults.availableMinutes, context.availableMinutes, 15),
+      low_pressure: true,
+      requested_by: "owner",
+      source_plan_draft_id: selected.plan_draft_id,
+      source_task_card_id: selected.task_card_id,
+      source_evaluation_id: selected.evaluation_id,
+      profile_delta_id: selected.profile_delta_id,
+      evidence_id: selected.evidence_id,
+      correction_id: selected.correction_id,
+      source_id: selected.source_id,
+      source_target_node_ids: selected.target_node_ids,
+      target_node_ids: targetNodeIds
+    });
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
   function automationProposalStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "loading") return "读取中";
@@ -719,6 +751,7 @@
     if (value === "superseded") return "已替代";
     if (value === "publishing") return "发布中";
     if (value === "published") return "已发布";
+    if (value === "created") return "已生成";
     if (value === "failed") return "失败";
     return value || "待建议";
   }
@@ -732,6 +765,8 @@
     const execution = proposal.execution || {};
     const detail = status === "published"
       ? `建议已发布${clean(execution.generatedTaskCardId) ? `：${clean(execution.generatedTaskCardId)}` : "。"}`
+      : status === "created"
+        ? `已生成自动化建议${clean(proposal.proposalId || proposal.proposal_id) ? `：${clean(proposal.proposalId || proposal.proposal_id)}` : "。"}`
       : status === "reviewed"
         ? `建议已记录为 ${automationProposalStatusText(proposal.status)}。`
         : status === "submitting"
@@ -786,20 +821,41 @@
     const acceptedCount = proposals.filter((item) => clean(item.status) === "accepted").length;
     const publishedCount = proposals.filter((item) => clean(item.execution?.status) === "published").length;
     const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const selectedCycle = state.cycleHistory?.selectedCycle || {};
+    const createPayload = createAutomationProposalCreatePayload({
+      context,
+      workspaceId: state.selectedWorkspaceId || context.target?.workspaceId,
+      selectedCycle
+    });
+    const hasSelectedSource = cycleAuditHasAnchor({
+      plan_draft_id: createPayload.source_plan_draft_id,
+      task_card_id: createPayload.source_task_card_id,
+      evaluation_id: createPayload.source_evaluation_id,
+      profile_delta_id: createPayload.profile_delta_id,
+      evidence_id: createPayload.evidence_id,
+      correction_id: createPayload.correction_id,
+      source_id: createPayload.source_id
+    });
+    const busy = holder.actionStatus === "submitting";
     const reason = status === "loading"
       ? "正在读取 Owner 可复核的下一张建议。"
       : status === "failed"
         ? clean(holder.error) || "automation_proposals_failed"
         : proposedCount
           ? "Owner 需要复核 AI 建议后再发布。"
-          : "没有待复核建议；后续 proposal 由完成周期生成。";
+          : hasSelectedSource
+            ? "可从选中的完整周期生成下一张建议。"
+            : "没有待复核建议；请选择一个完整历史周期后生成 proposal。";
     return `<section class="learning-card-generation-proposals" data-automation-proposal-panel data-automation-proposal-status="${escapeHtml(status || "idle")}">
       <div class="learning-card-generation-proposal-head">
         <span>
           <strong>自动化建议</strong>
           <small>${escapeHtml(reason)}</small>
         </span>
-        <button type="button" data-automation-proposal-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新建议"}</button>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-proposal-create ${busy || !hasSelectedSource ? `disabled aria-disabled="true" data-automation-proposal-blocked-reason="${escapeHtml(hasSelectedSource ? "建议操作正在写入。" : "请先在历史周期里选择一个完整周期。")}"` : ""}>${busy && hasSelectedSource ? "生成中" : "生成建议"}</button>
+          <button type="button" data-automation-proposal-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新建议"}</button>
+        </div>
       </div>
       <div class="learning-card-generation-proposal-grid">
         <span><small>待复核</small><strong>${escapeHtml(String(proposedCount))}</strong></span>
@@ -1781,6 +1837,7 @@
 
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
+    createAutomationProposalCreatePayload,
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,
     createAutomationProposalQueryPayload,

@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T13:43+08:00 - Owner Selected-Cycle Proposal Creation UI
+
+- Status: implemented, documented, and full-Harness validated locally. This
+  slice extends the Owner automation proposal panel from list/review/publish to
+  selected-cycle create/list/review/accepted-publish over the existing proposal
+  backend. Overall Growth closed-loop MVP progress is about `77%`: Owner can
+  now choose a bounded historical cycle in the `生成` tab and create the next
+  supervised proposal without Codex, but digest/action/execution UI, production
+  visual/release evidence, and broader rollout are still open.
+- Scope:
+  - `public/growth-api-client.js` adds `createGrowthAutomationProposal`, using
+    the existing Owner-only `POST /api/v1/growth/automation/proposals` route
+    through direct plugin and Home AI proxy paths;
+  - `public/growth-card-generation-ui.js` adds
+    `createAutomationProposalCreatePayload`, using only the selected cycle's
+    service-provided selectors plus scoped learner/domain-pack/subject summary
+    fields, and renders `data-automation-proposal-create`;
+  - `public/app.js` binds the create action, shows visible write/progress/error
+    state, refreshes proposals after create, and refreshes release workbench
+    readback without calling Gateway or card generation directly;
+  - `public/growth-homeai-legacy.css` keeps the new proposal header actions
+    compact and mobile-safe;
+  - frontend adapter and architecture harnesses now cover create path, direct
+    and proxy API calls, selected-cycle payload construction, button rendering,
+    app event hooks, and no raw/private browser payloads.
+- Boundaries:
+  - browser creation delegates only to the existing proposal route, which in
+    turn delegates to `learning-automation-proposal-service`;
+  - it does not call Gateway directly, model vendors, card generation,
+    authoring, evaluation, scheduler dry-run/execution/ticks, notification
+    delivery, stage-assessment activation, or SQLite tables;
+  - `expired`/`superseded` decision UI, digest/action/execution/run/
+    worker-target UI, platform Action Inbox/Web Push evidence, and central
+    visual/release evidence remain later slices.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_FAILURE_POLICY.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `node --check public/growth-api-client.js && node --check public/growth-card-generation-ui.js && node --check public/app.js`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js` (`65/65`);
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `git diff --check`;
+  - `npm test` (`802/802`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth Owner selected-cycle automation proposal creation UI over existing proposal route; frontend adapter docs harness only; no production deploy" --json`
+    classified this as H1 and did not require the visual lane.
+  - The Home AI app deploy plan still reported unrelated native-notification/
+    Web Push dirty files and `main...origin/main [ahead 1]`; they were not
+    modified by this Growth slice.
+- CodeGraph status after edits: `347` JavaScript files, `4,640` nodes,
+  `18,576` edges.
+
 ## 2026-06-16T13:33+08:00 - Owner Automation Proposal Review Panel
 
 - Status: implemented, documented, and locally validated. This slice adds the

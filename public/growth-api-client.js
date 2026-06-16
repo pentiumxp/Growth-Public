@@ -251,6 +251,12 @@
       return fetchJson(`${growthApiPath("automation", "proposals")}${automationProposalQuery(targetWorkspaceId, payload)}`);
     }
 
+    function createGrowthAutomationProposal(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "proposals"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function fetchGrowthCard(taskCardId, targetWorkspaceId = getWorkspaceId()) {
       const cardId = clean(taskCardId);
       if (!cardId) throw new Error("missing_task_card_id");
@@ -380,6 +386,7 @@
       activateGrowthStageAssessment,
       draftGrowthDailyLoop,
       evaluateGrowthStageAssessment,
+      createGrowthAutomationProposal,
       fetchCardGenerationContext,
       fetchGrowthAutomationProposals,
       fetchGrowthCycleAudit,

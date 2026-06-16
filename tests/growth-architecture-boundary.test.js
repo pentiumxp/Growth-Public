@@ -3587,8 +3587,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /data-card-generation-cycle-history-select/);
   assert.match(app, /refreshAutomationProposals/);
   assert.match(app, /fetchGrowthAutomationProposals/);
+  assert.match(app, /createGrowthAutomationProposal/);
   assert.match(app, /reviewGrowthAutomationProposal/);
   assert.match(app, /publishGrowthAutomationProposal/);
+  assert.match(app, /data-automation-proposal-create/);
   assert.match(app, /data-automation-proposal-review/);
   assert.match(app, /data-automation-proposal-publish/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
@@ -3623,6 +3625,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /releaseWorkbenchPanel/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
+  assert.match(generationUi, /createAutomationProposalCreatePayload/);
+  assert.match(generationUi, /data-automation-proposal-create/);
   assert.match(generationUi, /data-automation-proposal-review/);
   assert.match(generationUi, /data-automation-proposal-publish/);
 
@@ -3630,6 +3634,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /fetchGrowthCycleHistory/);
   assert.match(apiClient, /learning-cycles", "history"/);
   assert.match(apiClient, /fetchGrowthAutomationProposals/);
+  assert.match(apiClient, /createGrowthAutomationProposal/);
   assert.match(apiClient, /reviewGrowthAutomationProposal/);
   assert.match(apiClient, /publishGrowthAutomationProposal/);
   assert.match(apiClient, /automation", "proposals"/);

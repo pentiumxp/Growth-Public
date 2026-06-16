@@ -377,8 +377,9 @@ Writeful scheduling can be considered only after:
 
 - Owner daily UI is product-usable;
 - audit/correction UI is product-usable;
-- a minimal proposal list/review/accepted-publish UI exists, and proposal
-  creation/digest/action UI plus visual/release evidence are complete;
+- a minimal proposal selected-cycle create/list/review/accepted-publish UI
+  exists, and `expired`/`superseded`, digest/action UI plus visual/release
+  evidence are complete;
 - scheduler dry-run output is persisted in digest records;
 - active failure policy exists for the target scope;
 - action handoff and platform notification evidence exist;

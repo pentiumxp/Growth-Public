@@ -681,14 +681,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `learning-automation-proposal-service`. Focused proposal
   repository/service/route/script/architecture harnesses pass. The embedded
   Owner `生成` tab now has the first proposal review panel over the existing
-  proposal routes: it lists bounded proposals for the selected visible target
-  and scoped learner/domain-pack/subject, records `accepted` or `skipped`
+  proposal routes: it can create a bounded proposal from the selected
+  historical cycle, lists bounded proposals for the selected visible target and
+  scoped learner/domain-pack/subject, records `accepted` or `skipped`
   decisions, and can explicitly publish an already accepted proposal through
   `POST /api/v1/growth/automation/proposals/:proposalId/publish`. This panel
-  does not create new proposals, call Gateway, draft plans, run schedulers,
-  activate stage assessments, or mutate learner state outside the existing
-  proposal publish route. Digest/action/execution UI and production
-  visual/release evidence remain later slices.
+  uses the selected cycle's service-provided selectors, does not call Gateway
+  directly, does not call card generation directly, does not run schedulers,
+  does not activate stage assessments, and does not mutate learner state
+  outside the existing proposal create/decision/publish service boundaries.
+  `expired`/`superseded` decision UI, digest/action/execution UI, and
+  production visual/release evidence remain later slices.
   The supervised scheduler dry-run boundary is now locally implemented through
   `learning-automation-scheduler-service` and Owner-only
   `POST /api/v1/growth/automation/scheduler/dry-run`. It lists accepted

@@ -754,6 +754,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-proposal-create]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        createAutomationProposalFromUi().catch((error) => {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-review]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1077,6 +1090,20 @@
     };
   }
 
+  function createAutomationProposalCreatePayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationProposalCreatePayload !== "function") {
+      throw new Error("automation_proposal_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const selectedCycle = pageState.cardGeneration.cycleHistory?.selectedCycle || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationProposalCreatePayload({ context, workspaceId: targetWorkspaceId, selectedCycle }),
+      targetWorkspaceId
+    };
+  }
+
   function createAutomationProposalPublishPayload(proposal = {}) {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createAutomationProposalPublishPayload !== "function") {
@@ -1088,6 +1115,33 @@
       payload: ui.createAutomationProposalPublishPayload({ context, workspaceId: targetWorkspaceId, proposal }),
       targetWorkspaceId
     };
+  }
+
+  async function createAutomationProposalFromUi() {
+    const { payload, targetWorkspaceId } = createAutomationProposalCreatePayload();
+    pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationProposals?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.createGrowthAutomationProposal(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: result.ok ? "created" : "failed",
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "automation_proposal_create_failed")
+      });
+      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
   }
 
   async function reviewAutomationProposalFromUi(button) {
