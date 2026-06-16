@@ -333,6 +333,12 @@
       return fetchJson(`${growthApiPath("automation", "release-workbench")}${releaseWorkbenchQuery(targetWorkspaceId, context)}`);
     }
 
+    function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "release-packages", "build"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function fetchGrowthAutomationProposals(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("automation", "proposals")}${automationProposalQuery(targetWorkspaceId, payload)}`);
     }
@@ -557,6 +563,7 @@
       createGrowthAutomationDigest,
       createGrowthAutomationSchedulerWorkerTarget,
       createGrowthAutomationProposal,
+      buildGrowthReleasePackage,
       fetchCardGenerationContext,
       fetchGrowthAutomationActionHandoffs,
       fetchGrowthAutomationDigests,

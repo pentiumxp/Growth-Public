@@ -21,7 +21,11 @@
         error: "",
         actionStatus: "idle",
         actionResult: null,
-        actionError: ""
+        actionError: "",
+        packageStatus: "idle",
+        packageResult: null,
+        packageCandidate: null,
+        packageError: ""
       },
       automationProposals: {
         status: "idle",
@@ -786,6 +790,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-package-build]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        buildReleasePackageFromUi(button).catch((error) => {
+          pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+            packageStatus: "failed",
+            packageError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1133,7 +1150,11 @@
       error: "",
       actionStatus: "idle",
       actionResult: null,
-      actionError: ""
+      actionError: "",
+      packageStatus: "idle",
+      packageResult: null,
+      packageCandidate: null,
+      packageError: ""
     };
     pageState.cardGeneration.automationProposals = {
       status: "loading",
@@ -1260,7 +1281,11 @@
       error: "",
       actionStatus: previous.actionStatus || "idle",
       actionResult: previous.actionResult || null,
-      actionError: previous.actionError || ""
+      actionError: previous.actionError || "",
+      packageStatus: previous.packageStatus || "idle",
+      packageResult: previous.packageResult || null,
+      packageCandidate: previous.packageCandidate || null,
+      packageError: previous.packageError || ""
     };
     try {
       const result = await api.fetchGrowthReleaseWorkbench(requestedTargetWorkspaceId, context);
@@ -1270,7 +1295,11 @@
         error: "",
         actionStatus: previous.actionStatus || "idle",
         actionResult: previous.actionResult || null,
-        actionError: previous.actionError || ""
+        actionError: previous.actionError || "",
+        packageStatus: previous.packageStatus || "idle",
+        packageResult: previous.packageResult || null,
+        packageCandidate: previous.packageCandidate || null,
+        packageError: previous.packageError || ""
       };
       pageState.cardGeneration.context = Object.assign({}, context, {
         releaseWorkbench: result
@@ -1283,7 +1312,11 @@
         error: error.message || String(error),
         actionStatus: previous.actionStatus || "idle",
         actionResult: previous.actionResult || null,
-        actionError: previous.actionError || ""
+        actionError: previous.actionError || "",
+        packageStatus: previous.packageStatus || "idle",
+        packageResult: previous.packageResult || null,
+        packageCandidate: previous.packageCandidate || null,
+        packageError: previous.packageError || ""
       };
       return null;
     }
@@ -2749,10 +2782,60 @@
     const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
     const action = findReleaseWorkbenchAction(button.dataset.releaseWorkbenchEndpointKey, button.dataset.releaseWorkbenchActionKey);
     if (!action) throw new Error("release_workbench_action_not_found");
+    const endpointKey = clean(button.dataset.releaseWorkbenchEndpointKey);
+    const releasePackage = endpointKey === "release_package"
+      ? pageState.cardGeneration.releaseWorkbench?.packageCandidate || pageState.cardGeneration.releaseWorkbench?.packageResult?.package || null
+      : null;
     return {
-      payload: ui.createReleaseWorkbenchActionPayload({ context, workspaceId: targetWorkspaceId, action }),
+      payload: ui.createReleaseWorkbenchActionPayload({ context, workspaceId: targetWorkspaceId, action, releasePackage }),
       targetWorkspaceId
     };
+  }
+
+  function createReleasePackageBuildPayloadFromButton(button) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createReleasePackageBuildPayload !== "function") {
+      throw new Error("release_package_build_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const action = findReleaseWorkbenchAction(button.dataset.releaseWorkbenchEndpointKey, button.dataset.releaseWorkbenchActionKey);
+    if (!action) throw new Error("release_workbench_action_not_found");
+    return {
+      payload: ui.createReleasePackageBuildPayload({ context, workspaceId: targetWorkspaceId, action }),
+      targetWorkspaceId
+    };
+  }
+
+  async function buildReleasePackageFromUi(button) {
+    const { payload, targetWorkspaceId } = createReleasePackageBuildPayloadFromButton(button);
+    pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+      packageStatus: "building",
+      packageResult: pageState.cardGeneration.releaseWorkbench?.packageResult || null,
+      packageCandidate: pageState.cardGeneration.releaseWorkbench?.packageCandidate || null,
+      packageError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.buildGrowthReleasePackage(payload, targetWorkspaceId);
+      const candidate = result?.package || result?.releasePackage || result?.release_package || null;
+      const packageStatus = candidate
+        ? result?.ok === false ? "blocked" : "ready"
+        : "blocked";
+      pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+        packageStatus,
+        packageResult: result,
+        packageCandidate: candidate,
+        packageError: result?.ok === false ? clean(result.error) || "release_package_candidate_blocked" : ""
+      });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.releaseWorkbench = Object.assign({}, pageState.cardGeneration.releaseWorkbench, {
+        packageStatus: "failed",
+        packageError: error.message || String(error)
+      });
+      renderShell();
+    }
   }
 
   async function recordReleaseWorkbenchActionFromUi(button) {

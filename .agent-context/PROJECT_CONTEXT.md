@@ -334,17 +334,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised
-  `release_evidence`, `release_approval`, `release_activation`, and
-  `runtime_enablement` actions from the plugin UI. It intentionally does not
-  record `release_package` from the workbench template because package record
-  writes require a real release package artifact, not a placeholder body. The
-  frontend harness explicitly covers `release_approval` action templates:
-  payloads must contain only the advertised approval/config gate fields and
-  summary-only action metadata, and must not include `writefulSchedulingAllowed`,
-  raw prompts, transcripts, private evidence, or runtime config values.
-  Missing-package workbench actions now include a bounded preparation route for
-  Owner-triggered release package candidate build before any package-record
-  write.
+  `release_evidence`, `release_approval`, `release_package`,
+  `release_activation`, and `runtime_enablement` actions from the plugin UI.
+  `release_package` is two-step UI glue: Owner must first build a summary-only
+  `growth.learningAutomationReleasePackage.v1` candidate through
+  `POST /api/v1/growth/automation/release-packages/build`, then record that
+  exact candidate through the workbench action facade. A workbench placeholder
+  body cannot create a package record. The frontend harness explicitly covers
+  `release_approval` and `release_package` action templates: approval payloads
+  must contain only advertised approval/config gate fields, package build
+  payloads must not include package artifacts, package record payloads must
+  include a real summary-only package candidate, and none of these payloads may
+  include `writefulSchedulingAllowed`, raw prompts, transcripts, private
+  evidence, or runtime config values.
   Release-readiness writes a summary-only advisory
   snapshot only when `--write-snapshot` is explicitly supplied. Growth now also
   has `npm run smoke:release-evidence-bundle-audit`, a service-owned read-only

@@ -152,10 +152,14 @@ full operating loop:
   routes. It now also renders a summary-only release workbench panel over
   `GET /api/v1/growth/automation/release-workbench` and can call the
   Owner-only `POST /api/v1/growth/automation/release-workbench/actions`
-  facade for advertised evidence, approval, activation, and runtime enablement
-  records. It deliberately does not record `release_package`, because package
-  recording requires a real release package artifact rather than a workbench
-  placeholder. The backend now exposes Owner-only
+  facade for advertised evidence, approval, package, activation, and runtime
+  enablement records. Package recording is a two-step Owner UI flow: the
+  browser first calls the Owner-only
+  `POST /api/v1/growth/automation/release-packages/build` route for a
+  summary-only package candidate, then sends that real
+  `growth.learningAutomationReleasePackage.v1` artifact to the workbench
+  action facade. A workbench placeholder body cannot create a package record.
+  The backend now exposes Owner-only
   `POST /api/v1/growth/automation/release-packages/build` for explicitly
   building a summary-only release package candidate through the normal service
   graph; this build route can return a blocked candidate for audit, but it does

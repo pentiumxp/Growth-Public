@@ -331,6 +331,11 @@ test("Growth API client exposes card generation context and write helpers", asyn
     program_id: "program_science",
     limit: 4
   }, "weixin_fanfan");
+  await client.buildGrowthReleasePackage({
+    learner_id: "fanfan",
+    tasks: ["planner_readiness", "scheduler_dry_run"],
+    required_task_ids: ["planner_readiness", "scheduler_dry_run"]
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -487,6 +492,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
     learner_id: "fanfan",
     program_id: "program_science",
     limit: 4
+  });
+  assert.equal(calls[38].path, "/api/v1/growth/automation/release-packages/build");
+  assert.deepEqual(JSON.parse(calls[38].options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    tasks: ["planner_readiness", "scheduler_dry_run"],
+    required_task_ids: ["planner_readiness", "scheduler_dry_run"]
   });
 });
 
@@ -778,6 +790,34 @@ test("Growth card interaction controller lets Owner retry a failed evaluation an
 
 test("Growth card generation UI renders Owner panel and structured payload", () => {
   const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const releasePackageCandidate = {
+    schemaVersion: "growth.learningAutomationReleasePackage.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    ok: true,
+    status: "ready_for_release_review",
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    domain: "science",
+    subject: "science",
+    packageId: "lgapkg_ui_1",
+    summary: {
+      schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+      summaryOnly: true,
+      status: "ready_for_release_review",
+      collectionRunId: "release_run_1",
+      stepCount: 2
+    },
+    steps: [{
+      taskId: "planner_readiness",
+      status: "pass",
+      summaryOnly: true
+    }, {
+      taskId: "scheduler_dry_run",
+      status: "pass",
+      summaryOnly: true
+    }]
+  };
   const context = {
     target: { workspaceId: "weixin_fanfan", learnerId: "fanfan", displayName: "凡凡", enabled: true },
     selectedRecipeId: "daily_english_v1",
@@ -959,10 +999,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       status: "blocked",
       releaseWorkbench: {
         status: "blocked",
-        ownerActionCount: 3,
+        ownerActionCount: 4,
         missingEvidenceKeys: ["visual_smoke"],
         missingApprovalKeys: ["writefulExecutionApproval"],
-        missingRecordKinds: ["runtime_enablement"],
+        missingRecordKinds: ["release_package", "runtime_enablement"],
         ownerActions: [{
           key: "visual_smoke",
           action: "record_release_evidence",
@@ -988,6 +1028,25 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             body: {
               approval_key: "writefulExecutionApproval",
               config_gate: "writefulExecutionApproval"
+            }
+          }
+        }, {
+          key: "release_package",
+          action: "record_release_package",
+          requiredActor: "owner",
+          label: "Record release package",
+          source: "missing_record",
+          endpointKey: "release_package",
+          preparationRoute: {
+            body: {
+              tasks: ["planner_readiness", "scheduler_dry_run"],
+              required_task_ids: ["planner_readiness", "scheduler_dry_run"],
+              activation_gates: ["writeful_execution"]
+            }
+          },
+          route: {
+            body: {
+              release_package: { summaryOnly: true }
             }
           }
         }, {
@@ -1343,7 +1402,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
               recordId: "lgrelevd_1",
               recordStatus: "pass"
             }
-          }
+          },
+          packageStatus: "ready",
+          packageResult: {
+            ok: true,
+            package: releasePackageCandidate
+          },
+          packageCandidate: releasePackageCandidate
         },
         automationProposals: {
           status: "ready",
@@ -1587,9 +1652,16 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /发布工作台/);
   assert.match(html, /Record release evidence for visual_smoke/);
   assert.match(html, /Record release approval for writeful execution/);
+  assert.match(html, /Record release package/);
   assert.match(html, /data-release-workbench-action/);
   assert.match(html, /data-release-workbench-endpoint-key="release_evidence"/);
   assert.match(html, /data-release-workbench-endpoint-key="release_approval"/);
+  assert.match(html, /data-release-workbench-endpoint-key="release_package"/);
+  assert.match(html, /data-release-package-build/);
+  assert.match(html, /构建包候选/);
+  assert.match(html, /记录包/);
+  assert.match(html, /data-release-package-status="ready"/);
+  assert.match(html, /包候选已构建：lgapkg_ui_1/);
   assert.match(html, /已写入 release_evidence 记录：lgrelevd_1/);
   assert.match(html, /data-card-generation-target-provisioning/);
   assert.match(html, /data-card-generation-domain-pack/);
@@ -1707,6 +1779,63 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(releaseApprovalPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseApprovalPayload, "transcript"), false);
   assert.equal(Object.hasOwn(releaseApprovalPayload, "writefulSchedulingAllowed"), false);
+
+  const releasePackageAction = context.releaseWorkbench.releaseWorkbench.ownerActions[2];
+  const releasePackageBuildPayload = windowRef.HermesGrowthCardGenerationUi.createReleasePackageBuildPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    action: releasePackageAction
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releasePackageBuildPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    requested_by: "owner",
+    action_key: "release_package",
+    action: {
+      key: "release_package",
+      action: "record_release_package",
+      endpointKey: "release_package",
+      source: "missing_record",
+      summaryOnly: true
+    },
+    tasks: ["planner_readiness", "scheduler_dry_run"],
+    required_task_ids: ["planner_readiness", "scheduler_dry_run"],
+    activation_gates: ["writeful_execution"]
+  });
+  assert.equal(Object.hasOwn(releasePackageBuildPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releasePackageBuildPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releasePackageBuildPayload, "release_package"), false);
+
+  const releasePackageRecordPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    action: releasePackageAction,
+    releasePackage: releasePackageCandidate
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releasePackageRecordPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    endpoint_key: "release_package",
+    action_key: "release_package",
+    requested_by: "owner",
+    action: {
+      key: "release_package",
+      action: "record_release_package",
+      endpointKey: "release_package",
+      source: "missing_record",
+      summaryOnly: true
+    },
+    release_package: releasePackageCandidate
+  });
+  assert.equal(Object.hasOwn(releasePackageRecordPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releasePackageRecordPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releasePackageRecordPayload, "writefulSchedulingAllowed"), false);
 
   const proposalQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalQueryPayload({
     context,
@@ -3092,6 +3221,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-card-generation-apply-target/);
   assert.match(source, /data-card-generation-provision-target/);
   assert.match(source, /data-release-workbench-action/);
+  assert.match(source, /data-release-package-build/);
   assert.match(source, /data-automation-proposal-refresh/);
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
@@ -3106,6 +3236,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function createOwnerCorrectionPayload/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
   assert.match(source, /function createReleaseWorkbenchActionPayloadFromButton/);
+  assert.match(source, /function createReleasePackageBuildPayloadFromButton/);
+  assert.match(source, /function buildReleasePackageFromUi/);
   assert.match(source, /function recordReleaseWorkbenchActionFromUi/);
   assert.match(source, /function createAutomationProposalCreatePayload/);
   assert.match(source, /function createAutomationProposalFromUi/);
@@ -3143,6 +3275,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function provisionTargetDomainPackFromUi/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.buildGrowthReleasePackage\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthAutomationDigests\(payload, requestedTargetWorkspaceId\)/);

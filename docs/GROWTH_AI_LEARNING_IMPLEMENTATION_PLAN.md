@@ -1144,11 +1144,13 @@ Required harness:
 Remaining release gaps:
 
 - product UI evidence for Owner daily, audit/correction, proposal review,
-  digest/action/execution/run, and worker-target views. Backend Owner review
-  evidence now exists through `npm run smoke:owner-review-evidence`, but it
-  does not replace product UI or central visual evidence. The current proposal
-  selected-cycle create/review/publish panel still needs central visual/release
-  evidence before it is treated as production-complete;
+  digest/action/execution/run, worker-target views, and release package review.
+  Backend Owner review evidence now exists through
+  `npm run smoke:owner-review-evidence`, and the release package review UI can
+  build a summary-only candidate before recording it, but these do not replace
+  product UI or central visual evidence. The current proposal selected-cycle
+  create/review/publish panel and release package review flow still need
+  central visual/release evidence before they are treated as production-complete;
 - real production Home AI platform Action Inbox + Web Push dual receipt
   evidence from `npm run smoke:platform-action-evidence`;
 - real production central embedded-plugin visual artifact for mobile scroll,
@@ -1188,11 +1190,12 @@ The next implementation slice should be chosen by product goal:
   create/review/publish with explicit `--allow-write`. Implement the remaining
   UI/evidence around P5-P10 next: `expired`/`superseded` proposal decision UI,
   digest/action/failure-policy UI, execution UI, scheduler run audit UI,
-  platform Action Inbox/Web Push evidence, production dry-run evidence through
-  `npm run smoke:scheduler-dry-run`, central visual evidence, and a
-  release-readiness evidence snapshot. The P8 and P9 backend boundaries are
-  implemented locally and remain default-disabled; the P10 backend boundary is
-  an evidence gate only and must not enable execution or scheduling.
+  release package review evidence, platform Action Inbox/Web Push evidence,
+  production dry-run evidence through `npm run smoke:scheduler-dry-run`,
+  central visual evidence, and a release-readiness evidence snapshot. The P8
+  and P9 backend boundaries are implemented locally and remain default-disabled;
+  the P10 backend boundary is an evidence gate only and must not enable
+  execution or scheduling.
 
 Do not start background writeful scheduling or automatic card publication until
 P1, P2, P5, P6, P7, P8, P9 UI/evidence, P10 release-readiness evidence, and

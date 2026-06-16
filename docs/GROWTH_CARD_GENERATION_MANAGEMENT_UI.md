@@ -29,19 +29,21 @@ target enablement. The same Owner tab now also reads
 `GET /api/v1/growth/automation/release-workbench` and renders a summary-only
 release workbench panel. From that panel Owner can call
 `POST /api/v1/growth/automation/release-workbench/actions` for advertised
-`release_evidence`, `release_approval`, `release_activation`, and
-`runtime_enablement` actions. The UI deliberately does not record
-`release_package` from the workbench template because package recording
-requires a real `growth.learningAutomationReleasePackage.v1` artifact rather
-than a placeholder body. Central `embedded-plugin-shell` visual evidence passed for
+`release_evidence`, `release_approval`, `release_package`,
+`release_activation`, and `runtime_enablement` actions. `release_package` is a
+two-step browser flow: Owner first builds a summary-only
+`growth.learningAutomationReleasePackage.v1` candidate through
+`POST /api/v1/growth/automation/release-packages/build`, then records that
+candidate through the workbench action facade. A placeholder route body is
+never enough to record a package. Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
 preview, learning-loop state, and release-readiness Owner-loop aggregation.
 Remaining product closure is older-cycle selection, formal stage-checkpoint UI,
 proposal/digest/action-handoff/scheduler-execution/scheduler-run/worker-target
-production evidence, real package review UI, and production release evidence
-collection.
+production evidence, central visual evidence for release package review UI, and
+production release evidence collection.
 
 ## Objective
 
@@ -120,9 +122,12 @@ selected learner target, not the iframe's Owner workspace.
 6. Growth reads compact release workbench state for the selected target through
    `GET /api/v1/growth/automation/release-workbench`. This panel is UI glue
    over backend release services. It may record only advertised Owner actions
-   through `POST /api/v1/growth/automation/release-workbench/actions`; it must
-   not build packages, run smoke tasks, flip runtime config, schedule work,
-   notify users, call Gateway, or mutate learner state directly.
+   through `POST /api/v1/growth/automation/release-workbench/actions`. For
+   `release_package`, it first delegates package candidate construction to the
+   Owner-only `POST /api/v1/growth/automation/release-packages/build` route and
+   records only the returned summary-only package artifact. It must not run
+   smoke scripts in the browser, flip runtime config, schedule work, notify
+   users, call Gateway, or mutate learner state directly.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
 8. Owner selects the `日常英语卡` recipe.
@@ -356,6 +361,7 @@ embedded UI:
 
 - `release_evidence`;
 - `release_approval`;
+- `release_package`;
 - `release_activation`;
 - `runtime_enablement`.
 
@@ -372,20 +378,23 @@ and config gate plus summary-only action metadata. It must not send
 `writefulSchedulingAllowed`, runtime config values, private evidence payloads,
 or any field that implies scheduler permission.
 
-The panel intentionally does not record `release_package`. The
-`learning-automation-release-workbench-action-service` can delegate package
-records only when the request contains a real
-`growth.learningAutomationReleasePackage.v1` artifact. A workbench route
-template with `{ summaryOnly: true }` is not enough to create or record a
-package. Package building and package review remain handled by the existing
-release package builder/smoke path until a dedicated package review UI exists.
+For `release_package`, the embedded UI must first call the Owner-only package
+build route and retain the returned summary-only
+`growth.learningAutomationReleasePackage.v1` candidate in local UI state. The
+record button stays blocked until such a candidate exists. The later workbench
+action payload may include only that package candidate plus summary-only action
+metadata. It must not send a placeholder `{ summaryOnly: true }` body as the
+package, raw bundle output, raw smoke logs, private paths, transcripts, raw
+prompts, model output, or scheduler permission fields.
 
 The release workbench panel does not grant scheduling permission. It does not
-apply runtime config, run smoke scripts, build packages, publish cards, call
-Gateway, notify users, or mutate learner state. Runtime enablement action
-records are audit/readback records only; external configuration verification
-still happens outside Growth and must be represented as bounded summary
-evidence before scheduler execution can proceed.
+apply runtime config, publish cards, call Gateway, notify users, or mutate
+learner state. Package candidate building is delegated only to
+`POST /api/v1/growth/automation/release-packages/build`; the browser does not
+run smoke scripts or construct package internals itself. Runtime enablement
+action records are audit/readback records only; external configuration
+verification still happens outside Growth and must be represented as bounded
+summary evidence before scheduler execution can proceed.
 
 ### Owner Daily Loop Screen Contract
 

@@ -717,11 +717,13 @@ Use the Growth-owned release-readiness boundary:
   through `growth-api-client.js`, renders status/missing evidence/approval/
   record counts plus advertised Owner actions, and calls
   `POST /api/v1/growth/automation/release-workbench/actions` only for
-  supported `release_evidence`, `release_approval`, `release_activation`, and
-  `runtime_enablement` endpoints. It is UI glue over existing services. It
-  does not support `release_package` from a placeholder template; package
-  records still require a real release package artifact from the package
-  builder or a future package review UI.
+  supported `release_evidence`, `release_approval`, `release_package`,
+  `release_activation`, and `runtime_enablement` endpoints. It is UI glue over
+  existing services. For `release_package`, Owner first builds a summary-only
+  candidate through `POST /api/v1/growth/automation/release-packages/build`;
+  the record action remains blocked until that real
+  `growth.learningAutomationReleasePackage.v1` artifact exists. A placeholder
+  workbench template is not a package artifact.
 - action handoff smoke CLI:
   `npm run smoke:action-handoff -- --workspace-id <workspace> --learner-id <learner> --json`.
 - scheduler execution smoke CLI:

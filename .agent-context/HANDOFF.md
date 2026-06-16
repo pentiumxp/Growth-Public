@@ -9,6 +9,79 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T01:20+08:00 - Release Package Review UI Two-Step Flow
+
+- Status: implemented locally and fully validated. This slice was not deployed.
+- Change intent:
+  - close the Owner UI gap where `release_package` workbench actions were
+    visible only as a missing record but could not be handled from the Growth
+    plugin interface;
+  - keep package records behind a real summary-only
+    `growth.learningAutomationReleasePackage.v1` candidate rather than a
+    workbench placeholder body;
+  - preserve the platform contract: Growth UI does not call Gateway, publish
+    cards, run scheduler actions, flip runtime config, grant scheduler
+    permission, or build package internals in the browser.
+- Scope:
+  - `public/growth-api-client.js` now exposes
+    `buildGrowthReleasePackage(payload, targetWorkspaceId)` for the Owner-only
+    `POST /api/v1/growth/automation/release-packages/build` route;
+  - `public/growth-card-generation-ui.js` now treats `release_package` as a
+    supported workbench endpoint with a two-step row: `构建包候选` first, then
+    `记录包` only after a real summary-only package candidate exists;
+  - `public/app.js` wires the package build button, visible build/blocked/error
+    state, and package-candidate handoff into the existing
+    `release-workbench/actions` facade;
+  - `public/growth-homeai-legacy.css` adds compact mobile-safe action wrapping
+    for the two release-package row buttons;
+  - `tests/growth-frontend-adapter.test.js` now covers the API route, UI row,
+    package candidate status, build payload, package record payload, and app
+    wiring. Payload assertions exclude raw prompts, transcripts,
+    `writefulSchedulingAllowed`, and placeholder package bodies.
+- Docs changed:
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - this handoff.
+- Validation:
+  - syntax: `node --check public/growth-api-client.js`;
+  - syntax: `node --check public/growth-card-generation-ui.js`;
+  - syntax: `node --check public/app.js`;
+  - focused frontend Harness:
+    `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
+  - focused frontend/architecture Harness:
+    `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js`
+    passed `64/64`;
+  - docs locality:
+    `node scripts/check-growth-docs-locality.js` passed and
+    `node --test tests/growth-docs-locality.test.js` passed `1/1`;
+  - `git diff --check` passed in the Growth workspace;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `845/845`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,930 nodes, 20,447 edges, index up
+    to date, with the existing optional earlier-engine reindex notice;
+  - Home AI AI Ops required checks classified the slice as H3 with no visual
+    lane or deployment required, and passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node --check ../plugins/growth/public/app.js`,
+    `node --check ../plugins/growth/public/growth-api-client.js`,
+    `node --check ../plugins/growth/public/growth-card-generation-ui.js`,
+    `node --check ../plugins/growth/tests/growth-frontend-adapter.test.js`,
+    and app `git diff --check`.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-67a55945-c80c-4d8b-9d0d-befce32384ef`.
+- Remaining gates:
+  - this does not replace real central visual evidence before production UI
+    release;
+  - this does not replace production release evidence collection, platform
+    Action Inbox/Web Push evidence, production dry-run evidence, explicit
+    release approvals, or real completed-cycle/profile-feedback production
+    evidence.
+
 ## 2026-06-17T00:31+08:00 - Release Workbench Approval UI Payload Harness
 
 - Status: implemented locally and fully validated; this handoff entry is part

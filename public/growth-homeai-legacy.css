@@ -13975,6 +13975,13 @@ body.task-markdown-preview-open {
   padding: 9px 11px;
 }
 
+.learning-card-generation-release-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .learning-card-generation-release-empty {
   min-height: 52px;
   display: grid;
@@ -15110,7 +15117,8 @@ body.task-markdown-preview-open {
   .learning-card-generation-stage-controls,
   .learning-card-generation-correction-controls,
   .learning-card-generation-provisioning-actions,
-  .learning-card-generation-cycle-actions {
+  .learning-card-generation-cycle-actions,
+  .learning-card-generation-release-row-actions {
     justify-content: stretch;
     grid-template-columns: 1fr;
   }
@@ -15119,7 +15127,8 @@ body.task-markdown-preview-open {
   .learning-card-generation-stage-actions button,
   .learning-card-generation-correction-controls button,
   .learning-card-generation-provisioning-actions button,
-  .learning-card-generation-cycle-actions button {
+  .learning-card-generation-cycle-actions button,
+  .learning-card-generation-release-row-actions button {
     flex: 1 1 auto;
   }
 

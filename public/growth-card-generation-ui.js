@@ -572,7 +572,7 @@
   }
 
   function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
-    return ["release_evidence", "release_approval", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
+    return ["release_evidence", "release_approval", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
   }
 
   function releaseWorkbenchScopeFromContext(context = {}, workspaceId = "") {
@@ -593,7 +593,36 @@
     };
   }
 
-  function createReleaseWorkbenchActionPayload({ context = {}, workspaceId = "", action = {} } = {}) {
+  function createReleasePackageBuildPayload({ context = {}, workspaceId = "", action = {} } = {}) {
+    const routeBody = action.preparationRoute?.body || action.route?.body || {};
+    const actionKey = clean(action.key || action.actionKey || action.action_key || routeBody.record_kind || "release_package");
+    const payload = Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
+      requested_by: "owner",
+      action_key: actionKey,
+      action: {
+        key: actionKey,
+        action: clean(action.action),
+        endpointKey: clean(action.endpointKey || action.endpoint_key),
+        source: clean(action.source),
+        summaryOnly: true
+      },
+      tasks: asArray(routeBody.tasks || ["planner_readiness", "scheduler_dry_run"]).map(clean).filter(Boolean),
+      required_task_ids: asArray(routeBody.required_task_ids || routeBody.requiredTaskIds || ["planner_readiness", "scheduler_dry_run"]).map(clean).filter(Boolean),
+      activation_gates: asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean)
+    });
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return typeof value === "object" ? Boolean(value) : clean(value);
+    }));
+  }
+
+  function releasePackageCandidateFromHolder(holder = {}) {
+    const result = holder.packageResult || {};
+    const candidate = holder.packageCandidate || result.package || result.releasePackage || result.release_package;
+    return candidate && typeof candidate === "object" ? candidate : null;
+  }
+
+  function createReleaseWorkbenchActionPayload({ context = {}, workspaceId = "", action = {}, releasePackage = null } = {}) {
     const endpointKey = clean(action.endpointKey || action.endpoint_key);
     const routeBody = action.route?.body || {};
     const actionKey = clean(action.key || action.actionKey || routeBody.evidence_key || routeBody.check_key || routeBody.approval_key);
@@ -617,6 +646,9 @@
       payload.approval_key = clean(routeBody.approval_key || routeBody.config_gate || actionKey);
       payload.config_gate = clean(routeBody.config_gate || routeBody.approval_key || actionKey);
       payload.status = "active";
+    }
+    if (endpointKey === "release_package" && releasePackage && typeof releasePackage === "object") {
+      payload.release_package = releasePackage;
     }
     if (endpointKey === "release_activation") {
       payload.activation_gates = asArray(routeBody.activation_gates || routeBody.activationGates || ["writeful_execution"]).map(clean).filter(Boolean);
@@ -647,12 +679,66 @@
     </div>`;
   }
 
+  function releasePackageStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.packageStatus);
+    const error = clean(holder.packageError);
+    const result = holder.packageResult || {};
+    const candidate = releasePackageCandidateFromHolder(holder);
+    if (!status || status === "idle") return "";
+    const summary = candidate?.summary || result.summary || {};
+    const packageId = clean(candidate?.packageId || candidate?.package_id || candidate?.id || summary.packageId || summary.package_id);
+    const packageStatus = clean(candidate?.status || summary.status || result.status || status);
+    const stepCount = Number(candidate?.stepCount ?? summary.stepCount ?? (Array.isArray(candidate?.steps) ? candidate.steps.length : 0)) || 0;
+    const detail = status === "building"
+      ? "正在构建 summary-only release package candidate。"
+      : status === "ready"
+        ? `包候选已构建${packageId ? `：${packageId}` : "。"}${packageStatus ? ` · ${packageStatus}` : ""}${stepCount ? ` · ${stepCount} steps` : ""}`
+        : status === "blocked"
+          ? `包候选仍阻塞${packageStatus ? `：${packageStatus}` : "。"}${error ? ` · ${error}` : ""}`
+          : error || "包候选构建失败。";
+    return `<div class="learning-card-generation-release-status" data-release-package-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(releaseWorkbenchStatusText(status))}</em>
+    </div>`;
+  }
+
+  function releasePackageActionRow(action = {}, holder = {}, escapeHtml = defaultEscapeHtml) {
+    const endpointKey = clean(action.endpointKey || action.endpoint_key);
+    const actionKey = clean(action.key || action.actionKey || action.action_key);
+    const buildBusy = holder.packageStatus === "building";
+    const recordBusy = holder.actionStatus === "recording";
+    const candidate = releasePackageCandidateFromHolder(holder);
+    const disabledReason = !candidate
+      ? "先构建 summary-only release package candidate，再记录 package。"
+      : recordBusy ? "正在记录上一条 release action。" : "";
+    return `<div class="learning-card-generation-release-row" data-release-workbench-action-row data-release-workbench-endpoint="${escapeHtml(endpointKey || "unsupported")}">
+      <span>
+        <strong>${escapeHtml(clean(action.label) || actionKey || "Record release package")}</strong>
+        <small>${escapeHtml(clean(action.source || action.action || "build package candidate before recording"))}</small>
+      </span>
+      <div class="learning-card-generation-release-row-actions">
+        <button type="button"
+          data-release-package-build
+          data-release-workbench-action-key="${escapeHtml(actionKey)}"
+          data-release-workbench-endpoint-key="${escapeHtml(endpointKey)}"
+          ${buildBusy || recordBusy ? "disabled" : ""}>${escapeHtml(buildBusy ? "构建中" : "构建包候选")}</button>
+        <button type="button"
+          data-release-workbench-action
+          data-release-workbench-action-key="${escapeHtml(actionKey)}"
+          data-release-workbench-endpoint-key="${escapeHtml(endpointKey)}"
+          ${disabledReason ? `data-release-workbench-blocked-reason="${escapeHtml(disabledReason)}"` : ""}
+          ${!candidate || buildBusy || recordBusy ? "disabled" : ""}>${escapeHtml(recordBusy ? "记录中" : "记录包")}</button>
+      </div>
+    </div>`;
+  }
+
   function releaseWorkbenchActionRows(actions = [], holder = {}, escapeHtml = defaultEscapeHtml) {
     const busy = holder.actionStatus === "recording";
     if (!actions.length) return `<div class="learning-card-generation-release-empty">暂无需要 Owner 记录的 release action。</div>`;
     return actions.slice(0, 6).map((action) => {
       const endpointKey = clean(action.endpointKey || action.endpoint_key);
       const actionKey = clean(action.key || action.actionKey || action.action_key);
+      if (endpointKey === "release_package") return releasePackageActionRow(action, holder, escapeHtml);
       const supported = releaseWorkbenchSupportedEndpoint(endpointKey);
       const disabled = busy || !supported;
       const detail = action.externalActionRequired
@@ -709,6 +795,7 @@
       <div class="learning-card-generation-release-actions">
         ${releaseWorkbenchActionRows(actions, holder, escapeHtml)}
       </div>
+      ${releasePackageStatusPanel(holder, escapeHtml)}
       ${releaseWorkbenchActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
@@ -2683,6 +2770,7 @@
     createCycleAuditQueryPayload,
     createCycleHistoryQueryPayload,
     createOwnerCorrectionPayload,
+    createReleasePackageBuildPayload,
     createReleaseWorkbenchActionPayload,
     createTargetProvisionPayload,
     createStageAssessmentPayload,
