@@ -11,9 +11,10 @@
 
 ## 2026-06-17T04:28+08:00 - Release Workbench UI Decision Action Closure
 
-- Status: implemented and focused Harness validated locally. Commit/push is
-  still pending for this slice. This slice is not deployed because the user
-  deferred production deployment until the broader Growth target is complete.
+- Status: implemented, locally validated, committed, and pushed to both
+  configured Growth remotes as `0ffdcff`. This slice is not deployed because
+  the user deferred production deployment until the broader Growth target is
+  complete.
 - Change intent:
   - make the embedded Owner release workbench UI able to execute the existing
     `release_decision` workbench action instead of leaving release decisions as
@@ -83,8 +84,7 @@
   - AI Ops evidence ledger record:
     `evidence-1507828a-ef6f-4e83-84d9-f5b68ff5db68`.
 - Remaining gates:
-  - run final diff hygiene;
-  - commit and push this slice if requested/when batching the next commit.
+  - no production deployment in this slice.
 
 ## 2026-06-17T04:16+08:00 - Release Decision Latest Ready Collection Run Auto-Selection
 
