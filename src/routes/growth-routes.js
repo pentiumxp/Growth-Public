@@ -770,6 +770,7 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     releaseEvidenceArtifactManifest: merged.releaseEvidenceArtifactManifest || merged.release_evidence_artifact_manifest || merged.evidenceArtifactManifest || merged.evidence_artifact_manifest || merged.uiEvidenceManifest || merged.ui_evidence_manifest || merged.artifactManifest || merged.artifact_manifest,
     centralVisualEvidenceFile: merged.centralVisualEvidenceFile || merged.central_visual_evidence_file,
     releasePackage: merged.releasePackage || merged.release_package || merged.package,
+    buildReleasePackage: merged.buildReleasePackage === true || merged.build_release_package === true || merged.buildAndRecordPackage === true || merged.build_and_record_package === true || merged.recordPackageFromBuild === true || merged.record_package_from_build === true,
     activationDecision: merged.activationDecision || merged.activation_decision || merged.ownerActivationDecision || merged.owner_activation_decision,
     enablementDecision: merged.enablementDecision || merged.enablement_decision || merged.ownerEnablementDecision || merged.owner_enablement_decision,
     approval: merged.approval || merged.approvalSummary || merged.approval_summary,

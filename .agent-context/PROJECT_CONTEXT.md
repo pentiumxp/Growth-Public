@@ -379,14 +379,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   action facade over that workbench. The facade reads the workbench first,
   requires the requested endpoint to be advertised, then delegates only to
   existing release-readiness snapshot, release evidence, release approval,
-  collection-run, release-decision, release package-record, release activation,
-  or runtime enablement record services. It requires only the
+  collection-run, release-decision, release package-record or explicit package
+  build-and-record, release activation, or runtime enablement record services.
+  It requires only the
   selected endpoint's write service instead of requiring every possible
   release-workbench action dependency at construction time. It stores/passes only
-  summary-only bounded action/evidence/approval/decision data and does not
-  build packages, run smoke tasks internally, call Gateway/model providers,
-  publish, schedule, mutate runtime config, grant scheduler permission, or
-  mutate learner state.
+  summary-only bounded action/evidence/approval/decision/package data. Default
+  `release_package` actions still record only an existing package artifact; only
+  an explicit `buildReleasePackage` / `build_and_record_package` request
+  delegates package build-and-record to
+  `learning-automation-release-package-service.buildPackage` with package-record
+  write authorization. The facade does not build packages itself, run smoke tasks
+  internally, call Gateway/model providers, publish, schedule, mutate runtime
+  config, grant scheduler permission, or mutate learner state.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised
@@ -412,9 +417,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   summary-only `growth.learningAutomationReleasePackage.v1` candidate through
   `POST /api/v1/growth/automation/release-packages/build`, then records that
   exact candidate through the workbench action facade. A workbench placeholder
-  body cannot create a package record. The build service/API/CLI can also
-  persist a package audit record only when explicit `write_package_record` /
-  `--write-package-record` plus write authorization is supplied. The frontend
+  body cannot create a package record. Owner tooling may also send an explicit
+  `buildReleasePackage` / `build_and_record_package` workbench action, which
+  delegates build plus package-record persistence to the package service instead
+  of requiring a prebuilt artifact in the action body. The build service/API/CLI
+  can also persist a package audit record only when explicit
+  `write_package_record` / `--write-package-record` plus write authorization is
+  supplied. The frontend
   harness explicitly covers
   `release_approval`, `release_evidence_collection`, `release_decision`, and
   `release_package` action templates: approval payloads must contain only

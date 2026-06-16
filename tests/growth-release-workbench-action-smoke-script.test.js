@@ -68,6 +68,7 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--central-visual-evidence-file", "/tmp/central-visual.json",
     "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
     "--scheduler-run-ui-evidence-file", "/tmp/scheduler-run-ui.json",
+    "--build-and-record-package",
     "--evidence-json", JSON.stringify({ evidenceId: "ui_1" }),
     "--requested-by", "owner"
   ]);
@@ -91,6 +92,7 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.centralVisualEvidenceFile, "/tmp/central-visual.json");
   assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
   assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
+  assert.equal(input.buildReleasePackage, true);
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
 });
@@ -155,12 +157,14 @@ test("release workbench action smoke script delegates only to action service", (
 
   const result = runOperation(service, {
     workspaceId: "fanfan",
-    endpointKey: "release_evidence"
+    endpointKey: "release_package",
+    buildReleasePackage: true
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.endpointKey, "release_evidence");
+  assert.equal(result.endpointKey, "release_package");
   assert.equal(calls[0].workspaceId, "fanfan");
+  assert.equal(calls[0].buildReleasePackage, true);
 });
 
 test("release workbench action smoke script can run evidence collection through the workbench facade", () => {

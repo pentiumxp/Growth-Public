@@ -2546,12 +2546,12 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /releaseCollectionRunService\.recordRun/);
   assert.match(releaseWorkbenchActionService, /releaseDecisionService\.recordDecision/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.recordPackage/);
+  assert.match(releaseWorkbenchActionService, /releasePackageService\.buildPackage/);
   assert.match(releaseWorkbenchActionService, /releaseActivationService\.recordActivation/);
   assert.match(releaseWorkbenchActionService, /runtimeEnablementService\.recordEnablement/);
   assert.doesNotMatch(releaseWorkbenchActionService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseWorkbenchActionService, /learning_growth_/);
   assert.doesNotMatch(releaseWorkbenchActionService, /spawnSync/);
-  assert.doesNotMatch(releaseWorkbenchActionService, /buildPackage/);
   assert.doesNotMatch(releaseWorkbenchActionService, /publishPlanItem/);
   assert.doesNotMatch(releaseWorkbenchActionService, /generateCard/);
   assert.doesNotMatch(releaseWorkbenchActionService, /evaluateSubmission/);

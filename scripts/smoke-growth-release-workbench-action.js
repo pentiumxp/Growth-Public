@@ -134,6 +134,12 @@ function inputFromArgs(args) {
     releaseDecision: parseJsonArg(args, ["--release-decision-json", "--releaseDecisionJson", "--decision-json", "--decisionJson"], undefined),
     centralVisualEvidenceFile: firstArgValue(args, ["--central-visual-evidence-file", "--centralVisualEvidenceFile"], ""),
     releasePackage: parseJsonArg(args, ["--release-package-json", "--releasePackageJson"], undefined),
+    buildReleasePackage: hasFlag(args, "--build-release-package")
+      || hasFlag(args, "--buildReleasePackage")
+      || hasFlag(args, "--build-and-record-package")
+      || hasFlag(args, "--buildAndRecordPackage")
+      || hasFlag(args, "--record-package-from-build")
+      || hasFlag(args, "--recordPackageFromBuild"),
     action: parseJsonArg(args, ["--action-json", "--actionJson"], undefined),
     evidence: parseJsonArg(args, ["--evidence-json", "--evidenceJson"], undefined),
     releaseApproval: parseJsonArg(args, ["--release-approval-json", "--releaseApprovalJson"], undefined),

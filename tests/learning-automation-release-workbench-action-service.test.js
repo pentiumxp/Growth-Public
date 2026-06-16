@@ -136,6 +136,31 @@ function serviceWith(overrides = {}) {
       }
     },
     releasePackageService: overrides.releasePackageService || {
+      buildPackage(input) {
+        calls.push(["release_package_build", input]);
+        return {
+          ok: false,
+          package: {
+            schemaVersion: "growth.learningAutomationReleasePackage.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            packageId: "lgapkg_build_artifact_1",
+            status: "incomplete",
+            summary: {
+              status: "incomplete",
+              packageRecordWritten: true,
+              packageRecordId: "lgapkg_build_1"
+            }
+          },
+          record: {
+            ok: true,
+            package: {
+              packageId: "lgapkg_build_1",
+              status: "incomplete"
+            }
+          }
+        };
+      },
       recordPackage(input) {
         calls.push(["release_package", input]);
         return {
@@ -366,6 +391,63 @@ test("release workbench action records package artifacts only through package re
   assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_package"]);
   assert.equal(calls[1][1].releasePackage, releasePackage);
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action can explicitly build and record a package through package service", () => {
+  const { service, calls } = serviceWith();
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_package",
+    actionKey: "release_package",
+    buildAndRecordPackage: true,
+    tasks: ["planner_readiness", "scheduler_dry_run"],
+    requiredTaskIds: ["planner_readiness", "scheduler_dry_run"],
+    activationGates: ["writeful_execution"],
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "recorded");
+  assert.equal(result.endpointKey, "release_package");
+  assert.equal(result.actionRecord.recordId, "lgapkg_build_1");
+  assert.equal(result.actionRecord.recordStatus, "incomplete");
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.runtimeConfigMutationPerformed, false);
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_package_build"]);
+  assert.deepEqual(calls[1][1].tasks, ["planner_readiness", "scheduler_dry_run"]);
+  assert.deepEqual(calls[1][1].requiredTaskIds, ["planner_readiness", "scheduler_dry_run"]);
+  assert.deepEqual(calls[1][1].activationGates, ["writeful_execution"]);
+  assert.equal(calls[1][1].writePackageRecord, true);
+  assert.equal(calls[1][1].allowWritePackage, true);
+  assert.equal(calls[1][1].ownerAuthorizedWrite, true);
+});
+
+test("release workbench action fails closed when package build is requested but unavailable", () => {
+  const { service, calls } = serviceWith({
+    releasePackageService: {
+      recordPackage(input) {
+        calls.push(["release_package", input]);
+        return {
+          ok: true,
+          package: {
+            packageId: "lgapkg_1",
+            status: "ready_for_release_review"
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_package",
+    buildReleasePackage: true
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "release_workbench_action_release_package_build_unavailable");
+  assert.deepEqual(calls.map((call) => call[0]), ["workbench"]);
 });
 
 test("release workbench action records runtime enablement audit without config mutation", () => {

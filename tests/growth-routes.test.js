@@ -5288,6 +5288,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      schedulerRunUiEvidenceFile: undefined,
 	      schedulerWorkerTargetUiEvidenceFile: undefined,
 	      releasePackage: undefined,
+	      buildReleasePackage: false,
       activationDecision: undefined,
       enablementDecision: undefined,
       approval: undefined,
@@ -5387,6 +5388,7 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      schedulerRunUiEvidenceFile: "/tmp/scheduler-run-ui.json",
 	      schedulerWorkerTargetUiEvidenceFile: undefined,
 	      releasePackage: undefined,
+	      buildReleasePackage: false,
 	      activationDecision: undefined,
 	      enablementDecision: undefined,
 	      approval: undefined,
@@ -5425,6 +5427,36 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      allowWriteCollection: true,
 	      ownerAuthorizedWrite: true
 	    });
+
+	    const packageBuildRecordResponse = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+	      method: "POST",
+	      headers: {
+	        authorization: "Bearer workspace-key",
+	        "content-type": "application/json",
+	        "x-hermes-plugin-actor-role": "owner",
+	        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+	      },
+	      body: JSON.stringify({
+	        workspace_id: "weixin_fanfan",
+	        learner_id: "fanfan",
+	        program_id: "program_science",
+	        endpoint_key: "release_package",
+	        action_key: "release_package",
+	        build_and_record_package: true,
+	        tasks: ["planner_readiness", "scheduler_dry_run"],
+	        required_task_ids: ["planner_readiness", "scheduler_dry_run"],
+	        activation_gates: ["writeful_execution"],
+	        requested_by: "weixin_owner"
+	      })
+	    });
+	    assert.equal(packageBuildRecordResponse.status, 201);
+	    assert.equal((await packageBuildRecordResponse.json()).endpointKey, "release_package");
+	    assert.equal(calls[2].endpointKey, "release_package");
+	    assert.equal(calls[2].buildReleasePackage, true);
+	    assert.deepEqual(calls[2].tasks, ["planner_readiness", "scheduler_dry_run"]);
+	    assert.deepEqual(calls[2].requiredTaskIds, ["planner_readiness", "scheduler_dry_run"]);
+	    assert.deepEqual(calls[2].activationGates, ["writeful_execution"]);
+	    assert.equal(calls[2].releasePackage, undefined);
 
 	    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
       method: "POST",

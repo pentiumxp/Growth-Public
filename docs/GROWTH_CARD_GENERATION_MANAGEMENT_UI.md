@@ -46,7 +46,10 @@ candidate through the workbench action facade. A placeholder route body is
 never enough to record a package. The build route remains no-write by default
 for this UI path, while backend/CLI callers may request package audit
 persistence only with explicit write flags and Owner or `--allow-write`
-authorization. Central `embedded-plugin-shell` visual evidence passed for
+authorization; the workbench action backend can also accept an explicit
+`buildReleasePackage` / `build_and_record_package` request that delegates build
+plus package-record persistence to the package service. Central
+`embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
@@ -141,9 +144,12 @@ selected learner target, not the iframe's Owner workspace.
    `release_package`, it first delegates package candidate construction to the
    Owner-only `POST /api/v1/growth/automation/release-packages/build` route and
    records only the returned summary-only package artifact. The default browser
-   path does not ask the build route to write package records. It must not run
-   smoke scripts in the browser, flip runtime config, schedule work, notify
-   users, call Gateway, or mutate learner state directly.
+   path does not ask the build route to write package records. Backend/CLI
+   tooling may use the explicit `buildReleasePackage` workbench action flag for
+   build-and-record, but the embedded browser path keeps the package artifact
+   visible before recording it. It must not run smoke scripts in the browser,
+   flip runtime config, schedule work, notify users, call Gateway, or mutate
+   learner state directly.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
 8. Owner selects the `日常英语卡` recipe.
@@ -421,9 +427,13 @@ build route and retain the returned summary-only
 `growth.learningAutomationReleasePackage.v1` candidate in local UI state. The
 record button stays blocked until such a candidate exists. The later workbench
 action payload may include only that package candidate plus summary-only action
-metadata. It must not send a placeholder `{ summaryOnly: true }` body as the
-package, raw bundle output, raw smoke logs, private paths, transcripts, raw
-prompts, model output, or scheduler permission fields.
+metadata. Backend/CLI tooling can alternatively set the explicit
+`buildReleasePackage` / `build_and_record_package` flag so the workbench action
+delegates build-and-record to the package service, but the embedded UI keeps the
+candidate-review step visible. It must not send a placeholder
+`{ summaryOnly: true }` body as the package, raw bundle output, raw smoke logs,
+private paths, transcripts, raw prompts, model output, or scheduler permission
+fields.
 
 The release workbench panel does not grant scheduling permission. It does not
 apply runtime config, publish cards, call Gateway, notify users, or mutate

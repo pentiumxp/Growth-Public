@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T06:55+08:00 - Explicit Package Build-And-Record Workbench Action
+
+- Status: implemented, documented, full-Harness validated locally, and ready for
+  commit/push closure in this slice. No deployment in this slice.
+- Change intent:
+  - close the remaining backend gap where the Owner release workbench
+    `release_package` action could record only a prebuilt
+    `growth.learningAutomationReleasePackage.v1` artifact supplied by UI/Codex
+    tooling;
+  - keep default package action behavior two-step and explicit, while allowing
+    Owner tooling to request package build plus package-record persistence from
+    the same workbench action boundary.
+- Scope:
+  - `learning-automation-release-workbench-action-service` now recognizes
+    explicit `buildReleasePackage` / `build_and_record_package` requests for
+    `release_package` actions and delegates to
+    `learning-automation-release-package-service.buildPackage`;
+  - the delegated build path supplies `writePackageRecord=true`,
+    `allowWritePackage=true`, and `ownerAuthorizedWrite=true`, then treats
+    `result.record.ok === true` as the action success condition;
+  - default `release_package` actions without the explicit build flag still
+    require an existing summary-only package artifact and call
+    `releasePackageService.recordPackage`;
+  - route normalization and the smoke CLI now preserve the explicit build flag
+    aliases without widening HTTP manifest file reads or other action payloads;
+  - focused Harness covers build+record success, build service unavailable
+    failure, route flag normalization, CLI flag parsing/delegation, and the
+    updated architecture guard.
+- Boundary notes:
+  - the workbench action facade still owns no repository/table and does not spawn
+    commands, run smoke tasks internally, call Gateway/model vendors, publish
+    cards/plans, evaluate submissions, execute scheduler actions, flip runtime
+    config, grant scheduler permission, inspect SQLite directly, deploy, or
+    mutate learner state;
+  - package composition and package-record persistence remain owned by
+    `learning-automation-release-package-service` and its repository boundary;
+  - this is backend/CLI/route enablement only. It does not replace the required
+    Home AI central visual/UI release evidence for production readiness.
+- Validation passed:
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=205` and
+    `checkedCount=205`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `113/113`;
+  - `git diff --check`;
+  - `npm test` passed `892/892`.
+
 ## 2026-06-17T10:45+08:00 - Inline Artifact Manifest Workbench Action
 
 - Status: implemented, documented, full-Harness validated locally, committed,

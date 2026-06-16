@@ -960,7 +960,12 @@ Implemented backend shape:
   `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages/build` defaults
   to no-write but can persist the collection-run row and/or package audit row
-  only when explicit write flags are supplied;
+  only when explicit write flags are supplied. The Owner workbench
+  `release_package` action still records an existing package artifact by default;
+  when Owner tooling explicitly sends `buildReleasePackage` /
+  `build_and_record_package`, the action facade delegates to this same package
+  service with package-record write authorization instead of building packages
+  inside the facade;
   Owner-only `POST /api/v1/growth/automation/release-packages` records an
   existing summary-only package artifact only and does not run smoke tasks. The
   package is not release approval, runtime config enablement, scheduler
@@ -1221,7 +1226,10 @@ Remaining release gaps:
   `release_package_review_ui_evidence` gate for the package review row, but that
   gate still needs a real summary UI/visual artifact with candidate-build,
   candidate-status, and record-package-action coverage before it can pass in
-  production. Local Harness now proves that a validated
+  production. Local Harness now proves that the backend workbench action can
+  either record an existing package artifact or explicitly delegate
+  build-and-record to the package service with bounded unavailable-service
+  failure. Local Harness also proves that a validated
   release-package-review UI evidence summary can be recorded through
   `npm run smoke:release-evidence` into a temporary Growth SQLite database and
   read back from the release-evidence bag with top-level evidence/check keys

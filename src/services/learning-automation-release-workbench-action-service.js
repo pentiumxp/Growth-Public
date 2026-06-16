@@ -39,6 +39,10 @@ function asArray(value) {
   return [value];
 }
 
+function booleanFlag(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
 function scanPrivacyKeys(value, path = "", findings = [], seen = new Set()) {
   if (!value || typeof value !== "object" || findings.length >= 16 || seen.has(value)) return findings;
   seen.add(value);
@@ -161,6 +165,15 @@ function defaultSummary(input = {}, kind = "evidence") {
   });
 }
 
+function shouldBuildReleasePackage(input = {}) {
+  return booleanFlag(input.buildReleasePackage)
+    || booleanFlag(input.build_release_package)
+    || booleanFlag(input.buildAndRecordPackage)
+    || booleanFlag(input.build_and_record_package)
+    || booleanFlag(input.recordPackageFromBuild)
+    || booleanFlag(input.record_package_from_build);
+}
+
 function baseInput(input = {}, scope = {}) {
   return Object.assign({}, input, scope, {
     requestedBy: input.requestedBy || input.requested_by,
@@ -208,6 +221,16 @@ function callWriteService(endpointKey, input, scope, services) {
   }
   if (endpointKey === "release_package") {
     const releasePackage = input.releasePackage || input.release_package || input.package;
+    if (shouldBuildReleasePackage(input)) {
+      if (!services.releasePackageService || typeof services.releasePackageService.buildPackage !== "function") {
+        return unavailable("release_workbench_action_release_package_build_unavailable", scope);
+      }
+      return services.releasePackageService.buildPackage(Object.assign({}, base, {
+        writePackageRecord: true,
+        allowWritePackage: true,
+        ownerAuthorizedWrite: true
+      }));
+    }
     if (!releasePackage) return unavailable("release_workbench_action_release_package_required", scope);
     return services.releasePackageService.recordPackage(Object.assign({}, base, {
       releasePackage,
@@ -236,7 +259,7 @@ function resultRecord(endpointKey, result = {}) {
   if (endpointKey === "release_evidence_collection") return result.collection || null;
   if (endpointKey === "release_collection_run") return result.run || null;
   if (endpointKey === "release_decision") return result.decision || null;
-  if (endpointKey === "release_package") return result.package || null;
+  if (endpointKey === "release_package") return result.record?.package || result.package || null;
   if (endpointKey === "release_activation") return result.activation || null;
   if (endpointKey === "runtime_enablement") return result.enablement || null;
   return null;
@@ -269,6 +292,7 @@ function actionRecordId(record = {}) {
 
 function actionWriteSucceeded(endpointKey, result = {}) {
   if (endpointKey === "release_evidence_collection") return Boolean(result?.collection);
+  if (endpointKey === "release_package" && result?.record) return result.record.ok === true;
   return result?.ok === true;
 }
 
