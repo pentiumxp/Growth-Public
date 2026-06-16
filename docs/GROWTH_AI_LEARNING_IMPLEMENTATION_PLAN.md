@@ -400,7 +400,10 @@ Required harness:
 - `npm run smoke:profile-feedback` for completed-cycle profile/evidence
   feedback readback;
 - `tests/growth-routes.test.js`;
-- UI privacy tests and central visual evidence.
+- `tests/growth-frontend-adapter.test.js` for browser history selection,
+  selected-cycle audit payloads, Home AI proxy routing, visible progress/errors,
+  and UI privacy projection;
+- central visual evidence before production UI release.
 
 ### P3: Stage Checkpoint Loop
 

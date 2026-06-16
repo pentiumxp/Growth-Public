@@ -127,7 +127,7 @@ confused:
 | Direct daily card generation | The Owner `生成` tab can generate supported daily cards through the card-generation service and Gateway authoring boundary. | Keep this path as a compact recipe path, especially for `daily_english_v1`, while preserving `daily_score_once` and visible progress/failure states. |
 | Planner-backed science path | Backend services and harnesses can run the Fanfan science vertical from plan draft through publication, learner evidence, evaluation, ledger, Profile V2, and profile-delta audit. | The embedded Owner UI must expose domain-pack/subject selection, plan preview, explicit publish, publish-attempt failure state, and audit refresh without Codex. |
 | Learner card interaction | Generated daily cards support one submission, one evaluation, one optional reflection, audio evidence, and score-proportional completion. | The UI must keep at most one active text box per stage and must never require a pass-line retry for ordinary daily cards. |
-| Audit readback | Backend read routes expose plan, evidence, profile-delta, correction, cycle audit, selectable cycle history, and completeness DTOs. | Owner UI must render those DTOs as an explanation surface, older-cycle selector, and correction entry point without exposing raw private content. |
+| Audit readback | Backend read routes expose plan, evidence, profile-delta, correction, cycle audit, selectable cycle history, and completeness DTOs; the Owner `生成` tab now renders current-cycle and selected historical-cycle audit/completeness using service-provided selectors. | Production-complete release still requires central visual/release evidence for the audit surface, and later proposal/digest/action review UI. |
 | Supervised automation | Proposal creation, Owner decision, and accepted-proposal explicit publication are implemented as a non-scheduling backend layer. | Proposal review UI must exist before any scheduler; scheduling must start with read-only dry-run evidence and notification/action handoff design. |
 | Release-review evidence | Release-readiness can require bounded release workbench smoke evidence and evidence-bundle readback for Owner release tooling. | This remains L7/release-review evidence only; it does not advance the daily browser loop until Owner/learner learning flows and audit/correction UI are browser-operable and visually validated. |
 
@@ -747,8 +747,9 @@ smoke evidence, scheduler/digest UI, platform action UI or Action Inbox/Web
 Push evidence, and a production Home AI central visual harness artifact still
 need to be completed and ingested before production rollout.
 
-The next product-visible improvement should be the Owner-supervised daily
-planning UI. The audit UI should consume the learning-cycle aggregate for
-cycle-level drilldown, and the completeness route for closure/readiness
-badges, instead of stitching plan, evidence, profile-delta, and correction
-routes in browser code.
+The next product-visible improvement should be production closure of the
+Owner-supervised daily planning/audit UI. The audit UI now consumes
+`learning-cycles/history` selectors plus the learning-cycle aggregate and
+completeness routes for drilldown/readiness badges instead of stitching plan,
+evidence, profile-delta, and correction routes in browser code; remaining work
+is visual/release evidence and supervised automation review UI.

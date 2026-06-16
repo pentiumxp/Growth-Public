@@ -47,6 +47,13 @@
         completeness: null,
         error: ""
       },
+      cycleHistory: {
+        status: "idle",
+        data: null,
+        selectedCycleKey: "",
+        selectedCycle: null,
+        error: ""
+      },
       error: "",
       progressStep: "",
       progressMessage: "",
@@ -659,6 +666,42 @@
         });
       });
     });
+    root.querySelectorAll("[data-card-generation-cycle-history-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshCycleHistoryFromUi().catch((error) => {
+          pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-card-generation-cycle-history-select]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const selected = selectCycleHistoryItem(button.dataset.cycleHistoryKey);
+        if (!selected) {
+          pageState.cardGeneration.cycleDrilldown = Object.assign({}, pageState.cardGeneration.cycleDrilldown || {}, {
+            status: "failed",
+            error: pageState.cardGeneration.cycleHistory?.error || "未找到可选择的历史周期。"
+          });
+          renderShell();
+          return;
+        }
+        refreshOwnerCycleDrilldownFromUi().catch((error) => {
+          pageState.cardGeneration.cycleDrilldown = {
+            status: "failed",
+            audit: pageState.cardGeneration.cycleDrilldown?.audit || null,
+            completeness: pageState.cardGeneration.cycleDrilldown?.completeness || null,
+            error: error.message || String(error)
+          };
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-card-generation-correction-action]").forEach((select) => {
       select.addEventListener("change", () => {
         pageState.cardGeneration.ownerCorrectionAction = clean(select.value) || "confirm_profile_delta";
@@ -785,6 +828,13 @@
       completeness: null,
       error: ""
     };
+    pageState.cardGeneration.cycleHistory = {
+      status: "loading",
+      data: pageState.cardGeneration.cycleHistory?.data || null,
+      selectedCycleKey: "",
+      selectedCycle: null,
+      error: ""
+    };
     pageState.cardGeneration.learningLoopState = {
       status: "loading",
       data: null,
@@ -823,6 +873,7 @@
     renderShell();
     await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+    await refreshCycleHistoryFromUi({ silent: true });
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
@@ -907,6 +958,7 @@
       }));
       await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+      await refreshCycleHistoryFromUi({ silent: true });
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
@@ -1064,6 +1116,56 @@
     };
   }
 
+  function cycleHistoryItems() {
+    const history = pageState.cardGeneration.cycleHistory || {};
+    const data = history.data || {};
+    return Array.isArray(data.cycles) ? data.cycles : [];
+  }
+
+  function cycleHistoryKey(cycle = {}, index = 0) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (ui && typeof ui.cycleHistoryItemKey === "function") {
+      return ui.cycleHistoryItemKey(cycle, index);
+    }
+    const selectors = cycle.selectors || {};
+    return [
+      selectors.taskCardId || cycle.taskCardId,
+      selectors.evaluationId || cycle.evaluationId,
+      selectors.profileDeltaId || cycle.profileDeltaId,
+      selectors.planDraftId || cycle.planDraftId,
+      selectors.correctionId || cycle.correctionId,
+      index
+    ].map(clean).filter(Boolean).join(":") || `cycle:${index}`;
+  }
+
+  function selectCycleHistoryItem(key = "") {
+    const selectedKey = clean(key);
+    const cycles = cycleHistoryItems();
+    const index = cycles.findIndex((cycle, cycleIndex) => cycleHistoryKey(cycle, cycleIndex) === selectedKey);
+    const selectedCycle = index >= 0 ? cycles[index] : null;
+    pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
+      selectedCycleKey: selectedCycle ? selectedKey : "",
+      selectedCycle,
+      error: selectedCycle ? "" : "未找到可选择的历史周期。"
+    });
+    return selectedCycle;
+  }
+
+  function createCycleHistoryQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createCycleHistoryQueryPayload !== "function") {
+      throw new Error("cycle_history_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const payload = ui.createCycleHistoryQueryPayload({
+      context,
+      workspaceId: targetWorkspaceId,
+      selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
+    });
+    return { payload, targetWorkspaceId };
+  }
+
   function createCycleAuditQueryPayload() {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createCycleAuditQueryPayload !== "function") {
@@ -1076,9 +1178,51 @@
       workspaceId: targetWorkspaceId,
       draftResult: pageState.cardGeneration.dailyLoopDraftResult || {},
       publishResult: pageState.cardGeneration.dailyLoopPublishResult || {},
-      generatedResult: pageState.cardGeneration.generatedResult || {}
+      generatedResult: pageState.cardGeneration.generatedResult || {},
+      selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
     });
     return { payload, targetWorkspaceId };
+  }
+
+  async function refreshCycleHistoryFromUi(options = {}) {
+    if (!pageState.auth.isOwner || !pageState.cardGeneration.context) return null;
+    const { payload, targetWorkspaceId } = createCycleHistoryQueryPayload();
+    const previous = pageState.cardGeneration.cycleHistory || {};
+    pageState.cardGeneration.cycleHistory = Object.assign({}, previous, {
+      status: "loading",
+      error: ""
+    });
+    if (!options.silent) renderShell();
+    try {
+      const result = await api.fetchGrowthCycleHistory(payload, targetWorkspaceId);
+      const cycles = Array.isArray(result.cycles) ? result.cycles : [];
+      let selectedCycleKey = previous.selectedCycleKey || "";
+      let selectedCycle = null;
+      if (selectedCycleKey) {
+        const index = cycles.findIndex((cycle, cycleIndex) => cycleHistoryKey(cycle, cycleIndex) === selectedCycleKey);
+        if (index >= 0) selectedCycle = cycles[index];
+        else selectedCycleKey = "";
+      }
+      pageState.cardGeneration.cycleHistory = {
+        status: "ready",
+        data: result,
+        selectedCycleKey,
+        selectedCycle,
+        error: ""
+      };
+      if (options.refreshDrilldown && selectedCycle) {
+        await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      }
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.cycleHistory = Object.assign({}, previous, {
+        status: "failed",
+        error: error.message || String(error)
+      });
+      if (!options.silent) renderShell();
+      return null;
+    }
   }
 
   async function refreshOwnerCycleDrilldownFromUi(options = {}) {
@@ -1165,7 +1309,15 @@
         completeness: null,
         error: ""
       };
+      pageState.cardGeneration.cycleHistory = {
+        status: "idle",
+        data: null,
+        selectedCycleKey: "",
+        selectedCycle: null,
+        error: ""
+      };
       await refreshLearningLoopState(targetWorkspaceId, context);
+      await refreshCycleHistoryFromUi({ silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {
@@ -1190,6 +1342,11 @@
       completeness: null,
       error: ""
     };
+    pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
+      selectedCycleKey: "",
+      selectedCycle: null,
+      error: ""
+    });
     pageState.cardGeneration.progressStep = "context";
     pageState.cardGeneration.progressMessage = "正在整理学习图谱、画像摘要和近期信号。";
     renderShell();
@@ -1230,6 +1387,11 @@
       completeness: null,
       error: ""
     };
+    pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
+      selectedCycleKey: "",
+      selectedCycle: null,
+      error: ""
+    });
     pageState.cardGeneration.progressStep = "authoring";
     pageState.cardGeneration.progressMessage = "正在根据已验证计划项生成卡片。";
     renderShell();

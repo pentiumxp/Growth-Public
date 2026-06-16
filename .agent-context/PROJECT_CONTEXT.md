@@ -641,7 +641,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   DTOs into bounded `growth.learningCycleHistory.v1` rows for Owner history
   selection without writes, Gateway calls, direct repository access,
   publication, generation, evaluation, scheduling, notification delivery,
-  stage activation, or learner-state mutation.
+  stage activation, or learner-state mutation. The embedded Owner `生成` tab now
+  consumes those rows through `growth-api-client.js`, renders selectable
+  historical cycles, and uses only the selected row's service-provided selectors
+  to refresh `learning-cycles/audit` plus `learning-cycles/completeness`; browser
+  code must not reconstruct history from raw rows.
   Audit-completeness readback is now implemented through
   `learning-audit-completeness-service` and visible-target scoped
   `GET /api/v1/growth/learning-cycles/completeness`; it evaluates the public

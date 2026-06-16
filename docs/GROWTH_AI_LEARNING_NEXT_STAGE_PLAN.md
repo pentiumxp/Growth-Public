@@ -117,8 +117,8 @@ Growth already has substantial backend foundation:
   target, default-disabled worker lease, release-readiness evidence, persisted
   release approval records, and persisted release evidence records.
 
-The product is not complete because the browser history controls and release
-evidence are not closed:
+The product is not complete because production release evidence and later
+automation surfaces are not closed:
 
 - Owner planner/provision UI now supports visible target selection,
   `targetProvisioning` status, domain-pack/subject selection, explicit Owner
@@ -128,12 +128,14 @@ evidence are not closed:
   action to gate the Owner formal-checkpoint activation button, and keeps the
   actual activation write on `learning-stage-assessment-service`. Central
   `embedded-plugin-shell` visual evidence and production Owner-loop smoke exist
-  for the Growth plugin shell; backend historical-cycle readback exists, while
-  browser richer older-cycle selection controls and full automation release
-  evidence UI/production collection remain incomplete;
-- Owner audit/correction UI is not fully rendered from the implemented DTOs,
-  even though the backend services and `npm run smoke:owner-audit` are
-  available;
+  for the Growth plugin shell. Browser older-cycle selection is now wired over
+  `GET /api/v1/growth/learning-cycles/history`: Owner can refresh bounded
+  history rows, select one row, and drill into audit/completeness through the
+  returned selectors without browser-side history reconstruction. Full
+  automation release evidence UI/production collection remains incomplete;
+- Owner audit/correction UI renders the implemented DTOs for current-cycle and
+  selected historical-cycle audit. It still needs production visual/release
+  evidence before product-complete release;
 - stage-checkpoint browser UI is wired into the Owner generation panel as a
   controls-driven status/action surface. The backend Owner controls read model
   remains summary-only through `learning-stage-checkpoint-controls-service` and
@@ -165,8 +167,8 @@ The next implementation slices should be:
    explicitly create/update target provision rows through the Growth service
    facade. This Owner-loop path is deployed and production smoke validated, but
    Fanfan science still requires explicit Owner provisioning before draft/
-   publish. The remaining closure is older-cycle selection and formal
-   checkpoint/proposal/digest/action/execution surfaces.
+   publish. The remaining closure is formal checkpoint production evidence and
+   proposal/digest/action/execution surfaces.
 2. **Learner daily evidence closure**: keep generated daily cards on one
    active submission box, one evaluation, one optional reflection, audio
    record/playback, and score-proportional completion. No pass-line retry loop
@@ -176,10 +178,11 @@ The next implementation slices should be:
    summaries, correction history, and bounded correction writes through the
    Owner correction service. It also renders explicit
    `learning-cycles/audit` and `learning-cycles/completeness` drilldown for
-   the current generated/completed card cycle, showing summary-only timeline,
-   findings, and missing-required evidence. Backend selectable cycle history is
-   available through `learning-cycle-history-service`; remaining closure is
-   browser older-cycle selection plus production release evidence.
+   the current generated/completed card cycle and selected historical cycles,
+   showing summary-only timeline, findings, and missing-required evidence.
+   Browser cycle history uses `learning-cycle-history-service` selectors as the
+   only drilldown source and does not reconstruct older cycles locally. Remaining
+   closure is production release/visual evidence.
 4. **Formal checkpoint separation**: expose readiness and activation for
    stage assessments as a separate Owner path. Daily plan publish must still
    block direct formal assessment publication.
@@ -926,12 +929,11 @@ A next-stage package is complete only when:
 ## Immediate Recommendation
 
 The preferred next product slice remains Path A, but the immediate focus has
-shifted from basic draft/publish/provision operation to product-grade closure:
-older-cycle selection over the implemented current-cycle audit/completeness
-panel, central embedded visual evidence, and production release evidence over
-the existing daily-loop facade. That keeps the AI loop observable and avoids
-adding automation before Owner can inspect why a card was selected and what
-changed after completion.
+shifted from basic draft/publish/provision/history operation to product-grade
+closure: central embedded visual evidence, production release evidence, and then
+proposal/digest/action UI over the existing supervised automation facades. That
+keeps the AI loop observable and avoids adding unattended automation before
+Owner can inspect why a card was selected and what changed after completion.
 
 If the next slice must be backend-only, choose Path B and keep it strictly as
 release-readiness evidence. That boundary should make missing release evidence

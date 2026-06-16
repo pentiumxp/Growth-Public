@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T13:11+08:00 - Owner Historical Cycle Selection in Generation Tab
+
+- Status: implemented, documented, and full-Harness validated locally. This
+  slice closes the browser-side Owner control for selecting older learning
+  cycles over the service-owned `GET /api/v1/growth/learning-cycles/history`
+  read DTO. It keeps the Growth closed-loop progress baseline at about `75%`
+  complete overall, with about `25%` remaining for production visual/release
+  evidence, supervised automation UI, stage-assessment release evidence, and
+  broader multi-workspace/domain rollout.
+- Scope:
+  - `public/growth-api-client.js` adds `fetchGrowthCycleHistory` and supports
+    direct plugin and Home AI proxy paths with bounded query parameters;
+  - `public/growth-card-generation-ui.js` renders compact historical-cycle
+    rows in the cycle drilldown panel, builds bounded history queries, and
+    builds audit queries from the selected cycle's service-provided selectors;
+  - `public/app.js` owns the browser state, refresh, selection, and audit/
+    completeness reload flow for selected historical cycles;
+  - `public/growth-homeai-legacy.css` adds compact Hermes-control-panel styles
+    for the history panel without introducing a new color system.
+- Boundaries:
+  - no Gateway/model-vendor calls, no publication/generation/evaluation, no
+    scheduler execution, no notification delivery, no platform event emission,
+    no stage activation, no learner-state mutation, and no Home AI old Growth
+    server import;
+  - browser code consumes the history DTO and uses service-provided selectors;
+    it does not reconstruct historical cycles from raw card/submission rows;
+  - the UI remains readback/audit control only.
+- Harness added/updated:
+  - `tests/growth-frontend-adapter.test.js` covers direct/proxy history
+    client paths, history panel rendering, refresh/select events, selected-row
+    state, `createCycleHistoryQueryPayload`, and selected-cycle audit payload
+    override behavior;
+  - `tests/growth-architecture-boundary.test.js` guards the history adapter,
+    UI attributes, selected-cycle selector use, and no raw/private payload
+    leakage in the browser history surface.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`.
+- Validation passed:
+  - `node --check public/growth-api-client.js public/growth-card-generation-ui.js public/app.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` (`31/31`);
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js` (`65/65`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `git diff --check`;
+  - `npm test` (`802/802`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth Owner cycle history selection UI over learning-cycles/history; frontend adapter docs harness only; no production deploy" --json`
+    classified this UI adapter/readback slice as H1 and did not require the
+    visual lane.
+  - The Home AI app deploy plan still reported unrelated native-notification/
+    Web Push dirty files from another workspace state. They were not modified
+    by this Growth slice.
+- CodeGraph status after edits: `347` JavaScript files, `4,616` nodes,
+  `18,407` edges.
+
 ## 2026-06-16T12:52+08:00 - Recommendation Lifecycle Readback Release Evidence
 
 - Status: implemented and focused-Harness validated locally. This slice adds a

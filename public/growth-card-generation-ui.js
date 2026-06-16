@@ -852,7 +852,38 @@
     return [];
   }
 
-  function createCycleAuditQueryPayload({ context = {}, workspaceId = "", draftResult = {}, publishResult = {}, generatedResult = {} } = {}) {
+  function cycleHistoryItemKey(cycle = {}, index = 0) {
+    const selectors = cycle.selectors || {};
+    return [
+      selectors.taskCardId || cycle.taskCardId,
+      selectors.evaluationId || cycle.evaluationId,
+      selectors.profileDeltaId || cycle.profileDeltaId,
+      selectors.planDraftId || cycle.planDraftId,
+      selectors.correctionId || cycle.correctionId,
+      index
+    ].map(clean).filter(Boolean).join(":") || `cycle:${index}`;
+  }
+
+  function cycleSelectionPayload(cycle = {}) {
+    const selectors = cycle.selectors || {};
+    const targetNodeIds = firstCleanArray(
+      selectors.targetNodeIds,
+      cycle.targetNodeIds,
+      cycle.nodeIds
+    );
+    return {
+      plan_draft_id: firstCleanValue(selectors.planDraftId, cycle.planDraftId),
+      task_card_id: firstCleanValue(selectors.taskCardId, cycle.taskCardId),
+      evaluation_id: firstCleanValue(selectors.evaluationId, cycle.evaluationId),
+      profile_delta_id: firstCleanValue(selectors.profileDeltaId, cycle.profileDeltaId),
+      evidence_id: firstCleanValue(selectors.evidenceId, cycle.evidenceId),
+      correction_id: firstCleanValue(selectors.correctionId, cycle.correctionId),
+      source_id: firstCleanValue(selectors.sourceId, cycle.sourceId, selectors.evaluationId, cycle.evaluationId),
+      target_node_ids: targetNodeIds
+    };
+  }
+
+  function createCycleAuditQueryPayload({ context = {}, workspaceId = "", draftResult = {}, publishResult = {}, generatedResult = {}, selectedCycle = {} } = {}) {
     const ownerAudit = context.ownerAudit || {};
     const latestPlan = ownerAuditItems(ownerAudit, "planAudit")[0] || {};
     const firstDelta = ownerAuditItems(ownerAudit, "profileDeltaAudit")[0] || {};
@@ -864,7 +895,9 @@
     const generation = publishResult.generation || generatedResult || {};
     const published = generation.published || {};
     const selectedItem = selectedPlanItem(planDraft);
+    const selectedCyclePayload = cycleSelectionPayload(selectedCycle || {});
     const targetNodeIds = firstCleanArray(
+      selectedCyclePayload.target_node_ids,
       firstDelta.targetNodeIds,
       firstCorrection.targetNodeIds,
       selectedItem.targetNodeIds,
@@ -877,15 +910,51 @@
       workspace_id: firstCleanValue(workspaceId, context.target?.workspaceId),
       learner_id: firstCleanValue(context.target?.learnerId, workspaceId),
       program_id: firstCleanValue(context.programId, firstDelta.programId, latestPlan.programId, plan.programId, defaults.programId),
-      plan_draft_id: firstCleanValue(planDraft.planDraftId, latestPlan.planDraftId),
-      task_card_id: firstCleanValue(published.taskCardId, generation.taskCardId, generatedResult.taskCardId, planDraft.generatedTaskCardId, latestPlan.generatedTaskCardId, firstDelta.taskCardId, firstCorrection.taskCardId),
-      evaluation_id: firstCleanValue(firstDelta.evaluationId, firstCorrection.evaluationId),
-      profile_delta_id: firstCleanValue(firstDelta.profileDeltaId, firstCorrection.profileDeltaId),
-      evidence_id: firstCleanValue(firstCleanArray(firstDelta.evidenceIds, firstCorrection.evidenceIds)[0]),
-      correction_id: firstCleanValue(firstCorrection.correctionId),
-      source_id: firstCleanValue(firstDelta.evaluationId, firstCorrection.evaluationId),
+      plan_draft_id: firstCleanValue(selectedCyclePayload.plan_draft_id, planDraft.planDraftId, latestPlan.planDraftId),
+      task_card_id: firstCleanValue(selectedCyclePayload.task_card_id, published.taskCardId, generation.taskCardId, generatedResult.taskCardId, planDraft.generatedTaskCardId, latestPlan.generatedTaskCardId, firstDelta.taskCardId, firstCorrection.taskCardId),
+      evaluation_id: firstCleanValue(selectedCyclePayload.evaluation_id, firstDelta.evaluationId, firstCorrection.evaluationId),
+      profile_delta_id: firstCleanValue(selectedCyclePayload.profile_delta_id, firstDelta.profileDeltaId, firstCorrection.profileDeltaId),
+      evidence_id: firstCleanValue(selectedCyclePayload.evidence_id, firstCleanArray(firstDelta.evidenceIds, firstCorrection.evidenceIds)[0]),
+      correction_id: firstCleanValue(selectedCyclePayload.correction_id, firstCorrection.correctionId),
+      source_id: firstCleanValue(selectedCyclePayload.source_id, firstDelta.evaluationId, firstCorrection.evaluationId),
       target_node_ids: targetNodeIds,
       limit: 20
+    };
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
+  function createCycleHistoryQueryPayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const provisioning = context.targetProvisioning || {};
+    const graphOptions = graphOptionsForContext(context);
+    const selected = cycleSelectionPayload(selectedCycle || {});
+    const targetNodeIds = firstCleanArray(
+      selected.target_node_ids,
+      context.nextCardRecommendation?.targetNodeIds,
+      plan.targetNodeIds,
+      [context.nextCardRecommendation?.targetNodeId || plan.targetNodeId]
+    );
+    const payload = {
+      workspace_id: firstCleanValue(workspaceId, context.target?.workspaceId),
+      learner_id: firstCleanValue(context.target?.learnerId, workspaceId),
+      program_id: firstCleanValue(context.programId, plan.programId, defaults.programId),
+      domain_pack_id: firstCleanValue(provisioning.selectedDomainPackId, graphOptions.selectedDomainPackId, context.domainPackId, plan.domainPackId, defaults.domainPackId),
+      domain: firstCleanValue(provisioning.selectedDomain, graphOptions.selectedDomain, plan.domain, context.domain, defaults.domain),
+      subject: firstCleanValue(provisioning.selectedSubject, graphOptions.selectedSubject, plan.subject, context.subject, defaults.subject, plan.domain, context.domain),
+      plan_draft_id: selected.plan_draft_id,
+      task_card_id: selected.task_card_id,
+      evaluation_id: selected.evaluation_id,
+      profile_delta_id: selected.profile_delta_id,
+      evidence_id: selected.evidence_id,
+      correction_id: selected.correction_id,
+      source_id: selected.source_id,
+      target_node_ids: targetNodeIds,
+      include_completeness: "false",
+      limit: 8
     };
     return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
       if (Array.isArray(value)) return value.length > 0;
@@ -971,14 +1040,51 @@
     }).join("");
   }
 
+  function cycleHistoryRows(cycleHistory = {}, selectedCycleKey = "", escapeHtml = defaultEscapeHtml) {
+    const cycles = asArray(cycleHistory.data?.cycles || cycleHistory.cycles).slice(0, 6);
+    const status = clean(cycleHistory.status || (cycleHistory.data ? "ready" : "idle"));
+    if (status === "loading") return `<div class="learning-card-generation-cycle-empty">正在读取历史周期。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-cycle-empty">历史周期读取失败：${escapeHtml(clean(cycleHistory.error) || "cycle_history_failed")}</div>`;
+    if (!cycles.length) return `<div class="learning-card-generation-cycle-empty">暂无可选择的历史周期。</div>`;
+    return cycles.map((cycle, index) => {
+      const key = cycleHistoryItemKey(cycle, index);
+      const selectors = cycle.selectors || {};
+      const counts = cycle.counts || {};
+      const selected = key === selectedCycleKey;
+      const title = firstCleanValue(selectors.taskCardId, cycle.taskCardId, selectors.evaluationId, cycle.evaluationId, `cycle ${index + 1}`);
+      const detail = firstCleanValue(
+        cycle.summary,
+        selectors.planDraftId,
+        selectors.profileDeltaId,
+        selectors.correctionId,
+        "summary-only history"
+      );
+      const meta = [
+        Number(counts.evidence || 0) ? `${Number(counts.evidence || 0)} evidence` : "",
+        Number(counts.profileDeltas || 0) ? `${Number(counts.profileDeltas || 0)} delta` : "",
+        Number(counts.corrections || 0) ? `${Number(counts.corrections || 0)} correction` : ""
+      ].filter(Boolean).join(" · ") || clean(cycle.updatedAt || cycle.createdAt || "history");
+      return `<button type="button" class="learning-card-generation-cycle-history-row" data-card-generation-cycle-history-select data-cycle-history-key="${escapeHtml(key)}" data-cycle-history-selected="${selected ? "true" : "false"}">
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(meta)}</em>
+      </button>`;
+    }).join("");
+  }
+
   function cycleDrilldownPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
     const drilldown = state.cycleDrilldown || {};
+    const cycleHistory = state.cycleHistory || {};
+    const selectedCycleKey = clean(cycleHistory.selectedCycleKey);
     const payload = createCycleAuditQueryPayload({
       context,
       workspaceId: state.selectedWorkspaceId || context.target?.workspaceId,
       draftResult: state.dailyLoopDraftResult || {},
       publishResult: state.dailyLoopPublishResult || {},
-      generatedResult: state.generatedResult || {}
+      generatedResult: state.generatedResult || {},
+      selectedCycle: cycleHistory.selectedCycle || {}
     });
     const status = clean(drilldown.status || "idle");
     const audit = drilldown.audit || {};
@@ -1017,6 +1123,15 @@
       <div class="learning-card-generation-cycle-actions">
         <span>${escapeHtml(completeness.readyForAutomation ? "审计完整，可作为后续自动化证据" : `完整性：${completenessLabel}`)}</span>
         <button type="button" class="primary" data-card-generation-cycle-audit-refresh ${disabled ? `disabled aria-disabled="true" data-card-generation-blocked-reason="${escapeHtml(hasAnchor ? "正在读取审计，请稍候。" : "还没有可读取的单卡 cycle anchor。")}"` : ""}>${loading ? "读取中" : "读取单卡审计"}</button>
+      </div>
+      <div class="learning-card-generation-cycle-history" data-card-generation-cycle-history data-cycle-history-status="${escapeHtml(cycleHistory.status || "idle")}">
+        <div class="learning-card-generation-cycle-history-head">
+          <span>历史周期</span>
+          <button type="button" data-card-generation-cycle-history-refresh ${cycleHistory.status === "loading" ? "disabled" : ""}>${cycleHistory.status === "loading" ? "读取中" : "刷新历史"}</button>
+        </div>
+        <div class="learning-card-generation-cycle-history-list">
+          ${cycleHistoryRows(cycleHistory, selectedCycleKey, escapeHtml)}
+        </div>
       </div>
       <div class="learning-card-generation-cycle-columns">
         <div>
@@ -1520,10 +1635,12 @@
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,
+    createCycleHistoryQueryPayload,
     createOwnerCorrectionPayload,
     createReleaseWorkbenchActionPayload,
     createTargetProvisionPayload,
     createStageAssessmentPayload,
+    cycleHistoryItemKey,
     cycleAuditHasAnchor,
     isFanfanSampleTarget,
     renderOwnerCardGenerationPanel

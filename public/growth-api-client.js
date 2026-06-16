@@ -150,6 +150,30 @@
       return query ? `?${query}` : "";
     }
 
+    function cycleHistoryQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const params = new URLSearchParams();
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "planDraftId", payload.planDraftId || payload.plan_draft_id);
+      appendQueryParam(params, "taskCardId", payload.taskCardId || payload.task_card_id);
+      appendQueryParam(params, "evaluationId", payload.evaluationId || payload.evaluation_id);
+      appendQueryParam(params, "profileDeltaId", payload.profileDeltaId || payload.profile_delta_id);
+      appendQueryParam(params, "evidenceId", payload.evidenceId || payload.evidence_id);
+      appendQueryParam(params, "correctionId", payload.correctionId || payload.correction_id);
+      appendQueryParam(params, "sourceId", payload.sourceId || payload.source_id);
+      appendQueryArrayParam(params, "targetNodeIds", payload.targetNodeIds || payload.target_node_ids || payload.nodeIds || payload.node_ids);
+      appendQueryParam(params, "includeCompleteness", payload.includeCompleteness || payload.include_completeness);
+      appendQueryParam(params, "limit", payload.limit || 8);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function stageAssessmentControlsQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -253,6 +277,10 @@
       return fetchJson(`${growthApiPath("learning-cycles", "completeness")}${cycleAuditQuery(targetWorkspaceId, payload)}`);
     }
 
+    function fetchGrowthCycleHistory(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("learning-cycles", "history")}${cycleHistoryQuery(targetWorkspaceId, payload)}`);
+    }
+
     function fetchGrowthStageCheckpointControls(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("stage-assessments", "controls")}${stageAssessmentControlsQuery(targetWorkspaceId, payload)}`);
     }
@@ -321,6 +349,7 @@
       fetchCardGenerationContext,
       fetchGrowthCycleAudit,
       fetchGrowthCycleCompleteness,
+      fetchGrowthCycleHistory,
       fetchGrowthCard,
       fetchGrowthReleaseWorkbench,
       fetchGrowthStageCheckpointControls,

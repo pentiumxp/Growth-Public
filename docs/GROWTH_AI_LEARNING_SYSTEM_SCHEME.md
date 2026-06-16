@@ -485,10 +485,11 @@ single-cycle query and calls
 `GET /api/v1/growth/learning-cycles/audit` plus
 `GET /api/v1/growth/learning-cycles/completeness` through the browser API
 client. It renders only summary counts, timeline rows, completeness findings,
-and missing-required state. Backend selectable history is implemented through
+and missing-required state. Selectable history is implemented through
 `learning-cycle-history-service`, `GET /api/v1/growth/learning-cycles/history`,
-and `npm run smoke:cycle-history`; the browser still needs richer controls for
-choosing older cycles from that DTO.
+and `npm run smoke:cycle-history`; the browser now reads the history DTO,
+renders bounded older-cycle rows, and uses the selected row's service-provided
+selectors to refresh audit/completeness without reconstructing history locally.
 
 Required shape:
 
@@ -499,9 +500,9 @@ Required shape:
 - UI privacy tests reject raw answers, transcripts, prompts, model output,
   source bodies, private paths, credentials, and provider configuration.
 
-Remaining Package 2 work: browser richer selection/history controls for
-choosing older cycles after the current generated-card cycle is no longer the
-primary context.
+Remaining Package 2 work: production visual/release evidence for the audit and
+correction surface, plus broader proposal/digest/action UI after the Owner
+learning loop is visually validated.
 Central `embedded-plugin-shell` visual evidence already passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production with no-write Owner-loop smoke. Full automation
@@ -667,28 +668,26 @@ draft/publish path:
   drilldown over `learning-cycles/audit` and `learning-cycles/completeness`,
   using summary-only timeline/findings and keeping `readyForAutomation` as
   evidence only, not an automation permission.
-- backend `learning-cycles/history` now returns selectable summary-only cycle
-  rows for older-cycle history controls, but the browser control itself remains
-  a later product slice.
+- browser `learning-cycles/history` controls now render selectable summary-only
+  cycle rows and drill into audit/completeness using returned selectors; this is
+  read-only Owner audit state and does not publish, generate, evaluate, schedule,
+  or mutate learner data.
 
-The product is not complete because it still lacks browser older-cycle selection UI,
-proposal/digest/action UI, central visual evidence, platform action evidence,
-and execution enablement evidence. Scope/provision controls now exist in the
+The product is not complete because it still lacks proposal/digest/action UI,
+central visual evidence, platform action evidence, and execution enablement
+evidence. Scope/provision/history controls now exist in the
 Owner `生成` tab over the Growth context and domain-pack provision service
 facades.
 
 Therefore the recommended next product-visible slice is still:
 
-1. finish Owner-supervised daily UI details over the existing daily-loop
-   facade, especially browser older-cycle selection and production visual
-   evidence;
-2. then add older-cycle selection/history controls over the implemented
-   history/audit/completeness readbacks;
-3. then harden formal checkpoint controls;
-4. then generalize target/domain-pack UI beyond the current explicit provision
+1. finish Owner-supervised daily UI release evidence over the existing daily-loop
+   facade, especially production visual evidence;
+2. then harden formal checkpoint controls;
+3. then generalize target/domain-pack UI beyond the current explicit provision
    controls and service harness;
-5. then move to proposal/digest/action/execution UI;
-6. only after those gates consider background writeful scheduling.
+4. then move to proposal/digest/action/execution UI;
+5. only after those gates consider background writeful scheduling.
 
 If the next slice is backend-only, it must still preserve the same order of
 safety gates and must not enable automatic publication before the Owner UI and

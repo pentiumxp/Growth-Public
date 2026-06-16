@@ -204,6 +204,17 @@ test("Growth API client exposes card generation context and write helpers", asyn
     task_card_id: "ltask_daily_1",
     target_node_ids: ["kg_main_idea"]
   }, "weixin_fanfan");
+  await client.fetchGrowthCycleHistory({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    task_card_id: "ltask_daily_1",
+    target_node_ids: ["kg_main_idea"],
+    include_completeness: false,
+    limit: 5
+  }, "weixin_fanfan");
   await client.fetchGrowthReleaseWorkbench("weixin_fanfan", {
     target: { learnerId: "fanfan" },
     suggestedPlan: {
@@ -295,15 +306,16 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
   assert.equal(calls[14].path, "/api/v1/growth/learning-cycles/audit?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&planDraftId=lgplan_1&taskCardId=ltask_daily_1&evaluationId=eval_daily_1&profileDeltaId=lgpdelta_1&evidenceId=lgevd_1&correctionId=lgcorr_1&sourceId=eval_daily_1&targetNodeIds=kg_main_idea%2Ckg_evidence&limit=5");
   assert.equal(calls[15].path, "/api/v1/growth/learning-cycles/completeness?workspaceId=weixin_fanfan&taskCardId=ltask_daily_1&targetNodeIds=kg_main_idea&limit=20");
-  assert.equal(calls[16].path, "/api/v1/growth/automation/release-workbench?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1");
-  assert.equal(calls[17].path, "/api/v1/growth/automation/release-workbench/actions");
-  assert.deepEqual(JSON.parse(calls[17].options.body), {
+  assert.equal(calls[16].path, "/api/v1/growth/learning-cycles/history?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&taskCardId=ltask_daily_1&targetNodeIds=kg_main_idea&includeCompleteness=false&limit=5");
+  assert.equal(calls[17].path, "/api/v1/growth/automation/release-workbench?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1");
+  assert.equal(calls[18].path, "/api/v1/growth/automation/release-workbench/actions");
+  assert.deepEqual(JSON.parse(calls[18].options.body), {
     workspace_id: "weixin_fanfan",
     endpoint_key: "release_evidence",
     action_key: "visual_smoke",
     evidence_key: "visual_smoke"
   });
-  assert.equal(calls[18].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
+  assert.equal(calls[19].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -331,6 +343,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.submitGrowthProfileCorrection({ target_node_ids: ["kg_english_main_idea"], reason: "bounded" }, "weixin_stephen");
   await client.fetchGrowthCycleAudit({ task_card_id: "ltask_daily_1", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.fetchGrowthCycleCompleteness({ task_card_id: "ltask_daily_1" }, "weixin_stephen");
+  await client.fetchGrowthCycleHistory({ task_card_id: "ltask_daily_1", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.fetchGrowthReleaseWorkbench("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.recordGrowthReleaseWorkbenchAction({ endpoint_key: "runtime_enablement", action_key: "runtime" }, "weixin_stephen");
   await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
@@ -344,9 +357,10 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(calls[5].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/profile-corrections");
   assert.equal(calls[6].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/audit?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&targetNodeIds=kg_english_main_idea&limit=20");
   assert.equal(calls[7].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/completeness?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&limit=20");
-  assert.equal(calls[8].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
-  assert.equal(calls[9].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/actions");
-  assert.equal(calls[10].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
+  assert.equal(calls[8].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/history?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&targetNodeIds=kg_english_main_idea&limit=8");
+  assert.equal(calls[9].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
+  assert.equal(calls[10].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/actions");
+  assert.equal(calls[11].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -835,6 +849,47 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
               remediation: "Persist profile-delta audit after evaluation."
             }]
           }
+        },
+        cycleHistory: {
+          status: "ready",
+          selectedCycleKey: "ltask_history_1:eval_history_1:lgpdelta_history_1:lgplan_history_1:0",
+          selectedCycle: {
+            selectors: {
+              planDraftId: "lgplan_history_1",
+              taskCardId: "ltask_history_1",
+              evaluationId: "eval_history_1",
+              profileDeltaId: "lgpdelta_history_1",
+              evidenceId: "lgevidence_history_1",
+              targetNodeIds: ["kg_history_node"]
+            },
+            counts: { planDrafts: 1, evidence: 1, profileDeltas: 1, corrections: 0 },
+            summary: "Older evidence repair cycle."
+          },
+          data: {
+            ok: true,
+            cycles: [{
+              selectors: {
+                planDraftId: "lgplan_history_1",
+                taskCardId: "ltask_history_1",
+                evaluationId: "eval_history_1",
+                profileDeltaId: "lgpdelta_history_1",
+                evidenceId: "lgevidence_history_1",
+                targetNodeIds: ["kg_history_node"]
+              },
+              counts: { planDrafts: 1, evidence: 1, profileDeltas: 1, corrections: 0 },
+              summary: "Older evidence repair cycle."
+            }, {
+              selectors: {
+                planDraftId: "lgplan_history_2",
+                taskCardId: "ltask_history_2",
+                evaluationId: "eval_history_2",
+                targetNodeIds: ["kg_history_node_2"]
+              },
+              counts: { planDrafts: 1, evidence: 1, profileDeltas: 0, corrections: 1 },
+              summary: "Earlier observation cycle."
+            }]
+          },
+          error: ""
         }
       }
     },
@@ -892,6 +947,12 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-cycle-drilldown/);
   assert.match(html, /单卡闭环审计/);
   assert.match(html, /data-card-generation-cycle-audit-refresh/);
+  assert.match(html, /data-card-generation-cycle-history/);
+  assert.match(html, /data-card-generation-cycle-history-refresh/);
+  assert.match(html, /data-card-generation-cycle-history-select/);
+  assert.match(html, /data-cycle-history-selected="true"/);
+  assert.match(html, /ltask_history_1/);
+  assert.match(html, /Older evidence repair cycle/);
   assert.match(html, /评价证据 · lgevidence_science_1/);
   assert.match(html, /画像变化审计/);
   assert.match(html, /待补齐/);
@@ -1051,6 +1112,39 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(Object.hasOwn(cyclePayload, "raw_answer"), false);
   assert.equal(Object.hasOwn(cyclePayload, "transcript"), false);
   assert.equal(Object.hasOwn(cyclePayload, "raw_prompt"), false);
+
+  const historyPayload = windowRef.HermesGrowthCardGenerationUi.createCycleHistoryQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.equal(historyPayload.workspace_id, "weixin_fanfan");
+  assert.equal(historyPayload.learner_id, "fanfan");
+  assert.equal(historyPayload.domain_pack_id, "uk_hk_curriculum_foundation");
+  assert.equal(historyPayload.domain, "science");
+  assert.equal(historyPayload.subject, "science");
+  assert.deepEqual(JSON.parse(JSON.stringify(historyPayload.target_node_ids)), ["kg_english_evidence_answering"]);
+  assert.equal(historyPayload.include_completeness, "false");
+
+  const selectedHistoryPayload = windowRef.HermesGrowthCardGenerationUi.createCycleAuditQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        planDraftId: "lgplan_history_1",
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        profileDeltaId: "lgpdelta_history_1",
+        evidenceId: "lgevidence_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    }
+  });
+  assert.equal(selectedHistoryPayload.plan_draft_id, "lgplan_history_1");
+  assert.equal(selectedHistoryPayload.task_card_id, "ltask_history_1");
+  assert.equal(selectedHistoryPayload.evaluation_id, "eval_history_1");
+  assert.equal(selectedHistoryPayload.profile_delta_id, "lgpdelta_history_1");
+  assert.equal(selectedHistoryPayload.evidence_id, "lgevidence_history_1");
+  assert.deepEqual(JSON.parse(JSON.stringify(selectedHistoryPayload.target_node_ids)), ["kg_history_node"]);
 
   const stagePayload = windowRef.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
     context,

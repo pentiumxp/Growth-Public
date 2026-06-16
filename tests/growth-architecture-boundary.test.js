@@ -3579,6 +3579,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /preferredCardGenerationWorkspaceId/);
   assert.match(app, /refreshLearningLoopState/);
   assert.match(app, /fetchLearningLoopState/);
+  assert.match(app, /refreshCycleHistoryFromUi/);
+  assert.match(app, /fetchGrowthCycleHistory/);
+  assert.match(app, /data-card-generation-cycle-history-select/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
   assert.match(app, /data-learning-growth-evaluation-retry/);
   assert.match(app, /retryEvaluation/);
@@ -3603,6 +3606,16 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   const generationUi = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(generationUi, /data-learning-loop-state-panel/);
   assert.match(generationUi, /learningLoopStatePanel/);
+  assert.match(generationUi, /data-card-generation-cycle-history/);
+  assert.match(generationUi, /createCycleHistoryQueryPayload/);
+  assert.match(generationUi, /cycleHistoryItemKey/);
+  assert.match(generationUi, /selectedCycle/);
   assert.match(generationUi, /data-release-workbench-panel/);
   assert.match(generationUi, /releaseWorkbenchPanel/);
+
+  const apiClient = read(path.join("public", "growth-api-client.js"));
+  assert.match(apiClient, /fetchGrowthCycleHistory/);
+  assert.match(apiClient, /learning-cycles", "history"/);
+  assert.doesNotMatch(generationUi, /learning_growth_/);
+  assert.doesNotMatch(generationUi, /raw_answer|raw_prompt|raw_model|source_document_body/);
 });
