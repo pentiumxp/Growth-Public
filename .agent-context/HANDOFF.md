@@ -16486,3 +16486,72 @@
     evidence, and release approvals;
   - do not enable scheduler/runtime writeful execution until the remaining
     release gates and Owner approvals exist.
+
+## 2026-06-16T18:58Z - Owner review remediation fields projected through release readbacks
+
+- Status:
+  - Implemented and committed local Growth backend/docs/harness slice:
+    `5ebd32f` (`Project owner review remediation fields through release readbacks`).
+  - No production deploy was executed. Home AI AI Ops classified the wording as
+    H1 because the task text mentioned deploy, but the actual work was a
+    Growth-only read-model/docs/harness change.
+  - Broad progress estimate for the AI-learning backend closure is now around
+    77%: this closes one release-readiness audit/readback gap, while product UI
+    evidence, live production evidence, write approvals, and runtime enablement
+    remain open.
+- Implemented behavior:
+  - `learning-automation-release-readiness-service` now preserves bounded
+    `passedGateKeys`, `missingGateKeys`, `passedGateCount`, `missingGateCount`,
+    `requiredActionCount`, and `nextAction` in
+    `ownerReviewStageSummary` for `ownerReviewEvidence`.
+  - `learning-automation-release-controls-service`,
+    `learning-automation-release-inventory-service`, and
+    `learning-automation-release-dashboard-service` now carry the same compact
+    stage summary forward when present, without expanding full
+    `evidenceReadback.items[]` or raw dependency ids.
+  - This is audit/remediation visibility only. It does not change
+    `owner_review_evidence` pass/fail semantics, release approval, runtime
+    config, scheduler permission, publication, Gateway access, or product
+    UI/visual evidence.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Growth validation passed:
+  - targeted `node --check` for the four touched services;
+  - focused release/readback harness:
+    `node --test tests/learning-automation-owner-review-evidence-service.test.js tests/growth-automation-owner-review-evidence-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-release-controls-service.test.js tests/growth-release-controls-smoke-script.test.js tests/learning-automation-release-inventory-service.test.js tests/growth-release-inventory-smoke-script.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-release-dashboard-smoke-script.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `124/124`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `npm run check` passed with `runtimeCount=201`, `checkedCount=201`;
+  - `npm test` passed `857/857`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date and `codegraph status`
+    reported index up to date, with the existing earlier-engine reindex
+    advisory.
+- Home AI AI Ops validation passed:
+  - read the requested deployment, production access/closure, docs index,
+    harness map, required-matrix, and test-matrix docs;
+  - passed `node --check scripts/deploy-macos-production.js`;
+  - passed `node tests/macos-production-deploy-script.test.js`;
+  - passed `node tests/production-status-smoke-harness.test.js`;
+  - passed `node tests/architecture-code-test-harness-map.test.js`;
+  - passed `npm run --silent deploy:macos -- --target home-ai --json` in
+    plan-only mode;
+  - passed app-side `git diff --check`;
+  - appended AI Ops evidence record
+    `evidence-835ddcdb-a6d1-40a2-9893-acfc384a3ae0`.
+- Remaining next-step candidates:
+  - collect production `profile_feedback` smoke evidence from a real completed
+    production learning cycle;
+  - close product UI and visual evidence gates: Owner daily, Owner audit,
+    proposal/digest/action/scheduler/worker-target views, and release package
+    review;
+  - create reviewed digest/action handoff/worker-target production evidence
+    instead of relying on backend readbacks only;
+  - collect platform action evidence, controlled daily-loop write evidence, and
+    explicit release approvals;
+  - keep scheduler/runtime writeful execution disabled until remaining release
+    gates and Owner approvals exist.
