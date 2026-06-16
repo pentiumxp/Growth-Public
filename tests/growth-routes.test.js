@@ -6301,6 +6301,12 @@ test("growth learning loop state is Owner-only and limited to visible targets", 
           target: { workspaceId: input.workspaceId, learnerId: input.learnerId },
           scope: { subject: input.subject },
           status: "ready_to_draft",
+          recommendationEvidence: {
+            schemaVersion: "growth.learningLoopState.recommendationEvidence.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            summary: { explanationReady: true }
+          },
           nextAction: { action: "draft_daily_plan" }
         };
       }
@@ -6319,6 +6325,7 @@ test("growth learning loop state is Owner-only and limited to visible targets", 
     const ownerBody = await ownerResponse.json();
     assert.equal(ownerBody.schemaVersion, "growth.learningLoopState.v1");
     assert.equal(ownerBody.status, "ready_to_draft");
+    assert.equal(ownerBody.recommendationEvidence.schemaVersion, "growth.learningLoopState.recommendationEvidence.v1");
     assert.deepEqual(calls[0], {
       workspaceId: "weixin_fanfan",
       learnerId: "fanfan",

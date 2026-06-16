@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T02:00Z - Learning Loop Recommendation Evidence Trace
+
+- Status: implemented and validated locally. This slice extends the no-write
+  Owner learning-loop state read model with a nested summary-only recommendation
+  evidence trace. It does not deploy, call Gateway/model vendors, write SQLite,
+  publish cards/plans, evaluate submissions, execute scheduler actions, run
+  scheduler ticks, deliver notifications, activate stage assessments, mutate
+  learner state, or change runtime config.
+- Scope:
+  - `learning-loop-state-service` now returns
+    `growth.learningLoopState.recommendationEvidence.v1` inside
+    `growth.learningLoopState.v1`;
+  - the trace is assembled only from existing
+    `learning-daily-loop-service.preview` context and stage-readiness output:
+    bounded evidence ids, source card/evaluation ids, plan drafts,
+    profile-delta audits, Owner corrections, Profile V2 node summaries, and
+    trajectory recommendation lifecycle rows;
+  - the HTTP route remains unchanged except that the DTO now carries the nested
+    trace through the existing Owner-only
+    `GET /api/v1/growth/learning-loop/state` boundary.
+- Changed files:
+  - `src/services/learning-loop-state-service.js`;
+  - `tests/learning-loop-state-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - Growth next-stage/closed-loop/architecture/platform-pointer docs;
+  - `.agent-context/PROJECT_CONTEXT.md` and this handoff.
+- Validation passed:
+  - `node --check src/services/learning-loop-state-service.js`;
+  - `node --check tests/learning-loop-state-service.test.js`;
+  - `node --check tests/growth-routes.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - focused learning-loop service/architecture:
+    `node --test tests/learning-loop-state-service.test.js tests/growth-architecture-boundary.test.js`
+    (`36/36`);
+  - focused route/smoke/architecture:
+    `node --test tests/learning-loop-state-service.test.js tests/growth-learning-loop-state-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    (`85/85`);
+  - completed-cycle evidence:
+    `node --test tests/learning-card-ai-loop-harness.test.js tests/growth-learner-cycle-smoke-script.test.js`
+    (`10/10`);
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run check` (`190/190` runtime JavaScript files covered);
+  - `npm test` (`761/761`);
+  - `codegraph sync` reported already up to date;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - AI Ops intake classified the slice as H3 with no visual or deployment lane
+    required;
+  - AI Ops evidence ledger append id:
+    `evidence-a8173f7f-6e0a-45fc-9510-be0be69f2dee`.
+- Remaining product work:
+  - render the recommendation evidence trace in the Owner audit UI when the
+    browser history/audit controls are completed;
+  - collect central visual evidence before any production UI release.
+
 ## 2026-06-16T01:00Z - Owner Release Package Build Boundary
 
 - Status: implemented and focused-Harness validated locally. This slice adds a

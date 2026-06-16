@@ -61,16 +61,63 @@ function preview(overrides = {}) {
           weaknessCount: 1,
           strengthCount: 1
         },
+        capabilityStates: [{
+          nodeId: "kg_science_fair_test",
+          status: "needs_repair",
+          scoreBand: "developing",
+          confidence: 0.44,
+          evidenceCount: 2,
+          evidenceWeightTotal: 0.8,
+          evidenceIds: ["evidence_eval_1"],
+          summary: "Recent answer mixed dependent and controlled variables."
+        }],
         weaknesses: [{
           nodeId: "kg_science_fair_test",
           status: "needs_repair",
+          scoreBand: "developing",
+          confidence: 0.44,
+          evidenceCount: 2,
+          evidenceIds: ["evidence_eval_1"],
           summary: "Needs controlled-variable explanation."
+        }],
+        strengths: [{
+          nodeId: "kg_science_observation",
+          status: "stable",
+          scoreBand: "secure",
+          confidence: 0.82,
+          evidenceCount: 3,
+          evidenceIds: ["evidence_strength_1"],
+          summary: "Can describe simple observations."
         }],
         staleEvidence: [],
         recommendedPlannerHints: [{ role: "repair" }],
         stageReadiness: { status: "dormant" }
       },
-      evidenceAudit: { ok: true, count: 2 },
+      evidenceAudit: {
+        ok: true,
+        count: 2,
+        items: [{
+          evidenceId: "evidence_eval_1",
+          sourceType: "evaluation",
+          sourceId: "eval_science_1",
+          sourceTaskCardId: "ltask_science_1",
+          graphNodeId: "kg_science_fair_test",
+          graphNodeIds: ["kg_science_fair_test"],
+          cardRole: "practice",
+          evidenceWeight: 0.4,
+          confidence: 0.48,
+          scoreBand: "developing",
+          status: "observed",
+          summary: {
+            summaryOnly: true,
+            scoreBand: "developing",
+            status: "observed",
+            feedbackSummary: "Controlled variables need another short repair card.",
+            remainingWeaknesses: ["controlled-variable explanation"]
+          },
+          createdAt: "2026-06-15T08:18:00.000Z"
+        }]
+      },
       ownerAudit: {
         summary: {
           planDraftCount: 1,
@@ -80,15 +127,111 @@ function preview(overrides = {}) {
           lastPlanAt: "2026-06-15T08:00:00.000Z",
           lastPublishedAt: "2026-06-15T08:05:00.000Z",
           lastProfileDeltaAt: "2026-06-15T08:20:00.000Z"
+        },
+        planAudit: {
+          planDrafts: [{
+            planDraftId: "lgplan_science_1",
+            status: "published",
+            horizon: "daily_plan",
+            selectedItemId: "plan_item_1",
+            generatedTaskCardId: "ltask_science_1",
+            generatedLearningGraphPlanId: "lgp_science_1",
+            targetNodeIds: ["kg_science_fair_test"],
+            basisEvidenceIds: ["evidence_eval_1"],
+            selectedItem: {
+              itemId: "plan_item_1",
+              cardRole: "practice",
+              subject: "science",
+              targetNodeIds: ["kg_science_fair_test"],
+              estimatedMinutes: 12,
+              difficultyBand: "foundation",
+              supportLevel: "light_hint",
+              evidenceRequirements: ["short_answer"],
+              reason: "Repair controlled-variable explanation."
+            },
+            createdAt: "2026-06-15T08:00:00.000Z",
+            publishedAt: "2026-06-15T08:05:00.000Z"
+          }]
+        },
+        profileDeltaAudit: {
+          items: [{
+            profileDeltaId: "pdelta_science_1",
+            taskCardId: "ltask_science_1",
+            evaluationId: "eval_science_1",
+            targetNodeIds: ["kg_science_fair_test"],
+            evidenceIds: ["evidence_eval_1"],
+            changedCapabilityCount: 1,
+            profileStateChanged: true,
+            summary: {
+              reason: "Moved target node to repair because controlled-variable explanation was incomplete."
+            },
+            changedCapabilities: [{
+              nodeId: "kg_science_fair_test",
+              beforeStatus: "unknown",
+              afterStatus: "needs_repair",
+              summary: "Needs one more low-pressure repair card.",
+              evidenceIds: ["evidence_eval_1"]
+            }],
+            plannerHintChange: {
+              beforeStrategy: "observe",
+              afterStrategy: "repair",
+              reason: "One weak controlled-variable signal is present."
+            },
+            createdAt: "2026-06-15T08:20:00.000Z"
+          }]
+        },
+        profileCorrections: {
+          items: [{
+            correctionId: "corr_science_1",
+            reviewAction: "confirm",
+            status: "active",
+            targetNodeIds: ["kg_science_fair_test"],
+            evidenceIds: ["evidence_corr_1"],
+            sourceEvidenceIds: ["evidence_eval_1"],
+            profileDeltaId: "pdelta_science_1",
+            taskCardId: "ltask_science_1",
+            evaluationId: "eval_science_1",
+            reason: "Owner agrees with repair plan.",
+            createdAt: "2026-06-15T08:30:00.000Z"
+          }]
         }
       },
       nextCardRecommendation: {
         selectionMode: "strategy",
+        recommendationMode: "trajectory",
+        recommendationId: "rec_science_1",
+        recommendationStatus: "pending",
         strategy: "repair",
+        cardRole: "practice",
+        difficultyBand: "foundation",
+        supportLevel: "light_hint",
         targetNodeId: "kg_science_fair_test",
+        targetNodeIds: ["kg_science_fair_test"],
         reason: "Recent evidence still needs a repair card.",
+        evidenceBasis: {
+          trajectoryId: "traj_science_1",
+          taskCardId: "ltask_science_1",
+          sourceEvaluationId: "eval_science_1",
+          trajectoryUpdatedAt: "2026-06-15T08:21:00.000Z",
+          weakSignalCount: 1,
+          weakStateCount: 1
+        },
         rawPrompt: "must not leak"
       },
+      recommendationLifecycle: [{
+        trajectoryId: "traj_science_1",
+        status: "pending",
+        strategy: "repair",
+        cardRole: "practice",
+        difficultyBand: "foundation",
+        supportLevel: "light_hint",
+        targetNodeIds: ["kg_science_fair_test"],
+        reason: "Use one more short repair card.",
+        taskCardId: "ltask_science_1",
+        sourceEvaluationId: "eval_science_1",
+        createdAt: "2026-06-15T08:21:00.000Z",
+        statusUpdatedAt: "2026-06-15T08:21:00.000Z"
+      }],
       authoringDraft: { rawPrompt: "must not leak" }
     },
     cycleAudit: null,
@@ -159,6 +302,18 @@ test("learning loop state projects a summary-only ready-to-draft state", () => {
   assert.equal(result.profile.weaknessCount, 1);
   assert.equal(result.audit.planDraftCount, 1);
   assert.equal(result.stageAssessment.status, "dormant");
+  assert.equal(result.recommendationEvidence.schemaVersion, "growth.learningLoopState.recommendationEvidence.v1");
+  assert.equal(result.recommendationEvidence.summary.explanationReady, true);
+  assert.equal(result.recommendationEvidence.evidenceBasis.trajectoryId, "traj_science_1");
+  assert.deepEqual(result.recommendationEvidence.evidenceTrace.evidenceIds, ["evidence_eval_1", "evidence_corr_1"]);
+  assert.deepEqual(result.recommendationEvidence.evidenceTrace.profileDeltaIds, ["pdelta_science_1"]);
+  assert.deepEqual(result.recommendationEvidence.evidenceTrace.correctionIds, ["corr_science_1"]);
+  assert.equal(result.recommendationEvidence.profileTrace.weaknesses[0].nodeId, "kg_science_fair_test");
+  assert.equal(result.recommendationEvidence.auditTrace.planDrafts[0].planDraftId, "lgplan_science_1");
+  assert.equal(result.recommendationEvidence.auditTrace.evidenceItems[0].summary.feedbackSummary, "Controlled variables need another short repair card.");
+  assert.equal(result.recommendationEvidence.auditTrace.profileDeltas[0].plannerHintChange.afterStrategy, "repair");
+  assert.equal(result.recommendationEvidence.auditTrace.recommendationLifecycle[0].trajectoryId, "traj_science_1");
+  assert.equal(result.summary.recommendationEvidenceReady, true);
   assert.deepEqual(calls.map((call) => call.type), ["preview", "stageReadiness"]);
   assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
   assert.equal(JSON.stringify(result).includes("authoringDraft"), false);

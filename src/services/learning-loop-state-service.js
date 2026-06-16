@@ -149,6 +149,288 @@ function recommendationFrom(context = {}) {
   };
 }
 
+function publicEvidenceBasis(basis = {}) {
+  return {
+    trajectoryId: cleanString(basis.trajectoryId),
+    taskCardId: cleanString(basis.taskCardId),
+    sourceEvaluationId: cleanString(basis.sourceEvaluationId),
+    trajectoryUpdatedAt: cleanString(basis.trajectoryUpdatedAt, 64),
+    weakSignalCount: number(basis.weakSignalCount),
+    weakStateCount: number(basis.weakStateCount),
+    stableHighStateCount: number(basis.stableHighStateCount),
+    highSignalCount: number(basis.highSignalCount)
+  };
+}
+
+function publicEvidenceSummary(summary = {}) {
+  return {
+    summaryOnly: summary.summaryOnly !== false,
+    scoreBand: cleanString(summary.scoreBand),
+    status: cleanString(summary.status),
+    signalType: cleanString(summary.signalType),
+    evidenceRole: cleanString(summary.evidenceRole),
+    feedbackSummary: cleanString(summary.feedbackSummary || summary.summary || summary.reflectionSummary, 240),
+    strengths: asArray(summary.strengths).map((item) => cleanString(item, 140)).filter(Boolean).slice(0, 4),
+    remainingWeaknesses: asArray(summary.remainingWeaknesses).map((item) => cleanString(item, 140)).filter(Boolean).slice(0, 4)
+  };
+}
+
+function publicEvidenceTraceItem(item = {}) {
+  return {
+    evidenceId: cleanString(item.evidenceId),
+    sourceType: cleanString(item.sourceType),
+    sourceId: cleanString(item.sourceId),
+    sourceTaskCardId: cleanString(item.sourceTaskCardId),
+    graphNodeId: cleanString(item.graphNodeId),
+    graphNodeIds: uniqueStrings(item.graphNodeIds || [item.graphNodeId]).slice(0, 8),
+    cardRole: cleanString(item.cardRole),
+    evidenceWeight: number(item.evidenceWeight),
+    confidence: number(item.confidence),
+    scoreBand: cleanString(item.scoreBand),
+    status: cleanString(item.status),
+    summary: publicEvidenceSummary(item.summary || {}),
+    createdAt: cleanString(item.createdAt, 64)
+  };
+}
+
+function publicPlanTraceItem(item = {}) {
+  return {
+    planDraftId: cleanString(item.planDraftId),
+    status: cleanString(item.status),
+    horizon: cleanString(item.horizon),
+    selectedItemId: cleanString(item.selectedItemId),
+    generatedTaskCardId: cleanString(item.generatedTaskCardId),
+    generatedLearningGraphPlanId: cleanString(item.generatedLearningGraphPlanId),
+    targetNodeIds: uniqueStrings(item.targetNodeIds).slice(0, 12),
+    basisEvidenceIds: uniqueStrings(item.basisEvidenceIds).slice(0, 12),
+    selectedItem: item.selectedItem ? {
+      itemId: cleanString(item.selectedItem.itemId),
+      cardRole: cleanString(item.selectedItem.cardRole),
+      subject: cleanString(item.selectedItem.subject),
+      targetNodeIds: uniqueStrings(item.selectedItem.targetNodeIds).slice(0, 12),
+      estimatedMinutes: number(item.selectedItem.estimatedMinutes),
+      difficultyBand: cleanString(item.selectedItem.difficultyBand),
+      supportLevel: cleanString(item.selectedItem.supportLevel),
+      evidenceRequirements: uniqueStrings(item.selectedItem.evidenceRequirements).slice(0, 8),
+      reason: cleanString(item.selectedItem.reason, 240)
+    } : null,
+    createdAt: cleanString(item.createdAt, 64),
+    publishedAt: cleanString(item.publishedAt, 64)
+  };
+}
+
+function publicProfileDeltaTraceItem(item = {}) {
+  return {
+    profileDeltaId: cleanString(item.profileDeltaId),
+    taskCardId: cleanString(item.taskCardId),
+    evaluationId: cleanString(item.evaluationId),
+    targetNodeIds: uniqueStrings(item.targetNodeIds).slice(0, 12),
+    evidenceIds: uniqueStrings(item.evidenceIds).slice(0, 12),
+    changedCapabilityCount: number(item.changedCapabilityCount || item.summary?.changedCapabilityCount),
+    profileStateChanged: Boolean(item.profileStateChanged || item.summary?.profileStateChanged),
+    reason: cleanString(item.summary?.reason || item.summary?.summary || item.summary?.plannerHintReason, 240),
+    changedCapabilities: asArray(item.changedCapabilities).map((capability) => ({
+      nodeId: cleanString(capability.nodeId),
+      beforeStatus: cleanString(capability.beforeStatus || capability.before?.status),
+      afterStatus: cleanString(capability.afterStatus || capability.after?.status || capability.status),
+      summary: cleanString(capability.summary || capability.reason, 220),
+      evidenceIds: uniqueStrings(capability.evidenceIds).slice(0, 8)
+    })).filter((capability) => capability.nodeId).slice(0, 8),
+    plannerHintChange: {
+      beforeStrategy: cleanString(item.plannerHintChange?.beforeStrategy || item.plannerHintChange?.before?.strategy),
+      afterStrategy: cleanString(item.plannerHintChange?.afterStrategy || item.plannerHintChange?.after?.strategy),
+      reason: cleanString(item.plannerHintChange?.reason, 220)
+    },
+    createdAt: cleanString(item.createdAt, 64)
+  };
+}
+
+function publicCorrectionTraceItem(item = {}) {
+  return {
+    correctionId: cleanString(item.correctionId),
+    reviewAction: cleanString(item.reviewAction),
+    status: cleanString(item.status),
+    targetNodeIds: uniqueStrings(item.targetNodeIds).slice(0, 12),
+    evidenceIds: uniqueStrings(item.evidenceIds).slice(0, 12),
+    sourceEvidenceIds: uniqueStrings(item.sourceEvidenceIds).slice(0, 12),
+    profileDeltaId: cleanString(item.profileDeltaId),
+    taskCardId: cleanString(item.taskCardId),
+    evaluationId: cleanString(item.evaluationId),
+    reason: cleanString(item.reason, 240),
+    createdAt: cleanString(item.createdAt, 64)
+  };
+}
+
+function publicProfileTraceItem(item = {}) {
+  return {
+    nodeId: cleanString(item.nodeId),
+    status: cleanString(item.status),
+    scoreBand: cleanString(item.scoreBand),
+    confidence: number(item.confidence),
+    evidenceCount: number(item.evidenceCount),
+    evidenceWeightTotal: number(item.evidenceWeightTotal),
+    stale: Boolean(item.stale),
+    summary: cleanString(item.summary || item.reason || item.misconception, 220),
+    evidenceIds: uniqueStrings(item.evidenceIds).slice(0, 8)
+  };
+}
+
+function publicLifecycleTraceItem(item = {}) {
+  return {
+    trajectoryId: cleanString(item.trajectoryId),
+    status: cleanString(item.status),
+    strategy: cleanString(item.strategy),
+    cardRole: cleanString(item.cardRole),
+    difficultyBand: cleanString(item.difficultyBand),
+    supportLevel: cleanString(item.supportLevel),
+    targetNodeIds: uniqueStrings(item.targetNodeIds).slice(0, 8),
+    reason: cleanString(item.reason, 220),
+    taskCardId: cleanString(item.taskCardId),
+    sourceEvaluationId: cleanString(item.sourceEvaluationId),
+    generatedTaskCardId: cleanString(item.generatedTaskCardId),
+    generatedLearningGraphPlanId: cleanString(item.generatedLearningGraphPlanId),
+    createdAt: cleanString(item.createdAt, 64),
+    statusUpdatedAt: cleanString(item.statusUpdatedAt, 64),
+    acceptedAt: cleanString(item.acceptedAt, 64),
+    supersededAt: cleanString(item.supersededAt, 64),
+    supersededByTrajectoryId: cleanString(item.supersededByTrajectoryId)
+  };
+}
+
+function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {}, profile = {}, audit = {}) {
+  const context = preview.context || {};
+  const nextCardRecommendation = context.nextCardRecommendation || {};
+  const ownerAudit = context.ownerAudit || {};
+  const targetNodeIds = uniqueStrings(
+    recommendation.targetNodeIds
+    || nextCardRecommendation.targetNodeIds
+    || scope.targetNodeIds
+    || [recommendation.targetNodeId || nextCardRecommendation.targetNodeId]
+  ).slice(0, 12);
+  const evidenceItems = asArray(context.evidenceAudit?.items).map(publicEvidenceTraceItem)
+    .filter((item) => item.evidenceId)
+    .slice(0, 8);
+  const planDrafts = asArray(ownerAudit.planAudit?.planDrafts).map(publicPlanTraceItem)
+    .filter((item) => item.planDraftId)
+    .slice(0, 5);
+  const profileDeltas = asArray(ownerAudit.profileDeltaAudit?.items).map(publicProfileDeltaTraceItem)
+    .filter((item) => item.profileDeltaId)
+    .slice(0, 5);
+  const corrections = asArray(ownerAudit.profileCorrections?.items).map(publicCorrectionTraceItem)
+    .filter((item) => item.correctionId)
+    .slice(0, 5);
+  const profileV2 = context.profileV2 || {};
+  const capabilityStates = asArray(profileV2.capabilityStates).map(publicProfileTraceItem)
+    .filter((item) => item.nodeId)
+    .filter((item) => !targetNodeIds.length || targetNodeIds.includes(item.nodeId))
+    .slice(0, 8);
+  const weaknesses = asArray(profileV2.weaknesses).map(publicProfileTraceItem)
+    .filter((item) => item.nodeId)
+    .slice(0, 6);
+  const strengths = asArray(profileV2.strengths).map(publicProfileTraceItem)
+    .filter((item) => item.nodeId)
+    .slice(0, 6);
+  const staleEvidence = asArray(profileV2.staleEvidence).map(publicProfileTraceItem)
+    .filter((item) => item.nodeId)
+    .slice(0, 6);
+  const lifecycle = asArray(context.recommendationLifecycle).map(publicLifecycleTraceItem)
+    .filter((item) => item.trajectoryId || item.status || item.strategy)
+    .slice(0, 6);
+  const evidenceIds = uniqueStrings([
+    ...evidenceItems.map((item) => item.evidenceId),
+    ...planDrafts.flatMap((item) => item.basisEvidenceIds),
+    ...profileDeltas.flatMap((item) => item.evidenceIds),
+    ...corrections.flatMap((item) => [...item.evidenceIds, ...item.sourceEvidenceIds]),
+    ...capabilityStates.flatMap((item) => item.evidenceIds),
+    ...weaknesses.flatMap((item) => item.evidenceIds)
+  ]).slice(0, 24);
+  const sourceTaskCardIds = uniqueStrings([
+    nextCardRecommendation.evidenceBasis?.taskCardId,
+    ...evidenceItems.map((item) => item.sourceTaskCardId),
+    ...profileDeltas.map((item) => item.taskCardId),
+    ...corrections.map((item) => item.taskCardId),
+    ...lifecycle.map((item) => item.taskCardId)
+  ]).slice(0, 12);
+  const sourceEvaluationIds = uniqueStrings([
+    nextCardRecommendation.evidenceBasis?.sourceEvaluationId,
+    ...profileDeltas.map((item) => item.evaluationId),
+    ...corrections.map((item) => item.evaluationId),
+    ...lifecycle.map((item) => item.sourceEvaluationId)
+  ]).slice(0, 12);
+  const trajectoryIds = uniqueStrings([
+    nextCardRecommendation.evidenceBasis?.trajectoryId,
+    ...lifecycle.map((item) => item.trajectoryId)
+  ]).slice(0, 12);
+  const explanationReady = Boolean(
+    recommendation.available
+    && (evidenceIds.length || profileDeltas.length || lifecycle.length || planDrafts.length || profile.evidenceCount || audit.profileDeltaCount)
+  );
+  return {
+    schemaVersion: "growth.learningLoopState.recommendationEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    available: explanationReady,
+    targetNodeIds,
+    recommendation: {
+      selectionMode: recommendation.selectionMode,
+      recommendationMode: recommendation.recommendationMode,
+      recommendationId: recommendation.recommendationId,
+      recommendationStatus: recommendation.recommendationStatus,
+      strategy: recommendation.strategy,
+      cardRole: cleanString(nextCardRecommendation.cardRole),
+      difficultyBand: cleanString(nextCardRecommendation.difficultyBand),
+      supportLevel: cleanString(nextCardRecommendation.supportLevel),
+      targetNodeId: recommendation.targetNodeId,
+      targetNodeIds: recommendation.targetNodeIds,
+      reason: recommendation.reason
+    },
+    evidenceBasis: publicEvidenceBasis(nextCardRecommendation.evidenceBasis || {}),
+    evidenceTrace: {
+      evidenceIds,
+      sourceTaskCardIds,
+      sourceEvaluationIds,
+      trajectoryIds,
+      planDraftIds: planDrafts.map((item) => item.planDraftId),
+      profileDeltaIds: profileDeltas.map((item) => item.profileDeltaId),
+      correctionIds: corrections.map((item) => item.correctionId)
+    },
+    profileTrace: {
+      capabilityStateCount: profile.capabilityStateCount,
+      evidenceCount: profile.evidenceCount,
+      weaknessCount: profile.weaknessCount,
+      strengthCount: profile.strengthCount,
+      staleEvidenceCount: profile.staleEvidenceCount,
+      plannerHintCount: profile.plannerHintCount,
+      plannerHints: asArray(profileV2.recommendedPlannerHints).map((hint) => ({
+        strategy: cleanString(hint.strategy || hint.role),
+        targetNodeIds: uniqueStrings(hint.targetNodeIds).slice(0, 8),
+        reason: cleanString(hint.reason, 220)
+      })).slice(0, 4),
+      capabilityStates,
+      weaknesses,
+      strengths,
+      staleEvidence
+    },
+    auditTrace: {
+      planDrafts,
+      evidenceItems,
+      profileDeltas,
+      corrections,
+      recommendationLifecycle: lifecycle
+    },
+    summary: {
+      explanationReady,
+      evidenceItemCount: evidenceItems.length,
+      evidenceIdCount: evidenceIds.length,
+      profileDeltaCount: profileDeltas.length,
+      correctionCount: corrections.length,
+      recommendationLifecycleCount: lifecycle.length,
+      basisTrajectoryPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.trajectoryId)),
+      basisEvaluationPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.sourceEvaluationId))
+    }
+  };
+}
+
 function publicStageAssessment(readiness = null) {
   if (!readiness) {
     return {
@@ -290,6 +572,7 @@ function createLearningLoopStateService(options = {}) {
     const profile = profileFrom(preview.context || {});
     const audit = auditFrom(preview);
     const recommendation = recommendationFrom(preview.context || {});
+    const recommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit);
     const stageAssessmentReadiness = stageAssessmentFor(input, preview);
     const stageAssessment = publicStageAssessment(stageAssessmentReadiness);
     stageAssessment.targetNodeIds = scope.targetNodeIds;
@@ -309,6 +592,7 @@ function createLearningLoopStateService(options = {}) {
       audit,
       stageAssessment,
       recommendation,
+      recommendationEvidence,
       nextAction,
       summary: {
         status,
@@ -316,6 +600,7 @@ function createLearningLoopStateService(options = {}) {
         readyForPublish: nextAction.action === "publish_selected_plan_item" && nextAction.enabled !== false,
         stageCheckpointReady: stageAssessment.eligible && stageAssessment.status !== "active",
         auditComplete: audit.completenessAvailable ? audit.complete : false,
+        recommendationEvidenceReady: recommendationEvidence.summary.explanationReady,
         weaknessCount: profile.weaknessCount,
         missingRequired: audit.missingRequired
       }

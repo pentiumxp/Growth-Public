@@ -437,6 +437,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   delegates to `learning-loop-state-service` through the normal service graph.
   It projects compact `growth.learningLoopState.v1` summary-only state and the
   next Owner action from daily-loop preview plus stage-assessment readiness,
+  and now includes nested `growth.learningLoopState.recommendationEvidence.v1`
+  trace linking bounded evidence ids, source card/evaluation ids, plan drafts,
+  profile-delta audits, Owner corrections, Profile V2 summaries, and
+  trajectory recommendation lifecycle rows that explain the next
+  recommendation,
   without Gateway calls, plan publication, card generation, evaluation,
   scheduling, stage activation, direct repository access, SQLite writes, or
   learner-state mutation. Profile-feedback evidence now also has
@@ -752,9 +757,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `GET /api/v1/growth/learning-loop/state`. It composes the existing
   daily-loop preview DTO and read-only `learning-stage-assessment-service`
   readiness into compact `growth.learningLoopState.v1` state/next-action
-  output for UI/harness use. The AI-loop harness now covers post-cycle readback
-  from a completed Fanfan science daily card into the next planning action. It
-  is no-write, summary-only, and does not call
+  output for UI/harness use. It also exposes nested summary-only
+  `growth.learningLoopState.recommendationEvidence.v1` so Owner/release
+  tooling can explain the next recommendation from persisted summary links
+  without rejoining raw tables or model output. The AI-loop harness now covers
+  post-cycle readback from a completed Fanfan science daily card into the next
+  planning action. It is no-write, summary-only, and does not call
   Gateway, publish plans, generate cards, evaluate submissions, run schedulers,
   deliver notifications, activate stage assessments, or inspect SQLite tables.
   `npm run smoke:daily-loop` now provides a controlled local/production smoke

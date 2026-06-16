@@ -3030,10 +3030,15 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
 
   const service = read(path.join("src", "services", "learning-loop-state-service.js"));
   assert.match(service, /growth\.learningLoopState\.v1/);
+  assert.match(service, /growth\.learningLoopState\.recommendationEvidence\.v1/);
   assert.match(service, /privacyClass: "summary_only"/);
   assert.match(service, /summaryOnly: true/);
   assert.match(service, /dailyLoopService\.preview/);
   assert.match(service, /stageAssessmentService\.stageReadiness/);
+  assert.match(service, /recommendationEvidenceFrom/);
+  assert.match(service, /evidenceTrace/);
+  assert.match(service, /auditTrace/);
+  assert.match(service, /profileTrace/);
   assert.match(service, /draft_daily_plan/);
   assert.match(service, /publish_selected_plan_item/);
   assert.match(service, /complete_cycle_audit/);
@@ -3051,6 +3056,8 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
 
   const serviceHarness = read(path.join("tests", "learning-loop-state-service.test.js"));
   assert.match(serviceHarness, /projects a summary-only ready-to-draft state/);
+  assert.match(serviceHarness, /recommendationEvidence/);
+  assert.match(serviceHarness, /traj_science_1/);
   assert.match(serviceHarness, /prefers publish when a selected plan is ready/);
   assert.match(serviceHarness, /surfaces incomplete audit before drafting more work/);
   assert.match(serviceHarness, /surfaces stage checkpoint readiness/);
