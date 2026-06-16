@@ -1638,7 +1638,15 @@ Implementation progress on 2026-06-15:
   evidence. The default `target_provisioning` task maps to
   `productionTargetProvisioningSmokeEvidence` and proves the selected visible
   learner/domain-pack/subject/node resolves through the target-provisioning
-  service without writing provisions or exposing raw graph content. Controlled daily-loop draft/publish smoke
+  service without writing provisions or exposing raw graph content. The
+  stage-assessment readiness and stage-checkpoint controls tasks must be run
+  with a real `targetNodeIds` coverage selector. For the Fanfan science sample,
+  `kg_ls_science_scientific_enquiry_plan_investigative_work` is a valid
+  summary-only topic node in
+  `domain_pack_fanfan_cambridge_pathway_v1`. A read-only result with
+  `activationState=dormant` and `insufficient_recent_practice` is valid backend
+  release evidence; it means the low-pressure checkpoint policy is working and
+  must not be converted into a forced assessment activation. Controlled daily-loop draft/publish smoke
   can be added only with the explicit non-default `daily_loop_write` task plus
   `--allow-write-evidence`, and the builder then delegates to the existing
   daily-loop smoke write gate instead of importing daily-loop services. The

@@ -57,6 +57,10 @@ function evidenceBag(input = {}) {
   return input.evidence || input.evidenceSummary || input.evidence_summary || {};
 }
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
 function mergeEvidenceBags(input = {}, persisted = {}) {
   const merged = Object.assign({}, persisted);
   Object.entries(evidenceBag(input) || {}).forEach(([key, value]) => {
@@ -64,6 +68,7 @@ function mergeEvidenceBags(input = {}, persisted = {}) {
   });
   Object.entries(input || {}).forEach(([key, value]) => {
     if (key.endsWith("Evidence") || key === "releaseEvidenceBundleAudit") {
+      if (value === false && hasOwn(merged, key)) return;
       if (value !== undefined) merged[key] = value;
     }
   });
@@ -72,10 +77,6 @@ function mergeEvidenceBags(input = {}, persisted = {}) {
 
 function releaseApprovalBag(input = {}) {
   return input.releaseApproval || input.release_approval || input.approvals || {};
-}
-
-function hasOwn(object, key) {
-  return Object.prototype.hasOwnProperty.call(object || {}, key);
 }
 
 function mergeReleaseApprovals(input = {}, persisted = {}) {
@@ -99,6 +100,7 @@ function evidenceOk(input = {}, key) {
 
 function evidenceValue(input = {}, key) {
   const bag = evidenceBag(input);
+  if (input[key] === false && hasOwn(bag, key)) return bag[key];
   return input[key] ?? bag[key];
 }
 

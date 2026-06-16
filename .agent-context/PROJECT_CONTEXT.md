@@ -405,14 +405,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   bundle, pass bundle audit, evaluate release-readiness as incomplete, evaluate
   collection-run readback, keep `collectionRunWritten=false`, and keep
   `writefulSchedulingAllowed=false`. Full release readiness remains incomplete
-  until product UI/visual, platform action, stage-checkpoint, and
-  completed-cycle/profile-feedback evidence are present. Production Fanfan
-  science target-provisioning evidence now uses the current native graph
-  domain pack id `domain_pack_fanfan_cambridge_pathway_v1`; the older
+  until product UI/visual, platform action, and completed-cycle/profile-feedback
+  evidence are present. Production Fanfan science target-provisioning evidence
+  now uses the current native graph domain pack id
+  `domain_pack_fanfan_cambridge_pathway_v1`; the older
   `uk_hk_curriculum_foundation` value is treated as a stale playbook marker in
   current Growth docs. The production no-write target-provisioning release
   evidence subset passes through `sample_default`, writes no collection-run
-  record, and keeps scheduler permission false.
+  record, and keeps scheduler permission false. The production no-write
+  stage-checkpoint backend subset passes when `stage_assessment` and
+  `stage_checkpoint_controls` are collected with a real science coverage node
+  such as `kg_ls_science_scientific_enquiry_plan_investigative_work`; the
+  controls may still report `insufficient_recent_practice`, which is expected
+  low-pressure behavior and keeps formal activation disabled.
   Growth now also has `npm run smoke:release-collection-run`, a service-owned
   release collection-run boundary over bundle, bundle-audit, and
   release-readiness artifacts. It delegates to

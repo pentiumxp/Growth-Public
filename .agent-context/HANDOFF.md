@@ -9,6 +9,41 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T16:00+08:00 - Stage Checkpoint Release Evidence Mapping Closure
+
+- Status: implemented locally; production redeploy and post-deploy smoke are
+  required before treating the production gap as closed. This H1 backend slice
+  fixes release-readiness evidence merging so bundled release evidence is not
+  shadowed by default `false` CLI flag fields, and documents the production
+  Fanfan science stage-checkpoint evidence selector.
+- Diagnosis:
+  - production no-write release evidence collection for
+    `stage_assessment + stage_checkpoint_controls` was first blocked because
+    the stage scripts require a real `targetNodeIds`/coverage selector;
+  - production graph readback shows
+    `kg_ls_science_scientific_enquiry_plan_investigative_work` as a
+    summary-only science topic node in
+    `domain_pack_fanfan_cambridge_pathway_v1`;
+  - with that selector, both bundle tasks pass and bundle-audit passes, but
+    release-readiness still marked `stage_checkpoint_evidence` missing because
+    `stageCheckpointEvidence=false` from default CLI input shadowed the
+    bundled `stageCheckpointEvidence` object;
+  - `stage_checkpoint_controls` correctly reports
+    `activationState=dormant` / `insufficient_recent_practice` for the sample,
+    so the Owner formal-checkpoint activation remains disabled until enough
+    recent ordinary practice exists.
+- Changes:
+  - `learning-automation-release-readiness-service` now keeps bundled evidence
+    when the top-level field is only a default `false` flag;
+  - `tests/learning-automation-release-readiness-service.test.js` covers this
+    bundled-evidence precedence regression;
+  - Growth docs now record that stage-checkpoint release evidence requires a
+    real coverage node and that not-ready/dormant stage controls are valid
+    low-pressure backend evidence, not a forced activation.
+- Validation so far:
+  - focused release-readiness / release-evidence-collection / bundle tests:
+    `59/59` passing.
+
 ## 2026-06-16T16:05+08:00 - Target Provisioning Release Evidence Parameter Closure
 
 - Status: implemented, production-verified, and documented. This backend/docs

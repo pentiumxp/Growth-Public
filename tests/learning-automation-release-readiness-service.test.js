@@ -301,6 +301,38 @@ test("automation release readiness service returns ready-for-review only when al
   ]);
 });
 
+test("automation release readiness prefers bundled evidence over default false flag fields", () => {
+  const { service } = createService();
+
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    stageCheckpointEvidence: false,
+    proposalReviewUiEvidence: false,
+    evidence: {
+      stageCheckpointEvidence: {
+        ok: true,
+        status: "pass",
+        evidenceId: "stage_sep_from_bundle",
+        taskId: "stage_assessment"
+      },
+      proposalReviewUiEvidence: {
+        ok: true,
+        status: "pass",
+        evidenceId: "proposal_ui_from_bundle"
+      }
+    }
+  }));
+
+  const stageCheckpoint = result.checks.find((item) => item.key === "stage_checkpoint_evidence");
+  assert.equal(stageCheckpoint.status, "pass");
+  assert.equal(stageCheckpoint.summary.evidencePresent, true);
+  assert.equal(stageCheckpoint.summary.evidenceId, "stage_sep_from_bundle");
+  assert.equal(stageCheckpoint.summary.taskId, "stage_assessment");
+
+  const proposalUi = result.checks.find((item) => item.key === "proposal_review_ui_evidence");
+  assert.equal(proposalUi.status, "pass");
+  assert.equal(proposalUi.summary.evidenceId, "proposal_ui_from_bundle");
+});
+
 test("automation release readiness service reports missing evidence without enabling scheduling", () => {
   const { service } = createService({
     reviewedDigest: false,
