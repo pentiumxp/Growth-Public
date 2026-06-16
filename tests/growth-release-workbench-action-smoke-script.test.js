@@ -18,17 +18,27 @@ test("release workbench action smoke script parses bounded action input", () => 
   const input = inputFromArgs([
     "--workspace-id", "fanfan",
     "--learner-id", "fanfan",
-    "--endpoint-key", "release_evidence",
+    "--endpoint-key", "release_collection_run",
     "--evidence-key", "owner_daily_ui_evidence",
     "--activation-gates", "writeful_execution,background_scheduler",
+    "--release-evidence-bundle-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true }),
+    "--release-evidence-bundle-audit-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1", summaryOnly: true }),
+    "--release-readiness-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseReadiness.v1", summaryOnly: true }),
+    "--release-collection-run-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1", summaryOnly: true }),
+    "--release-decision-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseDecision.v1", summaryOnly: true }),
     "--evidence-json", JSON.stringify({ evidenceId: "ui_1" }),
     "--requested-by", "owner"
   ]);
 
   assert.equal(input.workspaceId, "fanfan");
-  assert.equal(input.endpointKey, "release_evidence");
+  assert.equal(input.endpointKey, "release_collection_run");
   assert.equal(input.evidenceKey, "owner_daily_ui_evidence");
   assert.deepEqual(input.activationGates, ["writeful_execution", "background_scheduler"]);
+  assert.equal(input.releaseEvidenceBundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
+  assert.equal(input.releaseEvidenceBundleAudit.schemaVersion, "growth.learningAutomationReleaseEvidenceBundleAudit.v1");
+  assert.equal(input.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
+  assert.equal(input.releaseCollectionRun.schemaVersion, "growth.learningAutomationReleaseCollectionRun.v1");
+  assert.equal(input.releaseDecision.schemaVersion, "growth.learningAutomationReleaseDecision.v1");
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
 });

@@ -6,8 +6,11 @@ const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cooki
 const PRIVATE_VALUE_RE = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
 
 const SUPPORTED_ENDPOINTS = Object.freeze([
+  "release_readiness_snapshot",
   "release_evidence",
   "release_approval",
+  "release_collection_run",
+  "release_decision",
   "release_package",
   "release_activation",
   "runtime_enablement"
@@ -97,8 +100,11 @@ function requireMethod(scope, key, service, method) {
 }
 
 function requireEndpointService(scope, endpointKey, services) {
+  if (endpointKey === "release_readiness_snapshot") return requireMethod(scope, "release_readiness", services.releaseReadinessService, "createSnapshot");
   if (endpointKey === "release_evidence") return requireMethod(scope, "release_evidence", services.releaseEvidenceService, "recordEvidence");
   if (endpointKey === "release_approval") return requireMethod(scope, "release_approval", services.releaseApprovalService, "recordApproval");
+  if (endpointKey === "release_collection_run") return requireMethod(scope, "release_collection_run", services.releaseCollectionRunService, "recordRun");
+  if (endpointKey === "release_decision") return requireMethod(scope, "release_decision", services.releaseDecisionService, "recordDecision");
   if (endpointKey === "release_package") return requireMethod(scope, "release_package", services.releasePackageService, "recordPackage");
   if (endpointKey === "release_activation") return requireMethod(scope, "release_activation", services.releaseActivationService, "recordActivation");
   if (endpointKey === "runtime_enablement") return requireMethod(scope, "runtime_enablement", services.runtimeEnablementService, "recordEnablement");
@@ -147,6 +153,9 @@ function baseInput(input = {}, scope = {}) {
 
 function callWriteService(endpointKey, input, scope, services) {
   const base = baseInput(input, scope);
+  if (endpointKey === "release_readiness_snapshot") {
+    return services.releaseReadinessService.createSnapshot(base);
+  }
   if (endpointKey === "release_evidence") {
     const evidenceKey = cleanString(input.evidenceKey || input.evidence_key || input.checkKey || input.check_key || actionKeyFrom(input), 160);
     if (!evidenceKey) return unavailable("release_workbench_action_evidence_key_required", scope);
@@ -163,6 +172,12 @@ function callWriteService(endpointKey, input, scope, services) {
       approval: defaultSummary(input, "approval"),
       evidence: defaultSummary(input, "evidence")
     }));
+  }
+  if (endpointKey === "release_collection_run") {
+    return services.releaseCollectionRunService.recordRun(base);
+  }
+  if (endpointKey === "release_decision") {
+    return services.releaseDecisionService.recordDecision(base);
   }
   if (endpointKey === "release_package") {
     const releasePackage = input.releasePackage || input.release_package || input.package;
@@ -188,8 +203,11 @@ function callWriteService(endpointKey, input, scope, services) {
 }
 
 function resultRecord(endpointKey, result = {}) {
+  if (endpointKey === "release_readiness_snapshot") return result.snapshot || null;
   if (endpointKey === "release_evidence") return result.evidence || null;
   if (endpointKey === "release_approval") return result.approval || null;
+  if (endpointKey === "release_collection_run") return result.run || null;
+  if (endpointKey === "release_decision") return result.decision || null;
   if (endpointKey === "release_package") return result.package || null;
   if (endpointKey === "release_activation") return result.activation || null;
   if (endpointKey === "runtime_enablement") return result.enablement || null;
@@ -198,8 +216,11 @@ function resultRecord(endpointKey, result = {}) {
 
 function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   const releaseWorkbenchService = options.releaseWorkbenchService || null;
+  const releaseReadinessService = options.releaseReadinessService || null;
   const releaseEvidenceService = options.releaseEvidenceService || null;
   const releaseApprovalService = options.releaseApprovalService || null;
+  const releaseCollectionRunService = options.releaseCollectionRunService || null;
+  const releaseDecisionService = options.releaseDecisionService || null;
   const releasePackageService = options.releasePackageService || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
@@ -227,8 +248,11 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
     }
 
     const services = {
+      releaseReadinessService,
       releaseEvidenceService,
       releaseApprovalService,
+      releaseCollectionRunService,
+      releaseDecisionService,
       releasePackageService,
       releaseActivationService,
       runtimeEnablementService
@@ -258,7 +282,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
         summaryOnly: true,
         endpointKey,
         actionKey: actionKeyFrom(input),
-        recordId: cleanString(record?.evidenceRecordId || record?.approvalId || record?.packageId || record?.activationId || record?.enablementId, 180),
+        recordId: cleanString(record?.readinessId || record?.evidenceRecordId || record?.approvalId || record?.runId || record?.decisionId || record?.packageId || record?.activationId || record?.enablementId, 180),
         recordStatus: cleanString(record?.status, 120)
       },
       writeResult: result,

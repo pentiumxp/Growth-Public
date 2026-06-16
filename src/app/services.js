@@ -392,8 +392,11 @@ function createServices(config) {
   });
   const learningAutomationReleaseWorkbenchActionService = createLearningAutomationReleaseWorkbenchActionService({
     releaseWorkbenchService: learningAutomationReleaseWorkbenchService,
+    releaseReadinessService: learningAutomationReleaseReadinessService,
     releaseEvidenceService: learningAutomationReleaseEvidenceService,
     releaseApprovalService: learningAutomationReleaseApprovalService,
+    releaseCollectionRunService: learningAutomationReleaseCollectionRunService,
+    releaseDecisionService: learningAutomationReleaseDecisionService,
     releasePackageService: learningAutomationReleasePackageService,
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService

@@ -16,8 +16,11 @@ function workbenchResult(status = "release_evidence_required") {
       summaryOnly: true,
       status,
       recordRoutes: [
+        { key: "release_readiness_snapshot" },
         { key: "release_evidence" },
         { key: "release_approval" },
+        { key: "release_collection_run" },
+        { key: "release_decision" },
         { key: "release_package" },
         { key: "release_activation" },
         { key: "runtime_enablement" }
@@ -33,6 +36,21 @@ function serviceWith(overrides = {}) {
       workbench(input) {
         calls.push(["workbench", input]);
         return workbenchResult();
+      }
+    },
+    releaseReadinessService: overrides.releaseReadinessService || {
+      createSnapshot(input) {
+        calls.push(["release_readiness_snapshot", input]);
+        return {
+          ok: true,
+          snapshot: {
+            readinessId: "lgarel_1",
+            status: "ready_for_release_review"
+          },
+          readiness: {
+            status: "ready_for_release_review"
+          }
+        };
       }
     },
     releaseEvidenceService: overrides.releaseEvidenceService || {
@@ -58,6 +76,36 @@ function serviceWith(overrides = {}) {
             approvalId: "lgaapp_1",
             status: "approved",
             approvalKey: input.approvalKey
+          }
+        };
+      }
+    },
+    releaseCollectionRunService: overrides.releaseCollectionRunService || {
+      recordRun(input) {
+        calls.push(["release_collection_run", input]);
+        return {
+          ok: true,
+          run: {
+            runId: "lgacrn_1",
+            status: "ready_for_release_review"
+          },
+          evaluated: {
+            status: "ready_for_release_review"
+          }
+        };
+      }
+    },
+    releaseDecisionService: overrides.releaseDecisionService || {
+      recordDecision(input) {
+        calls.push(["release_decision", input]);
+        return {
+          ok: true,
+          decision: {
+            decisionId: "lgadec_1",
+            status: "approved"
+          },
+          evaluated: {
+            status: "approved"
           }
         };
       }
@@ -168,6 +216,52 @@ test("release workbench action requires only the selected endpoint write service
   });
   assert.equal(missingPackage.ok, false);
   assert.equal(missingPackage.error, "learning_automation_release_workbench_action_release_package_unavailable");
+});
+
+test("release workbench action records readiness snapshot, collection run, and release decision through advertised services", () => {
+  const { service, calls } = serviceWith();
+
+  const snapshot = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_readiness_snapshot",
+    evidence: { ownerDailyUiEvidence: { ok: true } },
+    releaseApproval: { writefulExecutionApproval: { ok: true } },
+    requestedBy: "owner"
+  });
+  assert.equal(snapshot.ok, true);
+  assert.equal(snapshot.actionRecord.recordId, "lgarel_1");
+  assert.equal(snapshot.runtimeConfigMutationPerformed, false);
+
+  const collectionRun = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_collection_run",
+    releaseEvidenceBundle: { schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true },
+    releaseEvidenceBundleAudit: { schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1", summaryOnly: true },
+    releaseReadiness: { schemaVersion: "growth.learningAutomationReleaseReadiness.v1", summaryOnly: true },
+    requestedBy: "owner"
+  });
+  assert.equal(collectionRun.ok, true);
+  assert.equal(collectionRun.actionRecord.recordId, "lgacrn_1");
+
+  const decision = service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "release_decision",
+    collectionRunId: "lgacrn_1",
+    status: "approved",
+    releaseCollectionRun: { schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1", summaryOnly: true },
+    requestedBy: "owner"
+  });
+  assert.equal(decision.ok, true);
+  assert.equal(decision.actionRecord.recordId, "lgadec_1");
+  assert.equal(decision.writefulSchedulingAllowed, false);
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "workbench",
+    "release_readiness_snapshot",
+    "workbench",
+    "release_collection_run",
+    "workbench",
+    "release_decision"
+  ]);
 });
 
 test("release workbench action records package artifacts only through package record service", () => {

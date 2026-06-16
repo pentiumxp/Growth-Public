@@ -2316,8 +2316,11 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /growth\.learningAutomationReleaseWorkbenchAction\.v1/);
   assert.match(releaseWorkbenchActionService, /releaseWorkbenchService\.workbench/);
   assert.match(releaseWorkbenchActionService, /requireEndpointService/);
+  assert.match(releaseWorkbenchActionService, /releaseReadinessService\.createSnapshot/);
   assert.match(releaseWorkbenchActionService, /releaseEvidenceService\.recordEvidence/);
   assert.match(releaseWorkbenchActionService, /releaseApprovalService\.recordApproval/);
+  assert.match(releaseWorkbenchActionService, /releaseCollectionRunService\.recordRun/);
+  assert.match(releaseWorkbenchActionService, /releaseDecisionService\.recordDecision/);
   assert.match(releaseWorkbenchActionService, /releasePackageService\.recordPackage/);
   assert.match(releaseWorkbenchActionService, /releaseActivationService\.recordActivation/);
   assert.match(releaseWorkbenchActionService, /runtimeEnablementService\.recordEnablement/);
@@ -2325,9 +2328,6 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseWorkbenchActionService, /learning_growth_/);
   assert.doesNotMatch(releaseWorkbenchActionService, /spawnSync/);
   assert.doesNotMatch(releaseWorkbenchActionService, /buildPackage/);
-  assert.doesNotMatch(releaseWorkbenchActionService, /createSnapshot/);
-  assert.doesNotMatch(releaseWorkbenchActionService, /recordRun/);
-  assert.doesNotMatch(releaseWorkbenchActionService, /recordDecision/);
   assert.doesNotMatch(releaseWorkbenchActionService, /publishPlanItem/);
   assert.doesNotMatch(releaseWorkbenchActionService, /generateCard/);
   assert.doesNotMatch(releaseWorkbenchActionService, /evaluateSubmission/);

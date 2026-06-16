@@ -706,6 +706,9 @@ function normalizeAutomationOwnerReviewEvidenceInput(url, target) {
 function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, target, request, url) {
   const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {};
   const merged = Object.assign({}, payload, body);
+  const releaseApproval = merged.releaseApproval || merged.release_approval || merged.approvals
+    ? releaseApprovalFromBody(merged)
+    : undefined;
   return {
     workspaceId,
     learnerId: merged.learnerId || merged.learner_id || target?.workspaceId || workspaceId,
@@ -720,21 +723,36 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     endpointKey: merged.endpointKey || merged.endpoint_key,
     actionKey: merged.actionKey || merged.action_key || merged.key,
     action: merged.action || merged.ownerAction || merged.owner_action,
+    status: merged.status || merged.decision || merged.decisionStatus || merged.decision_status,
     evidenceKey: merged.evidenceKey || merged.evidence_key || merged.checkKey || merged.check_key,
     approvalKey: merged.approvalKey || merged.approval_key || merged.configGate || merged.config_gate,
     activationGate: merged.activationGate || merged.activation_gate,
     activationGates: merged.activationGates || merged.activation_gates || merged.requestedActivationGates || merged.requested_activation_gates,
+    releaseEvidenceBundle: merged.releaseEvidenceBundle || merged.release_evidence_bundle || merged.evidenceBundle || merged.evidence_bundle || merged.bundle,
+    releaseEvidenceBundleAudit: merged.releaseEvidenceBundleAudit || merged.release_evidence_bundle_audit || merged.evidenceBundleAudit || merged.evidence_bundle_audit || merged.audit,
+    releaseReadiness: merged.releaseReadiness || merged.release_readiness || merged.readiness,
+    releaseCollectionRun: merged.releaseCollectionRun || merged.release_collection_run || merged.collectionRun || merged.collection_run || merged.run,
+    releaseDecision: merged.releaseDecision || merged.release_decision || merged.decisionSummary || merged.decision_summary,
+    releaseEvidenceBundleFile: merged.releaseEvidenceBundleFile || merged.release_evidence_bundle_file || merged.evidenceBundleFile || merged.evidence_bundle_file || merged.bundleFile || merged.bundle_file,
+    releaseEvidenceBundleAuditFile: merged.releaseEvidenceBundleAuditFile || merged.release_evidence_bundle_audit_file || merged.evidenceBundleAuditFile || merged.evidence_bundle_audit_file || merged.auditFile || merged.audit_file,
+    releaseReadinessFile: merged.releaseReadinessFile || merged.release_readiness_file || merged.readinessFile || merged.readiness_file,
+    releaseCollectionRunFile: merged.releaseCollectionRunFile || merged.release_collection_run_file || merged.collectionRunFile || merged.collection_run_file || merged.runFile || merged.run_file,
     releasePackage: merged.releasePackage || merged.release_package || merged.package,
     activationDecision: merged.activationDecision || merged.activation_decision || merged.ownerActivationDecision || merged.owner_activation_decision,
     enablementDecision: merged.enablementDecision || merged.enablement_decision || merged.ownerEnablementDecision || merged.owner_enablement_decision,
     approval: merged.approval || merged.approvalSummary || merged.approval_summary,
-    evidence: merged.evidence || merged.evidenceSummary || merged.evidence_summary,
+    releaseApproval,
+    evidence: merged.evidence || merged.evidenceSummary || merged.evidence_summary || readinessEvidenceFromBody(merged),
+    limit: merged.limit,
     note: merged.note || merged.reason || merged.summary,
     requestedBy: merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     recordedBy: merged.recordedBy || merged.recorded_by || merged.approvedBy || merged.approved_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     approvedBy: merged.approvedBy || merged.approved_by || merged.recordedBy || merged.recorded_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    decidedBy: merged.decidedBy || merged.decided_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    createdBy: merged.createdBy || merged.created_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     recordedAt: merged.recordedAt || merged.recorded_at || merged.approvedAt || merged.approved_at,
     approvedAt: merged.approvedAt || merged.approved_at || merged.recordedAt || merged.recorded_at,
+    decidedAt: merged.decidedAt || merged.decided_at,
     createdAt: merged.createdAt || merged.created_at,
     ownerAuthorizedWrite: true
   };

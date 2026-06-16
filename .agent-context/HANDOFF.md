@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T14:56+08:00 - Release Workbench Action Record-Route Parity
+
+- Status: implemented, documented, and validated. This backend-only slice
+  aligns `learning-automation-release-workbench-action-service` with the record
+  routes already advertised by `learning-automation-release-workbench-service`.
+  Overall Growth closed-loop MVP progress is about `83%` after this slice:
+  the Owner release workbench action facade can now write every advertised
+  release record route, while product-specific Owner automation UI polish,
+  production evidence collection, and broader rollout remain open.
+- Scope:
+  - the release workbench action facade now supports
+    `release_readiness_snapshot`, `release_evidence`, `release_approval`,
+    `release_collection_run`, `release_decision`, `release_package`,
+    `release_activation`, and `runtime_enablement`;
+  - the service first reads the release workbench, fails closed when an
+    endpoint is not advertised, and requires only the selected endpoint's
+    write service;
+  - readiness snapshots, collection runs, and release decisions still remain
+    owned by their existing services/repositories; the action facade is only
+    the Owner-visible wrapper for advertised workbench actions;
+  - the route normalizer and smoke CLI now forward bounded bundle/audit/
+    readiness/collection-run/decision payloads and actor/timestamp fields;
+  - no repository/table ownership, package build, smoke-task execution,
+    Gateway/model call, publication, evaluation, scheduler execution, runtime
+    config mutation, scheduler permission grant, stage activation, or
+    learner-state mutation was added.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Harness updated:
+  - `tests/learning-automation-release-workbench-action-service.test.js`;
+  - `tests/growth-release-workbench-action-smoke-script.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - focused release workbench action/route/architecture harnesses (`89/89`);
+  - targeted `node --check` for changed runtime files;
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`;
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `npm test` (`804/804`);
+  - CodeGraph status reported an up-to-date Growth index with `347`
+    JavaScript files, `4,662` nodes, and `18,716` edges;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - Intake command:
+    `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release workbench action record-route parity for readiness snapshot, collection run, and release decision; backend service docs harness only; no production deploy" --json`.
+  - AI Ops classified the slice as H1 and did not require the visual lane.
+  - AI Ops evidence record:
+    `evidence-f1d58965-163f-4f05-ab87-ebb6fb92d434`.
+  - The Home AI app deploy plan reported `dirty: false`; the app local branch
+    was already `ahead 6`, and this Growth slice did not modify the app
+    workspace.
+
 ## 2026-06-16T14:35+08:00 - Downstream Owner Review Stage Summary Readback
 
 - Status: implemented, documented, and validated. This backend-only slice

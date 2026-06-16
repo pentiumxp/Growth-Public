@@ -323,14 +323,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `POST /api/v1/growth/automation/release-workbench/actions` as the write-gated
   action facade over that workbench. The facade reads the workbench first,
   requires the requested endpoint to be advertised, then delegates only to
-  existing release evidence, release approval, release package-record, release
-  activation, or runtime enablement record services. It requires only the
+  existing release-readiness snapshot, release evidence, release approval,
+  collection-run, release-decision, release package-record, release activation,
+  or runtime enablement record services. It requires only the
   selected endpoint's write service instead of requiring every possible
   release-workbench action dependency at construction time. It stores/passes only
   summary-only bounded action/evidence/approval/decision data and does not
-  build packages, create readiness snapshots, record collection runs, record
-  release decisions, call Gateway/model providers, publish, schedule, mutate
-  runtime config, grant scheduler permission, or mutate learner state.
+  build packages, run smoke tasks internally, call Gateway/model providers,
+  publish, schedule, mutate runtime config, grant scheduler permission, or
+  mutate learner state.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised
