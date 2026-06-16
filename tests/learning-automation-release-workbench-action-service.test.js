@@ -90,11 +90,16 @@ function serviceWith(overrides = {}) {
             schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.v1",
             summaryOnly: true,
             status: "incomplete",
-            collectionRunId: "lgacrn_collect_1",
             writeCollectionRun: input.writeCollectionRun === true,
             summary: {
               collectionRunId: "lgacrn_collect_1",
               collectionRunWritten: input.writeCollectionRun === true
+            },
+            artifacts: {
+              releaseCollectionRun: {
+                runId: "lgacrn_collect_1",
+                status: "ready_for_release_review"
+              }
             }
           }
         };

@@ -29,6 +29,28 @@ function splitCsv(value) {
     .filter(Boolean);
 }
 
+function collectRepeatedValues(args, names) {
+  const values = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (names.includes(args[index])) {
+      const value = String(args[index + 1] || "").trim();
+      if (value) values.push(value);
+    }
+  }
+  return values;
+}
+
+function uniqueStrings(values = []) {
+  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
+}
+
+function listArg(args, repeatedNames, csvNames) {
+  return uniqueStrings([
+    ...collectRepeatedValues(args, repeatedNames),
+    ...splitCsv(firstArgValue(args, csvNames, ""))
+  ]);
+}
+
 function parseJsonArg(args, names, fallback = undefined) {
   const raw = firstArgValue(args, names, "");
   if (!raw) return fallback;
@@ -48,6 +70,10 @@ function inputFromArgs(args) {
     domain: firstArgValue(args, ["--domain"], ""),
     subject: firstArgValue(args, ["--subject"], ""),
     horizon: firstArgValue(args, ["--horizon"], "daily_plan") || "daily_plan",
+    targetNodeIds: listArg(args, ["--target-node-id", "--targetNodeId"], ["--target-node-ids", "--targetNodeIds"]),
+    tasks: listArg(args, ["--task", "--task-id", "--taskId"], ["--tasks", "--task-ids", "--taskIds"]),
+    requiredTaskIds: listArg(args, ["--required-task", "--required-task-id", "--requiredTaskId"], ["--required-tasks", "--required-task-ids", "--requiredTasks", "--requiredTaskIds"]),
+    requiredApprovalKeys: listArg(args, ["--required-approval-key", "--requiredApprovalKey"], ["--required-approval-keys", "--requiredApprovalKeys"]),
     collectionRunId: firstArgValue(args, ["--collection-run-id", "--collectionRunId", "--run-id", "--runId"], ""),
     endpointKey: firstArgValue(args, ["--endpoint-key", "--endpointKey"], ""),
     actionKey: firstArgValue(args, ["--action-key", "--actionKey", "--key"], ""),
@@ -67,6 +93,7 @@ function inputFromArgs(args) {
     approval: parseJsonArg(args, ["--approval-json", "--approvalJson"], undefined),
     activationDecision: parseJsonArg(args, ["--activation-decision-json", "--activationDecisionJson"], undefined),
     enablementDecision: parseJsonArg(args, ["--enablement-decision-json", "--enablementDecisionJson"], undefined),
+    writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun") || hasFlag(args, "--record-collection-run"),
     note: firstArgValue(args, ["--note", "--summary"], ""),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], ""),
     recordedBy: firstArgValue(args, ["--recorded-by", "--recordedBy", "--approved-by", "--approvedBy"], ""),

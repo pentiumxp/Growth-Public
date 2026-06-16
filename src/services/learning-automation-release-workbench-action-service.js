@@ -223,6 +223,31 @@ function resultRecord(endpointKey, result = {}) {
   return null;
 }
 
+function actionRecordId(record = {}) {
+  const summary = objectOnly(record.summary);
+  const artifacts = objectOnly(record.artifacts);
+  const releaseCollectionRun = objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run);
+  return cleanString(
+    record?.readinessId ||
+    record?.evidenceRecordId ||
+    record?.approvalId ||
+    record?.collectionRunId ||
+    record?.collection_run_id ||
+    summary.collectionRunId ||
+    summary.collection_run_id ||
+    releaseCollectionRun.runId ||
+    releaseCollectionRun.run_id ||
+    releaseCollectionRun.collectionRunId ||
+    releaseCollectionRun.collection_run_id ||
+    record?.runId ||
+    record?.decisionId ||
+    record?.packageId ||
+    record?.activationId ||
+    record?.enablementId,
+    180
+  );
+}
+
 function actionWriteSucceeded(endpointKey, result = {}) {
   if (endpointKey === "release_evidence_collection") return Boolean(result?.collection);
   return result?.ok === true;
@@ -298,7 +323,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
         summaryOnly: true,
         endpointKey,
         actionKey: actionKeyFrom(input),
-        recordId: cleanString(record?.readinessId || record?.evidenceRecordId || record?.approvalId || record?.collectionRunId || record?.collection_run_id || record?.runId || record?.decisionId || record?.packageId || record?.activationId || record?.enablementId, 180),
+        recordId: actionRecordId(record),
         recordStatus: cleanString(record?.status, 120)
       },
       writeResult: result,

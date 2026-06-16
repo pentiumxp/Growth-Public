@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T02:00+08:00 - Release Workbench Action Collection CLI Closure
+
+- Status: implemented locally and fully validated. Commit and push are the next
+  step in this continuation. This slice was not deployed because the user
+  deferred deployment until the broader Growth target is complete.
+- Change intent:
+  - close the remaining gap between the Owner release workbench action facade
+    and its operational smoke CLI for `release_evidence_collection`;
+  - keep Growth Service First: the smoke CLI parses only bounded Owner action
+    input, the action facade verifies the workbench-advertised endpoint, and
+    the release evidence collection service remains the owner of bundle,
+    audit, readiness, and collection-run composition;
+  - make collection action records auditable even when the collection-run id is
+    returned inside `summary.collectionRunId` or
+    `artifacts.releaseCollectionRun.runId` instead of as a top-level field.
+- Scope:
+  - `scripts/smoke-growth-release-workbench-action.js` now parses bounded
+    collection selectors for `release_evidence_collection`: target node ids,
+    tasks, required task ids, required approval keys, and explicit
+    `--write-collection-run`;
+  - `learning-automation-release-workbench-action-service` now normalizes
+    `actionRecord.recordId` from top-level record ids, collection summary ids,
+    or release collection-run artifacts;
+  - the smoke-script Harness now runs a real temporary SQLite
+    `release_evidence_collection` action through the workbench facade and
+    verifies the summary-only collection-run audit row;
+  - the service Harness now covers nested collection-run id normalization.
+- Docs changed:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - this handoff.
+- Validation:
+  - `node --check src/services/learning-automation-release-workbench-action-service.js`;
+  - `node --check scripts/smoke-growth-release-workbench-action.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js`
+    passed `12/12`;
+  - `git diff --check` passed.
+  - `node scripts/check-growth-docs-locality.js` passed with `requiredCount=35`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `849/849`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,937 nodes, 20,919 edges, index up
+    to date, with the existing optional earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because of release/deployment wording;
+  - app-side required checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`;
+  - the app deploy plan reported unrelated existing dirty files
+    `public/app-pwa-push-ui.js` and `server-routes/push-api-routes.js`; they
+    were not touched by this Growth slice.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-d4a3353c-bc15-4587-adcd-83a50174af1c`.
+- Remaining gates:
+  - commit and push this validated slice;
+  - no production deployment in this slice.
+
 ## 2026-06-17T01:49+08:00 - Release Evidence Collection Workbench Action
 
 - Status: implemented locally, fully validated, committed, and pushed after

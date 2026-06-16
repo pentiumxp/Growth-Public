@@ -49,9 +49,15 @@ test("release workbench action smoke script parses bounded action input", () => 
   const input = inputFromArgs([
     "--workspace-id", "fanfan",
     "--learner-id", "fanfan",
-    "--endpoint-key", "release_collection_run",
+    "--endpoint-key", "release_evidence_collection",
     "--evidence-key", "owner_daily_ui_evidence",
+    "--target-node-id", "kg_science_fair_test",
+    "--tasks", "planner_readiness,learning_loop_state",
+    "--required-task", "planner_readiness",
+    "--required-tasks", "learning_loop_state",
+    "--required-approval-key", "writefulExecutionApproval",
     "--activation-gates", "writeful_execution,background_scheduler",
+    "--write-collection-run",
     "--release-evidence-bundle-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true }),
     "--release-evidence-bundle-audit-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1", summaryOnly: true }),
     "--release-readiness-json", JSON.stringify({ schemaVersion: "growth.learningAutomationReleaseReadiness.v1", summaryOnly: true }),
@@ -62,9 +68,14 @@ test("release workbench action smoke script parses bounded action input", () => 
   ]);
 
   assert.equal(input.workspaceId, "fanfan");
-  assert.equal(input.endpointKey, "release_collection_run");
+  assert.equal(input.endpointKey, "release_evidence_collection");
   assert.equal(input.evidenceKey, "owner_daily_ui_evidence");
+  assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
+  assert.deepEqual(input.tasks, ["planner_readiness", "learning_loop_state"]);
+  assert.deepEqual(input.requiredTaskIds, ["planner_readiness", "learning_loop_state"]);
+  assert.deepEqual(input.requiredApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(input.activationGates, ["writeful_execution", "background_scheduler"]);
+  assert.equal(input.writeCollectionRun, true);
   assert.equal(input.releaseEvidenceBundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
   assert.equal(input.releaseEvidenceBundleAudit.schemaVersion, "growth.learningAutomationReleaseEvidenceBundleAudit.v1");
   assert.equal(input.releaseReadiness.schemaVersion, "growth.learningAutomationReleaseReadiness.v1");
@@ -105,6 +116,62 @@ test("release workbench action smoke script delegates only to action service", (
   assert.equal(result.ok, true);
   assert.equal(result.endpointKey, "release_evidence");
   assert.equal(calls[0].workspaceId, "fanfan");
+});
+
+test("release workbench action smoke script can run evidence collection through the workbench facade", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-workbench-action-collection-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const stdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-workbench-action.js"),
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain", "science",
+      "--subject", "science",
+      "--endpoint-key", "release_evidence_collection",
+      "--action-key", "release_collection_run",
+      "--task", "planner_readiness",
+      "--required-task", "planner_readiness",
+      "--write-collection-run",
+      "--requested-by", "owner",
+      "--allow-write",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    const output = JSON.parse(stdout);
+    assert.equal(output.operation, "record");
+    assert.equal(output.ok, true);
+    assert.equal(output.schemaVersion, "growth.learningAutomationReleaseWorkbenchAction.v1");
+    assert.equal(output.endpointKey, "release_evidence_collection");
+    assert.equal(output.actionRecord.endpointKey, "release_evidence_collection");
+    assert.match(output.actionRecord.recordId, /^lgacrn_/);
+    assert.equal(output.writeResult.collection.schemaVersion, "growth.learningAutomationReleaseEvidenceCollection.v1");
+    assert.equal(output.writeResult.collection.summary.collectionRunWritten, true);
+    assert.equal(output.writeResult.collection.writefulSchedulingAllowed, false);
+    assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.runtimeConfigChange, false);
+    assert.equal(output.configChangeApplied, false);
+
+    const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
+    try {
+      const row = db.prepare("SELECT * FROM learning_growth_automation_release_collection_runs WHERE workspace_id = ?").get("fanfan");
+      assert.equal(row.privacy_class, "summary_only");
+      assert.equal(JSON.parse(row.summary_json).writefulSchedulingAllowed, false);
+    } finally {
+      db.close();
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("release workbench action smoke script writes evidence only with explicit allow-write", () => {
