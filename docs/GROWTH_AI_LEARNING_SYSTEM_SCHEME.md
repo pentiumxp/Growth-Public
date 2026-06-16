@@ -503,7 +503,8 @@ Required shape:
   source bodies, private paths, credentials, and provider configuration.
 
 Remaining Package 2 work: production visual/release evidence for the audit and
-correction surface, plus broader proposal/digest/action UI after the Owner
+correction surface, plus release evidence for the broader
+proposal/digest/action/execution/run/worker-target Owner UI after the Owner
 learning loop is visually validated.
 Central `embedded-plugin-shell` visual evidence already passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
@@ -675,11 +676,11 @@ draft/publish path:
   read-only Owner audit state and does not publish, generate, evaluate, schedule,
   or mutate learner data.
 
-The product is not complete because it still lacks proposal/digest/action UI,
-central visual evidence, platform action evidence, and execution enablement
-evidence. Scope/provision/history controls now exist in the
-Owner `生成` tab over the Growth context and domain-pack provision service
-facades.
+The product is not complete because proposal/digest/action/execution/run/
+worker-target UI exists only as local Owner panels and still lacks production
+visual/release evidence, platform action evidence, and execution enablement
+evidence. Scope/provision/history controls now exist in the Owner `生成` tab
+over the Growth context and domain-pack provision service facades.
 
 Therefore the recommended next product-visible slice is still:
 
@@ -688,7 +689,8 @@ Therefore the recommended next product-visible slice is still:
 2. then harden formal checkpoint controls;
 3. then generalize target/domain-pack UI beyond the current explicit provision
    controls and service harness;
-4. then move to proposal/digest/action/execution UI;
+4. then collect validated production evidence for proposal/digest/action/
+   execution/run/worker-target UI;
 5. only after those gates consider background writeful scheduling.
 
 If the next slice is backend-only, it must still preserve the same order of

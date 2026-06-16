@@ -3846,8 +3846,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /automationProposalDecisionReason/);
   assert.match(generationUi, /data-automation-proposal-publish/);
   assert.match(generationUi, /data-automation-digest-panel/);
+  assert.match(generationUi, /createAutomationDigestCreatePayload/);
   assert.match(generationUi, /createAutomationDigestQueryPayload/);
   assert.match(generationUi, /createAutomationDigestReviewPayload/);
+  assert.match(generationUi, /data-automation-digest-create/);
   assert.match(generationUi, /data-automation-digest-review/);
   assert.match(generationUi, /data-automation-action-handoff-panel/);
   assert.match(generationUi, /createAutomationActionHandoffQueryPayload/);
@@ -3878,6 +3880,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /reviewGrowthAutomationProposal/);
   assert.match(apiClient, /publishGrowthAutomationProposal/);
   assert.match(apiClient, /fetchGrowthAutomationDigests/);
+  assert.match(apiClient, /createGrowthAutomationDigest/);
   assert.match(apiClient, /reviewGrowthAutomationDigest/);
   assert.match(apiClient, /fetchGrowthAutomationActionHandoffs/);
   assert.match(apiClient, /createGrowthAutomationActionHandoff/);

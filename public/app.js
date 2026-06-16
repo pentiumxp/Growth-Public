@@ -851,6 +851,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-digest-create]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        createAutomationDigestFromUi().catch((error) => {
+          pageState.cardGeneration.automationDigests = Object.assign({}, pageState.cardGeneration.automationDigests, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-digest-review]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1643,6 +1656,19 @@
     };
   }
 
+  function createAutomationDigestCreatePayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationDigestCreatePayload !== "function") {
+      throw new Error("automation_digest_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationDigestCreatePayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
   function createAutomationActionHandoffPayload(digest = {}) {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createAutomationActionHandoffPayload !== "function") {
@@ -1799,6 +1825,34 @@
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function createAutomationDigestFromUi() {
+    const { payload, targetWorkspaceId } = createAutomationDigestCreatePayload();
+    pageState.cardGeneration.automationDigests = Object.assign({}, pageState.cardGeneration.automationDigests, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationDigests?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.createGrowthAutomationDigest(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationDigests = Object.assign({}, pageState.cardGeneration.automationDigests, {
+        actionStatus: result.ok ? "created" : "failed",
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "automation_digest_create_failed")
+      });
+      await refreshAutomationDigests(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationDigests = Object.assign({}, pageState.cardGeneration.automationDigests, {
         actionStatus: "failed",
         actionError: error.message || String(error)
       });

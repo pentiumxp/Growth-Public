@@ -186,8 +186,9 @@ automation surfaces are not closed:
   selector is supplied;
 - proposal selected-cycle create/list/review/accepted-publish UI now has a
   minimal Owner panel over existing proposal routes, including terminal
-  `expired` and `superseded` proposal decisions. Digest read/refresh/review UI
-  now lists persisted dry-run packets and can mark pending digests `reviewed`,
+  `expired` and `superseded` proposal decisions. Digest create/read/refresh/review UI
+  now creates a persisted dry-run digest from the selected bounded scope, lists
+  persisted dry-run packets, and can mark pending digests `reviewed`,
   `archived`, or `superseded` without executing them. Action handoff
   read/create/deliver UI now lists persisted handoffs, creates a handoff from a
   reviewed digest, and records delivery state through the Growth event
@@ -202,8 +203,7 @@ automation surfaces are not closed:
   worker-target read/create/review UI now lists persisted target rows, creates
   proposed target configuration for the selected provisioned scope, and records
   Owner review states `enabled`, `disabled`, or `archived` while keeping
-  `productionSchedulingAllowed=false` and not starting workers. Digest creation
-  remains future work;
+  `productionSchedulingAllowed=false` and not starting workers;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual release evidence exists for the Growth plugin
   shell. Product-specific mobile/dark checks for Owner generation, audit,
@@ -214,7 +214,7 @@ automation surfaces are not closed:
   readiness, daily-loop preview, learning-loop state, cycle history, Owner
   audit, learner-cycle audit, target provisioning, stage checkpoint evidence,
   stage checkpoint controls, scheduler dry-run, recommendation lifecycle,
-  proposal/action/execution/run/worker/worker-target readback, release
+  proposal/digest/action/execution/run/worker/worker-target readback, release
   workbench readback, Owner review readback, active failure-policy readiness,
   and central embedded-plugin visual evidence. Remaining release gates are
   product UI/visual evidence, reviewed digest/action/worker-target workflow
@@ -1098,9 +1098,10 @@ A next-stage package is complete only when:
 
 The preferred next product slice remains Path A, but the immediate focus has
 shifted from basic draft/publish/provision/history operation to product-grade
-closure: central embedded visual evidence, production release evidence, and then
-proposal/digest/action/run UI over the existing supervised automation facades. That
-keeps the AI loop observable and avoids adding unattended automation before
+closure: central embedded visual evidence, production release evidence, and
+validated release evidence for the now-local proposal/digest/action/execution/
+run/worker-target Owner UI over the existing supervised automation facades.
+That keeps the AI loop observable and avoids adding unattended automation before
 Owner can inspect why a card was selected and what changed after completion.
 
 If the next slice must be backend-only, choose Path B and keep it strictly as

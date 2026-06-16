@@ -363,6 +363,12 @@
       }, payload));
     }
 
+    function createGrowthAutomationDigest(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "digests"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function fetchGrowthCard(taskCardId, targetWorkspaceId = getWorkspaceId()) {
       const cardId = clean(taskCardId);
       if (!cardId) throw new Error("missing_task_card_id");
@@ -548,6 +554,7 @@
       evaluateGrowthStageAssessment,
       executeGrowthAutomationSchedulerOnce,
       createGrowthAutomationActionHandoff,
+      createGrowthAutomationDigest,
       createGrowthAutomationSchedulerWorkerTarget,
       createGrowthAutomationProposal,
       fetchCardGenerationContext,

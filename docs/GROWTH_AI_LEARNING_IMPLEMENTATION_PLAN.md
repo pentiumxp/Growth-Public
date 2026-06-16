@@ -176,9 +176,12 @@ surfaces are still missing:
 
 - Owner planner/provision UI is not fully product-closed;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs;
-- proposal selected-cycle create/review/publish UI has a first embedded panel
-  over existing proposal routes, but `expired`/`superseded` decision UI and
-  digest review UI remain future work;
+- proposal selected-cycle create/review/publish UI now covers
+  `accepted`/`skipped`/`expired`/`superseded` decisions and explicit accepted
+  proposal publication; automation digest create/read/refresh/review UI now
+  creates persisted dry-run packets and records review state without executing
+  them. These surfaces still need production visual/release evidence before
+  their release gates can pass;
 - rollback/failure policy backend is implemented as a scheduling-readiness
   prerequisite; Growth-owned automation action handoff backend is implemented,
   and the default-disabled Owner-explicit scheduler execution backend is

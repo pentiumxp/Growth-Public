@@ -9,6 +9,82 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T23:52+08:00 - Automation Digest Owner Create UI Controls
+
+- Status: implemented and locally validated in the working tree. Commit/push is
+  pending; not deployed per Owner instruction to deploy only after the broader
+  slice is complete.
+- Change intent:
+  - the embedded Owner generation UI can now explicitly create one persisted
+    dry-run automation digest from the selected bounded learner/domain scope;
+  - created digests stay pending review and can then be marked `reviewed`,
+    `archived`, or `superseded`;
+  - the create path is Owner UI glue only. It does not publish cards, schedule
+    work, call Gateway, evaluate submissions, deliver notifications, activate
+    stage assessments, mutate runtime config, or grant release permission.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds `createGrowthAutomationDigest()` for
+    direct plugin and Home AI proxy routes;
+  - `public/growth-card-generation-ui.js` adds
+    `createAutomationDigestCreatePayload()`, a `生成 Digest` action, created
+    status copy, and summary-only scoped payload construction;
+  - `public/app.js` wires `[data-automation-digest-create]`, posts through the
+    API client, shows submitting/created/failed state, and refreshes digest,
+    action-handoff, and release-workbench readbacks after create;
+  - `public/index.html` static asset version is bumped to
+    `20260616-digest-create-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers the API helper/proxy path,
+    button rendering, scoped create payload privacy, static cache version, and
+    app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for digest create helpers;
+  - updated `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - syntax checks passed for `public/growth-api-client.js`,
+    `public/growth-card-generation-ui.js`, `public/app.js`,
+    `tests/growth-frontend-adapter.test.js`, and
+    `tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - static cache key check passed for `20260616-digest-create-ui-v1` with 13
+    references and no stale action-handoff/scheduler-execution/scheduler-run/
+    worker-target keys in `public/index.html`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI AI Ops intake/required-checks returned H3; required checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`, syntax checks,
+    and `git diff --check`;
+  - Home AI static/visual harness unit checks passed:
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/static-cache-version-harness.test.js`, and
+    `node tests/task-list-ui.test.js`;
+  - central iOS PWA visual harness passed:
+    `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url
+    http://127.0.0.1:19075/ --artifact-dir
+    /tmp/homeai-growth-digest-create-visual --timeout-ms 45000 --wait-ms 900`,
+    screenshot
+    `/tmp/homeai-growth-digest-create-visual/ios-pwa-visual-dark-growth-surfaces-20260616T155538Z.png`;
+  - `git diff --check` passed in both Growth and Home AI app workspaces;
+  - CodeGraph status after edits: 355 files, 4,920 nodes, 19,999 edges, index
+    up to date.
+- AI Ops evidence:
+  - visual lane allocated and released:
+    `ios-pwa-3` / `http://127.0.0.1:19075/`;
+  - test evidence ledger record:
+    `evidence-f675eed5-9a51-4179-a0eb-1c6500ade30e`;
+  - visual evidence ledger record:
+    `evidence-51dc37ba-dea3-4398-a385-ca57a0b75d89`.
+
 ## 2026-06-16T23:35+08:00 - Automation Scheduler Worker Target Owner UI Controls
 
 - Status: implemented, locally validated, and committed/pushed as

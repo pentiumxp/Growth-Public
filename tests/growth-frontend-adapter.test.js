@@ -326,6 +326,11 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "skipped",
     reason_code: "owner_skipped_low_pressure"
   }, "weixin_fanfan");
+  await client.createGrowthAutomationDigest({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    limit: 4
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -476,6 +481,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "skipped",
     reason_code: "owner_skipped_low_pressure"
   });
+  assert.equal(calls[37].path, "/api/v1/growth/automation/digests");
+  assert.deepEqual(JSON.parse(calls[37].options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    program_id: "program_science",
+    limit: 4
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -524,6 +536,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.reviewGrowthAutomationSchedulerWorkerTarget("lgawtarget_1", { status: "disabled" }, "weixin_stephen");
   await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
   await client.reviewGrowthRecommendationLifecycle({ trajectory_id: "lgtraj_1", status: "expired" }, "weixin_stephen");
+  await client.createGrowthAutomationDigest({ learner_id: "fanfan", limit: 3 }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -592,6 +605,12 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     trajectory_id: "lgtraj_1",
     status: "expired"
+  });
+  assert.equal(calls[29].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/digests");
+  assert.deepEqual(JSON.parse(calls[29].options.body), {
+    workspace_id: "weixin_stephen",
+    learner_id: "fanfan",
+    limit: 3
   });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
@@ -1504,6 +1523,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /Accepted evidence repair card/);
   assert.match(html, /data-automation-digest-panel/);
   assert.match(html, /自动化 Digest/);
+  assert.match(html, /data-automation-digest-create/);
+  assert.match(html, /生成 Digest/);
   assert.match(html, /data-automation-digest-refresh/);
   assert.match(html, /data-automation-digest-review/);
   assert.match(html, /data-automation-digest-status="reviewed"/);
@@ -1742,6 +1763,23 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     horizon: "daily_plan",
     limit: 6
   });
+
+  const digestCreatePayload = windowRef.HermesGrowthCardGenerationUi.createAutomationDigestCreatePayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(digestCreatePayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    limit: 6,
+    requested_by: "owner"
+  });
+  assert.equal(Object.hasOwn(digestCreatePayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(digestCreatePayload, "transcript"), false);
 
   const digestReviewPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationDigestReviewPayload({
     context,
@@ -2941,7 +2979,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260616-worker-target-ui-v1";
+  const staticVersion = "20260616-digest-create-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -2971,6 +3009,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.doesNotMatch(html, /20260616-action-handoff-ui-v1/);
   assert.doesNotMatch(html, /20260616-scheduler-execution-ui-v1/);
   assert.doesNotMatch(html, /20260616-scheduler-run-ui-v1/);
+  assert.doesNotMatch(html, /20260616-worker-target-ui-v1/);
 });
 
 test("Growth app refreshes card generation context after publish without clearing preview", () => {
@@ -3010,6 +3049,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
   assert.match(source, /data-automation-proposal-publish/);
+  assert.match(source, /data-automation-digest-create/);
   assert.match(source, /data-automation-digest-refresh/);
   assert.match(source, /data-automation-digest-review/);
   assert.match(source, /data-automation-action-handoff-refresh/);
@@ -3027,6 +3067,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function createAutomationProposalPublishPayload/);
   assert.match(source, /function publishAutomationProposalFromUi/);
   assert.match(source, /function refreshAutomationDigests/);
+  assert.match(source, /function createAutomationDigestCreatePayload/);
+  assert.match(source, /function createAutomationDigestFromUi/);
+  assert.match(source, /api\.createGrowthAutomationDigest\(payload, targetWorkspaceId\)/);
   assert.match(source, /function createAutomationDigestReviewPayload/);
   assert.match(source, /function reviewAutomationDigestFromUi/);
   assert.match(source, /function refreshAutomationActionHandoffs/);

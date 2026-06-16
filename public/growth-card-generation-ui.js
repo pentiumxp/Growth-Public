@@ -773,6 +773,14 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function createAutomationDigestCreatePayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6,
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createAutomationDigestReviewPayload({ context = {}, workspaceId = "", digest = {}, status = "" } = {}) {
     const scope = automationProposalScopeFromContext(context, workspaceId);
     const targetStatus = clean(status);
@@ -1111,6 +1119,7 @@
     if (value === "reviewed") return "已复核";
     if (value === "archived") return "已归档";
     if (value === "superseded") return "已替代";
+    if (value === "created") return "已生成";
     if (value === "failed") return "失败";
     return value || "待摘要";
   }
@@ -1121,7 +1130,9 @@
     const result = holder.actionResult || {};
     const digest = result.digest || {};
     if (!status || status === "idle") return "";
-    const detail = status === "reviewed"
+    const detail = status === "created"
+      ? "Digest 已生成，等待 Owner 复核。"
+      : status === "reviewed"
       ? `Digest 已记录为 ${automationDigestStatusText(digest.status)}。`
       : status === "submitting"
         ? "正在通过 Growth automation digest service 写入。"
@@ -1184,13 +1195,14 @@
     const reviewedCount = digests.filter((item) => clean(item.status) === "reviewed").length;
     const requiredActionCount = digests.reduce((total, item = {}) => total + asArray(item.requiredActions || item.required_actions).length, 0);
     const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
     const reason = status === "loading"
       ? "正在读取自动化 digest。"
       : status === "failed"
         ? clean(holder.error) || "automation_digests_failed"
         : pendingCount
           ? "Owner 可以复核 digest，但不会自动发布或通知。"
-          : "暂无待复核 digest；刷新只读取已持久化摘要。";
+          : "暂无待复核 digest；可以从当前 dry-run 摘要生成一条待复核 digest。";
     return `<section class="learning-card-generation-proposals learning-card-generation-digests" data-automation-digest-panel data-automation-digest-status="${escapeHtml(status || "idle")}">
       <div class="learning-card-generation-proposal-head">
         <span>
@@ -1198,6 +1210,7 @@
           <small>${escapeHtml(reason)}</small>
         </span>
         <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-digest-create ${busy ? "disabled" : ""}>${busy ? "生成中" : "生成 Digest"}</button>
           <button type="button" data-automation-digest-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新 Digest"}</button>
         </div>
       </div>
@@ -2651,6 +2664,7 @@
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,
     createAutomationProposalQueryPayload,
+    createAutomationDigestCreatePayload,
     createAutomationDigestQueryPayload,
     createAutomationDigestReviewPayload,
     createAutomationActionHandoffQueryPayload,

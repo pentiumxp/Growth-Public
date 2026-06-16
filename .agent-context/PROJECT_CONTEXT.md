@@ -755,10 +755,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   It must not call Gateway, publish plans, generate cards, record proposal
   execution, send notifications, activate stage assessments, or inspect SQLite
   tables directly. Background writeful scheduling remains blocked until
-  proposal review, audit UI, automation digest/action/execution UI,
-  rollback/failure policy, action handoff, real production platform
-  Action Inbox/Web Push receipt evidence, visual evidence, and explicit release
-  evidence are implemented and covered by harness.
+  production visual/release evidence, platform Action Inbox/Web Push receipt
+  evidence, explicit release approvals, and runtime enablement evidence are
+  implemented and covered by harness.
   The automation digest backend is now implemented through
   `learning-automation-digest-service`, `automation-digests.js`,
   `learning_growth_automation_digests`, and visible-target/Owner scoped
@@ -767,6 +766,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `dryRun=true`, `writePlanned=false`, `writesPerformed=false`, and
   `publishPlanned=false`; it must not publish, record proposal execution,
   notify, enqueue, call Gateway, or activate stage assessments.
+  The embedded Owner UI can explicitly create one persisted dry-run digest from
+  the selected bounded scope, refresh/list persisted digest packets, and record
+  `reviewed`, `archived`, or `superseded` review state. This UI path delegates
+  only through the Growth API client/route/service boundary and must not
+  publish, schedule, call Gateway, evaluate, notify, mutate runtime config, or
+  grant release permission.
   `npm run smoke:digest` is the service-owned operational smoke for this
   boundary: `list` is the default read-only operation, `get` is read-only, and
   `create`/`review` require explicit `--allow-write` while delegating only to
