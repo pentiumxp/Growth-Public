@@ -9,6 +9,73 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T10:31+08:00 - Owner Review Evidence In Release Bundle/Readiness
+
+- Status: implemented and full-Harness validated locally. This slice wires
+  the existing no-write Owner automation review evidence read model into
+  release evidence bundles, release-readiness, release evidence records, route
+  input normalization, CLI flags, docs, and architecture guardrails. It does
+  not deploy, call Gateway/model vendors, publish plans/cards, generate cards,
+  evaluate submissions, execute scheduler actions, run scheduler ticks, deliver
+  notifications, emit platform events, activate stage assessments, mutate
+  learner state, write business state, flip runtime config, grant scheduler
+  permission, or replace product UI/central visual evidence.
+- Scope:
+  - `learning-automation-release-evidence-bundle-service` now includes the
+    default `owner_review_evidence` task and maps
+    `npm run smoke:owner-review-evidence` output to bounded
+    `ownerReviewEvidence`;
+  - `learning-automation-release-readiness-service` now treats
+    `ownerReviewEvidence` as readiness check `owner_review_evidence` with
+    required action `run_owner_review_evidence_smoke`;
+  - `learning-automation-release-evidence-service` now canonicalizes persisted
+    release evidence key `owner_review_evidence` as `ownerReviewEvidence`;
+  - `scripts/smoke-growth-release-readiness.js` accepts
+    `--owner-review-evidence`;
+  - release-readiness, release-review/controls/inventory/dashboard/workbench,
+    snapshot, activation-record, and package-build route normalization now
+    carries `ownerReviewEvidence` / `owner_review_evidence` aliases;
+  - Growth docs now state the bundle task, readiness key, persisted evidence
+    key, non-UI/non-visual boundary, and Harness coverage.
+- Focused validation passed:
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js src/services/learning-automation-release-readiness-service.js src/services/learning-automation-release-evidence-service.js scripts/smoke-growth-release-readiness.js scripts/build-growth-release-evidence-bundle.js src/routes/growth-routes.js`;
+  - `node --test tests/growth-routes.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-evidence-service.test.js tests/growth-architecture-boundary.test.js`
+    (`130/130`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    (`34/34`);
+  - `npm run smoke:owner-review-evidence -- --workspace-id fanfan --learner-id fanfan --domain science --subject science --json`
+    returned `status=proposal_required` on the current local DB;
+  - `npm run smoke:release-readiness -- --workspace-id fanfan --learner-id fanfan --domain science --subject science --owner-review-evidence --json`
+    returned `owner_review_evidence=pass` while overall readiness remained
+    `incomplete` due other missing UI/visual/release evidence;
+  - explicit bundle task smoke:
+    `npm run smoke:release-evidence-bundle -- --workspace-id fanfan --learner-id fanfan --domain science --subject science --task owner_review_evidence --output-file <tmp> --json`
+    produced `ownerReviewEvidence.status=pass` and
+    `summary.status=proposal_required`.
+- Broad validation passed:
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`784/784`);
+  - `git diff --check`;
+  - focused follow-up for release controls/dashboard/inventory smoke scripts
+    passed after updating the readiness evidence count to include
+    `owner_review_evidence`;
+  - CodeGraph status reported 343 JavaScript files indexed, 4519 nodes, and
+    18021 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth Owner review evidence release bundle and release-readiness wiring; local backend docs and harness only; no production deploy" --json`
+    classified this local backend release/readiness slice as H1 and required a
+    Mac deployment plan. No production deploy command was run because this
+    continuation is local backend/docs/Harness work and no deployment was
+    requested in this turn.
+- Remaining before full Growth closed-loop product completion:
+  - embedded proposal/digest/action/execution/run/worker-target product UI
+    evidence and central visual evidence;
+  - actual release evidence collection/audit/readiness snapshot/package
+    closure after product UI/visual evidence exists;
+  - broader product loop completion around stage-assessment/profile-update
+    closure. Overall full-denominator progress remains about 70%.
+
 ## 2026-06-16T10:12+08:00 - Owner Automation Review Evidence Read Model
 
 - Status: implemented and focused-Harness validated locally. This slice adds

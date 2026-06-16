@@ -388,6 +388,12 @@ Use the Growth-owned release-readiness boundary:
   templates, read routes, record routes, and missing-key summaries were
   collected; it is not release approval, runtime config enablement, scheduling
   permission, package recording, or deployment.
+  Backend Owner review evidence is now collected by the default
+  `owner_review_evidence` task. It delegates to
+  `npm run smoke:owner-review-evidence`, maps the bounded output to
+  `ownerReviewEvidence`, and proves only that the summary-only automation
+  evidence read model can be collected. It does not replace product UI or
+  central visual evidence.
 - release evidence bundle audit CLI:
   `npm run smoke:release-evidence-bundle-audit -- --workspace-id <workspace> --release-evidence-bundle-file <bundle.json> --json`.
   This audit delegates to
@@ -446,7 +452,11 @@ Use the Growth-owned release-readiness boundary:
   `npm run smoke:owner-review-evidence -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`.
   The CLI is no-write and aggregates existing automation/readiness service
   readbacks. It is backend evidence only and does not replace proposal/digest/
-  action/execution UI or visual evidence.
+  action/execution UI or visual evidence. The same output can be collected by
+  the default release evidence bundle task `owner_review_evidence` as
+  `ownerReviewEvidence`, passed to release-readiness with
+  `--owner-review-evidence`, or persisted as the canonical release evidence
+  record key `owner_review_evidence`.
 - release approval smoke CLI:
   `npm run smoke:release-approval -- --workspace-id <workspace> --learner-id <learner> --approval-key writeful_execution --json`.
   The default operation is read-only list. `bag` is a read-only projection for
@@ -677,6 +687,11 @@ The service aggregates summary-only readiness evidence:
 - release workbench action-template readback evidence from
   `npm run smoke:release-workbench` or from the non-default release-bundle
   `release_workbench` task;
+- backend Owner automation review evidence from
+  `npm run smoke:owner-review-evidence`, the default release-bundle
+  `owner_review_evidence` task, the release-readiness
+  `--owner-review-evidence` flag, or a persisted `owner_review_evidence`
+  release evidence record;
 - explicit release approval for each config gate, either as bounded one-off
   readiness input or as a persisted summary-only approval record read through
   `learning-automation-release-approval-service`:
@@ -848,7 +863,7 @@ becomes future planning evidence, not a required retry loop.
 | Scheduler dry-run | Service tests, `tests/growth-scheduler-dry-run-smoke-script.test.js`, `npm run smoke:scheduler-dry-run`, the Fanfan science completed-cycle candidate in `tests/learning-card-ai-loop-harness.test.js`, and architecture guard for no Gateway, publication, evaluation, execution, scheduler tick, stage activation, notification, learner-state mutation, or direct repository access from the CLI. |
 | Digest | Repository/service/route tests, `tests/growth-automation-digest-smoke-script.test.js`, `npm run smoke:digest`, the Fanfan science completed-cycle digest in `tests/learning-card-ai-loop-harness.test.js`, read-only list/get by default, explicit `--allow-write` for create/review, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Failure policy | Repository/service/route tests, `tests/growth-automation-failure-policy-smoke-script.test.js`, `npm run smoke:failure-policy`, read-only readiness/list by default, explicit `--allow-write` for create/review, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
-| Owner review evidence | `tests/learning-automation-owner-review-evidence-service.test.js`, `tests/growth-automation-owner-review-evidence-smoke-script.test.js`, route tests, architecture guards, and `npm run smoke:owner-review-evidence`. The service owns no repository/table and aggregates proposal, digest, failure-policy, action-handoff, scheduler execution/run, worker-target, and release-readiness DTOs into one summary-only backend evidence read model. It is no-write, not UI evidence, and must not call Gateway, publish, generate, evaluate, execute scheduler actions, run scheduler ticks, deliver handoffs, emit events, activate stage assessments, mutate learner state, or inspect repositories directly. |
+| Owner review evidence | `tests/learning-automation-owner-review-evidence-service.test.js`, `tests/growth-automation-owner-review-evidence-smoke-script.test.js`, `tests/learning-automation-release-evidence-bundle-service.test.js`, `tests/growth-release-evidence-bundle-script.test.js`, `tests/learning-automation-release-readiness-service.test.js`, `tests/growth-release-readiness-smoke-script.test.js`, `tests/learning-automation-release-evidence-service.test.js`, route tests, architecture guards, `npm run smoke:owner-review-evidence`, release-bundle task `owner_review_evidence`, release-readiness key `owner_review_evidence`, and canonical persisted release evidence key `owner_review_evidence`. The service owns no repository/table and aggregates proposal, digest, failure-policy, action-handoff, scheduler execution/run, worker-target, and release-readiness DTOs into one summary-only backend evidence read model. It is no-write, not UI evidence, and must not call Gateway, publish, generate, evaluate, execute scheduler actions, run scheduler ticks, deliver handoffs, emit events, activate stage assessments, mutate learner state, or inspect repositories directly. |
 | Action handoff | Repository/service/route tests, `tests/growth-automation-action-handoff-smoke-script.test.js`, `npm run smoke:action-handoff`, explicit write gate for create/deliver, event delivery failure visibility, and architecture guard for no Gateway, publication, evaluation, scheduler execution, scheduler tick, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler execution | Repository/service/route tests, `tests/growth-automation-scheduler-execution-smoke-script.test.js`, `npm run smoke:scheduler-execution`, read-only list by default, explicit `--allow-write` for execute, default-disabled blocked execution evidence, release authorization plus release activation audit readback plus persisted `verified_enabled` runtime enablement readback before publish, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler tick, action handoff delivery, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler run | Repository/service/route tests, `tests/growth-automation-scheduler-run-smoke-script.test.js`, `npm run smoke:scheduler-run`, read-only list by default, explicit `--allow-write` for run, default-disabled blocked run evidence, and architecture guard for no Gateway, direct publication, evaluation, scheduler dry-run bypass, scheduler execution bypass, action handoff delivery, worker timer, stage activation, learner-state mutation, or direct repository access from the CLI. |

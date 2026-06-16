@@ -27,7 +27,8 @@ const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "productionSchedulerDryRunSmokeEvidence",
   "releaseEvidenceBundleAudit",
   "platformActionEvidence",
-  "centralVisualEvidence"
+  "centralVisualEvidence",
+  "ownerReviewEvidence"
 ]);
 
 const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
@@ -57,7 +58,8 @@ const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
   productionSchedulerDryRunSmokeEvidence: "production_scheduler_dry_run_smoke_evidence",
   releaseEvidenceBundleAudit: "release_evidence_bundle_audit",
   platformActionEvidence: "platform_action_evidence",
-  centralVisualEvidence: "central_visual_evidence"
+  centralVisualEvidence: "central_visual_evidence",
+  ownerReviewEvidence: "owner_review_evidence"
 });
 
 const RELEASE_EVIDENCE_KEY_ALIASES = new Map();

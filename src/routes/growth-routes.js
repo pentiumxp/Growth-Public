@@ -580,7 +580,8 @@ function normalizeAutomationReleaseReviewInput(url, target) {
     schedulerExecutionUiEvidence: truthy(url.searchParams.get("schedulerExecutionUiEvidence") || url.searchParams.get("scheduler_execution_ui_evidence")),
     schedulerRunUiEvidence: truthy(url.searchParams.get("schedulerRunUiEvidence") || url.searchParams.get("scheduler_run_ui_evidence")),
     schedulerWorkerTargetUiEvidence: truthy(url.searchParams.get("schedulerWorkerTargetUiEvidence") || url.searchParams.get("scheduler_worker_target_ui_evidence")),
-    releaseWorkbenchSmokeEvidence: truthy(url.searchParams.get("releaseWorkbenchSmokeEvidence") || url.searchParams.get("release_workbench_smoke_evidence") || url.searchParams.get("releaseWorkbenchEvidence") || url.searchParams.get("release_workbench_evidence"))
+    releaseWorkbenchSmokeEvidence: truthy(url.searchParams.get("releaseWorkbenchSmokeEvidence") || url.searchParams.get("release_workbench_smoke_evidence") || url.searchParams.get("releaseWorkbenchEvidence") || url.searchParams.get("release_workbench_evidence")),
+    ownerReviewEvidence: truthy(url.searchParams.get("ownerReviewEvidence") || url.searchParams.get("owner_review_evidence") || url.searchParams.get("automationOwnerReviewEvidence") || url.searchParams.get("automation_owner_review_evidence"))
   });
 }
 
@@ -642,6 +643,7 @@ function normalizeAutomationReleaseActivationRecordInput(body, workspaceId, targ
     schedulerRunUiEvidence: body.schedulerRunUiEvidence || body.scheduler_run_ui_evidence,
     schedulerWorkerTargetUiEvidence: body.schedulerWorkerTargetUiEvidence || body.scheduler_worker_target_ui_evidence,
     releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence,
+    ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence,
     activationDecision: body.activationDecision || body.activation_decision || body.ownerActivationDecision || body.owner_activation_decision,
     evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
     note: body.note || body.reason || body.summary,
@@ -759,7 +761,8 @@ function readinessEvidenceFromBody(body = {}) {
     productionPlannerReadinessEvidence: body.productionPlannerReadinessEvidence || body.production_planner_readiness_evidence || evidence.productionPlannerReadinessEvidence || evidence.production_planner_readiness_evidence,
     platformActionEvidence: body.platformActionEvidence || body.platform_action_evidence || evidence.platformActionEvidence || evidence.platform_action_evidence,
     centralVisualEvidence: body.centralVisualEvidence || body.central_visual_evidence || evidence.centralVisualEvidence || evidence.central_visual_evidence,
-    releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence || evidence.releaseWorkbenchSmokeEvidence || evidence.release_workbench_smoke_evidence
+    releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence || evidence.releaseWorkbenchSmokeEvidence || evidence.release_workbench_smoke_evidence,
+    ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence || evidence.ownerReviewEvidence || evidence.owner_review_evidence || evidence.automationOwnerReviewEvidence || evidence.automation_owner_review_evidence
   });
 }
 
@@ -773,7 +776,8 @@ function readinessEvidenceFromQuery(url) {
     productionPlannerReadinessEvidence: truthy(url.searchParams.get("productionPlannerReadinessEvidence") || url.searchParams.get("production_planner_readiness_evidence")),
     platformActionEvidence: truthy(url.searchParams.get("platformActionEvidence") || url.searchParams.get("platform_action_evidence")),
     centralVisualEvidence: truthy(url.searchParams.get("centralVisualEvidence") || url.searchParams.get("central_visual_evidence")),
-    releaseWorkbenchSmokeEvidence: truthy(url.searchParams.get("releaseWorkbenchSmokeEvidence") || url.searchParams.get("release_workbench_smoke_evidence") || url.searchParams.get("releaseWorkbenchEvidence") || url.searchParams.get("release_workbench_evidence"))
+    releaseWorkbenchSmokeEvidence: truthy(url.searchParams.get("releaseWorkbenchSmokeEvidence") || url.searchParams.get("release_workbench_smoke_evidence") || url.searchParams.get("releaseWorkbenchEvidence") || url.searchParams.get("release_workbench_evidence")),
+    ownerReviewEvidence: truthy(url.searchParams.get("ownerReviewEvidence") || url.searchParams.get("owner_review_evidence") || url.searchParams.get("automationOwnerReviewEvidence") || url.searchParams.get("automation_owner_review_evidence"))
   };
 }
 
@@ -938,6 +942,7 @@ function normalizeAutomationReleasePackageBuildInput(body, workspaceId, target, 
     schedulerRunUiEvidence: body.schedulerRunUiEvidence || body.scheduler_run_ui_evidence,
     schedulerWorkerTargetUiEvidence: body.schedulerWorkerTargetUiEvidence || body.scheduler_worker_target_ui_evidence,
     releaseWorkbenchSmokeEvidence: body.releaseWorkbenchSmokeEvidence || body.release_workbench_smoke_evidence || body.releaseWorkbenchEvidence || body.release_workbench_evidence,
+    ownerReviewEvidence: body.ownerReviewEvidence || body.owner_review_evidence || body.automationOwnerReviewEvidence || body.automation_owner_review_evidence,
     evidence: body.evidence || body.evidenceSummary || body.evidence_summary,
     releaseApproval: releaseApprovalFromBody(body),
     requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),

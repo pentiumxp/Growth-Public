@@ -76,6 +76,10 @@ test("automation release evidence service returns evidence bag for release-readi
     evidence: { evidenceId: "central_visual_1", artifactId: "central_harness_artifact" }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "owner_review_evidence",
+    evidence: { evidenceId: "owner_review_1", source: "owner_review_smoke" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_audit_ui_evidence",
     status: "blocked",
     evidence: { evidenceId: "owner_audit_blocked_1" }
@@ -84,10 +88,11 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "owner_visual_harness");
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
+  assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
   assert.equal(bag.writefulSchedulingAllowed, false);
 });
 
@@ -115,4 +120,5 @@ test("automation release evidence service rejects invalid evidence keys and priv
   assert.equal(privacyValue.error, "learning_automation_release_evidence_privacy_failed");
 
   assert.equal(canonicalReleaseEvidenceKey("central_visual_evidence"), "centralVisualEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("owner_review_evidence"), "ownerReviewEvidence");
 });

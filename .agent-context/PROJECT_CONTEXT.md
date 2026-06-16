@@ -147,7 +147,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   release-readiness boundary. It now also treats bounded release-workbench
   smoke/readback evidence as a separate required readiness check after
   `npm run smoke:release-workbench` or the explicit `release_workbench`
-  release evidence bundle task. It now also has
+  release evidence bundle task. It now also treats backend Owner automation
+  review evidence as `owner_review_evidence` after
+  `npm run smoke:owner-review-evidence`, the default `owner_review_evidence`
+  release evidence bundle task, the `--owner-review-evidence` readiness flag,
+  or a persisted `owner_review_evidence` release evidence record. This evidence
+  proves backend readback only and does not replace product UI or visual
+  evidence. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
   `--stage-checkpoint-evidence` after
@@ -159,7 +165,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `--scheduler-worker-target-ui-evidence` as Owner automation UI evidence
   flags, accepts
   `--release-workbench-evidence` as final Owner action-template readback
-  evidence, accepts
+  evidence, accepts `--owner-review-evidence` as backend Owner automation
+  review readback evidence, accepts
   `--production-proposal-smoke-evidence` after
   `npm run smoke:proposal` has produced bounded read-only production proposal
   evidence, accepts
@@ -215,8 +222,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
   smoke, stage-checkpoint controls readback smoke, platform action evidence,
-  central visual evidence, and proposal smoke
-  in the default task set, and now also collects the
+  central visual evidence, proposal smoke, and backend Owner automation review
+  evidence in the default task set, and now also collects the
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
@@ -240,7 +247,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   visual harness artifact validation into `centralVisualEvidence`, controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`, and explicit non-default release
-  workbench smoke into `releaseWorkbenchSmokeEvidence`; it does not write
+  workbench smoke into `releaseWorkbenchSmokeEvidence`, and backend Owner
+  automation review evidence into `ownerReviewEvidence`; it does not write
   business state of its own, does not call Gateway, and does not change
   release-readiness or scheduler permission. The same builder now also exposes
   an explicit non-default `release_controls` task that runs

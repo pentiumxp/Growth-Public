@@ -19,6 +19,14 @@ not be counted as mobile visual evidence.
 - Service: `src/services/learning-automation-owner-review-evidence-service.js`.
 - Route: `GET /api/v1/growth/automation/owner-review-evidence`.
 - Smoke CLI: `npm run smoke:owner-review-evidence`.
+- Release evidence bundle task: default task `owner_review_evidence`, persisted
+  as `ownerReviewEvidence`.
+- Release-readiness check key: `owner_review_evidence`, with required action
+  `run_owner_review_evidence_smoke`.
+- Release-readiness smoke flag:
+  `npm run smoke:release-readiness -- --owner-review-evidence`.
+- Release evidence record key: `owner_review_evidence`, canonicalized as
+  `ownerReviewEvidence` for persisted pass-record readback.
 - Schema: `growth.learningAutomationOwnerReviewEvidence.v1`.
 - Privacy class: `summary_only`.
 
@@ -55,6 +63,26 @@ The top-level DTO contains:
 The gate list is advisory. Missing gate keys identify what Owner or release
 tooling should inspect next; they do not enable scheduling.
 
+## Release Evidence Integration
+
+`owner_review_evidence` is now part of the default release evidence bundle.
+The bundle builder runs `npm run smoke:owner-review-evidence` through its
+injected command runner, parses the summary-only result, privacy-scans it, and
+stores a bounded `ownerReviewEvidence` item. The bundle stores status, gate
+counts, release-readiness status, missing gate/check keys, and next-action key;
+it never stores smoke stdout, raw dependency DTOs, private paths, or learner
+content.
+
+Release-readiness treats `ownerReviewEvidence` as a required backend evidence
+check. This proves the Owner automation evidence read model can be collected
+and read back; it does not prove proposal/digest/action/execution UI evidence
+or mobile visual evidence. Those evidence keys remain separate readiness
+requirements.
+
+The same evidence key can also be recorded through the release evidence record
+boundary as `owner_review_evidence`. Persisted pass records are projected back
+into release-readiness through the canonical `ownerReviewEvidence` key.
+
 ## Forbidden Boundaries
 
 This boundary must not:
@@ -82,6 +110,11 @@ Required local harness:
 
 - `tests/learning-automation-owner-review-evidence-service.test.js`;
 - `tests/growth-automation-owner-review-evidence-smoke-script.test.js`;
+- `tests/learning-automation-release-evidence-bundle-service.test.js`;
+- `tests/growth-release-evidence-bundle-script.test.js`;
+- `tests/learning-automation-release-readiness-service.test.js`;
+- `tests/growth-release-readiness-smoke-script.test.js`;
+- `tests/learning-automation-release-evidence-service.test.js`;
 - route coverage in `tests/growth-routes.test.js`;
 - architecture guard in `tests/growth-architecture-boundary.test.js`;
 - syntax coverage through `npm run check`;

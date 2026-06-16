@@ -703,8 +703,9 @@ Implemented backend shape:
   from selected no-write/default-disabled smoke CLIs, including read-only
   cycle-history readback, read-only Owner audit readback, read-only
   learner-cycle audit, stage-assessment readiness, proposal smoke, platform
-  action evidence, and read-only release approval bag projection in the
-  default task set. It maps
+  action evidence, read-only release approval bag projection, and
+  backend Owner automation review evidence from
+  `npm run smoke:owner-review-evidence` in the default task set. It maps
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field so persisted approvals can flow into
   release-readiness without hand-spliced JSON. Use `--target-node-id` when
@@ -733,6 +734,11 @@ Implemented backend shape:
   missing-key summaries, and next action were collected; it is not release
   approval, runtime config enablement, scheduler permission, package recording,
   or deployment.
+  The default `owner_review_evidence` task maps
+  `npm run smoke:owner-review-evidence` output to `ownerReviewEvidence`.
+  A passing owner-review task means the backend summary-only Owner automation
+  evidence read model was collected; it is not proposal/digest/action UI
+  evidence and is not mobile visual evidence.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;
@@ -904,7 +910,9 @@ Required behavior:
   stage-checkpoint separation from `npm run smoke:stage-assessment`, proposal
   review, production proposal smoke evidence from `npm run smoke:proposal`,
   backend Owner review evidence from
-  `npm run smoke:owner-review-evidence`, automation digest UI, digest review,
+  `npm run smoke:owner-review-evidence`, the release-readiness
+  `owner_review_evidence` key or persisted `ownerReviewEvidence` record,
+  automation digest UI, digest review,
   active failure policy, delivered action
   handoff, automation action handoff UI, production action handoff smoke evidence from
   `npm run smoke:action-handoff`, Owner-explicit execution gate status,
@@ -947,7 +955,9 @@ Required behavior:
   release-dashboard readback through the non-default `release_dashboard`
   release-bundle task, optional final release-workbench readback through the
   non-default `release_workbench` release-bundle task or
-  `--release-workbench-evidence`, and explicit release approval records for each writeful
+  `--release-workbench-evidence`, Owner automation review evidence through
+  the default `owner_review_evidence` release-bundle task or
+  `--owner-review-evidence`, and explicit release approval records for each writeful
   config gate;
 - return bounded check statuses such as `pass`, `missing`, `blocked`, or
   `not_applicable`;

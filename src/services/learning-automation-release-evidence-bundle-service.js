@@ -26,7 +26,8 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "scheduler_run",
   "scheduler_worker_target",
   "scheduler_worker",
-  "release_approval"
+  "release_approval",
+  "owner_review_evidence"
 ]);
 
 const RELEASE_APPROVAL_KEYS = Object.freeze([
@@ -158,6 +159,12 @@ const TASK_DEFINITIONS = Object.freeze([
     script: "scripts/smoke-growth-automation-release-approval.js",
     commandName: "npm run smoke:release-approval",
     extraArgs: ["--operation", "bag"]
+  },
+  {
+    taskId: "owner_review_evidence",
+    evidenceKey: "ownerReviewEvidence",
+    script: "scripts/smoke-growth-automation-owner-review-evidence.js",
+    commandName: "npm run smoke:owner-review-evidence"
   },
   {
     taskId: "release_controls",
@@ -588,11 +595,36 @@ function releaseWorkbenchSummaryFromSmoke(value = {}) {
   };
 }
 
+function ownerReviewSummaryFromSmoke(value = {}) {
+  const ownerEvidence = value.automationOwnerReviewEvidence && typeof value.automationOwnerReviewEvidence === "object"
+    ? value.automationOwnerReviewEvidence
+    : {};
+  return {
+    source: cleanString(value.source || "growth-learning-automation-owner-review-evidence-service", 160),
+    status: cleanString(ownerEvidence.status || value.status, 120),
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 160),
+    readyForReleaseReview: value.readyForReleaseReview === true || ownerEvidence.readyForReleaseReview === true,
+    passedGateCount: Number(ownerEvidence.passedGateCount || ownerEvidence.passed_gate_count) || 0,
+    missingGateCount: Number(ownerEvidence.missingGateCount || ownerEvidence.missing_gate_count) || 0,
+    requiredActionCount: Number(ownerEvidence.requiredActionCount || ownerEvidence.required_action_count) || 0,
+    nextActionKey: cleanString(ownerEvidence.nextAction?.key || ownerEvidence.next_action?.key, 120),
+    releaseReadinessStatus: cleanString(ownerEvidence.releaseReadinessStatus || ownerEvidence.release_readiness_status, 120),
+    releaseMissingCheckKeys: uniqueStrings(ownerEvidence.releaseMissingCheckKeys || ownerEvidence.release_missing_check_keys || []),
+    missingGateKeys: uniqueStrings(ownerEvidence.missingGateKeys || ownerEvidence.missing_gate_keys || []),
+    writefulSchedulingAllowed: value.writefulSchedulingAllowed === true,
+    backgroundSchedulingAllowed: value.backgroundSchedulingAllowed === true,
+    backgroundWorkerAllowed: value.backgroundWorkerAllowed === true,
+    runtimeConfigChange: value.runtimeConfigChange === true,
+    configChangeApplied: value.configChangeApplied === true
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
   if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
   if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
+  if (task.taskId === "owner_review_evidence") return ownerReviewSummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
@@ -745,6 +777,10 @@ function taskSpecificArgs(task, scope) {
     args.push("--plugin-id", scope.visualPluginId || "growth");
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
+  }
+  if (task.taskId === "owner_review_evidence") {
+    if (scope.activationGates.length) args.push("--activation-gates", scope.activationGates.join(","));
+    if (scope.requiredApprovalKeys.length) args.push("--required-approval-keys", scope.requiredApprovalKeys.join(","));
   }
   if (task.taskId === "release_controls" || task.taskId === "release_inventory" || task.taskId === "release_dashboard" || task.taskId === "release_workbench") {
     if (scope.collectionRunId) args.push("--collection-run-id", scope.collectionRunId);

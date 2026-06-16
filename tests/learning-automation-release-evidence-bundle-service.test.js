@@ -34,6 +34,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("stage_checkpoint_controls"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("platform_action"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("central_visual"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("owner_review_evidence"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_controls"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_inventory"), false);
@@ -129,7 +130,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     subject: "science",
     targetNodeIds: ["kg_science_fair_test"],
     taskCardId: "ltask_science_daily_1",
-    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "cycle_history", "owner_audit", "profile_feedback", "learner_cycle", "stage_assessment", "stage_checkpoint_controls", "proposal"],
+    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "cycle_history", "owner_audit", "profile_feedback", "learner_cycle", "stage_assessment", "stage_checkpoint_controls", "proposal", "owner_review_evidence"],
     requestedBy: "owner"
   });
 
@@ -149,13 +150,14 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     "productionLearnerCycleSmokeEvidence",
     "stageCheckpointEvidence",
     "stageCheckpointControlsEvidence",
-    "productionProposalSmokeEvidence"
+    "productionProposalSmokeEvidence",
+    "ownerReviewEvidence"
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
-  assert.equal(result.bundle.summary.taskCount, 10);
+  assert.equal(result.bundle.summary.taskCount, 11);
   assert.equal(result.bundle.summary.blockedCount, 0);
-  assert.equal(calls.length, 10);
+  assert.equal(calls.length, 11);
   assert.equal(calls[0].command, "/node");
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-planner-readiness.js"));
   assert.ok(calls[2].args[0].endsWith("scripts/smoke-growth-learning-loop-state.js"));
@@ -182,6 +184,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   assert.ok(calls[8].args.includes("--target-node-id"));
   assert.ok(calls[8].args.includes("kg_science_fair_test"));
   assert.ok(calls[9].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
+  assert.ok(calls[10].args[0].endsWith("scripts/smoke-growth-automation-owner-review-evidence.js"));
   assert.ok(calls[3].args.includes("--target-node-id"));
   assert.ok(calls[6].args.includes("--target-node-id"));
   assert.ok(calls[0].args.includes("--json"));

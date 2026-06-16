@@ -178,6 +178,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("stage_assessment"));
   assert.ok(output.allowedTaskIds.includes("stage_checkpoint_controls"));
   assert.ok(output.allowedTaskIds.includes("proposal"));
+  assert.ok(output.allowedTaskIds.includes("owner_review_evidence"));
   assert.ok(output.allowedTaskIds.includes("central_visual"));
   assert.ok(output.allowedTaskIds.includes("daily_loop_write"));
   assert.ok(output.allowedTaskIds.includes("release_approval"));
@@ -608,6 +609,41 @@ test("release evidence bundle script writes bounded release-workbench readback f
     assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.recordRouteKeys.includes("release_evidence"), true);
     assert.equal(fileBundle.evidence.releaseWorkbenchSmokeEvidence.summary.readRouteKeys.includes("release_dashboard"), true);
     assert.equal(fileBundle.scope.activationGates[0], "writeful_execution");
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
+test("release evidence bundle script writes bounded owner-review evidence from no-write smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "owner-review-evidence-bundle.json");
+    const result = runScript([
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "owner_review_evidence",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.smoke, "npm run smoke:owner-review-evidence");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.source, "growth-learning-automation-owner-review-evidence-service");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.schemaVersion, "growth.learningAutomationOwnerReviewEvidence.v1");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.status, "proposal_required");
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.missingGateKeys.includes("proposal_record_present"), true);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.writefulSchedulingAllowed, false);
+    assert.equal(fileBundle.evidence.ownerReviewEvidence.summary.runtimeConfigChange, false);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
