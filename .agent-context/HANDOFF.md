@@ -11,8 +11,9 @@
 
 ## 2026-06-16T23:06+08:00 - Automation Scheduler Execution Owner UI Controls
 
-- Status: implemented and locally validated; pending commit/push. Not deployed
-  per Owner instruction to deploy after the broader slice is complete.
+- Status: implemented, locally validated, and committed/pushed as
+  `b010822 Add scheduler execution Owner UI controls`; not deployed per Owner
+  instruction to deploy after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation scheduler
     execution attempts for the selected Growth target;
