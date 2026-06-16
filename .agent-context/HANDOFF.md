@@ -9,10 +9,93 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T21:10+08:00 - Recommendation Lifecycle Owner UI Controls
+
+- Status: implemented, validated, and ready to commit/push; not deployed per
+  Owner instruction to deploy only after the broader slice is complete.
+- Change intent:
+  - Owner generation UI now exposes the backend recommendation lifecycle review
+    boundary for pending `recommendationLifecycle` rows;
+  - pending recommendations can be explicitly recorded as `skipped` or
+    `expired` from the Growth plugin interface instead of requiring Codex;
+  - the UI refreshes the selected learner context after success so Owner sees
+    the recommendation leave pending state without triggering generation.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds
+    `reviewGrowthRecommendationLifecycle()`, routed through
+    `POST /api/v1/growth/recommendations/lifecycle/review`;
+  - `public/growth-card-generation-ui.js` adds summary-only lifecycle review
+    payload construction, pending-row `跳过` / `过期` controls, and visible
+    submitting/reviewed/failed state;
+  - `public/app.js` owns only ephemeral UI state and delegates the durable
+    status update to the API client/service boundary before refreshing Growth
+    context/readbacks;
+  - `public/growth-homeai-legacy.css` adds minimal lifecycle action/status
+    styling, including existing dark/system-dark contrast rules;
+  - `public/index.html` static asset version is bumped to
+    `20260616-recommendation-lifecycle-ui-v1` so the later deployment can
+    break stale browser caches.
+- Harness/docs:
+  - updated `tests/growth-frontend-adapter.test.js` for API helper, Home AI
+    proxy path handling, pending-row buttons, payload privacy, and app source
+    wiring;
+  - updated `tests/growth-architecture-boundary.test.js` so the frontend route
+    remains a helper/adapter over the service boundary;
+  - updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_CARD_LOOP.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - `node --check public/growth-api-client.js`;
+  - `node --check public/growth-card-generation-ui.js`;
+  - `node --check public/app.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed `1/1`;
+  - `node --test tests/learning-recommendation-lifecycle-service.test.js
+    tests/growth-routes.test.js
+    tests/growth-recommendation-lifecycle-smoke-script.test.js
+    tests/learning-card-ai-loop-harness.test.js` passed `61/61`;
+  - `node --test tests/growth-ui-evidence-smoke-script.test.js
+    tests/learning-automation-ui-evidence-service.test.js
+    tests/growth-central-visual-evidence-smoke-script.test.js
+    tests/learning-automation-central-visual-evidence-service.test.js`
+    passed `16/16`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - full Growth `npm test` passed with `844/844`;
+  - `git diff --check` passed;
+  - static asset version consistency check passed for
+    `20260616-recommendation-lifecycle-ui-v1` with 13 references and no old
+    `20260615-target-provision-controls-ui-v1` references;
+  - CodeGraph CLI status after edits: 355 files, 4,835 nodes, 19,156 edges,
+    index up to date; MCP status call returned a tool-layer unsupported-call
+    error, so CLI fallback was used.
+- AI Ops evidence:
+  - intake returned deployment-oriented H1 because the task text contained
+    deployment wording, but changed-file required-checks for the touched
+    frontend/docs files returned H3 and no deployment requirement;
+  - evidence ledger record:
+    `evidence-fc577c48-a590-4dc9-8ace-68fab6d45c73`;
+  - Browser plugin `iab` was unavailable during local visual verification, so
+    no live browser screenshot was captured. Machine-verifiable local visual
+    coverage came from `growth-embedded-layout` plus Growth UI/central visual
+    evidence validator harnesses.
+- Boundary:
+  - no Gateway/model call, proposal creation, card generation, plan
+    publication, evaluation, scheduler execution, notification/handoff
+    delivery, stage activation, runtime config mutation, or deployment was
+    performed;
+  - durable writes still belong only to
+    `learning-recommendation-lifecycle-service.reviewRecommendation()`.
+
 ## 2026-06-16T20:45+08:00 - Recommendation Lifecycle Owner Decisions
 
-- Status: implemented, tested, and ready to commit/push in this turn; not
-  deployed per Owner instruction to deploy after the broader slice is complete.
+- Status: implemented, tested, committed/pushed as
+  `f87225c Add recommendation lifecycle owner decisions`, and not deployed per
+  Owner instruction to deploy after the broader slice is complete.
 - Change intent:
   - pending trajectory `nextRecommendation` rows can now be explicitly marked
     `skipped` or `expired` through the Growth recommendation lifecycle service;

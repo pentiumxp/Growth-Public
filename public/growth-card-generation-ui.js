@@ -272,8 +272,35 @@
     return value || "记录";
   }
 
-  function recommendationLifecyclePanel(context = {}, escapeHtml = defaultEscapeHtml) {
+  function recommendationLifecycleActionStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "submitting") return "记录中";
+    if (value === "reviewed") return "已记录";
+    if (value === "failed") return "失败";
+    return value || "待操作";
+  }
+
+  function recommendationLifecycleActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const recommendation = result.recommendation || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "reviewed"
+      ? `推荐已记录为 ${recommendationLifecycleStatusText(recommendation.status)}。`
+      : status === "submitting"
+        ? "正在通过 Growth recommendation lifecycle service 写入。"
+        : error || "推荐状态写入失败。";
+    return `<div class="learning-card-generation-lifecycle-status" data-recommendation-lifecycle-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(recommendationLifecycleActionStatusText(status))}</em>
+    </div>`;
+  }
+
+  function recommendationLifecyclePanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
     const rows = asArray(context.recommendationLifecycle).slice(0, 4);
+    const holder = state.recommendationLifecycle || {};
+    const busy = holder.actionStatus === "submitting";
     if (!rows.length) {
       return `<div class="learning-card-generation-lifecycle" data-card-generation-lifecycle>
         <div class="learning-card-generation-lifecycle-head">
@@ -287,9 +314,13 @@
     }
     const renderedRows = rows.map((item) => {
       const targets = asArray(item.targetNodeIds).map(clean).filter(Boolean);
-      const label = clean(targets[0] || item.strategy || item.trajectoryId || item.taskCardId || "推荐");
+      const label = clean(targets[0] || item.strategy || item.trajectoryId || item.sourceTaskCardId || item.taskCardId || "推荐");
       const status = clean(item.status);
-      const resultId = clean(item.generatedTaskCardId || item.supersededByTrajectoryId || item.sourceEvaluationId || item.taskCardId);
+      const canReview = status === "pending";
+      const trajectoryId = clean(item.trajectoryId || item.id);
+      const sourceTaskCardId = clean(item.sourceTaskCardId || item.taskCardId || item.source_task_card_id || item.task_card_id);
+      const sourceEvaluationId = clean(item.sourceEvaluationId || item.evaluationId || item.source_evaluation_id || item.evaluation_id);
+      const resultId = clean(item.generatedTaskCardId || item.supersededByTrajectoryId || item.sourceEvaluationId || item.sourceTaskCardId || item.taskCardId);
       const detail = clean(item.reason) || resultId || "summary-only";
       const meta = [
         clean(item.strategy),
@@ -302,6 +333,22 @@
         </span>
         <em>${escapeHtml(recommendationLifecycleStatusText(status))}</em>
         ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+        ${canReview ? `<div class="learning-card-generation-lifecycle-actions">
+          <button type="button"
+            data-recommendation-lifecycle-review
+            data-recommendation-lifecycle-trajectory-id="${escapeHtml(trajectoryId)}"
+            data-recommendation-lifecycle-source-task-card-id="${escapeHtml(sourceTaskCardId)}"
+            data-recommendation-lifecycle-source-evaluation-id="${escapeHtml(sourceEvaluationId)}"
+            data-recommendation-lifecycle-status="skipped"
+            ${busy ? "disabled" : ""}>${busy ? "记录中" : "跳过"}</button>
+          <button type="button"
+            data-recommendation-lifecycle-review
+            data-recommendation-lifecycle-trajectory-id="${escapeHtml(trajectoryId)}"
+            data-recommendation-lifecycle-source-task-card-id="${escapeHtml(sourceTaskCardId)}"
+            data-recommendation-lifecycle-source-evaluation-id="${escapeHtml(sourceEvaluationId)}"
+            data-recommendation-lifecycle-status="expired"
+            ${busy ? "disabled" : ""}>过期</button>
+        </div>` : ""}
       </div>`;
     }).join("");
     return `<div class="learning-card-generation-lifecycle" data-card-generation-lifecycle>
@@ -313,6 +360,7 @@
         <em>${escapeHtml(String(rows.length))}</em>
       </div>
       ${renderedRows}
+      ${recommendationLifecycleActionStatusPanel(holder, escapeHtml)}
     </div>`;
   }
 
@@ -347,7 +395,7 @@
     </div>`;
   }
 
-  function learningProfilePanel(context = {}, escapeHtml = defaultEscapeHtml) {
+  function learningProfilePanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
     const profile = context.learningProfile || {};
     const strategy = profile.nextCardStrategy || context.nextCardStrategy || {};
     const summary = profile.summary || {};
@@ -375,7 +423,7 @@
           ${profileItemRows(profile.recentTrajectory, "暂无轨迹", escapeHtml)}
         </div>
       </div>
-      ${recommendationLifecyclePanel(context, escapeHtml)}
+      ${recommendationLifecyclePanel(context, state, escapeHtml)}
       ${nextCardRecommendationPanel(context, strategy, escapeHtml)}
     </section>`;
   }
@@ -707,6 +755,24 @@
       card_schema_version: clean(defaults.cardSchemaVersion || "growth.card.authoring.v1"),
       requested_by: "owner"
     })).filter(([, value]) => clean(value)));
+  }
+
+  function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
+    const plan = context.suggestedPlan || {};
+    const defaults = context.generationDefaults || {};
+    const targetStatus = clean(status);
+    const payload = {
+      workspace_id: clean(workspaceId || recommendation.workspaceId || recommendation.workspace_id || context.target?.workspaceId),
+      learner_id: clean(context.target?.learnerId || recommendation.learnerId || recommendation.learner_id || workspaceId),
+      program_id: clean(context.programId || recommendation.programId || recommendation.program_id || plan.programId || defaults.programId),
+      trajectory_id: clean(recommendation.trajectoryId || recommendation.trajectory_id || recommendation.id),
+      task_card_id: clean(recommendation.sourceTaskCardId || recommendation.source_task_card_id || recommendation.taskCardId || recommendation.task_card_id),
+      source_evaluation_id: clean(recommendation.sourceEvaluationId || recommendation.source_evaluation_id || recommendation.evaluationId || recommendation.evaluation_id),
+      status: targetStatus,
+      reason_code: targetStatus === "expired" ? "owner_expired_stale_recommendation" : "owner_skipped_low_pressure",
+      reviewed_by: "owner"
+    };
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => clean(value)));
   }
 
   function createAutomationProposalCreatePayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
@@ -1800,7 +1866,7 @@
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
-          ${learningProfilePanel(context, escapeHtml)}
+          ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
           ${cycleDrilldownPanel(context, state, escapeHtml)}
           ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
@@ -1841,6 +1907,7 @@
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,
     createAutomationProposalQueryPayload,
+    createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,

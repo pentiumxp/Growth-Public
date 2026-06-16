@@ -138,6 +138,8 @@ test("Growth learning profile projection stays service-owned", () => {
   const ui = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(ui, /data-card-generation-profile/);
   assert.match(ui, /data-card-generation-lifecycle/);
+  assert.match(ui, /data-recommendation-lifecycle-review/);
+  assert.match(ui, /createRecommendationLifecycleDecisionPayload/);
   assert.match(ui, /data-release-workbench-panel/);
   assert.match(ui, /createReleaseWorkbenchActionPayload/);
   assert.match(ui, /data-automation-proposal-panel/);
@@ -150,6 +152,10 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.doesNotMatch(ui, /rawAnswer/);
   assert.doesNotMatch(ui, /rawPrompt/);
   assert.doesNotMatch(ui, /sourceRef/);
+
+  const apiClient = read(path.join("public", "growth-api-client.js"));
+  assert.match(apiClient, /reviewGrowthRecommendationLifecycle/);
+  assert.match(apiClient, /growthApiPath\("recommendations", "lifecycle", "review"\)/);
 });
 
 test("Growth learning operating loop foundation stays service-owned", () => {

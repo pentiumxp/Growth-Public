@@ -259,6 +259,11 @@ test("Growth API client exposes card generation context and write helpers", asyn
     target_node_ids: ["kg_science_observation"],
     assessment_coverage_node_ids: ["kg_science_observation", "kg_science_fair_test"]
   }, "weixin_fanfan");
+  await client.reviewGrowthRecommendationLifecycle({
+    trajectory_id: "lgtraj_pending_1",
+    status: "skipped",
+    reason_code: "owner_skipped_low_pressure"
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -353,6 +358,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
     generation_key: "automation_proposal:lgauto_proposed_1"
   });
   assert.equal(calls[23].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
+  assert.equal(calls[24].path, "/api/v1/growth/recommendations/lifecycle/review");
+  assert.deepEqual(JSON.parse(calls[24].options.body), {
+    workspace_id: "weixin_fanfan",
+    trajectory_id: "lgtraj_pending_1",
+    status: "skipped",
+    reason_code: "owner_skipped_low_pressure"
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -388,6 +400,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.reviewGrowthAutomationProposal("lgauto_1", { status: "skipped" }, "weixin_stephen");
   await client.publishGrowthAutomationProposal("lgauto_1", { requested_by: "owner" }, "weixin_stephen");
   await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
+  await client.reviewGrowthRecommendationLifecycle({ trajectory_id: "lgtraj_1", status: "expired" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -410,6 +423,12 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(calls[13].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/proposals/lgauto_1/decision");
   assert.equal(calls[14].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/proposals/lgauto_1/publish");
   assert.equal(calls[15].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
+  assert.equal(calls[16].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/recommendations/lifecycle/review");
+  assert.deepEqual(JSON.parse(calls[16].options.body), {
+    workspace_id: "weixin_stephen",
+    trajectory_id: "lgtraj_1",
+    status: "expired"
+  });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -674,6 +693,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       trajectoryId: "traj_pending",
       status: "pending",
       strategy: "stabilize",
+      sourceTaskCardId: "ltask_source_pending",
+      sourceEvaluationId: "eval_source_pending",
       targetNodeIds: ["kg_english_vocab_context"],
       reason: "Pending daily practice suggestion."
     }],
@@ -902,6 +923,16 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        recommendationLifecycle: {
+          actionStatus: "reviewed",
+          actionResult: {
+            recommendation: {
+              trajectoryId: "traj_pending",
+              status: "skipped"
+            }
+          },
+          actionError: ""
+        },
         cycleDrilldown: {
           status: "ready",
           audit: {
@@ -1067,6 +1098,12 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /已生成/);
   assert.match(html, /已替换/);
   assert.match(html, /待生成/);
+  assert.match(html, /data-recommendation-lifecycle-review/);
+  assert.match(html, /data-recommendation-lifecycle-status="skipped"/);
+  assert.match(html, /data-recommendation-lifecycle-status="expired"/);
+  assert.match(html, /data-recommendation-lifecycle-trajectory-id="traj_pending"/);
+  assert.match(html, /data-recommendation-lifecycle-source-task-card-id="ltask_source_pending"/);
+  assert.match(html, /推荐已记录为 已跳过/);
   assert.match(html, /ltask_generated_1/);
   assert.match(html, /traj_accepted/);
   assert.match(html, /data-recommendation-mode="trajectory"/);
@@ -1193,6 +1230,26 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     source_target_node_ids: ["kg_history_node"],
     target_node_ids: ["kg_history_node"]
   });
+
+  const recommendationDecisionPayload = windowRef.HermesGrowthCardGenerationUi.createRecommendationLifecycleDecisionPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    recommendation: context.recommendationLifecycle[2],
+    status: "expired"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(recommendationDecisionPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    trajectory_id: "traj_pending",
+    task_card_id: "ltask_source_pending",
+    source_evaluation_id: "eval_source_pending",
+    status: "expired",
+    reason_code: "owner_expired_stale_recommendation",
+    reviewed_by: "owner"
+  });
+  assert.equal(Object.hasOwn(recommendationDecisionPayload, "raw_answer"), false);
+  assert.equal(Object.hasOwn(recommendationDecisionPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(recommendationDecisionPayload, "raw_prompt"), false);
 
   const payload = windowRef.HermesGrowthCardGenerationUi.createDailyEnglishGeneratePayload({
     context,
@@ -2140,7 +2197,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260615-target-provision-controls-ui-v1";
+  const staticVersion = "20260616-recommendation-lifecycle-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -2206,6 +2263,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
   assert.match(source, /data-automation-proposal-publish/);
+  assert.match(source, /data-recommendation-lifecycle-review/);
   assert.match(source, /function createOwnerCorrectionPayload/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
   assert.match(source, /function createReleaseWorkbenchActionPayloadFromButton/);
@@ -2216,6 +2274,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function reviewAutomationProposalFromUi/);
   assert.match(source, /function createAutomationProposalPublishPayload/);
   assert.match(source, /function publishAutomationProposalFromUi/);
+  assert.match(source, /function createRecommendationLifecycleDecisionPayload/);
+  assert.match(source, /function reviewRecommendationLifecycleFromUi/);
   assert.match(source, /function createCycleAuditQueryPayload/);
   assert.match(source, /function refreshOwnerCycleDrilldownFromUi/);
   assert.match(source, /function createTargetProvisionPayload/);
@@ -2224,12 +2284,14 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.reviewGrowthRecommendationLifecycle\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.provisionGrowthDomainPack\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleAudit\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleCompleteness\(payload, targetWorkspaceId\)/);
   assert.match(source, /await refreshCardGenerationContextAfterPublish\(targetWorkspaceId\);[\s\S]*await refreshOwnerCycleDrilldownFromUi\(\{ silent: true \}\);[\s\S]*renderShell\(\);/);
   assert.match(source, /pageState\.cardGeneration\.ownerCorrectionDraft = "";\s*[\s\S]*pageState\.cardGeneration\.ownerCorrection = \{\s*status: "submitted"/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\);[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId, \{ errorPrefix: "纠偏已保存，但" \}\);[\s\S]*renderShell\(\);/);
+  assert.match(source, /api\.reviewGrowthRecommendationLifecycle\(payload, targetWorkspaceId\);[\s\S]*await refreshCardGenerationContextAfterPublish\(targetWorkspaceId, \{ errorPrefix: "推荐状态已记录，但" \}\);[\s\S]*renderShell\(\);/);
   assert.doesNotMatch(source, /api\.generateGrowthCard/);
   assert.doesNotMatch(source, /await loadCardGenerationContext\(targetWorkspaceId\)/);
 });

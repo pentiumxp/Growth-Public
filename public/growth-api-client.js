@@ -373,6 +373,12 @@
       }, payload));
     }
 
+    function reviewGrowthRecommendationLifecycle(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("recommendations", "lifecycle", "review"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function publishGrowthAutomationProposal(proposalId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
       const id = clean(proposalId);
       if (!id) throw new Error("missing_proposal_id");
@@ -406,6 +412,7 @@
       publishGrowthAutomationProposal,
       retryGrowthEvaluation,
       reviewGrowthAutomationProposal,
+      reviewGrowthRecommendationLifecycle,
       resolveGrowthApiPath,
       submitGrowthCardEvidence,
       submitGrowthExperienceSignal,

@@ -640,7 +640,12 @@ part of this boundary: it creates a proposal from the selected historical
 cycle's service-provided selectors, lists proposals for the selected visible
 target and scoped learner/domain-pack/subject, records `accepted` or `skipped`,
 and calls the accepted proposal publish route only after explicit Owner action.
-It still does not expose `expired`/`superseded` decision controls.
+It still does not expose proposal `expired`/`superseded` decision controls.
+Recommendation lifecycle decisions are separate: the same Owner generation
+surface can mark a pending next-card recommendation `skipped` or `expired`
+through `POST /api/v1/growth/recommendations/lifecycle/review`, then refreshes
+the context readback. This does not create a proposal, publish a card, call
+Gateway, or schedule work.
 The daily generation screen should prefer the scoped context DTO for its first
 refresh, while history/drilldown views can call the direct audit routes. The
 cycle audit route is the preferred drilldown API when the UI has a
@@ -833,11 +838,17 @@ scoped; Owner viewing a learner must see that learner's provision,
 graph/profile/evidence projections, and recommendation lifecycle, not the
 Owner workspace's rows.
 
-The Owner UI renders `recommendationLifecycle` as the read-only "推荐闭环"
-panel. Rows may show lifecycle status, strategy, target node id, short reason,
-generated card/plan ids, superseded-by trajectory id, and bounded timestamps.
-The UI must not write lifecycle state, infer accepted/superseded from raw
-trajectory JSON, or display raw learner content.
+The Owner UI renders `recommendationLifecycle` as the "推荐闭环" panel. Rows may
+show lifecycle status, strategy, target node id, short reason, generated
+card/plan ids, superseded-by trajectory id, and bounded timestamps. Pending
+rows may expose only two explicit Owner actions: `skipped` and `expired`.
+Those buttons call the API client helper for
+`POST /api/v1/growth/recommendations/lifecycle/review`, show submitting /
+reviewed / failed state, and refresh the selected learner context after
+success. The UI must not mark `accepted`, infer lifecycle state from raw
+trajectory JSON, mutate `superseded`, display raw learner content, call
+Gateway, publish/generate cards, evaluate submissions, schedule work, or
+deliver notifications.
 
 After a daily card or stage-assessment card publishes, the embedded UI must
 refresh `GET /api/v1/growth/card-generation/context` for the selected learner
@@ -1039,13 +1050,14 @@ Add focused tests before broad regression runs:
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
+| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/activation/runtime enablement endpoints without package placeholders |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |
 | UI audit panel | renders `ownerAudit`, persisted profile-delta audit summaries, Owner correction history, next recommendation, and recommendation lifecycle from context DTOs without raw source payloads |
+| UI recommendation lifecycle review | renders pending recommendation `跳过` / `过期` actions, constructs summary-only review payloads from service-provided selectors, calls `reviewGrowthRecommendationLifecycle`, refreshes context after success, and never marks `accepted`, publishes/generates cards, calls Gateway, evaluates, schedules, or delivers notifications |
 | UI cycle drilldown | calls `fetchGrowthCycleAudit` and `fetchGrowthCycleCompleteness`, renders single-card timeline/findings/missing-required state, keeps no raw source payloads, and does not schedule or publish |
 | UI proposal review | current slice creates supervised proposals from a selected historical cycle, lists proposals, shows bounded rationale and required Owner publish action, records `accepted`/`skipped` decisions, can call explicit accepted-proposal publish, and never auto-publishes or schedules after proposal creation or decision. A later slice must cover `expired`/`superseded` decisions and production visual/release evidence. |
 | UI automation digest review | later panel lists persisted dry-run digests, shows would-publish/blocked/skipped counts, keeps explicit publish manual, records digest review/archive/supersede state, and never publishes or notifies during digest creation or review |

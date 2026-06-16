@@ -31,6 +31,11 @@
         actionResult: null,
         actionError: ""
       },
+      recommendationLifecycle: {
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       targetProvisionDraft: {
         domainPackId: "",
         domain: "",
@@ -793,6 +798,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-recommendation-lifecycle-review]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        reviewRecommendationLifecycleFromUi(button).catch((error) => {
+          pageState.cardGeneration.recommendationLifecycle = Object.assign({}, pageState.cardGeneration.recommendationLifecycle, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-stage-assessment-check]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -912,6 +930,11 @@
       status: "loading",
       data: pageState.cardGeneration.automationProposals?.data || null,
       error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
+    pageState.cardGeneration.recommendationLifecycle = {
       actionStatus: "idle",
       actionResult: null,
       actionError: ""
@@ -1077,6 +1100,44 @@
     return automationProposalItems().find((proposal = {}) => clean(proposal.proposalId || proposal.proposal_id) === id) || null;
   }
 
+  function recommendationLifecycleItems() {
+    const context = pageState.cardGeneration.context || {};
+    return Array.isArray(context.recommendationLifecycle) ? context.recommendationLifecycle : [];
+  }
+
+  function findRecommendationLifecycleItem(button) {
+    const trajectoryId = clean(button.dataset.recommendationLifecycleTrajectoryId);
+    const sourceTaskCardId = clean(button.dataset.recommendationLifecycleSourceTaskCardId);
+    const sourceEvaluationId = clean(button.dataset.recommendationLifecycleSourceEvaluationId);
+    return recommendationLifecycleItems().find((item = {}) => {
+      return (trajectoryId && clean(item.trajectoryId || item.trajectory_id || item.id) === trajectoryId)
+        || (sourceTaskCardId && clean(item.sourceTaskCardId || item.source_task_card_id || item.taskCardId || item.task_card_id) === sourceTaskCardId)
+        || (sourceEvaluationId && clean(item.sourceEvaluationId || item.source_evaluation_id || item.evaluationId || item.evaluation_id) === sourceEvaluationId);
+    }) || {
+      trajectoryId,
+      sourceTaskCardId,
+      sourceEvaluationId
+    };
+  }
+
+  function createRecommendationLifecycleDecisionPayload(button) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createRecommendationLifecycleDecisionPayload !== "function") {
+      throw new Error("recommendation_lifecycle_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createRecommendationLifecycleDecisionPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        recommendation: findRecommendationLifecycleItem(button),
+        status: button.dataset.recommendationLifecycleStatus
+      }),
+      targetWorkspaceId
+    };
+  }
+
   function createAutomationProposalDecisionPayload(proposal = {}, status = "") {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createAutomationProposalDecisionPayload !== "function") {
@@ -1205,6 +1266,32 @@
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function reviewRecommendationLifecycleFromUi(button) {
+    const { payload, targetWorkspaceId } = createRecommendationLifecycleDecisionPayload(button);
+    pageState.cardGeneration.recommendationLifecycle = Object.assign({}, pageState.cardGeneration.recommendationLifecycle, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.recommendationLifecycle?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.reviewGrowthRecommendationLifecycle(payload, targetWorkspaceId);
+      pageState.cardGeneration.recommendationLifecycle = Object.assign({}, pageState.cardGeneration.recommendationLifecycle, {
+        actionStatus: "reviewed",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "推荐状态已记录，但" });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.recommendationLifecycle = Object.assign({}, pageState.cardGeneration.recommendationLifecycle, {
         actionStatus: "failed",
         actionError: error.message || String(error)
       });

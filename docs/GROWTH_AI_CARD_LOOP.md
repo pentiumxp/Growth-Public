@@ -326,9 +326,14 @@ or provider configuration.
 
 `learning-card-generation-context-service` projects the same lifecycle into
 the Owner context as `recommendationLifecycle`. The embedded Owner generation
-UI renders it as a read-only "推荐闭环" panel. The UI must not infer lifecycle
-state from raw trajectory JSON or mutate lifecycle status; accepted and
-superseded writes remain service-owned.
+UI renders it as the "推荐闭环" panel and may call the Owner-only lifecycle
+review route to mark a pending recommendation `skipped` or `expired`. The UI
+constructs the review payload only from service-provided selectors, shows
+submitting/reviewed/failed state, and refreshes the selected learner context
+after success. It must not infer lifecycle state from raw trajectory JSON, mark
+`accepted`, mutate `superseded`, publish/generate cards, call Gateway, evaluate
+submissions, schedule work, or deliver notifications. Accepted and superseded
+writes remain service-owned.
 
 After a card publish succeeds, the embedded UI refreshes only the generation
 context for the selected learner. It must preserve `status="published"` and
