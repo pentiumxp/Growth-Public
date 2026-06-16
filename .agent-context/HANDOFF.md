@@ -11,8 +11,9 @@
 
 ## 2026-06-16T22:18+08:00 - Automation Proposal Lifecycle Owner UI Controls
 
-- Status: implemented and validated locally; not deployed per Owner instruction
-  to deploy only after the broader slice is complete.
+- Status: implemented, validated, and committed/pushed as
+  `91758e5 Add proposal lifecycle UI decisions`; not deployed per Owner
+  instruction to deploy only after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now exposes all service-supported
     automation proposal review decisions: `accepted`, `skipped`, `expired`,
