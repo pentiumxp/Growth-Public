@@ -209,9 +209,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   assertions, screenshot or DOM evidence, and a private-value-safe public
   projection; it does not run Appium, the Home AI visual harness, Gateway,
   scheduler actions, generation, evaluation, notification delivery, stage
-  activation, learner-state writes, or release evidence persistence. It accepts
-  `--release-workbench-evidence` as final Owner action-template readback
-  evidence, accepts `--owner-review-evidence` as backend Owner automation
+  activation, learner-state writes, or release evidence persistence. The
+  deprecated `--release-workbench-evidence` flag now returns blocked
+  remediation metadata instead of passing evidence; valid final Owner
+  action-template readback evidence must come from `npm run
+  smoke:release-workbench` through explicit evidence JSON, the non-default
+  `release_workbench` release-bundle task, or a persisted release-evidence
+  record projection. Provided but non-passing release evidence is reported as
+  blocked with bounded invalid-reason readback. It accepts
+  `--owner-review-evidence` as backend Owner automation
   review readback evidence, accepts
   `--production-proposal-smoke-evidence` after
   `npm run smoke:proposal` has produced bounded read-only production proposal

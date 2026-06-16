@@ -792,7 +792,10 @@ Implemented backend shape:
   workbench task means bounded read routes, Owner record-route templates,
   missing-key summaries, and next action were collected; it is not release
   approval, runtime config enablement, scheduler permission, package recording,
-  or deployment.
+  or deployment. The legacy `--release-workbench-evidence` readiness flag is a
+  blocked remediation marker only; valid workbench evidence must come from the
+  workbench smoke output through explicit evidence JSON, the release bundle, or
+  a persisted release-evidence record projection.
   The default `owner_review_evidence` task maps
   `npm run smoke:owner-review-evidence` output to `ownerReviewEvidence`.
   A passing owner-review task means the backend summary-only Owner automation
@@ -1053,8 +1056,8 @@ Required behavior:
   non-default `release_inventory` release-bundle task, optional final
   release-dashboard readback through the non-default `release_dashboard`
   release-bundle task, optional final release-workbench readback through the
-  non-default `release_workbench` release-bundle task or
-  `--release-workbench-evidence`, Owner automation review evidence through
+  non-default `release_workbench` release-bundle task, explicit evidence JSON,
+  or persisted release-evidence record projection, Owner automation review evidence through
   the default `owner_review_evidence` release-bundle task or
   `--owner-review-evidence`, and explicit release approval records for each writeful
   config gate;

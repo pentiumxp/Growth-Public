@@ -369,16 +369,20 @@ Use the Growth-owned release-readiness boundary:
   `growth.learningAutomationReleaseEvidenceBundle.v1` bundle through
   `--evidence-bundle-file <path>` or `--evidence-bundle-json <json>`. Bundle
   scope/evidence/approval fields are summary-only defaults; explicit CLI
-  scope, `--evidence-json`, `--release-approval-json`, and evidence flags
-  override them. When a bundle is provided, the CLI passes bounded
+  scope, `--evidence-json`, and `--release-approval-json` override them.
+  Deprecated boolean evidence flags must not fabricate passing evidence when a
+  versioned smoke/bundle artifact exists. In particular,
+  `--release-workbench-evidence` now surfaces blocked remediation metadata and
+  cannot satisfy `releaseWorkbenchSmokeEvidence`; callers must provide the
+  bounded workbench smoke result through `--evidence-json`, a release evidence
+  bundle, or a validated persisted release-evidence record projection. When a
+  bundle is provided, the CLI passes bounded
   `evidenceBundleReadback` metadata into readiness. Service output includes
   `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with
   `summaryOnly=true`, source bundle summary, present/missing counts, missing
-  check keys, and bounded per-check evidence references. The CLI also accepts
-  `--release-workbench-evidence` for the final no-write Owner action-template
-  readback after `npm run smoke:release-workbench` has produced bounded
-  `growth.learningAutomationReleaseWorkbench.v1` evidence. `--write-snapshot`
+  check keys, bounded per-check evidence references, and bounded invalid
+  reasons for provided non-passing release evidence. `--write-snapshot`
   persists that readback catalog in `evidence_readback_json`.
 - release evidence bundle builder CLI:
   `npm run smoke:release-evidence-bundle -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --target-node-id <target-node-id> --output-file <bundle.json> --json`.
@@ -655,10 +659,12 @@ Use the Growth-owned release-readiness boundary:
   It exists so Owner UI can show bounded read routes, Owner-only record-route
   templates, missing evidence/check/approval/record summaries, and manual
   runtime-config follow-up hints without Codex joining DTOs or applying config.
-  Its bounded output can be passed to release-readiness through
-  `--release-workbench-evidence` or collected by the non-default
-  `release_workbench` release evidence bundle task as
-  `releaseWorkbenchSmokeEvidence`.
+  Its bounded output can be passed to release-readiness through explicit
+  `--evidence-json`, collected by the non-default `release_workbench` release
+  evidence bundle task as `releaseWorkbenchSmokeEvidence`, or persisted through
+  the release-evidence record path. The legacy
+  `--release-workbench-evidence` flag is a blocked remediation marker, not a
+  passing evidence source.
   It owns no repository/table, does not run smoke tasks internally, and does
   not write, publish, schedule, notify, call Gateway, flip runtime config,
   grant scheduler permission, or mutate learner state.
@@ -779,8 +785,9 @@ The service aggregates summary-only readiness evidence:
 - Home AI platform Action Inbox/Web Push evidence;
 - central embedded-plugin visual evidence;
 - release workbench action-template readback evidence from
-  `npm run smoke:release-workbench` or from the non-default release-bundle
-  `release_workbench` task;
+  `npm run smoke:release-workbench` supplied through explicit evidence JSON,
+  from the non-default release-bundle `release_workbench` task, or from a
+  validated persisted release-evidence record projection;
 - backend Owner automation review evidence from
   `npm run smoke:owner-review-evidence`, the default release-bundle
   `owner_review_evidence` task, the release-readiness

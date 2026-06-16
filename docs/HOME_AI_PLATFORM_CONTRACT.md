@@ -199,10 +199,15 @@ and package dashboard summaries may carry only that compact summary object, not
 the full `evidenceReadback.items[]` catalog. This readback does not change
 readiness status, release approval, runtime config, or scheduler permission.
 `releaseWorkbenchSmokeEvidence` is a Growth-local readiness input for the
-Owner action-template read model and may come from
-`--release-workbench-evidence` or the non-default `release_workbench`
-release-bundle task. It is readback evidence only and does not approve release,
-enable runtime config, record a package, grant scheduling permission, or deploy.
+Owner action-template read model and may come from the non-default
+`release_workbench` release-bundle task, explicit summary evidence JSON, or a
+validated persisted release-evidence record projection. The legacy
+`--release-workbench-evidence` flag is a deprecated remediation marker only; it
+returns blocked evidence and cannot satisfy release-readiness. Provided
+non-passing release evidence is reported as `blocked` with bounded
+`invalidReason` readback instead of being flattened into `missing`. Workbench
+readback evidence is readback-only and does not approve release, enable runtime
+config, record a package, grant scheduling permission, or deploy.
 
 This addendum is Growth-local only. It does not change the Home AI central
 platform contract, does not grant runtime config permission, and does not allow

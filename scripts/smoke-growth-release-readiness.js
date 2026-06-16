@@ -106,6 +106,19 @@ function deprecatedUiEvidenceFlag(evidenceKey) {
   };
 }
 
+function deprecatedReleaseEvidenceFlag(evidenceKey, checkKey, error, requiredAction) {
+  return {
+    ok: false,
+    status: "blocked",
+    source: "release_readiness_smoke_flag_deprecated",
+    evidenceKey,
+    checkKey,
+    error,
+    requiredAction,
+    readyForReleaseEvidence: false
+  };
+}
+
 function applyDeprecatedUiEvidenceFlag(args, evidence, flagName, evidenceKey) {
   if (evidenceFlag(args, flagName)) evidence[evidenceKey] = deprecatedUiEvidenceFlag(evidenceKey);
 }
@@ -230,7 +243,14 @@ function evidenceFromArgs(args, bundle = evidenceBundleFromArgs(args)) {
   if (evidenceFlag(args, "--release-evidence-bundle-audit")) evidence.releaseEvidenceBundleAudit = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--platform-action-evidence")) evidence.platformActionEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   if (evidenceFlag(args, "--central-visual-evidence")) evidence.centralVisualEvidence = { ok: true, source: "release_readiness_smoke_flag" };
-  if (evidenceFlag(args, "--release-workbench-evidence")) evidence.releaseWorkbenchSmokeEvidence = { ok: true, source: "release_readiness_smoke_flag" };
+  if (evidenceFlag(args, "--release-workbench-evidence")) {
+    evidence.releaseWorkbenchSmokeEvidence = deprecatedReleaseEvidenceFlag(
+      "releaseWorkbenchSmokeEvidence",
+      "release_workbench_smoke_evidence",
+      "validated_release_workbench_evidence_required",
+      "provide_validated_release_workbench_evidence"
+    );
+  }
   if (evidenceFlag(args, "--owner-review-evidence") || evidenceFlag(args, "--owner-review-evidence-smoke")) evidence.ownerReviewEvidence = { ok: true, source: "release_readiness_smoke_flag" };
   return evidence;
 }

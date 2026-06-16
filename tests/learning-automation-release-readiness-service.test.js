@@ -645,6 +645,36 @@ test("automation release readiness service can use persisted release evidence re
   assert.equal(calls[0].input.status, "pass");
 });
 
+test("automation release readiness service blocks provided non-passing release evidence", () => {
+  const { service } = createService();
+  const result = service.evaluateReadiness(Object.assign(scope(), {
+    evidence: {
+      releaseWorkbenchSmokeEvidence: {
+        ok: false,
+        status: "blocked",
+        evidenceId: "release_workbench_deprecated_flag",
+        source: "release_readiness_smoke_flag_deprecated",
+        error: "validated_release_workbench_evidence_required",
+        requiredAction: "provide_validated_release_workbench_evidence"
+      }
+    }
+  }));
+
+  const workbench = result.checks.find((item) => item.key === "release_workbench_smoke_evidence");
+  const readback = result.evidenceReadback.items.find((item) => item.key === "releaseWorkbenchSmokeEvidence");
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "blocked");
+  assert.equal(workbench.status, "blocked");
+  assert.equal(workbench.summary.evidenceProvided, true);
+  assert.equal(workbench.summary.evidencePresent, false);
+  assert.equal(workbench.summary.invalidReason, "validated_release_workbench_evidence_required");
+  assert.equal(workbench.requiredAction.action, "provide_validated_release_workbench_evidence");
+  assert.equal(result.releaseReview.blockedCheckKeys.includes("release_workbench_smoke_evidence"), true);
+  assert.equal(readback.evidencePresent, false);
+  assert.equal(readback.invalidReason, "validated_release_workbench_evidence_required");
+  assert.equal(readback.evidenceId, "release_workbench_deprecated_flag");
+});
+
 test("automation release readiness service blocks enabled config gates when explicit release approval is missing", () => {
   const { service } = createService({
     config: {

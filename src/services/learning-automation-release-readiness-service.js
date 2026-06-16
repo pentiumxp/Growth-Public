@@ -127,6 +127,48 @@ function evidenceRef(input = {}, key) {
   };
 }
 
+function evidenceProvided(input = {}, key) {
+  const value = evidenceValue(input, key);
+  if (value === undefined || value === null || value === false) return false;
+  if (value && typeof value === "object" && Object.keys(value).length === 0) return false;
+  return true;
+}
+
+function evidenceFailureReason(value = {}) {
+  if (!value || typeof value !== "object") return "release_evidence_not_passing";
+  return boundedString(
+    value.invalidReason
+      || value.invalid_reason
+      || value.error
+      || value.reason
+      || (value.status ? `release_evidence_status_${value.status}` : "")
+      || "release_evidence_not_passing",
+    180
+  );
+}
+
+function evidenceRequiredAction(value = {}, fallbackAction) {
+  const actionValue = value && typeof value === "object"
+    ? (value.requiredAction || value.required_action)
+    : null;
+  if (actionValue && typeof actionValue === "object") {
+    return {
+      action: boundedString(actionValue.action || fallbackAction, 180),
+      requiredActor: boundedString(actionValue.requiredActor || actionValue.required_actor || "owner", 80)
+    };
+  }
+  if (actionValue) {
+    return {
+      action: boundedString(actionValue, 180),
+      requiredActor: "owner"
+    };
+  }
+  return {
+    action: fallbackAction,
+    requiredActor: "owner"
+  };
+}
+
 function numberField(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
@@ -294,6 +336,16 @@ function presentCheck(input, evidenceKey, checkKey, label, requiredAction) {
       evidenceKey,
       evidencePresent: true
     }, evidenceRef(input, evidenceKey)));
+  }
+  const value = evidenceValue(input, evidenceKey);
+  if (evidenceProvided(input, evidenceKey)) {
+    return check(checkKey, "blocked", Object.assign({
+      label,
+      evidenceKey,
+      evidencePresent: false,
+      evidenceProvided: true,
+      invalidReason: evidenceFailureReason(value)
+    }, evidenceRef(input, evidenceKey)), evidenceRequiredAction(value, requiredAction));
   }
   return check(checkKey, "missing", {
     label,
@@ -484,6 +536,7 @@ function compactEvidenceItem(checkItem = {}) {
     evidenceId: compactEvidenceField(summary.evidenceId, 180),
     schemaVersion: compactEvidenceField(summary.schemaVersion, 180),
     source: compactEvidenceField(summary.source, 180),
+    invalidReason: compactEvidenceField(summary.invalidReason || summary.invalid_reason, 180),
     observedAt: compactEvidenceField(summary.observedAt, 120),
     artifactId: compactEvidenceField(summary.artifactId, 180),
     runId: compactEvidenceField(summary.runId, 180),

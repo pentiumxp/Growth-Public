@@ -94,6 +94,19 @@ function deprecatedUiFlag(evidenceKey) {
   };
 }
 
+function deprecatedReleaseWorkbenchFlag() {
+  return {
+    ok: false,
+    status: "blocked",
+    source: "release_readiness_smoke_flag_deprecated",
+    evidenceKey: "releaseWorkbenchSmokeEvidence",
+    checkKey: "release_workbench_smoke_evidence",
+    error: "validated_release_workbench_evidence_required",
+    requiredAction: "provide_validated_release_workbench_evidence",
+    readyForReleaseEvidence: false
+  };
+}
+
 test("release readiness smoke script parses bounded scope, evidence, and approval selectors", () => {
   const args = [
     "--workspace-id", "weixin_fanfan",
@@ -170,7 +183,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionLearnerCycleSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     productionSchedulerDryRunSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
     releaseEvidenceBundleAudit: { ok: true, source: "release_readiness_smoke_flag" },
-    releaseWorkbenchSmokeEvidence: { ok: true, source: "release_readiness_smoke_flag" },
+    releaseWorkbenchSmokeEvidence: deprecatedReleaseWorkbenchFlag(),
     ownerReviewEvidence: { ok: true, source: "release_readiness_smoke_flag" }
   };
 
@@ -475,6 +488,32 @@ test("release readiness smoke script blocks deprecated UI evidence flags", () =>
     assert.equal(ownerDaily.requiredAction.action, "provide_validated_ui_evidence_summary");
     assert.equal(output.releaseReview.blockedCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(output.evidenceReadback.items.find((item) => item.key === "ownerDailyUiEvidence").evidencePresent, false);
+  });
+});
+
+test("release readiness smoke script blocks deprecated release workbench evidence flag", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const result = runScript([
+      "--workspace-id", "weixin_fanfan",
+      "--release-workbench-evidence",
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0);
+    const output = parseStdout(result);
+    const workbench = output.checks.find((item) => item.key === "release_workbench_smoke_evidence");
+    assert.equal(output.ok, true);
+    assert.equal(output.status, "blocked");
+    assert.equal(workbench.status, "blocked");
+    assert.equal(workbench.summary.invalidReason, "validated_release_workbench_evidence_required");
+    assert.equal(workbench.requiredAction.action, "provide_validated_release_workbench_evidence");
+    assert.equal(output.releaseReview.blockedCheckKeys.includes("release_workbench_smoke_evidence"), true);
+    const readback = output.evidenceReadback.items.find((item) => item.key === "releaseWorkbenchSmokeEvidence");
+    assert.equal(readback.evidencePresent, false);
+    assert.equal(readback.invalidReason, "validated_release_workbench_evidence_required");
   });
 });
 
