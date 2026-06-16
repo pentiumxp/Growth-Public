@@ -22,6 +22,10 @@ function boundedText(value, max = 500) {
 }
 
 function scanPrivacy(value, path = "$", findings = []) {
+  if (typeof value === "string") {
+    if (PRIVATE_VALUE_PATTERN.test(value)) findings.push(path);
+    return findings;
+  }
   if (!value || typeof value !== "object") return findings;
   if (Array.isArray(value)) {
     value.forEach((item, index) => scanPrivacy(item, `${path}[${index}]`, findings));
@@ -30,8 +34,7 @@ function scanPrivacy(value, path = "$", findings = []) {
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}.${key}`;
     if (PRIVATE_KEY_PATTERN.test(key)) findings.push(childPath);
-    if (typeof child === "string" && PRIVATE_VALUE_PATTERN.test(child)) findings.push(childPath);
-    if (child && typeof child === "object") scanPrivacy(child, childPath, findings);
+    scanPrivacy(child, childPath, findings);
   }
   return findings;
 }

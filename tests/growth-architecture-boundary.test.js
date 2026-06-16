@@ -1349,6 +1349,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseReadinessRepository, /createLearningAutomationReleaseReadinessRepository/);
   assert.match(automationReleaseReadinessRepository, /summary_only/);
   assert.match(automationReleaseReadinessRepository, /scanPrivacyKeys/);
+  assert.match(automationReleaseReadinessRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseReadinessRepository, /saveSnapshot/);
   assert.match(automationReleaseReadinessRepository, /listSnapshots/);
   assert.match(automationReleaseReadinessRepository, /learning_automation_release_readiness_privacy_class_required/);
@@ -1361,6 +1362,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseCollectionRunRepository, /summary_only/);
   assert.match(automationReleaseCollectionRunRepository, /scanPrivacyKeys/);
   assert.match(automationReleaseCollectionRunRepository, /scanPrivateValues/);
+  assert.match(automationReleaseCollectionRunRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseCollectionRunRepository, /saveRun/);
   assert.match(automationReleaseCollectionRunRepository, /listRuns/);
   assert.match(automationReleaseCollectionRunRepository, /learning_automation_release_collection_run_privacy_class_required/);
@@ -1373,6 +1375,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseDecisionRepository, /summary_only/);
   assert.match(automationReleaseDecisionRepository, /scanPrivacyKeys/);
   assert.match(automationReleaseDecisionRepository, /scanPrivateValues/);
+  assert.match(automationReleaseDecisionRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseDecisionRepository, /saveDecision/);
   assert.match(automationReleaseDecisionRepository, /listDecisions/);
   assert.match(automationReleaseDecisionRepository, /learning_automation_release_decision_privacy_class_required/);
@@ -1385,6 +1388,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleasePackageRepository, /summary_only/);
   assert.match(automationReleasePackageRepository, /scanPrivacyKeys/);
   assert.match(automationReleasePackageRepository, /scanPrivateValues/);
+  assert.match(automationReleasePackageRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleasePackageRepository, /savePackage/);
   assert.match(automationReleasePackageRepository, /listPackages/);
   assert.match(automationReleasePackageRepository, /release_dashboard_summary_json/);
@@ -1410,6 +1414,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseEvidenceRepository, /createLearningAutomationReleaseEvidenceRepository/);
   assert.match(automationReleaseEvidenceRepository, /summary_only/);
   assert.match(automationReleaseEvidenceRepository, /scanPrivacy/);
+  assert.match(automationReleaseEvidenceRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseEvidenceRepository, /saveEvidence/);
   assert.match(automationReleaseEvidenceRepository, /listEvidence/);
   assert.match(automationReleaseEvidenceRepository, /learning_automation_release_evidence_privacy_class_required/);
@@ -1422,6 +1427,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseActivationRepository, /summary_only/);
   assert.match(automationReleaseActivationRepository, /scanPrivacyKeys/);
   assert.match(automationReleaseActivationRepository, /scanPrivateValues/);
+  assert.match(automationReleaseActivationRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationReleaseActivationRepository, /saveActivation/);
   assert.match(automationReleaseActivationRepository, /listActivations/);
   assert.match(automationReleaseActivationRepository, /learning_automation_release_activation_privacy_class_required/);
@@ -1435,6 +1441,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationRuntimeEnablementRepository, /summary_only/);
   assert.match(automationRuntimeEnablementRepository, /scanPrivacyKeys/);
   assert.match(automationRuntimeEnablementRepository, /scanPrivateValues/);
+  assert.match(automationRuntimeEnablementRepository, /PRIVATE_VALUE_PATTERN/);
   assert.match(automationRuntimeEnablementRepository, /saveEnablement/);
   assert.match(automationRuntimeEnablementRepository, /listEnablements/);
   assert.match(automationRuntimeEnablementRepository, /learning_automation_runtime_enablement_privacy_class_required/);

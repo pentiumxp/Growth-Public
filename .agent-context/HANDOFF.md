@@ -9,6 +9,58 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T11:26+08:00 - P10 Release/Runtime Repository Privacy Guard Consistency
+
+- Status: implemented and full-Harness validated locally. This slice makes the
+  P10 release/runtime persistence guard contract explicit across repository
+  Harness and architecture boundary checks. It does not deploy, call
+  Gateway/model vendors, publish plans/cards, generate cards, evaluate
+  submissions, execute scheduler actions, run scheduler ticks, deliver
+  notifications, emit platform events, activate stage assessments, mutate
+  learner state, flip runtime config, grant scheduler permission, or change
+  product UI.
+- Scope:
+  - `automation-release-evidence.js` now uses the same string-first recursive
+    private value scan shape as the other release/runtime repositories;
+  - repository Harness now asserts private path value rejection paths for
+    release-readiness snapshots, release evidence records, collection-run
+    records, release decisions, release package records, release activations,
+    and runtime enablements, using generic `/Users/example/...` paths for the
+    repository-level cases touched here;
+  - architecture boundary tests now require explicit `PRIVATE_VALUE_PATTERN`
+    coverage for release-readiness, collection-run, decision, package, release
+    evidence, release activation, and runtime enablement repositories.
+- Focused validation passed:
+  - `node --check src/stores/growth-learning-sqlite/automation-release-evidence.js tests/learning-automation-release-evidence-repository.test.js tests/learning-automation-release-readiness-repository.test.js tests/learning-automation-release-collection-run-repository.test.js tests/learning-automation-release-decision-repository.test.js tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-activation-repository.test.js tests/learning-automation-runtime-enablement-repository.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-release-evidence-repository.test.js tests/learning-automation-release-readiness-repository.test.js tests/learning-automation-release-collection-run-repository.test.js tests/learning-automation-release-decision-repository.test.js tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-activation-repository.test.js tests/learning-automation-runtime-enablement-repository.test.js tests/growth-architecture-boundary.test.js`
+    (`53/53`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`.
+- Broad and central validation passed:
+  - `npm run check` (`194/194` runtime JavaScript files covered);
+  - `npm test` (`785/785`);
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app `npm run --silent deploy:macos -- --target home-ai --json`
+    returned `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - CodeGraph status reported 343 JavaScript files indexed, 4529 nodes, and
+    18046 edges.
+- AI Ops note:
+  - `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth P10 release/runtime repository privacy value guard consistency; backend docs and harness only; no production deploy" --json`
+    classified this backend/database slice as H1 and required app-side deploy
+    script, architecture-harness map, diff hygiene, and plan-only deployment
+    checks.
+  - The Home AI app deploy plan still reported unrelated dirty app files from
+    another workspace state. They were not modified by this Growth slice.
+- Progress calibration:
+  - Full AI-driven Growth closed-loop MVP progress is still best reported as
+    about 71-73%. The repository/database guard surface is tighter after this
+    slice, but product-visible Owner UI, central visual evidence, real
+    production release evidence collection, and multi-workspace/domain-pack
+    rollout remain the larger unfinished denominator.
+
 ## 2026-06-16T11:20+08:00 - Automation Repository Privacy Value Guards
 
 - Status: implemented and full-Harness validated locally. This slice hardens

@@ -118,10 +118,11 @@ test("automation release decision repository rejects privacy risks, invalid stat
     assert.equal(privacyKey.error, "learning_automation_release_decision_privacy_failed");
 
     const privateValue = repository.saveDecision(sampleDecision({
-      collectionRunSummary: { artifactFileName: "/Users/xuxin/.homeai-qa/release.json" }
+      collectionRunSummary: { artifactFileName: "/Users/example/.homeai-qa/release.json" }
     }));
     assert.equal(privateValue.ok, false);
     assert.equal(privateValue.error, "learning_automation_release_decision_privacy_failed");
+    assert.equal(privateValue.privateValueFindings.includes("$.collectionRunSummary.artifactFileName"), true);
 
     const invalidStatus = repository.saveDecision(sampleDecision({
       status: "released"

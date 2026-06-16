@@ -100,10 +100,11 @@ test("automation release evidence repository rejects privacy-risk, invalid statu
 
     const privacyValue = repository.saveEvidence(sampleEvidence({
       evidenceKey: "ownerAuditUiEvidence",
-      evidence: { artifactId: "/Users/hermes-dev/private-artifact.json" }
+      evidence: { artifactId: "/Users/example/private-artifact.json" }
     }));
     assert.equal(privacyValue.ok, false);
     assert.equal(privacyValue.error, "learning_automation_release_evidence_privacy_failed");
+    assert.equal(privacyValue.privacyFindings.includes("$.evidence.artifactId"), true);
 
     const status = repository.saveEvidence(sampleEvidence({
       evidenceKey: "stageCheckpointEvidence",

@@ -177,10 +177,11 @@ test("automation release package repository rejects privacy risks, invalid statu
     assert.equal(privacyKey.privacyFindings.includes("$.releaseReadinessSummary.rawPrompt"), true);
 
     const privateValue = repository.savePackage(samplePackage({
-      releaseEvidenceBundleSummary: { artifactFileName: "/Users/xuxin/.homeai-qa/release-bundle.json" }
+      releaseEvidenceBundleSummary: { artifactFileName: "/Users/example/.homeai-qa/release-bundle.json" }
     }));
     assert.equal(privateValue.ok, false);
     assert.equal(privateValue.error, "learning_automation_release_package_privacy_failed");
+    assert.equal(privateValue.privateValueFindings.includes("$.releaseEvidenceBundleSummary.artifactFileName"), true);
 
     const privacyClass = repository.savePackage(samplePackage({
       privacyClass: "raw_private"

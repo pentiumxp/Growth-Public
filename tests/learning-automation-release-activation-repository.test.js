@@ -133,10 +133,11 @@ test("automation release activation repository rejects privacy risks, runtime ch
     assert.equal(privacyKey.error, "learning_automation_release_activation_privacy_failed");
 
     const privateValue = repository.saveActivation(sampleActivation({
-      releaseClosure: { artifact: "/Users/xuxin/.homeai-qa/release.json" }
+      releaseClosure: { artifact: "/Users/example/.homeai-qa/release.json" }
     }));
     assert.equal(privateValue.ok, false);
     assert.equal(privateValue.error, "learning_automation_release_activation_privacy_failed");
+    assert.equal(privateValue.privateValueFindings.includes("$.releaseClosure.artifact"), true);
 
     const runtimeChange = repository.saveActivation(sampleActivation({
       configChangeApplied: true

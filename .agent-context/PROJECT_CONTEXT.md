@@ -163,7 +163,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   target, and worker lease. This is a database-boundary hardening slice only:
   it does not enable scheduler execution, publish accepted proposals, call
   Gateway, generate/evaluate cards, activate stage assessments, flip runtime
-  config, or deliver platform actions. It now also has
+  config, or deliver platform actions. The P10 release/runtime persistence
+  chain now has the same private value guard at repository boundaries:
+  release-readiness snapshot, release approval, release evidence,
+  collection-run, release decision, release package, release activation, and
+  runtime enablement records reject privacy-risk keys, private path values,
+  token-looking string values, and non-summary privacy classes before
+  persistence.
+  Activation and runtime enablement repositories additionally keep runtime
+  mutation flags blocked. It now also has
   `npm run smoke:release-readiness`, a service-owned CLI that defaults to
   no-write readiness evaluation, accepts
   `--stage-checkpoint-evidence` after

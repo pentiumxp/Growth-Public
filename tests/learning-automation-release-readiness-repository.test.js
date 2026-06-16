@@ -134,7 +134,7 @@ test("automation release readiness repository rejects privacy-risk fields, non-s
         summaryOnly: true,
         items: [{
           key: "ownerDailyUiEvidence",
-          evidenceId: "/Users/hermes-dev/.homeai-qa/private-output.json"
+          evidenceId: "/Users/example/.homeai-qa/private-output.json"
         }]
       }
     }));

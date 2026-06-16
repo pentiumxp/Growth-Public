@@ -131,10 +131,11 @@ test("automation runtime enablement repository rejects privacy risks, runtime ch
     assert.equal(privacyKey.error, "learning_automation_runtime_enablement_privacy_failed");
 
     const privateValue = repository.saveEnablement(sampleEnablement({
-      activationSummary: { artifact: "/Users/xuxin/.homeai-qa/runtime.json" }
+      activationSummary: { artifact: "/Users/example/.homeai-qa/runtime.json" }
     }));
     assert.equal(privateValue.ok, false);
     assert.equal(privateValue.error, "learning_automation_runtime_enablement_privacy_failed");
+    assert.equal(privateValue.privateValueFindings.includes("$.activationSummary.artifact"), true);
 
     const runtimeChange = repository.saveEnablement(sampleEnablement({
       configChangeApplied: true
