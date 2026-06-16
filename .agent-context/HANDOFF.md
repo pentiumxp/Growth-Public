@@ -11,8 +11,9 @@
 
 ## 2026-06-17T00:26+08:00 - Platform Action Evidence Dual Receipt Gate
 
-- Status: implemented locally and fully validated. Commit and push are still
-  pending in this slice.
+- Status: implemented locally, fully validated, and committed as
+  `ce0cbe8 Require dual platform action receipts`. Push is still pending in
+  this slice.
 - Change intent:
   - platform action release evidence now requires a delivered Growth event
     outbox `growth.automation.action_required` receipt containing both an
