@@ -299,7 +299,8 @@ function createServices(config) {
     repository: growthLearningStore.learningAutomationReleaseApprovalRepository
   });
   const learningAutomationReleaseEvidenceService = createLearningAutomationReleaseEvidenceService({
-    repository: growthLearningStore.learningAutomationReleaseEvidenceRepository
+    repository: growthLearningStore.learningAutomationReleaseEvidenceRepository,
+    uiEvidenceService: learningAutomationUiEvidenceService
   });
   const learningAutomationReleaseCollectionRunService = createLearningAutomationReleaseCollectionRunService({
     repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository

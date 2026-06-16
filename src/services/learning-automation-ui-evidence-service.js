@@ -205,6 +205,8 @@ function screenshotName(value = {}) {
       || value.screenshot
       || value.screenshotFile
       || value.screenshot_file
+      || value.screenshotArtifactName
+      || value.screenshot_artifact_name
       || objectOnly(value.artifacts).screenshotPath
       || objectOnly(value.artifacts).screenshot_path
       || objectOnly(value.artifact).screenshotPath

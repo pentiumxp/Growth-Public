@@ -14,6 +14,37 @@ const {
   validateInput
 } = require("../scripts/smoke-growth-release-workbench-action");
 
+function validOwnerDailyUiEvidence(source = "workbench_action_smoke") {
+  return {
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "ownerDailyUiEvidence",
+    checkKey: "owner_daily_ui_evidence",
+    uiGate: "owner_daily",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source,
+      evidenceKey: "ownerDailyUiEvidence",
+      checkKey: "owner_daily_ui_evidence",
+      uiGate: "owner_daily",
+      status: "pass",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: "growth-owner-daily.png",
+      coverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+      requiredCoverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: []
+  };
+}
+
 test("release workbench action smoke script parses bounded action input", () => {
   const input = inputFromArgs([
     "--workspace-id", "fanfan",
@@ -87,7 +118,7 @@ test("release workbench action smoke script writes evidence only with explicit a
       "--learner-id", "fanfan",
       "--endpoint-key", "release_evidence",
       "--evidence-key", "owner_daily_ui_evidence",
-      "--evidence-json", JSON.stringify({ evidenceId: "ui_1", source: "workbench_action_smoke" }),
+      "--evidence-json", JSON.stringify(validOwnerDailyUiEvidence("workbench_action_smoke")),
       "--requested-by", "owner",
       "--allow-write",
       "--json"

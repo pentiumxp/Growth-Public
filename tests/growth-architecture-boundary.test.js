@@ -211,6 +211,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationReleaseReadinessService/);
   assert.match(services, /createLearningAutomationReleaseEvidenceService/);
   assert.match(services, /learningAutomationReleaseEvidenceService/);
+  assert.match(services, /uiEvidenceService: learningAutomationUiEvidenceService/);
   assert.match(services, /createLearningAutomationReleaseCollectionRunService/);
   assert.match(services, /learningAutomationReleaseCollectionRunService/);
   assert.match(services, /createLearningAutomationReleaseDecisionService/);
@@ -1102,6 +1103,10 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseEvidenceService, /recordEvidence/);
   assert.match(automationReleaseEvidenceService, /listEvidence/);
   assert.match(automationReleaseEvidenceService, /evidenceBag/);
+  assert.match(automationReleaseEvidenceService, /UI_RELEASE_EVIDENCE_KEYS/);
+  assert.match(automationReleaseEvidenceService, /validateUiReleaseEvidencePass/);
+  assert.match(automationReleaseEvidenceService, /uiEvidenceService\.evaluate/);
+  assert.match(automationReleaseEvidenceService, /learning_automation_release_evidence_ui_validation_failed/);
   assert.match(automationReleaseEvidenceService, /repository\.saveEvidence/);
   assert.match(automationReleaseEvidenceService, /repository\.listEvidence/);
   assert.match(automationReleaseEvidenceService, /summaryOnly: true/);
@@ -3068,6 +3073,8 @@ test("Growth automation release approval smoke CLI stays service-owned and write
   assert.match(releaseEvidenceScript, /automation_release_evidence_smoke_invalid_json/);
   assert.match(releaseEvidenceScript, /automation_release_evidence_smoke_operation_invalid/);
   assert.match(releaseEvidenceScript, /workspace_id_required/);
+  assert.doesNotMatch(releaseEvidenceScript, /learningAutomationUiEvidenceService/);
+  assert.doesNotMatch(releaseEvidenceScript, /require\(["']\.\.\/src\/stores/);
   assert.match(releaseEvidenceScript, /evidence_key_required/);
   assert.doesNotMatch(releaseEvidenceScript, /require\(["']\.\.\/src\/stores/);
   assert.doesNotMatch(releaseEvidenceScript, /learning_growth_/);

@@ -5,6 +5,10 @@ const {
   canonicalReleaseEvidenceKey,
   createLearningAutomationReleaseEvidenceService
 } = require("../src/services/learning-automation-release-evidence-service");
+const {
+  UI_GATE_SPECS,
+  createLearningAutomationUiEvidenceService
+} = require("../src/services/learning-automation-ui-evidence-service");
 
 function scope(overrides = {}) {
   return Object.assign({
@@ -18,10 +22,11 @@ function scope(overrides = {}) {
   }, overrides);
 }
 
-function createService() {
+function createService(options = {}) {
   const rows = [];
   const calls = [];
   const service = createLearningAutomationReleaseEvidenceService({
+    uiEvidenceService: options.uiEvidenceService,
     repository: {
       saveEvidence(input) {
         calls.push({ type: "saveEvidence", input });
@@ -46,30 +51,136 @@ function createService() {
   return { calls, rows, service };
 }
 
-test("automation release evidence service canonicalizes release evidence keys and records summary-only evidence", () => {
+function validOwnerDailyUiEvidence(overrides = {}) {
+  return Object.assign({
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "ownerDailyUiEvidence",
+    checkKey: "owner_daily_ui_evidence",
+    uiGate: "owner_daily",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "ownerDailyUiEvidence",
+      checkKey: "owner_daily_ui_evidence",
+      uiGate: "owner_daily",
+      status: "pass",
+      route: "/?embed=hermes#generate",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: "growth-owner-daily.png",
+      coverage: UI_GATE_SPECS.ownerDailyUiEvidence.requiredCoverage,
+      requiredCoverage: UI_GATE_SPECS.ownerDailyUiEvidence.requiredCoverage,
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  }, overrides);
+}
+
+test("automation release evidence service canonicalizes release evidence keys and records non-UI summary-only evidence", () => {
   const { calls, service } = createService();
 
   const result = service.recordEvidence(Object.assign(scope(), {
-    evidenceKey: "owner_daily_ui_evidence",
-    evidence: { evidenceId: "owner_daily_ui_1", source: "owner_visual_harness" },
+    evidenceKey: "central_visual_evidence",
+    evidence: { evidenceId: "central_visual_1", source: "central_visual_harness" },
     recordedBy: "weixin_owner"
   }));
 
   assert.equal(result.ok, true);
   assert.equal(result.writefulSchedulingAllowed, false);
-  assert.equal(result.evidence.evidenceKey, "ownerDailyUiEvidence");
+  assert.equal(result.evidence.evidenceKey, "centralVisualEvidence");
   assert.equal(calls[0].type, "saveEvidence");
   assert.equal(calls[0].input.privacyClass, "summary_only");
-  assert.equal(calls[0].input.checkKey, "owner_daily_ui_evidence");
+  assert.equal(calls[0].input.checkKey, "central_visual_evidence");
   assert.equal(calls[0].input.evidence.summaryOnly, true);
   assert.equal(calls[0].input.evidence.writefulSchedulingAllowed, false);
 });
 
-test("automation release evidence service returns evidence bag for release-readiness", () => {
+test("automation release evidence service requires UI validator before pass UI evidence persists", () => {
+  const withoutValidator = createService();
+  const unavailable = withoutValidator.service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: validOwnerDailyUiEvidence()
+  }));
+  assert.equal(unavailable.ok, false);
+  assert.equal(unavailable.error, "learning_automation_release_evidence_ui_validator_unavailable");
+  assert.equal(withoutValidator.calls.length, 0);
+
+  const withValidator = createService({
+    uiEvidenceService: createLearningAutomationUiEvidenceService()
+  });
+  const invalid = withValidator.service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: { ok: true, evidenceKey: "ownerDailyUiEvidence" }
+  }));
+  assert.equal(invalid.ok, false);
+  assert.equal(invalid.error, "learning_automation_release_evidence_ui_validation_failed");
+  assert.ok(invalid.missingRequired.includes("required_ui_coverage"));
+  assert.equal(withValidator.calls.length, 0);
+});
+
+test("automation release evidence service saves pass UI evidence only after validator acceptance", () => {
+  const { calls, service } = createService({
+    uiEvidenceService: createLearningAutomationUiEvidenceService()
+  });
+
+  const result = service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: validOwnerDailyUiEvidence(),
+    recordedBy: "weixin_owner"
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.evidence.evidenceKey, "ownerDailyUiEvidence");
+  assert.equal(result.evidence.evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
+  assert.equal(result.evidence.evidence.validatedBy, "learning-automation-ui-evidence-service");
+  assert.equal(result.evidence.evidence.validationSchemaVersion, "growth.learningAutomationUiEvidence.v1");
+  assert.equal(result.evidence.evidence.readyForReleaseEvidence, true);
+  assert.equal(result.evidence.evidence.uiEvidence.screenshotArtifactName, "growth-owner-daily.png");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].input.evidence.validatedBy, "learning-automation-ui-evidence-service");
+  assert.equal(JSON.stringify(calls[0].input.evidence).includes("/Users/"), false);
+});
+
+test("automation release evidence service can record blocked UI evidence without making it a pass gate", () => {
   const { service } = createService();
+  const result = service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "owner_audit_ui_evidence",
+    status: "blocked",
+    evidence: { evidenceId: "owner_audit_blocked_1", status: "blocked" }
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.evidence.status, "blocked");
+  assert.equal(result.evidence.evidence.ok, false);
+  assert.equal(result.evidence.evidence.uiValidationRequiredForPass, true);
+
+  const bag = service.evidenceBag(scope());
+  assert.equal(bag.ok, true);
+  assert.equal(bag.evidence.ownerAuditUiEvidence, undefined);
+});
+
+test("automation release evidence service returns evidence bag for release-readiness", () => {
+  const { service } = createService({
+    uiEvidenceService: createLearningAutomationUiEvidenceService()
+  });
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_daily_ui_evidence",
-    evidence: { evidenceId: "owner_daily_ui_1", source: "owner_visual_harness" }
+    evidence: validOwnerDailyUiEvidence()
   }));
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "central_visual_evidence",
@@ -106,7 +217,7 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.equal(bag.ok, true);
   assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
-  assert.equal(bag.evidence.ownerDailyUiEvidence.source, "owner_visual_harness");
+  assert.equal(bag.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");

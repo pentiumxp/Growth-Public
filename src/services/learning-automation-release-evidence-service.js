@@ -1,5 +1,7 @@
 "use strict";
 
+const { UI_GATE_SPECS } = require("./learning-automation-ui-evidence-service");
+
 const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "ownerDailyUiEvidence",
   "ownerAuditUiEvidence",
@@ -77,6 +79,8 @@ for (const key of RELEASE_EVIDENCE_KEYS) {
   RELEASE_EVIDENCE_KEY_ALIASES.set(CHECK_KEY_BY_EVIDENCE_KEY[key], key);
 }
 
+const UI_RELEASE_EVIDENCE_KEYS = new Set(Object.keys(UI_GATE_SPECS));
+
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|access-key\.txt|launch-token)/i;
 
@@ -148,6 +152,79 @@ function evidenceSummary(input = {}, evidenceKey) {
   });
 }
 
+function uiValidationInput(input = {}, scope = {}, evidenceKey = "") {
+  return Object.assign({}, input, scope, {
+    evidenceKey,
+    checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+    evidence: input.evidence || input.uiEvidence || input.ui_evidence || input.evidenceSummary || input.evidence_summary || null
+  });
+}
+
+function uiValidatedEvidenceSummary(input = {}, evidenceKey, validation = {}) {
+  const summary = evidenceSummary(Object.assign({}, input, {
+    status: "pass",
+    evidence: input.evidence || input.evidenceSummary || input.evidence_summary || {}
+  }), evidenceKey);
+  return Object.assign({}, summary, {
+    schemaVersion: "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1",
+    source: cleanString(validation.source || summary.source || "growth-learning-automation-ui-evidence-service", 180),
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    validatedBy: "learning-automation-ui-evidence-service",
+    validationSchemaVersion: cleanString(validation.schemaVersion, 180),
+    evidenceKey,
+    checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+    uiGate: cleanString(validation.uiGate, 120),
+    status: "pass",
+    ok: true,
+    present: true,
+    readyForReleaseEvidence: validation.readyForReleaseEvidence === true,
+    uiEvidence: validation.uiEvidence || {},
+    uiEvidenceBoundary: validation.uiEvidenceBoundary || {},
+    missingRequired: Array.isArray(validation.missingRequired) ? validation.missingRequired : [],
+    privateValueFindingCount: Array.isArray(validation.privateValueFindings) ? validation.privateValueFindings.length : 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  });
+}
+
+function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "", uiEvidenceService = null }) {
+  if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
+    return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
+  }
+  const candidate = evidenceSummary(input, evidenceKey);
+  if (candidate.status !== "pass") {
+    return { ok: true, evidence: Object.assign({}, candidate, { uiValidationRequiredForPass: true }) };
+  }
+  if (!uiEvidenceService || typeof uiEvidenceService.evaluate !== "function") {
+    return unavailable("learning_automation_release_evidence_ui_validator_unavailable", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || ""
+    });
+  }
+  let validation;
+  try {
+    validation = uiEvidenceService.evaluate(uiValidationInput(input, scope, evidenceKey));
+  } catch (error) {
+    return unavailable("learning_automation_release_evidence_ui_validation_failed", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+      detail: cleanString(error && error.message ? error.message : error, 160)
+    });
+  }
+  if (!validation?.ok || validation.readyForReleaseEvidence !== true || validation.status !== "pass") {
+    return unavailable("learning_automation_release_evidence_ui_validation_failed", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+      validationStatus: cleanString(validation?.status, 80),
+      validationError: cleanString(validation?.error, 120),
+      missingRequired: Array.isArray(validation?.missingRequired) ? validation.missingRequired : []
+    });
+  }
+  return { ok: true, evidence: uiValidatedEvidenceSummary(input, evidenceKey, validation) };
+}
+
 function compactBagEntry(record = {}) {
   const evidence = record.evidence || {};
   return {
@@ -166,6 +243,7 @@ function compactBagEntry(record = {}) {
 
 function createLearningAutomationReleaseEvidenceService(options = {}) {
   const repository = options.repository || null;
+  const uiEvidenceService = options.uiEvidenceService || null;
 
   function recordEvidence(input = {}) {
     if (!repository || typeof repository.saveEvidence !== "function") {
@@ -176,11 +254,13 @@ function createLearningAutomationReleaseEvidenceService(options = {}) {
     if (!scope.workspaceId || !evidenceKey) return unavailable("learning_automation_release_evidence_scope_required");
     const privacyFindings = scanPrivacy(input);
     if (privacyFindings.length) return unavailable("learning_automation_release_evidence_privacy_failed", { privacyFindings });
+    const validation = validateUiReleaseEvidencePass({ input, scope, evidenceKey, uiEvidenceService });
+    if (!validation.ok) return validation;
     const saveResult = repository.saveEvidence(Object.assign({}, input, scope, {
       evidenceKey,
       checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
       evidenceVersion: input.evidenceVersion || input.evidence_version || "growth.learningAutomationReleaseEvidenceRecord.v1",
-      evidence: evidenceSummary(input, evidenceKey),
+      evidence: validation.evidence,
       recordedBy: input.recordedBy || input.recorded_by || input.requestedBy || input.requested_by,
       observedAt: input.observedAt || input.observed_at || input.recordedAt || input.recorded_at,
       privacyClass: "summary_only"
@@ -248,6 +328,7 @@ function createLearningAutomationReleaseEvidenceService(options = {}) {
 
 module.exports = {
   RELEASE_EVIDENCE_KEYS,
+  UI_RELEASE_EVIDENCE_KEYS,
   canonicalReleaseEvidenceKey,
   createLearningAutomationReleaseEvidenceService
 };

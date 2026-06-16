@@ -16,6 +16,54 @@ const {
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-release-evidence");
 
+function validOwnerDailyUiEvidence() {
+  return {
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "ownerDailyUiEvidence",
+    checkKey: "owner_daily_ui_evidence",
+    uiGate: "owner_daily",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "ownerDailyUiEvidence",
+      checkKey: "owner_daily_ui_evidence",
+      uiGate: "owner_daily",
+      status: "pass",
+      route: "/?embed=hermes#generate",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: "growth-owner-daily.png",
+      coverage: [
+        "owner_daily_generation",
+        "daily_loop_preview",
+        "target_context"
+      ],
+      requiredCoverage: [
+        "owner_daily_generation",
+        "daily_loop_preview",
+        "target_context"
+      ],
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: [],
+    uiEvidenceBoundary: {
+      summaryOnly: true,
+      growthReadsOnlyEvidenceArtifacts: true,
+      growthRunsNoVisualTooling: true,
+      homeAiOwnsVisualHarness: true,
+      noLearnerStateMutation: true,
+      noModelCalls: true
+    }
+  };
+}
+
 test("automation release evidence smoke script parses default read-only list input", () => {
   const args = [
     "--workspace-id", "weixin_fanfan",
@@ -110,7 +158,7 @@ test("automation release evidence smoke script can record against a temporary SQ
       "--workspace-id", "weixin_fanfan",
       "--learner-id", "fanfan",
       "--evidence-key", "owner_daily_ui_evidence",
-      "--evidence-json", JSON.stringify({ evidenceId: "owner_daily_ui_1", source: "owner_visual_harness" }),
+      "--evidence-json", JSON.stringify(validOwnerDailyUiEvidence()),
       "--recorded-by", "weixin_owner",
       "--json"
     ], {
@@ -142,7 +190,38 @@ test("automation release evidence smoke script can record against a temporary SQ
     assert.equal(bag.status, 0, bag.stderr || bag.stdout);
     const bagOutput = JSON.parse(bag.stdout);
     assert.equal(bagOutput.ok, true);
-    assert.equal(bagOutput.evidence.ownerDailyUiEvidence.evidenceId, "owner_daily_ui_1");
+    assert.equal(bagOutput.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
+    assert.equal(bagOutput.evidence.ownerDailyUiEvidence.evidenceRecordId, recordOutput.evidence.evidenceRecordId);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("automation release evidence smoke script rejects unvalidated pass UI evidence", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-automation-release-evidence-smoke-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  try {
+    const record = spawnSync(process.execPath, [
+      scriptPath,
+      "--operation", "record",
+      "--allow-write",
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--evidence-key", "owner_daily_ui_evidence",
+      "--evidence-json", JSON.stringify({ ok: true, evidenceKey: "ownerDailyUiEvidence" }),
+      "--recorded-by", "weixin_owner",
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    assert.equal(record.status, 1, record.stderr || record.stdout);
+    const recordOutput = JSON.parse(record.stdout);
+    assert.equal(recordOutput.ok, false);
+    assert.equal(recordOutput.error, "learning_automation_release_evidence_ui_validation_failed");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

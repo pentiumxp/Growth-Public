@@ -26,6 +26,37 @@ function runSmoke(scriptName, args, env = {}) {
   return JSON.parse(stdout);
 }
 
+function validOwnerDailyUiEvidence(source = "inventory_smoke") {
+  return {
+    ok: true,
+    source: "growth-learning-automation-ui-evidence-service",
+    schemaVersion: "growth.learningAutomationUiEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "ownerDailyUiEvidence",
+    checkKey: "owner_daily_ui_evidence",
+    uiGate: "owner_daily",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    uiEvidence: {
+      source,
+      evidenceKey: "ownerDailyUiEvidence",
+      checkKey: "owner_daily_ui_evidence",
+      uiGate: "owner_daily",
+      status: "pass",
+      screenshotPresent: true,
+      domEvidencePresent: false,
+      screenshotArtifactName: "growth-owner-daily.png",
+      coverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+      requiredCoverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+      missingCoverage: [],
+      assertionCount: 1,
+      failedAssertionCount: 0
+    },
+    missingRequired: []
+  };
+}
+
 test("release inventory smoke script parses scope, gates, and evidence flags", () => {
   const input = inputFromArgs([
     "--workspace-id", "weixin_fanfan",
@@ -121,7 +152,7 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
       "--domain", "science",
       "--subject", "science",
       "--evidence-key", "owner_daily_ui_evidence",
-      "--evidence-json", JSON.stringify({ evidenceId: "owner_daily_ui_smoke_1", source: "inventory_smoke" }),
+      "--evidence-json", JSON.stringify(validOwnerDailyUiEvidence("inventory_smoke")),
       "--recorded-by", "weixin_owner",
       "--observed-at", "2026-06-15T18:15:00.000Z"
     ], env);

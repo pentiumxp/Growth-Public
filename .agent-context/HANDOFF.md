@@ -9,6 +9,41 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T18:08+08:00 - UI Release Evidence Persistence Hardening
+
+- Status: implemented and locally verified; commit/deploy pending at this
+  handoff update. This H2 backend/docs/harness slice tightens persisted release
+  evidence records for UI gates.
+- Change intent:
+  - pass records for `ownerDailyUiEvidence`, `ownerAuditUiEvidence`,
+    `proposalReviewUiEvidence`, `automationDigestUiEvidence`,
+    `automationActionHandoffUiEvidence`, `schedulerExecutionUiEvidence`,
+    `schedulerRunUiEvidence`, and `schedulerWorkerTargetUiEvidence` must be
+    accepted by `learning-automation-ui-evidence-service` before
+    `learning-automation-release-evidence-service` saves them;
+  - unvalidated direct `{ok:true}` UI evidence must fail closed and write no
+    pass row;
+  - blocked/missing UI evidence records may still be saved as explicit non-pass
+    audit state.
+- Boundary:
+  - the release-evidence CLI remains glue over
+    `learningAutomationReleaseEvidenceService`;
+  - the CLI must not call the UI validator directly or import SQLite stores;
+  - the validator still does not run visual tooling, call Gateway, generate,
+    evaluate, schedule, deliver notifications, activate stage assessments, or
+    mutate learner state.
+- Validation:
+  - focused service/script/architecture/docs-locality tests passed with `54/54`;
+  - focused downstream dashboard/inventory/workbench-action regression set
+    passed with `66/66`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `npm run check` passed;
+  - full Growth `npm test` passed with `829/829`;
+  - `git diff --check` passed;
+  - CodeGraph status after sync: 355 files, 4,792 nodes, 19,118 edges, index
+    up to date.
+
 ## 2026-06-16T17:41+08:00 - Growth Plugin Redeploy at Current Head
 
 - Status: deployed through the canonical Home AI Mac plugin deployment path.
