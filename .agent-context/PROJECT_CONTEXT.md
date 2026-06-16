@@ -411,7 +411,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   runtime-enablements. The Owner-only `release-workbench/actions` facade can
   execute that advertised endpoint by delegating only to
   `learning-automation-release-preflight-service.recordReport` with write
-  authorization.
+  authorization. Persisted preflight reports now also flow into release
+  inventory readback through the injected
+  `learningAutomationReleasePreflightReportRepository.listReports` boundary;
+  release dashboard then projects only inventory's bounded latest preflight
+  report id/status and advisory readiness flags. This downstream readback is
+  audit visibility only and never becomes deployment permission.
   The embedded Owner `生成` UI now consumes the release workbench read model and
   action facade through `public/growth-api-client.js`, renders
   `data-release-workbench-panel`, and can record advertised

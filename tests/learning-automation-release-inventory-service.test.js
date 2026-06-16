@@ -176,6 +176,26 @@ function createService(overrides = {}, calls = []) {
         };
       }
     },
+    preflightReportRepository: {
+      listReports(input) {
+        calls.push({ type: "preflightReports", input });
+        return [{
+          preflightReportId: "lgarpf_1",
+          collectionRunId: input.collectionRunId,
+          status: "ready_for_owner_release_activation",
+          privacyClass: "summary_only",
+          releasePreflight: {
+            schemaVersion: "growth.learningAutomationReleasePreflight.summary.v1",
+            summaryOnly: true,
+            readyForProductionDeploy: false,
+            readyForProductionDeployReview: true,
+            readyForOwnerReleaseActivation: true,
+            backendEvidenceComplete: true
+          },
+          createdAt: "2026-06-16T11:14:00.000Z"
+        }];
+      }
+    },
     releaseActivationService: {
       listActivations(input) {
         calls.push({ type: "activations", input });
@@ -247,7 +267,7 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.ok, true);
   assert.equal(result.schemaVersion, RELEASE_INVENTORY_SCHEMA);
   assert.equal(result.status, "manual_runtime_config_required");
-  assert.equal(result.releaseInventory.artifactCount, 8);
+  assert.equal(result.releaseInventory.artifactCount, 9);
   assert.equal(result.releaseInventory.latestReadinessSnapshotId, "lgar_ready_1");
   assert.equal(result.releaseInventory.latestReadinessEvidencePresentCount, 26);
   assert.equal(result.releaseInventory.latestReadinessEvidenceMissingCount, 1);
@@ -261,6 +281,10 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.releaseInventory.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.releaseInventory.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.releaseInventory.latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.releaseInventory.latestPreflightReportId, "lgarpf_1");
+  assert.equal(result.releaseInventory.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.releaseInventory.latestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.releaseInventory.latestPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(result.releaseInventory.latestDecisionId, "lgard_1");
   assert.equal(result.releaseInventory.releaseEvidenceRecordCount, 1);
   assert.equal(result.releaseInventory.latestReleaseEvidenceRecordId, "lgarev_1");
@@ -291,6 +315,10 @@ test("release inventory composes bounded artifact readback through services", ()
   assert.equal(result.artifactReadback.releaseEvidence.latest.id, "lgarev_1");
   assert.equal(result.artifactReadback.releaseEvidence.latest.evidenceKey, "ownerDailyUiEvidence");
   assert.equal(result.artifactReadback.releaseEvidence.latest.checkKey, "owner_daily_ui_evidence");
+  assert.equal(result.artifactReadback.preflightReports.latest.id, "lgarpf_1");
+  assert.equal(result.artifactReadback.preflightReports.latest.readyForProductionDeploy, false);
+  assert.equal(result.artifactReadback.preflightReports.latest.readyForProductionDeployReview, true);
+  assert.equal(result.artifactReadback.preflightReports.latest.readyForOwnerReleaseActivation, true);
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigChange, false);
   assert.deepEqual(calls.map((call) => call.type), [
@@ -301,6 +329,7 @@ test("release inventory composes bounded artifact readback through services", ()
     "packages",
     "approvals",
     "releaseEvidence",
+    "preflightReports",
     "activations",
     "runtimeEnablements"
   ]);

@@ -484,6 +484,7 @@ function actionsFromMissingApprovals(keys = [], scope = {}) {
 
 function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {}) {
   return uniqueStrings(kinds, 12).map((kind) => {
+    if (kind === "release_preflight") return null;
     const endpointKey = kind === "release_collection_run" ? "release_evidence_collection" : actionKeyForRecordKind(kind);
     if (!endpointKey) return null;
     const preparationRoute = endpointKey === "release_package"

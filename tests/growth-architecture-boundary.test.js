@@ -232,6 +232,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationReleaseEvidenceArtifactTemplateService/);
   assert.match(services, /releaseWorkbenchService: learningAutomationReleaseWorkbenchService/);
   assert.match(services, /releasePreflightService: learningAutomationReleasePreflightService/);
+  assert.match(services, /preflightReportRepository: growthLearningStore\.learningAutomationReleasePreflightReportRepository/);
   assert.match(services, /createLearningAutomationReleaseCollectionRunService/);
   assert.match(services, /learningAutomationReleaseCollectionRunService/);
   assert.match(services, /createLearningAutomationReleaseDecisionService/);
@@ -2475,6 +2476,9 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseInventoryService, /packageService\.listPackages/);
   assert.match(releaseInventoryService, /approvalService\.listApprovals/);
   assert.match(releaseInventoryService, /releaseEvidenceService\.listEvidence/);
+  assert.match(releaseInventoryService, /preflightReportRepository\.listReports/);
+  assert.match(releaseInventoryService, /release_preflight/);
+  assert.match(releaseInventoryService, /latestPreflightReportId/);
   assert.match(releaseInventoryService, /releaseActivationService\.listActivations/);
   assert.match(releaseInventoryService, /runtimeEnablementService\.listEnablements/);
   assert.match(releaseInventoryService, /packageDashboardFields/);
@@ -2513,6 +2517,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseDashboardService, /persistedEvidenceKeys/);
   assert.match(releaseDashboardService, /latestReleaseEvidenceRecordId/);
   assert.match(releaseDashboardService, /releaseEvidenceRecordCount/);
+  assert.match(releaseDashboardService, /preflightReports/);
+  assert.match(releaseDashboardService, /latestPreflightReportId/);
   assert.doesNotMatch(releaseDashboardService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseDashboardService, /learning_growth_/);
   assert.doesNotMatch(releaseDashboardService, /spawnSync/);

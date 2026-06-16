@@ -323,7 +323,7 @@ function recordSummary(value = {}, kind = "") {
     ok: record.ok !== false,
     status: cleanString(record.status, 120),
     count: Number(record.count) || 0,
-    latestId: cleanString(record.latestId || record.latestRecordId || latest.id || latest.runId || latest.packageId || latest.decisionId || latest.approvalId || latest.evidenceRecordId || latest.activationId || latest.enablementId, 180),
+    latestId: cleanString(record.latestId || record.latestRecordId || latest.id || latest.runId || latest.packageId || latest.decisionId || latest.preflightReportId || latest.reportId || latest.approvalId || latest.evidenceRecordId || latest.activationId || latest.enablementId, 180),
     latestStatus: cleanString(record.latestStatus || latest.status, 120),
     statuses: uniqueStrings(record.statuses || [])
   };
@@ -343,6 +343,13 @@ function recordSummary(value = {}, kind = "") {
     });
   }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record, latest));
+  if (kind === "release_preflight") {
+    return Object.assign(summary, {
+      latestReadyForProductionDeploy: false,
+      latestReadyForProductionDeployReview: latest.readyForProductionDeployReview === true || latest.ready_for_production_deploy_review === true,
+      latestReadyForOwnerReleaseActivation: latest.readyForOwnerReleaseActivation === true || latest.ready_for_owner_release_activation === true
+    });
+  }
   return summary;
 }
 
@@ -357,6 +364,7 @@ function artifactReadbackSummary(artifactReadback = {}) {
     packages: recordSummary(readback.packages, "release_package"),
     approvals: recordSummary(readback.approvals),
     releaseEvidence: recordSummary(readback.releaseEvidence || readback.release_evidence, "release_evidence"),
+    preflightReports: recordSummary(readback.preflightReports || readback.preflight_reports, "release_preflight"),
     activations: recordSummary(readback.activations),
     runtimeEnablements: recordSummary(readback.runtimeEnablements || readback.runtime_enablements)
   };
@@ -383,6 +391,10 @@ function inventorySummary(inventory = {}) {
     latestPackageDashboardStatus: cleanString(summary.latestPackageDashboardStatus, 120),
     latestPackageDashboardNextActionKey: cleanString(summary.latestPackageDashboardNextActionKey, 140),
     latestPackageDashboardRequiredActionCount: Number(summary.latestPackageDashboardRequiredActionCount || 0) || 0,
+    latestPreflightReportId: cleanString(summary.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(summary.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview: summary.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: summary.latestPreflightReadyForOwnerReleaseActivation === true,
     latestDecisionId: cleanString(summary.latestDecisionId, 180),
     releaseEvidenceRecordCount: Number(summary.releaseEvidenceRecordCount || 0) || 0,
     latestReleaseEvidenceRecordId: cleanString(summary.latestReleaseEvidenceRecordId, 180),
@@ -442,6 +454,10 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     latestPackageDashboardStatus: inventoryPart.latestPackageDashboardStatus,
     latestPackageDashboardNextActionKey: inventoryPart.latestPackageDashboardNextActionKey,
     latestPackageDashboardRequiredActionCount: inventoryPart.latestPackageDashboardRequiredActionCount,
+    latestPreflightReportId: inventoryPart.latestPreflightReportId,
+    latestPreflightStatus: inventoryPart.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: inventoryPart.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: inventoryPart.latestPreflightReadyForOwnerReleaseActivation,
     latestDecisionId: inventoryPart.latestDecisionId,
     releaseEvidenceRecordCount: inventoryPart.releaseEvidenceRecordCount,
     latestReleaseEvidenceRecordId: inventoryPart.latestReleaseEvidenceRecordId,

@@ -735,13 +735,15 @@ Use the Growth-owned release-readiness boundary:
   This returns one no-write `growth.learningAutomationReleaseInventory.v1`
   Owner/visible-target readback over release-readiness snapshots, collection
   runs, decisions, package audit records, release approvals, activation
-  records, runtime enablement records, and release controls. It reports bounded
+  records, runtime enablement records, persisted preflight reports, and release
+  controls. It reports bounded
   artifact counts, latest artifact ids, latest package dashboard
   status/next-action key/required-action count/step count, latest readiness
-  `ownerReviewStageSummary` counters when present, missing/blocked record
-  kinds, and the nested controls state. It owns no repository/table, does not
-  run smoke tasks internally, and does not write, publish, schedule, notify,
-  call Gateway, flip runtime config, grant scheduler permission, or mutate
+  `ownerReviewStageSummary` counters when present, latest preflight report
+  id/status/advisory readiness flags, missing/blocked record kinds, and the
+  nested controls state. It owns no repository/table, does not run smoke tasks
+  internally, and does not write, publish, schedule, notify, call Gateway, flip
+  runtime config, grant scheduler permission, write preflight reports, or mutate
   learner state. For
   final release evidence packaging, the same readback can be collected with
   `npm run smoke:release-evidence-bundle -- --task release_inventory ...`;
@@ -756,11 +758,11 @@ Use the Growth-owned release-readiness boundary:
   joining release services in the browser. It also projects the latest package
   dashboard status/next-action key/required-action count/step count from
   inventory plus bounded Owner review stage-summary counters from current and
-  latest readiness readbacks when present. It owns no repository/table, does
-  not run smoke tasks internally, and does not write, publish, schedule,
-  notify, call Gateway, flip runtime config, grant scheduler permission, or
-  mutate
-  learner state.
+  latest readiness readbacks when present, plus latest persisted preflight
+  report id/status/advisory readiness flags from inventory. It owns no
+  repository/table, does not run smoke tasks internally, and does not write,
+  publish, schedule, notify, call Gateway, flip runtime config, grant scheduler
+  permission, write preflight reports, or mutate learner state.
 - release workbench readback smoke CLI:
   `npm run smoke:release-workbench -- --workspace-id <workspace> --learner-id <learner> --activation-gates writeful_execution --json`.
   This returns one no-write `growth.learningAutomationReleaseWorkbench.v1`

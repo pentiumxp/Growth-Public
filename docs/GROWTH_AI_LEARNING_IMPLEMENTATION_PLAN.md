@@ -1039,10 +1039,14 @@ Implemented backend shape:
   and package blockers are clear. It keeps
   `readyForProductionDeploy=false`; `readyForProductionDeployReview` and
   `readyForOwnerReleaseActivation` remain advisory evidence and do not replace
-  Home AI central visual, deployment, or runtime-config gates. It does not run
-  smoke tasks internally, call Gateway, publish, generate, evaluate, schedule,
-  notify, activate stage assessments, mutate learner state, flip runtime config,
-  grant scheduler permission, or deploy.
+  Home AI central visual, deployment, or runtime-config gates. Persisted
+  preflight reports are read by release inventory through the injected
+  preflight report repository and projected by release dashboard through
+  inventory as bounded latest report id/status/advisory readiness flags; that
+  downstream readback is not a new preflight writer and not a deploy switch. It
+  does not run smoke tasks internally, call Gateway, publish, generate,
+  evaluate, schedule, notify, activate stage assessments, mutate learner state,
+  flip runtime config, grant scheduler permission, or deploy.
 - `npm run smoke:release-activation` delegates to
   `learning-automation-release-activation-service.preflight` by default and
   returns a no-write `growth.learningAutomationReleaseActivation.v1` preflight

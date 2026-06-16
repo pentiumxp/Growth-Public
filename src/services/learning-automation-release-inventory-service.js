@@ -216,6 +216,7 @@ function primaryIdKeys(kind) {
     release_collection_run: ["collectionRunId", "collection_run_id", "runId", "run_id"],
     release_decision: ["decisionId", "decision_id"],
     release_package: ["packageId", "package_id"],
+    release_preflight: ["preflightReportId", "preflight_report_id", "reportId", "report_id"],
     release_approval: ["approvalId", "approval_id"],
     release_evidence: ["evidenceRecordId", "evidence_record_id"],
     release_activation: ["activationId", "activation_id"],
@@ -291,6 +292,7 @@ function recordSummary(kind, record = {}) {
     "snapshotId", "snapshot_id",
     "decisionId", "decision_id",
     "packageId", "package_id",
+    "preflightReportId", "preflight_report_id", "reportId", "report_id",
     "approvalId", "approval_id",
     "evidenceRecordId", "evidence_record_id",
     "activationId", "activation_id",
@@ -329,6 +331,16 @@ function recordSummary(kind, record = {}) {
     });
   }
   if (kind === "release_package") return Object.assign(summary, packageDashboardFields(record));
+  if (kind === "release_preflight") {
+    const releasePreflight = objectOnly(record.releasePreflight || record.release_preflight || record.summary);
+    return Object.assign(summary, {
+      preflightReportId: summary.id,
+      readyForProductionDeploy: false,
+      readyForProductionDeployReview: releasePreflight.readyForProductionDeployReview === true || releasePreflight.ready_for_production_deploy_review === true,
+      readyForOwnerReleaseActivation: releasePreflight.readyForOwnerReleaseActivation === true || releasePreflight.ready_for_owner_release_activation === true,
+      backendEvidenceComplete: releasePreflight.backendEvidenceComplete === true || releasePreflight.backend_evidence_complete === true
+    });
+  }
   return summary;
 }
 
@@ -409,6 +421,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
   const packageService = options.packageService || null;
   const approvalService = options.approvalService || null;
   const releaseEvidenceService = options.releaseEvidenceService || null;
+  const preflightReportRepository = options.preflightReportRepository || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
   const releaseControlsService = options.releaseControlsService || null;
@@ -427,6 +440,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       || requireMethod(scope, "packages", packageService, "listPackages")
       || requireMethod(scope, "approvals", approvalService, "listApprovals")
       || requireMethod(scope, "release_evidence", releaseEvidenceService, "listEvidence")
+      || requireMethod(scope, "preflight_reports", preflightReportRepository, "listReports")
       || requireMethod(scope, "activations", releaseActivationService, "listActivations")
       || requireMethod(scope, "runtime_enablements", runtimeEnablementService, "listEnablements")
       || requireMethod(scope, "controls", releaseControlsService, "summarize");
@@ -442,6 +456,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       packages: packageService.listPackages(request),
       approvals: approvalService.listApprovals(request),
       releaseEvidence: releaseEvidenceService.listEvidence(request),
+      preflightReports: asArray(preflightReportRepository.listReports(request)),
       activations: releaseActivationService.listActivations(request),
       runtimeEnablements: runtimeEnablementService.listEnablements(request)
     };
@@ -457,6 +472,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
       listSummary("release_package", result.packages, "packages"),
       listSummary("release_approval", result.approvals, "approvals"),
       listSummary("release_evidence", result.releaseEvidence, "evidence"),
+      listSummary("release_preflight", { ok: true, count: result.preflightReports.length, reports: result.preflightReports }, "reports"),
       listSummary("release_activation", result.activations, "activations"),
       listSummary("runtime_enablement", result.runtimeEnablements, "enablements")
     ];
@@ -466,6 +482,7 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
     const latestSnapshot = objectOnly(summaries.find((summary) => summary.kind === "release_readiness_snapshot")?.latest);
     const latestSnapshotEvidenceReadback = objectOnly(latestSnapshot.evidenceReadback);
     const latestPackage = objectOnly(summaries.find((summary) => summary.kind === "release_package")?.latest);
+    const latestPreflight = objectOnly(summaries.find((summary) => summary.kind === "release_preflight")?.latest);
     const releaseEvidenceSummary = objectOnly(summaries.find((summary) => summary.kind === "release_evidence"));
     const latestReleaseEvidence = objectOnly(releaseEvidenceSummary.latest);
 
@@ -499,6 +516,10 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         latestPackageDashboardStatus: cleanString(latestPackage.latestPackageDashboardStatus, 120),
         latestPackageDashboardNextActionKey: cleanString(latestPackage.latestPackageDashboardNextActionKey, 140),
         latestPackageDashboardRequiredActionCount: Number(latestPackage.latestPackageDashboardRequiredActionCount || 0) || 0,
+        latestPreflightReportId: cleanString(latestPreflight.id || latestPreflight.preflightReportId, 180),
+        latestPreflightStatus: cleanString(latestPreflight.status, 120),
+        latestPreflightReadyForProductionDeployReview: latestPreflight.readyForProductionDeployReview === true,
+        latestPreflightReadyForOwnerReleaseActivation: latestPreflight.readyForOwnerReleaseActivation === true,
         latestDecisionId: cleanString(summaries.find((summary) => summary.kind === "release_decision")?.latest?.id, 180),
         releaseEvidenceRecordCount: Number(releaseEvidenceSummary.count || 0) || 0,
         latestReleaseEvidenceRecordId: cleanString(latestReleaseEvidence.id, 180),
@@ -520,8 +541,9 @@ function createLearningAutomationReleaseInventoryService(options = {}) {
         packages: summaries[3],
         approvals: summaries[4],
         releaseEvidence: summaries[5],
-        activations: summaries[6],
-        runtimeEnablements: summaries[7],
+        preflightReports: summaries[6],
+        activations: summaries[7],
+        runtimeEnablements: summaries[8],
         controls
       },
       writefulSchedulingAllowed: false,

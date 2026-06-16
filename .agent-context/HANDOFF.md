@@ -9,10 +9,84 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T07:49+08:00 - Release Preflight Report Inventory Readback
+
+- Status: implemented and full-Harness validated locally. No production
+  deployment in this slice.
+- Change intent:
+  - make persisted release preflight reports visible in downstream release
+    inventory and release dashboard readback;
+  - keep preflight reports advisory and avoid turning them into deployment,
+    runtime-config, or scheduler permission;
+  - avoid a service dependency cycle by having release inventory read only the
+    injected preflight report repository, while release dashboard consumes only
+    release inventory's bounded projection.
+- Scope:
+  - `learning-automation-release-inventory-service` now includes
+    `release_preflight` in its artifact readback, reads
+    `preflightReportRepository.listReports`, and projects
+    `latestPreflightReportId`, `latestPreflightStatus`,
+    `latestPreflightReadyForProductionDeployReview`, and
+    `latestPreflightReadyForOwnerReleaseActivation`;
+  - `learning-automation-release-dashboard-service` now carries those bounded
+    latest preflight fields from inventory and includes `preflightReports` in
+    the artifact readback summary;
+  - `src/app/services.js` injects
+    `growthLearningStore.learningAutomationReleasePreflightReportRepository`
+    into the release inventory service;
+  - `learning-automation-release-workbench-service` ignores missing
+    `release_preflight` records in the generic missing-record action generator
+    so `record_release_preflight` is offered only through the existing
+    preflight readiness policy.
+- Boundary notes:
+  - inventory owns no repository/table and writes no preflight reports;
+  - dashboard owns no repository/table and reads preflight state only through
+    inventory;
+  - preflight report persistence remains owned by
+    `learning-automation-release-preflight-service` and
+    `learning_growth_automation_release_preflight_reports`;
+  - `readyForProductionDeploy` remains false; downstream projections expose
+    only bounded advisory review/activation flags;
+  - this does not call Gateway/model vendors, run smoke tasks internally,
+    publish/generate/evaluate cards, execute scheduler actions, run scheduler
+    ticks, deliver notifications, activate stage assessments, flip runtime
+    config, grant scheduler permission, deploy, or mutate learner state.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for changed service/app/test files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-preflight-service.test.js tests/learning-automation-release-preflight-repository.test.js tests/growth-routes.test.js tests/growth-release-preflight-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `105/105`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - `git diff --check`;
+  - `npm test` passed `907/907`;
+  - `codegraph sync && codegraph status` reported index up to date with `370`
+    files, `5,177` nodes, and `22,355` edges, plus the existing earlier-engine
+    advisory.
+- Remaining next-step candidates:
+  - make the preflight readback visible in any later Owner activation/runtime
+    review surfaces that need it, still without granting deployment
+    permission;
+  - collect real Home AI central visual/UI summary artifacts and platform
+    Action Inbox/Web Push evidence for production release gates;
+  - collect real production controlled daily-loop/profile-feedback/learner-cycle
+    evidence and explicit release approvals over production inputs;
+  - do not deploy unless explicitly requested.
+
 ## 2026-06-17T07:35+08:00 - Release Preflight Workbench Action Facade
 
-- Status: implemented and full-Harness validated locally; not committed yet;
-  no production deployment in this slice.
+- Status: implemented, full-Harness validated locally, committed as `da62d67`,
+  and pushed to `origin/main` and `public/main`; no production deployment in
+  this slice.
 - Change intent:
   - close the backend gap where release preflight reports existed only through
     direct preflight API/CLI and not through the Owner release workbench action
@@ -78,8 +152,14 @@
   - `codegraph sync && codegraph status` reported index up to date with `370`
     files, `5,177` nodes, and `22,358` edges, plus the existing earlier-engine
     advisory.
-- Remaining before push:
-  - commit and push to the configured Growth remotes; do not deploy.
+- Remaining next-step candidates:
+  - make persisted preflight reports visible to downstream release inventory,
+    dashboard, closure, and activation/runtime review surfaces without turning
+    them into deployment permission;
+  - collect real Home AI central visual/UI summary artifacts and platform
+    Action Inbox/Web Push evidence for production release gates;
+  - collect real production controlled daily-loop/profile-feedback/learner-cycle
+    evidence and explicit release approvals over production inputs.
 
 ## 2026-06-17T15:35+08:00 - Release Preflight Audit Report Boundary
 

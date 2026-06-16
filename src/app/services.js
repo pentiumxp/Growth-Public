@@ -380,6 +380,7 @@ function createServices(config) {
     packageService: learningAutomationReleasePackageService,
     approvalService: learningAutomationReleaseApprovalService,
     releaseEvidenceService: learningAutomationReleaseEvidenceService,
+    preflightReportRepository: growthLearningStore.learningAutomationReleasePreflightReportRepository,
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService,
     releaseControlsService: learningAutomationReleaseControlsService
