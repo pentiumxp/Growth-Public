@@ -823,6 +823,40 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function automationSchedulerExecutionActionFromHandoff(handoff = {}) {
+    const actions = asArray(handoff.actions);
+    return actions.find((action = {}) => clean(action.proposalId || action.proposal_id)) || actions[0] || {};
+  }
+
+  function createAutomationSchedulerExecutionQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationSchedulerExecutionPayload({ context = {}, workspaceId = "", handoff = {} } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const defaults = context.generationDefaults || {};
+    const action = automationSchedulerExecutionActionFromHandoff(handoff);
+    const handoffId = clean(handoff.handoffId || handoff.handoff_id);
+    const proposalId = clean(action.proposalId || action.proposal_id || handoff.proposalId || handoff.proposal_id);
+    const planDraftId = clean(action.planDraftId || action.plan_draft_id || handoff.planDraftId || handoff.plan_draft_id);
+    const selectedItemId = clean(action.selectedItemId || action.selected_item_id || action.itemId || action.item_id || handoff.selectedItemId || handoff.selected_item_id);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      handoff_id: handoffId,
+      digest_id: clean(handoff.digestId || handoff.digest_id),
+      policy_id: clean(handoff.policyId || handoff.policy_id),
+      proposal_id: proposalId,
+      plan_draft_id: planDraftId,
+      selected_item_id: selectedItemId,
+      execution_mode: "owner_explicit_once",
+      generation_key: ["scheduler_execution", handoffId, proposalId, planDraftId, selectedItemId].filter(Boolean).join(":"),
+      card_schema_version: clean(defaults.cardSchemaVersion || "growth.card.authoring.v1"),
+      requested_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createRecommendationLifecycleDecisionPayload({ context = {}, workspaceId = "", recommendation = {}, status = "" } = {}) {
     const plan = context.suggestedPlan || {};
     const defaults = context.generationDefaults || {};
@@ -1238,6 +1272,133 @@
         ${automationActionHandoffRows(holder, escapeHtml)}
       </div>
       ${automationActionHandoffActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationSchedulerExecutionStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "submitting") return "执行中";
+    if (value === "started") return "已开始";
+    if (value === "published") return "已发布";
+    if (value === "blocked") return "已拦截";
+    if (value === "failed") return "失败";
+    if (value === "skipped") return "已跳过";
+    if (value === "executed") return "已记录";
+    return value || "待处理";
+  }
+
+  function automationSchedulerExecutionActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const execution = result.execution || {};
+    if (!status || status === "idle") return "";
+    const resultStatus = clean(execution.status || result.status || status);
+    const detail = status === "submitting"
+      ? "正在通过 Growth scheduler execution service 记录 Owner 显式执行。"
+      : resultStatus === "published"
+        ? `Scheduler execution 已发布：${clean(execution.executionId || execution.execution_id) || "execution"}。`
+        : resultStatus === "blocked"
+          ? `Scheduler execution 被门禁拦截：${clean(execution.reason || result.error || error) || "blocked"}。`
+          : status === "executed"
+            ? `Scheduler execution 已记录：${clean(execution.executionId || execution.execution_id) || "execution"}。`
+            : error || clean(result.error) || "Scheduler execution 操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-scheduler-execution-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationSchedulerExecutionStatusText(resultStatus))}</em>
+    </div>`;
+  }
+
+  function automationSchedulerExecutionRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const executions = asArray(data.executions).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取 scheduler execution。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">Scheduler execution 读取失败：${escapeHtml(clean(holder.error) || "automation_scheduler_executions_failed")}</div>`;
+    if (!executions.length) return `<div class="learning-card-generation-proposal-empty">暂无 scheduler execution。已投递 handoff 后，可以显式尝试执行一次。</div>`;
+    return executions.map((execution) => {
+      const executionId = clean(execution.executionId || execution.execution_id);
+      const statusText = automationSchedulerExecutionStatusText(execution.status);
+      const handoffId = clean(execution.handoffId || execution.handoff_id);
+      const proposalId = clean(execution.proposalId || execution.proposal_id);
+      const generatedTaskCardId = clean(execution.execution?.generatedTaskCardId || execution.execution?.generated_task_card_id);
+      const reason = clean(execution.reason || execution.error || execution.execution?.reason);
+      return `<div class="learning-card-generation-proposal-row" data-automation-scheduler-execution-row data-automation-scheduler-execution-id="${escapeHtml(executionId)}">
+        <span>
+          <strong>${escapeHtml(executionId || "scheduler execution")}</strong>
+          <small>${escapeHtml(`handoff ${handoffId || "unknown"} · proposal ${proposalId || "unknown"}`)}</small>
+          <small>${escapeHtml(generatedTaskCardId ? `generated card ${generatedTaskCardId}` : (reason || "默认禁用时会记录 blocked，不会发布。"))}</small>
+        </span>
+        <em>${escapeHtml(statusText)}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function automationSchedulerExecutionHandoffRows(handoffsHolder = {}, executionsHolder = {}, escapeHtml = defaultEscapeHtml) {
+    const handoffs = asArray(handoffsHolder.data?.handoffs)
+      .filter((handoff) => {
+        const deliveryStatus = clean(handoff.deliveryStatus || handoff.delivery_status || handoff.status);
+        return deliveryStatus === "delivered";
+      })
+      .slice(0, 4);
+    const busy = executionsHolder.actionStatus === "submitting";
+    if (!handoffs.length) return `<div class="learning-card-generation-proposal-empty">没有可执行的已投递 handoff。</div>`;
+    return handoffs.map((handoff) => {
+      const handoffId = clean(handoff.handoffId || handoff.handoff_id);
+      const digestId = clean(handoff.digestId || handoff.digest_id);
+      const action = automationSchedulerExecutionActionFromHandoff(handoff);
+      const proposalId = clean(action.proposalId || action.proposal_id || handoff.proposalId || handoff.proposal_id);
+      const selectedItemId = clean(action.selectedItemId || action.selected_item_id || action.itemId || action.item_id);
+      return `<div class="learning-card-generation-proposal-row" data-automation-scheduler-execution-handoff-row data-automation-action-handoff-id="${escapeHtml(handoffId)}">
+        <span>
+          <strong>${escapeHtml(handoffId || "delivered handoff")}</strong>
+          <small>${escapeHtml(`digest ${digestId || "unknown"} · proposal ${proposalId || "missing"}`)}</small>
+          <small>执行会重新检查 release / activation / runtime gates；默认禁用时只写 blocked 记录。</small>
+        </span>
+        <em>${escapeHtml(proposalId ? "可尝试" : "缺 proposal")}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-scheduler-execution-execute data-automation-action-handoff-id="${escapeHtml(handoffId)}" data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-selected-item-id="${escapeHtml(selectedItemId)}" ${busy || !handoffId || !proposalId ? "disabled" : ""}>执行一次</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationSchedulerExecutionPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationSchedulerExecutions || {};
+    const data = holder.data || {};
+    const executions = asArray(data.executions);
+    const published = executions.filter((item) => clean(item.status) === "published").length;
+    const blocked = executions.filter((item) => clean(item.status) === "blocked").length;
+    const failed = executions.filter((item) => clean(item.status) === "failed").length;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const reason = status === "loading"
+      ? "正在读取 scheduler execution。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_scheduler_executions_failed"
+        : "Owner 显式执行只通过 scheduler execution service；默认配置会被门禁拦截。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-scheduler-executions" data-automation-scheduler-execution-panel data-automation-scheduler-execution-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>Scheduler 执行</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-scheduler-execution-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新执行"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>已发布</small><strong>${escapeHtml(String(published))}</strong></span>
+        <span><small>已拦截</small><strong>${escapeHtml(String(blocked))}</strong></span>
+        <span><small>失败</small><strong>${escapeHtml(String(failed))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationSchedulerExecutionHandoffRows(state.automationActionHandoffs || {}, holder, escapeHtml)}
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationSchedulerExecutionRows(holder, escapeHtml)}
+      </div>
+      ${automationSchedulerExecutionActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -2173,6 +2334,7 @@
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
           ${automationActionHandoffPanel(context, state, escapeHtml)}
+          ${automationSchedulerExecutionPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
           ${learningProfilePanel(context, state, escapeHtml)}
           ${ownerAuditPanel(context, state, escapeHtml)}
@@ -2220,6 +2382,8 @@
     createAutomationActionHandoffQueryPayload,
     createAutomationActionHandoffPayload,
     createAutomationActionHandoffDeliverPayload,
+    createAutomationSchedulerExecutionQueryPayload,
+    createAutomationSchedulerExecutionPayload,
     createRecommendationLifecycleDecisionPayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,

@@ -829,7 +829,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   operation, while `execute` requires explicit `--allow-write` and still
   delegates only to `learning-automation-scheduler-execution-service`. With
   writeful execution disabled, explicit execution records a bounded blocked
-  row rather than publishing.
+  row rather than publishing. The embedded Owner `生成` tab now lists
+  scheduler execution rows and can explicitly call `execute-once` from a
+  delivered handoff through the Growth API client; the UI is glue only and does
+  not call Gateway, scheduler run, worker targets, release internals, or card
+  generation directly.
   The background scheduler contract is documented in
   `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md`. Its local
   backend boundary is implemented as default-disabled

@@ -9,11 +9,95 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T23:06+08:00 - Automation Scheduler Execution Owner UI Controls
+
+- Status: implemented and locally validated; pending commit/push. Not deployed
+  per Owner instruction to deploy after the broader slice is complete.
+- Change intent:
+  - the embedded Owner generation UI now lists persisted automation scheduler
+    execution attempts for the selected Growth target;
+  - delivered action handoffs render an explicit `执行一次` action that submits
+    an `owner_explicit_once` request through the existing Growth route;
+  - default-disabled execution remains visible as a bounded `blocked` record.
+    It does not grant release permission, schedule work, call Gateway,
+    evaluate submissions, activate stage assessments, or mutate learner state.
+- Code/UI changes:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationSchedulerExecutions()` and
+    `executeGrowthAutomationSchedulerOnce()`, including Home AI plugin proxy
+    routing;
+  - `public/growth-card-generation-ui.js` adds summary-only scheduler
+    execution query/execute payload builders, delivered-handoff execute rows,
+    persisted execution rows, status counts, and default-disabled blocked
+    wording;
+  - `public/app.js` loads scheduler execution readbacks with Owner generation
+    context, wires refresh/execute buttons, refreshes execution/release
+    workbench state after handoff or execution actions, and refreshes execution
+    state after target provisioning changes;
+  - `public/index.html` static asset version is bumped to
+    `20260616-scheduler-execution-ui-v1`.
+- Harness/docs:
+  - `tests/growth-frontend-adapter.test.js` covers API helpers, proxy paths,
+    Owner panel rendering, payload privacy, static version, and app wiring;
+  - `tests/growth-architecture-boundary.test.js` guards the frontend adapter
+    boundary for scheduler execution list/execute helpers;
+  - updated `.agent-context/PROJECT_CONTEXT.md`,
+    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md`, and
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - syntax checks passed for `public/growth-api-client.js`,
+    `public/growth-card-generation-ui.js`, `public/app.js`,
+    `tests/growth-frontend-adapter.test.js`, and
+    `tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` passed `36/36`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-scheduler-execution-repository.test.js
+    tests/learning-automation-scheduler-execution-service.test.js
+    tests/growth-automation-scheduler-execution-smoke-script.test.js
+    tests/growth-routes.test.js` passed `64/64`;
+  - `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed with `844/844`;
+  - Home AI H2 checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `node tests/ios-pwa-live-debug-server.test.js`,
+    `node tests/ios-pwa-visual-harness.test.js`,
+    `node tests/task-list-ui.test.js`, and
+    `node tests/static-cache-version-harness.test.js`;
+  - central iOS PWA visual harness passed:
+    `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url
+    http://127.0.0.1:19075/ --artifact-dir
+    /tmp/homeai-growth-scheduler-execution-visual --timeout-ms 45000
+    --wait-ms 900`, screenshot
+    `/tmp/homeai-growth-scheduler-execution-visual/ios-pwa-visual-dark-growth-surfaces-20260616T150529Z.png`;
+  - `git diff --check` passed;
+  - CodeGraph status after edits: 355 files, 4,886 nodes, 19,781 edges, index
+    up to date.
+- AI Ops evidence:
+  - changed-file required-checks returned H3, no deployment required; this was
+    still treated with central visual validation because it is Owner-visible UI;
+  - visual lane allocated and released:
+    `ios-pwa-3` / `http://127.0.0.1:19075/`;
+  - test evidence ledger record:
+    `evidence-71da20d3-4f4e-458b-8ae6-99df7b859360`;
+  - visual evidence ledger record:
+    `evidence-8e76e746-1218-40bf-9f1a-5bb3b8fae2c4`.
+- Boundary:
+  - no Gateway/model call, card generation, plan publication, digest creation,
+    proposal publication, evaluation, scheduler run/tick, worker target/lease,
+    action handoff delivery, stage activation, database schema change, runtime
+    config mutation, production sync, or deployment was performed.
+
 ## 2026-06-16T22:48+08:00 - Automation Action Handoff Owner UI Controls
 
-- Status: implemented, locally validated, and committed as
-  `8087e98 Add automation action handoff Owner UI controls`; pending push. Not
-  deployed per Owner instruction to deploy after the broader slice is complete.
+- Status: implemented, locally validated, and committed/pushed as
+  `8087e98 Add automation action handoff Owner UI controls` plus
+  `a272d1f Update action handoff UI handoff status`; not deployed per Owner
+  instruction to deploy after the broader slice is complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation action
     handoff rows for the selected Growth target;

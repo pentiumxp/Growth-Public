@@ -29,6 +29,15 @@ Implemented locally as a default-disabled backend slice:
   `GET /api/v1/growth/automation/scheduler/executions`;
 - Owner-only
   `POST /api/v1/growth/automation/scheduler/execute-once`;
+- embedded Owner generation UI controls in `public/growth-card-generation-ui.js`
+  and `public/app.js`:
+  - list persisted execution attempts through
+    `GET /api/v1/growth/automation/scheduler/executions`;
+  - show delivered handoff rows as explicit execution candidates;
+  - submit `owner_explicit_once` payloads through
+    `POST /api/v1/growth/automation/scheduler/execute-once`;
+  - render `published`, `blocked`, and `failed` execution states without
+    treating any of them as release permission;
 - final release authorization readback through
   `learning-automation-release-authorization-service`,
   `GET /api/v1/growth/automation/release-authorization`, and
@@ -54,6 +63,28 @@ Implemented locally as a default-disabled backend slice:
 The config gate defaults to false. When the gate is false, `execute-once`
 records a bounded blocked execution row and does not inspect handoff state,
 publish, enqueue, call Gateway, or mutate learner state.
+
+## UI Contract
+
+The embedded Owner UI is a thin workflow surface over the service boundary.
+
+It may:
+
+- query persisted execution rows for the selected visible target;
+- render delivered action handoffs as possible Owner-explicit execution inputs;
+- construct summary-only payloads from target scope plus handoff action
+  metadata;
+- call the existing execute-once route after an explicit Owner button press;
+- refresh release workbench/readback state after the route returns or fails.
+
+It must not:
+
+- call Gateway, model vendors, card generation, evaluation, stage assessment,
+  scheduler run, worker timers, or release-readiness internals directly;
+- infer authorization from notification delivery or UI state;
+- fabricate release approval, activation, or runtime enablement evidence;
+- auto-retry execution after a blocked/failed response;
+- hide default-disabled blocked rows from Owner review.
 
 ## Execution Contract
 
@@ -310,7 +341,9 @@ Before production enablement, Growth still needs:
 - Owner daily UI;
 - audit/correction UI;
 - proposal review UI;
-- digest/action/failure policy UI;
+- digest/action/failure policy UI production evidence;
+- scheduler execution UI production evidence;
+- scheduler run and worker-target UI;
 - platform Action Inbox/Web Push product evidence;
 - central Home AI embedded-plugin visual evidence;
 - production dry-run evidence;
