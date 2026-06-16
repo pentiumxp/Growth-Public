@@ -240,6 +240,8 @@ function compactUiBagFields(record = {}, evidence = {}) {
   const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
   if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) return {};
   return {
+    evidenceKey,
+    checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
     schemaVersion: cleanString(evidence.schemaVersion || evidence.schema_version, 180),
     privacyClass: cleanString(evidence.privacyClass || evidence.privacy_class, 80),
     summaryOnly: evidence.summaryOnly === true || evidence.summary_only === true,

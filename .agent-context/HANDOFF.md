@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T04:51+08:00 - Release Package UI Evidence Readiness Consumption
+
+- Status: implemented and locally validated. This handoff section belongs to
+  the same change set as the release-evidence bag projection fix.
+- Change intent:
+  - close the remaining backend/Harness gap where a validated persisted
+    `releasePackageReviewUiEvidence` record could be read from the
+    release-evidence bag but release-readiness still blocked it because the bag
+    projection lacked top-level `evidenceKey` / `checkKey` fields;
+  - keep readiness strict: pass UI evidence still requires the validator
+    schema, `validationSchemaVersion`, summary-only privacy class, matching
+    evidence/check keys, screenshot or DOM evidence, no missing coverage, and
+    zero failed assertions.
+- Scope:
+  - `src/services/learning-automation-release-evidence-service.js` now includes
+    top-level `evidenceKey` and `checkKey` in compact UI release-evidence bag
+    projections;
+  - `tests/learning-automation-release-evidence-service.test.js` asserts those
+    fields for `releasePackageReviewUiEvidence`;
+  - `tests/growth-automation-release-evidence-smoke-script.test.js` now records
+    validated release package review UI evidence into a temporary SQLite DB,
+    reads it back from the release-evidence bag, and runs
+    `scripts/smoke-growth-release-readiness.js` against the same DB to verify
+    `release_package_review_ui_evidence` passes from persisted evidence;
+  - Growth-local docs and the local platform pointer now describe the
+    validator-to-repository-to-readiness consumption path.
+- Boundary notes:
+  - no production visual artifact generated;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - `node --test tests/learning-automation-release-evidence-service.test.js tests/growth-automation-release-evidence-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js`
+    passed `38/38`.
+  - `node --test tests/learning-automation-release-evidence-service.test.js tests/growth-automation-release-evidence-smoke-script.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-ui-evidence-service.test.js tests/growth-ui-evidence-smoke-script.test.js`
+    passed `48/48`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run --silent check` passed with `runtimeCount=201` and
+    `checkedCount=201`;
+  - `npm test` passed `866/866`;
+  - `git diff --check` passed;
+  - `codegraph sync` reported already up to date.
+- Remaining gates:
+  - still no production deployment in this slice.
+
 ## 2026-06-17T04:43+08:00 - Release Package Review UI Evidence Persistence Harness
 
 - Status: implemented and locally validated. The changes for this section are

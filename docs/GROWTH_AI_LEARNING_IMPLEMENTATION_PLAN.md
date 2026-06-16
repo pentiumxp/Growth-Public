@@ -1167,9 +1167,11 @@ Remaining release gaps:
   production. Local Harness now proves that a validated
   release-package-review UI evidence summary can be recorded through
   `npm run smoke:release-evidence` into a temporary Growth SQLite database and
-  read back from the release-evidence bag, but that fixture does not replace a
-  real Home AI visual/UI artifact. These backend/UI affordances do not replace
-  product UI or central visual evidence.
+  read back from the release-evidence bag with top-level evidence/check keys
+  that `npm run smoke:release-readiness` can consume as a passing
+  `release_package_review_ui_evidence` check, but that fixture does not
+  replace a real Home AI visual/UI artifact. These backend/UI affordances do
+  not replace product UI or central visual evidence.
   The current proposal selected-cycle create/review/publish panel and release
   package review flow still need central visual/release evidence before they are
   treated as production-complete;

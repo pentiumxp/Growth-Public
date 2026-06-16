@@ -288,6 +288,8 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.deepEqual(bag.evidence.ownerDailyUiEvidence.uiEvidence.missingCoverage, []);
   assert.equal(bag.evidence.ownerDailyUiEvidence.uiEvidence.failedAssertionCount, 0);
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
+  assert.equal(bag.evidence.releasePackageReviewUiEvidence.evidenceKey, "releasePackageReviewUiEvidence");
+  assert.equal(bag.evidence.releasePackageReviewUiEvidence.checkKey, "release_package_review_ui_evidence");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.uiGate, "release_package_review");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.readyForReleaseEvidence, true);
   assert.equal(bag.evidence.ownerReviewEvidence.source, "owner_review_smoke");

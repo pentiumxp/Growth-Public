@@ -213,7 +213,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   output is optionally persisted through the existing release-evidence record
   path. The release-evidence record service now re-runs that validator before
   saving any pass UI evidence key, and its evidence bag preserves the
-  validator schema/projection summary for readiness readback. Release-readiness
+  validator schema/projection summary plus top-level evidence/check keys for
+  readiness readback. Release-readiness
   one-off UI inputs must be `growth.learningAutomationUiEvidence.v1` validator
   summaries or validated release-evidence record projections, so deprecated UI
   flags and unvalidated direct `{ok:true}` UI evidence cannot satisfy
@@ -227,7 +228,8 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   includes the `releasePackageReviewUiEvidence` /
   `release_package_review_ui_evidence` gate for the release package review row;
   that gate requires package candidate build, candidate status, and record
-  package action coverage before pass release evidence can be persisted. The
+  package action coverage before pass release evidence can be persisted and
+  consumed by release-readiness from persisted release-evidence records. The
   deprecated `--release-workbench-evidence` flag now returns blocked
   remediation metadata instead of passing evidence; valid final Owner
   action-template readback evidence must come from `npm run

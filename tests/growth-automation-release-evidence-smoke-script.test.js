@@ -7,6 +7,7 @@ const test = require("node:test");
 
 const repoRoot = path.resolve(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-release-evidence.js");
+const readinessScriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-readiness.js");
 
 const {
   inputFromArgs,
@@ -304,6 +305,38 @@ test("automation release evidence smoke script records release package review UI
     assert.equal(bagOutput.evidence.releasePackageReviewUiEvidence.readyForReleaseEvidence, true);
     assert.equal(JSON.stringify(bagOutput).includes("/Users/"), false);
     assert.equal(JSON.stringify(bagOutput).includes("access-key"), false);
+
+    const readiness = spawnSync(process.execPath, [
+      readinessScriptPath,
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain-pack-id", "uk_hk_curriculum_foundation",
+      "--domain", "science",
+      "--subject", "science",
+      "--json"
+    ], {
+      cwd: repoRoot,
+      env: Object.assign({}, process.env, {
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    assert.equal(readiness.status, 0, readiness.stderr || readiness.stdout);
+    const readinessOutput = JSON.parse(readiness.stdout);
+    const packageReviewCheck = readinessOutput.checks.find((item) => item.key === "release_package_review_ui_evidence");
+    assert.equal(readinessOutput.ok, true);
+    assert.notEqual(readinessOutput.status, "ready_for_release_review");
+    assert.equal(packageReviewCheck.status, "pass");
+    assert.equal(packageReviewCheck.summary.uiEvidenceValidated, true);
+    assert.equal(readinessOutput.releaseReview.persistedEvidenceKeys.includes("releasePackageReviewUiEvidence"), true);
+    assert.equal(readinessOutput.evidence.persistedEvidenceKeys.includes("releasePackageReviewUiEvidence"), true);
+    assert.equal(readinessOutput.evidenceReadback.presentEvidenceKeys.includes("releasePackageReviewUiEvidence"), true);
+    assert.equal(readinessOutput.evidenceReadback.missingCheckKeys.includes("release_package_review_ui_evidence"), false);
+    const packageReviewReadback = readinessOutput.evidenceReadback.items.find((item) => item.key === "releasePackageReviewUiEvidence");
+    assert.equal(packageReviewReadback.evidencePresent, true);
+    assert.equal(packageReviewReadback.evidenceId, recordOutput.evidence.evidenceRecordId);
+    assert.equal(packageReviewReadback.source, "growth-learning-automation-ui-evidence-service");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
