@@ -467,6 +467,29 @@ function summaryFromSmoke(value = {}) {
   return summary;
 }
 
+function platformActionSummaryFromSmoke(value = {}) {
+  const latest = value.latestReceipt && typeof value.latestReceipt === "object" && !Array.isArray(value.latestReceipt)
+    ? value.latestReceipt
+    : {};
+  const summary = summaryFromSmoke(value);
+  summary.readyForReleaseEvidence = value.readyForReleaseEvidence === true;
+  summary.missingRequired = uniqueStrings(asArray(value.missingRequired)).slice(0, 12);
+  summary.latestReceipt = {
+    eventId: cleanString(latest.eventId || latest.event_id, 160),
+    workspaceId: cleanString(latest.workspaceId || latest.workspace_id, 120),
+    actionHandoffId: cleanString(latest.actionHandoffId || latest.action_handoff_id, 120),
+    digestId: cleanString(latest.digestId || latest.digest_id, 120),
+    actionInboxReceiptPresent: latest.actionInboxReceiptPresent === true || Boolean(cleanString(latest.inboxItemId || latest.inbox_item_id, 120)),
+    webPushReceiptPresent: latest.webPushReceiptPresent === true || Number(latest.webPushSent || latest.web_push_sent || 0) > 0,
+    webPushAttempted: Number(latest.webPushAttempted || latest.web_push_attempted || 0) || 0,
+    webPushSent: Number(latest.webPushSent || latest.web_push_sent || 0) || 0,
+    webPushFailed: Number(latest.webPushFailed || latest.web_push_failed || 0) || 0,
+    webPushSkipped: latest.webPushSkipped === true || latest.web_push_skipped === true,
+    webPushReason: cleanString(latest.webPushReason || latest.web_push_reason, 160)
+  };
+  return summary;
+}
+
 function publicReleaseApprovalEntry(value = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return {
@@ -775,6 +798,7 @@ function summaryForTask(task, value) {
   if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
   if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
   if (task.taskId === "owner_review_evidence") return ownerReviewSummaryFromSmoke(value);
+  if (task.taskId === "platform_action") return platformActionSummaryFromSmoke(value);
   if (task.taskId === "target_provisioning") return targetProvisioningSummaryFromSmoke(value);
   if (task.taskId === "recommendation_lifecycle") return recommendationLifecycleSummaryFromSmoke(value);
   return summaryFromSmoke(value);

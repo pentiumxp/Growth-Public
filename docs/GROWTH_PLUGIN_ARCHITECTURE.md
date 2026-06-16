@@ -891,8 +891,8 @@ be feature-driven:
    locally; the UI creates only persisted dry-run digest evidence and does not
    publish, schedule, call Gateway, evaluate, notify, or grant release
    permission.
-8. Collect production visual/release evidence and platform Action Inbox/Web
-   Push receipt evidence for the automation action handoff UI described in
+8. Collect production visual/release evidence and platform Action Inbox + Web
+   Push dual receipt evidence for the automation action handoff UI described in
    `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md` before any writeful
    scheduler. The service, repository, Owner routes, event mapping, delivery
    failure guard, architecture guard, and read/create/deliver UI are

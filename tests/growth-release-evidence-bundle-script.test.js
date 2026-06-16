@@ -622,7 +622,13 @@ test("release evidence bundle script writes platform action evidence from delive
             status: 202,
             response: {
               inboxItemId: "inbox_smoke",
-              clickUrl: "/?view=inbox&item=inbox_smoke"
+              clickUrl: "/?view=inbox&item=inbox_smoke",
+              webPush: {
+                enabled: true,
+                attempted: 1,
+                sent: 1,
+                failed: 0
+              }
             }
           }
         }
@@ -652,6 +658,7 @@ test("release evidence bundle script writes platform action evidence from delive
     assert.equal(fileBundle.evidence.platformActionEvidence.summary.source, "growth-learning-automation-platform-action-evidence-service");
     assert.equal(fileBundle.evidence.platformActionEvidence.summary.status, "pass");
     assert.equal(fileBundle.evidence.platformActionEvidence.summary.count, 1);
+    assert.equal(fileBundle.evidence.platformActionEvidence.summary.latestReceipt.webPushSent, 1);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("/?view=inbox"), false);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);

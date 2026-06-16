@@ -80,7 +80,10 @@ test("platform action evidence smoke script reports missing evidence without wri
     assert.equal(output.ok, false);
     assert.equal(output.status, "missing");
     assert.equal(output.error, "platform_action_evidence_missing");
-    assert.deepEqual(output.missingRequired, ["delivered_platform_action_inbox_receipt"]);
+    assert.deepEqual(output.missingRequired, [
+      "delivered_platform_action_inbox_receipt",
+      "delivered_platform_web_push_receipt"
+    ]);
   });
 });
 
@@ -105,7 +108,13 @@ test("platform action evidence smoke script returns summary-only delivered recei
             status: 202,
             response: {
               inboxItemId: "inbox_smoke",
-              clickUrl: "/?view=inbox&item=inbox_smoke"
+              clickUrl: "/?view=inbox&item=inbox_smoke",
+              webPush: {
+                enabled: true,
+                attempted: 1,
+                sent: 1,
+                failed: 0
+              }
             }
           }
         }
@@ -130,6 +139,8 @@ test("platform action evidence smoke script returns summary-only delivered recei
     assert.equal(output.readyForReleaseEvidence, true);
     assert.equal(output.latestReceipt.inboxItemId, "inbox_smoke");
     assert.equal(output.latestReceipt.clickUrlPresent, true);
+    assert.equal(output.latestReceipt.webPushReceiptPresent, true);
+    assert.equal(output.latestReceipt.webPushSent, 1);
     assert.equal(JSON.stringify(output).includes("/?view=inbox"), false);
     assert.equal(JSON.stringify(output).includes("access-key"), false);
   });

@@ -780,8 +780,10 @@ Implemented backend shape:
   learner/domain-pack/subject/node can resolve without writing a provision.
   The default `platform_action` task maps
   `npm run smoke:platform-action-evidence` output to `platformActionEvidence`
-  from delivered Growth outbox receipts without reading Home AI internal
-  Action Inbox/Web Push storage.
+  from delivered Growth outbox receipts. A passing summary must prove both an
+  Action Inbox item id and a bounded Web Push `sent > 0` receipt from the Home
+  AI notification response, without reading Home AI internal Action Inbox/Web
+  Push storage or storing push endpoints.
   The default `central_visual` task maps
   `npm run smoke:central-visual-evidence` output to `centralVisualEvidence`
   from a supplied Home AI central visual harness artifact without starting
@@ -1147,8 +1149,8 @@ Remaining release gaps:
   does not replace product UI or central visual evidence. The current proposal
   selected-cycle create/review/publish panel still needs central visual/release
   evidence before it is treated as production-complete;
-- real production Home AI platform Action Inbox/Web Push receipt evidence from
-  `npm run smoke:platform-action-evidence`;
+- real production Home AI platform Action Inbox + Web Push dual receipt
+  evidence from `npm run smoke:platform-action-evidence`;
 - real production central embedded-plugin visual artifact for mobile scroll,
   dark mode, progress, and embedded shell, then ingestion through
   `npm run smoke:central-visual-evidence`;

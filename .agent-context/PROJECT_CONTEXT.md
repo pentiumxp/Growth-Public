@@ -1027,8 +1027,13 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   Older-cycle selection over the implemented current-cycle drilldown, browser
   formal stage-checkpoint UI over the implemented controls read model,
   proposal/digest/action/execution UI, real production
-  platform Action Inbox/Web Push receipt evidence, and full automation release
-  review remain future slices.
+  platform Action Inbox + Web Push dual receipt evidence, and full automation
+  release review remain future slices. The platform action evidence gate now
+  requires a delivered Growth event-outbox notification receipt containing both
+  an Action Inbox item id and a bounded Web Push `sent > 0` summary. Growth
+  stores only summary counts/reason from the Home AI notification response and
+  still must not read Home AI Action Inbox/Web Push storage, push
+  subscriptions, endpoints, or raw payloads.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

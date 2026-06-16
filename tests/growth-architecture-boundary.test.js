@@ -1243,6 +1243,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationPlatformActionEvidenceService, /outboxStore\.list/);
   assert.match(automationPlatformActionEvidenceService, /growth\.automation\.action_required/);
   assert.match(automationPlatformActionEvidenceService, /delivered_platform_action_inbox_receipt/);
+  assert.match(automationPlatformActionEvidenceService, /delivered_platform_web_push_receipt/);
+  assert.match(automationPlatformActionEvidenceService, /growthDoesNotReadPushSubscriptions/);
   assert.match(automationPlatformActionEvidenceService, /homeAiOwnsActionInbox/);
   assert.match(automationPlatformActionEvidenceService, /homeAiOwnsWebPush/);
   assert.match(automationPlatformActionEvidenceService, /summaryOnly: true/);

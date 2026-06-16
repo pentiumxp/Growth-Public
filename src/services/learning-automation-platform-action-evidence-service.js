@@ -56,10 +56,17 @@ function deliveryResult(record = {}) {
   const delivery = record.delivery || {};
   const firstResult = asArray(delivery.results)[0] || {};
   const response = delivery.response || firstResult.response || {};
+  const webPush = response.webPush || response.web_push || response.push || firstResult.webPush || firstResult.web_push || firstResult.push || delivery.webPush || delivery.web_push || delivery.push || {};
   return {
     status: Number(delivery.status || firstResult.status || record.last_status || 0) || 0,
     inboxItemId: cleanString(firstResult.inboxItemId || response.inboxItemId, 120),
     clickUrlPresent: Boolean(cleanString(firstResult.clickUrl || response.clickUrl, 240)),
+    webPushEnabled: webPush.enabled === true,
+    webPushAttempted: Number(webPush.attempted || 0) || 0,
+    webPushSent: Number(webPush.sent || 0) || 0,
+    webPushFailed: Number(webPush.failed || 0) || 0,
+    webPushSkipped: webPush.skipped === true,
+    webPushReason: cleanString(webPush.reason || webPush.error, 160),
     error: cleanString(delivery.error || firstResult.error || record.last_error, 160)
   };
 }
@@ -91,8 +98,29 @@ function publicReceipt(record = {}) {
     deliveryStatus: cleanString(record.status, 80),
     homeAiStatus: delivery.status,
     inboxItemId: delivery.inboxItemId,
-    clickUrlPresent: delivery.clickUrlPresent
+    actionInboxReceiptPresent: Boolean(delivery.inboxItemId),
+    clickUrlPresent: delivery.clickUrlPresent,
+    webPushReceiptPresent: delivery.webPushSent > 0,
+    webPushEnabled: delivery.webPushEnabled,
+    webPushAttempted: delivery.webPushAttempted,
+    webPushSent: delivery.webPushSent,
+    webPushFailed: delivery.webPushFailed,
+    webPushSkipped: delivery.webPushSkipped,
+    webPushReason: delivery.webPushReason
   };
+}
+
+function missingRequiredForReceipt(receipt = null) {
+  if (!receipt) {
+    return [
+      "delivered_platform_action_inbox_receipt",
+      "delivered_platform_web_push_receipt"
+    ];
+  }
+  const missing = [];
+  if (!receipt.actionInboxReceiptPresent) missing.push("delivered_platform_action_inbox_receipt");
+  if (!receipt.webPushReceiptPresent) missing.push("delivered_platform_web_push_receipt");
+  return missing;
 }
 
 function createLearningAutomationPlatformActionEvidenceService(options = {}) {
@@ -130,7 +158,8 @@ function createLearningAutomationPlatformActionEvidenceService(options = {}) {
       .sort((left, right) => cleanString(right.deliveredAt).localeCompare(cleanString(left.deliveredAt)))
       .slice(0, scope.limit);
     const latestReceipt = receipts[0] || null;
-    const pass = Boolean(latestReceipt && latestReceipt.inboxItemId);
+    const missingRequired = missingRequiredForReceipt(latestReceipt);
+    const pass = missingRequired.length === 0;
     return {
       ok: pass,
       source: "growth-learning-automation-platform-action-evidence-service",
@@ -149,12 +178,14 @@ function createLearningAutomationPlatformActionEvidenceService(options = {}) {
       count: receipts.length,
       latestReceipt,
       receipts,
-      missingRequired: pass ? [] : ["delivered_platform_action_inbox_receipt"],
+      missingRequired,
       platformBoundary: {
         summaryOnly: true,
         homeAiOwnsActionInbox: true,
         homeAiOwnsWebPush: true,
-        growthEvidenceSource: "growth_event_outbox_delivered_receipt"
+        growthEvidenceSource: "growth_event_outbox_delivered_receipt",
+        growthReadsOnlyBoundedReceiptSummary: true,
+        growthDoesNotReadPushSubscriptions: true
       },
       error: pass ? "" : "platform_action_evidence_missing"
     };

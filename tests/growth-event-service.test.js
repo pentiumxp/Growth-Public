@@ -121,7 +121,18 @@ test("delivers queued Growth events to the Home AI plugin notification endpoint"
       return Promise.resolve({
         ok: true,
         status: 202,
-        json: () => Promise.resolve({ ok: true, inboxItem: { id: "inbox_1" }, clickUrl: "/?view=inbox" })
+        json: () => Promise.resolve({
+          ok: true,
+          inboxItem: { id: "inbox_1" },
+          clickUrl: "/?view=inbox",
+          push: {
+            enabled: true,
+            attempted: 1,
+            sent: 1,
+            failed: 0,
+            endpoint: "not persisted"
+          }
+        })
       });
     }
   });
@@ -138,6 +149,15 @@ test("delivers queued Growth events to the Home AI plugin notification endpoint"
   assert.equal(result.ok, true);
   assert.equal(records[0].status, "delivered");
   assert.equal(records[0].delivery.response.inboxItemId, "inbox_1");
+  assert.deepEqual(records[0].delivery.response.webPush, {
+    enabled: true,
+    attempted: 1,
+    sent: 1,
+    failed: 0,
+    skipped: false,
+    reason: ""
+  });
+  assert.equal(JSON.stringify(records[0].delivery.response).includes("endpoint"), false);
   assert.match(calls[0].url, /\/api\/hermes-plugins\/growth\/notifications\?workspaceId=weixin_child$/);
   assert.equal(calls[0].options.headers["X-Hermes-Web-Key"], "home-ai-key");
   assert.equal(JSON.parse(calls[0].options.body).sourceId, "event_delivered");

@@ -347,8 +347,10 @@ Future writeful scheduling still requires:
 4. Digest review UI closure.
 5. Active failure policy for the target scope.
 6. Production action handoff UI/visual evidence and real production platform
-   Action Inbox/Web Push receipt evidence from
-   `npm run smoke:platform-action-evidence`.
+   Action Inbox + Web Push dual receipt evidence from
+   `npm run smoke:platform-action-evidence`: the Growth event-outbox delivery
+   receipt must contain both an Action Inbox item id and a bounded Web Push
+   summary with `sent > 0`.
 7. The default-disabled Owner-explicit scheduler execution backend has
    repository/service/route/architecture harness evidence and remains disabled
    until explicit release approval.

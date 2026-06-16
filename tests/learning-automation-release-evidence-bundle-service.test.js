@@ -816,7 +816,10 @@ test("release evidence bundle service collects platform action evidence from rea
         eventId: "event_platform_action",
         actionHandoffId: "lgahand_1",
         inboxItemId: "inbox_1",
-        clickUrlPresent: true
+        actionInboxReceiptPresent: true,
+        clickUrlPresent: true,
+        webPushReceiptPresent: true,
+        webPushSent: 1
       }
     })
   }));
@@ -834,6 +837,7 @@ test("release evidence bundle service collects platform action evidence from rea
   assert.equal(result.bundle.evidence.platformActionEvidence.summary.source, "growth-learning-automation-platform-action-evidence-service");
   assert.equal(result.bundle.evidence.platformActionEvidence.summary.status, "pass");
   assert.equal(result.bundle.evidence.platformActionEvidence.summary.count, 1);
+  assert.equal(result.bundle.evidence.platformActionEvidence.summary.latestReceipt.webPushSent, 1);
   assert.equal(calls.length, 1);
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-platform-action-evidence.js"));
   assert.ok(calls[0].args.includes("--json"));

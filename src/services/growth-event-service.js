@@ -79,6 +79,18 @@ function notificationStatus(event = {}) {
   return "open";
 }
 
+function boundedPushSummary(push = null) {
+  if (!push || typeof push !== "object" || Array.isArray(push)) return null;
+  return {
+    enabled: push.enabled === true,
+    attempted: Number(push.attempted || 0) || 0,
+    sent: Number(push.sent || 0) || 0,
+    failed: Number(push.failed || 0) || 0,
+    skipped: push.skipped === true,
+    reason: cleanString(push.reason || push.error || "", 160)
+  };
+}
+
 function notificationPayloadForEvent(event = {}) {
   const workspaceId = hermesWorkspaceId(event.workspace_id) || "owner";
   const sourceId = eventSourceId(event);
@@ -141,7 +153,8 @@ function createGrowthEventService(options = {}) {
       status: response.status,
       response: {
         inboxItemId: body?.inboxItem?.id || "",
-        clickUrl: body?.clickUrl || ""
+        clickUrl: body?.clickUrl || "",
+        webPush: boundedPushSummary(body?.push)
       }
     };
   }
@@ -206,6 +219,7 @@ function createGrowthEventService(options = {}) {
 
 module.exports = {
   ALLOWED_EVENT_TYPES,
+  boundedPushSummary,
   createGrowthEventService,
   notificationPayloadForEvent,
   normalizeGrowthEvent

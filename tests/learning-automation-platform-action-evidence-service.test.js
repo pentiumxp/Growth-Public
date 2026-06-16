@@ -35,7 +35,8 @@ test("platform action evidence service projects delivered automation notificatio
         status: 202,
         response: {
           inboxItemId: "inbox_old",
-          clickUrl: "/?view=inbox"
+          clickUrl: "/?view=inbox",
+          webPush: { enabled: true, attempted: 1, sent: 1, failed: 0 }
         }
       }
     },
@@ -55,7 +56,8 @@ test("platform action evidence service projects delivered automation notificatio
         status: 202,
         response: {
           inboxItemId: "inbox_latest",
-          clickUrl: "/?view=inbox"
+          clickUrl: "/?view=inbox",
+          webPush: { enabled: true, attempted: 1, sent: 1, failed: 0 }
         }
       }
     },
@@ -72,7 +74,7 @@ test("platform action evidence service projects delivered automation notificatio
       },
       delivery: {
         status: 202,
-        response: { inboxItemId: "inbox_other" }
+        response: { inboxItemId: "inbox_other", webPush: { enabled: true, attempted: 1, sent: 1, failed: 0 } }
       }
     }
   ]);
@@ -92,10 +94,15 @@ test("platform action evidence service projects delivered automation notificatio
   assert.equal(result.count, 2);
   assert.equal(result.latestReceipt.eventId, "event_latest");
   assert.equal(result.latestReceipt.inboxItemId, "inbox_latest");
+  assert.equal(result.latestReceipt.actionInboxReceiptPresent, true);
   assert.equal(result.latestReceipt.clickUrlPresent, true);
+  assert.equal(result.latestReceipt.webPushReceiptPresent, true);
+  assert.equal(result.latestReceipt.webPushAttempted, 1);
+  assert.equal(result.latestReceipt.webPushSent, 1);
   assert.equal(result.latestReceipt.workspaceId, "weixin_fanfan");
   assert.equal(result.platformBoundary.homeAiOwnsActionInbox, true);
   assert.equal(result.platformBoundary.homeAiOwnsWebPush, true);
+  assert.equal(result.platformBoundary.growthDoesNotReadPushSubscriptions, true);
   assert.equal(JSON.stringify(result).includes("/?view=inbox"), false);
 });
 
@@ -111,7 +118,7 @@ test("platform action evidence service filters by action handoff and digest", ()
         action_handoff_id: "lgahand_1",
         digest_id: "lgadig_1"
       },
-      delivery: { status: 202, response: { inboxItemId: "inbox_1" } }
+      delivery: { status: 202, response: { inboxItemId: "inbox_1", webPush: { enabled: true, attempted: 1, sent: 1 } } }
     },
     {
       id: "event_2",
@@ -123,7 +130,7 @@ test("platform action evidence service filters by action handoff and digest", ()
         action_handoff_id: "lgahand_2",
         digest_id: "lgadig_2"
       },
-      delivery: { status: 202, response: { inboxItemId: "inbox_2" } }
+      delivery: { status: 202, response: { inboxItemId: "inbox_2", webPush: { enabled: true, attempted: 1, sent: 1 } } }
     }
   ]);
 
@@ -138,6 +145,50 @@ test("platform action evidence service filters by action handoff and digest", ()
   assert.equal(result.latestReceipt.actionHandoffId, "lgahand_1");
   assert.equal(result.latestReceipt.digestId, "lgadig_1");
   assert.equal(result.latestReceipt.inboxItemId, "inbox_1");
+  assert.equal(result.latestReceipt.webPushReceiptPresent, true);
+});
+
+test("platform action evidence service requires both Action Inbox and Web Push receipts", () => {
+  const inboxOnly = serviceWithRecords([
+    {
+      id: "event_inbox_only",
+      status: "delivered",
+      delivered_at: "2026-06-15T06:10:00.000Z",
+      event: {
+        type: "growth.automation.action_required",
+        workspace_id: "growth:weixin_fanfan"
+      },
+      delivery: {
+        status: 202,
+        response: { inboxItemId: "inbox_only", clickUrl: "/?view=inbox" }
+      }
+    }
+  ]).evaluate({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(inboxOnly.ok, false);
+  assert.equal(inboxOnly.status, "missing");
+  assert.deepEqual(inboxOnly.missingRequired, ["delivered_platform_web_push_receipt"]);
+  assert.equal(inboxOnly.latestReceipt.actionInboxReceiptPresent, true);
+  assert.equal(inboxOnly.latestReceipt.webPushReceiptPresent, false);
+
+  const webPushOnly = serviceWithRecords([
+    {
+      id: "event_push_only",
+      status: "delivered",
+      delivered_at: "2026-06-15T06:20:00.000Z",
+      event: {
+        type: "growth.automation.action_required",
+        workspace_id: "growth:weixin_fanfan"
+      },
+      delivery: {
+        status: 202,
+        response: { webPush: { enabled: true, attempted: 1, sent: 1 } }
+      }
+    }
+  ]).evaluate({ workspaceId: "weixin_fanfan" });
+
+  assert.equal(webPushOnly.ok, false);
+  assert.deepEqual(webPushOnly.missingRequired, ["delivered_platform_action_inbox_receipt"]);
 });
 
 test("platform action evidence service fails closed when no delivered platform receipt exists", () => {
@@ -166,7 +217,10 @@ test("platform action evidence service fails closed when no delivered platform r
   assert.equal(result.ok, false);
   assert.equal(result.status, "missing");
   assert.equal(result.readyForReleaseEvidence, false);
-  assert.deepEqual(result.missingRequired, ["delivered_platform_action_inbox_receipt"]);
+  assert.deepEqual(result.missingRequired, [
+    "delivered_platform_action_inbox_receipt",
+    "delivered_platform_web_push_receipt"
+  ]);
   assert.equal(result.error, "platform_action_evidence_missing");
 });
 

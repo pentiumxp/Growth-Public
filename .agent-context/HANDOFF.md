@@ -9,6 +9,61 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T00:26+08:00 - Platform Action Evidence Dual Receipt Gate
+
+- Status: implemented locally and fully validated. Commit and push are still
+  pending in this slice.
+- Change intent:
+  - platform action release evidence now requires a delivered Growth event
+    outbox `growth.automation.action_required` receipt containing both an
+    Action Inbox item id and a bounded Web Push receipt with `sent > 0`;
+  - Growth still reads only its own event-outbox delivery response metadata and
+    must not inspect Home AI Action Inbox tables, Web Push subscriptions,
+    endpoints, raw URLs, raw push payloads, Gateway, learner state, scheduling,
+    publishing, generation, or evaluation internals.
+- Code changes:
+  - `growth-event-service` stores a bounded `webPush` summary from the Home AI
+    notification response: enabled/attempted/sent/failed/skipped/reason only;
+  - `learning-automation-platform-action-evidence-service` now exposes
+    `actionInboxReceiptPresent`, `webPushReceiptPresent`, bounded Web Push
+    counts/reason, and missing-required keys for both receipt halves;
+  - `learning-automation-release-evidence-bundle-service` preserves the bounded
+    platform action `latestReceipt` summary inside release evidence bundles.
+- Harness changes:
+  - focused tests cover event outbox bounded Web Push persistence, dual
+    receipt pass/fail policy, smoke-script output, release-bundle preservation,
+    and architecture guards against reading push subscriptions or platform
+    internals.
+- Validation already run before this handoff update:
+  - `node --test tests/growth-event-service.test.js
+    tests/learning-automation-platform-action-evidence-service.test.js`
+    passed `11/11`;
+  - `node --test tests/growth-event-service.test.js
+    tests/learning-automation-platform-action-evidence-service.test.js
+    tests/growth-platform-action-evidence-smoke-script.test.js` passed
+    `15/15`;
+  - `node --test tests/learning-automation-release-readiness-service.test.js
+    tests/growth-release-readiness-smoke-script.test.js` passed `25/25`;
+  - `node --test tests/growth-architecture-boundary.test.js` passed `33/33`;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js` passed `40/40`.
+- Additional validation:
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed `1/1`;
+  - `npm run check` passed with `runtimeCount=200` and `checkedCount=200`;
+  - full Growth `npm test` passed `845/845`;
+  - `git diff --check` passed in Growth and Home AI app workspaces;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported 355 files, 4,923 nodes, 20,118 edges, index up
+    to date, with the existing optional earlier-engine reindex notice;
+  - Home AI AI Ops required checks passed:
+    `node tests/architecture-code-test-harness-map.test.js`, per-file
+    `node --check` checks for the changed Growth service/test files, and app
+    `git diff --check`.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-9fc805f3-82c2-4a7f-b231-7b346257a867`.
+
 ## 2026-06-16T23:52+08:00 - Automation Digest Owner Create UI Controls
 
 - Status: implemented, locally validated, and committed/pushed as

@@ -814,7 +814,7 @@ The service aggregates summary-only readiness evidence:
   `npm run smoke:scheduler-dry-run`;
 - release-readiness internal no-write scheduler dry-run safety evidence from
   `learning-automation-scheduler-service.dryRun`;
-- Home AI platform Action Inbox/Web Push evidence;
+- Home AI platform Action Inbox + Web Push dual receipt evidence;
 - central embedded-plugin visual evidence;
 - release workbench action-template readback evidence from
   `npm run smoke:release-workbench` supplied through explicit evidence JSON,
@@ -899,7 +899,9 @@ Snapshot persistence contract:
 - platform action release evidence can be generated through
   `npm run smoke:platform-action-evidence`, which reads only delivered
   `growth.automation.action_required` receipts from Growth's event outbox and
-  emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`;
+  emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`.
+  Passing evidence requires both an Action Inbox item id and bounded Web Push
+  `sent > 0` summary from the same delivered Home AI notification receipt;
   Home AI continues to own Action Inbox and Web Push internals;
 - UI-gate release evidence can be validated through
   `npm run smoke:ui-evidence -- --evidence-key <canonical-key>
