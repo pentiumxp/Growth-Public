@@ -9,6 +9,86 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T19:31+08:00 - Legacy Release Evidence Flag Hardening
+
+- Status: implemented, tested, pushed, deployed, and production-smoked. This
+  H2 backend/docs/harness slice closes the remaining legacy release-readiness
+  boolean evidence flag path that could previously fabricate passing
+  `{ok:true}` smoke evidence.
+- Change intent:
+  - `scripts/smoke-growth-release-readiness.js` now maps service-owned
+    smoke/readback boolean flags into blocked deprecated evidence markers,
+    including stage checkpoint, proposal, scheduler, planner, target
+    provisioning, daily-loop, learning-loop state, cycle-history, Owner audit,
+    profile-feedback, recommendation lifecycle, learner-cycle, scheduler
+    dry-run, release-bundle audit, platform action, central visual, release
+    workbench, and Owner review flags;
+  - valid release evidence for those gates must come from explicit summary
+    evidence JSON, a `growth.learningAutomationReleaseEvidenceBundle.v1`
+    artifact, or a persisted pass release-evidence record projection;
+  - `ownerReviewEvidenceCheck()` now treats provided but non-passing Owner
+    review evidence as `blocked` with bounded invalid reason/readback instead
+    of flattening it into `missing`;
+  - release approval shortcut flags remain unchanged because they are explicit
+    Owner approval inputs, not service-owned smoke artifacts.
+- Boundary:
+  - release-readiness remains advisory evidence only and always keeps
+    `writefulSchedulingAllowed=false`;
+  - the readiness CLI still delegates to the normal service graph and does not
+    run smoke tasks, visual tooling, Gateway, publication, generation,
+    evaluation, scheduler execution, notification delivery, stage activation,
+    learner-state mutation, runtime config mutation, or deployment;
+  - deprecated flags remain visible remediation inputs, not hard CLI failures,
+    so older command flows get a bounded blocked result and required action.
+- Validation:
+  - focused release-readiness service/script/architecture tests passed with
+    `56/56`;
+  - `node scripts/check-growth-docs-locality.js` passed;
+  - `node --test tests/growth-docs-locality.test.js` passed;
+  - `npm run check` passed;
+  - Home AI `node tests/architecture-code-test-harness-map.test.js` passed;
+  - `git diff --check` passed;
+  - full Growth `npm test` passed with `836/836`;
+  - CodeGraph status after sync: 355 files, 4,816 nodes, 19,201 edges, index
+    up to date.
+- Commit/deploy:
+  - commit: `58c4cfc473da` (`Harden release-readiness legacy evidence flags`);
+  - pushed to `origin/main` and `public/main`;
+  - deployed through the central Home AI Mac plugin deploy path;
+  - backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260616T112928Z-plugin-growth-manual`;
+  - restarted launchd label: `com.hermesmobile.plugin.growth`;
+  - manifest health check passed on attempt 2;
+  - codex shared-auth repair passed;
+  - codex-auth profile audit remained non-blocking with
+    `codexIssueCount=0`.
+- Production smoke:
+  - ran deployed `scripts/smoke-growth-release-readiness.js` as `hermes-host`
+    under `/Users/hermes-host/HermesMobile/plugins/growth`;
+  - used an initialized temporary SQLite DB under `/tmp`, removed after the
+    run, with no production Growth SQLite writes;
+  - deprecated `--production-planner-readiness-evidence` and
+    `--owner-review-evidence-smoke` returned `ok=true`, `status=blocked`,
+    blocked check statuses, and bounded invalid reasons:
+    `validated_production_planner_readiness_evidence_required` and
+    `validated_owner_review_evidence_required`.
+- AI Ops evidence:
+  - implementation/test evidence:
+    `evidence-96731021-ba17-4bf1-b125-7dc31fc030ab`;
+  - deploy/production-smoke evidence:
+    `evidence-24b3b806-1c12-49c5-864d-46ba4291da64`.
+- Operator note:
+  - after this deploy, Owner asked to deploy future Growth work only after the
+    broader task slice is fully completed, rather than deploying intermediate
+    slices repeatedly.
+- Next:
+  - continue the AI learning closed-loop/product-readiness work without another
+    deployment until the next broader slice is complete and validated;
+  - remaining real release readiness still needs central Home AI visual/UI
+    artifacts, production completed-cycle/profile feedback evidence, platform
+    Action Inbox/Web Push evidence, controlled daily-loop evidence, and
+    explicit release approvals.
+
 ## 2026-06-16T18:56+08:00 - Release Workbench Evidence Flag Hardening
 
 - Status: implemented, tested, pushed, deployed, and production-smoked. This
