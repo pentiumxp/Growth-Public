@@ -11,9 +11,10 @@
 
 ## 2026-06-16T23:18+08:00 - Automation Scheduler Run Owner UI Controls
 
-- Status: implemented and locally validated in working tree; commit and push
-  are still in progress. Not deployed per Owner instruction to deploy only
-  after the broader slice is complete.
+- Status: implemented, locally validated, and committed as
+  `16c658a Add scheduler run Owner UI controls`; push is still in progress.
+  Not deployed per Owner instruction to deploy only after the broader slice is
+  complete.
 - Change intent:
   - the embedded Owner generation UI now lists persisted automation scheduler
     run/tick rows for the selected Growth target;
