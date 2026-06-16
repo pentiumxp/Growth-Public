@@ -9,6 +9,9 @@ const {
 const {
   UI_EVIDENCE_COLLECTION_TASKS
 } = require("../src/services/learning-automation-ui-evidence-task-registry");
+const {
+  createLearningAutomationReleaseEvidenceArtifactManifestService
+} = require("../src/services/learning-automation-release-evidence-artifact-manifest-service");
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -110,9 +113,32 @@ function uiEvidenceFileInputFromArgs(args) {
   return output;
 }
 
+function releaseEvidenceArtifactManifestFileFromArgs(args) {
+  return firstArgValue(args, [
+    "--release-evidence-artifact-manifest-file",
+    "--releaseEvidenceArtifactManifestFile",
+    "--evidence-artifact-manifest-file",
+    "--evidenceArtifactManifestFile",
+    "--ui-evidence-manifest-file",
+    "--uiEvidenceManifestFile"
+  ], "");
+}
+
+function applyArtifactManifestInput(input) {
+  const service = createLearningAutomationReleaseEvidenceArtifactManifestService({
+    readFile: fs.readFileSync
+  });
+  const result = service.applyToInput(input);
+  if (result.ok) return result.input;
+  return Object.assign({}, input, {
+    releaseEvidenceArtifactManifestError: result.error,
+    invalidArtifactManifestEntries: result.invalidEntries || []
+  });
+}
+
 function inputFromArgs(args) {
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], "");
-  return Object.assign({
+  const input = Object.assign({
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -157,6 +183,11 @@ function inputFromArgs(args) {
     schedulerRunUiEvidence: hasFlag(args, "--scheduler-run-ui-evidence") || hasFlag(args, "--schedulerRunUiEvidence"),
     schedulerWorkerTargetUiEvidence: hasFlag(args, "--scheduler-worker-target-ui-evidence") || hasFlag(args, "--schedulerWorkerTargetUiEvidence")
   }, uiEvidenceFileInputFromArgs(args));
+  const manifestFile = releaseEvidenceArtifactManifestFileFromArgs(args);
+  if (manifestFile) {
+    input.releaseEvidenceArtifactManifestFile = manifestFile;
+  }
+  return applyArtifactManifestInput(input);
 }
 
 function outputFileFromArgs(args) {
@@ -180,6 +211,15 @@ async function main() {
   const failOnBlocked = hasFlag(args, "--fail-on-blocked") || hasFlag(args, "--failOnBlocked");
   const repoRoot = path.join(__dirname, "..");
   const input = inputFromArgs(args);
+  if (input.releaseEvidenceArtifactManifestError) {
+    process.stdout.write(formatResult({
+      ok: false,
+      error: input.releaseEvidenceArtifactManifestError,
+      invalidArtifactManifestEntries: input.invalidArtifactManifestEntries || []
+    }, pretty));
+    process.exitCode = 2;
+    return;
+  }
   const service = createLearningAutomationReleaseEvidenceBundleService({
     repoRoot,
     runCommand(command, commandArgs, options) {
@@ -236,6 +276,7 @@ module.exports = {
   outputFileFromArgs,
   activationGates,
   requiredApprovalKeys,
+  releaseEvidenceArtifactManifestFileFromArgs,
   taskIds,
   targetNodeIds
 };

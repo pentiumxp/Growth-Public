@@ -33,7 +33,15 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   actions may forward only transient `*_ui_evidence_file` summary-artifact
   inputs to the bundle/collection services; public artifacts expose only
   bounded validator summaries and `...FilePresent` booleans, never raw local
-  artifact paths.
+  artifact paths. Release evidence bundle, package, collection, and workbench
+  action CLIs can now read
+  `--release-evidence-artifact-manifest-file <manifest.json>` to map Home
+  AI-produced central visual/UI summary artifact files into those existing
+  transient inputs by `taskId`, `evidenceKey`, `checkKey`, or `uiGate`. The
+  manifest path is stripped immediately after parsing, unknown artifact keys
+  fail closed, mapped task ids are carried as `artifactTaskIds`, and the
+  existing central visual/UI validators and release-evidence service remain
+  the only acceptance/persistence path.
 - Current implementation owns plugin SQLite read projections, migrated audio
   playback, historical audio BLOB backfill tooling, workspace-bound read-only
   MCP tools, workspace-bearer submission/reflection evidence write endpoints,

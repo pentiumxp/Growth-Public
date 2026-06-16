@@ -61,7 +61,10 @@ function requiredTaskIdsFromArgs(args) {
 function inputFromArgs(args) {
   const bundleInput = bundleInputFromArgs(args);
   return Object.assign({}, bundleInput, {
-    requiredTaskIds: requiredTaskIdsFromArgs(args),
+    requiredTaskIds: uniqueStrings([
+      ...requiredTaskIdsFromArgs(args),
+      ...(bundleInput.artifactTaskIds || [])
+    ]),
     writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun"),
     writePackageRecord: hasFlag(args, "--write-package-record") || hasFlag(args, "--writePackageRecord") || hasFlag(args, "--record-package"),
     allowWritePackage: hasFlag(args, "--allow-write") || hasFlag(args, "--allowWrite"),
@@ -92,6 +95,15 @@ async function main() {
   const pretty = hasFlag(args, "--json") || hasFlag(args, "--pretty");
   const failOnBlocked = hasFlag(args, "--fail-on-blocked") || hasFlag(args, "--failOnBlocked");
   const input = inputFromArgs(args);
+  if (input.releaseEvidenceArtifactManifestError) {
+    process.stdout.write(formatResult({
+      ok: false,
+      error: input.releaseEvidenceArtifactManifestError,
+      invalidArtifactManifestEntries: input.invalidArtifactManifestEntries || []
+    }, pretty));
+    process.exitCode = 2;
+    return;
+  }
   const services = createServices(readEnv(process.env));
   const service = services.learningAutomationReleasePackageBuildService || services.learningAutomationReleasePackageService;
   const result = service.buildPackage(input);

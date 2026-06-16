@@ -18,6 +18,7 @@ const {
   activationGates,
   inputFromArgs,
   outputFileFromArgs,
+  releaseEvidenceArtifactManifestFileFromArgs,
   requiredApprovalKeys,
   taskIds,
   targetNodeIds
@@ -782,6 +783,82 @@ test("release evidence bundle script writes explicit release package review UI e
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);
+  });
+});
+
+test("release evidence bundle script maps release evidence artifact manifest into existing evidence tasks", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const centralVisualPath = path.join(dir, "central-visual.json");
+    const schedulerRunUiPath = path.join(dir, "scheduler-run-ui.json");
+    const manifestPath = path.join(dir, "release-artifacts-manifest.json");
+    const bundlePath = path.join(dir, "release-artifacts-bundle.json");
+    fs.writeFileSync(centralVisualPath, JSON.stringify({
+      ok: true,
+      source: "home-ai-ios-pwa-visual-harness",
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      screenshotPath: "/Users/xuxin/.homeai-qa/artifacts/growth-embedded.png",
+      assertions: [{ name: "visible", status: "pass" }]
+    }), "utf8");
+    fs.writeFileSync(schedulerRunUiPath, JSON.stringify({
+      ok: true,
+      source: "home-ai-ios-pwa-visual-harness",
+      evidenceKey: "schedulerRunUiEvidence",
+      status: "pass",
+      checkedAt: "2026-06-17T08:00:00.000Z",
+      route: "/plugins/growth/release",
+      screen: "scheduler-run",
+      screenshotArtifactName: "growth-scheduler-run.png",
+      domAssertions: [{ name: "run-history", status: "pass" }],
+      coverage: ["run_history", "default_disabled", "partial_failure_state"],
+      assertions: [{ name: "scheduler-run", status: "pass" }]
+    }), "utf8");
+    fs.writeFileSync(manifestPath, JSON.stringify({
+      schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+      privacyClass: "summary_only",
+      centralVisualEvidenceFile: centralVisualPath,
+      artifacts: [{
+        checkKey: "scheduler_run_ui_evidence",
+        file: schedulerRunUiPath
+      }]
+    }), "utf8");
+
+    const args = [
+      "--workspace-id", "smoke_workspace",
+      "--learner-id", "smoke_learner",
+      "--program-id", "smoke_program",
+      "--domain", "science",
+      "--subject", "science",
+      "--task", "central_visual",
+      "--release-evidence-artifact-manifest-file", manifestPath,
+      "--output-file", bundlePath,
+      "--json"
+    ];
+    assert.equal(releaseEvidenceArtifactManifestFileFromArgs(args), manifestPath);
+    const input = inputFromArgs(args);
+    assert.equal(input.centralVisualEvidenceFile, centralVisualPath);
+    assert.equal(input.schedulerRunUiEvidenceFile, schedulerRunUiPath);
+    assert.deepEqual(input.artifactTaskIds, ["central_visual", "scheduler_run_ui"]);
+    assert.equal(JSON.stringify(input).includes(manifestPath), false);
+
+    const result = runScript(args, {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.centralVisualEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.schedulerRunUiEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.schedulerRunUiEvidence.checkKey, "scheduler_run_ui_evidence");
+    assert.equal(fileBundle.scope.centralVisualEvidenceFilePresent, true);
+    assert.equal(fileBundle.scope.schedulerRunUiEvidenceFilePresent, true);
+    assert.equal(fileBundle.scope.centralVisualEvidenceFile, undefined);
+    assert.equal(fileBundle.scope.schedulerRunUiEvidenceFile, undefined);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(JSON.stringify(fileBundle).includes(manifestPath), false);
+    assert.equal(JSON.stringify(fileBundle).includes(schedulerRunUiPath), false);
+    assert.equal(JSON.stringify(fileBundle).includes("/Users/"), false);
   });
 });
 

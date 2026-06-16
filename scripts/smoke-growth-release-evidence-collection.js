@@ -63,6 +63,15 @@ async function main() {
   const failOnBlocked = hasFlag(args, "--fail-on-blocked") || hasFlag(args, "--failOnBlocked");
   const services = createServices(readEnv(process.env));
   const input = inputFromArgs(args);
+  if (input.releaseEvidenceArtifactManifestError) {
+    process.stdout.write(formatResult({
+      ok: false,
+      error: input.releaseEvidenceArtifactManifestError,
+      invalidArtifactManifestEntries: input.invalidArtifactManifestEntries || []
+    }, pretty));
+    process.exitCode = 2;
+    return;
+  }
   const result = services.learningAutomationReleaseEvidenceCollectionService.collect(input);
   const outputFile = outputFileFromArgs(args);
   if (outputFile && result.collection) {

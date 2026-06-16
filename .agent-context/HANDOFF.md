@@ -9,6 +9,48 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T08:35+08:00 - Release Evidence Artifact Manifest Input
+
+- Status: implemented and locally validated; not deployed in this slice.
+- Change intent:
+  - reduce the final release-evidence collection manual step where central
+    visual and UI summary artifact files had to be supplied one CLI flag at a
+    time;
+  - keep Growth as a summary-only consumer of Home AI visual/UI artifacts and
+    keep the existing central visual/UI validators plus release-evidence
+    service as the only acceptance path.
+- Scope:
+  - added `learning-automation-release-evidence-artifact-manifest-service`;
+  - `npm run smoke:release-evidence-bundle`,
+    `npm run smoke:release-package`,
+    `npm run smoke:release-evidence-collection`, and
+    `npm run smoke:release-workbench-action` now accept
+    `--release-evidence-artifact-manifest-file <manifest.json>`;
+  - the manifest maps `centralVisualEvidenceFile` plus registered UI artifact
+    entries keyed by `taskId`, `evidenceKey`, `checkKey`, or `uiGate` into the
+    existing transient evidence-file inputs;
+  - manifest paths are stripped immediately after parsing, unknown artifact
+    keys fail closed, and mapped task ids are appended as `artifactTaskIds`
+    without replacing the default backend evidence tasks.
+- Boundary notes:
+  - no Home AI visual harness, Appium, live browser, or central visual lane ran
+    in this plugin workspace;
+  - no raw manifest path or raw artifact path is emitted in public bundle,
+    collection, or action output;
+  - no Gateway/model-vendor calls;
+  - no card publication, evaluation, scheduler execution, notification,
+    runtime config mutation, deployment, or learner-state mutation.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-artifact-manifest-service.js && node --check scripts/build-growth-release-evidence-bundle.js && node --check scripts/build-growth-release-package.js && node --check scripts/smoke-growth-release-evidence-collection.js && node --check scripts/smoke-growth-release-workbench-action.js`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-evidence-artifact-manifest-service.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-evidence-collection-smoke-script.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/learning-automation-release-workbench-action-service.test.js`
+    passed `69/69`.
+- Remaining gates:
+  - real Home AI visual/UI summary artifacts still need to be collected through
+    the central Home AI visual toolchain before release readiness can be final;
+  - production deployment remains separate and should happen only after the
+    user explicitly asks for deployment.
+
 ## 2026-06-17T06:35+08:00 - Registry-Driven UI Evidence Collection Tasks
 
 - Status: implemented and locally validated; not deployed in this slice.

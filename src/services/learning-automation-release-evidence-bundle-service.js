@@ -301,7 +301,13 @@ function normalizeTaskIds(input = {}) {
   const explicit = uniqueStrings(input.tasks || input.taskIds || input.task_ids || [])
     .map(normalizeTaskId)
     .filter(Boolean);
-  return explicit.length ? explicit : Array.from(DEFAULT_TASK_IDS);
+  const artifactTaskIds = uniqueStrings(input.artifactTaskIds || input.artifact_task_ids || [])
+    .map(normalizeTaskId)
+    .filter(Boolean);
+  return uniqueStrings([
+    ...(explicit.length ? explicit : Array.from(DEFAULT_TASK_IDS)),
+    ...artifactTaskIds
+  ]);
 }
 
 function scopeArgs(scope = {}) {

@@ -76,6 +76,51 @@ test("release evidence collection script parses scope, tasks, and write gate", (
   assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
 });
 
+test("release evidence collection script maps artifact manifest into collection task inputs", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-evidence-collection-manifest-"));
+  try {
+    const manifestPath = path.join(dir, "release-artifacts-manifest.json");
+    fs.writeFileSync(manifestPath, JSON.stringify({
+      schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+      privacyClass: "summary_only",
+      centralVisualEvidenceFile: "/tmp/central-visual.json",
+      artifacts: [{
+        evidenceKey: "releasePackageReviewUiEvidence",
+        file: "/tmp/release-package-review-ui.json"
+      }, {
+        uiGate: "scheduler_run",
+        file: "/tmp/scheduler-run-ui.json"
+      }]
+    }), "utf8");
+
+    const input = inputFromArgs([
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--task", "planner_readiness",
+      "--required-task", "planner_readiness",
+      "--release-evidence-artifact-manifest-file", manifestPath
+    ]);
+
+    assert.equal(input.centralVisualEvidenceFile, "/tmp/central-visual.json");
+    assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
+    assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
+    assert.deepEqual(input.artifactTaskIds, [
+      "central_visual",
+      "release_package_review_ui",
+      "scheduler_run_ui"
+    ]);
+    assert.deepEqual(input.requiredTaskIds, [
+      "planner_readiness",
+      "central_visual",
+      "release_package_review_ui",
+      "scheduler_run_ui"
+    ]);
+    assert.equal(JSON.stringify(input).includes(manifestPath), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("release evidence collection script fails closed for write without allow-write", () => {
   const result = runScript([
     "--workspace-id", "smoke_workspace",

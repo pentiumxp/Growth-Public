@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 "use strict";
 
+const fs = require("node:fs");
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
 const {
   UI_EVIDENCE_COLLECTION_TASKS
 } = require("../src/services/learning-automation-ui-evidence-task-registry");
+const {
+  createLearningAutomationReleaseEvidenceArtifactManifestService
+} = require("../src/services/learning-automation-release-evidence-artifact-manifest-service");
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -72,12 +76,35 @@ function uiEvidenceFileInputFromArgs(args) {
   return output;
 }
 
+function releaseEvidenceArtifactManifestFileFromArgs(args) {
+  return firstArgValue(args, [
+    "--release-evidence-artifact-manifest-file",
+    "--releaseEvidenceArtifactManifestFile",
+    "--evidence-artifact-manifest-file",
+    "--evidenceArtifactManifestFile",
+    "--ui-evidence-manifest-file",
+    "--uiEvidenceManifestFile"
+  ], "");
+}
+
+function applyArtifactManifestInput(input) {
+  const service = createLearningAutomationReleaseEvidenceArtifactManifestService({
+    readFile: fs.readFileSync
+  });
+  const result = service.applyToInput(input);
+  if (result.ok) return result.input;
+  return Object.assign({}, input, {
+    releaseEvidenceArtifactManifestError: result.error,
+    invalidArtifactManifestEntries: result.invalidEntries || []
+  });
+}
+
 function inputFromArgs(args) {
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], "");
   const activationGate = firstArgValue(args, ["--activation-gate", "--activationGate"], "");
   const activationGates = splitCsv(firstArgValue(args, ["--activation-gates", "--activationGates"], ""))
     .concat(activationGate ? [activationGate] : []);
-  return Object.assign({
+  const input = Object.assign({
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -121,6 +148,16 @@ function inputFromArgs(args) {
     recordedAt: firstArgValue(args, ["--recorded-at", "--recordedAt", "--approved-at", "--approvedAt"], ""),
     createdAt: firstArgValue(args, ["--created-at", "--createdAt"], "")
   }, uiEvidenceFileInputFromArgs(args));
+  const manifestFile = releaseEvidenceArtifactManifestFileFromArgs(args);
+  if (manifestFile) {
+    input.releaseEvidenceArtifactManifestFile = manifestFile;
+  }
+  const applied = applyArtifactManifestInput(input);
+  if (applied.artifactTaskIds?.length) {
+    applied.tasks = uniqueStrings([...(applied.tasks || []), ...applied.artifactTaskIds]);
+    applied.requiredTaskIds = uniqueStrings([...(applied.requiredTaskIds || []), ...applied.artifactTaskIds]);
+  }
+  return applied;
 }
 
 function validateInput(input = {}, allowWrite = false) {
@@ -153,6 +190,15 @@ async function main() {
     process.exitCode = 2;
     return;
   }
+  if (input.releaseEvidenceArtifactManifestError) {
+    process.stdout.write(formatResult({
+      ok: false,
+      error: input.releaseEvidenceArtifactManifestError,
+      invalidArtifactManifestEntries: input.invalidArtifactManifestEntries || []
+    }, pretty));
+    process.exitCode = 2;
+    return;
+  }
   const validation = validateInput(input, hasFlag(args, "--allow-write"));
   if (!validation.ok) {
     process.stdout.write(formatResult(validation, pretty));
@@ -178,6 +224,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  releaseEvidenceArtifactManifestFileFromArgs,
   runOperation,
   validateInput
 };

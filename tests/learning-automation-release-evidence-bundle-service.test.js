@@ -46,6 +46,20 @@ test("release evidence bundle service normalizes scope and task args", () => {
     "planner_readiness",
     "scheduler_dry_run"
   ]);
+  assert.deepEqual(normalizeTaskIds({
+    tasks: ["planner-readiness"],
+    artifactTaskIds: ["scheduler-run-ui", "release_package_review_ui"]
+  }), [
+    "planner_readiness",
+    "scheduler_run_ui",
+    "release_package_review_ui"
+  ]);
+  assert.equal(normalizeTaskIds({
+    artifactTaskIds: ["scheduler_run_ui"]
+  }).includes("planner_readiness"), true);
+  assert.equal(normalizeTaskIds({
+    artifactTaskIds: ["scheduler_run_ui"]
+  }).includes("scheduler_run_ui"), true);
   assert.deepEqual(publicScope({
     workspace_id: "weixin_fanfan",
     learner_id: "fanfan",

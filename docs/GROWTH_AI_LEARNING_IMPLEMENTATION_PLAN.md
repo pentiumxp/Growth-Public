@@ -810,6 +810,17 @@ Implemented backend shape:
   only bounded validator fields, records file presence without the raw path,
   and does not run the Home AI visual harness or persist release evidence by
   itself.
+  The bundle, release package, release evidence collection, and release
+  workbench action CLIs also accept
+  `--release-evidence-artifact-manifest-file <manifest.json>`. That manifest
+  is read only by Growth and may map `centralVisualEvidenceFile` plus UI
+  artifacts keyed by registered `taskId`, `evidenceKey`, `checkKey`, or
+  `uiGate` into the existing transient file inputs. The manifest path is
+  stripped immediately after parsing, mapped UI tasks are added as
+  `artifactTaskIds`, unknown artifact keys fail closed, and no manifest path or
+  raw artifact path is exposed in public bundle/collection/action output. This
+  is an operator convenience over Home AI-produced summary artifacts; it does
+  not start visual tooling, bypass UI validation, or persist release evidence.
   The explicit non-default `release_workbench` task maps
   `npm run smoke:release-workbench` output into
   `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final
@@ -885,7 +896,11 @@ Implemented backend shape:
   supplied with `--release-package-review-ui-evidence-file`; collection treats
   that file path as transient input, strips it from public artifacts, and
   persists a pass record only after the release-evidence service revalidates
-  the compact UI summary. The Owner-only
+  the compact UI summary. For multi-artifact release collection, the same
+  transient mapping can come from
+  `--release-evidence-artifact-manifest-file <manifest.json>`; manifest-derived
+  UI tasks are added to the bundle task set and required collection tasks
+  without replacing the normal backend evidence tasks. The Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` route
   exposes the same boundary from the plugin API. This facade is useful when
   Owner/release tooling needs a structured collection pass without building or

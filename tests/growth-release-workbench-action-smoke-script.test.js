@@ -95,6 +95,41 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.requestedBy, "owner");
 });
 
+test("release workbench action smoke script maps artifact manifest into evidence collection input", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-workbench-action-manifest-"));
+  try {
+    const manifestPath = path.join(dir, "release-artifacts-manifest.json");
+    fs.writeFileSync(manifestPath, JSON.stringify({
+      schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+      privacyClass: "summary_only",
+      artifacts: [{
+        taskId: "owner_daily_ui",
+        file: "/tmp/owner-daily-ui.json"
+      }, {
+        checkKey: "scheduler_run_ui_evidence",
+        file: "/tmp/scheduler-run-ui.json"
+      }]
+    }), "utf8");
+
+    const input = inputFromArgs([
+      "--workspace-id", "fanfan",
+      "--endpoint-key", "release_evidence_collection",
+      "--task", "planner_readiness",
+      "--required-task", "planner_readiness",
+      "--release-evidence-artifact-manifest-file", manifestPath
+    ]);
+
+    assert.equal(input.ownerDailyUiEvidenceFile, "/tmp/owner-daily-ui.json");
+    assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
+    assert.deepEqual(input.artifactTaskIds, ["owner_daily_ui", "scheduler_run_ui"]);
+    assert.deepEqual(input.tasks, ["planner_readiness", "owner_daily_ui", "scheduler_run_ui"]);
+    assert.deepEqual(input.requiredTaskIds, ["planner_readiness", "owner_daily_ui", "scheduler_run_ui"]);
+    assert.equal(JSON.stringify(input).includes(manifestPath), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("release workbench action smoke script requires explicit write flag", () => {
   assert.deepEqual(validateInput({ workspaceId: "fanfan", endpointKey: "release_evidence" }, false), {
     ok: false,
