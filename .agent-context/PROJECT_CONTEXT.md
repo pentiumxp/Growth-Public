@@ -54,7 +54,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   operational smoke through `npm run smoke:stage-checkpoint-controls`, which
   delegates only to `learningStageCheckpointControlsService.controls()` through
   the normal service graph and feeds `stageCheckpointControlsEvidence` into
-  release evidence bundles/readiness. The next target architecture is the
+  release evidence bundles/readiness. The embedded Owner generation panel now
+  fetches that controls DTO through `GET /api/v1/growth/stage-assessments/controls`,
+  displays bounded readiness evidence, and enables formal-checkpoint generation
+  only when the `activate_stage_assessment` action is enabled; the actual write
+  still goes through `POST /api/v1/growth/stage-assessments/activate`. The next
+  target architecture is the
   Growth-owned AI learning operating loop documented in
   `docs/GROWTH_LEARNING_OPERATING_LOOP.md`: evidence ledger, Profile V2,
   Gateway-backed planner, post-evaluation profile-delta audit,

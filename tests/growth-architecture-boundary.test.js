@@ -3275,6 +3275,23 @@ test("Growth stage assessment activation stays service-owned", () => {
   assert.doesNotMatch(routes, /stageReadiness/);
   assert.doesNotMatch(routes, /learning_growth_stage_assessment_cycles/);
   assert.doesNotMatch(routes, /generateCard\(Object\.assign/);
+
+  const apiClient = read(path.join("public", "growth-api-client.js"));
+  assert.match(apiClient, /fetchGrowthStageCheckpointControls/);
+  assert.match(apiClient, /stage-assessments", "controls"/);
+
+  const ui = read(path.join("public", "growth-card-generation-ui.js"));
+  assert.match(ui, /data-stage-checkpoint-controls-status/);
+  assert.match(ui, /data-stage-checkpoint-activate-enabled/);
+  assert.match(ui, /activate_stage_assessment/);
+
+  const app = read(path.join("public", "app.js"));
+  assert.match(app, /refreshStageCheckpointControls/);
+  assert.match(app, /fetchGrowthStageCheckpointControls/);
+  assert.match(app, /stage_checkpoint_controls_required/);
+  assert.match(app, /activateAction\.enabled !== true/);
+  assert.doesNotMatch(app, /stageReadiness/);
+  assert.doesNotMatch(app, /learning_growth_stage_assessment_cycles/);
 });
 
 test("Growth stage-assessment smoke CLI stays service-owned and write-gated", () => {

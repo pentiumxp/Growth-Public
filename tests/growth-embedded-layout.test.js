@@ -58,6 +58,8 @@ test("Owner card generation progress and dark mode contrast are covered", () => 
   assert.match(css, /:root\[data-theme="dark"\][\s\S]*\.learning-card-generation-lifecycle-row em/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-lifecycle-head em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-lifecycle-row em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-plan-head em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-plan-row em\s*\{[\s\S]*?background: #245c64;/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-stage-assessment/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-stage-controls/);
+  assert.match(css, /\.learning-card-generation-stage-controls\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-actions button\.primary/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-stage-actions button\.primary/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-provisioning-actions button\.primary/);
@@ -67,7 +69,7 @@ test("Owner card generation progress and dark mode contrast are covered", () => 
   assert.match(css, /@media \(prefers-color-scheme: dark\)[\s\S]*:root\[data-theme="system"\] \.learning-card-generation-progress/);
   assert.match(css, /\.learning-card-generation-loop-grid\s*\{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
   assert.match(css, /@media \(max-width: 720px\)[\s\S]*\.learning-card-generation-provisioning-grid,[\s\S]*\.learning-card-generation-profile-metrics/);
-  assert.match(css, /@media \(max-width: 720px\)[\s\S]*\.learning-card-generation-provisioning-actions,[\s\S]*\.learning-card-generation-cycle-actions/);
+  assert.match(css, /@media \(max-width: 720px\)[\s\S]*\.learning-card-generation-stage-controls,[\s\S]*\.learning-card-generation-cycle-actions/);
   assert.match(css, /@media \(max-width: 720px\)[\s\S]*\.learning-card-generation-profile-columns,[\s\S]*\.learning-card-generation-owner-columns,[\s\S]*\.learning-card-generation-cycle-columns,[\s\S]*\.learning-card-generation-profile-metrics,[\s\S]*\.learning-card-generation-recommendation-grid,[\s\S]*\.learning-card-generation-plan-grid,[\s\S]*\.learning-card-generation-loop-grid,[\s\S]*\.learning-card-generation-owner-grid,[\s\S]*\.learning-card-generation-cycle-grid,[\s\S]*\.learning-card-generation-stage-grid\s*\{[\s\S]*?grid-template-columns: 1fr;/);
   assert.match(css, /\.learning-card-generation-actions button,[\s\S]*?\.learning-card-generation-stage-actions button,[\s\S]*?\.learning-card-generation-correction-controls button,[\s\S]*?\.learning-card-generation-cycle-actions button,[\s\S]*?\.learning-card-generation-open-card\s*\{[\s\S]*?min-height: 44px;/);
   assert.match(css, /\.learning-card-generation-provisioning-actions button,[\s\S]*?\.learning-card-generation-open-card\s*\{[\s\S]*?min-height: 44px;/);

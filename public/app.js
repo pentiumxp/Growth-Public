@@ -54,6 +54,9 @@
         status: "idle",
         eligibility: null,
         result: null,
+        controls: null,
+        controlsStatus: "idle",
+        controlsError: "",
         error: ""
       }
     };
@@ -88,6 +91,10 @@
 
   function clean(value) {
     return String(value ?? "").trim();
+  }
+
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
   }
 
   function escapeHtml(value) {
@@ -687,9 +694,11 @@
       button.addEventListener("click", (event) => {
         event.preventDefault();
         if (button.disabled) return;
-        checkStageAssessmentEligibility().catch((error) => {
+        refreshStageCheckpointControlsFromUi().catch((error) => {
           pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
             status: "failed",
+            controlsStatus: "failed",
+            controlsError: error.message || String(error),
             error: error.message || String(error)
           });
           renderShell();
@@ -806,9 +815,13 @@
       status: "idle",
       eligibility: null,
       result: null,
+      controls: null,
+      controlsStatus: "loading",
+      controlsError: "",
       error: ""
     };
     renderShell();
+    await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
@@ -892,6 +905,7 @@
         result: pageState.cardGeneration.targetProvisionDraft?.result || null,
         error: pageState.cardGeneration.targetProvisionDraft?.error || ""
       }));
+      await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
@@ -917,22 +931,64 @@
     };
   }
 
-  async function checkStageAssessmentEligibility() {
-    const { payload, targetWorkspaceId } = createStageAssessmentPayload("system");
+  function stageAssessmentAction(controls = {}, key = "") {
+    return asArray(controls.actions).find((action) => clean(action.key) === key) || null;
+  }
+
+  async function refreshStageCheckpointControls(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const previous = pageState.cardGeneration.stageAssessment || {};
+    const payload = window.HermesGrowthCardGenerationUi.createStageAssessmentPayload({
+      context,
+      workspaceId: clean(targetWorkspaceId || context?.target?.workspaceId || currentWorkspaceId),
+      activationSource: "owner_manual"
+    });
     pageState.cardGeneration.stageAssessment = {
+      status: previous.status || "idle",
+      eligibility: previous.eligibility || null,
+      result: previous.result || null,
+      controls: previous.controls || null,
+      controlsStatus: "loading",
+      controlsError: "",
+      error: previous.error || ""
+    };
+    try {
+      const result = await api.fetchGrowthStageCheckpointControls(payload, targetWorkspaceId);
+      pageState.cardGeneration.stageAssessment = {
+        status: result.summary?.status || result.readiness?.activationState || previous.status || "idle",
+        eligibility: previous.eligibility || null,
+        result: previous.result || null,
+        controls: result,
+        controlsStatus: "ready",
+        controlsError: "",
+        error: previous.error || ""
+      };
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.stageAssessment = {
+        status: previous.status || "failed",
+        eligibility: previous.eligibility || null,
+        result: previous.result || null,
+        controls: previous.controls || null,
+        controlsStatus: "failed",
+        controlsError: error.message || String(error),
+        error: previous.error || ""
+      };
+      return null;
+    }
+  }
+
+  async function refreshStageCheckpointControlsFromUi() {
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    pageState.cardGeneration.stageAssessment = Object.assign({}, pageState.cardGeneration.stageAssessment, {
       status: "checking",
-      eligibility: pageState.cardGeneration.stageAssessment?.eligibility || null,
-      result: pageState.cardGeneration.stageAssessment?.result || null,
+      controlsStatus: "loading",
+      controlsError: "",
       error: ""
-    };
+    });
     renderShell();
-    const result = await api.evaluateGrowthStageAssessment(payload, targetWorkspaceId);
-    pageState.cardGeneration.stageAssessment = {
-      status: result.activationState || result.cycle?.status || (result.eligible ? "eligible" : "dormant"),
-      eligibility: result,
-      result: pageState.cardGeneration.stageAssessment?.result || null,
-      error: ""
-    };
+    await refreshStageCheckpointControls(targetWorkspaceId, context);
     renderShell();
   }
 
@@ -1317,6 +1373,14 @@
 
   async function activateStageAssessmentFromUi() {
     const { payload, targetWorkspaceId } = createStageAssessmentPayload("owner_manual");
+    const controls = pageState.cardGeneration.stageAssessment?.controls || null;
+    const activateAction = stageAssessmentAction(controls || {}, "activate_stage_assessment");
+    if (!controls || controls.ok !== true) {
+      throw new Error("stage_checkpoint_controls_required");
+    }
+    if (!activateAction || activateAction.enabled !== true) {
+      throw new Error(clean(activateAction?.disabledReason) || "stage_checkpoint_controls_activation_disabled");
+    }
     pageState.cardGeneration.status = "generating";
     pageState.cardGeneration.error = "";
     pageState.cardGeneration.generatedResult = null;

@@ -150,6 +150,25 @@
       return query ? `?${query}` : "";
     }
 
+    function stageAssessmentControlsQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const params = new URLSearchParams();
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "subjectId", payload.subjectId || payload.subject_id);
+      appendQueryParam(params, "capabilityClusterId", payload.capabilityClusterId || payload.capability_cluster_id);
+      appendQueryParam(params, "targetNodeId", payload.targetNodeId || payload.target_node_id);
+      appendQueryArrayParam(params, "targetNodeIds", payload.targetNodeIds || payload.target_node_ids);
+      appendQueryArrayParam(params, "assessmentCoverageNodeIds", payload.assessmentCoverageNodeIds || payload.assessment_coverage_node_ids);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function updateWorkspaceUrl() {
       const currentWorkspaceId = clean(getWorkspaceId());
       if (!currentWorkspaceId || typeof historyRef?.replaceState !== "function") return;
@@ -234,6 +253,10 @@
       return fetchJson(`${growthApiPath("learning-cycles", "completeness")}${cycleAuditQuery(targetWorkspaceId, payload)}`);
     }
 
+    function fetchGrowthStageCheckpointControls(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("stage-assessments", "controls")}${stageAssessmentControlsQuery(targetWorkspaceId, payload)}`);
+    }
+
     function evaluateGrowthStageAssessment(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("stage-assessments", "eligibility"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -300,6 +323,7 @@
       fetchGrowthCycleCompleteness,
       fetchGrowthCard,
       fetchGrowthReleaseWorkbench,
+      fetchGrowthStageCheckpointControls,
       fetchJson,
       fetchLearningLoopState,
       generateGrowthCard,

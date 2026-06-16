@@ -123,18 +123,22 @@ evidence are not closed:
 - Owner planner/provision UI now supports visible target selection,
   `targetProvisioning` status, domain-pack/subject selection, explicit Owner
   provision creation/update, daily-loop draft/publish, audit correction, and
-  current-cycle audit drilldown. Central `embedded-plugin-shell` visual
-  evidence and production Owner-loop smoke exist for the Growth plugin shell;
-  backend historical-cycle readback exists, while browser richer older-cycle
-  selection controls, formal checkpoint UI, and full automation release
+  current-cycle audit drilldown. It also renders stage-checkpoint controls from
+  `growth.stageCheckpointControls.v1`, uses the `activate_stage_assessment`
+  action to gate the Owner formal-checkpoint activation button, and keeps the
+  actual activation write on `learning-stage-assessment-service`. Central
+  `embedded-plugin-shell` visual evidence and production Owner-loop smoke exist
+  for the Growth plugin shell; backend historical-cycle readback exists, while
+  browser richer older-cycle selection controls and full automation release
   evidence UI/production collection remain incomplete;
 - Owner audit/correction UI is not fully rendered from the implemented DTOs,
   even though the backend services and `npm run smoke:owner-audit` are
   available;
-- stage-checkpoint browser UI remains separate future work, but the backend
-  Owner controls read model now exists through
-  `learning-stage-checkpoint-controls-service` and Owner-only
-  `GET /api/v1/growth/stage-assessments/controls`;
+- stage-checkpoint browser UI is wired into the Owner generation panel as a
+  controls-driven status/action surface. The backend Owner controls read model
+  remains summary-only through `learning-stage-checkpoint-controls-service` and
+  Owner-only `GET /api/v1/growth/stage-assessments/controls`; production visual
+  evidence for the new controls surface is still required before UI release;
 - proposal/digest/action/execution/run/worker-target UI remains future work;
 - platform Action Inbox/Web Push evidence is not complete;
 - central embedded-plugin visual evidence exists for the Growth plugin shell;
@@ -207,7 +211,7 @@ The missing product capability is the browser-operable learning loop:
 | A1: Owner daily planning UI | Owner can create one daily card from persisted context through the plugin UI, apply target domain-pack/subject scope, and explicitly provision a visible target before planning. Older-cycle selection and release evidence remain. | Use `GET /api/v1/growth/learning-loop/state` for compact state/next action, `POST /api/v1/growth/domain-pack-provisions` for explicit target provision, then `learning-daily-loop-service` draft/publish for execution; render readiness, plan item, progress, errors, and card link. | No direct Gateway calls, no browser-side state recomputation, no new scheduler, no automatic publish. |
 | A2: Learner daily evidence UI | Learner can finish the generated card with one submit, one evaluation, and one optional reflection. | Reuse generated-card detail flow, audio evidence, one-box-per-stage state, and visible failed-evaluation recovery. | No pass-line retry gate and no extra competing submission boxes. |
 | A3: Owner audit/correction UI | Owner can see why the card happened, what changed, and how to correct future profile evidence. | Render plan/evidence/profile-delta/cycle/completeness/correction DTOs and write corrections through `learning-owner-correction-service`. | No browser-side Profile V2 computation and no raw transcript/prompt viewer. |
-| A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately. | Use `learning-stage-checkpoint-controls-service` for summary-only controls and `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher; no activation/generation from the controls read model. |
+| A4: Stage checkpoint controls | Owner can see and activate formal checkpoint readiness separately from the generation panel. | Use `learning-stage-checkpoint-controls-service` for summary-only controls, frontend controls-action gating, and `learning-stage-assessment-service` for readiness, activation, completion, and cooldown. | No direct formal assessment publication from the daily plan publisher; no activation/generation from the controls read model and no browser-side eligibility recomputation. |
 | A5: Generalized target selector | The same workflow can target another visible and provisioned learner/domain. | Preserve actor/target separation and target-workspace-owned rows. | No fallback to Fanfan constants for non-sample targets. |
 
 The preferred next package is A1 plus the minimum A2/A3 wiring needed to prove
@@ -815,7 +819,7 @@ becomes future planning evidence, not a required retry loop.
 | Learner daily interaction | One submission box, one evaluation, one optional reflection, audio record/playback, visible failed-evaluation retry path, no pass-line loop, and `tests/growth-learner-cycle-smoke-script.test.js` plus `npm run smoke:learner-cycle` for service-level audit/submit/evaluate/reflect/full-loop evidence. The smoke defaults to no-write audit, gates write operations with `--allow-write`, returns only summary ids/status/counts/findings without learner text or raw model content, and the harness verifies the completed smoke cycle can be read by the no-write learning-loop state smoke as the next planning action. |
 | Evidence/profile/audit | Evidence ledger, evidence audit, Profile V2, profile-delta audit, correction, cycle audit, completeness, stale evidence, privacy tests, `tests/growth-owner-audit-smoke-script.test.js`, and `npm run smoke:owner-audit`; the smoke now returns cycle audit, completeness, evidence audit, profile-delta audit, and correction DTOs by default, while correction writes remain explicitly gated. Audit-completeness privacy projection must block raw/private DTO keys but must not fail solely because safe public text values contain words such as token, transcript, secret, prompt, or cookie. |
 | Stage assessment | Readiness, activation, coverage, completion, cooldown, direct daily-publish blocking, `tests/growth-stage-assessment-smoke-script.test.js`, and `npm run smoke:stage-assessment`; the CLI defaults to read-only readiness and requires explicit `--allow-write` for eligibility, activation, or completion evidence. |
-| Stage checkpoint controls | Summary-only Owner controls DTO, `tests/learning-stage-checkpoint-controls-service.test.js`, `tests/growth-stage-checkpoint-controls-smoke-script.test.js`, `npm run smoke:stage-checkpoint-controls`, default release-bundle task `stage_checkpoint_controls`, release-readiness key `stage_checkpoint_controls_evidence`, and architecture coverage for no Gateway, direct repository, generation, publication, evaluation, scheduler, notification, stage activation, or learner-state mutation. |
+| Stage checkpoint controls | Summary-only Owner controls DTO, Owner generation-panel controls rendering and action gating, `tests/learning-stage-checkpoint-controls-service.test.js`, `tests/growth-stage-checkpoint-controls-smoke-script.test.js`, `tests/growth-frontend-adapter.test.js`, `npm run smoke:stage-checkpoint-controls`, default release-bundle task `stage_checkpoint_controls`, release-readiness key `stage_checkpoint_controls_evidence`, and architecture coverage for no Gateway, direct repository, generation, publication, evaluation, scheduler, notification, stage activation, learner-state mutation, or browser-side eligibility recomputation from the controls boundary. |
 | Multi-workspace target | Visible-target allow/deny, explicit provision enablement, cross-subject domain-pack plus subject-domain selection, wrong-subject blocking, target-workspace row ownership, `tests/growth-target-provisioning-smoke-script.test.js`, `npm run smoke:target-provisioning`, and no actor/target mixing. |
 | Proposal | Repository/service/route tests, `tests/growth-automation-proposal-smoke-script.test.js`, `npm run smoke:proposal`, the completed-cycle proposal evidence in `tests/learning-card-ai-loop-harness.test.js`, read-only list by default, explicit `--allow-write` for create/review/publish, and architecture guard for no Gateway, direct plan publisher, direct card generation, evaluation, scheduler execution, scheduler tick, action handoff, stage activation, learner-state mutation, or direct repository access from the CLI. |
 | Scheduler dry-run | Service tests, `tests/growth-scheduler-dry-run-smoke-script.test.js`, `npm run smoke:scheduler-dry-run`, the Fanfan science completed-cycle candidate in `tests/learning-card-ai-loop-harness.test.js`, and architecture guard for no Gateway, publication, evaluation, execution, scheduler tick, stage activation, notification, learner-state mutation, or direct repository access from the CLI. |

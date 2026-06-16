@@ -221,6 +221,15 @@ test("Growth API client exposes card generation context and write helpers", asyn
     action_key: "visual_smoke",
     evidence_key: "visual_smoke"
   }, "weixin_fanfan");
+  await client.fetchGrowthStageCheckpointControls({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    target_node_ids: ["kg_science_observation"],
+    assessment_coverage_node_ids: ["kg_science_observation", "kg_science_fair_test"]
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
@@ -294,6 +303,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     action_key: "visual_smoke",
     evidence_key: "visual_smoke"
   });
+  assert.equal(calls[18].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -323,6 +333,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchGrowthCycleCompleteness({ task_card_id: "ltask_daily_1" }, "weixin_stephen");
   await client.fetchGrowthReleaseWorkbench("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.recordGrowthReleaseWorkbenchAction({ endpoint_key: "runtime_enablement", action_key: "runtime" }, "weixin_stephen");
+  await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -335,6 +346,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(calls[7].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-cycles/completeness?targetWorkspaceId=weixin_stephen&taskCardId=ltask_daily_1&limit=20");
   assert.equal(calls[8].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
   assert.equal(calls[9].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/actions");
+  assert.equal(calls[10].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/stage-assessments/controls?targetWorkspaceId=weixin_stephen&targetNodeId=kg_science_observation");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1104,6 +1116,108 @@ test("Growth card generation UI renders stage assessment eligibility and activat
   assert.match(html, /<strong>2<\/strong>/);
   assert.match(html, /打开阶段测评/);
   assert.match(html, /data-learning-open-growth-task="stage_card_1"/);
+});
+
+test("Growth card generation UI gates formal checkpoint activation through controls", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_fanfan", learnerId: "fanfan", displayName: "凡凡", enabled: true },
+    selectedRecipeId: "daily_english_v1",
+    recipes: [{ id: "daily_english_v1", label: "日常英语卡" }],
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      plannerContextReady: true
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_science_observation",
+      targetNodeIds: ["kg_science_observation", "kg_science_fair_test"],
+      title: "Science checkpoint",
+      domain: "science",
+      subject: "science",
+      evidenceRequirements: ["short_answer"]
+    }
+  };
+  const controls = {
+    ok: true,
+    schemaVersion: "growth.stageCheckpointControls.v1",
+    summary: {
+      status: "ready_for_owner_activation",
+      readyForOwnerActivation: true,
+      recentTrajectoryCount: 4,
+      highPressureSignalCount: 0
+    },
+    readiness: {
+      activationState: "eligible",
+      reason: "enough_recent_practice",
+      evidence: { recentTrajectoryCount: 4, highPressureSignalCount: 0 }
+    },
+    actions: [{
+      key: "activate_stage_assessment",
+      enabled: true,
+      route: { path: "/api/v1/growth/stage-assessments/activate" }
+    }]
+  };
+
+  const readyHtml = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context,
+        stageAssessment: {
+          status: "ready_for_owner_activation",
+          controls,
+          controlsStatus: "ready",
+          controlsError: "",
+          error: ""
+        }
+      }
+    },
+    viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
+    workspaceId: "weixin_fanfan"
+  });
+  const readyButton = readyHtml.match(/<button[^>]+data-stage-assessment-activate[^>]*>/)?.[0] || "";
+  assert.match(readyHtml, /data-stage-checkpoint-controls-status="ready"/);
+  assert.match(readyHtml, /data-stage-checkpoint-activate-enabled="true"/);
+  assert.match(readyHtml, /Owner 可以显式生成一次正式阶段测评/);
+  assert.doesNotMatch(readyButton, /\sdisabled(?:\s|>|=)/);
+
+  const blockedHtml = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context,
+        stageAssessment: {
+          status: "cooldown",
+          controls: Object.assign({}, controls, {
+            summary: { status: "cooldown", readyForOwnerActivation: false, recentTrajectoryCount: 4, highPressureSignalCount: 0 },
+            readiness: { activationState: "cooldown", reason: "stage_assessment_recently_completed", cooldownUntil: "2026-06-20T00:00:00.000Z" },
+            actions: [{
+              key: "activate_stage_assessment",
+              enabled: false,
+              disabledReason: "stage_assessment_cooldown_active"
+            }]
+          }),
+          controlsStatus: "ready",
+          controlsError: "",
+          error: ""
+        }
+      }
+    },
+    viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
+    workspaceId: "weixin_fanfan"
+  });
+  const blockedButton = blockedHtml.match(/<button[^>]+data-stage-assessment-activate[^>]*>/)?.[0] || "";
+  assert.match(blockedHtml, /data-stage-checkpoint-activate-enabled="false"/);
+  assert.match(blockedHtml, /同一能力簇仍在冷却期/);
+  assert.match(blockedButton, /\sdisabled(?:\s|>|=)/);
+  assert.match(blockedButton, /data-stage-assessment-blocked-reason="同一能力簇仍在冷却期。"/);
 });
 
 test("Growth teaching card UI renders submit and recording controls for a generated daily card", () => {

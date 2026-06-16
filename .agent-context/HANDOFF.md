@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T05:00Z - Stage Checkpoint Controls Owner UI
+
+- Status: implemented and focused-Harness validated locally. This slice wires
+  the embedded Owner generation panel to the stage-checkpoint controls read
+  model. It does not deploy, call Gateway/model vendors, write SQLite directly,
+  publish daily plans, evaluate submissions, execute scheduler actions, run
+  scheduler ticks, deliver notifications, mutate runtime config, or recompute
+  stage eligibility in the browser.
+- Scope:
+  - added `fetchGrowthStageCheckpointControls()` in `public/growth-api-client.js`
+    with proxy-aware target workspace query handling;
+  - `public/app.js` now reads controls after card-generation context refresh,
+    refreshes controls from the `检查条件` button, and blocks activation unless
+    the `activate_stage_assessment` action is enabled;
+  - `public/growth-card-generation-ui.js` renders controls status, bounded
+    readiness evidence, cooldown/blocked reason, and a controls-gated formal
+    checkpoint button;
+  - `public/growth-homeai-legacy.css` adds compact controls status styling plus
+    dark/mobile layout guards;
+  - actual formal checkpoint writes remain on
+    `POST /api/v1/growth/stage-assessments/activate`, owned by
+    `learning-stage-assessment-service`.
+- Focused validation passed:
+  - `node --check public/growth-card-generation-ui.js`;
+  - `node --check public/app.js`;
+  - `node --check public/growth-api-client.js`;
+  - `node --check tests/growth-frontend-adapter.test.js`;
+  - `node --check tests/growth-embedded-layout.test.js`;
+  - `node --check tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`
+    (`68/68`).
+- Broad and central validation passed:
+  - `npm run check` (`192/192` runtime JavaScript files covered);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - `git diff --check`;
+  - `npm test` (`772/772`);
+  - `codegraph sync` reported already up to date;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - local Playwright component visual smoke from the Home AI app workspace
+    against current Growth dev server on `http://127.0.0.1:4981`, mobile
+    dark viewport `390x720`, screenshot
+    `/tmp/growth-stage-controls-mobile-dark-4981.png`, nonblank
+    `150368` bytes, controls status `ready`, activation flag `true`, shell
+    `overflow-y:auto`, and scroll verified;
+  - Home AI app `node tests/ios-pwa-live-debug-server.test.js`;
+  - Home AI app `node tests/ios-pwa-visual-harness.test.js`;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`.
+- AI Ops note:
+  - `node scripts/ai-ops-control-plane.js intake --task "Growth plugin Owner
+    stage checkpoint controls UI wiring with local Playwright visual smoke only;
+    no production deploy" --json` classified the slice as H1 with visual lane
+    and Mac deployment plan requirements. This slice intentionally did not
+    allocate a central visual lane or run `npm run --silent deploy:macos
+    -- --target home-ai --json` because no production UI release was requested.
+    Those remain required before deployment.
+- Remaining product work:
+  - collect central visual evidence for the stage-checkpoint controls surface
+    before any production UI release;
+  - continue broader Growth AI learning closed-loop MVP backend/readiness work.
+
 ## 2026-06-16T04:00Z - Stage Checkpoint Controls Smoke And Release Evidence
 
 - Status: implemented and validated locally. This slice adds a
@@ -76,8 +138,6 @@
     complete before commit/push and about 81% once this slice is committed and
     pushed.
 - Remaining product work:
-  - render the controls DTO and activation action in the embedded Owner
-    stage-checkpoint UI;
   - collect central visual evidence before any production UI release.
 
 ## 2026-06-16T03:00Z - Stage Checkpoint Controls Read Model
