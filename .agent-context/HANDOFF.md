@@ -9,6 +9,90 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T02:31+08:00 - Learning Loop Reward Audit Trace
+
+- Status: implemented locally, fully validated, and committed. This slice was
+  not deployed because the user deferred production deployment until the
+  broader Growth target is complete.
+- Commit:
+  - `f998e47 Add growth reward audit trace to loop state`.
+- Change intent:
+  - make the closed-loop recommendation state explain score-proportional
+    Growth coin settlement alongside evidence, Profile V2, profile-delta, and
+    trajectory recommendation readback;
+  - keep reward settlement readback as a Service First, summary-only audit
+    boundary, not a write path;
+  - preserve the low-pressure `daily_score_once` contract by surfacing reward
+    totals without reintroducing pass-line gates.
+- Scope:
+  - `learning-reward-audit-service` now exposes
+    `growth.learningRewardAudit.v1` summary-only reward settlement readback;
+  - the Growth SQLite reward repository now supports bounded
+    `listRewardSettlements` filters by workspace, learner, program, task card,
+    evaluation, settlement id, and status;
+  - `learning-loop-state-service` now composes the reward audit service and
+    returns bounded `rewardTrace`, reward settlement ids, and total coin amount
+    in recommendation evidence;
+  - reward audit failures remain visible and non-fatal in the loop-state DTO;
+  - service graph wiring exposes `learningRewardAuditService` and injects it
+    into `learningLoopStateService`.
+- Privacy and boundary notes:
+  - readback excludes idempotency keys, ledger entry JSON, raw settlement
+    payloads, raw learner answers/reflections/transcripts, raw prompts, answer
+    keys, private paths, credentials, and provider configuration;
+  - the new service does not write reward settlements, publish plans, generate
+    cards, call Gateway, evaluate submissions, schedule work, deliver
+    notifications, or activate stage assessments.
+- Docs changed:
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - this handoff.
+- Validation:
+  - syntax checks passed for
+    `src/services/learning-reward-audit-service.js`,
+    `src/services/learning-loop-state-service.js`,
+    `src/stores/growth-learning-sqlite/rewards.js`,
+    `src/stores/growth-learning-sqlite-store.js`, and `src/app/services.js`;
+  - focused Harness:
+    `node --test tests/learning-reward-audit-service.test.js tests/growth-learning-sqlite-rewards.test.js tests/learning-loop-state-service.test.js tests/growth-architecture-boundary.test.js`
+    passed `45/45`;
+  - wider focused Harness:
+    `node --test tests/learning-loop-state-service.test.js tests/learning-reward-audit-service.test.js tests/growth-learning-sqlite-rewards.test.js tests/growth-learning-loop-state-smoke-script.test.js tests/learning-daily-loop-service.test.js tests/learning-stage-assessment-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `110/110`;
+  - docs locality passed:
+    `node scripts/check-growth-docs-locality.js` and
+    `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `34/34`;
+  - `npm run check` passed with `runtimeCount=201` and `checkedCount=201`;
+  - full Growth `npm test` passed `856/856`;
+  - `git diff --check` passed in Growth and app;
+  - `codegraph status` reported 357 files, 4,961 nodes, 21,073 edges, index up
+    to date, with the existing optional earlier-engine reindex notice.
+- Home AI AI Ops non-deploy evidence:
+  - intake classified the task as H1 because the task text included
+    deployment/no-deployment boundary wording;
+  - concrete changed-file required-checks classified the Growth file scope as
+    H3 and returned architecture-map, syntax, and diff-hygiene checks;
+  - app-side required checks passed:
+    `node --check scripts/deploy-macos-production.js`,
+    `node tests/macos-production-deploy-script.test.js`,
+    `node tests/production-status-smoke-harness.test.js`,
+    `node tests/architecture-code-test-harness-map.test.js`,
+    `npm run --silent deploy:macos -- --target home-ai --json`, and
+    `git diff --check`;
+  - the deploy command was plan-only and did not include `--execute`.
+- AI Ops evidence:
+  - test evidence ledger record:
+    `evidence-b763bd6c-3209-42be-8e1a-bb0f82442215`.
+- Remaining gates:
+  - no production deployment in this slice;
+  - the broader Growth objective still needs subsequent backend slices before
+    final deployment.
+
 ## 2026-06-17T02:14+08:00 - Compact Daily Recipe Generalization
 
 - Status: implemented locally, fully validated, and ready for push. This slice
