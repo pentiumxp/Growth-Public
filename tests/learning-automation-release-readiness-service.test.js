@@ -50,7 +50,54 @@ function allEvidence() {
     platformActionEvidence: { ok: true, evidenceId: "platform_action" },
     centralVisualEvidence: { ok: true, evidenceId: "visual" },
     releaseWorkbenchSmokeEvidence: { ok: true, evidenceId: "release_workbench" },
-    ownerReviewEvidence: { ok: true, evidenceId: "owner_review_evidence" }
+    ownerReviewEvidence: {
+      ok: true,
+      evidenceId: "owner_review_evidence",
+      dependencyIds: [
+        "lgaprop_internal_1",
+        "lgadig_internal_1",
+        "lgahand_internal_1",
+        "lgaexec_internal_1",
+        "lgarun_internal_1",
+        "lgawt_internal_1"
+      ],
+      summary: {
+        proposalCount: 5,
+        acceptedProposalCount: 1,
+        proposedProposalCount: 1,
+        skippedProposalCount: 1,
+        expiredProposalCount: 1,
+        supersededProposalCount: 1,
+        ownerDecisionProposalCount: 4,
+        proposalExecutionCount: 3,
+        publishedProposalExecutionCount: 1,
+        blockedProposalExecutionCount: 1,
+        failedProposalExecutionCount: 1,
+        digestCount: 2,
+        reviewedDigestCount: 1,
+        pendingDigestCount: 1,
+        digestRequiredActionCount: 1,
+        digestBlockedCandidateCount: 1,
+        actionHandoffCount: 2,
+        deliveredHandoffCount: 1,
+        pendingHandoffDeliveryCount: 1,
+        actionHandoffActionCount: 1,
+        blockedActionHandoffCount: 1,
+        schedulerExecutionCount: 3,
+        publishedSchedulerExecutionCount: 1,
+        blockedSchedulerExecutionCount: 1,
+        failedSchedulerExecutionCount: 1,
+        schedulerRunCount: 3,
+        completedSchedulerRunCount: 1,
+        blockedSchedulerRunCount: 1,
+        skippedSchedulerRunCount: 1,
+        reviewedWorkerTargetCount: 1,
+        pendingWorkerTargetReviewCount: 1,
+        disabledWorkerTargetCount: 1,
+        failurePolicyReady: true,
+        failurePolicyStatus: "ready"
+      }
+    }
   };
 }
 
@@ -225,6 +272,26 @@ test("automation release readiness service returns ready-for-review only when al
   assert.equal(result.checks.find((item) => item.key === "production_scheduler_dry_run").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "release_workbench_smoke_evidence").status, "pass");
   assert.equal(result.checks.find((item) => item.key === "owner_review_evidence").status, "pass");
+  const ownerReviewCheck = result.checks.find((item) => item.key === "owner_review_evidence");
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummaryPresent, true);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.acceptedProposalCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.digestRequiredActionCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.deliveredHandoffCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.completedSchedulerRunCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+  assert.equal(ownerReviewCheck.summary.ownerReviewStageSummary.failurePolicyStatus, "ready");
+  const ownerReviewReadback = result.evidenceReadback.items.find((item) => item.key === "ownerReviewEvidence");
+  assert.equal(ownerReviewReadback.ownerReviewStageSummary.acceptedProposalCount, 1);
+  assert.equal(ownerReviewReadback.ownerReviewStageSummary.digestRequiredActionCount, 1);
+  assert.equal(ownerReviewReadback.ownerReviewStageSummary.blockedActionHandoffCount, 1);
+  assert.equal(ownerReviewReadback.ownerReviewStageSummary.skippedSchedulerRunCount, 1);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgaprop_"), false);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgadig_"), false);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgahand_"), false);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgaexec_"), false);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgarun_"), false);
+  assert.equal(JSON.stringify(result.evidenceReadback).includes("lgawt_"), false);
   assert.deepEqual(calls.map((call) => call.type), [
     "listDigests",
     "evaluateFailurePolicy",

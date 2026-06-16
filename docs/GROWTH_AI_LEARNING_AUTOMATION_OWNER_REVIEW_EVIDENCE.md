@@ -98,6 +98,15 @@ and read back; it does not prove proposal/digest/action/execution UI evidence
 or mobile visual evidence. Those evidence keys remain separate readiness
 requirements.
 
+When `ownerReviewEvidence` includes the bundle `summary`, release-readiness
+projects the same stage counters into
+`evidenceReadback.items[].ownerReviewStageSummary` for the
+`ownerReviewEvidence` item. That catalog entry is summary-only and bounded; it
+keeps proposal, digest, handoff, scheduler, worker-target, and failure-policy
+counts visible to release tooling without copying raw dependency ids or rows.
+It does not change the pass/fail semantics of the `owner_review_evidence`
+check and does not grant scheduler or publish permission.
+
 The same evidence key can also be recorded through the release evidence record
 boundary as `owner_review_evidence`. Persisted pass records are projected back
 into release-readiness through the canonical `ownerReviewEvidence` key.
@@ -147,10 +156,11 @@ In particular, `proposed` counts as pending review evidence, while `skipped`,
 `expired`, and `superseded` remain owner-decision audit counts and do not pass
 the accepted-proposal gate.
 
-The release-evidence bundle harness must also prove the bounded
-`ownerReviewEvidence.summary` projection preserves digest, action-handoff,
-scheduler execution, scheduler run, worker-target, and failure-policy counts
-without carrying raw dependency ids.
+The release-evidence bundle and release-readiness harnesses must also prove
+the bounded `ownerReviewEvidence.summary` and
+`evidenceReadback.items[].ownerReviewStageSummary` projections preserve digest,
+action-handoff, scheduler execution, scheduler run, worker-target, and
+failure-policy counts without carrying raw dependency ids.
 
 ## Current Product Gap
 

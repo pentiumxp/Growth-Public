@@ -188,6 +188,11 @@ service. Snapshot writes persist the catalog in
 Release controls, release inventory, release dashboard, and release workbench DTOs may project
 only bounded summary fields from that catalog, such as present/missing counts
 and source bundle ids/status/counts; they must not expose full evidence items.
+For `ownerReviewEvidence`, release-readiness may also project bounded
+`ownerReviewStageSummary` counters in the evidenceReadback item so release
+tooling can inspect proposal lifecycle plus downstream automation-stage counts
+without raw dependency ids. This readback does not change readiness status,
+release approval, runtime config, or scheduler permission.
 `releaseWorkbenchSmokeEvidence` is a Growth-local readiness input for the
 Owner action-template read model and may come from
 `--release-workbench-evidence` or the non-default `release_workbench`

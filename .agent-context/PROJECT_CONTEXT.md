@@ -134,7 +134,11 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   config. Release-readiness also projects summary-only `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
   bundle readback, present/missing counts, missing check keys, and bounded
-  per-check evidence references. Owner snapshots persist that readback in
+  per-check evidence references. For `ownerReviewEvidence`, the readback item
+  now also carries bounded `ownerReviewStageSummary` counters from the release
+  evidence bundle summary without raw dependency ids; this is audit visibility
+  only and does not change readiness pass semantics or scheduler permission.
+  Owner snapshots persist that readback in
   `learning_growth_automation_release_readiness.evidence_readback_json`, and
   repository privacy scanning rejects private path/token-like values even when a
   caller bypasses the service. Release controls, inventory, and dashboard

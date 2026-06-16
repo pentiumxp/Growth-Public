@@ -201,7 +201,21 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         ownerDailyUiEvidence: { ok: true, evidenceId: "bundle_daily_ui" },
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
-        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" }
+        platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+        ownerReviewEvidence: {
+          ok: true,
+          evidenceId: "bundle_owner_review",
+          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
+          summary: {
+            acceptedProposalCount: 1,
+            digestRequiredActionCount: 1,
+            blockedActionHandoffCount: 1,
+            publishedSchedulerExecutionCount: 1,
+            completedSchedulerRunCount: 1,
+            pendingWorkerTargetReviewCount: 1,
+            failurePolicyStatus: "ready"
+          }
+        }
       },
     releaseApproval: {
       writefulExecutionApproval: { approved: true, evidenceId: "bundle_execution_approval" }
@@ -255,6 +269,20 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+        ownerReviewEvidence: {
+          ok: true,
+          evidenceId: "bundle_owner_review",
+          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
+          summary: {
+            acceptedProposalCount: 1,
+            digestRequiredActionCount: 1,
+            blockedActionHandoffCount: 1,
+            publishedSchedulerExecutionCount: 1,
+            completedSchedulerRunCount: 1,
+            pendingWorkerTargetReviewCount: 1,
+            failurePolicyStatus: "ready"
+          }
+        },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" }
       },
       releaseApproval: {
@@ -269,6 +297,20 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
       stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
       platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+      ownerReviewEvidence: {
+        ok: true,
+        evidenceId: "bundle_owner_review",
+        dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
+        summary: {
+          acceptedProposalCount: 1,
+          digestRequiredActionCount: 1,
+          blockedActionHandoffCount: 1,
+          publishedSchedulerExecutionCount: 1,
+          completedSchedulerRunCount: 1,
+          pendingWorkerTargetReviewCount: 1,
+          failurePolicyStatus: "ready"
+        }
+      },
       centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
       ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
     });
@@ -291,6 +333,20 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         stageCheckpointEvidence: { ok: true, evidenceId: "bundle_stage_smoke" },
         stageCheckpointControlsEvidence: { ok: true, evidenceId: "bundle_stage_controls" },
         platformActionEvidence: { ok: true, evidenceId: "bundle_platform_action" },
+        ownerReviewEvidence: {
+          ok: true,
+          evidenceId: "bundle_owner_review",
+          dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
+          summary: {
+            acceptedProposalCount: 1,
+            digestRequiredActionCount: 1,
+            blockedActionHandoffCount: 1,
+            publishedSchedulerExecutionCount: 1,
+            completedSchedulerRunCount: 1,
+            pendingWorkerTargetReviewCount: 1,
+            failurePolicyStatus: "ready"
+          }
+        },
         centralVisualEvidence: { ok: true, evidenceId: "inline_visual" },
         ownerAuditUiEvidence: { ok: true, source: "release_readiness_smoke_flag" }
       },
@@ -312,6 +368,24 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       requestedBy: "bundle_owner",
       createdAt: "2026-06-15T18:21:00.000Z"
     });
+    const dbPath = path.join(dir, "growth-learning.sqlite3");
+    new DatabaseSync(dbPath, { open: true }).close();
+    const result = runScript(args.concat("--json"), {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+    assert.equal(result.status, 0);
+    const output = parseStdout(result);
+    const ownerReviewReadback = output.evidenceReadback.items.find((item) => item.key === "ownerReviewEvidence");
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.acceptedProposalCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.digestRequiredActionCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.blockedActionHandoffCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.publishedSchedulerExecutionCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.completedSchedulerRunCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.pendingWorkerTargetReviewCount, 1);
+    assert.equal(ownerReviewReadback.ownerReviewStageSummary.failurePolicyStatus, "ready");
+    assert.equal(JSON.stringify(output.evidenceReadback).includes("lgaprop_bundle_1"), false);
+    assert.equal(JSON.stringify(output.evidenceReadback).includes("lgaexec_bundle_1"), false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

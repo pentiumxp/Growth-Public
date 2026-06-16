@@ -1747,6 +1747,14 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /releaseWorkbenchSmokeEvidence/);
   assert.match(releaseReadinessService, /release_workbench_smoke_evidence/);
   assert.match(releaseReadinessService, /run_release_workbench_readback_smoke/);
+  assert.match(releaseReadinessService, /ownerReviewEvidenceCheck/);
+  assert.match(releaseReadinessService, /ownerReviewStageSummary/);
+  assert.match(releaseReadinessService, /ownerReviewStageSummaryPresent/);
+  assert.match(releaseReadinessService, /digestRequiredActionCount/);
+  assert.match(releaseReadinessService, /blockedActionHandoffCount/);
+  assert.match(releaseReadinessService, /publishedSchedulerExecutionCount/);
+  assert.match(releaseReadinessService, /completedSchedulerRunCount/);
+  assert.match(releaseReadinessService, /pendingWorkerTargetReviewCount/);
   assert.match(releaseReadinessService, /ownerReviewEvidence/);
   assert.match(releaseReadinessService, /owner_review_evidence/);
   assert.match(releaseReadinessService, /run_owner_review_evidence_smoke/);

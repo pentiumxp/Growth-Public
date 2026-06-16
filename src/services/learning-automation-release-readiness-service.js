@@ -91,16 +91,19 @@ function mergeReleaseApprovals(input = {}, persisted = {}) {
 }
 
 function evidenceOk(input = {}, key) {
-  const bag = evidenceBag(input);
-  const value = input[key] ?? bag[key];
+  const value = evidenceValue(input, key);
   if (value === true) return true;
   if (value && typeof value === "object") return value.ok === true || value.status === "pass" || value.present === true;
   return false;
 }
 
-function evidenceRef(input = {}, key) {
+function evidenceValue(input = {}, key) {
   const bag = evidenceBag(input);
-  const value = input[key] ?? bag[key];
+  return input[key] ?? bag[key];
+}
+
+function evidenceRef(input = {}, key) {
+  const value = evidenceValue(input, key);
   if (!value || typeof value !== "object") return {};
   return {
     schemaVersion: boundedString(value.schemaVersion || value.schema_version, 160),
@@ -112,6 +115,84 @@ function evidenceRef(input = {}, key) {
     runId: boundedString(value.runId || value.run_id, 180),
     taskId: boundedString(value.taskId || value.task_id, 180)
   };
+}
+
+function numberField(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function ownerReviewStageSummary(value = {}) {
+  const source = objectOnly(value.summary || value.automationOwnerReviewEvidence || value.automation_owner_review_evidence || value);
+  const summary = {
+    proposalCount: numberField(source.proposalCount || source.proposal_count),
+    acceptedProposalCount: numberField(source.acceptedProposalCount || source.accepted_proposal_count),
+    proposedProposalCount: numberField(source.proposedProposalCount || source.proposed_proposal_count),
+    skippedProposalCount: numberField(source.skippedProposalCount || source.skipped_proposal_count),
+    expiredProposalCount: numberField(source.expiredProposalCount || source.expired_proposal_count),
+    supersededProposalCount: numberField(source.supersededProposalCount || source.superseded_proposal_count),
+    ownerDecisionProposalCount: numberField(source.ownerDecisionProposalCount || source.owner_decision_proposal_count),
+    proposalExecutionCount: numberField(source.proposalExecutionCount || source.proposal_execution_count),
+    publishedProposalExecutionCount: numberField(source.publishedProposalExecutionCount || source.published_proposal_execution_count),
+    blockedProposalExecutionCount: numberField(source.blockedProposalExecutionCount || source.blocked_proposal_execution_count),
+    failedProposalExecutionCount: numberField(source.failedProposalExecutionCount || source.failed_proposal_execution_count),
+    digestCount: numberField(source.digestCount || source.digest_count),
+    reviewedDigestCount: numberField(source.reviewedDigestCount || source.reviewed_digest_count),
+    pendingDigestCount: numberField(source.pendingDigestCount || source.pending_digest_count),
+    digestRequiredActionCount: numberField(source.digestRequiredActionCount || source.digest_required_action_count),
+    digestBlockedCandidateCount: numberField(source.digestBlockedCandidateCount || source.digest_blocked_candidate_count),
+    actionHandoffCount: numberField(source.actionHandoffCount || source.action_handoff_count),
+    deliveredHandoffCount: numberField(source.deliveredHandoffCount || source.delivered_handoff_count),
+    pendingHandoffDeliveryCount: numberField(source.pendingHandoffDeliveryCount || source.pending_handoff_delivery_count),
+    actionHandoffActionCount: numberField(source.actionHandoffActionCount || source.action_handoff_action_count),
+    blockedActionHandoffCount: numberField(source.blockedActionHandoffCount || source.blocked_action_handoff_count),
+    schedulerExecutionCount: numberField(source.schedulerExecutionCount || source.scheduler_execution_count),
+    publishedSchedulerExecutionCount: numberField(source.publishedSchedulerExecutionCount || source.published_scheduler_execution_count),
+    blockedSchedulerExecutionCount: numberField(source.blockedSchedulerExecutionCount || source.blocked_scheduler_execution_count),
+    failedSchedulerExecutionCount: numberField(source.failedSchedulerExecutionCount || source.failed_scheduler_execution_count),
+    schedulerRunCount: numberField(source.schedulerRunCount || source.scheduler_run_count),
+    completedSchedulerRunCount: numberField(source.completedSchedulerRunCount || source.completed_scheduler_run_count),
+    blockedSchedulerRunCount: numberField(source.blockedSchedulerRunCount || source.blocked_scheduler_run_count),
+    skippedSchedulerRunCount: numberField(source.skippedSchedulerRunCount || source.skipped_scheduler_run_count),
+    reviewedWorkerTargetCount: numberField(source.reviewedWorkerTargetCount || source.reviewed_worker_target_count),
+    pendingWorkerTargetReviewCount: numberField(source.pendingWorkerTargetReviewCount || source.pending_worker_target_review_count),
+    disabledWorkerTargetCount: numberField(source.disabledWorkerTargetCount || source.disabled_worker_target_count),
+    failurePolicyReady: source.failurePolicyReady === true || source.failure_policy_ready === true,
+    failurePolicyStatus: compactEvidenceField(source.failurePolicyStatus || source.failure_policy_status, 120)
+  };
+  const hasEvidence = Object.entries(summary).some(([key, value]) => {
+    if (key === "failurePolicyReady") return value === true;
+    if (key === "failurePolicyStatus") return Boolean(value);
+    return Number(value) > 0;
+  });
+  return hasEvidence ? summary : null;
+}
+
+function ownerReviewEvidenceCheck(input) {
+  const evidenceKey = "ownerReviewEvidence";
+  const checkKey = "owner_review_evidence";
+  const label = "Owner automation review evidence readback";
+  if (!evidenceOk(input, evidenceKey)) {
+    return check(checkKey, "missing", {
+      label,
+      evidenceKey,
+      evidencePresent: false
+    }, {
+      action: "run_owner_review_evidence_smoke",
+      requiredActor: "owner"
+    });
+  }
+  const summary = ownerReviewStageSummary(evidenceValue(input, evidenceKey));
+  return check(checkKey, "pass", Object.assign({
+    label,
+    evidenceKey,
+    evidencePresent: true,
+    ownerReviewStageSummaryPresent: Boolean(summary)
+  }, evidenceRef(input, evidenceKey), summary ? { ownerReviewStageSummary: summary } : {}));
 }
 
 function releaseApproved(input = {}, key) {
@@ -292,7 +373,8 @@ function compactEvidenceItem(checkItem = {}) {
     observedAt: compactEvidenceField(summary.observedAt, 120),
     artifactId: compactEvidenceField(summary.artifactId, 180),
     runId: compactEvidenceField(summary.runId, 180),
-    taskId: compactEvidenceField(summary.taskId, 180)
+    taskId: compactEvidenceField(summary.taskId, 180),
+    ownerReviewStageSummary: summary.ownerReviewStageSummary || undefined
   }).filter(([, value]) => value !== undefined && value !== ""));
 }
 
@@ -586,7 +668,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       presentCheck(inputWithReleaseEvidence, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
       presentCheck(inputWithReleaseEvidence, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
       presentCheck(inputWithReleaseEvidence, "releaseWorkbenchSmokeEvidence", "release_workbench_smoke_evidence", "Release workbench action-template readback", "run_release_workbench_readback_smoke"),
-      presentCheck(inputWithReleaseEvidence, "ownerReviewEvidence", "owner_review_evidence", "Owner automation review evidence readback", "run_owner_review_evidence_smoke"),
+      ownerReviewEvidenceCheck(inputWithReleaseEvidence),
       configGateCheck(inputWithReleaseApproval, config, "writeful_execution_release_approval", "automationWritefulExecutionEnabled", "writefulExecutionApproval", "Writeful execution release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_scheduler_release_approval", "automationBackgroundSchedulerEnabled", "backgroundSchedulerApproval", "Background scheduler release approval"),
       configGateCheck(inputWithReleaseApproval, config, "background_worker_release_approval", "automationBackgroundWorkerEnabled", "backgroundWorkerApproval", "Background worker release approval")

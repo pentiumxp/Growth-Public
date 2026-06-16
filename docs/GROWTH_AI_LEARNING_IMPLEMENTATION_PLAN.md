@@ -775,6 +775,11 @@ Implemented backend shape:
   scheduler execution, scheduler run, worker-target, and failure-policy stage
   counts. It is not proposal/digest/action UI evidence and is not mobile visual
   evidence.
+  Release-readiness now preserves those bounded counters in
+  `evidenceReadback.items[].ownerReviewStageSummary` for the
+  `ownerReviewEvidence` item. That readback improves release audit visibility
+  only; it does not add a new pass gate, approve release, enable scheduling, or
+  publish cards.
   Use `--task daily_loop_write
   --allow-write-evidence --daily-loop-write-operation draft|publish` only when
   intentionally collecting controlled production daily-loop write evidence;

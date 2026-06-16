@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-16T14:17+08:00 - Release-Readiness Owner Review Stage Readback
+
+- Status: implemented, documented, and validated. This backend-only slice
+  closes the readback gap between `ownerReviewEvidence.summary` in release
+  evidence bundles and release-readiness snapshots/readbacks. Overall Growth
+  closed-loop MVP progress remains about `80%`: release audit visibility is
+  stronger, but product-specific automation UI, central visual evidence,
+  production evidence collection, and broader rollout remain open.
+- Scope:
+  - `learning-automation-release-readiness-service` now uses a dedicated
+    `ownerReviewEvidenceCheck` instead of a generic presence check;
+  - when `ownerReviewEvidence` carries a bundle summary, release-readiness
+    projects bounded `ownerReviewStageSummary` counters into the
+    `ownerReviewEvidence` item in `evidenceReadback.items`;
+  - the projected counters cover proposal lifecycle, proposal execution,
+    digest, action-handoff, scheduler execution, scheduler run, worker-target,
+    and failure-policy status;
+  - service and smoke harnesses prove raw proposal/digest/handoff/execution/
+    run/worker-target ids in evidence input are not copied into the readback;
+  - no readiness pass semantics, release approval, scheduler permission,
+    Gateway/model call, card publication, evaluation, runtime config, or
+  learner-state mutation was added. After this slice is committed and pushed,
+  the delivered progress estimate is `81%`.
+- Docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Harness updated:
+  - `tests/learning-automation-release-readiness-service.test.js`;
+  - `tests/growth-release-readiness-smoke-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-architecture-boundary.test.js` (`48/48`);
+  - `node scripts/check-growth-docs-locality.js` (`35/35`);
+  - targeted `node --check` for changed runtime/test files;
+  - `git diff --check`;
+  - `npm run check` (`196/196` runtime JavaScript files covered);
+  - `npm test` (`803/803`);
+  - `codegraph sync && codegraph status` reported up-to-date index with
+    `347` JavaScript files, `4,646` nodes, and `18,635` edges;
+  - Home AI app `node --check scripts/deploy-macos-production.js`;
+  - Home AI app `node tests/macos-production-deploy-script.test.js`;
+  - Home AI app `node tests/production-status-smoke-harness.test.js`;
+  - Home AI app `node tests/architecture-code-test-harness-map.test.js`;
+  - Home AI app
+    `npm run --silent deploy:macos -- --target home-ai --json` returned
+    `ok: true`, `mode: "plan"`, and did not execute deployment;
+  - Home AI app `git diff --check`.
+- AI Ops note:
+  - Intake command:
+    `cd /Users/hermes-dev/HermesMobileDev/app && node scripts/ai-ops-control-plane.js intake --task "Growth release-readiness owner-review evidence stage readback projection; backend service docs harness only; no production deploy" --json`.
+  - AI Ops classified the slice as H1 and did not require the visual lane.
+  - AI Ops evidence record:
+    `evidence-a54240e4-2682-49ad-8a0f-f9b95055f90d`.
+  - The Home AI app deploy plan reported unrelated dirty files
+    `adapters/owner-elevation-routing-service.js` and
+    `tests/owner-elevation-routing-service.test.js`; they were not modified by
+    this Growth slice.
+
 ## 2026-06-16T14:08+08:00 - Owner Review Evidence Downstream Stage Counts
 
 - Status: implemented, documented, and validated. This backend-only slice
