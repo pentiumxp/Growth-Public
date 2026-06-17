@@ -400,6 +400,18 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "active",
     reason: "Owner activated bounded failure policy."
   }, "weixin_fanfan");
+  await client.fetchGrowthReleaseArtifactTemplate("weixin_fanfan", {
+    target: { learnerId: "fanfan" },
+    suggestedPlan: {
+      domain: "english",
+      subject: "english"
+    },
+    releaseWorkbench: {
+      releaseWorkbench: {
+        inventory: { latestCollectionRunId: "release_run_1" }
+      }
+    }
+  });
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -618,6 +630,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "active",
     reason: "Owner activated bounded failure policy."
   });
+  const releaseArtifactTemplateCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/release-artifact-template?"));
+  assert.equal(releaseArtifactTemplateCall.path, "/api/v1/growth/automation/release-artifact-template?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -678,6 +692,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchGrowthAutomationFailurePolicyReadiness({ learner_id: "fanfan" }, "weixin_stephen");
   await client.createGrowthAutomationFailurePolicy({ learner_id: "fanfan", policy: { summaryOnly: true } }, "weixin_stephen");
   await client.reviewGrowthAutomationFailurePolicy("lgafpol_proxy_1", { status: "archived" }, "weixin_stephen");
+  await client.fetchGrowthReleaseArtifactTemplate("weixin_stephen", { target: { learnerId: "fanfan" } });
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -796,6 +811,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     status: "archived"
   });
+  const proxyReleaseArtifactTemplateCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-artifact-template?"));
+  assert.equal(proxyReleaseArtifactTemplateCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-artifact-template?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1269,6 +1286,123 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           }
         }]
       }
+    },
+    releaseArtifactTemplate: {
+      ok: true,
+      status: "artifact_manifest_required",
+      releaseArtifactTemplate: {
+        schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactTemplate.summary.v1",
+        summaryOnly: true,
+        status: "artifact_manifest_required",
+        manifestSchemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+        artifactSlotCount: 2,
+        artifactTaskIds: ["central_visual", "release_package_review_ui"],
+        artifactSlots: [{
+          schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactSlot.v1",
+          summaryOnly: true,
+          taskId: "central_visual",
+          evidenceKey: "centralVisualEvidence",
+          checkKey: "central_visual_evidence",
+          manifestField: "centralVisualEvidenceFile",
+          required: true,
+          source: "home_ai_central_visual_toolchain"
+        }, {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactSlot.v1",
+          summaryOnly: true,
+          taskId: "release_package_review_ui",
+          evidenceKey: "releasePackageReviewUiEvidence",
+          checkKey: "release_package_review_ui_evidence",
+          uiGate: "release_package_review",
+          manifestMap: "uiEvidenceFiles",
+          manifestKey: "releasePackageReviewUiEvidence",
+          required: true,
+          source: "home_ai_central_ui_visual_toolchain"
+        }],
+        artifactManifestTemplate: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          centralVisualEvidenceFile: "",
+          uiEvidenceFiles: {
+            releasePackageReviewUiEvidence: ""
+          }
+        },
+        readyForManifestInput: false,
+        releaseEvidenceChecklist: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceChecklist.v1",
+          summaryOnly: true,
+          status: "release_evidence_actions_required",
+          itemCount: 4,
+          artifactItemCount: 2,
+          collectionTaskItemCount: 1,
+          statePrerequisiteItemCount: 1,
+          items: [{
+            key: "artifact:central_visual",
+            label: "中心视觉证据",
+            kind: "home_ai_visual_artifact",
+            status: "missing"
+          }, {
+            key: "artifact:release_package_review_ui",
+            label: "发布包复核 UI 证据",
+            kind: "home_ai_visual_artifact",
+            status: "missing"
+          }, {
+            key: "collection:profile_feedback",
+            label: "Profile feedback collection",
+            kind: "release_evidence_collection_task",
+            commandName: "npm run smoke:profile-feedback",
+            status: "missing"
+          }, {
+            key: "state:active_failure_policy",
+            label: "Active failure policy",
+            kind: "release_state_prerequisite",
+            routePath: "/api/v1/growth/automation/failure-policies",
+            status: "missing"
+          }]
+        },
+        releaseEvidenceActionPlan: {
+          schemaVersion: "growth.learningAutomationReleaseEvidenceActionPlan.v1",
+          summaryOnly: true,
+          status: "release_evidence_actions_required",
+          actionCount: 2,
+          submittableActionCount: 0,
+          phaseBlockedActionCount: 2,
+          externalActionCount: 1,
+          readyPhase: "release_evidence_prerequisites",
+          nextAction: {
+            key: "prepare:release_evidence_artifact_manifest",
+            action: "collect_home_ai_central_visual_ui_summary_artifacts",
+            readyToSubmit: false
+          },
+          nextSubmittableAction: null,
+          actions: [{
+            key: "prepare:release_evidence_artifact_manifest",
+            action: "collect_home_ai_central_visual_ui_summary_artifacts",
+            label: "Prepare release evidence artifact manifest",
+            readyToSubmit: false,
+            artifactSlotCount: 2,
+            artifactTaskIds: ["central_visual", "release_package_review_ui"],
+            followupRoute: {
+              path: "/api/v1/growth/automation/release-workbench/actions"
+            }
+          }, {
+            key: "execute:release_evidence_collection",
+            action: "run_release_evidence_collection",
+            label: "Run release evidence collection",
+            readyToSubmit: false,
+            route: {
+              path: "/api/v1/growth/automation/release-workbench/actions"
+            },
+            directCollectionRoutePath: "/api/v1/growth/automation/release-evidence-collections/run"
+          }]
+        },
+        nextAction: {
+          key: "fill_release_evidence_artifact_manifest",
+          action: "collect_home_ai_central_visual_ui_summary_artifacts",
+          requiredActor: "owner"
+        }
+      },
+      writefulSchedulingAllowed: false
     },
     automationProposals: {
       ok: true,
@@ -1809,6 +1943,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           },
           packageCandidate: releasePackageCandidate
         },
+        releaseArtifactTemplate: {
+          status: "ready",
+          data: context.releaseArtifactTemplate,
+          error: ""
+        },
         automationProposals: {
           status: "ready",
           data: context.automationProposals,
@@ -2152,6 +2291,19 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-workbench-endpoint-key="release_package"/);
   assert.match(html, /收集证据/);
   assert.match(html, /记录决策/);
+  assert.match(html, /data-release-artifact-template-panel/);
+  assert.match(html, /data-release-artifact-template-status="artifact_manifest_required"/);
+  assert.match(html, /证据清单/);
+  assert.match(html, /data-release-artifact-template-refresh/);
+  assert.match(html, /data-release-artifact-slot/);
+  assert.match(html, /data-release-artifact-task-id="central_visual"/);
+  assert.match(html, /data-release-artifact-task-id="release_package_review_ui"/);
+  assert.match(html, /data-release-artifact-checklist-key="artifact:central_visual"/);
+  assert.match(html, /data-release-artifact-checklist-key="collection:profile_feedback"/);
+  assert.match(html, /data-release-artifact-action-key="prepare:release_evidence_artifact_manifest"/);
+  assert.match(html, /data-release-artifact-action-key="execute:release_evidence_collection"/);
+  assert.match(html, /Manifest 待中心视觉\/UI artifact/);
+  assert.match(html, /growth.learningAutomationReleaseEvidenceArtifactManifest.v1/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -2383,6 +2535,20 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(windowRef.HermesGrowthCardGenerationUi.ownerAuditReviewHasAnchor(ownerAuditReviewPayload), true);
   assert.equal(Object.hasOwn(ownerAuditReviewPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(ownerAuditReviewPayload, "transcript"), false);
+
+  const releaseArtifactTemplateQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseArtifactTemplateQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseArtifactTemplateQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan"
+  });
+  assert.equal(Object.hasOwn(releaseArtifactTemplateQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseArtifactTemplateQueryPayload, "transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -4078,7 +4244,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-failure-policy-ui-v1";
+  const staticVersion = "20260618-release-artifact-template-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -4125,6 +4291,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function refreshReleaseWorkbench/);
   assert.match(source, /api\.fetchGrowthReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);
+  assert.match(source, /function refreshReleaseArtifactTemplate/);
+  assert.match(source, /api\.fetchGrowthReleaseArtifactTemplate\(requestedTargetWorkspaceId, context\)/);
+  assert.match(source, /data-release-artifact-template-refresh/);
+  assert.match(source, /releaseArtifactTemplate/);
+  assert.match(source, /await refreshReleaseArtifactTemplate\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshAutomationProposals/);
   assert.match(source, /api\.fetchGrowthAutomationProposals\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)/);
@@ -4221,6 +4392,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.recordGrowthOwnerAuditReview\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.buildGrowthReleasePackage\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthReleaseArtifactTemplate\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);

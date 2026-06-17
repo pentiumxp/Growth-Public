@@ -1835,6 +1835,15 @@ Implementation progress on 2026-06-15:
   project bounded count/latest id/key/status fields; they must not inspect the
   SQLite table directly and must not treat the presence of a record as runtime
   enablement.
+- The embedded Owner generation tab now consumes the no-write
+  release artifact-template readback from
+  `GET /api/v1/growth/automation/release-artifact-template` inside the release
+  workbench panel. It displays artifact slots, checklist items, action-plan
+  rows, manifest schema status, and refresh state so Owner can see which Home
+  AI central visual/UI summary artifacts and release-evidence collection tasks
+  remain. This is guidance only: the browser does not read local artifact
+  files, run visual tooling, validate evidence, persist pass records, approve a
+  release, apply runtime config, or grant scheduler permission.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection

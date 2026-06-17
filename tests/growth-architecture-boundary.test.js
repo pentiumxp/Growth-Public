@@ -4440,6 +4440,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /fetchGrowthAutomationFailurePolicyReadiness/);
   assert.match(app, /createGrowthAutomationFailurePolicy/);
   assert.match(app, /reviewGrowthAutomationFailurePolicy/);
+  assert.match(app, /refreshReleaseArtifactTemplate/);
+  assert.match(app, /fetchGrowthReleaseArtifactTemplate/);
+  assert.match(app, /data-release-artifact-template-refresh/);
   assert.match(app, /data-automation-failure-policy-create/);
   assert.match(app, /data-automation-failure-policy-review/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
@@ -4472,6 +4475,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /selectedCycle/);
   assert.match(generationUi, /data-release-workbench-panel/);
   assert.match(generationUi, /releaseWorkbenchPanel/);
+  assert.match(generationUi, /data-release-artifact-template-panel/);
+  assert.match(generationUi, /releaseArtifactTemplatePanel/);
+  assert.match(generationUi, /createReleaseArtifactTemplateQueryPayload/);
+  assert.match(generationUi, /data-release-artifact-checklist-item/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
   assert.match(generationUi, /createAutomationProposalCreatePayload/);

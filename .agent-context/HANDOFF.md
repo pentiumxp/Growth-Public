@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T04:04+0800 - Release Artifact Template Owner UI
+
+- Status: implemented locally; syntax and focused frontend Harness passed. No
+  production deploy, Home AI central visual harness run, Gateway/model call,
+  learner evidence write, release evidence persistence, visual/UI artifact
+  validation, scheduler execution, runtime config change, release approval, or
+  Home AI host logic change was performed.
+- Classification: H2 Growth embedded UI consumption over the existing
+  no-write release artifact-template boundary. It adds no route, table, release
+  evidence writer, visual-tool runner, scheduler permission, runtime config
+  mutation, or browser-side release policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthReleaseArtifactTemplate()` for
+    `GET /api/v1/growth/automation/release-artifact-template`;
+  - `public/growth-card-generation-ui.js` now renders a summary-only
+    `证据清单` subpanel inside the release workbench, showing artifact slots,
+    checklist rows, action-plan rows, manifest schema status, and refresh
+    state from the service readback only;
+  - `public/app.js` keeps `releaseArtifactTemplate` UI state, wires refresh,
+    and refreshes artifact-template readback after successful release workbench
+    refreshes so proposal/digest/failure-policy/handoff/scheduler/worker
+    prerequisite changes do not leave stale release evidence guidance;
+  - `public/index.html` cache-busting moved to
+    `20260618-release-artifact-template-ui-v1`;
+  - Growth-local docs now state that the Owner UI consumes artifact-template
+    readback but still cannot upload local artifacts, run visual tooling,
+    validate UI evidence, persist release evidence, approve release state,
+    mutate runtime config, or enable scheduling.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js public/growth-card-generation-ui.js
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32.
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 76/76;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`,
+    `checkedCount=225`;
+  - `git diff --check`;
+  - local current-worktree service readback on `GROWTH_PORT=4883`: index used
+    `20260618-release-artifact-template-ui-v1`;
+    `growth-card-generation-ui.js` contained
+    `data-release-artifact-template-panel`,
+    `createReleaseArtifactTemplateQueryPayload`, and `证据清单`; `app.js`
+    contained `refreshReleaseArtifactTemplate` and refresh wiring; and
+    `growth-api-client.js` contained `fetchGrowthReleaseArtifactTemplate`.
+- Remaining gate:
+  - before production UI release, still run the Home AI central embedded-plugin
+    visual harness and persist bounded UI/release evidence through the existing
+    Growth release-evidence path.
+
 ## 2026-06-18T03:50+0800 - Failure Policy Owner UI
 
 - Status: implemented locally; focused frontend/layout/architecture/docs

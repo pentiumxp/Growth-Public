@@ -67,6 +67,12 @@ readback gate set.
   for the existing workbench action route plus external artifact/manual steps;
   blank manifest templates remain unfilled, and collection body templates keep
   artifact tasks outside `tasks` until the filled manifest is supplied. The
+  embedded Owner `生成` tab now consumes this readback inside the release
+  workbench panel as a summary-only `证据清单` subpanel with artifact slots,
+  checklist rows, action-plan rows, manifest schema status, and refresh
+  wiring. It does not accept local artifact paths, run visual tooling, validate
+  UI evidence, persist release evidence, apply approvals, or enable scheduling.
+  The
   route performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or
   widen to default UI tasks when no visual/UI evidence is missing. The normal

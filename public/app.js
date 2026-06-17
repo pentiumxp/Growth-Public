@@ -35,6 +35,11 @@
         packageCandidate: null,
         packageError: ""
       },
+      releaseArtifactTemplate: {
+        status: "idle",
+        data: null,
+        error: ""
+      },
       automationProposals: {
         status: "idle",
         data: null,
@@ -975,6 +980,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-artifact-template-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshReleaseArtifactTemplate().catch((error) => {
+          pageState.cardGeneration.releaseArtifactTemplate = Object.assign({}, pageState.cardGeneration.releaseArtifactTemplate, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1422,6 +1440,11 @@
       packageCandidate: null,
       packageError: ""
     };
+    pageState.cardGeneration.releaseArtifactTemplate = {
+      status: "loading",
+      data: pageState.cardGeneration.releaseArtifactTemplate?.data || null,
+      error: ""
+    };
     pageState.cardGeneration.automationProposals = {
       status: "loading",
       data: pageState.cardGeneration.automationProposals?.data || null,
@@ -1722,7 +1745,7 @@
     }
   }
 
-  async function refreshReleaseWorkbench(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+  async function refreshReleaseWorkbench(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
     if (!pageState.auth.isOwner || !context) return null;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
     const previous = pageState.cardGeneration.releaseWorkbench || {};
@@ -1755,6 +1778,9 @@
       pageState.cardGeneration.context = Object.assign({}, context, {
         releaseWorkbench: result
       });
+      if (!options.skipArtifactTemplate) {
+        await refreshReleaseArtifactTemplate(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
+      }
       return result;
     } catch (error) {
       pageState.cardGeneration.releaseWorkbench = {
@@ -1769,6 +1795,39 @@
         packageCandidate: previous.packageCandidate || null,
         packageError: previous.packageError || ""
       };
+      return null;
+    }
+  }
+
+  async function refreshReleaseArtifactTemplate(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.releaseArtifactTemplate || {};
+    pageState.cardGeneration.releaseArtifactTemplate = {
+      status: "loading",
+      data: previous.data || null,
+      error: ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const result = await api.fetchGrowthReleaseArtifactTemplate(requestedTargetWorkspaceId, context);
+      pageState.cardGeneration.releaseArtifactTemplate = {
+        status: "ready",
+        data: result,
+        error: ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        releaseArtifactTemplate: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.releaseArtifactTemplate = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error)
+      };
+      if (!options.silent) renderShell();
       return null;
     }
   }

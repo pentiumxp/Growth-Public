@@ -431,6 +431,10 @@
       return fetchJson(`${growthApiPath("automation", "release-workbench")}${releaseWorkbenchQuery(targetWorkspaceId, context)}`);
     }
 
+    function fetchGrowthReleaseArtifactTemplate(targetWorkspaceId = getWorkspaceId(), context = {}) {
+      return fetchJson(`${growthApiPath("automation", "release-artifact-template")}${releaseWorkbenchQuery(targetWorkspaceId, context)}`);
+    }
+
     function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "release-packages", "build"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -731,6 +735,7 @@
       fetchGrowthCard,
       fetchGrowthReferenceObjectTypes,
       fetchGrowthReferenceSummary,
+      fetchGrowthReleaseArtifactTemplate,
       fetchGrowthReleaseWorkbench,
       fetchGrowthStageCheckpointControls,
       fetchJson,

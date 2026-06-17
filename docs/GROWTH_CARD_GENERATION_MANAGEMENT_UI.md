@@ -53,8 +53,16 @@ for this UI path, while backend/CLI callers may request package audit
 persistence only with explicit write flags and Owner or `--allow-write`
 authorization; the workbench action backend can also accept an explicit
 `buildReleasePackage` / `build_and_record_package` request that delegates build
-plus package-record persistence to the package service. Central
-`embedded-plugin-shell` visual evidence passed for
+plus package-record persistence to the package service.
+The same release workbench panel now also reads the no-write
+`GET /api/v1/growth/automation/release-artifact-template` readback and renders
+a `证据清单` subpanel. That subpanel shows only the service-projected artifact
+slots, checklist items, action-plan rows, next action, manifest schema, and
+refresh state. It does not accept local file paths, run the Home AI visual
+toolchain, validate UI artifacts, persist release evidence, apply approvals,
+or enable scheduling; filled artifact manifests still enter Growth only through
+the existing release workbench action / release evidence collection boundary.
+Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
 passed for manifest/status/static-version, planner readiness, daily-loop
@@ -471,7 +479,11 @@ learner state. Package candidate building is delegated only to
 `POST /api/v1/growth/automation/release-packages/build`; the browser does not
 run smoke scripts or construct package internals itself, and it records package
 audit rows through the advertised workbench action only after a real candidate
-exists. Runtime enablement
+exists. The release artifact-template subpanel is read-only guidance for
+Owner/release tooling: it displays missing Home AI central visual/UI artifact
+slots, supported collection tasks, state prerequisites, manual gaps, and
+phase-blocked action templates, but it does not upload evidence or turn a blank
+manifest into a pass record. Runtime enablement
 action records are audit/readback records only; external configuration
 verification still happens outside Growth and must be represented as bounded
 summary evidence before scheduler execution can proceed.
@@ -1194,7 +1206,7 @@ Add focused tests before broad regression runs:
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state with subject/capability/coverage selectors, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, formal stage-checkpoint rubric readback from the controls DTO, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
-| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, and absence of `writefulSchedulingAllowed`, raw prompts, or transcripts. |
+| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. It also renders `data-release-artifact-template-panel` from the no-write release artifact-template readback, including artifact slots, checklist rows, action-plan rows, manifest schema status, refresh state, and direct/proxy API client coverage for `GET /api/v1/growth/automation/release-artifact-template`. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, release artifact-template query payloads, and absence of `writefulSchedulingAllowed`, raw prompts, raw artifact paths, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |

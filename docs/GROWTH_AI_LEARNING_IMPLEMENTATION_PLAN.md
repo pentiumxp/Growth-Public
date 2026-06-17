@@ -883,6 +883,14 @@ Implemented backend shape:
   same artifact slots, strips it after parsing, expands only whitelisted central
   visual/UI task selectors into transient collection inputs, and deliberately
   keeps server-local manifest file reads as CLI/operator glue only.
+  The embedded Owner generation tab now consumes this same no-write readback
+  through the release workbench panel: it fetches
+  `GET /api/v1/growth/automation/release-artifact-template`, shows artifact
+  slots, checklist items, action-plan rows, manifest schema status, and a
+  refresh control, and refreshes it whenever release workbench state refreshes.
+  The browser still does not read server-local artifact files, run Home AI
+  visual tooling, validate UI artifacts, persist release evidence, grant
+  approval, or enable scheduling.
   The explicit non-default `release_workbench` task maps
   `npm run smoke:release-workbench` output into
   `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final
