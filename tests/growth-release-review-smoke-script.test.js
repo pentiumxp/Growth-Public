@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseReviewSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-review");
@@ -227,14 +228,118 @@ test("release review smoke script delegates to service only", () => {
   const result = runOperation({
     review(input) {
       calls.push(input);
-      return { ok: true, status: "incomplete" };
+      return {
+        ok: true,
+        status: "incomplete",
+        readyForReleaseReview: false,
+        collectionRunPresent: true,
+        packageRecordRequired: true,
+        packageRecordPresent: false,
+        releaseReview: {
+          status: "incomplete",
+          packageRecordStatus: "missing",
+          missingCheckKeys: [ "release_package_record" ],
+          blockedCheckKeys: [],
+          missingEvidenceKeys: [],
+          requiredActionCount: 1,
+          nextAction: {
+            key: "record_release_package",
+            action: "record_release_package",
+            requiredActor: "owner"
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        }
+      };
     }
   }, { workspaceId: "fanfan" });
 
   assert.equal(result.ok, true);
   assert.equal(result.status, "incomplete");
+  assert.equal(result.releaseReviewStatus, "incomplete");
+  assert.equal(result.releaseReviewPackageRecordRequired, true);
+  assert.equal(result.releaseReviewPackageRecordPresent, false);
+  assert.equal(result.releaseReviewPackageRecordStatus, "missing");
+  assert.equal(result.releaseReviewMissingCheckCount, 1);
+  assert.equal(result.releaseReviewRequiredActionCount, 1);
+  assert.deepEqual(result.releaseReviewNextAction, {
+    key: "record_release_package",
+    action: "record_release_package",
+    requiredActor: "owner"
+  });
+  assert.equal(result.releaseReviewWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseReviewRuntimeConfigChange, false);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].workspaceId, "fanfan");
+});
+
+test("release review smoke script projects top-level operator readback", () => {
+  const result = projectReleaseReviewSmokeReadback({
+    ok: true,
+    status: "approved",
+    readyForReleaseReview: true,
+    approvedForReleaseReview: true,
+    collectionRunPresent: true,
+    packageRecordReadbackAvailable: true,
+    packageRecordRequired: true,
+    packageRecordPresent: true,
+    latestCollectionRun: {
+      runId: "lgacrn_ready_1",
+      status: "ready_for_release_review"
+    },
+    latestDecision: {
+      decisionId: "lgrd_1",
+      status: "approved"
+    },
+    latestPackage: {
+      packageId: "lgrpkg_1"
+    },
+    packageReadback: {
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "ready_for_release_review",
+      latestPackageDashboardNextActionKey: "",
+      latestPackageDashboardPreflightStatus: "ready_for_owner_release_activation",
+      latestPackageDashboardPreflightReadyForOwnerReleaseActivation: true
+    },
+    releaseReview: {
+      status: "approved",
+      packageRecordStatus: "ready_for_release_review",
+      latestPackageId: "lgrpkg_1",
+      latestPackageStepCount: 6,
+      latestPackageDashboardStatus: "ready_for_release_review",
+      latestPackageDashboardPreflightStatus: "ready_for_owner_release_activation",
+      latestPackageDashboardPreflightReadyForOwnerReleaseActivation: true,
+      missingCheckKeys: [],
+      blockedCheckKeys: [],
+      missingEvidenceKeys: [],
+      requiredActionCount: 0,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    }
+  });
+
+  assert.equal(result.releaseReviewStatus, "approved");
+  assert.equal(result.releaseReviewReadyForReleaseReview, true);
+  assert.equal(result.releaseReviewApprovedForReleaseReview, true);
+  assert.equal(result.releaseReviewCollectionRunPresent, true);
+  assert.equal(result.releaseReviewCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.releaseReviewLatestDecisionId, "lgrd_1");
+  assert.equal(result.releaseReviewLatestDecisionStatus, "approved");
+  assert.equal(result.releaseReviewPackageRecordReadbackAvailable, true);
+  assert.equal(result.releaseReviewPackageRecordRequired, true);
+  assert.equal(result.releaseReviewPackageRecordPresent, true);
+  assert.equal(result.releaseReviewPackageRecordStatus, "ready_for_release_review");
+  assert.equal(result.releaseReviewLatestPackageId, "lgrpkg_1");
+  assert.equal(result.releaseReviewLatestPackageStepCount, 6);
+  assert.equal(result.releaseReviewLatestPackageDashboardStatus, "ready_for_release_review");
+  assert.equal(result.releaseReviewLatestPackageDashboardPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.releaseReviewLatestPackageDashboardPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.releaseReviewMissingCheckCount, 0);
+  assert.equal(result.releaseReviewBlockedCheckCount, 0);
+  assert.equal(result.releaseReviewMissingEvidenceCount, 0);
+  assert.equal(result.releaseReviewRequiredActionCount, 0);
+  assert.equal(result.releaseReviewWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseReviewRuntimeConfigChange, false);
 });
 
 test("release review smoke script runs no-write review against a temporary SQLite db", () => {
@@ -258,6 +363,12 @@ test("release review smoke script runs no-write review against a temporary SQLit
   assert.equal(output.operation, "review");
   assert.equal(output.ok, true);
   assert.equal(output.schemaVersion, "growth.learningAutomationReleaseReview.v1");
+  assert.equal(output.releaseReviewStatus, output.status);
+  assert.equal(output.releaseReviewPackageRecordRequired, false);
+  assert.equal(output.releaseReviewPackageRecordPresent, false);
+  assert.equal(output.releaseReviewMissingCheckCount, output.releaseReview.missingCheckKeys.length);
+  assert.equal(output.releaseReviewBlockedCheckCount, output.releaseReview.blockedCheckKeys.length);
+  assert.equal(output.releaseReviewMissingEvidenceCount, output.releaseReview.missingEvidenceKeys.length);
   assert.equal(output.writefulSchedulingAllowed, false);
   assert.equal(output.runtimeConfigChange, false);
 });
@@ -286,6 +397,10 @@ test("release review smoke script blocks legacy boolean release evidence flags",
     assert.equal(output.ok, true);
     assert.equal(output.status, "blocked");
     assert.equal(output.readyForReleaseReview, false);
+    assert.equal(output.releaseReviewStatus, "blocked");
+    assert.equal(output.releaseReviewReadyForReleaseReview, false);
+    assert.equal(output.releaseReviewBlockedCheckCount, output.releaseReview.blockedCheckKeys.length);
+    assert.equal(output.releaseReviewMissingEvidenceCount, output.releaseReview.missingEvidenceKeys.length);
     assert.equal(output.releaseReview.blockedCheckKeys.includes("stage_checkpoint_evidence"), true);
     assert.equal(output.readiness.releaseReview.blockedCheckKeys.includes("stage_checkpoint_evidence"), true);
     assert.equal(output.writefulSchedulingAllowed, false);
@@ -365,6 +480,19 @@ test("release review smoke script reads package audit record from the real SQLit
     assert.equal(output.packageRecordReadbackAvailable, true);
     assert.equal(output.packageRecordRequired, true);
     assert.equal(output.packageRecordPresent, true);
+    assert.equal(output.releaseReviewStatus, output.status);
+    assert.equal(output.releaseReviewReadyForReleaseReview, output.readyForReleaseReview);
+    assert.equal(output.releaseReviewCollectionRunPresent, true);
+    assert.equal(output.releaseReviewCollectionRunId, run.runId);
+    assert.equal(output.releaseReviewPackageRecordReadbackAvailable, true);
+    assert.equal(output.releaseReviewPackageRecordRequired, true);
+    assert.equal(output.releaseReviewPackageRecordPresent, true);
+    assert.equal(output.releaseReviewLatestPackageId, releasePackage.packageId);
+    assert.equal(output.releaseReviewLatestPackageStepCount, 6);
+    assert.equal(output.releaseReviewLatestPackageDashboardStatus, "manual_runtime_config_required");
+    assert.equal(output.releaseReviewLatestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+    assert.equal(output.releaseReviewWritefulSchedulingAllowed, false);
+    assert.equal(output.releaseReviewRuntimeConfigChange, false);
     assert.equal(output.latestPackage.packageId, releasePackage.packageId);
     assert.equal(output.latestPackage.collectionRunId, run.runId);
     assert.equal(output.latestPackage.stepSummary.stepCount, 6);

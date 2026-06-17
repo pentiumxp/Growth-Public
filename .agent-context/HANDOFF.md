@@ -9,6 +9,55 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:52+08:00 - Release Review Smoke Operator Readback
+
+- Status: implemented, key-node validated, and ready to commit locally. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- AI Ops note:
+  - `node scripts/ai-ops-control-plane.js intake --task "Growth plugin local H2
+    release review smoke projection contract and harness update" --json` still
+    over-selected Mac deployment H1 because of the `release` keyword;
+  - this slice is intentionally limited to Growth-local smoke projection,
+    Harness, and docs, so deployment/visual requirements from that intake are
+    not applied here.
+- Problem found:
+  - `smoke-growth-release-review` delegated correctly to
+    `learning-automation-release-review-service.review`, but operator-critical
+    status, collection-run/decision/package readback, package-dashboard
+    summary, missing/blocked counts, next action, and runtime/write flags were
+    available only through the canonical nested DTOs;
+  - this made release-review less consistent with release-decision,
+    release-readiness, controls, closure, inventory, dashboard, workbench, and
+    preflight smoke readbacks.
+- Scope:
+  - added `projectReleaseReviewSmokeReadback` in
+    `scripts/smoke-growth-release-review.js`;
+  - wrapped the smoke `review` operation with bounded top-level,
+    summary-only projection fields while preserving `releaseReview` and the
+    service DTO as canonical output;
+  - expanded `tests/growth-release-review-smoke-script.test.js` with pure
+    projection coverage, fake-service delegation assertions, temporary SQLite
+    no-write readback assertions, blocked legacy-flag assertions, and package
+    audit-record readback assertions;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-release-review.js`;
+  - `node --test tests/growth-release-review-smoke-script.test.js` -> 8/8;
+  - `npm run --silent test:release-union` -> 242/242;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `node scripts/check-growth-docs-locality.js` -> ok, `requiredCount=37`;
+  - `git diff --check` -> ok;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,344 nodes, 23,403 edges, with the existing earlier-engine advisory.
+- Note: full `npm test` was intentionally not run in this slice per the current
+  speed instruction. Key-node validation was selected because the change is
+  limited to smoke projection, Harness, and documentation.
+
 ## 2026-06-17T12:44+08:00 - Release Decision Smoke Operator Readback
 
 - Status: implemented, key-node validated, and ready to commit locally. No

@@ -55,8 +55,78 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason || action.label, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80)
+  };
+}
+
+function projectReleaseReviewSmokeReadback(result = {}) {
+  const releaseReview = objectOnly(result.releaseReview);
+  const latestCollectionRun = objectOnly(result.latestCollectionRun);
+  const latestDecision = objectOnly(result.latestDecision);
+  const latestPackage = objectOnly(result.latestPackage);
+  const packageReadback = objectOnly(result.packageReadback || releaseReview.packageReadback);
+  const status = cleanString(result.releaseReviewStatus || result.status || releaseReview.status, 120);
+  const latestPackageId = cleanString(
+    releaseReview.latestPackageId
+    || packageReadback.latestPackageId
+    || latestPackage.packageId
+    || latestPackage.package_id,
+    140
+  );
+  return Object.assign({}, result, {
+    releaseReviewStatus: status,
+    releaseReviewReadyForReleaseReview: result.readyForReleaseReview === true,
+    releaseReviewApprovedForReleaseReview: result.approvedForReleaseReview === true || status === "approved",
+    releaseReviewCollectionRunPresent: result.collectionRunPresent === true || Boolean(latestCollectionRun.runId),
+    releaseReviewCollectionRunId: cleanString(
+      result.collectionRunId
+      || latestCollectionRun.runId
+      || latestCollectionRun.collectionRunId
+      || latestCollectionRun.collection_run_id,
+      140
+    ),
+    releaseReviewLatestDecisionId: cleanString(latestDecision.decisionId || latestDecision.decision_id, 140),
+    releaseReviewLatestDecisionStatus: cleanString(latestDecision.status, 120),
+    releaseReviewPackageRecordReadbackAvailable: result.packageRecordReadbackAvailable === true || releaseReview.packageRecordReadbackAvailable === true,
+    releaseReviewPackageRecordRequired: result.packageRecordRequired === true || releaseReview.packageRecordRequired === true,
+    releaseReviewPackageRecordPresent: result.packageRecordPresent === true || releaseReview.packageRecordPresent === true,
+    releaseReviewPackageRecordStatus: cleanString(releaseReview.packageRecordStatus || packageReadback.packageRecordStatus, 120),
+    releaseReviewLatestPackageId: latestPackageId,
+    releaseReviewLatestPackageStepCount: Number(releaseReview.latestPackageStepCount || packageReadback.latestPackageStepCount || 0) || 0,
+    releaseReviewLatestPackageDashboardStatus: cleanString(releaseReview.latestPackageDashboardStatus || packageReadback.latestPackageDashboardStatus, 120),
+    releaseReviewLatestPackageDashboardNextActionKey: cleanString(releaseReview.latestPackageDashboardNextActionKey || packageReadback.latestPackageDashboardNextActionKey, 140),
+    releaseReviewLatestPackageDashboardPreflightStatus: cleanString(releaseReview.latestPackageDashboardPreflightStatus || packageReadback.latestPackageDashboardPreflightStatus, 120),
+    releaseReviewLatestPackageDashboardPreflightReadyForOwnerReleaseActivation: releaseReview.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true || packageReadback.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true,
+    releaseReviewMissingCheckCount: asArray(releaseReview.missingCheckKeys).length,
+    releaseReviewBlockedCheckCount: asArray(releaseReview.blockedCheckKeys).length,
+    releaseReviewMissingEvidenceCount: asArray(releaseReview.missingEvidenceKeys).length,
+    releaseReviewRequiredActionCount: Number(releaseReview.requiredActionCount || 0) || 0,
+    releaseReviewNextAction: compactAction(releaseReview.nextAction),
+    releaseReviewWritefulSchedulingAllowed: result.writefulSchedulingAllowed === true || releaseReview.writefulSchedulingAllowed === true,
+    releaseReviewRuntimeConfigChange: result.runtimeConfigChange === true || releaseReview.runtimeConfigChange === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.review(input);
+  return projectReleaseReviewSmokeReadback(service.review(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -92,6 +162,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseReviewSmokeReadback,
   runOperation,
   validateInput
 };
