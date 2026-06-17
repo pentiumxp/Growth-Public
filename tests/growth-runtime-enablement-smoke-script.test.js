@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectRuntimeEnablementSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-runtime-enablement");
@@ -59,7 +60,36 @@ test("runtime enablement smoke script delegates operations to service only and g
   const service = {
     evaluate(input) {
       calls.push({ type: "evaluate", input });
-      return { ok: true, status: "activation_record_required" };
+      return {
+        ok: true,
+        status: "ready_for_manual_runtime_config_enablement",
+        runtimeConfigVerified: false,
+        readyForManualRuntimeConfigEnablement: true,
+        manualRuntimeConfigRequired: true,
+        requestedActivationGates: ["writeful_execution"],
+        requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+        latestPreflightReportId: "lgarpf_ready_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        runtimeEnablement: {
+          status: "ready_for_manual_runtime_config_enablement",
+          runtimeConfigVerified: false,
+          readyForManualRuntimeConfigEnablement: true,
+          requiredActionCount: 1,
+          nextAction: {
+            key: "enable_runtime_config_manually",
+            action: "perform_platform_runtime_config_enablement",
+            requiredActor: "owner"
+          },
+          configChangeApplied: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false,
+          writefulSchedulingAllowed: false
+        },
+        configChangeApplied: false,
+        runtimeConfigChange: false,
+        runtimeConfigMutationPerformed: false,
+        writefulSchedulingAllowed: false
+      };
     },
     listEnablements(input) {
       calls.push({ type: "list", input });
@@ -73,7 +103,21 @@ test("runtime enablement smoke script delegates operations to service only and g
 
   const evaluated = runOperation(service, { workspaceId: "fanfan" });
   assert.equal(evaluated.ok, true);
-  assert.equal(evaluated.status, "activation_record_required");
+  assert.equal(evaluated.status, "ready_for_manual_runtime_config_enablement");
+  assert.equal(evaluated.runtimeEnablementStatus, "ready_for_manual_runtime_config_enablement");
+  assert.equal(evaluated.runtimeEnablementReadyForManualRuntimeConfigEnablement, true);
+  assert.equal(evaluated.runtimeEnablementManualRuntimeConfigRequired, true);
+  assert.equal(evaluated.runtimeEnablementRequestedGateCount, 1);
+  assert.equal(evaluated.runtimeEnablementRequiredConfigKeyCount, 1);
+  assert.equal(evaluated.runtimeEnablementLatestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(evaluated.runtimeEnablementLatestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(evaluated.runtimeEnablementRequiredActionCount, 1);
+  assert.deepEqual(evaluated.runtimeEnablementNextAction, {
+    key: "enable_runtime_config_manually",
+    action: "perform_platform_runtime_config_enablement",
+    requiredActor: "owner"
+  });
+  assert.equal(evaluated.runtimeEnablementConfigChangeApplied, false);
 
   const list = runOperation(service, { workspaceId: "fanfan", operation: "list" });
   assert.equal(list.ok, true);
@@ -86,6 +130,63 @@ test("runtime enablement smoke script delegates operations to service only and g
   assert.equal(record.ok, true);
   assert.equal(record.enablement.enablementId, "lgrten_1");
   assert.deepEqual(calls.map((call) => call.type), ["evaluate", "list", "record"]);
+});
+
+test("runtime enablement smoke script projects top-level operator readback", () => {
+  const result = projectRuntimeEnablementSmokeReadback({
+    ok: true,
+    status: "ready_for_manual_runtime_config_enablement",
+    runtimeConfigVerified: false,
+    readyForManualRuntimeConfigEnablement: true,
+    manualRuntimeConfigRequired: true,
+    requestedActivationGates: ["writeful_execution", "background_scheduler"],
+    requiredConfigKeys: ["automationWritefulExecutionEnabled", "automationBackgroundSchedulerEnabled"],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
+    runtimeEnablement: {
+      status: "ready_for_manual_runtime_config_enablement",
+      runtimeConfigVerified: false,
+      readyForManualRuntimeConfigEnablement: true,
+      requiredActionCount: 1,
+      nextAction: {
+        key: "enable_runtime_config_manually",
+        action: "perform_platform_runtime_config_enablement",
+        requiredActor: "owner"
+      },
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  });
+
+  assert.equal(result.runtimeEnablementStatus, "ready_for_manual_runtime_config_enablement");
+  assert.equal(result.runtimeEnablementConfigVerified, false);
+  assert.equal(result.runtimeEnablementReadyForManualRuntimeConfigEnablement, true);
+  assert.equal(result.runtimeEnablementManualRuntimeConfigRequired, true);
+  assert.equal(result.runtimeEnablementRequestedGateCount, 2);
+  assert.equal(result.runtimeEnablementRequiredConfigKeyCount, 2);
+  assert.equal(result.runtimeEnablementLatestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.runtimeEnablementLatestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.runtimeEnablementLatestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.runtimeEnablementLatestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.runtimeEnablementRequiredActionCount, 1);
+  assert.equal(result.runtimeEnablementConfigChangeApplied, false);
+  assert.equal(result.runtimeEnablementRuntimeConfigChange, false);
+  assert.equal(result.runtimeEnablementRuntimeConfigMutationPerformed, false);
+  assert.equal(result.runtimeEnablementWritefulSchedulingAllowed, false);
+  assert.equal(result.runtimeEnablementBackgroundSchedulingAllowed, false);
+  assert.equal(result.runtimeEnablementBackgroundWorkerAllowed, false);
 });
 
 test("runtime enablement smoke script runs no-write evaluation against a temporary SQLite db", () => {
@@ -112,6 +213,12 @@ test("runtime enablement smoke script runs no-write evaluation against a tempora
     assert.equal(output.ok, true);
     assert.equal(output.schemaVersion, "growth.learningAutomationRuntimeEnablement.v1");
     assert.equal(output.status, "activation_record_required");
+    assert.equal(output.runtimeEnablementStatus, output.status);
+    assert.equal(output.runtimeEnablementConfigVerified, output.runtimeConfigVerified === true);
+    assert.equal(output.runtimeEnablementReadyForManualRuntimeConfigEnablement, output.readyForManualRuntimeConfigEnablement === true);
+    assert.equal(output.runtimeEnablementRequestedGateCount, output.requestedActivationGates.length);
+    assert.equal(output.runtimeEnablementRequiredConfigKeyCount, output.requiredConfigKeys.length);
+    assert.equal(output.runtimeEnablementRequiredActionCount, output.runtimeEnablement.requiredActionCount);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
@@ -150,6 +257,10 @@ test("runtime enablement smoke script records summary-only audit rows against a 
     assert.equal(output.enablement.privacyClass, "summary_only");
     assert.equal(output.enablement.status, "activation_record_required");
     assert.equal(output.enablement.currentConfig.configChangeApplied, false);
+    assert.equal(output.runtimeEnablementStatus, output.evaluated.status);
+    assert.equal(output.runtimeEnablementLatestEnablementId, output.enablement.enablementId);
+    assert.equal(output.runtimeEnablementLatestEnablementStatus, output.enablement.status);
+    assert.equal(output.runtimeEnablementConfigChangeApplied, false);
     assert.equal(output.configChangeApplied, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
@@ -172,6 +283,9 @@ test("runtime enablement smoke script records summary-only audit rows against a 
     assert.equal(listed.ok, true);
     assert.equal(listed.count, 1);
     assert.equal(listed.enablements[0].enablementId, output.enablement.enablementId);
+    assert.equal(listed.runtimeEnablementCount, 1);
+    assert.equal(listed.runtimeEnablementLatestEnablementId, output.enablement.enablementId);
+    assert.equal(listed.runtimeEnablementLatestEnablementStatus, output.enablement.status);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

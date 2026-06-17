@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseActivationSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-activation");
@@ -63,7 +64,30 @@ test("release activation smoke script delegates operations to service only and g
   const service = {
     preflight(input) {
       calls.push({ type: "preflight", input });
-      return { ok: true, status: "ready_for_owner_config_enablement" };
+      return {
+        ok: true,
+        status: "ready_for_owner_config_enablement",
+        preflightPassed: true,
+        readyForOwnerRuntimeConfigDecision: true,
+        requestedActivationGates: ["writeful_execution"],
+        missingApprovalKeys: [],
+        latestPreflightReportId: "lgarpf_ready_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        activationPreflight: {
+          status: "ready_for_owner_config_enablement",
+          preflightPassed: true,
+          readyForOwnerRuntimeConfigDecision: true,
+          requiredActionCount: 1,
+          nextAction: {
+            key: "enable_automation_runtime_config",
+            action: "enable_runtime_config_gates_after_owner_decision",
+            requiredActor: "owner"
+          }
+        },
+        configChangeApplied: false,
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false
+      };
     },
     listActivations(input) {
       calls.push({ type: "list", input });
@@ -78,6 +102,20 @@ test("release activation smoke script delegates operations to service only and g
   const preflight = runOperation(service, { workspaceId: "fanfan" });
   assert.equal(preflight.ok, true);
   assert.equal(preflight.status, "ready_for_owner_config_enablement");
+  assert.equal(preflight.releaseActivationStatus, "ready_for_owner_config_enablement");
+  assert.equal(preflight.releaseActivationPreflightPassed, true);
+  assert.equal(preflight.releaseActivationReadyForOwnerRuntimeConfigDecision, true);
+  assert.equal(preflight.releaseActivationRequestedGateCount, 1);
+  assert.equal(preflight.releaseActivationMissingApprovalCount, 0);
+  assert.equal(preflight.releaseActivationLatestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(preflight.releaseActivationLatestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(preflight.releaseActivationRequiredActionCount, 1);
+  assert.deepEqual(preflight.releaseActivationNextAction, {
+    key: "enable_automation_runtime_config",
+    action: "enable_runtime_config_gates_after_owner_decision",
+    requiredActor: "owner"
+  });
+  assert.equal(preflight.releaseActivationConfigChangeApplied, false);
 
   const list = runOperation(service, { workspaceId: "fanfan", operation: "list" });
   assert.equal(list.ok, true);
@@ -90,6 +128,59 @@ test("release activation smoke script delegates operations to service only and g
   assert.equal(record.ok, true);
   assert.equal(record.activation.activationId, "lgaract_1");
   assert.deepEqual(calls.map((call) => call.type), ["preflight", "list", "record"]);
+});
+
+test("release activation smoke script projects top-level operator readback", () => {
+  const result = projectReleaseActivationSmokeReadback({
+    ok: true,
+    status: "ready_for_owner_config_enablement",
+    preflightPassed: true,
+    readyForOwnerReleaseActivation: true,
+    readyForOwnerRuntimeConfigDecision: true,
+    activationAllowed: true,
+    requestedActivationGates: ["writeful_execution", "background_scheduler"],
+    requiredApprovalKeys: ["writefulExecutionApproval"],
+    missingApprovalKeys: [],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
+    activationPreflight: {
+      status: "ready_for_owner_config_enablement",
+      preflightPassed: true,
+      readyForOwnerRuntimeConfigDecision: true,
+      activationAllowed: true,
+      requiredActionCount: 1,
+      nextAction: {
+        key: "enable_automation_runtime_config",
+        action: "enable_runtime_config_gates_after_owner_decision",
+        requiredActor: "owner"
+      },
+      configChangeApplied: false,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    },
+    configChangeApplied: false,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false
+  });
+
+  assert.equal(result.releaseActivationStatus, "ready_for_owner_config_enablement");
+  assert.equal(result.releaseActivationPreflightPassed, true);
+  assert.equal(result.releaseActivationReadyForOwnerReleaseActivation, true);
+  assert.equal(result.releaseActivationReadyForOwnerRuntimeConfigDecision, true);
+  assert.equal(result.releaseActivationAllowed, true);
+  assert.equal(result.releaseActivationRequestedGateCount, 2);
+  assert.equal(result.releaseActivationRequiredApprovalCount, 1);
+  assert.equal(result.releaseActivationMissingApprovalCount, 0);
+  assert.equal(result.releaseActivationLatestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releaseActivationLatestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.releaseActivationLatestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.releaseActivationLatestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.releaseActivationRequiredActionCount, 1);
+  assert.equal(result.releaseActivationConfigChangeApplied, false);
+  assert.equal(result.releaseActivationWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseActivationRuntimeConfigChange, false);
 });
 
 test("release activation smoke script runs no-write preflight against a temporary SQLite db", () => {
@@ -116,6 +207,13 @@ test("release activation smoke script runs no-write preflight against a temporar
     assert.equal(output.ok, true);
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseActivation.v1");
     assert.equal(output.preflightPassed, false);
+    assert.equal(output.releaseActivationStatus, output.status);
+    assert.equal(output.releaseActivationPreflightPassed, output.preflightPassed);
+    assert.equal(output.releaseActivationReadyForOwnerReleaseActivation, output.readyForOwnerReleaseActivation === true);
+    assert.equal(output.releaseActivationReadyForOwnerRuntimeConfigDecision, output.readyForOwnerRuntimeConfigDecision === true);
+    assert.equal(output.releaseActivationRequestedGateCount, output.requestedActivationGates.length);
+    assert.equal(output.releaseActivationMissingApprovalCount, output.missingApprovalKeys.length);
+    assert.equal(output.releaseActivationRequiredActionCount, output.activationPreflight.requiredActionCount);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
@@ -181,6 +279,10 @@ test("release activation smoke script records summary-only audit rows against a 
     assert.equal(output.ok, true);
     assert.equal(output.activation.privacyClass, "summary_only");
     assert.equal(output.activation.activationPreflight.configChangeApplied, false);
+    assert.equal(output.releaseActivationStatus, output.evaluated.status);
+    assert.equal(output.releaseActivationLatestActivationId, output.activation.activationId);
+    assert.equal(output.releaseActivationLatestActivationStatus, output.activation.status);
+    assert.equal(output.releaseActivationConfigChangeApplied, false);
     assert.equal(output.configChangeApplied, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
@@ -203,6 +305,9 @@ test("release activation smoke script records summary-only audit rows against a 
     assert.equal(listed.ok, true);
     assert.equal(listed.count, 1);
     assert.equal(listed.activations[0].activationId, output.activation.activationId);
+    assert.equal(listed.releaseActivationCount, 1);
+    assert.equal(listed.releaseActivationLatestActivationId, output.activation.activationId);
+    assert.equal(listed.releaseActivationLatestActivationStatus, output.activation.status);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

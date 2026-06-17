@@ -314,8 +314,8 @@ record projection that readiness may consume, and it must preserve
 `evidenceKey`, and `checkKey`; otherwise the record may appear in
 `persistedEvidenceKeys` but still fail the summary-only evidence contract.
 The release-decision, release-review, release-authorization, release-readiness, release-controls,
-release-closure, release-inventory, release-dashboard, release-workbench, and
-release-preflight smoke CLIs should
+release-closure, release-activation, runtime-enablement, release-inventory,
+release-dashboard, release-workbench, and release-preflight smoke CLIs should
 keep top-level operator readback aligned
 with their nested service DTOs.
 `releaseReadinessStatus`, readiness booleans, check/evidence/approval/action
@@ -326,7 +326,9 @@ counts, `nextRequiredAction`, `releaseDecisionStatus`,
 `releaseAuthorizationStatus`, `releaseAuthorizationMissingApprovalCount`,
 `releaseAuthorizationPackageRecordStatus`, `releaseControlsStatus`,
 `releaseControlsNextAction`, `releaseClosureStatus`,
-`releaseClosureNextAction`, `releaseInventoryStatus`,
+`releaseClosureNextAction`, `releaseActivationStatus`,
+`releaseActivationLatestPreflightStatus`, `runtimeEnablementStatus`,
+`runtimeEnablementLatestPreflightStatus`, `releaseInventoryStatus`,
 `releaseInventoryMissingRecordKindCount`, `releaseDashboardStatus`,
 `releaseDashboardNextAction`, `releaseWorkbenchStatus`, `nextOwnerAction`,
 `releasePreflightStatus`, `releasePreflightRequiredActionCount`,

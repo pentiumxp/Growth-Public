@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:06+08:00 - Release Activation/Runtime Enablement Smoke Operator Readback
+
+- Status: implemented, key-node validated, and ready to commit locally. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-release-activation` and `smoke-growth-runtime-enablement`
+    delegated correctly to their owning services, but operator-critical status,
+    latest audit id/status, preflight report status, gate/config/action counts,
+    next action, and config/scheduler flags were available only through nested
+    DTOs;
+  - this made activation/runtime enablement less consistent with the existing
+    release-decision, release-review, release-authorization, release-readiness,
+    controls, closure, inventory, dashboard, workbench, and preflight smoke
+    readbacks.
+- Scope:
+  - added `projectReleaseActivationSmokeReadback` in
+    `scripts/smoke-growth-release-activation.js`;
+  - added `projectRuntimeEnablementSmokeReadback` in
+    `scripts/smoke-growth-runtime-enablement.js`;
+  - wrapped activation preflight/list/record and runtime evaluate/list/record
+    outputs with bounded top-level, summary-only projection fields while
+    preserving service DTOs as canonical output;
+  - expanded `tests/growth-release-activation-smoke-script.test.js` and
+    `tests/growth-runtime-enablement-smoke-script.test.js` with pure projection
+    coverage, fake-service delegation assertions, and temporary SQLite
+    readback assertions;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-release-activation.js`;
+  - `node --test tests/growth-release-activation-smoke-script.test.js` -> 7/7;
+  - `node --check scripts/smoke-growth-runtime-enablement.js`;
+  - `node --test tests/growth-runtime-enablement-smoke-script.test.js` -> 6/6;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `node scripts/check-growth-docs-locality.js` -> ok, `requiredCount=37`;
+  - `git diff --check` -> ok;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,364 nodes, 23,545 edges, with the existing earlier-engine advisory.
+- Note: full `npm test` is intentionally not planned for this slice per the
+  current speed instruction; `npm run test:release-union` was also skipped for
+  speed because this slice is limited to smoke projection, Harness, and
+  documentation, with no service, route, schema, Gateway, UI, scheduler, or
+  runtime-config behavior change.
+
 ## 2026-06-17T12:55+08:00 - Release Authorization Smoke Operator Readback
 
 - Status: implemented, key-node validated, and ready to commit locally. No

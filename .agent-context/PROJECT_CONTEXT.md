@@ -696,12 +696,13 @@ readback gate set.
   required actions, and one next action while still keeping
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
   Release-decision, release-review, release-authorization, release-controls,
-  release-closure, release-inventory, release-dashboard, release-workbench, and
-  release-preflight smoke CLIs now mirror selected nested
+  release-closure, release-activation, runtime-enablement, release-inventory,
+  release-dashboard, release-workbench, and release-preflight smoke CLIs now mirror selected nested
   DTO
   fields into top-level operator readbacks for status, missing counts, required
   action count, one next action, approval counts, package/record/report status,
-  package-review readiness, advisory readiness booleans, and runtime/write
+  activation/runtime-config readback fields, package-review readiness,
+  advisory readiness booleans, and runtime/write
   flags only; those projections are not new release decisions, scheduler
   permissions, runtime config authority, or write permissions.
   Growth now also has
@@ -718,7 +719,11 @@ readback gate set.
   report through the injected
   `learningAutomationReleasePreflightReportRepository.listReports` boundary
   and projects only bounded latest preflight report id/status/advisory readiness
-  flags into activation preflight readback. Growth also has visible-target scoped
+  flags into activation preflight readback. Its smoke CLI also mirrors bounded
+  top-level `releaseActivation*` operator readback for status/count/latest audit
+  id, preflight readiness/report, gate/approval/action counts, next action, and
+  runtime/write flags while preserving the nested activation/evaluated/record
+  DTOs as canonical. Growth also has visible-target scoped
   `GET /api/v1/growth/automation/release-activations`, Owner-only
   `POST /api/v1/growth/automation/release-activations`, and
   `npm run smoke:release-activation -- --operation record --allow-write` for
@@ -747,7 +752,12 @@ readback gate set.
   `ready_for_manual_runtime_config_enablement`, `partial_config`, or
   `verified_enabled`, while projecting latest preflight report id/status and
   advisory readiness flags only from activation records, never by reading
-  preflight reports directly. It still applies no config and keeps all runtime
+  preflight reports directly. Its smoke CLI also mirrors bounded top-level
+  `runtimeEnablement*` operator readback for status/count/latest audit id,
+  runtime verification/manual config readiness, gate/config/action counts,
+  preflight readback, next action, config mutation flags, and
+  scheduler/background flags while preserving the nested runtime/evaluated/record
+  DTOs as canonical. It still applies no config and keeps all runtime
   mutation/scheduling permission flags false.
   Growth now also has the no-write Owner release-controls aggregate:
   `learning-automation-release-controls-service`, visible-target scoped
