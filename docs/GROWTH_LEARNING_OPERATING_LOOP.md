@@ -1852,6 +1852,13 @@ Implementation progress on 2026-06-15:
   remain. This is guidance only: the browser does not read local artifact
   files, run visual tooling, validate evidence, persist pass records, approve a
   release, apply runtime config, or grant scheduler permission.
+  The workbench/template source must preserve the full bounded release
+  missing-key set before deriving artifact slots. A real
+  `weixin_stephen/science` readback with more than 24 missing checks now keeps
+  `central_visual_evidence` visible and maps it to the `central_visual`
+  manifest slot; the matching `centralVisualEvidence` pass record is accepted
+  by readiness only because it was replayed under the same workspace, learner,
+  domain, subject, and horizon scope.
 - The embedded Owner generation tab also consumes the existing Owner-only
   `GET /api/v1/growth/automation/release-workbench/action-audits` readback
   inside the same release workbench panel as a summary-only `操作审计` list.

@@ -62,6 +62,7 @@ const ARTIFACT_BACKED_COLLECTION_TASK_IDS = new Set([
   "central_visual",
   ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => task.taskId)
 ]);
+const RELEASE_WORKBENCH_KEY_LIMIT = 96;
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
@@ -240,7 +241,7 @@ function statePrerequisiteDefinition(key = "") {
 }
 
 function statePrerequisiteKeys(keys = []) {
-  return uniqueStrings(keys, 64).filter((key) => Boolean(statePrerequisiteDefinition(key)));
+  return uniqueStrings(keys, RELEASE_WORKBENCH_KEY_LIMIT).filter((key) => Boolean(statePrerequisiteDefinition(key)));
 }
 
 function scopeQuery(scope = {}) {
@@ -430,7 +431,7 @@ function collectionTaskPlan(keys = []) {
   const safeTaskSet = new Set();
   const writeGatedTaskSet = new Set();
   const unsupported = [];
-  for (const key of uniqueStrings(keys, 64)) {
+  for (const key of uniqueStrings(keys, RELEASE_WORKBENCH_KEY_LIMIT)) {
     const taskId = releaseEvidenceCollectionTaskIdForKey(key);
     if (taskId) {
       safeTaskSet.add(taskId);
@@ -836,10 +837,10 @@ function dependencySummary(result = {}, summaryKey = "") {
     latestPreflightReadyForOwnerReleaseActivation:
       summary.latestPreflightReadyForOwnerReleaseActivation === true
       || result.latestPreflightReadyForOwnerReleaseActivation === true,
-    missingCheckKeys: uniqueStrings(summary.missingCheckKeys || result.missingCheckKeys || []),
-    blockedCheckKeys: uniqueStrings(summary.blockedCheckKeys || result.blockedCheckKeys || []),
-    missingEvidenceKeys: uniqueStrings(summary.missingEvidenceKeys || result.missingEvidenceKeys || []),
-    missingApprovalKeys: uniqueStrings(summary.missingApprovalKeys || result.missingApprovalKeys || [])
+    missingCheckKeys: uniqueStrings(summary.missingCheckKeys || result.missingCheckKeys || [], RELEASE_WORKBENCH_KEY_LIMIT),
+    blockedCheckKeys: uniqueStrings(summary.blockedCheckKeys || result.blockedCheckKeys || [], RELEASE_WORKBENCH_KEY_LIMIT),
+    missingEvidenceKeys: uniqueStrings(summary.missingEvidenceKeys || result.missingEvidenceKeys || [], RELEASE_WORKBENCH_KEY_LIMIT),
+    missingApprovalKeys: uniqueStrings(summary.missingApprovalKeys || result.missingApprovalKeys || [], RELEASE_WORKBENCH_KEY_LIMIT)
   };
 }
 
@@ -847,8 +848,8 @@ function inventoryRecordSummary(inventory = {}) {
   const summary = objectOnly(inventory.releaseInventory);
   return {
     status: cleanString(summary.status || inventory.status, 120),
-    missingRecordKinds: uniqueStrings(summary.missingRecordKinds || inventory.missingRecordKinds || []),
-    blockedRecordKinds: uniqueStrings(summary.blockedRecordKinds || inventory.blockedRecordKinds || []),
+    missingRecordKinds: uniqueStrings(summary.missingRecordKinds || inventory.missingRecordKinds || [], RELEASE_WORKBENCH_KEY_LIMIT),
+    blockedRecordKinds: uniqueStrings(summary.blockedRecordKinds || inventory.blockedRecordKinds || [], RELEASE_WORKBENCH_KEY_LIMIT),
     latestReadinessSnapshotId: cleanString(summary.latestReadinessSnapshotId, 180),
     latestCollectionRunId: cleanString(summary.latestCollectionRunId, 180),
     latestDecisionId: cleanString(summary.latestDecisionId, 180),
@@ -934,17 +935,17 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
       ...readinessSummary.missingEvidenceKeys,
       ...controlsSummary.missingEvidenceKeys,
       ...dashboardSummary.missingEvidenceKeys
-    ]);
+    ], RELEASE_WORKBENCH_KEY_LIMIT);
     const missingCheckKeys = uniqueStrings([
       ...readinessSummary.missingCheckKeys,
       ...controlsSummary.missingCheckKeys,
       ...dashboardSummary.missingCheckKeys
-    ]);
+    ], RELEASE_WORKBENCH_KEY_LIMIT);
     const missingApprovalKeys = uniqueStrings([
       ...readinessSummary.missingApprovalKeys,
       ...controlsSummary.missingApprovalKeys,
       ...dashboardSummary.missingApprovalKeys
-    ]);
+    ], RELEASE_WORKBENCH_KEY_LIMIT);
     const collectionTasks = collectionTaskPlan([...missingEvidenceKeys, ...missingCheckKeys]);
     const releaseStatePrerequisiteKeys = statePrerequisiteKeys(missingCheckKeys);
     const releaseStatePrerequisiteActions = actionsFromStatePrerequisites(releaseStatePrerequisiteKeys, scope);

@@ -67,6 +67,16 @@ readback gate set.
   for the existing workbench action route plus external artifact/manual steps;
   blank manifest templates remain unfilled, and collection body templates keep
   artifact tasks outside `tasks` until the filled manifest is supplied. The
+  release workbench must preserve the full bounded release missing-key set
+  before deriving collection tasks and artifact slots; it cannot use a compact
+  UI preview limit that drops later release gates. A real
+  `weixin_stephen/science` readback with more than 24 missing checks now keeps
+  `central_visual_evidence` visible, maps it to the `central_visual` artifact
+  slot, and emits `centralVisualEvidenceFile` in the blank manifest template.
+  Release evidence records remain scope-strict, so central visual evidence
+  written for an Owner/testing scope does not satisfy a domain-scoped release;
+  the same Home AI summary artifact must be replayed or collected under the
+  matching workspace/learner/domain/subject/horizon scope.
   embedded Owner `生成` tab now consumes this readback inside the release
   workbench panel as a summary-only `证据清单` subpanel with artifact slots,
   checklist rows, action-plan rows, manifest schema status, and refresh
@@ -866,7 +876,11 @@ readback gate set.
   `workspaceId` / `learnerId` / `programId` / `domainPackId` / `domain` /
   `subject` / `horizon` scope; a domain-scoped release such as Fanfan science
   must collect or replay evidence with matching `--domain` and `--subject`
-  values. The release workbench now maps missing
+  values. A local replay for `weixin_stephen/science` wrote
+  `centralVisualEvidence` record `lgarev_520d91fed2dd889df3` and
+  `releaseEvidenceBundleAudit` record `lgarev_c6c62b2f0d032ce7e7`,
+  after which readiness reported `central_visual_evidence=pass` while overall
+  release readiness remained incomplete. The release workbench now maps missing
   `release_package_review_ui_evidence` to
   that collection task, Owner action routing accepts the matching transient
   artifact-file field only as a whitelisted collection input, and the embedded

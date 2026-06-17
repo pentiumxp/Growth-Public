@@ -9,6 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T05:19+0800 - Release Workbench Artifact Slot Scope Closure
+
+- Status: implemented locally; focused workbench/artifact-template harness,
+  real `weixin_stephen` release workbench/template readback, and
+  scope-correct central visual evidence replay passed. No production deploy,
+  release approval, runtime config mutation, scheduler permission,
+  Gateway/model call, card publication, evaluation, notification delivery, or
+  learner-state mutation was performed.
+- Classification: H2 Growth release workbench/readback correctness. The
+  workbench previously compacted missing release keys at 24 items, which could
+  hide later evidence requirements such as `central_visual_evidence` on a
+  real scope with more than 24 release gaps.
+- Scope:
+  - `learning-automation-release-workbench-service` now preserves release
+    missing evidence/check/approval/record keys with a release-level bounded
+    limit before deriving collection tasks, artifact-backed tasks, checklist
+    rows, and action templates;
+  - `release-artifact-template` readback for the real
+    `weixin_stephen/science` scope now includes `central_visual` as a Home
+    AI artifact slot, includes `centralVisualEvidenceFile` in the blank
+    manifest template, and keeps `release_package_review_ui` plus the nine
+    other UI/visual artifact-backed tasks visible;
+  - tests now cover a missing-key list larger than the compact UI count so
+    late `central_visual_evidence` and UI evidence keys cannot be dropped.
+- Real evidence written locally:
+  - replayed the already validated Home AI central visual summary artifact
+    against scope `workspaceId=weixin_stephen`, `learnerId=weixin_stephen`,
+    `domain=science`, `subject=science`, `horizon=daily_plan`;
+  - `smoke:release-evidence-collection` wrote advisory collection run
+    `lgacrn_bc0b4eeb572e597dac` plus pass release evidence records
+    `lgarev_520d91fed2dd889df3` (`centralVisualEvidence`) and
+    `lgarev_c6c62b2f0d032ce7e7` (`releaseEvidenceBundleAudit`);
+  - release-readiness readback for that scope now reports
+    `central_visual_evidence=pass`, persisted evidence keys
+    `centralVisualEvidence` and `releaseEvidenceBundleAudit`,
+    `passCheckCount=6`, `missingRequiredCount=41`, and
+    `missingEvidenceCount=34`.
+- Validation evidence:
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/learning-automation-release-evidence-artifact-template-service.test.js
+    tests/growth-release-artifact-template-smoke-script.test.js
+    tests/growth-release-workbench-smoke-script.test.js` -> 22/22;
+  - `node --check src/services/learning-automation-release-workbench-service.js
+    src/services/learning-automation-release-evidence-artifact-template-service.js
+    scripts/smoke-growth-release-artifact-template.js
+    scripts/smoke-growth-release-workbench.js`;
+  - `npm run smoke:release-artifact-template -- --workspace-id
+    weixin_stephen --learner-id weixin_stephen --domain science --subject
+    science --horizon daily_plan` -> `artifactSlotCount=10`,
+    `central_visual` present, `centralVisualEvidenceFile` present,
+    `missingEvidenceCount=36`, `missingCheckCount=43`;
+  - `npm run smoke:release-workbench -- --workspace-id weixin_stephen
+    --learner-id weixin_stephen --domain science --subject science --horizon
+    daily_plan` -> `central_visual_evidence` present in missing evidence,
+    `central_visual` present in collection tasks;
+  - `npm run smoke:release-readiness -- --workspace-id weixin_stephen
+    --learner-id weixin_stephen --domain science --subject science --horizon
+    daily_plan` -> central visual pass, release still incomplete.
+- Remaining gate:
+  - production release still needs the remaining UI evidence artifacts,
+    platform Action Inbox/Web Push evidence, production deployment health,
+    production smokes, state prerequisites, explicit approvals, package/
+    review/authorization/closure/preflight/activation/runtime records, broad
+    checks, and deployment when complete.
+
 ## 2026-06-18T05:07+0800 - Central Visual Evidence Persistence Closure
 
 - Status: implemented locally; Home AI central visual harness, Growth

@@ -155,9 +155,11 @@ test("release artifact template smoke script runs no-write template against a te
     assert.equal(output.releaseArtifactTemplateStatus, output.releaseArtifactTemplate.status);
     assert.equal(output.manifestSchemaVersion, "growth.learningAutomationReleaseEvidenceArtifactManifest.v1");
     assert.equal(output.artifactSlotCount, output.releaseArtifactTemplate.artifactSlotCount);
+    assert.equal(output.artifactTaskIds.includes("central_visual"), true);
     assert.equal(output.artifactTaskIds.includes("owner_daily_ui"), true);
     assert.equal(output.readyForManifestInput, output.releaseArtifactTemplate.readyForManifestInput);
     assert.equal(output.releaseArtifactTemplate.artifactManifestTemplate.schemaVersion, "growth.learningAutomationReleaseEvidenceArtifactManifest.v1");
+    assert.equal(Object.hasOwn(output.releaseArtifactTemplate.artifactManifestTemplate, "centralVisualEvidenceFile"), true);
     assert.equal(Array.isArray(output.releaseArtifactTemplate.artifactSlots), true);
     assert.equal(output.releaseArtifactTemplate.releaseEvidenceChecklist.schemaVersion, "growth.learningAutomationReleaseEvidenceChecklist.v1");
     assert.equal(Array.isArray(output.releaseArtifactTemplate.releaseEvidenceChecklist.items), true);

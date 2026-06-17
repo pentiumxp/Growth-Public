@@ -384,6 +384,84 @@ test("release workbench offers evidence collection for supported missing evidenc
   assert.equal(result.releaseWorkbench.writefulSchedulingAllowed, false);
 });
 
+test("release workbench keeps late release evidence keys when missing list exceeds compact UI count", () => {
+  const fillerMissingKeys = Array.from({ length: 30 }, (_, index) => `manual_release_gap_${index}`);
+  const service = createLearningAutomationReleaseWorkbenchService({
+    releaseReadinessService: {
+      evaluateReadiness() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseReview: {
+            status: "release_evidence_required",
+            missingCheckKeys: [],
+            missingEvidenceKeys: [
+              ...fillerMissingKeys,
+              "central_visual_evidence",
+              "owner_daily_ui_evidence"
+            ]
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseControlsService: {
+      summarize() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseControls: {
+            status: "release_evidence_required",
+            missingEvidenceKeys: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseInventoryService: {
+      inventory() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseInventory: {
+            status: "release_evidence_required",
+            missingRecordKinds: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseDashboardService: {
+      dashboard() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseDashboard: {
+            status: "release_evidence_required",
+            missingEvidenceKeys: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    }
+  });
+
+  const result = service.workbench({
+    workspaceId: "fanfan",
+    learnerId: "fanfan"
+  });
+
+  const collectionAction = result.releaseWorkbench.ownerActions
+    .find((action) => action.endpointKey === "release_evidence_collection");
+  assert.equal(result.releaseWorkbench.missingEvidenceKeys.includes("central_visual_evidence"), true);
+  assert.equal(result.releaseWorkbench.missingEvidenceKeys.includes("owner_daily_ui_evidence"), true);
+  assert.deepEqual(collectionAction.artifactTaskIds, ["central_visual", "owner_daily_ui"]);
+  assert.deepEqual(collectionAction.collectionTaskIds, ["central_visual", "owner_daily_ui"]);
+  assert.equal(collectionAction.route.body.central_visual_evidence_file, "");
+  assert.equal(collectionAction.route.body.owner_daily_ui_evidence_file, "");
+  assert.equal(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys.includes("manual_release_gap_29"), true);
+});
+
 test("release workbench offers preflight action before activation and runtime records", () => {
   const service = createLearningAutomationReleaseWorkbenchService({
     releaseReadinessService: {

@@ -833,6 +833,20 @@ Implemented backend shape:
   screenshot artifact file name, client version, assertion counts, and
   `centralBoundary` flags; it never stores raw local paths or Home AI visual
   internals.
+  Release workbench and artifact-template readback must preserve the full
+  bounded missing evidence/check key set before deriving collection tasks and
+  Home AI artifact slots. They must not apply a compact UI preview limit that
+  can drop later gates such as `central_visual_evidence` on real release scopes.
+  The `weixin_stephen/science` readback now proves this with
+  `artifactSlotCount=10`, including `central_visual`,
+  `centralVisualEvidenceFile`, and the UI artifact slots. Central visual pass
+  evidence is scope-strict: an Owner/testing-scope record does not satisfy a
+  workspace/domain-scoped release. Replaying the validated central visual
+  summary artifact under `workspaceId=weixin_stephen`, `domain=science`, and
+  `subject=science` wrote `centralVisualEvidence` record
+  `lgarev_520d91fed2dd889df3`; readiness for that scope now reports
+  `central_visual_evidence=pass` while remaining incomplete for the other
+  release gates.
   The explicit non-default `release_package_review_ui` task maps
   `npm run smoke:ui-evidence` output to `releasePackageReviewUiEvidence`.
   It is selected only when the caller supplies that task and a summary

@@ -236,7 +236,13 @@ full operating loop:
   include bounded central visual validator summaries, such as screenshot file
   name, client version, assertion counts, and Home-AI-owned visual boundary
   flags, when those records were produced by the release evidence collection
-  path.
+  path. Release evidence records are scope-strict; the readiness service only
+  consumes rows whose workspace, learner, program/domain selectors, subject,
+  and horizon match the evaluated release scope. The release workbench and
+  artifact-template services therefore preserve the full bounded missing-key
+  set before mapping evidence gaps to collection tasks and artifact slots,
+  rather than applying a compact UI preview limit that could hide later gates
+  such as `central_visual_evidence`.
   The backend now also exposes Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` for an
   explicit release evidence collection pass through the normal service graph.

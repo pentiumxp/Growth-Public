@@ -528,10 +528,16 @@ exists. The release artifact-template subpanel is read-only guidance for
 Owner/release tooling: it displays missing Home AI central visual/UI artifact
 slots, supported collection tasks, state prerequisites, manual gaps, and
 phase-blocked action templates, but it does not upload evidence or turn a blank
-manifest into a pass record. Runtime enablement
-action records are audit/readback records only; external configuration
-verification still happens outside Growth and must be represented as bounded
-summary evidence before scheduler execution can proceed.
+manifest into a pass record. Its source readback must preserve all bounded
+release missing evidence/check keys before deriving artifact slots; a compact
+display limit must not hide late gates such as `central_visual_evidence`. The
+current `weixin_stephen/science` readback exposes `central_visual`,
+`centralVisualEvidenceFile`, and UI artifact slots in the blank manifest
+template, while the actual central visual pass record is written only by the
+release evidence collection boundary under the matching release scope. Runtime
+enablement action records are audit/readback records only; external
+configuration verification still happens outside Growth and must be represented
+as bounded summary evidence before scheduler execution can proceed.
 
 The `发布总览` and `发布记录` subpanels are intentionally separate. `发布总览`
 is read-only ladder visibility over controls/dashboard/inventory/review/

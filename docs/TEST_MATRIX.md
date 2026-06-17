@@ -134,7 +134,12 @@ by release workbench/artifact-template, run
 `tests/growth-release-evidence-bundle-audit-smoke-script.test.js`,
 `tests/growth-release-workbench-smoke-script.test.js`,
 `tests/growth-release-artifact-template-smoke-script.test.js`, and
-`tests/growth-architecture-boundary.test.js`. The focused assertion must prove
+`tests/growth-architecture-boundary.test.js`. Workbench
+and artifact-template changes must include a regression where the missing
+release key list is longer than the compact UI display count, and late
+artifact-backed gates such as `central_visual_evidence` still produce
+`central_visual`, `centralVisualEvidenceFile`, and the required checklist/action
+rows. The focused assertion must prove
 the registry, not bundle/workbench/template services, owns the canonical task
 map; safe collection tasks, write-gated tasks, and collection-owned outputs
 remain separated; and schema consumers do not load smoke-runner services only
