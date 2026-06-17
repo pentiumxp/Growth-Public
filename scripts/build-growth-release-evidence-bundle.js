@@ -57,6 +57,27 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 32) {
+  return uniqueStrings(asArray(values)).slice(0, limit);
+}
+
 function numberArg(args, names, fallback) {
   const raw = firstArgValue(args, names, "");
   if (!raw) return fallback;
@@ -205,6 +226,78 @@ function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
 }
 
+function compactTaskStatus(task = {}) {
+  const item = objectOnly(task);
+  if (!Object.keys(item).length) return null;
+  return {
+    taskId: cleanString(item.taskId, 140),
+    evidenceKey: cleanString(item.evidenceKey, 180),
+    status: cleanString(item.status, 120),
+    ok: item.ok === true
+  };
+}
+
+function releaseEvidenceBundleReadbackFields(bundle = {}, result = {}) {
+  const summary = objectOnly(bundle.summary);
+  const scope = objectOnly(bundle.scope);
+  const evidence = objectOnly(bundle.evidence);
+  const releaseApproval = objectOnly(bundle.releaseApproval);
+  const tasks = asArray(bundle.tasks).map(compactTaskStatus).filter(Boolean);
+  const failedTaskIds = uniqueBoundedStrings(
+    summary.failedTaskIds || tasks.filter((task) => task.ok !== true).map((task) => task.taskId),
+    40
+  );
+  const blockedCount = numberValue(summary.blockedCount, tasks.filter((task) => task.ok !== true).length);
+  const passedCount = numberValue(summary.passedCount, tasks.filter((task) => task.ok === true).length);
+  return {
+    releaseEvidenceBundleStatus: cleanString(result.ok === false || blockedCount > 0 ? "blocked" : "pass", 120),
+    releaseEvidenceBundleOk: typeof result.ok === "boolean" ? result.ok : blockedCount === 0,
+    releaseEvidenceBundleSchemaVersion: cleanString(bundle.schemaVersion, 180),
+    releaseEvidenceBundlePrivacyClass: cleanString(bundle.privacyClass, 80),
+    releaseEvidenceBundleSummaryOnly: bundle.summaryOnly === true || bundle.summary_only === true,
+    releaseEvidenceBundleCreatedAt: cleanString(bundle.createdAt, 120),
+    releaseEvidenceBundleRequestedBy: cleanString(bundle.requestedBy, 160),
+    releaseEvidenceBundleWorkspaceId: cleanString(scope.workspaceId, 160),
+    releaseEvidenceBundleLearnerId: cleanString(scope.learnerId, 160),
+    releaseEvidenceBundleProgramId: cleanString(scope.programId, 160),
+    releaseEvidenceBundleDomainPackId: cleanString(scope.domainPackId, 180),
+    releaseEvidenceBundleDomain: cleanString(scope.domain, 120),
+    releaseEvidenceBundleSubject: cleanString(scope.subject, 120),
+    releaseEvidenceBundleHorizon: cleanString(scope.horizon, 80),
+    releaseEvidenceBundleTargetNodeIds: uniqueBoundedStrings(scope.targetNodeIds, 24),
+    releaseEvidenceBundleTaskCount: numberValue(summary.taskCount, tasks.length),
+    releaseEvidenceBundlePassedCount: passedCount,
+    releaseEvidenceBundleBlockedCount: blockedCount,
+    releaseEvidenceBundleFailedTaskIds: failedTaskIds,
+    releaseEvidenceBundleTaskIds: uniqueBoundedStrings(tasks.map((task) => task.taskId), 40),
+    releaseEvidenceBundleTaskStatuses: tasks.slice(0, 40),
+    releaseEvidenceBundleEvidenceKeys: uniqueBoundedStrings(Object.keys(evidence), 48),
+    releaseEvidenceBundleEvidenceKeyCount: Object.keys(evidence).length,
+    releaseEvidenceBundleReleaseApprovalKeys: uniqueBoundedStrings(Object.keys(releaseApproval), 12),
+    releaseEvidenceBundleReleaseApprovalKeyCount: Object.keys(releaseApproval).length,
+    releaseEvidenceBundleWritefulSchedulingAllowed: bundle.writefulSchedulingAllowed === true || summary.writefulSchedulingAllowed === true,
+    releaseEvidenceBundleRuntimeConfigChange: bundle.runtimeConfigChange === true || summary.runtimeConfigChange === true,
+    releaseEvidenceBundleConfigChangeApplied: bundle.configChangeApplied === true || summary.configChangeApplied === true,
+    releaseEvidenceBundleSchedulerPermissionGranted: bundle.schedulerPermissionGranted === true || summary.schedulerPermissionGranted === true
+  };
+}
+
+function projectReleaseEvidenceBundleSmokeReadback(result = {}) {
+  const readback = objectOnly(result);
+  const nestedBundle = objectOnly(readback.bundle);
+  const directBundle = objectOnly(result);
+  const bundle = nestedBundle.schemaVersion ? nestedBundle : directBundle.schemaVersion ? directBundle : {};
+  if (!Object.keys(bundle).length) return result;
+  const fields = releaseEvidenceBundleReadbackFields(bundle, readback);
+  const projectedBundle = Object.assign({}, bundle, fields);
+  if (nestedBundle.schemaVersion) {
+    return Object.assign({}, readback, fields, {
+      bundle: projectedBundle
+    });
+  }
+  return projectedBundle;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const pretty = hasFlag(args, "--json") || hasFlag(args, "--pretty");
@@ -229,7 +322,7 @@ async function main() {
       }));
     }
   });
-  const result = service.buildBundle(input);
+  const result = projectReleaseEvidenceBundleSmokeReadback(service.buildBundle(input));
   if (!result.ok && !result.bundle) {
     process.stdout.write(formatResult({
       ok: false,
@@ -247,7 +340,14 @@ async function main() {
       process.stdout.write(formatResult({
         ok: result.ok,
         outputFile: writtenPath,
-        summary: result.summary
+        summary: result.summary,
+        releaseEvidenceBundleStatus: result.releaseEvidenceBundleStatus,
+        releaseEvidenceBundleOk: result.releaseEvidenceBundleOk,
+        releaseEvidenceBundleTaskCount: result.releaseEvidenceBundleTaskCount,
+        releaseEvidenceBundlePassedCount: result.releaseEvidenceBundlePassedCount,
+        releaseEvidenceBundleBlockedCount: result.releaseEvidenceBundleBlockedCount,
+        releaseEvidenceBundleFailedTaskIds: result.releaseEvidenceBundleFailedTaskIds,
+        releaseEvidenceBundleEvidenceKeys: result.releaseEvidenceBundleEvidenceKeys
       }, pretty));
     } else {
       process.stdout.write(formatResult(result.bundle, pretty));
@@ -274,6 +374,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   outputFileFromArgs,
+  projectReleaseEvidenceBundleSmokeReadback,
   activationGates,
   requiredApprovalKeys,
   releaseEvidenceArtifactManifestFileFromArgs,

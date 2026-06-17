@@ -360,6 +360,9 @@ readback gate set.
   `npm run smoke:release-evidence-bundle`, a service-owned bundle builder
   that runs selected no-write/default-disabled smoke CLIs, emits a
   summary-only `growth.learningAutomationReleaseEvidenceBundle.v1` artifact,
+  mirrors bounded top-level `releaseEvidenceBundle*` operator readback for
+  status, scope, task counts/statuses, evidence keys, release-approval keys,
+  and false runtime/scheduling flags,
   includes learning-loop state smoke, cycle-history smoke, Owner audit smoke,
   profile-feedback smoke, learner-cycle audit smoke, stage-assessment readiness
   smoke, stage-checkpoint controls readback smoke, platform action evidence,

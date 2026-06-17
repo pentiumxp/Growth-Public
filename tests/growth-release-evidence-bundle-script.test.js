@@ -18,6 +18,7 @@ const {
   activationGates,
   inputFromArgs,
   outputFileFromArgs,
+  projectReleaseEvidenceBundleSmokeReadback,
   releaseEvidenceArtifactManifestFileFromArgs,
   requiredApprovalKeys,
   taskIds,
@@ -328,6 +329,92 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.ok(output.allowedTaskIds.includes("release_dashboard"));
 });
 
+test("release evidence bundle script projects top-level operator readback", () => {
+  const result = projectReleaseEvidenceBundleSmokeReadback({
+    ok: false,
+    source: "growth-learning-automation-release-evidence-bundle-service",
+    bundle: {
+      schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      createdAt: "2026-06-17T08:50:00.000Z",
+      requestedBy: "owner",
+      scope: {
+        workspaceId: "smoke_workspace",
+        learnerId: "smoke_learner",
+        programId: "smoke_program",
+        domainPackId: "domain_pack_science",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        targetNodeIds: ["kg_science_fair_test"]
+      },
+      evidence: {
+        productionPlannerReadinessEvidence: {},
+        productionSchedulerDryRunSmokeEvidence: {}
+      },
+      releaseApproval: {
+        writefulExecutionApproval: {
+          status: "approved"
+        }
+      },
+      summary: {
+        source: "growth-release-evidence-bundle-builder",
+        taskCount: 2,
+        passedCount: 1,
+        blockedCount: 1,
+        failedTaskIds: ["scheduler_dry_run"]
+      },
+      tasks: [{
+        taskId: "planner_readiness",
+        evidenceKey: "productionPlannerReadinessEvidence",
+        ok: true,
+        status: "pass"
+      }, {
+        taskId: "scheduler_dry_run",
+        evidenceKey: "productionSchedulerDryRunSmokeEvidence",
+        ok: false,
+        status: "blocked"
+      }]
+    },
+    summary: {
+      taskCount: 2,
+      passedCount: 1,
+      blockedCount: 1,
+      failedTaskIds: ["scheduler_dry_run"]
+    }
+  });
+
+  assert.equal(result.releaseEvidenceBundleStatus, "blocked");
+  assert.equal(result.releaseEvidenceBundleOk, false);
+  assert.equal(result.releaseEvidenceBundleSchemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
+  assert.equal(result.releaseEvidenceBundlePrivacyClass, "summary_only");
+  assert.equal(result.releaseEvidenceBundleSummaryOnly, true);
+  assert.equal(result.releaseEvidenceBundleWorkspaceId, "smoke_workspace");
+  assert.equal(result.releaseEvidenceBundleLearnerId, "smoke_learner");
+  assert.equal(result.releaseEvidenceBundleProgramId, "smoke_program");
+  assert.equal(result.releaseEvidenceBundleDomainPackId, "domain_pack_science");
+  assert.equal(result.releaseEvidenceBundleDomain, "science");
+  assert.equal(result.releaseEvidenceBundleSubject, "science");
+  assert.equal(result.releaseEvidenceBundleHorizon, "daily_plan");
+  assert.deepEqual(result.releaseEvidenceBundleTargetNodeIds, ["kg_science_fair_test"]);
+  assert.equal(result.releaseEvidenceBundleTaskCount, 2);
+  assert.equal(result.releaseEvidenceBundlePassedCount, 1);
+  assert.equal(result.releaseEvidenceBundleBlockedCount, 1);
+  assert.deepEqual(result.releaseEvidenceBundleFailedTaskIds, ["scheduler_dry_run"]);
+  assert.deepEqual(result.releaseEvidenceBundleTaskIds, ["planner_readiness", "scheduler_dry_run"]);
+  assert.deepEqual(result.releaseEvidenceBundleEvidenceKeys, [
+    "productionPlannerReadinessEvidence",
+    "productionSchedulerDryRunSmokeEvidence"
+  ]);
+  assert.deepEqual(result.releaseEvidenceBundleReleaseApprovalKeys, ["writefulExecutionApproval"]);
+  assert.equal(result.releaseEvidenceBundleWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseEvidenceBundleRuntimeConfigChange, false);
+  assert.equal(result.releaseEvidenceBundleConfigChangeApplied, false);
+  assert.equal(result.releaseEvidenceBundleSchedulerPermissionGranted, false);
+  assert.equal(result.bundle.releaseEvidenceBundleStatus, "blocked");
+});
+
 test("release evidence bundle script writes bounded cycle-history evidence from read-only history smoke", () => {
   withTempDb(({ dir, dbPath }) => {
     const bundlePath = path.join(dir, "cycle-history-bundle.json");
@@ -614,6 +701,23 @@ test("release evidence bundle script writes a summary-only bundle from a read-on
     assert.equal(fileBundle.privacyClass, "summary_only");
     assert.equal(fileBundle.scope.workspaceId, "smoke_workspace");
     assert.equal(fileBundle.summary.taskCount, 1);
+    assert.equal(fileBundle.releaseEvidenceBundleStatus, "pass");
+    assert.equal(fileBundle.releaseEvidenceBundleOk, true);
+    assert.equal(fileBundle.releaseEvidenceBundleWorkspaceId, "smoke_workspace");
+    assert.equal(fileBundle.releaseEvidenceBundleLearnerId, "smoke_learner");
+    assert.equal(fileBundle.releaseEvidenceBundleProgramId, "smoke_program");
+    assert.equal(fileBundle.releaseEvidenceBundleDomain, "science");
+    assert.equal(fileBundle.releaseEvidenceBundleSubject, "science");
+    assert.equal(fileBundle.releaseEvidenceBundleTaskCount, 1);
+    assert.equal(fileBundle.releaseEvidenceBundlePassedCount, 1);
+    assert.equal(fileBundle.releaseEvidenceBundleBlockedCount, 0);
+    assert.deepEqual(fileBundle.releaseEvidenceBundleFailedTaskIds, []);
+    assert.deepEqual(fileBundle.releaseEvidenceBundleTaskIds, ["action_handoff"]);
+    assert.deepEqual(fileBundle.releaseEvidenceBundleEvidenceKeys, ["productionActionHandoffSmokeEvidence"]);
+    assert.equal(fileBundle.releaseEvidenceBundleWritefulSchedulingAllowed, false);
+    assert.equal(fileBundle.releaseEvidenceBundleRuntimeConfigChange, false);
+    assert.equal(fileBundle.releaseEvidenceBundleConfigChangeApplied, false);
+    assert.equal(fileBundle.releaseEvidenceBundleSchedulerPermissionGranted, false);
     assert.equal(fileBundle.evidence.productionActionHandoffSmokeEvidence.source, "growth-release-evidence-bundle-builder");
     assert.equal(fileBundle.evidence.productionActionHandoffSmokeEvidence.smoke, "npm run smoke:action-handoff");
     assert.equal(JSON.stringify(fileBundle).includes("access-key"), false);

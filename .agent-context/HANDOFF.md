@@ -9,6 +9,37 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:01+08:00 - Release Evidence Bundle Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change release evidence bundle service behavior, task definitions, route
+  authorization, repositories, DB schema, Gateway/model calls, card
+  publication, scheduler execution/tick behavior, action-handoff delivery,
+  runtime config, UI behavior, production deployment, or learner state.
+- Scope:
+  - added `projectReleaseEvidenceBundleSmokeReadback()` in
+    `scripts/build-growth-release-evidence-bundle.js`;
+  - projected bounded top-level `releaseEvidenceBundle*` fields for status,
+    scope, task counts/statuses, evidence keys, release-approval keys, and
+    false runtime/scheduling flags while preserving the versioned bundle
+    artifact as canonical;
+  - kept the builder on the existing injected-runner path; no new service,
+    repository, direct Gateway, scheduler, publication, evaluation, visual, or
+    deployment path was added;
+  - expanded `tests/growth-release-evidence-bundle-script.test.js` to assert
+    pure projection plus real CLI output readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/build-growth-release-evidence-bundle.js`
+  - `node --test tests/growth-release-evidence-bundle-script.test.js`
+  - `npm run --silent smoke:release-evidence-bundle -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --task action_handoff --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with remaining release readback gaps.
+
 ## 2026-06-17T16:48+08:00 - Scheduler Dry-Run Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production

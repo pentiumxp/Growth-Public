@@ -483,8 +483,11 @@ Use the Growth-owned release-readiness boundary:
   proposal smoke, platform action
   evidence, central visual evidence from a Home AI visual harness artifact, and
   read-only release approval bag projection by default, emits only
-  `growth.learningAutomationReleaseEvidenceBundle.v1` summary evidence, and
-  can feed `npm run smoke:release-readiness -- --evidence-bundle-file
+  `growth.learningAutomationReleaseEvidenceBundle.v1` summary evidence,
+  mirrors bounded top-level `releaseEvidenceBundle*` operator readback for
+  status, scope, task counts/statuses, evidence keys, release-approval keys,
+  and false runtime/scheduling flags, and can feed
+  `npm run smoke:release-readiness -- --evidence-bundle-file
   <bundle.json>`. It maps release approvals from
   `npm run smoke:release-approval -- --operation bag` into the bundle
   `releaseApproval` field, so existing approval records do not require
