@@ -313,15 +313,18 @@ record projection that readiness may consume, and it must preserve
 `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
 `evidenceKey`, and `checkKey`; otherwise the record may appear in
 `persistedEvidenceKeys` but still fail the summary-only evidence contract.
-The release-readiness, release-controls, release-closure, release-inventory, and
-release-dashboard smoke CLIs should keep top-level operator readback aligned
+The release-readiness, release-controls, release-closure, release-inventory,
+release-dashboard, release-workbench, and release-preflight smoke CLIs should
+keep top-level operator readback aligned
 with their nested service DTOs.
 `releaseReadinessStatus`, readiness booleans, check/evidence/approval/action
 counts, `nextRequiredAction`, `releaseControlsStatus`,
 `releaseControlsNextAction`, `releaseClosureStatus`,
 `releaseClosureNextAction`, `releaseInventoryStatus`,
 `releaseInventoryMissingRecordKindCount`, `releaseDashboardStatus`,
-`releaseDashboardNextAction`, and `evidenceReadback...` counters are convenience
+`releaseDashboardNextAction`, `releaseWorkbenchStatus`, `nextOwnerAction`,
+`releasePreflightStatus`, `releasePreflightRequiredActionCount`,
+`releasePreflightNextAction`, and `evidenceReadback...` counters are convenience
 projections over the nested summary DTOs; they are not new release decisions,
 runtime config switches, Gateway calls, writes, or permission grants.
 

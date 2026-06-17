@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleasePreflightSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-preflight");
@@ -65,7 +66,23 @@ test("release preflight smoke script delegates only to selected preflight servic
   const service = {
     evaluate(input) {
       calls.push(["evaluate", input]);
-      return { ok: true, status: "blocked" };
+      return {
+        ok: true,
+        status: "blocked",
+        releasePreflight: {
+          status: "blocked",
+          requiredActionCount: 2,
+          nextAction: {
+            key: "resolve_release_blocker",
+            action: "resolve_or_record_blocked_release_decision",
+            requiredActor: "owner"
+          },
+          missingCheckKeys: ["owner_daily_ui_evidence"],
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false,
+          runtimeConfigMutationPerformed: false
+        }
+      };
     },
     listReports(input) {
       calls.push(["list", input]);
@@ -77,12 +94,93 @@ test("release preflight smoke script delegates only to selected preflight servic
     }
   };
 
-  assert.equal(runOperation(service, { operation: "evaluate", workspaceId: "fanfan" }).ok, true);
+  const evaluated = runOperation(service, { operation: "evaluate", workspaceId: "fanfan" });
+  assert.equal(evaluated.ok, true);
+  assert.equal(evaluated.releasePreflightStatus, "blocked");
+  assert.equal(evaluated.releasePreflightRequiredActionCount, 2);
+  assert.equal(evaluated.releasePreflightMissingCheckCount, 1);
+  assert.deepEqual(evaluated.releasePreflightNextAction, {
+    key: "resolve_release_blocker",
+    action: "resolve_or_record_blocked_release_decision",
+    requiredActor: "owner"
+  });
   assert.equal(runOperation(service, { operation: "list", workspaceId: "fanfan" }).ok, true);
   assert.equal(runOperation(service, { operation: "record", workspaceId: "fanfan", allowWritePreflight: true }).ok, true);
   assert.deepEqual(calls.map((call) => call[0]), ["evaluate", "list", "record"]);
   assert.equal(calls[2][1].operation, undefined);
   assert.equal(calls[2][1].allowWritePreflight, true);
+});
+
+test("release preflight smoke script projects nested service summary into top-level operator fields", () => {
+  const output = projectReleasePreflightSmokeReadback({
+    ok: true,
+    status: "ready_for_owner_release_activation",
+    releasePreflight: {
+      status: "ready_for_owner_release_activation",
+      requiredActionCount: 3,
+      nextAction: {
+        key: "record_release_activation",
+        action: "record_owner_release_activation",
+        requiredActor: "owner"
+      },
+      missingCheckKeys: ["central_visual_evidence"],
+      blockedCheckKeys: ["scheduler_worker_target"],
+      missingEvidenceKeys: ["release_package_review_ui_evidence"],
+      missingApprovalKeys: ["writefulExecutionApproval"],
+      missingRecordKinds: ["release_activation"],
+      blockedRecordKinds: ["runtime_enablement"],
+      readyForProductionDeploy: false,
+      readyForProductionDeployReview: true,
+      readyForOwnerReleaseActivation: true,
+      backendEvidenceComplete: true,
+      latestCollectionRunId: "lgacrn_ready_1",
+      latestDecisionId: "lgardec_ready_1",
+      latestPackageId: "lgarpkg_ready_1",
+      readinessEvidencePresentCount: 9,
+      readinessEvidenceMissingCount: 1,
+      ownerActionCount: 4,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    },
+    report: {
+      preflightReportId: "lgarpf_ready_1",
+      status: "ready_for_owner_release_activation"
+    }
+  });
+
+  assert.equal(output.releasePreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(output.releasePreflightRequiredActionCount, 3);
+  assert.equal(output.releasePreflightMissingCheckCount, 1);
+  assert.equal(output.releasePreflightBlockedCheckCount, 1);
+  assert.equal(output.releasePreflightMissingEvidenceCount, 1);
+  assert.equal(output.releasePreflightMissingApprovalCount, 1);
+  assert.equal(output.releasePreflightMissingRecordKindCount, 1);
+  assert.equal(output.releasePreflightBlockedRecordKindCount, 1);
+  assert.equal(output.releasePreflightReadyForProductionDeploy, false);
+  assert.equal(output.releasePreflightReadyForProductionDeployReview, true);
+  assert.equal(output.releasePreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(output.releasePreflightBackendEvidenceComplete, true);
+  assert.equal(output.releasePreflightLatestCollectionRunId, "lgacrn_ready_1");
+  assert.equal(output.releasePreflightLatestDecisionId, "lgardec_ready_1");
+  assert.equal(output.releasePreflightLatestPackageId, "lgarpkg_ready_1");
+  assert.equal(output.releasePreflightReportId, "lgarpf_ready_1");
+  assert.equal(output.releasePreflightReportStatus, "ready_for_owner_release_activation");
+  assert.equal(output.releasePreflightReadinessEvidencePresentCount, 9);
+  assert.equal(output.releasePreflightReadinessEvidenceMissingCount, 1);
+  assert.equal(output.releasePreflightOwnerActionCount, 4);
+  assert.equal(output.releasePreflightWritefulSchedulingAllowed, false);
+  assert.equal(output.releasePreflightRuntimeConfigChange, false);
+  assert.equal(output.releasePreflightRuntimeConfigMutationPerformed, false);
+  assert.equal(output.releasePreflightBackgroundSchedulingAllowed, false);
+  assert.equal(output.releasePreflightBackgroundWorkerAllowed, false);
+  assert.deepEqual(output.releasePreflightNextAction, {
+    key: "record_release_activation",
+    action: "record_owner_release_activation",
+    requiredActor: "owner"
+  });
 });
 
 test("release preflight smoke script runs no-write evaluate against a temporary SQLite db", () => {
@@ -110,6 +208,18 @@ test("release preflight smoke script runs no-write evaluate against a temporary 
     assert.equal(output.schemaVersion, "growth.learningAutomationReleasePreflight.v1");
     assert.equal(output.releasePreflight.summaryOnly, true);
     assert.equal(output.releasePreflight.readyForProductionDeploy, false);
+    assert.equal(output.releasePreflightStatus, output.releasePreflight.status);
+    assert.equal(output.releasePreflightRequiredActionCount, output.releasePreflight.requiredActionCount);
+    assert.equal(output.releasePreflightMissingCheckCount, output.releasePreflight.missingCheckKeys.length);
+    assert.equal(output.releasePreflightMissingEvidenceCount, output.releasePreflight.missingEvidenceKeys.length);
+    assert.equal(output.releasePreflightMissingApprovalCount, output.releasePreflight.missingApprovalKeys.length);
+    assert.equal(output.releasePreflightReadyForProductionDeploy, false);
+    assert.equal(output.releasePreflightReadyForProductionDeployReview, output.releasePreflight.readyForProductionDeployReview);
+    assert.equal(output.releasePreflightReadyForOwnerReleaseActivation, output.releasePreflight.readyForOwnerReleaseActivation);
+    assert.equal(output.releasePreflightBackendEvidenceComplete, output.releasePreflight.backendEvidenceComplete);
+    assert.equal(output.releasePreflightWritefulSchedulingAllowed, false);
+    assert.equal(output.releasePreflightRuntimeConfigChange, false);
+    assert.equal(output.releasePreflightRuntimeConfigMutationPerformed, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);

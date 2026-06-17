@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:36+08:00 - Release Preflight Smoke Operator Readback
+
+- Status: implemented, validated, and ready to commit locally. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change Home AI central contracts beyond the plugin-local pointer doc, runtime
+  config, scheduler permission, Gateway/model calls, UI behavior, production
+  deployment, or learner state mutation.
+- Problem found:
+  - `smoke-growth-release-preflight` returned the canonical
+    `growth.learningAutomationReleasePreflight.v1` DTO correctly, but
+    operator-critical status, missing counts, advisory readiness booleans,
+    report id/status, evidence counters, owner-action count, and runtime/write
+    flags were available only under nested `releasePreflight` / `report` fields;
+  - this made final backend release readback less consistent with release
+    readiness, controls, closure, inventory, dashboard, and workbench smoke
+    outputs.
+- Scope:
+  - added `projectReleasePreflightSmokeReadback` in
+    `scripts/smoke-growth-release-preflight.js`;
+  - wrapped `evaluate`, `list`, and `record` smoke operations with top-level,
+    summary-only projection fields while preserving nested service DTOs as the
+    canonical output;
+  - expanded `tests/growth-release-preflight-smoke-script.test.js` with pure
+    projection coverage plus SQLite no-write smoke assertions;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-release-preflight.js`;
+  - `node --test tests/growth-release-preflight-smoke-script.test.js` -> 5/5;
+  - `node --test tests/learning-automation-release-preflight-service.test.js
+    tests/learning-automation-release-preflight-repository.test.js
+    tests/growth-release-preflight-smoke-script.test.js` -> 11/11;
+  - `node scripts/check-growth-docs-locality.js` -> ok;
+  - `git diff --check` -> ok;
+  - `npm run --silent test:release-union` -> 241/241;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `npm test` -> 933/933;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,331 nodes, 23,335 edges.
+
 ## 2026-06-17T12:23+08:00 - Release Dashboard/Inventory Smoke Operator Readback
 
 - Status: implemented, validated, and ready to commit locally. No production

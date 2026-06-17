@@ -92,13 +92,68 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80)
+  };
+}
+
+function projectReleasePreflightSmokeReadback(result = {}) {
+  const preflight = objectOnly(result.releasePreflight);
+  const report = objectOnly(result.report);
+  return Object.assign({}, result, {
+    releasePreflightStatus: cleanString(preflight.status || result.status, 120),
+    releasePreflightRequiredActionCount: Number(preflight.requiredActionCount || 0) || 0,
+    releasePreflightNextAction: compactAction(preflight.nextAction),
+    releasePreflightMissingCheckCount: asArray(preflight.missingCheckKeys).length,
+    releasePreflightBlockedCheckCount: asArray(preflight.blockedCheckKeys).length,
+    releasePreflightMissingEvidenceCount: asArray(preflight.missingEvidenceKeys).length,
+    releasePreflightMissingApprovalCount: asArray(preflight.missingApprovalKeys).length,
+    releasePreflightMissingRecordKindCount: asArray(preflight.missingRecordKinds).length,
+    releasePreflightBlockedRecordKindCount: asArray(preflight.blockedRecordKinds).length,
+    releasePreflightReadyForProductionDeploy: preflight.readyForProductionDeploy === true,
+    releasePreflightReadyForProductionDeployReview: preflight.readyForProductionDeployReview === true,
+    releasePreflightReadyForOwnerReleaseActivation: preflight.readyForOwnerReleaseActivation === true,
+    releasePreflightBackendEvidenceComplete: preflight.backendEvidenceComplete === true,
+    releasePreflightLatestCollectionRunId: cleanString(preflight.latestCollectionRunId, 140),
+    releasePreflightLatestDecisionId: cleanString(preflight.latestDecisionId, 140),
+    releasePreflightLatestPackageId: cleanString(preflight.latestPackageId, 140),
+    releasePreflightReportId: cleanString(report.preflightReportId || report.reportId, 140),
+    releasePreflightReportStatus: cleanString(report.status, 120),
+    releasePreflightReadinessEvidencePresentCount: Number(preflight.readinessEvidencePresentCount || 0) || 0,
+    releasePreflightReadinessEvidenceMissingCount: Number(preflight.readinessEvidenceMissingCount || 0) || 0,
+    releasePreflightOwnerActionCount: Number(preflight.ownerActionCount || 0) || 0,
+    releasePreflightWritefulSchedulingAllowed: preflight.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
+    releasePreflightRuntimeConfigChange: preflight.runtimeConfigChange === true || result.runtimeConfigChange === true,
+    releasePreflightRuntimeConfigMutationPerformed: preflight.runtimeConfigMutationPerformed === true || result.runtimeConfigMutationPerformed === true,
+    releasePreflightBackgroundSchedulingAllowed: preflight.backgroundSchedulingAllowed === true || result.backgroundSchedulingAllowed === true,
+    releasePreflightBackgroundWorkerAllowed: preflight.backgroundWorkerAllowed === true || result.backgroundWorkerAllowed === true
+  });
+}
+
 function runOperation(service, input) {
   const operation = String(input.operation || "evaluate").trim();
   const serviceInput = Object.assign({}, input);
   delete serviceInput.operation;
-  if (operation === "list") return service.listReports(serviceInput);
-  if (operation === "record") return service.recordReport(serviceInput);
-  return service.evaluate(serviceInput);
+  if (operation === "list") return projectReleasePreflightSmokeReadback(service.listReports(serviceInput));
+  if (operation === "record") return projectReleasePreflightSmokeReadback(service.recordReport(serviceInput));
+  return projectReleasePreflightSmokeReadback(service.evaluate(serviceInput));
 }
 
 function formatResult(value, pretty = false) {
@@ -134,6 +189,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleasePreflightSmokeReadback,
   runOperation,
   validateInput
 };
