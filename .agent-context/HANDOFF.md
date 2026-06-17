@@ -21000,3 +21000,42 @@
     one-shot evaluation / one-shot reflection flow remains intact;
   - keep central visual validation/deploy for a later controlled release step
     rather than mixing it into this backend/context slice.
+
+## 2026-06-17T18:23+0800 - Owner recipe switching refreshes generation context
+
+- Status:
+  - Implemented local Growth frontend/docs/harness slice.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - `growth-api-client` card-generation context queries now accept `recipeId`
+    in both direct and embedded proxy modes.
+  - Daily-loop draft/advance payloads now include `recipe_id` so the selected
+    recipe remains visible through the Owner action boundary.
+  - The Owner generation UI now binds `data-card-generation-recipe` clicks.
+    Selecting a recipe refreshes generation context with only `recipeId` and
+    clears stale domain-pack/domain/subject draft selectors, so switching from
+    English to science cannot be overridden by the previous selector state.
+  - Target workspace selection remains separate from Owner workspace
+    authorization; recipe switching still uses the selected learner target.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check public/app.js`;
+  - `node --check public/growth-api-client.js`;
+  - `node --check public/growth-card-generation-ui.js`;
+  - `node --check tests/growth-frontend-adapter.test.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37` and no missing harness references;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - next larger package should validate the end-to-end sample action against a
+    realistic service fixture: recipe switch to Fanfan science, one-click
+    advance, resulting generated card visible in board/detail, and learner
+    submit/evaluate/reflect flow preserved;
+  - production visual validation and deploy should remain a separate release
+    gate.

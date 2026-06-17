@@ -2593,6 +2593,7 @@
       workspace_id: clean(workspaceId || context.target?.workspaceId),
       learner_id: clean(context.target?.learnerId || workspaceId),
       program_id: clean(context.programId || plan.programId || defaults.programId),
+      recipe_id: clean(selection.recipeId || selection.recipe_id || context.selectedRecipeId || "daily_english_v1"),
       domain_pack_id: clean(draft.domainPackId || provisioning.selectedDomainPackId || graphOptions.selectedDomainPackId || context.domainPackId || plan.domainPackId || defaults.domainPackId),
       domain: clean(draft.domain || provisioning.selectedDomain || graphOptions.selectedDomain || recommendation.domain || plan.domain || context.domain || defaults.domain || "english"),
       subject: clean(draft.subject || provisioning.selectedSubject || graphOptions.selectedSubject || recommendation.subject || plan.subject || context.subject || defaults.subject || plan.domain || context.domain || "english"),

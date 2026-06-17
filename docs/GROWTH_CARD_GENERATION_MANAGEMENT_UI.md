@@ -23,7 +23,9 @@ compact learning-loop state readback through
 and a no-write planner readiness smoke. The Owner `生成` tab now reads that
 state after loading generation context, renders a summary-only status/next
 action panel, applies recipe defaults before target-provisioning and graph
-suggestion, renders `targetProvisioning` plus filtered `graphOptions`, lets
+suggestion, lets Owner switch recipe by refreshing context with `recipeId`
+instead of stale graph selectors, renders `targetProvisioning` plus filtered
+`graphOptions`, lets
 Owner apply a selected domain pack/subject to context refresh, and can call the
 Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
 target enablement. The same Owner tab now also reads
@@ -157,7 +159,9 @@ selected learner target, not the iframe's Owner workspace.
 8. Owner selects the `日常英语卡` or `日常科学卡` recipe.
    The context service applies the recipe's domain/subject defaults before
    target provisioning and graph suggestion, so Owner does not need to hand-type
-   science selectors for the Fanfan sample path.
+   science selectors for the Fanfan sample path. The browser sends only
+   `recipeId` during recipe switching so an older English domain pack/subject
+   draft cannot override the science recipe defaults.
 9. Growth shows readiness:
    - learner workspace is provisioned;
    - learning graph is imported;

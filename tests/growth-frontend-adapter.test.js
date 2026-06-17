@@ -158,7 +158,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     }
   });
 
-  await client.fetchCardGenerationContext("weixin_fanfan");
+  await client.fetchCardGenerationContext("weixin_fanfan", { recipeId: "daily_science_v1" });
   await client.fetchLearningLoopState("weixin_fanfan", {
     target: { learnerId: "fanfan" },
     suggestedPlan: {
@@ -341,7 +341,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     subject: "science"
   }, "weixin_fanfan");
 
-  assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
+  assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
   assert.ok(advanceCall);
   assert.deepEqual(JSON.parse(advanceCall.options.body), {
@@ -530,7 +530,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     }
   });
 
-  await client.fetchCardGenerationContext("weixin_stephen");
+  await client.fetchCardGenerationContext("weixin_stephen", { recipeId: "daily_science_v1" });
   await client.fetchLearningLoopState("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.generateGrowthCard({ target_node_id: "kg_english_main_idea" }, "weixin_stephen");
   await client.draftGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
@@ -563,7 +563,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.advanceGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
-  assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
+  assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
   assert.equal(calls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/state?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&availableMinutes=15");
   assert.equal(calls[2].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/cards/generate");
   assert.equal(calls[3].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/draft");
@@ -2341,7 +2341,22 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     selection: { domainPackId: "uk_hk_curriculum_foundation", domain: "science", subject: "science" }
   });
   assert.equal(selectedDraftPayload.domain_pack_id, "uk_hk_curriculum_foundation");
+  assert.equal(selectedDraftPayload.recipe_id, "daily_english_v1");
   assert.equal(selectedDraftPayload.subject, "science");
+  const scienceAdvancePayload = windowRef.HermesGrowthCardGenerationUi.createDailyLoopAdvancePayload({
+    context: Object.assign({}, context, {
+      selectedRecipeId: "daily_science_v1",
+      generationDefaults: Object.assign({}, context.generationDefaults, {
+        domain: "science",
+        subject: "science"
+      })
+    }),
+    workspaceId: "weixin_fanfan",
+    selection: { recipeId: "daily_science_v1" }
+  });
+  assert.equal(scienceAdvancePayload.recipe_id, "daily_science_v1");
+  assert.equal(scienceAdvancePayload.domain, "science");
+  assert.equal(scienceAdvancePayload.subject, "science");
   const provisionPayload = windowRef.HermesGrowthCardGenerationUi.createTargetProvisionPayload({
     context,
     workspaceId: "weixin_fanfan",
@@ -3315,6 +3330,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function refreshCardGenerationContextAfterPublish/);
   assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId, requestedSelection\)/);
   assert.match(source, /api\.fetchCardGenerationContext\(requestedTargetWorkspaceId, selection\)/);
+  assert.match(source, /data-card-generation-recipe/);
+  assert.match(source, /resetGraphSelection: true/);
+  assert.match(source, /selection: \{ recipeId \}/);
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function refreshReleaseWorkbench/);
   assert.match(source, /api\.fetchGrowthReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);

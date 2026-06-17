@@ -64,6 +64,7 @@
       const params = new URLSearchParams();
       const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
       if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "recipeId", selection.recipeId || selection.recipe_id || selection.selectedRecipeId || selection.selected_recipe_id);
       appendQueryParam(params, "domainPackId", selection.domainPackId || selection.domain_pack_id);
       appendQueryParam(params, "domain", selection.domain);
       appendQueryParam(params, "subject", selection.subject);

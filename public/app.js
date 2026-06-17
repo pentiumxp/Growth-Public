@@ -84,6 +84,7 @@
         domainPackId: "",
         domain: "",
         subject: "",
+        recipeId: "",
         status: "idle",
         result: null,
         error: ""
@@ -264,6 +265,7 @@
       domainPackId: selectedPackId || clean(pack.domainPackId || pack.domain_pack_id),
       domain: clean(draft.domain || provisioning.selectedDomain || graphOptions.selectedDomain || pack.domain || context.domain),
       subject: clean(draft.subject || provisioning.selectedSubject || graphOptions.selectedSubject || subjects[0] || context.subject),
+      recipeId: clean(draft.recipeId || draft.recipe_id || context.selectedRecipeId),
       status: clean(draft.status || "idle"),
       result: draft.result || null,
       error: clean(draft.error)
@@ -610,6 +612,34 @@
         event.preventDefault();
         loadCardGenerationContext().catch((error) => {
           pageState.cardGeneration.status = "failed";
+          pageState.cardGeneration.error = error.message || String(error);
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-card-generation-recipe]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const recipeId = clean(button.dataset.cardGenerationRecipe);
+        if (!recipeId) return;
+        const context = pageState.cardGeneration.context || {};
+        const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context.target?.workspaceId || currentWorkspaceId);
+        pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+          domainPackId: "",
+          domain: "",
+          subject: "",
+          recipeId,
+          status: "loading",
+          error: ""
+        });
+        loadCardGenerationContext(targetWorkspaceId, {
+          resetGraphSelection: true,
+          selection: { recipeId }
+        }).catch((error) => {
+          pageState.cardGeneration.targetProvisionDraft = Object.assign({}, pageState.cardGeneration.targetProvisionDraft, {
+            status: "failed",
+            error: error.message || String(error)
+          });
           pageState.cardGeneration.error = error.message || String(error);
           renderShell();
         });
@@ -1110,10 +1140,14 @@
   async function loadCardGenerationContext(targetWorkspaceId = cardGenerationWorkspaceId(), options = {}) {
     if (!pageState.auth.isOwner) return;
     const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
-    const requestedSelection = selectionFromContext(
-      pageState.cardGeneration.context || {},
-      options.selection || pageState.cardGeneration.targetProvisionDraft || {}
-    );
+    const requestedSelection = options.resetGraphSelection
+      ? {
+        recipeId: clean(options.selection?.recipeId || options.selection?.recipe_id)
+      }
+      : selectionFromContext(
+        pageState.cardGeneration.context || {},
+        options.selection || pageState.cardGeneration.targetProvisionDraft || {}
+      );
     clearCardGenerationProgressTimers();
     pageState.cardGeneration.selectedWorkspaceId = requestedTargetWorkspaceId;
     pageState.cardGeneration.status = "loading_context";
