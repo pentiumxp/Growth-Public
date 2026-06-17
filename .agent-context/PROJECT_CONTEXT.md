@@ -293,7 +293,11 @@ readback gate set.
   `npm run smoke:ui-evidence`, which validates an explicit
   summary-only UI/visual artifact for a canonical UI evidence key before that
   output is optionally persisted through the existing release-evidence record
-  path. The release-evidence record service now re-runs that validator before
+  path. The CLI now mirrors bounded top-level `uiEvidence*` operator readback
+  for status, write gate, scope, gate/check keys, route/screen, coverage,
+  screenshot/DOM evidence, assertion counts, private value findings, validator
+  boundary flags, and false runtime/writeful flags while preserving the nested
+  service DTO as canonical. The release-evidence record service now re-runs that validator before
   saving any pass UI evidence key, and its evidence bag preserves the
   validator schema/projection summary plus top-level evidence/check keys for
   readiness readback. `npm run smoke:release-evidence` now mirrors bounded
