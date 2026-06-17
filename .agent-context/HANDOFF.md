@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T01:56Z - Central AI Ops Release Evidence Preflight
+
+- Status: central-contract preflight progressed. No Growth runtime code changed
+  and no production deployment was executed.
+- Scope:
+  - ran Home AI AI Ops intake for Growth release-evidence closure from
+    `/Users/hermes-dev/HermesMobileDev/app`;
+  - AI Ops classified the task as `H1` because it touches central visual and
+    production deployment evidence;
+  - read the required Home AI visual, deployment, production-closure, and
+    production-access contracts before running checks;
+  - allocated the `ios-pwa-1` visual lane for `growth`, then released it
+    without running live visual capture.
+- Home AI focused validation passed:
+  - `node tests/ios-pwa-live-debug-server.test.js`;
+  - `node tests/ios-pwa-visual-harness.test.js`;
+  - `node --check scripts/deploy-macos-production.js`;
+  - `node tests/macos-production-deploy-script.test.js`;
+  - `node tests/production-status-smoke-harness.test.js`;
+  - `npm run --silent deploy:macos -- --target home-ai --json` produced a
+    plan-only deploy packet for Home AI commit `ddbc3e30f810` with no
+    `--execute`.
+- AI Ops evidence ledger:
+  - ledger: `$HOME/.homeai-qa/growth-evidence-ledger.jsonl`;
+  - appended bounded `test`, `deploy`, `visual`, and `production_smoke`
+    records for this preflight;
+  - `node scripts/ai-ops-control-plane.js evidence verify --ledger
+    "$HOME/.homeai-qa/growth-evidence-ledger.jsonl" --require-kind test
+    --require-kind deploy --require-kind visual --require-kind
+    production_smoke --json` returned `ok=true`, `recordCount=14`.
+- Production probe result:
+  - `node scripts/plugin-workspace-platform-contract-check.js --probe-mac
+    --require-mac-ok --json` returned `ok=false`;
+  - Growth's platform pointer and handoff pointer were valid with no Growth
+    pointer issues;
+  - Mac plugin probes failed because this session could not validate production
+    plugin roots such as `/Users/hermes-host/HermesMobile/plugins/growth` and
+    loopback plugin manifest/MCP endpoints such as `127.0.0.1:4881`;
+  - this is a release gate blocker for production evidence, not a Growth-local
+    service/database/harness failure.
+- Remaining:
+  - real Home AI central visual/UI summary artifacts still need collection
+    through the live debug/visual harness with an authenticated PWA session;
+  - platform Action Inbox/Web Push evidence, controlled production daily-loop
+    write evidence, production profile-feedback evidence from a real completed
+    cycle, explicit Owner approvals, production deploy, and production health
+    checks remain open;
+  - scheduler/runtime writeful execution must stay disabled until those gates
+    are closed.
+
 ## 2026-06-17T11:45+08:00 - Full Local Suite Validation After Action Audit Smoke Readback
 
 - Status: validation-only follow-up completed locally. No runtime code changed
