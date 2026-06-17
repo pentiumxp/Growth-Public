@@ -1614,6 +1614,19 @@ readback gate set.
   summary through `ownerAuditReviewSummary` for readiness readback. This
   release evidence is distinct from `ownerReviewEvidence`, which remains the
   automation proposal/digest/action/scheduler review evidence model.
+  Production deployment-health release evidence now has a Growth-owned
+  summary-only validation boundary:
+  `learning-automation-production-deployment-evidence-service`,
+  visible-target scoped
+  `POST /api/v1/growth/automation/production-deployment-evidence`, and
+  `npm run smoke:production-deployment-evidence`. It validates only a bounded
+  Home AI macOS deployment-health summary, requires `serviceRunning`,
+  `manifestOk`, `healthOk`, Home AI deployment ownership, and Growth no-deploy
+  boundary flags, and can feed release-readiness as
+  `productionDeploymentHealthEvidence` / `production_deployment_health` through
+  the release-evidence service or one-off validated summary input. It does not
+  run deploy, restart, launchctl, scheduler, Gateway, runtime-config mutation,
+  notification, publication, generation, evaluation, or learner-state actions.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

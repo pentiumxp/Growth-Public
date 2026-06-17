@@ -17,6 +17,7 @@ const HOME_AI_VISUAL_UI_EVIDENCE_KEYS = [
   "release_package_review_ui_evidence"
 ];
 const HOME_AI_PLATFORM_ACTION_EVIDENCE_KEYS = ["platform_action_evidence"];
+const HOME_AI_DEPLOYMENT_HEALTH_EVIDENCE_KEYS = ["production_deployment_health"];
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -287,7 +288,15 @@ function buildProductionClosureGateSummary(scope, preflight) {
     .concat(preflight.missingEvidenceKeys));
   const visualUiMissingKeys = missingGateKeys(allMissingKeys, HOME_AI_VISUAL_UI_EVIDENCE_KEYS);
   const platformActionMissingKeys = missingGateKeys(allMissingKeys, HOME_AI_PLATFORM_ACTION_EVIDENCE_KEYS);
-  const growthBackendReady = preflight.readyForProductionDeployReview === true;
+  const deploymentHealthMissingKeys = missingGateKeys(allMissingKeys, HOME_AI_DEPLOYMENT_HEALTH_EVIDENCE_KEYS);
+  const externalGateKeys = new Set(
+    HOME_AI_VISUAL_UI_EVIDENCE_KEYS
+      .concat(HOME_AI_PLATFORM_ACTION_EVIDENCE_KEYS)
+      .concat(HOME_AI_DEPLOYMENT_HEALTH_EVIDENCE_KEYS)
+  );
+  const growthBackendMissingKeys = allMissingKeys.filter((key) => !externalGateKeys.has(key));
+  const growthBackendReady = preflight.readyForProductionDeployReview === true
+    || (preflight.backendEvidenceComplete === true && growthBackendMissingKeys.length === 0);
   const ownerActivationRecorded = Boolean(preflight.latestActivationId);
   const runtimeEnablementRecorded = Boolean(preflight.latestRuntimeEnablementId);
   const gates = [
@@ -299,7 +308,7 @@ function buildProductionClosureGateSummary(scope, preflight) {
       requiredActor: "owner",
       action: growthBackendReady ? "review_external_platform_gates" : "complete_growth_release_preflight_actions",
       evidenceSource: "Growth release preflight",
-      missingKeys: growthBackendReady ? [] : allMissingKeys
+      missingKeys: growthBackendMissingKeys
     }),
     gateSummary({
       key: "home_ai_visual_ui_artifacts",
@@ -342,11 +351,14 @@ function buildProductionClosureGateSummary(scope, preflight) {
     gateSummary({
       key: "production_deployment_health",
       label: "Production deployment and health evidence",
-      status: "pending_external_deployment_evidence",
-      passed: false,
+      status: deploymentHealthMissingKeys.length ? "pending_external_deployment_evidence" : "evidence_recorded",
+      passed: deploymentHealthMissingKeys.length === 0,
       requiredActor: "home_ai_platform",
-      action: "deploy_through_home_ai_macos_contract_and_attach_health_readback",
+      action: deploymentHealthMissingKeys.length
+        ? "deploy_through_home_ai_macos_contract_and_attach_health_readback"
+        : "review_recorded_production_deployment_health",
       evidenceSource: "Home AI macOS deployment contract",
+      missingKeys: deploymentHealthMissingKeys,
       blocksProductionDeploy: true
     })
   ];

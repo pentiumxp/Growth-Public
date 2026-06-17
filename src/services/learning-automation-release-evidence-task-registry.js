@@ -149,6 +149,13 @@ const TASK_DEFINITIONS = Object.freeze([
     script: "scripts/smoke-growth-central-visual-evidence.js",
     commandName: "npm run smoke:central-visual-evidence"
   },
+  {
+    taskId: "production_deployment_health",
+    evidenceKey: "productionDeploymentHealthEvidence",
+    checkKey: "production_deployment_health",
+    script: "scripts/smoke-growth-production-deployment-evidence.js",
+    commandName: "npm run smoke:production-deployment-evidence"
+  },
   ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => ({
     taskId: task.taskId,
     evidenceKey: task.evidenceKey,
@@ -274,7 +281,7 @@ function snakeCaseKey(key = "") {
 
 function keyEntriesForTask(task = {}) {
   const entries = [];
-  for (const key of [task.evidenceKey, task.outputKey]) {
+  for (const key of [task.evidenceKey, task.outputKey, task.checkKey]) {
     const clean = cleanString(key, 180);
     if (!clean) continue;
     entries.push([clean, task.taskId]);

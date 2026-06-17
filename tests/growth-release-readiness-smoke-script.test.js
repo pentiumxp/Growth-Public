@@ -163,6 +163,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--release-evidence-bundle-audit",
     "--platform-action-evidence",
     "--central-visual-evidence",
+    "--production-deployment-health-evidence",
     "--release-workbench-evidence",
     "--owner-review-evidence",
     "--release-approval-json", JSON.stringify({
@@ -207,6 +208,10 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     releaseEvidenceBundleAudit: deprecatedReleaseFlag("releaseEvidenceBundleAudit", "release_evidence_bundle_audit"),
     platformActionEvidence: deprecatedReleaseFlag("platformActionEvidence", "platform_action_evidence"),
     centralVisualEvidence: deprecatedReleaseFlag("centralVisualEvidence", "central_visual_evidence"),
+    productionDeploymentHealthEvidence: deprecatedReleaseFlag("productionDeploymentHealthEvidence", "production_deployment_health", {
+      error: "production_deployment_evidence_validator_schema_required",
+      requiredAction: "provide_validated_production_deployment_health_evidence"
+    }),
     releaseWorkbenchSmokeEvidence: deprecatedReleaseFlag("releaseWorkbenchSmokeEvidence", "release_workbench_smoke_evidence", {
       error: "validated_release_workbench_evidence_required",
       requiredAction: "provide_validated_release_workbench_evidence"
@@ -674,6 +679,13 @@ test("release readiness smoke script blocks deprecated service-owned evidence fl
       evidenceKey: "centralVisualEvidence"
     },
     {
+      flag: "--production-deployment-health-evidence",
+      checkKey: "production_deployment_health",
+      evidenceKey: "productionDeploymentHealthEvidence",
+      invalidReason: "production_deployment_evidence_validator_schema_required",
+      requiredAction: "provide_validated_production_deployment_health_evidence"
+    },
+    {
       flag: "--owner-review-evidence-smoke",
       checkKey: "owner_review_evidence",
       evidenceKey: "ownerReviewEvidence"
@@ -697,12 +709,12 @@ test("release readiness smoke script blocks deprecated service-owned evidence fl
       assert.equal(output.ok, true);
       assert.equal(output.status, "blocked");
       assert.equal(check.status, "blocked");
-      assert.equal(check.summary.invalidReason, `validated_${item.checkKey}_required`);
-      assert.equal(check.requiredAction.action, `provide_validated_${item.checkKey}`);
+      assert.equal(check.summary.invalidReason, item.invalidReason || `validated_${item.checkKey}_required`);
+      assert.equal(check.requiredAction.action, item.requiredAction || `provide_validated_${item.checkKey}`);
       assert.equal(output.releaseReview.blockedCheckKeys.includes(item.checkKey), true);
       const readback = output.evidenceReadback.items.find((entry) => entry.key === item.evidenceKey);
       assert.equal(readback.evidencePresent, false);
-      assert.equal(readback.invalidReason, `validated_${item.checkKey}_required`);
+      assert.equal(readback.invalidReason, item.invalidReason || `validated_${item.checkKey}_required`);
     });
   }
 });

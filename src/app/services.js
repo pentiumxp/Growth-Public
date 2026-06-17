@@ -14,6 +14,7 @@ const { createLearningAutomationDigestService } = require("../services/learning-
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
 const { createLearningAutomationOwnerReviewEvidenceService } = require("../services/learning-automation-owner-review-evidence-service");
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
+const { createLearningAutomationProductionDeploymentEvidenceService } = require("../services/learning-automation-production-deployment-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseEvidenceService } = require("../services/learning-automation-release-evidence-service");
@@ -300,6 +301,9 @@ function createServices(config) {
   const learningAutomationCentralVisualEvidenceService = createLearningAutomationCentralVisualEvidenceService({
     readFile: fs.readFileSync
   });
+  const learningAutomationProductionDeploymentEvidenceService = createLearningAutomationProductionDeploymentEvidenceService({
+    readFile: fs.readFileSync
+  });
   const learningAutomationUiEvidenceService = createLearningAutomationUiEvidenceService({
     readFile: fs.readFileSync
   });
@@ -324,7 +328,8 @@ function createServices(config) {
   });
   const learningAutomationReleaseEvidenceService = createLearningAutomationReleaseEvidenceService({
     repository: growthLearningStore.learningAutomationReleaseEvidenceRepository,
-    uiEvidenceService: learningAutomationUiEvidenceService
+    uiEvidenceService: learningAutomationUiEvidenceService,
+    productionDeploymentEvidenceService: learningAutomationProductionDeploymentEvidenceService
   });
   const learningAutomationReleaseCollectionRunService = createLearningAutomationReleaseCollectionRunService({
     repository: growthLearningStore.learningAutomationReleaseCollectionRunRepository
@@ -598,6 +603,7 @@ function createServices(config) {
     learningAutomationFailurePolicyService,
     learningAutomationOwnerReviewEvidenceService,
     learningAutomationPlatformActionEvidenceService,
+    learningAutomationProductionDeploymentEvidenceService,
     learningAutomationProposalService,
     learningAutomationReleaseApprovalService,
     learningAutomationReleaseActivationService,

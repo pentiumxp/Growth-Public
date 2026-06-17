@@ -45,7 +45,10 @@ until real artifacts are collected:
 - production profile-feedback evidence from a real completed cycle;
 - explicit Owner approvals for writeful execution, background scheduler, and
   background worker gates;
-- deployment and production service-health evidence.
+- Home AI macOS deployment and production service-health evidence, which
+  Growth may validate only from a bounded summary through
+  `npm run smoke:production-deployment-evidence` or a matching persisted
+  release-evidence record.
 
 ## Forbidden Harness Shortcuts
 

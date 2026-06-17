@@ -1,6 +1,9 @@
 "use strict";
 
 const { UI_GATE_SPECS } = require("./learning-automation-ui-evidence-service");
+const {
+  PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA
+} = require("./learning-automation-production-deployment-evidence-service");
 
 const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "ownerDailyUiEvidence",
@@ -36,6 +39,7 @@ const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "releaseEvidenceBundleAudit",
   "platformActionEvidence",
   "centralVisualEvidence",
+  "productionDeploymentHealthEvidence",
   "releaseWorkbenchSmokeEvidence",
   "ownerReviewEvidence"
 ]);
@@ -74,6 +78,7 @@ const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
   releaseEvidenceBundleAudit: "release_evidence_bundle_audit",
   platformActionEvidence: "platform_action_evidence",
   centralVisualEvidence: "central_visual_evidence",
+  productionDeploymentHealthEvidence: "production_deployment_health",
   releaseWorkbenchSmokeEvidence: "release_workbench_smoke_evidence",
   ownerReviewEvidence: "owner_review_evidence"
 });
@@ -86,6 +91,8 @@ for (const key of RELEASE_EVIDENCE_KEYS) {
 }
 
 const UI_RELEASE_EVIDENCE_KEYS = new Set(Object.keys(UI_GATE_SPECS));
+const PRODUCTION_DEPLOYMENT_EVIDENCE_KEY = "productionDeploymentHealthEvidence";
+const PRODUCTION_DEPLOYMENT_RELEASE_RECORD_SCHEMA = "growth.learningAutomationReleaseEvidenceRecord.productionDeploymentEvidence.v1";
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|access-key\.txt|launch-token)/i;
@@ -366,6 +373,106 @@ function compactOwnerAuditReviewBagFields(record = {}, evidence = {}) {
   return summary ? { ownerAuditReviewSummary: summary } : {};
 }
 
+function productionDeploymentValidationInput(input = {}, scope = {}) {
+  return Object.assign({}, input, scope, {
+    pluginId: input.pluginId || input.plugin_id || "growth",
+    environment: input.environment || input.env || "macos_production",
+    evidence: input.evidence
+      || input.productionDeploymentEvidence
+      || input.production_deployment_evidence
+      || input.evidenceSummary
+      || input.evidence_summary
+      || null
+  });
+}
+
+function compactDeploymentEvidenceProjection(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    source: cleanString(value.source, 120),
+    pluginId: cleanString(value.pluginId || value.plugin_id, 80),
+    environment: cleanString(value.environment || value.env, 80),
+    launchdLabel: cleanString(value.launchdLabel || value.launchd_label, 120),
+    status: cleanString(value.status, 80),
+    checkedAt: cleanString(value.checkedAt || value.checked_at, 120),
+    deployedAt: cleanString(value.deployedAt || value.deployed_at, 120),
+    deploymentContractVersion: cleanString(value.deploymentContractVersion || value.deployment_contract_version, 160),
+    releaseVersion: cleanString(value.releaseVersion || value.release_version, 120),
+    gitCommit: cleanString(value.gitCommit || value.git_commit, 80),
+    runId: cleanString(value.runId || value.run_id, 160),
+    artifactId: cleanString(value.artifactId || value.artifact_id, 160),
+    serviceRunning: value.serviceRunning === true || value.service_running === true,
+    manifestOk: value.manifestOk === true || value.manifest_ok === true,
+    healthOk: value.healthOk === true || value.health_ok === true,
+    endpointReachable: value.endpointReachable === true || value.endpoint_reachable === true,
+    sqliteIntegrityOk: value.sqliteIntegrityOk === true || value.sqlite_integrity_ok === true,
+    evidenceFilePresent: value.evidenceFilePresent === true || value.evidence_file_present === true,
+    evidenceFileName: cleanString(value.evidenceFileName || value.evidence_file_name, 180),
+    checkCount: Number(value.checkCount || value.check_count || 0) || 0,
+    failedCheckCount: Number(value.failedCheckCount || value.failed_check_count || 0) || 0
+  };
+}
+
+function compactDeploymentBoundary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    homeAiOwnsDeployment: value.homeAiOwnsDeployment === true || value.home_ai_owns_deployment === true,
+    homeAiOwnsServiceRestart: value.homeAiOwnsServiceRestart === true || value.home_ai_owns_service_restart === true,
+    growthRunsNoDeployment: value.growthRunsNoDeployment === true || value.growth_runs_no_deployment === true,
+    growthReadsOnlyDeploymentHealthSummary: value.growthReadsOnlyDeploymentHealthSummary === true || value.growth_reads_only_deployment_health_summary === true,
+    noRuntimeConfigMutation: value.noRuntimeConfigMutation === true || value.no_runtime_config_mutation === true,
+    noSchedulerPermission: value.noSchedulerPermission === true || value.no_scheduler_permission === true
+  };
+}
+
+function productionDeploymentValidatedEvidenceSummary(input = {}, evidenceKey, validation = {}) {
+  const summary = evidenceSummary(Object.assign({}, input, {
+    status: "pass",
+    evidence: input.evidence || input.evidenceSummary || input.evidence_summary || {}
+  }), evidenceKey);
+  return Object.assign({}, summary, {
+    schemaVersion: PRODUCTION_DEPLOYMENT_RELEASE_RECORD_SCHEMA,
+    source: cleanString(validation.source || summary.source || "growth-learning-automation-production-deployment-evidence-service", 180),
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    validatedBy: "learning-automation-production-deployment-evidence-service",
+    validationSchemaVersion: cleanString(validation.schemaVersion, 180),
+    evidenceKey,
+    checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+    status: "pass",
+    ok: true,
+    present: true,
+    readyForReleaseEvidence: validation.readyForReleaseEvidence === true,
+    deploymentEvidence: validation.deploymentEvidence || {},
+    deploymentBoundary: validation.deploymentBoundary || {},
+    missingRequired: Array.isArray(validation.missingRequired) ? validation.missingRequired : [],
+    privateValueFindingCount: Array.isArray(validation.privateValueFindings) ? validation.privateValueFindings.length : 0,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    configChangeApplied: false
+  });
+}
+
+function compactProductionDeploymentBagFields(record = {}, evidence = {}) {
+  const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
+  if (evidenceKey !== PRODUCTION_DEPLOYMENT_EVIDENCE_KEY) return {};
+  return {
+    evidenceKey,
+    checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+    schemaVersion: cleanString(evidence.schemaVersion || evidence.schema_version, 180),
+    privacyClass: cleanString(evidence.privacyClass || evidence.privacy_class, 80),
+    summaryOnly: evidence.summaryOnly === true || evidence.summary_only === true,
+    validationSchemaVersion: cleanString(evidence.validationSchemaVersion || evidence.validation_schema_version, 180),
+    validatedBy: cleanString(evidence.validatedBy || evidence.validated_by, 160),
+    readyForReleaseEvidence: evidence.readyForReleaseEvidence === true || evidence.ready_for_release_evidence === true,
+    deploymentEvidence: compactDeploymentEvidenceProjection(evidence.deploymentEvidence || evidence.deployment_evidence),
+    deploymentBoundary: compactDeploymentBoundary(evidence.deploymentBoundary || evidence.deployment_boundary),
+    missingRequired: compactStringArray(evidence.missingRequired || evidence.missing_required),
+    privateValueFindingCount: Number(evidence.privateValueFindingCount || evidence.private_value_finding_count || 0) || 0
+  };
+}
+
 function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "", uiEvidenceService = null }) {
   if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
     return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
@@ -402,6 +509,49 @@ function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "
   return { ok: true, evidence: uiValidatedEvidenceSummary(input, evidenceKey, validation) };
 }
 
+function validateProductionDeploymentEvidencePass({ input = {}, scope = {}, evidenceKey = "", productionDeploymentEvidenceService = null }) {
+  if (evidenceKey !== PRODUCTION_DEPLOYMENT_EVIDENCE_KEY) {
+    return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
+  }
+  const candidate = evidenceSummary(input, evidenceKey);
+  if (candidate.status !== "pass") {
+    return { ok: true, evidence: Object.assign({}, candidate, { productionDeploymentValidationRequiredForPass: true }) };
+  }
+  if (!productionDeploymentEvidenceService || typeof productionDeploymentEvidenceService.evaluate !== "function") {
+    return unavailable("learning_automation_release_evidence_production_deployment_validator_unavailable", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || ""
+    });
+  }
+  let validation;
+  try {
+    validation = productionDeploymentEvidenceService.evaluate(productionDeploymentValidationInput(input, scope));
+  } catch (error) {
+    return unavailable("learning_automation_release_evidence_production_deployment_validation_failed", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+      detail: cleanString(error && error.message ? error.message : error, 160)
+    });
+  }
+  if (!validation?.ok || validation.readyForReleaseEvidence !== true || validation.status !== "pass") {
+    return unavailable("learning_automation_release_evidence_production_deployment_validation_failed", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+      validationStatus: cleanString(validation?.status, 80),
+      validationError: cleanString(validation?.error, 120),
+      missingRequired: Array.isArray(validation?.missingRequired) ? validation.missingRequired : []
+    });
+  }
+  if (cleanString(validation.schemaVersion, 180) !== PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA) {
+    return unavailable("learning_automation_release_evidence_production_deployment_validation_failed", {
+      evidenceKey,
+      checkKey: CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "",
+      validationError: "production_deployment_evidence_schema_mismatch"
+    });
+  }
+  return { ok: true, evidence: productionDeploymentValidatedEvidenceSummary(input, evidenceKey, validation) };
+}
+
 function compactBagEntry(record = {}) {
   const evidence = record.evidence || {};
   const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
@@ -424,12 +574,13 @@ function compactBagEntry(record = {}) {
     runId: cleanString(evidence.runId || evidence.run_id, 180),
     taskId: cleanString(evidence.taskId || evidence.task_id, 180),
     readyForReleaseEvidence: evidence.readyForReleaseEvidence === true || evidence.ready_for_release_evidence === true
-  }, compactUiBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence), compactOwnerAuditReviewBagFields(record, evidence));
+  }, compactUiBagFields(record, evidence), compactProductionDeploymentBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence), compactOwnerAuditReviewBagFields(record, evidence));
 }
 
 function createLearningAutomationReleaseEvidenceService(options = {}) {
   const repository = options.repository || null;
   const uiEvidenceService = options.uiEvidenceService || null;
+  const productionDeploymentEvidenceService = options.productionDeploymentEvidenceService || null;
 
   function recordEvidence(input = {}) {
     if (!repository || typeof repository.saveEvidence !== "function") {
@@ -440,7 +591,19 @@ function createLearningAutomationReleaseEvidenceService(options = {}) {
     if (!scope.workspaceId || !evidenceKey) return unavailable("learning_automation_release_evidence_scope_required");
     const privacyFindings = scanPrivacy(input);
     if (privacyFindings.length) return unavailable("learning_automation_release_evidence_privacy_failed", { privacyFindings });
-    const validation = validateUiReleaseEvidencePass({ input, scope, evidenceKey, uiEvidenceService });
+    let validation;
+    if (UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
+      validation = validateUiReleaseEvidencePass({ input, scope, evidenceKey, uiEvidenceService });
+    } else if (evidenceKey === PRODUCTION_DEPLOYMENT_EVIDENCE_KEY) {
+      validation = validateProductionDeploymentEvidencePass({
+        input,
+        scope,
+        evidenceKey,
+        productionDeploymentEvidenceService
+      });
+    } else {
+      validation = { ok: true, evidence: evidenceSummary(input, evidenceKey) };
+    }
     if (!validation.ok) return validation;
     const saveResult = repository.saveEvidence(Object.assign({}, input, scope, {
       evidenceKey,

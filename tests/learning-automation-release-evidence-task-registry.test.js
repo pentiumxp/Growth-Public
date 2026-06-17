@@ -30,6 +30,7 @@ test("release evidence task registry owns default and opt-in task definitions", 
 
   const taskIds = TASK_DEFINITIONS.map((task) => task.taskId);
   assert.equal(taskIds.includes("daily_loop_write"), true);
+  assert.equal(taskIds.includes("production_deployment_health"), true);
   assert.equal(taskIds.includes("release_package_review_ui"), true);
   assert.equal(taskIds.includes("release_workbench"), true);
   assert.equal(taskDefinition("operating_loop_history").commandName, "npm run smoke:operating-loop");
@@ -58,6 +59,14 @@ test("release evidence task registry maps camel and snake evidence keys", () => 
     taskIdFromReleaseEvidenceKey("production_owner_audit_review_smoke_evidence"),
     "owner_audit_review"
   );
+  assert.equal(
+    taskIdFromReleaseEvidenceKey("productionDeploymentHealthEvidence"),
+    "production_deployment_health"
+  );
+  assert.equal(
+    taskIdFromReleaseEvidenceKey("production_deployment_health"),
+    "production_deployment_health"
+  );
   assert.equal(taskIdFromReleaseEvidenceKey("releaseApproval"), "release_approval");
   assert.equal(taskIdFromReleaseEvidenceKey("release_approval"), "release_approval");
   assert.equal(TASK_ID_BY_RELEASE_EVIDENCE_KEY.release_approval, "release_approval");
@@ -81,8 +90,20 @@ test("release evidence task registry separates safe collection, write-gated, and
     ""
   );
   assert.equal(
+    releaseEvidenceCollectionTaskIdForKey("productionDeploymentHealthEvidence"),
+    ""
+  );
+  assert.equal(
+    releaseEvidenceCollectionTaskIdForKey("production_deployment_health"),
+    ""
+  );
+  assert.equal(
     writeGatedReleaseEvidenceCollectionTaskIdForKey("production_daily_loop_write_smoke_evidence"),
     "daily_loop_write"
+  );
+  assert.equal(
+    writeGatedReleaseEvidenceCollectionTaskIdForKey("productionDeploymentHealthEvidence"),
+    ""
   );
   assert.equal(
     WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY.production_daily_loop_write_smoke_evidence,

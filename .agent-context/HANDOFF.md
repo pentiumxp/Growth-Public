@@ -9,6 +9,76 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T02:36+08:00 - Production Deployment Health Evidence Boundary
+
+- Status: implemented locally; focused release/readiness/preflight Harness,
+  docs-locality, release-union, global check, diff check, and CodeGraph sync
+  passed. No production deploy, Home AI visual harness run, platform
+  Action Inbox/Web Push delivery, runtime config change, scheduler execution,
+  Gateway/model call, learner-state mutation, release approval, or Home AI host
+  deployment/restart logic change was performed.
+- Classification: H2 Growth release-evidence/readiness boundary. It adds a
+  Growth-side summary-only validator for Home AI macOS deployment-health
+  evidence; Home AI still owns deployment, service restart, launchd, final
+  health collection, and production release operation.
+- Scope:
+  - added `learning-automation-production-deployment-evidence-service` and
+    `npm run smoke:production-deployment-evidence`;
+  - added visible-target scoped no-write
+    `POST /api/v1/growth/automation/production-deployment-evidence`; HTTP
+    accepts inline summary JSON only and ignores server-local evidence file
+    path fields;
+  - release-evidence persistence now revalidates
+    `productionDeploymentHealthEvidence` pass records through the deployment
+    validator before saving, then projects bounded deployment evidence into the
+    readiness bag;
+  - release-readiness now includes `production_deployment_health`, rejects
+    direct `{ ok: true }` or deprecated flag evidence without validator schema,
+    and keeps required action assigned to `home_ai_platform`;
+  - release-preflight separates Growth backend readiness from external Home AI
+    visual/platform/deployment gates, so deployment-health remains a distinct
+    production closure gate instead of being collapsed into generic backend
+    evidence;
+  - release-union downstream dashboard/inventory/package smoke Harness now uses
+    the updated readiness evidence cardinality (`36` total missing when no
+    evidence is present, `35` after one persisted pass record).
+- Harness/docs updated:
+  - `src/services/learning-automation-production-deployment-evidence-service.js`
+  - `scripts/smoke-growth-production-deployment-evidence.js`
+  - `src/services/learning-automation-release-evidence-service.js`
+  - `src/services/learning-automation-release-readiness-service.js`
+  - `src/services/learning-automation-release-preflight-service.js`
+  - `src/services/learning-automation-release-evidence-task-registry.js`
+  - `src/routes/growth-routes.js`
+  - `src/app/services.js`
+  - `scripts/run-growth-release-union-tests.js`
+  - focused service/smoke/route/architecture/release-union tests;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --test tests/learning-automation-production-deployment-evidence-service.test.js tests/growth-production-deployment-evidence-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js tests/learning-automation-release-readiness-service.test.js tests/learning-automation-release-preflight-service.test.js tests/growth-routes.test.js tests/learning-automation-release-evidence-task-registry.test.js tests/growth-release-readiness-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    -> 145/145;
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    -> 39/39;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run test:release-union` -> 268/268;
+  - `npm run --silent check` -> `runtimeCount=225`, `checkedCount=225`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-version advisory unchanged.
+- Remaining gate:
+  - this does not create real production deployment evidence by itself. Before
+    production release closure, Home AI still needs to run the macOS deployment
+    contract/health collection and provide the bounded summary for Growth to
+    validate or persist through the release-evidence service.
+
 ## 2026-06-18T02:07+08:00 - Release Preflight Production Closure Gate Readback
 
 - Status: implemented locally; focused preflight service/smoke/architecture

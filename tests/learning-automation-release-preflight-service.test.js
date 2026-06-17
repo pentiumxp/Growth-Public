@@ -114,12 +114,12 @@ test("release preflight evaluates summary-only release readiness without writefu
   assert.equal(result.releasePreflight.readyForOwnerReleaseActivation, true);
   assert.equal(result.releasePreflight.readyForProductionDeploy, false);
   assert.equal(result.releasePreflight.readyForProductionDeployReview, true);
-  assert.equal(result.releasePreflight.productionClosureGateSummary.status, "external_or_runtime_gates_pending");
+  assert.equal(result.releasePreflight.productionClosureGateSummary.status, "ready_for_production_deploy_evidence");
   assert.equal(result.releasePreflight.productionClosureGateCount, 6);
-  assert.equal(result.releasePreflight.productionClosurePendingGateCount, 1);
-  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").status, "pending_external_deployment_evidence");
-  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").passed, false);
-  assert.equal(result.releasePreflight.productionClosureGateSummary.nextExternalAction.key, "production_deployment_health");
+  assert.equal(result.releasePreflight.productionClosurePendingGateCount, 0);
+  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").status, "evidence_recorded");
+  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").passed, true);
+  assert.equal(result.releasePreflight.productionClosureGateSummary.nextExternalAction, null);
   assert.equal(result.releasePreflight.deploymentEvidenceRequired, true);
   assert.equal(result.releasePreflight.readinessEvidencePresentCount, 12);
   assert.deepEqual(result.releasePreflight.persistedApprovalKeys, ["writefulExecutionApproval"]);
@@ -205,6 +205,39 @@ test("release preflight keeps Home AI visual and platform evidence as explicit e
   assert.deepEqual(visualGate.missingKeys.sort(), ["central_visual_evidence", "release_package_review_ui_evidence"].sort());
   assert.equal(platformGate.status, "pending_platform_action_receipts");
   assert.deepEqual(platformGate.missingKeys, ["platform_action_evidence"]);
+});
+
+test("release preflight keeps production deployment health as explicit external gate when missing", () => {
+  const { service } = createReadyService({
+    dashboardResult: {
+      releaseDashboard: {
+        missingCheckKeys: ["production_deployment_health"],
+        missingEvidenceKeys: ["production_deployment_health"],
+        readinessEvidenceMissingCount: 1,
+        latestActivationId: "lgaract_ready_1",
+        latestRuntimeEnablementId: "lgarten_ready_1"
+      }
+    },
+    workbenchResult: {
+      releaseWorkbench: {
+        ownerActionCount: 1,
+        missingCheckKeys: ["production_deployment_health"],
+        missingEvidenceKeys: ["production_deployment_health"]
+      }
+    }
+  });
+
+  const result = service.evaluate({ workspaceId: "weixin_fanfan" });
+  const deploymentGate = result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health");
+
+  assert.equal(result.releasePreflight.readyForProductionDeploy, false);
+  assert.equal(result.releasePreflight.productionClosureGateSummary.status, "external_or_runtime_gates_pending");
+  assert.equal(result.releasePreflight.productionClosureGateSummary.nextExternalAction.key, "production_deployment_health");
+  assert.equal(deploymentGate.status, "pending_external_deployment_evidence");
+  assert.equal(deploymentGate.passed, false);
+  assert.deepEqual(deploymentGate.missingKeys, ["production_deployment_health"]);
+  assert.equal(deploymentGate.requiredActor, "home_ai_platform");
+  assert.equal(deploymentGate.action, "deploy_through_home_ai_macos_contract_and_attach_health_readback");
 });
 
 test("release preflight fails closed on privacy risks and missing dependencies", () => {

@@ -569,6 +569,30 @@ function normalizeAutomationCentralVisualEvidenceInput(body = {}, target) {
   };
 }
 
+function normalizeAutomationProductionDeploymentEvidenceInput(body = {}, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: body.learnerId || body.learner_id || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: body.programId || body.program_id || "",
+    domainPackId: body.domainPackId || body.domain_pack_id || "",
+    domain: body.domain || "",
+    subject: body.subject || "",
+    horizon: body.horizon || "daily_plan",
+    pluginId: body.pluginId || body.plugin_id || "growth",
+    environment: body.environment || body.env || "macos_production",
+    launchdLabel: body.launchdLabel || body.launchd_label || "com.hermesmobile.plugin.growth",
+    productionDeploymentEvidence: body.productionDeploymentEvidence
+      || body.production_deployment_evidence
+      || body.deploymentEvidence
+      || body.deployment_evidence
+      || body.evidence
+      || body.evidenceSummary
+      || body.evidence_summary
+  };
+}
+
 function normalizeAutomationUiEvidenceInput(body = {}, target) {
   const uiEvidence = body.uiEvidence
     || body.ui_evidence
@@ -1968,6 +1992,20 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, workspaceId);
     const result = services.learningAutomationCentralVisualEvidenceService.evaluate(
       normalizeAutomationCentralVisualEvidenceInput(body, target)
+    );
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/production-deployment-evidence") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const workspaceId = body.workspaceId
+      || body.workspace_id
+      || url.searchParams.get("workspaceId")
+      || url.searchParams.get("workspace_id")
+      || requestedWorkspaceId(request, url, "");
+    const target = visibleTargetByWorkspace(request, url, services, workspaceId);
+    const result = services.learningAutomationProductionDeploymentEvidenceService.evaluate(
+      normalizeAutomationProductionDeploymentEvidenceInput(body, target)
     );
     return sendJson(response, result.ok ? 200 : 400, result);
   }

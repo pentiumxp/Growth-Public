@@ -9,6 +9,9 @@ const {
   UI_GATE_SPECS,
   createLearningAutomationUiEvidenceService
 } = require("../src/services/learning-automation-ui-evidence-service");
+const {
+  createLearningAutomationProductionDeploymentEvidenceService
+} = require("../src/services/learning-automation-production-deployment-evidence-service");
 
 function scope(overrides = {}) {
   return Object.assign({
@@ -27,6 +30,7 @@ function createService(options = {}) {
   const calls = [];
   const service = createLearningAutomationReleaseEvidenceService({
     uiEvidenceService: options.uiEvidenceService,
+    productionDeploymentEvidenceService: options.productionDeploymentEvidenceService,
     repository: {
       saveEvidence(input) {
         calls.push({ type: "saveEvidence", input });
@@ -49,6 +53,33 @@ function createService(options = {}) {
     }
   });
   return { calls, rows, service };
+}
+
+function validProductionDeploymentEvidence(overrides = {}) {
+  return Object.assign({
+    ok: true,
+    source: "home-ai-macos-deployment-contract",
+    pluginId: "growth",
+    environment: "macos_production",
+    launchdLabel: "com.hermesmobile.plugin.growth",
+    deploymentContractVersion: "20260618-v4",
+    checkedAt: "2026-06-18T03:00:00.000Z",
+    deployedAt: "2026-06-18T02:58:00.000Z",
+    releaseVersion: "growth-d21abc6",
+    gitCommit: "d21abc6",
+    runId: "homeai_deploy_1",
+    artifactId: "deploy_health_1",
+    serviceRunning: true,
+    manifestOk: true,
+    healthOk: true,
+    endpointReachable: true,
+    sqliteIntegrityOk: true,
+    checks: [
+      { key: "launchd_service_health", status: "pass" },
+      { key: "plugin_manifest_health", ok: true },
+      { key: "production_health_smoke", pass: true }
+    ]
+  }, overrides);
 }
 
 function validOwnerDailyUiEvidence(overrides = {}) {
@@ -197,6 +228,47 @@ test("automation release evidence service saves pass UI evidence only after vali
   assert.equal(JSON.stringify(calls[0].input.evidence).includes("/Users/"), false);
 });
 
+test("automation release evidence service requires production deployment validator before pass health evidence persists", () => {
+  const withoutValidator = createService();
+  const unavailable = withoutValidator.service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_deployment_health",
+    evidence: validProductionDeploymentEvidence()
+  }));
+  assert.equal(unavailable.ok, false);
+  assert.equal(unavailable.error, "learning_automation_release_evidence_production_deployment_validator_unavailable");
+  assert.equal(withoutValidator.calls.length, 0);
+
+  const withValidator = createService({
+    productionDeploymentEvidenceService: createLearningAutomationProductionDeploymentEvidenceService()
+  });
+  const invalid = withValidator.service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_deployment_health",
+    evidence: { ok: true, pluginId: "growth" }
+  }));
+  assert.equal(invalid.ok, false);
+  assert.equal(invalid.error, "learning_automation_release_evidence_production_deployment_validation_failed");
+  assert.ok(invalid.missingRequired.includes("deployment_contract_readback"));
+  assert.equal(withValidator.calls.length, 0);
+
+  const validService = createService({
+    productionDeploymentEvidenceService: createLearningAutomationProductionDeploymentEvidenceService()
+  });
+  const result = validService.service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_deployment_health",
+    evidence: validProductionDeploymentEvidence(),
+    recordedBy: "home_ai_platform"
+  }));
+  assert.equal(result.ok, true);
+  assert.equal(result.evidence.evidenceKey, "productionDeploymentHealthEvidence");
+  assert.equal(result.evidence.evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.productionDeploymentEvidence.v1");
+  assert.equal(result.evidence.evidence.validatedBy, "learning-automation-production-deployment-evidence-service");
+  assert.equal(result.evidence.evidence.validationSchemaVersion, "growth.learningAutomationProductionDeploymentEvidence.v1");
+  assert.equal(result.evidence.evidence.deploymentEvidence.serviceRunning, true);
+  assert.equal(result.evidence.evidence.deploymentBoundary.homeAiOwnsDeployment, true);
+  assert.equal(result.evidence.evidence.runtimeConfigChange, false);
+  assert.equal(JSON.stringify(result).includes("/Users/"), false);
+});
+
 test("automation release evidence service can record blocked UI evidence without making it a pass gate", () => {
   const { service } = createService();
   const result = service.recordEvidence(Object.assign(scope(), {
@@ -217,7 +289,8 @@ test("automation release evidence service can record blocked UI evidence without
 
 test("automation release evidence service returns evidence bag for release-readiness", () => {
   const { service } = createService({
-    uiEvidenceService: createLearningAutomationUiEvidenceService()
+    uiEvidenceService: createLearningAutomationUiEvidenceService(),
+    productionDeploymentEvidenceService: createLearningAutomationProductionDeploymentEvidenceService()
   });
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_daily_ui_evidence",
@@ -226,6 +299,10 @@ test("automation release evidence service returns evidence bag for release-readi
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "central_visual_evidence",
     evidence: { evidenceId: "central_visual_1", artifactId: "central_harness_artifact" }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_deployment_health",
+    evidence: validProductionDeploymentEvidence()
   }));
   service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "owner_review_evidence",
@@ -299,7 +376,7 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionOperatingLoopHistorySmokeEvidence", "productionOwnerAuditReviewSmokeEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releasePackageReviewUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionDeploymentHealthEvidence", "productionOperatingLoopHistorySmokeEvidence", "productionOwnerAuditReviewSmokeEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releasePackageReviewUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
   assert.equal(bag.evidence.ownerDailyUiEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
@@ -316,6 +393,15 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.equal(bag.evidence.centralVisualEvidence.ok, true);
   assert.equal(bag.evidence.centralVisualEvidence.present, true);
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.productionDeploymentEvidence.v1");
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.validationSchemaVersion, "growth.learningAutomationProductionDeploymentEvidence.v1");
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.validatedBy, "learning-automation-production-deployment-evidence-service");
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.checkKey, "production_deployment_health");
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.deploymentEvidence.serviceRunning, true);
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.deploymentEvidence.manifestOk, true);
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.deploymentEvidence.healthOk, true);
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.deploymentBoundary.homeAiOwnsDeployment, true);
+  assert.equal(bag.evidence.productionDeploymentHealthEvidence.deploymentBoundary.growthRunsNoDeployment, true);
   assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.summaryOnly, true);
   assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.privacyClass, "summary_only");
   assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.checkKey, "release_workbench_smoke_evidence");
@@ -369,6 +455,7 @@ test("automation release evidence service rejects invalid evidence keys and priv
   assert.equal(canonicalReleaseEvidenceKey("owner_review_evidence"), "ownerReviewEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_operating_loop_history_smoke_evidence"), "productionOperatingLoopHistorySmokeEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_owner_audit_review_smoke_evidence"), "productionOwnerAuditReviewSmokeEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("production_deployment_health"), "productionDeploymentHealthEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_recommendation_lifecycle_smoke_evidence"), "productionRecommendationLifecycleSmokeEvidence");
   assert.equal(canonicalReleaseEvidenceKey("stage_checkpoint_controls_evidence"), "stageCheckpointControlsEvidence");
   assert.equal(canonicalReleaseEvidenceKey("release_workbench_smoke_evidence"), "releaseWorkbenchSmokeEvidence");

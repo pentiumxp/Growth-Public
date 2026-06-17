@@ -4,9 +4,13 @@ const {
   UI_EVIDENCE_SCHEMA,
   UI_GATE_SPECS
 } = require("./learning-automation-ui-evidence-service");
+const {
+  PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA
+} = require("./learning-automation-production-deployment-evidence-service");
 
 const UI_RELEASE_EVIDENCE_KEYS = new Set(Object.keys(UI_GATE_SPECS));
 const UI_RELEASE_EVIDENCE_RECORD_SCHEMA = "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1";
+const PRODUCTION_DEPLOYMENT_RELEASE_RECORD_SCHEMA = "growth.learningAutomationReleaseEvidenceRecord.productionDeploymentEvidence.v1";
 
 function cleanString(value) {
   return String(value || "").trim();
@@ -282,6 +286,133 @@ function uiEvidenceSummaryValidation(value = {}, evidenceKey, checkKey) {
     return { ok: false, reason: "ui_evidence_failed_assertions" };
   }
   return { ok: true, reason: "" };
+}
+
+function productionDeploymentValidationSchemaOk(value = {}) {
+  const schemaVersion = cleanString(value.schemaVersion || value.schema_version);
+  const validationSchemaVersion = cleanString(value.validationSchemaVersion || value.validation_schema_version);
+  if (schemaVersion === PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA) return true;
+  return schemaVersion === PRODUCTION_DEPLOYMENT_RELEASE_RECORD_SCHEMA
+    && validationSchemaVersion === PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA;
+}
+
+function productionDeploymentEvidenceSummaryValidation(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: false, reason: "validated_production_deployment_evidence_summary_required" };
+  }
+  if (!productionDeploymentValidationSchemaOk(value)) {
+    return { ok: false, reason: "production_deployment_evidence_validator_schema_required" };
+  }
+  if (!isSummaryOnlyEvidence(value)) {
+    return { ok: false, reason: "production_deployment_evidence_summary_only_required" };
+  }
+  if (value.readyForReleaseEvidence !== true || cleanString(value.status).toLowerCase() !== "pass") {
+    return { ok: false, reason: "production_deployment_evidence_not_ready_for_release" };
+  }
+  if (cleanString(value.evidenceKey || value.evidence_key) !== "productionDeploymentHealthEvidence") {
+    return { ok: false, reason: "production_deployment_evidence_key_mismatch" };
+  }
+  if (cleanString(value.checkKey || value.check_key) !== "production_deployment_health") {
+    return { ok: false, reason: "production_deployment_evidence_check_key_mismatch" };
+  }
+  if (asArray(value.missingRequired || value.missing_required).length) {
+    return { ok: false, reason: "production_deployment_evidence_missing_required" };
+  }
+  if (Number(value.privateValueFindingCount || value.private_value_finding_count || 0) > 0) {
+    return { ok: false, reason: "production_deployment_evidence_private_value_findings" };
+  }
+  const deploymentEvidence = objectOnly(value.deploymentEvidence || value.deployment_evidence);
+  if (!Object.keys(deploymentEvidence).length) {
+    return { ok: false, reason: "production_deployment_evidence_projection_required" };
+  }
+  if (cleanString(deploymentEvidence.status).toLowerCase() !== "pass") {
+    return { ok: false, reason: "production_deployment_health_not_passing" };
+  }
+  const serviceRunning = deploymentEvidence.serviceRunning === true || deploymentEvidence.service_running === true;
+  const manifestOk = deploymentEvidence.manifestOk === true || deploymentEvidence.manifest_ok === true;
+  const healthOk = deploymentEvidence.healthOk === true || deploymentEvidence.health_ok === true;
+  if (!serviceRunning) {
+    return { ok: false, reason: "production_deployment_service_health_required" };
+  }
+  if (!manifestOk) {
+    return { ok: false, reason: "production_deployment_manifest_health_required" };
+  }
+  if (!healthOk) {
+    return { ok: false, reason: "production_deployment_health_smoke_required" };
+  }
+  const boundary = objectOnly(value.deploymentBoundary || value.deployment_boundary);
+  if (boundary.homeAiOwnsDeployment !== true && boundary.home_ai_owns_deployment !== true) {
+    return { ok: false, reason: "production_deployment_home_ai_boundary_required" };
+  }
+  if (boundary.growthRunsNoDeployment !== true && boundary.growth_runs_no_deployment !== true) {
+    return { ok: false, reason: "production_deployment_growth_no_deploy_boundary_required" };
+  }
+  return { ok: true, reason: "" };
+}
+
+function productionDeploymentEvidenceReadback(value = {}) {
+  const deploymentEvidence = objectOnly(value.deploymentEvidence || value.deployment_evidence);
+  return {
+    deploymentContractVersion: compactEvidenceField(deploymentEvidence.deploymentContractVersion || deploymentEvidence.deployment_contract_version, 160),
+    environment: compactEvidenceField(deploymentEvidence.environment || deploymentEvidence.env, 80),
+    launchdLabel: compactEvidenceField(deploymentEvidence.launchdLabel || deploymentEvidence.launchd_label, 120),
+    checkedAt: compactEvidenceField(deploymentEvidence.checkedAt || deploymentEvidence.checked_at, 120),
+    deployedAt: compactEvidenceField(deploymentEvidence.deployedAt || deploymentEvidence.deployed_at, 120),
+    releaseVersion: compactEvidenceField(deploymentEvidence.releaseVersion || deploymentEvidence.release_version, 120),
+    runId: compactEvidenceField(deploymentEvidence.runId || deploymentEvidence.run_id, 160),
+    artifactId: compactEvidenceField(deploymentEvidence.artifactId || deploymentEvidence.artifact_id, 160),
+    serviceRunning: deploymentEvidence.serviceRunning === true || deploymentEvidence.service_running === true,
+    manifestOk: deploymentEvidence.manifestOk === true || deploymentEvidence.manifest_ok === true,
+    healthOk: deploymentEvidence.healthOk === true || deploymentEvidence.health_ok === true,
+    endpointReachable: deploymentEvidence.endpointReachable === true || deploymentEvidence.endpoint_reachable === true,
+    sqliteIntegrityOk: deploymentEvidence.sqliteIntegrityOk === true || deploymentEvidence.sqlite_integrity_ok === true,
+    checkCount: numberField(deploymentEvidence.checkCount || deploymentEvidence.check_count),
+    failedCheckCount: numberField(deploymentEvidence.failedCheckCount || deploymentEvidence.failed_check_count)
+  };
+}
+
+function productionDeploymentEvidenceCheck(input) {
+  const evidenceKey = "productionDeploymentHealthEvidence";
+  const checkKey = "production_deployment_health";
+  const label = "Production deployment and health evidence";
+  const value = evidenceValue(input, evidenceKey);
+  const validation = productionDeploymentEvidenceSummaryValidation(value);
+  if (validation.ok) {
+    return check(checkKey, "pass", Object.assign({
+      label,
+      evidenceKey,
+      evidencePresent: true,
+      productionDeploymentEvidenceValidated: true,
+      requiredSchemaVersion: PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA,
+      validationSchemaVersion: boundedString(value.validationSchemaVersion || value.validation_schema_version, 180)
+    }, evidenceRef(input, evidenceKey), {
+      productionDeploymentEvidence: productionDeploymentEvidenceReadback(value)
+    }));
+  }
+  if (value !== undefined && value !== null && value !== false) {
+    return check(checkKey, "blocked", Object.assign({
+      label,
+      evidenceKey,
+      evidencePresent: false,
+      evidenceProvided: true,
+      productionDeploymentEvidenceValidated: false,
+      invalidReason: validation.reason,
+      requiredSchemaVersion: PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA
+    }, evidenceRef(input, evidenceKey)), {
+      action: "provide_validated_production_deployment_health_evidence",
+      requiredActor: "home_ai_platform"
+    });
+  }
+  return check(checkKey, "missing", {
+    label,
+    evidenceKey,
+    evidencePresent: false,
+    productionDeploymentEvidenceValidated: false,
+    requiredSchemaVersion: PRODUCTION_DEPLOYMENT_EVIDENCE_SCHEMA
+  }, {
+    action: "attach_production_deployment_health_evidence",
+    requiredActor: "home_ai_platform"
+  });
 }
 
 function ownerReviewStageSummary(value = {}) {
@@ -990,6 +1121,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       schedulerDryRunCheck(scope, input),
       presentCheck(inputWithReleaseEvidence, "platformActionEvidence", "platform_action_evidence", "Home AI platform Action Inbox/Web Push evidence", "attach_platform_action_evidence"),
       presentCheck(inputWithReleaseEvidence, "centralVisualEvidence", "central_visual_evidence", "Central embedded-plugin visual evidence", "run_central_embedded_visual_harness"),
+      productionDeploymentEvidenceCheck(inputWithReleaseEvidence),
       uiEvidenceCheck(inputWithReleaseEvidence, "releasePackageReviewUiEvidence", "release_package_review_ui_evidence", "Release package review UI evidence", "complete_release_package_review_ui"),
       presentCheck(inputWithReleaseEvidence, "releaseWorkbenchSmokeEvidence", "release_workbench_smoke_evidence", "Release workbench action-template readback", "run_release_workbench_readback_smoke"),
       ownerReviewEvidenceCheck(inputWithReleaseEvidence),

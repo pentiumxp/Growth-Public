@@ -5177,6 +5177,159 @@ test("growth automation central visual evidence route validates inline visible-t
   }
 });
 
+test("growth automation production deployment evidence route validates inline visible-target summary", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationProductionDeploymentEvidenceService: {
+      evaluate(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-automation-production-deployment-evidence-service",
+          schemaVersion: "growth.learningAutomationProductionDeploymentEvidence.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          pluginId: input.pluginId,
+          environment: input.environment,
+          launchdLabel: input.launchdLabel,
+          status: "pass",
+          readyForReleaseEvidence: true,
+          deploymentEvidence: {
+            source: "home-ai-macos-deployment-contract",
+            pluginId: input.pluginId,
+            environment: input.environment,
+            launchdLabel: input.launchdLabel,
+            status: "pass",
+            serviceRunning: true,
+            manifestOk: true,
+            healthOk: true
+          },
+          deploymentBoundary: {
+            summaryOnly: true,
+            homeAiOwnsDeployment: true,
+            growthRunsNoDeployment: true,
+            growthReadsOnlyDeploymentHealthSummary: true,
+            noRuntimeConfigMutation: true
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/production-deployment-evidence`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspaceId: "growth:weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        pluginId: "growth",
+        environment: "macos_production",
+        launchdLabel: "com.hermesmobile.plugin.growth",
+        productionDeploymentEvidenceFile: "/tmp/deployment-health.json",
+        deploymentEvidenceFile: "/tmp/deployment-health-ignored.json",
+        productionDeploymentEvidence: {
+          source: "home-ai-macos-deployment-contract",
+          pluginId: "growth",
+          environment: "macos_production",
+          launchdLabel: "com.hermesmobile.plugin.growth",
+          status: "pass",
+          serviceRunning: true,
+          manifestOk: true,
+          healthOk: true,
+          checks: [{ key: "production_health_smoke", ok: true }]
+        }
+      })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningAutomationProductionDeploymentEvidence.v1");
+    assert.equal(body.deploymentEvidence.serviceRunning, true);
+    assert.equal(body.deploymentBoundary.homeAiOwnsDeployment, true);
+    assert.equal(body.deploymentBoundary.growthRunsNoDeployment, true);
+    assert.equal(body.deploymentBoundary.noRuntimeConfigMutation, true);
+    assert.equal(body.writefulSchedulingAllowed, false);
+    assert.equal(body.runtimeConfigChange, false);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      pluginId: "growth",
+      environment: "macos_production",
+      launchdLabel: "com.hermesmobile.plugin.growth",
+      productionDeploymentEvidence: {
+        source: "home-ai-macos-deployment-contract",
+        pluginId: "growth",
+        environment: "macos_production",
+        launchdLabel: "com.hermesmobile.plugin.growth",
+        status: "pass",
+        serviceRunning: true,
+        manifestOk: true,
+        healthOk: true,
+        checks: [{ key: "production_health_smoke", ok: true }]
+      }
+    });
+    assert.equal(calls[0].productionDeploymentEvidenceFile, undefined);
+    assert.equal(calls[0].deploymentEvidenceFile, undefined);
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/production-deployment-evidence`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspaceId: "weixin_fanfan", productionDeploymentEvidence: { ok: true } })
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth automation UI evidence route validates inline visible-target summary", async () => {
   const calls = [];
   const server = createServer({

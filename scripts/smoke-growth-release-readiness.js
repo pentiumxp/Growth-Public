@@ -145,6 +145,13 @@ const DEPRECATED_RELEASE_EVIDENCE_FLAGS = [
   ["--platform-action-evidence", "platformActionEvidence", "platform_action_evidence"],
   ["--central-visual-evidence", "centralVisualEvidence", "central_visual_evidence"],
   [
+    "--production-deployment-health-evidence",
+    "productionDeploymentHealthEvidence",
+    "production_deployment_health",
+    "production_deployment_evidence_validator_schema_required",
+    "provide_validated_production_deployment_health_evidence"
+  ],
+  [
     "--release-workbench-evidence",
     "releaseWorkbenchSmokeEvidence",
     "release_workbench_smoke_evidence",

@@ -154,8 +154,9 @@ test("release controls smoke script runs no-write summary against a temporary SQ
     assert.equal(output.releaseControls.summaryOnly, true);
     assert.equal(output.steps[0].evidenceReadback.summaryOnly, true);
     assert.equal(output.steps[0].evidenceReadback.presentCount, 0);
-    assert.equal(output.steps[0].evidenceReadback.missingCount, 35);
+    assert.equal(output.steps[0].evidenceReadback.missingCount, 36);
     assert.equal(output.steps[0].evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
+    assert.equal(output.steps[0].evidenceReadback.missingCheckKeys.includes("production_deployment_health"), true);
     assert.equal(output.steps[0].evidenceReadback.missingCheckKeys.includes("owner_review_evidence"), true);
     assert.equal(output.auditReadback.summaryOnly, true);
     assert.equal(output.auditReadback.activationRecords.status, "records_missing");
