@@ -223,6 +223,31 @@
       return query ? `?${query}` : "";
     }
 
+    function releaseEvidenceLedgerQuery(targetWorkspaceId = getWorkspaceId(), payload = {}, kind = "evidence") {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      const ledgerKind = clean(kind).toLowerCase();
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      if (ledgerKind === "approval") {
+        appendQueryParam(params, "approvalKey", payload.approvalKey || payload.approval_key || payload.configGate || payload.config_gate);
+        appendQueryParam(params, "status", payload.approvalStatus || payload.approval_status);
+      } else {
+        appendQueryParam(params, "evidenceKey", payload.evidenceKey || payload.evidence_key);
+        appendQueryParam(params, "checkKey", payload.checkKey || payload.check_key);
+        appendQueryParam(params, "status", payload.evidenceStatus || payload.evidence_status);
+      }
+      appendQueryParam(params, "limit", payload.limit || 8);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function automationProposalQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
       const params = new URLSearchParams();
@@ -560,6 +585,32 @@
       };
     }
 
+    async function fetchGrowthReleaseEvidenceLedger(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const evidenceQuery = releaseEvidenceLedgerQuery(targetWorkspaceId, payload, "evidence");
+      const approvalQuery = releaseEvidenceLedgerQuery(targetWorkspaceId, payload, "approval");
+      const [
+        releaseEvidence,
+        releaseApprovals
+      ] = await Promise.all([
+        fetchJson(`${growthApiPath("automation", "release-evidence")}${evidenceQuery}`),
+        fetchJson(`${growthApiPath("automation", "release-approvals")}${approvalQuery}`)
+      ]);
+      const evidenceRows = Array.isArray(releaseEvidence.evidence) ? releaseEvidence.evidence : [];
+      const approvalRows = Array.isArray(releaseApprovals.approvals) ? releaseApprovals.approvals : [];
+      return {
+        ok: true,
+        schemaVersion: "growth.releaseEvidenceLedger.ui.v1",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        evidenceCount: Number(releaseEvidence.count ?? evidenceRows.length ?? 0) || 0,
+        approvalCount: Number(releaseApprovals.count ?? approvalRows.length ?? 0) || 0,
+        releaseEvidence,
+        releaseApprovals,
+        evidence: releaseEvidence,
+        approvals: releaseApprovals
+      };
+    }
+
     function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "release-packages", "build"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -879,6 +930,7 @@
       fetchGrowthReferenceObjectTypes,
       fetchGrowthReferenceSummary,
       fetchGrowthReleaseArtifactTemplate,
+      fetchGrowthReleaseEvidenceLedger,
       fetchGrowthReleaseLifecycleRecords,
       fetchGrowthReleaseWorkbenchActionAudits,
       fetchGrowthReleaseStatusReadbacks,

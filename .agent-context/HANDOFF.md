@@ -9,6 +9,88 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T04:52+0800 - Release Evidence Ledger Owner UI
+
+- Status: implemented locally; syntax, focused frontend, architecture/docs,
+  docs-locality, global syntax coverage, combined embedded UI Harness, diff
+  check, and local static readback passed. No production deploy, Gateway/model
+  call, learner evidence write, release evidence persistence, release approval
+  write, release evidence collection, release decision/package write, runtime
+  config change, scheduler execution, Home AI host logic change, or Home AI
+  central visual harness run was performed.
+- Classification: H2 Growth embedded Owner UI readback over existing
+  visible-target release evidence and release approval list boundaries. It
+  adds no route, table, service, writer, scheduler permission, runtime config
+  mutation, Gateway boundary, release approval semantics, or browser-side
+  release policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthReleaseEvidenceLedger()`, which batches
+    `GET /api/v1/growth/automation/release-evidence` and
+    `GET /api/v1/growth/automation/release-approvals` into a summary-only UI
+    DTO;
+  - `public/growth-card-generation-ui.js` now renders a read-only `证据账本`
+    subpanel inside the release workbench, listing persisted public evidence
+    and approval rows with ids, keys, statuses, counts, and timestamps;
+  - `public/app.js` keeps `releaseEvidenceLedger` UI state, wires the refresh
+    button, and refreshes the ledger after release workbench refreshes;
+  - `public/growth-homeai-legacy.css` adds the new ledger panel to the common
+    release grid/gap styling;
+  - `public/index.html` cache-busting moved to
+    `20260618-release-evidence-ledger-ui-v1`.
+- Boundary:
+  - `证据账本` is display-only. It does not write release evidence, create
+    release approvals, run evidence collection, inspect SQLite/release storage
+    directly, mutate runtime config, approve release state, grant scheduler
+    permission, call Gateway, publish/generate cards, evaluate submissions, or
+    mutate learner state.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js public/growth-card-generation-ui.js
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 33/33;
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`,
+    `checkedCount=225`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 77/77;
+  - `git diff --check`;
+  - local current-worktree static readback on `python3 -m http.server
+    4887 --bind 127.0.0.1 --directory public`: index used
+    `20260618-release-evidence-ledger-ui-v1`;
+    `growth-card-generation-ui.js` contained
+    `data-release-evidence-ledger-panel`,
+    `createReleaseEvidenceLedgerQueryPayload`, and `证据账本`;
+    `app.js` contained `refreshReleaseEvidenceLedger`,
+    `data-release-evidence-ledger-refresh`, and
+    `fetchGrowthReleaseEvidenceLedger`; and `growth-api-client.js` contained
+    `fetchGrowthReleaseEvidenceLedger`,
+    `growth.releaseEvidenceLedger.ui.v1`, `release-evidence`, and
+    `release-approvals`.
+- Browser/live visual note:
+  - Browser skill instructions were read, but `tool_search` returned no
+    Node REPL browser-control tool for `node_repl js`; live in-app Browser
+    verification could not be run in this session.
+- Remaining gate:
+  - before production UI release, still run the Home AI central embedded-plugin
+    visual harness and persist bounded UI/release evidence through the existing
+    Growth release-evidence path.
+
 ## 2026-06-18T04:37+0800 - Release Lifecycle Records Owner UI
 
 - Status: implemented locally; syntax, focused frontend, architecture/docs,

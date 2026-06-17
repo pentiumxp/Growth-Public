@@ -1857,6 +1857,15 @@ Implementation progress on 2026-06-15:
   writing release decisions, package records, preflight reports, activation or
   runtime enablement rows, applying runtime config, approving release state, or
   granting scheduler permission.
+- The embedded Owner generation tab also consumes the existing release
+  evidence and release approval list routes as a read-only `证据账本` panel
+  inside release workbench. It displays persisted public DTO ids, keys,
+  statuses, counts, and timestamps from
+  `GET /api/v1/growth/automation/release-evidence` and
+  `GET /api/v1/growth/automation/release-approvals`, but it does not write
+  release evidence, create approvals, run collection, inspect release storage
+  directly, mutate runtime config, approve release state, or grant scheduler
+  permission.
 - The embedded Owner generation tab also renders a `发布记录` panel over the
   existing preflight-report, activation-record, and runtime-enablement record
   boundaries. Owner can explicitly record one summary-only preflight report,

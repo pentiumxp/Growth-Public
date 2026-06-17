@@ -1159,6 +1159,107 @@
     </div>`;
   }
 
+  function releaseEvidenceLedgerStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "ready") return "已读取";
+    if (value === "loading") return "读取中";
+    if (value === "failed") return "失败";
+    if (value === "pass") return "通过";
+    if (value === "approved") return "已批准";
+    if (value === "revoked") return "已撤销";
+    if (value === "expired") return "已过期";
+    return releaseWorkbenchStatusText(value);
+  }
+
+  function releaseEvidenceLedgerRows(data = {}, escapeHtml = defaultEscapeHtml) {
+    const releaseEvidence = data.releaseEvidence || data.evidence || {};
+    const releaseApprovals = data.releaseApprovals || data.approvals || {};
+    const evidenceRows = Array.isArray(data.evidence)
+      ? data.evidence
+      : asArray(releaseEvidence.evidence || data.evidenceRows);
+    const approvalRows = Array.isArray(data.approvals)
+      ? data.approvals
+      : asArray(releaseApprovals.approvals || data.approvalRows);
+    const rows = evidenceRows.slice(0, 4).map((record = {}) => {
+      const recordId = clean(record.evidenceRecordId || record.evidence_record_id || record.evidenceId || record.evidence_id || record.id);
+      const evidenceKey = clean(record.evidenceKey || record.evidence_key || record.key || record.checkKey || record.check_key);
+      const checkKey = clean(record.checkKey || record.check_key);
+      const detail = [
+        checkKey,
+        clean(record.note),
+        clean(record.observedAt || record.observed_at || record.updatedAt || record.updated_at)
+      ].filter(Boolean).join(" · ") || "摘要证据";
+      return `<div class="learning-card-generation-release-row" data-release-evidence-ledger-row data-release-evidence-ledger-kind="evidence" data-release-evidence-ledger-id="${escapeHtml(recordId)}">
+        <span>
+          <strong>${escapeHtml(evidenceKey || recordId || "release evidence")}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(releaseEvidenceLedgerStatusText(record.status))}</em>
+      </div>`;
+    });
+    rows.push(...approvalRows.slice(0, 4).map((record = {}) => {
+      const recordId = clean(record.approvalId || record.approval_id || record.id);
+      const approvalKey = clean(record.approvalKey || record.approval_key || record.configGate || record.config_gate);
+      const detail = [
+        clean(record.approvedBy || record.approved_by),
+        clean(record.note),
+        clean(record.approvedAt || record.approved_at || record.updatedAt || record.updated_at)
+      ].filter(Boolean).join(" · ") || "摘要审批";
+      return `<div class="learning-card-generation-release-row" data-release-evidence-ledger-row data-release-evidence-ledger-kind="approval" data-release-evidence-ledger-id="${escapeHtml(recordId)}">
+        <span>
+          <strong>${escapeHtml(approvalKey || recordId || "release approval")}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(releaseEvidenceLedgerStatusText(record.status))}</em>
+      </div>`;
+    }));
+    if (!rows.length) return `<div class="learning-card-generation-release-empty">暂无发布证据或审批记录。</div>`;
+    return rows.join("");
+  }
+
+  function releaseEvidenceLedgerPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.releaseEvidenceLedger || {};
+    const data = holder.data || context.releaseEvidenceLedger || {};
+    const releaseEvidence = data.releaseEvidence || data.evidence || {};
+    const releaseApprovals = data.releaseApprovals || data.approvals || {};
+    const evidenceRows = Array.isArray(data.evidence)
+      ? data.evidence
+      : asArray(releaseEvidence.evidence || data.evidenceRows);
+    const approvalRows = Array.isArray(data.approvals)
+      ? data.approvals
+      : asArray(releaseApprovals.approvals || data.approvalRows);
+    const loading = holder.status === "loading";
+    const failed = holder.status === "failed";
+    const status = failed ? "failed" : loading ? "loading" : clean(holder.status || data.status || "idle");
+    const evidenceCount = Number(data.evidenceCount ?? releaseEvidence.count ?? evidenceRows.length ?? 0) || 0;
+    const approvalCount = Number(data.approvalCount ?? releaseApprovals.count ?? approvalRows.length ?? 0) || 0;
+    const passCount = evidenceRows.filter((row) => clean(row.status).toLowerCase() === "pass").length;
+    const approvedCount = approvalRows.filter((row) => clean(row.status).toLowerCase() === "approved").length;
+    const detail = failed
+      ? clean(holder.error) || "release_evidence_ledger_unavailable"
+      : loading
+        ? "正在读取已保存的发布证据和审批记录。"
+        : "只读账本；写入仍通过工作台动作和服务校验。";
+    return `<div class="learning-card-generation-release-evidence-ledger" data-release-evidence-ledger-panel data-release-evidence-ledger-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-release-head">
+        <span>
+          <strong>证据账本</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <button type="button" data-release-evidence-ledger-refresh ${loading ? "disabled" : ""}>${escapeHtml(loading ? "刷新中" : "刷新")}</button>
+      </div>
+      <div class="learning-card-generation-release-grid">
+        <span><small>证据</small><strong>${escapeHtml(String(evidenceCount))}</strong></span>
+        <span><small>通过</small><strong>${escapeHtml(String(passCount))}</strong></span>
+        <span><small>审批</small><strong>${escapeHtml(String(approvalCount))}</strong></span>
+        <span><small>已批</small><strong>${escapeHtml(String(approvedCount))}</strong></span>
+      </div>
+      <div class="learning-card-generation-release-actions">
+        ${releaseEvidenceLedgerRows(data, escapeHtml)}
+      </div>
+    </div>`;
+  }
+
   function releaseLifecycleRecordsStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "ready") return "已读取";
@@ -1334,6 +1435,12 @@
       if (Array.isArray(value)) return value.length > 0;
       if (typeof value === "object") return Boolean(value);
       return clean(value) || value === true;
+    }));
+  }
+
+  function createReleaseEvidenceLedgerQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    return compactReleasePayload(Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
+      limit: 8
     }));
   }
 
@@ -1620,6 +1727,7 @@
       ${releaseArtifactTemplatePanel(context, state, escapeHtml)}
       ${releaseWorkbenchActionAuditsPanel(context, state, escapeHtml)}
       ${releaseStatusReadbacksPanel(context, state, escapeHtml)}
+      ${releaseEvidenceLedgerPanel(context, state, escapeHtml)}
       ${releaseLifecycleRecordsPanel(context, state, escapeHtml)}
       <div class="learning-card-generation-release-actions">
         ${releaseWorkbenchActionRows(actions, holder, escapeHtml)}
@@ -4072,6 +4180,7 @@
     createReleaseArtifactTemplateQueryPayload,
     createReleaseWorkbenchActionAuditQueryPayload,
     createReleaseStatusReadbackQueryPayload,
+    createReleaseEvidenceLedgerQueryPayload,
     createReleaseLifecycleRecordsQueryPayload,
     createReleaseLifecycleRecordPayload,
     createReleasePackageBuildPayload,

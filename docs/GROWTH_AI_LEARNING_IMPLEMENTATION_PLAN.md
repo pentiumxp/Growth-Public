@@ -902,6 +902,14 @@ Implemented backend shape:
   not record release decisions, package rows, preflight reports, activation or
   runtime enablement rows, mutate runtime config, grant release permission, or
   grant scheduler permission.
+  The same embedded panel now also reads existing persisted release evidence
+  and release approval list routes as a read-only `证据账本` panel:
+  `GET /api/v1/growth/automation/release-evidence` and
+  `GET /api/v1/growth/automation/release-approvals`. It displays only public
+  summary DTO rows, counts, keys, statuses, and timestamps. It does not record
+  release evidence, create approvals, run evidence collection, inspect SQLite
+  or release storage directly, call Gateway, mutate runtime config, grant
+  release permission, or grant scheduler permission.
   A separate embedded `发布记录` subpanel now consumes the existing
   preflight-report, activation-record, and runtime-enablement list routes and
   can call their existing Owner-only record routes with summary-only

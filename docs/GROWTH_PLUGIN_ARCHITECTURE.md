@@ -227,6 +227,12 @@ full operating loop:
   no-write, and records only collection-run/package audit rows when explicit
   write flags are supplied. It does not change runtime config or grant
   scheduler permission.
+  The embedded release workbench also renders a read-only `证据账本` panel by
+  batching the existing release-evidence and release-approval list routes. That
+  panel is public-DTO readback only: it shows persisted ids, keys, statuses,
+  counts, and timestamps, and it cannot write evidence, create approvals, run
+  collection, inspect SQLite directly, call Gateway, mutate runtime config, or
+  grant scheduler permission.
   The backend now also exposes Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` for an
   explicit release evidence collection pass through the normal service graph.

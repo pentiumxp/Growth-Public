@@ -715,6 +715,66 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
 });
 
+test("Growth API client fetches release evidence ledger through direct and proxy routes", async () => {
+  const windowRef = loadPublicScript("growth-api-client.js");
+  const payload = {
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    evidence_key: "centralVisualEvidence",
+    check_key: "central_visual_evidence",
+    evidence_status: "pass",
+    approval_key: "writefulExecutionApproval",
+    approval_status: "approved",
+    limit: 5
+  };
+  const directCalls = [];
+  const directClient = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "owner",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
+    fetchImpl: async (path, options = {}) => {
+      directCalls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => path.includes("release-evidence")
+          ? { ok: true, count: 1, evidence: [{ evidenceRecordId: "lgarev_client_1", status: "pass" }] }
+          : { ok: true, count: 1, approvals: [{ approvalId: "lgarap_client_1", status: "approved" }] }
+      };
+    }
+  });
+  const directResult = await directClient.fetchGrowthReleaseEvidenceLedger(payload, "weixin_fanfan");
+
+  assert.equal(directResult.schemaVersion, "growth.releaseEvidenceLedger.ui.v1");
+  assert.equal(directResult.evidenceCount, 1);
+  assert.equal(directResult.approvalCount, 1);
+  assert.equal(directCalls[0].path, "/api/v1/growth/automation/release-evidence?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&evidenceKey=centralVisualEvidence&checkKey=central_visual_evidence&status=pass&limit=5");
+  assert.equal(directCalls[1].path, "/api/v1/growth/automation/release-approvals?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&approvalKey=writefulExecutionApproval&status=approved&limit=5");
+
+  const proxyCalls = [];
+  const proxyClient = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "owner",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://homeai.local/api/hermes-plugins/growth/proxy/?embed=hermes&workspaceId=owner" },
+    fetchImpl: async (path, options = {}) => {
+      proxyCalls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => path.includes("release-evidence")
+          ? { ok: true, count: 0, evidence: [] }
+          : { ok: true, count: 0, approvals: [] }
+      };
+    }
+  });
+  await proxyClient.fetchGrowthReleaseEvidenceLedger({ learner_id: "fanfan", limit: 2 }, "weixin_stephen");
+
+  assert.equal(proxyCalls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-evidence?targetWorkspaceId=weixin_stephen&learnerId=fanfan&limit=2");
+  assert.equal(proxyCalls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-approvals?targetWorkspaceId=weixin_stephen&learnerId=fanfan&limit=2");
+});
+
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
   const windowRef = loadPublicScript("growth-api-client.js");
   const calls = [];
@@ -1648,6 +1708,52 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         }
       }
     },
+    releaseEvidenceLedger: {
+      ok: true,
+      schemaVersion: "growth.releaseEvidenceLedger.ui.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      evidenceCount: 1,
+      approvalCount: 1,
+      releaseEvidence: {
+        ok: true,
+        count: 1,
+        evidence: [{
+          evidenceRecordId: "lgarev_ui_1",
+          workspaceId: "weixin_fanfan",
+          learnerId: "fanfan",
+          domain: "science",
+          subject: "science",
+          horizon: "daily_plan",
+          evidenceKey: "centralVisualEvidence",
+          checkKey: "central_visual_evidence",
+          status: "pass",
+          note: "Central embedded visual evidence persisted.",
+          privacyClass: "summary_only",
+          observedAt: "2026-06-18T04:33:00.000Z",
+          updatedAt: "2026-06-18T04:33:00.000Z"
+        }]
+      },
+      releaseApprovals: {
+        ok: true,
+        count: 1,
+        approvals: [{
+          approvalId: "lgarap_ui_1",
+          workspaceId: "weixin_fanfan",
+          learnerId: "fanfan",
+          domain: "science",
+          subject: "science",
+          horizon: "daily_plan",
+          approvalKey: "writefulExecutionApproval",
+          status: "approved",
+          note: "Owner approval for writeful execution.",
+          approvedBy: "owner",
+          privacyClass: "summary_only",
+          approvedAt: "2026-06-18T04:34:00.000Z",
+          updatedAt: "2026-06-18T04:34:00.000Z"
+        }]
+      }
+    },
     releaseLifecycleRecords: {
       ok: true,
       schemaVersion: "growth.releaseLifecycleRecords.ui.v1",
@@ -2257,6 +2363,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           data: context.releaseStatusReadbacks,
           error: ""
         },
+        releaseEvidenceLedger: {
+          status: "ready",
+          data: context.releaseEvidenceLedger,
+          error: ""
+        },
         releaseLifecycleRecords: {
           status: "ready",
           data: context.releaseLifecycleRecords,
@@ -2642,6 +2753,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-status-readback-key="preflight"/);
   assert.match(html, /data-release-status-readback-key="runtimeEnablement"/);
   assert.match(html, /Collect release evidence/);
+  assert.match(html, /data-release-evidence-ledger-panel/);
+  assert.match(html, /data-release-evidence-ledger-status="ready"/);
+  assert.match(html, /证据账本/);
+  assert.match(html, /data-release-evidence-ledger-refresh/);
+  assert.match(html, /data-release-evidence-ledger-row/);
+  assert.match(html, /data-release-evidence-ledger-kind="evidence"/);
+  assert.match(html, /data-release-evidence-ledger-id="lgarev_ui_1"/);
+  assert.match(html, /centralVisualEvidence/);
+  assert.match(html, /data-release-evidence-ledger-kind="approval"/);
+  assert.match(html, /data-release-evidence-ledger-id="lgarap_ui_1"/);
+  assert.match(html, /writefulExecutionApproval/);
   assert.match(html, /data-release-lifecycle-records-panel/);
   assert.match(html, /data-release-lifecycle-records-status="ready"/);
   assert.match(html, /发布记录/);
@@ -2934,6 +3056,21 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "transcript"), false);
+
+  const releaseEvidenceLedgerQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseEvidenceLedgerQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseEvidenceLedgerQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    limit: 8
+  });
+  assert.equal(Object.hasOwn(releaseEvidenceLedgerQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseEvidenceLedgerQueryPayload, "transcript"), false);
 
   const releaseLifecycleRecordsQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseLifecycleRecordsQueryPayload({
     context,
@@ -4729,7 +4866,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-release-lifecycle-records-ui-v1";
+  const staticVersion = "20260618-release-evidence-ledger-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -4791,6 +4928,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-release-status-readbacks-refresh/);
   assert.match(source, /releaseStatusReadbacks/);
   assert.match(source, /await refreshReleaseStatusReadbacks\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
+  assert.match(source, /function refreshReleaseEvidenceLedger/);
+  assert.match(source, /api\.fetchGrowthReleaseEvidenceLedger\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-release-evidence-ledger-refresh/);
+  assert.match(source, /releaseEvidenceLedger/);
+  assert.match(source, /await refreshReleaseEvidenceLedger\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshReleaseLifecycleRecords/);
   assert.match(source, /api\.fetchGrowthReleaseLifecycleRecords\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /data-release-lifecycle-records-refresh/);

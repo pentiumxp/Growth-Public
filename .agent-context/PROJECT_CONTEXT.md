@@ -85,6 +85,14 @@ readback gate set.
   write release decisions, package records, preflight reports, activation or
   runtime enablement rows, mutate runtime config, approve release state, or
   grant scheduler permission.
+  The embedded Owner panel now also renders a read-only `证据账本` subpanel
+  that batches existing visible-target scoped
+  `GET /api/v1/growth/automation/release-evidence` and
+  `GET /api/v1/growth/automation/release-approvals` readbacks. It lists only
+  public summary DTO fields such as evidence/approval ids, keys, status, and
+  timestamps. It does not create evidence, approve release state, run
+  collection, inspect release storage directly, mutate runtime config, or grant
+  scheduler permission.
   The embedded Owner panel now also renders a separate `发布记录` subpanel over
   existing preflight-report, activation-record, and runtime-enablement list
   routes plus their Owner-only record routes. That panel writes only

@@ -50,6 +50,11 @@
         data: null,
         error: ""
       },
+      releaseEvidenceLedger: {
+        status: "idle",
+        data: null,
+        error: ""
+      },
       releaseLifecycleRecords: {
         status: "idle",
         data: null,
@@ -1037,6 +1042,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-evidence-ledger-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshReleaseEvidenceLedger().catch((error) => {
+          pageState.cardGeneration.releaseEvidenceLedger = Object.assign({}, pageState.cardGeneration.releaseEvidenceLedger, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-release-lifecycle-records-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1525,6 +1543,11 @@
       data: pageState.cardGeneration.releaseStatusReadbacks?.data || null,
       error: ""
     };
+    pageState.cardGeneration.releaseEvidenceLedger = {
+      status: "loading",
+      data: pageState.cardGeneration.releaseEvidenceLedger?.data || null,
+      error: ""
+    };
     pageState.cardGeneration.releaseLifecycleRecords = {
       status: "loading",
       data: pageState.cardGeneration.releaseLifecycleRecords?.data || null,
@@ -1875,6 +1898,9 @@
       if (!options.skipStatusReadbacks) {
         await refreshReleaseStatusReadbacks(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
       }
+      if (!options.skipEvidenceLedger) {
+        await refreshReleaseEvidenceLedger(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
+      }
       if (!options.skipLifecycleRecords) {
         await refreshReleaseLifecycleRecords(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
       }
@@ -1990,6 +2016,41 @@
       return result;
     } catch (error) {
       pageState.cardGeneration.releaseStatusReadbacks = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error)
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  async function refreshReleaseEvidenceLedger(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.releaseEvidenceLedger || {};
+    pageState.cardGeneration.releaseEvidenceLedger = {
+      status: "loading",
+      data: previous.data || null,
+      error: ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createReleaseEvidenceLedgerQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthReleaseEvidenceLedger(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.releaseEvidenceLedger = {
+        status: "ready",
+        data: result,
+        error: ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        releaseEvidenceLedger: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.releaseEvidenceLedger = {
         status: "failed",
         data: previous.data || null,
         error: error.message || String(error)

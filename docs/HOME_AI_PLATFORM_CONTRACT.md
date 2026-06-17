@@ -237,6 +237,17 @@ output, not manual evidence; the workbench must not surface it under
 may use the workbench-advertised fallback collection task only when a real
 evidence/check/collection-run gap exists.
 
+The embedded Owner release workbench may render a read-only `证据账本` panel by
+batching the existing visible-target scoped release evidence and release
+approval list routes:
+`GET /api/v1/growth/automation/release-evidence` and
+`GET /api/v1/growth/automation/release-approvals`. That browser aggregate is
+display-only and may expose only public summary DTO fields such as record ids,
+keys, statuses, counts, and timestamps. It must not add browser-side release
+evidence writes, approval writes, release-evidence collection execution,
+direct repository/SQLite access, runtime config mutation, release permission,
+scheduler permission, Gateway/model calls, or learner-state mutation.
+
 ## Growth-Local Release-Readiness Readback Addendum
 
 `plugin_learning_automation_release_readiness` now returns summary-only

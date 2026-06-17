@@ -4449,6 +4449,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /refreshReleaseStatusReadbacks/);
   assert.match(app, /fetchGrowthReleaseStatusReadbacks/);
   assert.match(app, /data-release-status-readbacks-refresh/);
+  assert.match(app, /refreshReleaseEvidenceLedger/);
+  assert.match(app, /fetchGrowthReleaseEvidenceLedger/);
+  assert.match(app, /data-release-evidence-ledger-refresh/);
   assert.match(app, /refreshReleaseLifecycleRecords/);
   assert.match(app, /fetchGrowthReleaseLifecycleRecords/);
   assert.match(app, /recordGrowthReleasePreflightReport/);
@@ -4500,6 +4503,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /releaseStatusReadbacksPanel/);
   assert.match(generationUi, /createReleaseStatusReadbackQueryPayload/);
   assert.match(generationUi, /data-release-status-readback-row/);
+  assert.match(generationUi, /data-release-evidence-ledger-panel/);
+  assert.match(generationUi, /releaseEvidenceLedgerPanel/);
+  assert.match(generationUi, /createReleaseEvidenceLedgerQueryPayload/);
+  assert.match(generationUi, /data-release-evidence-ledger-row/);
   assert.match(generationUi, /data-release-lifecycle-records-panel/);
   assert.match(generationUi, /releaseLifecycleRecordsPanel/);
   assert.match(generationUi, /createReleaseLifecycleRecordsQueryPayload/);
@@ -4578,6 +4585,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /fetchGrowthReleaseWorkbenchActionAudits/);
   assert.match(apiClient, /automation", "release-workbench", "action-audits"/);
   assert.match(apiClient, /fetchGrowthReleaseStatusReadbacks/);
+  assert.match(apiClient, /fetchGrowthReleaseEvidenceLedger/);
   assert.match(apiClient, /fetchGrowthReleaseLifecycleRecords/);
   assert.match(apiClient, /recordGrowthReleasePreflightReport/);
   assert.match(apiClient, /recordGrowthReleaseActivation/);
@@ -4585,6 +4593,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /automation", "release-controls"/);
   assert.match(apiClient, /automation", "release-dashboard"/);
   assert.match(apiClient, /automation", "release-preflight"/);
+  assert.match(apiClient, /automation", "release-evidence"/);
+  assert.match(apiClient, /automation", "release-approvals"/);
   assert.match(apiClient, /automation", "release-preflight-reports"/);
   assert.match(apiClient, /automation", "release-activations"/);
   assert.match(apiClient, /automation", "runtime-enablement"/);
