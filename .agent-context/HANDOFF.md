@@ -9,10 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T08:22+08:00 - Release Package Preflight Readback Projection
+
+- Status: implemented and full-Harness validated locally. No production
+  deployment in this slice.
+- Change intent:
+  - carry latest preflight report id/status/advisory readiness flags into the
+    final summary-only release package artifact and persisted package audit
+    record summaries;
+  - keep release package readback advisory only so package records cannot be
+    mistaken for deployment permission, runtime-config mutation, or scheduler
+    enablement;
+  - avoid adding a service dependency cycle by projecting only from
+    `release-controls` and `release-dashboard` DTOs already composed by
+    `learning-automation-release-package-service`.
+- Scope:
+  - `learning-automation-release-package-service` now projects bounded latest
+    preflight fields into package top-level fields, package summary, public
+    step summaries, `releaseControlsSummary`, `releaseDashboardSummary`, and
+    package-record `packageSummary`;
+  - `automation-release-packages.js` needed no schema change because package
+    summaries are already persisted as JSON summary columns;
+  - repository Harness now proves persisted package rows read those bounded
+    preflight fields back from real SQLite JSON summaries.
+- Boundary notes:
+  - release package does not read the preflight repository directly;
+  - release package does not compute or persist preflight reports;
+  - downstream projections keep all runtime mutation and scheduling permission
+    flags false.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for changed service/repository-test files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-package-service.test.js tests/learning-automation-release-package-repository.test.js tests/growth-architecture-boundary.test.js`
+    passed `46/46`.
+  - release package gate:
+    `node --test tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/learning-automation-release-evidence-bundle-audit-service.test.js tests/learning-automation-release-readiness-service.test.js tests/learning-automation-release-collection-run-service.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `154/154`;
+  - release union Harness:
+    `node --test tests/learning-automation-release-package-repository.test.js tests/learning-automation-release-package-service.test.js tests/growth-release-package-script.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-preflight-service.test.js tests/learning-automation-release-preflight-repository.test.js tests/learning-automation-release-activation-service.test.js tests/learning-automation-runtime-enablement-service.test.js tests/growth-release-controls-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-release-preflight-smoke-script.test.js tests/growth-release-activation-smoke-script.test.js tests/growth-runtime-enablement-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `171/171`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - `git diff --check`;
+  - `npm test` passed `908/908`;
+  - `codegraph sync && codegraph status` reported index up to date with `370`
+    files, `5,190` nodes, and `22,478` edges, plus the existing earlier-engine
+    advisory.
+- Remaining:
+  - commit and push this slice to `origin/main` and `public/main`;
+  - do not deploy unless explicitly requested.
+
 ## 2026-06-17T08:10+08:00 - Release Controls Workbench Preflight Projection
 
-- Status: implemented and full-Harness validated locally; commit and push still
-  pending. No production deployment in this slice.
+- Status: implemented, full-Harness validated locally, committed as `f22220b`,
+  and pushed to `origin/main` and `public/main`. No production deployment in
+  this slice.
 - Change intent:
   - carry latest preflight report id/status/advisory readiness flags into the
     final Owner release controls and release workbench readbacks;

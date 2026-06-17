@@ -2900,6 +2900,9 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(service, /latestReadinessEvidenceMissingCount/);
   assert.match(service, /ownerReviewStageSummary/);
   assert.match(service, /latestReadinessOwnerReviewStageSummary/);
+  assert.match(service, /firstPreflightSummary/);
+  assert.match(service, /latestPreflightReportId/);
+  assert.match(service, /latestPreflightReadyForOwnerReleaseActivation/);
   assert.match(service, /packageRecordRequested/);
   assert.match(service, /packageRecordWritten/);
   assert.match(service, /persistedEvidenceKeys/);
@@ -2951,6 +2954,8 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(serviceHarness, /requires explicit allow-write/);
   assert.match(serviceHarness, /records summary-only package records/);
   assert.match(serviceHarness, /readinessEvidencePresentCount/);
+  assert.match(serviceHarness, /lgarpf_dashboard_1/);
+  assert.match(serviceHarness, /lgarpf_activation_1/);
 
   const scriptHarness = read(path.join("tests", "growth-release-package-script.test.js"));
   assert.match(scriptHarness, /parses package, bundle, and audit options/);

@@ -152,6 +152,10 @@ function controls(overrides = {}) {
       summaryOnly: true,
       status: "manual_runtime_config_required",
       requiredActionCount: 1,
+      latestPreflightReportId: "lgarpf_activation_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       nextAction: {
         key: "enable_runtime_config_manually",
         action: "perform_platform_runtime_config_enablement",
@@ -198,6 +202,10 @@ function dashboard(overrides = {}) {
       }),
       latestCollectionRunId: "lgacrn_ready_1",
       latestPackageId: "lgapkg_ready_1",
+      latestPreflightReportId: "lgarpf_dashboard_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       missingRecordKinds: ["runtime_enablement"],
       missingCheckKeys: ["runtime_enablement"],
       missingEvidenceKeys: ["scheduler_worker_target_ui"],
@@ -325,6 +333,12 @@ test("release package service composes bundle, audit, readiness, collection run,
   ]);
   assert.equal(result.package.summary.stepCount, 6);
   assert.equal(result.package.summary.collectionRunId, "lgacrn_ready_1");
+  assert.equal(result.package.latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(result.package.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.package.latestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.package.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.package.summary.latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(result.package.summary.latestPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(records.auditInput.bundle.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.v1");
   assert.equal(records.readinessInput.evidence.releaseEvidenceBundleAudit.schemaVersion, "growth.learningAutomationReleaseEvidenceBundleAudit.v1");
   assert.equal(records.readinessInput.evidence.productionPlannerReadinessEvidence.evidenceId, "planner_ready");
@@ -335,6 +349,10 @@ test("release package service composes bundle, audit, readiness, collection run,
   assert.equal(records.dashboardInput.collectionRunId, "lgacrn_ready_1");
   assert.deepEqual(records.dashboardInput.activationGates, ["writeful_execution"]);
   assert.equal(result.package.artifacts.releaseDashboard.schemaVersion, "growth.learningAutomationReleaseDashboard.v1");
+  assert.equal(result.package.steps[4].latestPreflightReportId, "lgarpf_activation_1");
+  assert.equal(result.package.steps[4].latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.package.steps[5].latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(result.package.steps[5].latestPreflightReadyForProductionDeployReview, true);
   assert.equal(result.package.steps[5].requiredActionCount, 1);
   assert.equal(result.package.steps[5].nextActionKey, "enable_runtime_config_manually");
   assert.equal(JSON.stringify(result.package).includes("stdout"), false);
@@ -487,7 +505,15 @@ test("release package service records package audit rows during explicit build w
   assert.equal(written.package.summary.packageRecordId, "lgapkg_written_1");
   assert.equal(records.packageRecordInput.collectionRunId, "lgacrn_written_1");
   assert.equal(records.packageRecordInput.packageSummary.packageRecordRequested, true);
+  assert.equal(records.packageRecordInput.packageSummary.latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(records.packageRecordInput.packageSummary.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(records.packageRecordInput.stepSummary.steps[4].latestPreflightReportId, "lgarpf_activation_1");
+  assert.equal(records.packageRecordInput.stepSummary.steps[5].latestPreflightReportId, "lgarpf_dashboard_1");
   assert.equal(records.packageRecordInput.packageSummary.writefulSchedulingAllowed, false);
+  assert.equal(records.packageRecordInput.releaseControlsSummary.latestPreflightReportId, "lgarpf_activation_1");
+  assert.equal(records.packageRecordInput.releaseControlsSummary.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(records.packageRecordInput.releaseDashboardSummary.latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(records.packageRecordInput.releaseDashboardSummary.latestPreflightReadyForProductionDeployReview, true);
   assert.equal(records.packageRecordInput.releaseDashboardSummary.summaryOnly, true);
   assert.equal(JSON.stringify(records.packageRecordInput).includes("artifacts"), false);
   assert.equal(JSON.stringify(records.packageRecordInput).includes("productionPlannerReadinessEvidence"), false);
@@ -557,6 +583,9 @@ test("release package service records summary-only package records behind explic
   assert.equal(calls.saved.packageSummary.writefulSchedulingAllowed, false);
   assert.equal(calls.saved.stepSummary.stepCount, 6);
   assert.equal(calls.saved.releaseControlsSummary.runtimeConfigChange, false);
+  assert.equal(calls.saved.packageSummary.latestPreflightReportId, "lgarpf_dashboard_1");
+  assert.equal(calls.saved.releaseControlsSummary.latestPreflightReportId, "lgarpf_activation_1");
+  assert.equal(calls.saved.releaseDashboardSummary.latestPreflightReportId, "lgarpf_dashboard_1");
   assert.equal(calls.saved.releaseDashboardSummary.status, "manual_runtime_config_required");
   assert.equal(calls.saved.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
   assert.equal(calls.saved.releaseDashboardSummary.readinessEvidencePresentCount, 2);

@@ -30,6 +30,84 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(asArray(values).map((value) => cleanString(value, 120)).filter(Boolean)));
 }
 
+function snakeCaseKey(key) {
+  return String(key || "").replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function fieldValue(source = {}, key) {
+  if (!source || typeof source !== "object") return undefined;
+  if (Object.prototype.hasOwnProperty.call(source, key)) return source[key];
+  return source[snakeCaseKey(key)];
+}
+
+function firstField(candidates = [], keys = [], max = 180) {
+  for (const candidate of candidates) {
+    const source = objectOnly(candidate);
+    for (const key of keys) {
+      const value = cleanString(fieldValue(source, key), max);
+      if (value) return value;
+    }
+  }
+  return "";
+}
+
+function anyTrue(candidates = [], keys = []) {
+  return candidates.some((candidate) => {
+    const source = objectOnly(candidate);
+    return keys.some((key) => fieldValue(source, key) === true);
+  });
+}
+
+function preflightSummaryFrom(value = {}) {
+  const source = objectOnly(value);
+  const releaseControls = objectOnly(source.releaseControls || source.release_controls);
+  const releaseDashboard = objectOnly(source.releaseDashboard || source.release_dashboard);
+  const summary = objectOnly(source.summary);
+  const latest = objectOnly(source.latest);
+  const readback = objectOnly(source.preflightReportReadback || source.preflight_report_readback);
+  const candidates = [source, summary, releaseDashboard, releaseControls, latest, readback];
+  return {
+    latestPreflightReportId: firstField(candidates, [
+      "latestPreflightReportId",
+      "preflightReportId",
+      "reportId"
+    ]),
+    latestPreflightStatus: firstField(candidates, [
+      "latestPreflightStatus",
+      "preflightStatus"
+    ], 120),
+    latestPreflightReadyForProductionDeployReview: anyTrue(candidates, [
+      "latestPreflightReadyForProductionDeployReview",
+      "readyForProductionDeployReview"
+    ]),
+    latestPreflightReadyForOwnerReleaseActivation: anyTrue(candidates, [
+      "latestPreflightReadyForOwnerReleaseActivation",
+      "readyForOwnerReleaseActivation"
+    ])
+  };
+}
+
+function hasPreflightSignal(summary = {}) {
+  return Boolean(
+    summary.latestPreflightReportId
+      || summary.latestPreflightStatus
+      || summary.latestPreflightReadyForProductionDeployReview
+      || summary.latestPreflightReadyForOwnerReleaseActivation
+  );
+}
+
+function firstPreflightSummary(...values) {
+  const summaries = values.map(preflightSummaryFrom);
+  return summaries.find((summary) => summary.latestPreflightReportId)
+    || summaries.find((summary) => hasPreflightSignal(summary))
+    || {
+      latestPreflightReportId: "",
+      latestPreflightStatus: "",
+      latestPreflightReadyForProductionDeployReview: false,
+      latestPreflightReadyForOwnerReleaseActivation: false
+    };
+}
+
 function scanPrivacyKeys(value, pathName = "$", findings = []) {
   if (!value || typeof value !== "object") return findings;
   if (Array.isArray(value)) {
@@ -119,6 +197,7 @@ function publicStep(key, label, value = {}, resultOk = false) {
   const releaseControls = objectOnly(value.releaseControls || value.release_controls);
   const releaseDashboard = objectOnly(value.releaseDashboard || value.release_dashboard);
   const releaseReview = objectOnly(value.releaseReview || value.release_review);
+  const preflightSummary = firstPreflightSummary(value, releaseDashboard, releaseControls, summary);
   return {
     key,
     label,
@@ -134,6 +213,10 @@ function publicStep(key, label, value = {}, resultOk = false) {
       objectOnly(releaseDashboard.nextAction || releaseDashboard.next_action || releaseControls.nextAction || releaseControls.next_action || releaseReview.nextAction || releaseReview.next_action).key,
       120
     ),
+    latestPreflightReportId: preflightSummary.latestPreflightReportId,
+    latestPreflightStatus: preflightSummary.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
     readyForReleaseEvidence: value.readyForReleaseEvidence === true,
     readyForReleaseReview: value.readyForReleaseReview === true || summary.readyForReleaseReview === true,
     writefulSchedulingAllowed: value.writefulSchedulingAllowed === true || summary.writefulSchedulingAllowed === true
@@ -184,7 +267,7 @@ function derivePackageStatus(steps = [], collectionRun = {}) {
   return "incomplete";
 }
 
-function buildSummary(status, steps, options, collectionRun) {
+function buildSummary(status, steps, options, collectionRun, preflightSummary = {}) {
   const passedCount = steps.filter((step) => step.status === "pass").length;
   const blockedCount = steps.filter((step) => step.status === "blocked").length;
   return {
@@ -201,6 +284,10 @@ function buildSummary(status, steps, options, collectionRun) {
     packageRecordRequested: options.writePackageRecord === true,
     packageRecordWritten: false,
     packageRecordId: "",
+    latestPreflightReportId: cleanString(preflightSummary.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(preflightSummary.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation === true,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -245,6 +332,10 @@ function stepSummaryFromPackage(releasePackage = {}) {
     summaryOnly: step.summaryOnly === undefined ? true : step.summaryOnly === true,
     requiredActionCount: Number(step.requiredActionCount || step.required_action_count || 0) || 0,
     nextActionKey: cleanString(step.nextActionKey || step.next_action_key, 120),
+    latestPreflightReportId: cleanString(step.latestPreflightReportId || step.latest_preflight_report_id, 180),
+    latestPreflightStatus: cleanString(step.latestPreflightStatus || step.latest_preflight_status, 120),
+    latestPreflightReadyForProductionDeployReview: step.latestPreflightReadyForProductionDeployReview === true || step.latest_preflight_ready_for_production_deploy_review === true,
+    latestPreflightReadyForOwnerReleaseActivation: step.latestPreflightReadyForOwnerReleaseActivation === true || step.latest_preflight_ready_for_owner_release_activation === true,
     readyForReleaseEvidence: step.readyForReleaseEvidence === true || step.ready_for_release_evidence === true,
     readyForReleaseReview: step.readyForReleaseReview === true || step.ready_for_release_review === true,
     writefulSchedulingAllowed: false
@@ -278,6 +369,7 @@ function artifactSummary(value = {}, fallback = {}) {
 function controlsSummaryFromPackage(controls = {}) {
   const releaseControls = objectOnly(controls.releaseControls || controls.release_controls || controls.summary);
   const nextAction = objectOnly(releaseControls.nextAction || releaseControls.next_action);
+  const preflightSummary = firstPreflightSummary(controls, releaseControls);
   return Object.assign(artifactSummary(controls, releaseControls), {
     requiredActionCount: Number(releaseControls.requiredActionCount || releaseControls.required_action_count || 0) || 0,
     nextAction: nextAction.key ? {
@@ -285,6 +377,10 @@ function controlsSummaryFromPackage(controls = {}) {
       action: cleanString(nextAction.action, 180),
       requiredActor: cleanString(nextAction.requiredActor || nextAction.required_actor, 80)
     } : null,
+    latestPreflightReportId: preflightSummary.latestPreflightReportId,
+    latestPreflightStatus: preflightSummary.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -294,6 +390,7 @@ function controlsSummaryFromPackage(controls = {}) {
 function dashboardSummaryFromPackage(dashboard = {}) {
   const releaseDashboard = objectOnly(dashboard.releaseDashboard || dashboard.release_dashboard || dashboard.summary);
   const nextAction = objectOnly(releaseDashboard.nextAction || releaseDashboard.next_action);
+  const preflightSummary = firstPreflightSummary(dashboard, releaseDashboard);
   return Object.assign(artifactSummary(dashboard, releaseDashboard), {
     readinessStatus: cleanString(releaseDashboard.readinessStatus || releaseDashboard.readiness_status, 120),
     controlsStatus: cleanString(releaseDashboard.controlsStatus || releaseDashboard.controls_status, 120),
@@ -316,6 +413,10 @@ function dashboardSummaryFromPackage(dashboard = {}) {
     latestReadinessOwnerReviewStageSummary: objectOnly(releaseDashboard.latestReadinessOwnerReviewStageSummary || releaseDashboard.latest_readiness_owner_review_stage_summary),
     latestPackageId: cleanString(releaseDashboard.latestPackageId || releaseDashboard.latest_package_id, 160),
     latestDecisionId: cleanString(releaseDashboard.latestDecisionId || releaseDashboard.latest_decision_id, 160),
+    latestPreflightReportId: preflightSummary.latestPreflightReportId,
+    latestPreflightStatus: preflightSummary.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
     latestActivationId: cleanString(releaseDashboard.latestActivationId || releaseDashboard.latest_activation_id, 160),
     latestRuntimeEnablementId: cleanString(releaseDashboard.latestRuntimeEnablementId || releaseDashboard.latest_runtime_enablement_id, 160),
     missingRecordKinds: uniqueStrings(releaseDashboard.missingRecordKinds || releaseDashboard.missing_record_kinds || []),
@@ -341,6 +442,12 @@ function collectionRunIdFromPackage(releasePackage = {}) {
 function packageRecordFromArtifact(input = {}, releasePackage = {}) {
   const artifacts = objectOnly(releasePackage.artifacts);
   const scope = packageScopeFrom(input, releasePackage);
+  const preflightSummary = firstPreflightSummary(
+    releasePackage,
+    releasePackage.summary,
+    objectOnly(artifacts.releaseDashboard || artifacts.release_dashboard),
+    objectOnly(artifacts.releaseControls || artifacts.release_controls)
+  );
   const collectionRunId = cleanString(
     input.collectionRunId || input.collection_run_id || input.runId || input.run_id || collectionRunIdFromPackage(releasePackage),
     160
@@ -361,7 +468,7 @@ function packageRecordFromArtifact(input = {}, releasePackage = {}) {
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
-    }, objectOnly(releasePackage.summary)),
+    }, objectOnly(releasePackage.summary), preflightSummary),
     stepSummary: stepSummaryFromPackage(releasePackage),
     releaseEvidenceBundleSummary: artifactSummary(objectOnly(artifacts.releaseEvidenceBundle || artifacts.release_evidence_bundle)),
     releaseEvidenceBundleAuditSummary: artifactSummary(objectOnly(artifacts.releaseEvidenceBundleAudit || artifacts.release_evidence_bundle_audit)),
@@ -457,6 +564,7 @@ function createLearningAutomationReleasePackageService(options = {}) {
     const collectionRun = collectionRunArtifact(collectionResult);
     const controls = releaseControlsService.summarize(controlsInput(scope, input, optionBag, collectionRun));
     const dashboard = releaseDashboardService.dashboard(dashboardInput(scope, input, optionBag, collectionRun));
+    const preflightSummary = firstPreflightSummary(dashboard, controls);
     const steps = [
       publicStep("release_evidence_bundle", "Release evidence bundle", bundle || bundleResult, bundleResult.ok === true),
       publicStep("release_evidence_bundle_audit", "Release evidence bundle audit", audit, audit.ok === true),
@@ -480,10 +588,14 @@ function createLearningAutomationReleasePackageService(options = {}) {
       runtimeConfigChange: false,
       configChangeApplied: false,
       schedulerPermissionGranted: false,
+      latestPreflightReportId: preflightSummary.latestPreflightReportId,
+      latestPreflightStatus: preflightSummary.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
       writeCollectionRun: optionBag.writeCollectionRun,
       writePackageRecord: optionBag.writePackageRecord,
       steps,
-      summary: buildSummary(status, steps, optionBag, collectionRun),
+      summary: buildSummary(status, steps, optionBag, collectionRun, preflightSummary),
       artifacts: {
         releaseEvidenceBundle: bundle,
         releaseEvidenceBundleAudit: audit,

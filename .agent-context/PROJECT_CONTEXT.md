@@ -189,7 +189,12 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   workbench also carry latest preflight report id/status/advisory readiness
   flags only from activation/runtime records and downstream summary DTOs; they
   do not read the preflight repository directly and do not grant deployment,
-  runtime config, or scheduler permission. It now treats
+  runtime config, or scheduler permission. Release package artifacts and
+  package audit records now project bounded latest preflight fields from
+  release-controls and release-dashboard readbacks into package top-level
+  summary, step summary, and persisted package-record summaries without adding
+  a preflight repository read or changing deployment/runtime/scheduler
+  permission. It now treats
   production controlled daily-loop draft/publish smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle

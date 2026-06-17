@@ -44,6 +44,10 @@ function samplePackage(overrides = {}) {
       summaryOnly: true,
       status: "ready_for_release_review",
       collectionRunId: "lgacrn_ready_1",
+      latestPreflightReportId: "lgarpf_dashboard_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       writefulSchedulingAllowed: false
     },
     stepSummary: {
@@ -82,7 +86,11 @@ function samplePackage(overrides = {}) {
       status: "manual_runtime_config_required",
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
-      configChangeApplied: false
+      configChangeApplied: false,
+      latestPreflightReportId: "lgarpf_activation_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true
     },
     releaseDashboardSummary: {
       schemaVersion: "growth.learningAutomationReleaseDashboard.v1",
@@ -105,6 +113,10 @@ function samplePackage(overrides = {}) {
       latestReadinessEvidenceMissingCount: 29,
       latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestCollectionRunId: "lgacrn_ready_1",
+      latestPreflightReportId: "lgarpf_dashboard_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       missingRecordKinds: ["runtime_enablement"],
       missingCheckKeys: ["runtime_enablement"],
       persistedApprovalKeys: ["writefulExecutionApproval"],
@@ -132,8 +144,12 @@ test("automation release package repository saves and lists summary-only package
     assert.equal(saved.package.privacyClass, "summary_only");
     assert.equal(saved.package.collectionRunId, "lgacrn_ready_1");
     assert.equal(saved.package.packageSummary.writefulSchedulingAllowed, false);
+    assert.equal(saved.package.packageSummary.latestPreflightReportId, "lgarpf_dashboard_1");
+    assert.equal(saved.package.packageSummary.latestPreflightReadyForOwnerReleaseActivation, true);
     assert.equal(saved.package.releaseControlsSummary.runtimeConfigChange, false);
+    assert.equal(saved.package.releaseControlsSummary.latestPreflightReportId, "lgarpf_activation_1");
     assert.equal(saved.package.releaseDashboardSummary.runtimeConfigChange, false);
+    assert.equal(saved.package.releaseDashboardSummary.latestPreflightReportId, "lgarpf_dashboard_1");
     assert.equal(saved.package.releaseDashboardSummary.nextAction.key, "enable_runtime_config_manually");
     assert.equal(saved.package.releaseDashboardSummary.readinessEvidencePresentCount, 2);
     assert.equal(saved.package.releaseDashboardSummary.readinessEvidenceMissingCount, 28);
@@ -162,6 +178,9 @@ test("automation release package repository saves and lists summary-only package
     assert.equal(listed[0].packageId, saved.package.packageId);
     assert.equal(listed[0].stepSummary.stepCount, 6);
     assert.equal(listed[0].releaseDashboardSummary.status, "manual_runtime_config_required");
+    assert.equal(listed[0].packageSummary.latestPreflightReportId, "lgarpf_dashboard_1");
+    assert.equal(listed[0].releaseControlsSummary.latestPreflightReportId, "lgarpf_activation_1");
+    assert.equal(listed[0].releaseDashboardSummary.latestPreflightReportId, "lgarpf_dashboard_1");
     assert.equal(listed[0].releaseDashboardSummary.readinessEvidenceSourceBundleId, "lgerb_ready_1");
     assert.equal(listed[0].releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
   });

@@ -950,8 +950,12 @@ Implemented backend shape:
   `automation-release-packages.js` and contain only bounded package, step,
   bundle/audit/readiness/collection-run/controls/dashboard summaries. The
   repository migrates `release_dashboard_summary_json` for persisted dashboard
-  readback. Release review, controls, inventory, and dashboard readbacks expose
-  only bounded latest-package dashboard summary fields (`status`,
+  readback. Package artifacts and persisted package rows also project latest
+  preflight report id/status/advisory readiness flags from release-controls and
+  release-dashboard readbacks into package top-level summary, step summary, and
+  controls/dashboard package-record summaries. Release review, controls,
+  inventory, and dashboard readbacks expose only bounded latest-package
+  dashboard summary fields (`status`,
   `nextAction.key`, `requiredActionCount`, `stepCount`,
   readiness-evidence present/missing counts, source bundle id, latest readiness
   snapshot id, latest snapshot evidence counts, compact Owner review

@@ -617,7 +617,13 @@ Use the Growth-owned release-readiness boundary:
   summary-only package artifact and must not run package smoke tasks. Persisted
   package rows include bounded `releaseDashboardSummary`, including
   readiness-evidence present/missing counts, source bundle id, latest readiness
-  snapshot id, latest snapshot evidence counts, and persisted evidence keys.
+  snapshot id, latest snapshot evidence counts, persisted evidence keys, and
+  latest preflight report id/status/advisory readiness flags from
+  release-dashboard readback. Package top-level summary, package step summary,
+  and persisted `releaseControlsSummary` / `releaseDashboardSummary` also carry
+  those bounded preflight fields for Owner release-audit readback only; they do
+  not grant scheduler permission, runtime config enablement, or deployment
+  permission.
   Review, authorization, closure, controls, inventory, and dashboard readbacks
   expose only latest-package dashboard summary fields for Owner status
   surfaces; they must not expose full release evidence items. The
