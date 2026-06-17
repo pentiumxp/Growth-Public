@@ -843,9 +843,14 @@ Implemented backend shape:
   `releaseWorkbenchSmokeEvidence` so release-readiness can verify the final
   Owner action-template read model without Codex hand-spliced DTOs. A passing
   workbench task means bounded read routes, Owner record-route templates,
-  missing-key summaries, and next action were collected; it is not release
-  approval, runtime config enablement, scheduler permission, package recording,
-  or deployment. The legacy `--release-workbench-evidence` readiness flag is a
+  missing-key summaries, supported release-evidence collection task ids, and
+  next action were collected; it is not release approval, runtime config
+  enablement, scheduler permission, package recording, or deployment. The
+  workbench may make `collect_missing_release_evidence` the next action after a
+  collection-run already exists only when supported missing evidence still
+  remains, and that action must still go through the existing Owner workbench
+  action facade plus release-evidence collection service. The legacy
+  `--release-workbench-evidence` readiness flag is a
   blocked remediation marker only; valid workbench evidence must come from the
   workbench smoke output through explicit evidence JSON, the release bundle, or
   a persisted release-evidence record projection. The same rule now applies to
@@ -924,6 +929,15 @@ Implemented backend shape:
   recording a release package, and it must not record package rows, record
   release decisions, flip runtime config, grant scheduler permission, deploy,
   publish, generate, evaluate submissions, or mutate learner state.
+- `learning-automation-release-workbench-service` derives
+  `releaseEvidenceCollectionSupportedTaskIds` from missing evidence/check keys.
+  When inventory still lacks `release_collection_run`, the advertised action is
+  the existing collection-run remediation path. When a collection-run record is
+  already present but supported release evidence remains missing, the workbench
+  can surface `collect_missing_release_evidence` as the next Owner action over
+  the same `release_evidence_collection` endpoint. Unsupported manual/UI gaps
+  and write-gated tasks remain visible as separate readback fields and are not
+  silently included in the normal Owner action.
 - `npm run smoke:release-collection-run` delegates to
   `learning-automation-release-collection-run-service` and records a
   summary-only audit of one completed release evidence collection pass after a

@@ -9,10 +9,59 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T08:52+08:00 - Release Workbench Supported Evidence Collection Action
+
+- Status: implemented and full-Harness validated locally. No production
+  deployment in this slice.
+- Change intent:
+  - make the Owner release workbench surface a direct
+    `collect_missing_release_evidence` action when a collection-run record
+    already exists but supported missing release evidence remains;
+  - keep unsupported/manual evidence and write-gated evidence visible as
+    readback fields rather than silently including them in the normal action;
+  - keep the workbench as a no-write action-template read model over the
+    existing Owner action facade and release-evidence collection service.
+- Scope:
+  - `learning-automation-release-workbench-service` now exposes
+    `releaseEvidenceCollectionSupportedTaskIds`;
+  - when `release_collection_run` is not missing and supported task ids exist,
+    the workbench adds `collect_missing_release_evidence` /
+    `release_evidence_collection` before generic record-evidence actions;
+  - the action route still uses
+    `/api/v1/growth/automation/release-evidence-collections/run`, derived
+    bounded task selectors, profile-feedback auto-selection when applicable,
+    and central visual/UI artifact placeholders only as transient inputs;
+  - no route, repository, schema, Gateway, scheduler, runtime config, or
+    deployment boundary changed.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-workbench-service.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `92/92`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent test:release-union` passed `206/206`;
+  - `npm run --silent check` passed with `runtimeCount=209` and
+    `checkedCount=209`;
+  - `git diff --check`;
+  - `npm test` passed `910/910`;
+  - `codegraph sync && codegraph status` reported index up to date with `372`
+    files, `5,201` nodes, and `22,593` edges, plus the existing earlier-engine
+    advisory.
+- Remaining:
+  - do not deploy unless explicitly requested.
+
 ## 2026-06-17T08:44+08:00 - Growth Harness Matrix And Release Union Shortcut
 
-- Status: implemented and focused-Harness validated locally. No production
-  deployment in this slice.
+- Status: implemented, full-Harness validated locally, committed as `7f48a5b`,
+  and pushed to `origin/main` and `public/main`. No production deployment in
+  this slice.
 - Change intent:
   - replace thread-local release test selection with Growth-local durable
     Harness matrices;
@@ -49,7 +98,7 @@
     files, `5,200` nodes, and `22,582` edges, plus the existing earlier-engine
     advisory.
 - Remaining:
-  - commit and push to `origin/main` and `public/main`;
+  - none for this slice;
   - do not deploy unless explicitly requested.
 
 ## 2026-06-17T08:34+08:00 - Package Preflight Readback In Final Release Gates

@@ -445,6 +445,12 @@ readback gate set.
   scheduler, and Owner-review evidence. UI/manual evidence keys remain visible as
   unsupported collection keys, while write-gated tasks such as `daily_loop_write`
   are reported separately instead of being sent through the default Owner button.
+  When a collection-run record already exists but supported missing evidence
+  remains, the workbench exposes `releaseEvidenceCollectionSupportedTaskIds` and
+  can make `collect_missing_release_evidence` the next Owner action over the
+  same `release_evidence_collection` route. That is still an action-template
+  projection over the existing workbench action facade and collection service,
+  not a new write boundary or release/deploy permission.
   If no supported task can be derived, the workbench falls back to the bounded
   `learning_loop_state` task. A returned collection artifact completes the UI
   action even when release-readiness remains `incomplete`.

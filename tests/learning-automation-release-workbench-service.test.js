@@ -150,6 +150,7 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(decisionRoute.route.body.auto_select_latest_ready_collection_run, true);
   assert.equal(decisionRoute.route.body.status, "approved");
   assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
   assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, []);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
@@ -198,6 +199,96 @@ test("release workbench composes release services into Owner action templates wi
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.backgroundSchedulingAllowed, false);
   assert.equal(result.backgroundWorkerAllowed, false);
+});
+
+test("release workbench offers evidence collection for supported missing evidence after collection-run exists", () => {
+  const service = createLearningAutomationReleaseWorkbenchService({
+    releaseReadinessService: {
+      evaluateReadiness() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseReview: {
+            status: "release_evidence_required",
+            missingCheckKeys: [],
+            missingEvidenceKeys: [
+              "production_profile_feedback_smoke_evidence",
+              "central_visual_evidence"
+            ],
+            nextAction: {
+              key: "production_profile_feedback_smoke_evidence",
+              action: "record_release_evidence",
+              requiredActor: "owner"
+            }
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseControlsService: {
+      summarize() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseControls: {
+            status: "release_evidence_required",
+            missingEvidenceKeys: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseInventoryService: {
+      inventory() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseInventory: {
+            status: "release_evidence_required",
+            missingRecordKinds: ["release_package"],
+            latestCollectionRunId: "lgacrn_existing_1"
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    },
+    releaseDashboardService: {
+      dashboard() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseDashboard: {
+            status: "release_evidence_required",
+            missingEvidenceKeys: []
+          },
+          writefulSchedulingAllowed: false
+        };
+      }
+    }
+  });
+
+  const result = service.workbench({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    collectionRunId: "lgacrn_existing_1"
+  });
+
+  const collectionActions = result.releaseWorkbench.ownerActions
+    .filter((action) => action.endpointKey === "release_evidence_collection");
+  assert.equal(collectionActions.length, 1);
+  assert.equal(collectionActions[0].key, "collect_missing_release_evidence");
+  assert.equal(result.releaseWorkbench.nextAction.key, "collect_missing_release_evidence");
+  assert.equal(collectionActions[0].source, "missing_evidence_collection");
+  assert.equal(collectionActions[0].route.path, "/api/v1/growth/automation/release-evidence-collections/run");
+  assert.deepEqual(collectionActions[0].route.body.tasks, ["profile_feedback", "central_visual"]);
+  assert.deepEqual(collectionActions[0].route.body.required_task_ids, ["profile_feedback", "central_visual"]);
+  assert.equal(collectionActions[0].route.body.auto_select_latest_completed_cycle, true);
+  assert.equal(collectionActions[0].route.body.central_visual_evidence_file, "");
+  assert.deepEqual(collectionActions[0].collectionTaskIds, ["profile_feedback", "central_visual"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["profile_feedback", "central_visual"]);
+  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.key === "release_collection_run"), false);
+  assert.equal(result.releaseWorkbench.writefulSchedulingAllowed, false);
 });
 
 test("release workbench offers preflight action before activation and runtime records", () => {

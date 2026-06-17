@@ -549,7 +549,14 @@ Use the Growth-owned release-readiness boundary:
   `POST /api/v1/growth/automation/release-workbench/actions`. The advertised
   route body is derived from supported missing release evidence keys, for
   example profile feedback, platform action, central visual, release package
-  review UI, proposal, scheduler, and Owner-review evidence. The
+  review UI, proposal, scheduler, and Owner-review evidence. The workbench
+  also exposes `releaseEvidenceCollectionSupportedTaskIds` and, after a
+  collection-run record already exists, can surface a direct
+  `collect_missing_release_evidence` Owner action when supported missing
+  evidence still remains. That action still delegates through the existing
+  workbench action facade and release-evidence collection service; it is not a
+  write boundary expansion, release approval, or scheduler/runtime/deploy
+  permission. The
   `release_package_review_ui_evidence` key maps to the explicit non-default
   `release_package_review_ui` bundle task; the route template exposes an empty
   `release_package_review_ui_evidence_file` placeholder so Owner tooling can
@@ -830,9 +837,15 @@ Use the Growth-owned release-readiness boundary:
   existing services. For `release_evidence_collection`, the UI sends bounded
   collection tasks, `write_collection_run=true`, and
   `write_release_evidence_records=true` from the backend action template. Those
-  task ids come from the workbench's missing-evidence-derived no-write plan;
-  UI/manual evidence and write-gated evidence are surfaced for Owner review but
-  are not auto-collected by the normal button. For `release_decision`, the UI
+  task ids come from the workbench's missing-evidence-derived no-write plan,
+  with `releaseEvidenceCollectionSupportedTaskIds` separating supported task
+  ids from unsupported/manual evidence and write-gated tasks. After a
+  collection-run exists, the backend may make
+  `collect_missing_release_evidence` the next action for the supported subset;
+  the UI still submits only the advertised template through the workbench action
+  facade. UI/manual evidence and write-gated evidence are surfaced for Owner
+  review but are not auto-collected by the normal button. For
+  `release_decision`, the UI
   sends only the advertised status, summary-only decision metadata, and the
   explicit latest-ready collection-run auto-selection flag; collection-run
   lookup, validation, and persistence remain in

@@ -253,6 +253,7 @@ function collectionTaskPlan(keys = []) {
   return {
     taskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
     requiredTaskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
+    supportedTaskIds: taskIds,
     writeGatedTaskIds: Array.from(writeGatedTaskSet),
     unsupportedKeys: unsupported
   };
@@ -482,6 +483,36 @@ function actionsFromMissingApprovals(keys = [], scope = {}) {
   }, scope, "missing_approval")).filter(Boolean);
 }
 
+function collectionActionFromSupportedEvidence(scope = {}, collectionTasks = {}, inventorySummary = {}) {
+  const supportedTaskIds = asArray(collectionTasks.supportedTaskIds);
+  if (!supportedTaskIds.length) return null;
+  if (asArray(inventorySummary.missingRecordKinds).map((kind) => cleanString(kind, 140)).includes("release_collection_run")) {
+    return null;
+  }
+  const route = recordRoutes(scope, collectionTasks).find((item) => item.key === "release_evidence_collection")?.route || null;
+  return {
+    schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
+    summaryOnly: true,
+    key: "collect_missing_release_evidence",
+    action: "run_release_evidence_collection",
+    requiredActor: "owner",
+    label: "Collect missing release evidence",
+    source: "missing_evidence_collection",
+    endpointKey: "release_evidence_collection",
+    route,
+    requiresPreparation: false,
+    preparationRoute: null,
+    collectionTaskIds: asArray(collectionTasks.taskIds),
+    writeGatedCollectionTaskIds: asArray(collectionTasks.writeGatedTaskIds),
+    unsupportedCollectionKeys: asArray(collectionTasks.unsupportedKeys),
+    externalActionRequired: false,
+    externalAction: null,
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    writefulSchedulingAllowed: false
+  };
+}
+
 function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {}) {
   return uniqueStrings(kinds, 12).map((kind) => {
     if (kind === "release_preflight") return null;
@@ -686,6 +717,7 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
     ]);
     const collectionTasks = collectionTaskPlan([...missingEvidenceKeys, ...missingCheckKeys]);
     const ownerActions = dedupeActions([
+      collectionActionFromSupportedEvidence(scope, collectionTasks, inventorySummary),
       ownerAction(dashboardSummary.nextAction, scope, "release_dashboard", collectionTasks),
       ownerAction(controlsSummary.nextAction, scope, "release_controls", collectionTasks),
       ownerAction(readinessSummary.nextAction, scope, "release_readiness", collectionTasks),
@@ -715,6 +747,7 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
         recordRoutes: recordRoutes(scope, collectionTasks),
         releaseEvidenceCollectionTasks: collectionTasks.taskIds,
         releaseEvidenceCollectionRequiredTaskIds: collectionTasks.requiredTaskIds,
+        releaseEvidenceCollectionSupportedTaskIds: collectionTasks.supportedTaskIds,
         writeGatedReleaseEvidenceCollectionTasks: collectionTasks.writeGatedTaskIds,
         unsupportedReleaseEvidenceCollectionKeys: collectionTasks.unsupportedKeys,
         readiness: readinessSummary,
