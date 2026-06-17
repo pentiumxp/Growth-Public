@@ -95,9 +95,12 @@ write-gated task, or collection-owned output.
 For readiness state prerequisites such as reviewed digest, active failure
 policy, delivered action handoff, and reviewed enabled worker target, the
 focused assertion must prove they are projected as
-`releaseStatePrerequisiteActions`, not as
+`releaseStatePrerequisiteActions` with internal release-workbench action
+templates plus GET follow-up routes, not as
 `unsupportedReleaseEvidenceCollectionKeys`, not as collection task ids, and not
-as direct pass release evidence.
+as direct pass release evidence. Action-facade coverage must prove the selected
+endpoint delegates only to the owning digest, failure-policy, action-handoff,
+or worker-target service and keeps all scheduling/runtime mutation flags false.
 
 When changing release artifact-template checklist or action-plan fields, run
 `tests/learning-automation-release-evidence-artifact-template-service.test.js`

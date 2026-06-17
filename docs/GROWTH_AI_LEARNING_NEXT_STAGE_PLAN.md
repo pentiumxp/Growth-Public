@@ -797,7 +797,7 @@ Use the Growth-owned release-readiness boundary:
   `growth.learningAutomationReleaseEvidenceActionPlan.v1`, which projects
   summary-only Owner workbench-action route/body templates for collection,
   approvals, package records, activation/runtime audit records, plus
-  non-submittable external artifact/state/manual steps. Collection body
+  non-submittable external artifact, internal state-prerequisite, and manual steps. Collection body
   templates include only non-artifact task selectors until the blank manifest
   is filled. The smoke CLI also mirrors the operator-critical readback at the
   top level: `artifactSlotCount`, `artifactTaskIds`, checklist item counts,
@@ -1412,7 +1412,7 @@ approval booleans remain confined to the separate approval path.
 Release workbench state-prerequisite sub-contract: readiness checks that are
 proved by existing Growth automation state, such as reviewed digest, active
 failure policy, delivered action handoff, and reviewed enabled worker target,
-must be projected as `releaseStatePrerequisiteActions` with external Owner
+must be projected as `releaseStatePrerequisiteActions` with internal Owner workbench action templates, required selectors, and GET follow-up
 routes to those automation modules. They must not be counted as unsupported
 release evidence, must not be submitted through the release-evidence collection
 button, and must not create direct pass `release_evidence` actions. Harness

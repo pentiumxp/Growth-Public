@@ -152,6 +152,11 @@ function inputFromArgs(args) {
     endpointKey: firstArgValue(args, ["--endpoint-key", "--endpointKey"], ""),
     actionKey: firstArgValue(args, ["--action-key", "--actionKey", "--key"], ""),
     status: firstArgValue(args, ["--status", "--decision", "--decision-status", "--decisionStatus"], ""),
+    digestId: firstArgValue(args, ["--digest-id", "--digestId"], ""),
+    policyId: firstArgValue(args, ["--policy-id", "--policyId"], ""),
+    handoffId: firstArgValue(args, ["--handoff-id", "--handoffId"], ""),
+    targetId: firstArgValue(args, ["--target-id", "--targetId", "--worker-target-id", "--workerTargetId"], ""),
+    workerTargetId: firstArgValue(args, ["--worker-target-id", "--workerTargetId", "--target-id", "--targetId"], ""),
     limit: Number(firstArgValue(args, ["--limit"], "20")) || 20,
     evidenceKey: firstArgValue(args, ["--evidence-key", "--evidenceKey", "--check-key", "--checkKey"], ""),
     approvalKey: firstArgValue(args, ["--approval-key", "--approvalKey", "--config-gate", "--configGate"], ""),
@@ -180,7 +185,11 @@ function inputFromArgs(args) {
     note: firstArgValue(args, ["--note", "--summary"], ""),
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], ""),
     recordedBy: firstArgValue(args, ["--recorded-by", "--recordedBy", "--approved-by", "--approvedBy"], ""),
+    reviewedBy: firstArgValue(args, ["--reviewed-by", "--reviewedBy"], ""),
+    deliveredBy: firstArgValue(args, ["--delivered-by", "--deliveredBy"], ""),
     recordedAt: firstArgValue(args, ["--recorded-at", "--recordedAt", "--approved-at", "--approvedAt"], ""),
+    reviewedAt: firstArgValue(args, ["--reviewed-at", "--reviewedAt"], ""),
+    deliveredAt: firstArgValue(args, ["--delivered-at", "--deliveredAt"], ""),
     createdAt: firstArgValue(args, ["--created-at", "--createdAt"], "")
   }, uiEvidenceFileInputFromArgs(args));
   const manifestFile = releaseEvidenceArtifactManifestFileFromArgs(args);
@@ -208,12 +217,12 @@ function validateInput(input = {}, allowWrite = false) {
   return { ok: true };
 }
 
-function runOperation(service, input) {
+async function runOperation(service, input) {
   const operation = String(input.operation || "record").trim();
   const serviceInput = Object.assign({}, input);
   delete serviceInput.operation;
   if (operation === "list-audits") return service.listActionAudits(serviceInput);
-  return service.recordAction(serviceInput);
+  return await service.recordAction(serviceInput);
 }
 
 function formatResult(value, pretty = false) {
@@ -332,7 +341,7 @@ async function main() {
   }
   const services = createServices(readEnv(process.env));
   const result = projectReleaseWorkbenchActionSmokeReadback(
-    Object.assign({ operation: input.operation }, runOperation(services.learningAutomationReleaseWorkbenchActionService, input)),
+    Object.assign({ operation: input.operation }, await runOperation(services.learningAutomationReleaseWorkbenchActionService, input)),
     input
   );
   process.stdout.write(formatResult(Object.assign({ operation: input.operation }, result), pretty));

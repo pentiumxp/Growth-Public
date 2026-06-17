@@ -9,6 +9,59 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T00:00+08:00 - Release Workbench State Prerequisite Action Facade
+
+- Status: implemented locally; focused release-workbench/action/route Harness,
+  release-union gate, docs locality, global check, diff check, and CodeGraph
+  freshness passed. No production deploy, production visual harness, runtime
+  config change, scheduler execution, Gateway/model call, learner-state
+  mutation, or Home AI host logic change was performed.
+- Classification: H1 Growth release-workbench write-facade extension. It keeps
+  release-readiness state prerequisites out of release evidence while adding a
+  Growth-internal Owner action path for the existing automation-state services.
+- Scope:
+  - `learning-automation-release-workbench-service` now advertises
+    `automation_digest`, `automation_failure_policy`,
+    `automation_action_handoff`, and `automation_scheduler_worker_target`
+    record routes as internal `release-workbench/actions` templates with
+    required selectors and GET follow-up routes;
+  - `learning-automation-release-workbench-action-service` is now async and can
+    delegate to automation digest create/review, failure-policy create/review,
+    action-handoff create/deliver, and scheduler worker-target create/review
+    through existing service boundaries;
+  - route normalization and the smoke CLI now pass bounded selector fields such
+    as `digestId`, `policyId`, `handoffId`, `targetId`, reviewer/delivery
+    metadata, and still strip private artifact paths through the existing
+    manifest/temporary-field path.
+- Harness/docs updated:
+  - `tests/learning-automation-release-workbench-service.test.js`
+  - `tests/learning-automation-release-workbench-action-service.test.js`
+  - `tests/growth-release-workbench-action-smoke-script.test.js`
+  - `tests/growth-routes.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - `node --check` on touched runtime, route, smoke, and test files;
+  - `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-routes.test.js`
+    -> 87/87;
+  - `node --test tests/growth-architecture-boundary.test.js` -> 37/37;
+  - `npm run test:release-union` -> 256/256;
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining gate:
+  - production deployment, Home AI central visual evidence, real Gateway/runtime
+    config, real completed-cycle/profile-feedback evidence, platform
+    Action Inbox/Web Push evidence, and explicit release approvals remain
+    outside this local implementation package.
+
 ## 2026-06-17T22:59+08:00 - Owner Review Signal Readback
 
 - Status: implemented locally; focused backend harness, docs locality,

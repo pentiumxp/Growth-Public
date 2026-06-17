@@ -25,7 +25,11 @@ function workbenchResult(status = "release_evidence_required") {
         { key: "release_package" },
         { key: "release_preflight" },
         { key: "release_activation" },
-        { key: "runtime_enablement" }
+        { key: "runtime_enablement" },
+        { key: "automation_digest" },
+        { key: "automation_failure_policy" },
+        { key: "automation_action_handoff" },
+        { key: "automation_scheduler_worker_target" }
       ]
     }
   };
@@ -217,14 +221,116 @@ function serviceWith(overrides = {}) {
         };
       }
     },
+    automationDigestService: overrides.automationDigestService || {
+      createDigest(input) {
+        calls.push(["automation_digest_create", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          digest: {
+            digestId: "lgadig_1",
+            status: "pending"
+          }
+        };
+      },
+      reviewDigest(input) {
+        calls.push(["automation_digest_review", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          digest: {
+            digestId: input.digestId,
+            status: input.status || "reviewed"
+          }
+        };
+      }
+    },
+    automationFailurePolicyService: overrides.automationFailurePolicyService || {
+      createPolicy(input) {
+        calls.push(["automation_failure_policy_create", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          policy: {
+            policyId: "lgafp_1",
+            status: "draft"
+          }
+        };
+      },
+      reviewPolicy(input) {
+        calls.push(["automation_failure_policy_review", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          policy: {
+            policyId: input.policyId,
+            status: input.status || "active"
+          }
+        };
+      }
+    },
+    automationActionHandoffService: overrides.automationActionHandoffService || {
+      createHandoff(input) {
+        calls.push(["automation_action_handoff_create", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          handoff: {
+            handoffId: "lgahoff_1",
+            status: "pending_delivery",
+            deliveryStatus: "not_delivered",
+            digestId: input.digestId
+          }
+        };
+      },
+      async deliverHandoff(input) {
+        calls.push(["automation_action_handoff_deliver", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          deliveryStatus: "delivered",
+          handoff: {
+            handoffId: input.handoffId,
+            status: "delivered",
+            deliveryStatus: "delivered"
+          }
+        };
+      }
+    },
+    automationSchedulerWorkerTargetService: overrides.automationSchedulerWorkerTargetService || {
+      createTarget(input) {
+        calls.push(["automation_scheduler_worker_target_create", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          target: {
+            targetId: "lgawt_1",
+            workerTargetId: "lgawt_1",
+            status: "proposed"
+          }
+        };
+      },
+      reviewTarget(input) {
+        calls.push(["automation_scheduler_worker_target_review", input]);
+        return {
+          ok: true,
+          duplicate: false,
+          target: {
+            targetId: input.targetId,
+            workerTargetId: input.targetId,
+            status: input.status || "enabled"
+          }
+        };
+      }
+    },
     actionAuditRepository: overrides.actionAuditRepository
   });
   return { service, calls };
 }
 
-test("release workbench action records evidence through the existing evidence service", () => {
+test("release workbench action records evidence through the existing evidence service", async () => {
   const { service, calls } = serviceWith();
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence",
@@ -246,7 +352,7 @@ test("release workbench action records evidence through the existing evidence se
   assert.equal(calls[1][1].evidence.summaryOnly, true);
 });
 
-test("release workbench action persists bounded summary-only action audit rows when repository is present", () => {
+test("release workbench action persists bounded summary-only action audit rows when repository is present", async () => {
   const saved = [];
   const { service } = serviceWith({
     actionAuditRepository: {
@@ -264,7 +370,7 @@ test("release workbench action persists bounded summary-only action audit rows w
     }
   });
 
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     programId: "program_science",
@@ -300,7 +406,7 @@ test("release workbench action persists bounded summary-only action audit rows w
   assert.equal(listed.actionAudits[0].recordId, "lgarev_1");
 });
 
-test("release workbench action persists bounded blocked audit rows for post-privacy action failures", () => {
+test("release workbench action persists bounded blocked audit rows for post-privacy action failures", async () => {
   const saved = [];
   const { service } = serviceWith({
     releaseEvidenceService: {
@@ -327,7 +433,7 @@ test("release workbench action persists bounded blocked audit rows for post-priv
     }
   });
 
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence",
@@ -346,11 +452,11 @@ test("release workbench action persists bounded blocked audit rows for post-priv
   assert.equal(JSON.stringify(saved[0]).includes("must not be copied"), false);
 });
 
-test("release workbench action runs evidence collection even when readiness remains incomplete", () => {
+test("release workbench action runs evidence collection even when readiness remains incomplete", async () => {
   const { service, calls } = serviceWith();
   const releasePackageReviewUiEvidenceFile = "/Users/hermes-dev/.homeai-qa/release-package-review-ui.json";
   const schedulerRunUiEvidenceFile = "/Users/hermes-dev/.homeai-qa/scheduler-run-ui.json";
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence_collection",
@@ -382,7 +488,7 @@ test("release workbench action runs evidence collection even when readiness rema
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
-test("release workbench action reports blocked evidence collection as visible failure", () => {
+test("release workbench action reports blocked evidence collection as visible failure", async () => {
   const saved = [];
   const { service } = serviceWith({
     releaseEvidenceCollectionService: {
@@ -414,7 +520,7 @@ test("release workbench action reports blocked evidence collection as visible fa
     }
   });
 
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence_collection",
@@ -442,9 +548,9 @@ test("release workbench action reports blocked evidence collection as visible fa
   assert.equal(JSON.stringify(saved[0]).includes("owner_daily_ui"), false);
 });
 
-test("release workbench action still blocks private paths outside transient artifact fields", () => {
+test("release workbench action still blocks private paths outside transient artifact fields", async () => {
   const { service, calls } = serviceWith();
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_evidence_collection",
@@ -463,7 +569,7 @@ test("release workbench action still blocks private paths outside transient arti
   assert.deepEqual(calls, []);
 });
 
-test("release workbench action requires only the selected endpoint write service", () => {
+test("release workbench action requires only the selected endpoint write service", async () => {
   const calls = [];
   const service = createLearningAutomationReleaseWorkbenchActionService({
     releaseWorkbenchService: {
@@ -486,7 +592,7 @@ test("release workbench action requires only the selected endpoint write service
     }
   });
 
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_evidence",
     evidenceKey: "owner_daily_ui_evidence"
@@ -496,7 +602,7 @@ test("release workbench action requires only the selected endpoint write service
   assert.equal(result.actionRecord.recordId, "lgarev_selected_only");
   assert.deepEqual(calls.map((call) => call[0]), ["workbench", "release_evidence"]);
 
-  const missingPackage = service.recordAction({
+  const missingPackage = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_package",
     releasePackage: { summaryOnly: true }
@@ -505,10 +611,10 @@ test("release workbench action requires only the selected endpoint write service
   assert.equal(missingPackage.error, "learning_automation_release_workbench_action_release_package_unavailable");
 });
 
-test("release workbench action records readiness snapshot, collection run, and release decision through advertised services", () => {
+test("release workbench action records readiness snapshot, collection run, and release decision through advertised services", async () => {
   const { service, calls } = serviceWith();
 
-  const snapshot = service.recordAction({
+  const snapshot = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_readiness_snapshot",
     evidence: { ownerDailyUiEvidence: { ok: true } },
@@ -519,7 +625,7 @@ test("release workbench action records readiness snapshot, collection run, and r
   assert.equal(snapshot.actionRecord.recordId, "lgarel_1");
   assert.equal(snapshot.runtimeConfigMutationPerformed, false);
 
-  const collectionRun = service.recordAction({
+  const collectionRun = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_collection_run",
     releaseEvidenceBundle: { schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1", summaryOnly: true },
@@ -530,7 +636,7 @@ test("release workbench action records readiness snapshot, collection run, and r
   assert.equal(collectionRun.ok, true);
   assert.equal(collectionRun.actionRecord.recordId, "lgacrn_1");
 
-  const decision = service.recordAction({
+  const decision = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_decision",
     status: "approved",
@@ -551,7 +657,7 @@ test("release workbench action records readiness snapshot, collection run, and r
   ]);
 });
 
-test("release workbench action records package artifacts only through package record service", () => {
+test("release workbench action records package artifacts only through package record service", async () => {
   const { service, calls } = serviceWith();
   const releasePackage = {
     schemaVersion: "growth.learningAutomationReleasePackage.v1",
@@ -560,7 +666,7 @@ test("release workbench action records package artifacts only through package re
     workspaceId: "fanfan",
     status: "ready_for_release_review"
   };
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_package",
     releasePackage
@@ -573,9 +679,9 @@ test("release workbench action records package artifacts only through package re
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
-test("release workbench action records preflight report through preflight service only", () => {
+test("release workbench action records preflight report through preflight service only", async () => {
   const { service, calls } = serviceWith();
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     programId: "program_science",
@@ -600,9 +706,9 @@ test("release workbench action records preflight report through preflight servic
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
-test("release workbench action fails closed when preflight service is unavailable", () => {
+test("release workbench action fails closed when preflight service is unavailable", async () => {
   const { service, calls } = serviceWith({ releasePreflightService: {} });
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_preflight",
     actionKey: "release_preflight"
@@ -613,9 +719,9 @@ test("release workbench action fails closed when preflight service is unavailabl
   assert.deepEqual(calls.map((call) => call[0]), ["workbench"]);
 });
 
-test("release workbench action can explicitly build and record a package through package service", () => {
+test("release workbench action can explicitly build and record a package through package service", async () => {
   const { service, calls } = serviceWith();
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     learnerId: "fanfan",
     endpointKey: "release_package",
@@ -643,7 +749,7 @@ test("release workbench action can explicitly build and record a package through
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
-test("release workbench action fails closed when package build is requested but unavailable", () => {
+test("release workbench action fails closed when package build is requested but unavailable", async () => {
   const { service, calls } = serviceWith({
     releasePackageService: {
       recordPackage(input) {
@@ -659,7 +765,7 @@ test("release workbench action fails closed when package build is requested but 
     }
   });
 
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_package",
     buildReleasePackage: true
@@ -670,9 +776,9 @@ test("release workbench action fails closed when package build is requested but 
   assert.deepEqual(calls.map((call) => call[0]), ["workbench"]);
 });
 
-test("release workbench action records runtime enablement audit without config mutation", () => {
+test("release workbench action records runtime enablement audit without config mutation", async () => {
   const { service, calls } = serviceWith();
-  const result = service.recordAction({
+  const result = await service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "runtime_enablement",
     activationGates: ["writeful_execution"],
@@ -687,12 +793,129 @@ test("release workbench action records runtime enablement audit without config m
   assert.equal(calls[1][1].enablementDecision.summaryOnly, true);
 });
 
-test("release workbench action fails closed for missing endpoint, blocked workbench, and privacy risk", () => {
-  const missing = serviceWith().service.recordAction({ workspaceId: "fanfan" });
+test("release workbench action advances Growth automation state prerequisites through existing services", async () => {
+  const { service, calls } = serviceWith();
+
+  const createdDigest = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_digest",
+    actionKey: "reviewed_automation_digest",
+    requestedBy: "owner"
+  });
+  assert.equal(createdDigest.ok, true);
+  assert.equal(createdDigest.actionRecord.recordId, "lgadig_1");
+  assert.equal(createdDigest.actionRecord.recordStatus, "pending");
+
+  const reviewedDigest = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_digest",
+    actionKey: "reviewed_automation_digest",
+    digestId: "lgadig_1",
+    requestedBy: "owner"
+  });
+  assert.equal(reviewedDigest.ok, true);
+  assert.equal(reviewedDigest.actionRecord.recordId, "lgadig_1");
+  assert.equal(reviewedDigest.actionRecord.recordStatus, "reviewed");
+
+  const createdPolicy = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_failure_policy",
+    actionKey: "active_failure_policy",
+    requestedBy: "owner"
+  });
+  assert.equal(createdPolicy.ok, true);
+  assert.equal(createdPolicy.actionRecord.recordId, "lgafp_1");
+  assert.equal(createdPolicy.actionRecord.recordStatus, "draft");
+
+  const activatedPolicy = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_failure_policy",
+    actionKey: "active_failure_policy",
+    policyId: "lgafp_1",
+    requestedBy: "owner"
+  });
+  assert.equal(activatedPolicy.ok, true);
+  assert.equal(activatedPolicy.actionRecord.recordId, "lgafp_1");
+  assert.equal(activatedPolicy.actionRecord.recordStatus, "active");
+
+  const createdHandoff = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_action_handoff",
+    actionKey: "delivered_action_handoff",
+    digestId: "lgadig_1",
+    requestedBy: "owner"
+  });
+  assert.equal(createdHandoff.ok, true);
+  assert.equal(createdHandoff.actionRecord.recordId, "lgahoff_1");
+  assert.equal(createdHandoff.actionRecord.recordStatus, "pending_delivery");
+
+  const deliveredHandoff = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_action_handoff",
+    actionKey: "delivered_action_handoff",
+    handoffId: "lgahoff_1",
+    requestedBy: "owner"
+  });
+  assert.equal(deliveredHandoff.ok, true);
+  assert.equal(deliveredHandoff.actionRecord.recordId, "lgahoff_1");
+  assert.equal(deliveredHandoff.actionRecord.recordStatus, "delivered");
+
+  const createdTarget = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_scheduler_worker_target",
+    actionKey: "reviewed_enabled_worker_target",
+    targetNodeIds: ["kg_science_node_1"],
+    requestedBy: "owner"
+  });
+  assert.equal(createdTarget.ok, true);
+  assert.equal(createdTarget.actionRecord.recordId, "lgawt_1");
+  assert.equal(createdTarget.actionRecord.recordStatus, "proposed");
+
+  const enabledTarget = await service.recordAction({
+    workspaceId: "fanfan",
+    endpointKey: "automation_scheduler_worker_target",
+    actionKey: "reviewed_enabled_worker_target",
+    targetId: "lgawt_1",
+    requestedBy: "owner"
+  });
+  assert.equal(enabledTarget.ok, true);
+  assert.equal(enabledTarget.actionRecord.recordId, "lgawt_1");
+  assert.equal(enabledTarget.actionRecord.recordStatus, "enabled");
+  assert.equal(enabledTarget.writefulSchedulingAllowed, false);
+  assert.equal(enabledTarget.runtimeConfigMutationPerformed, false);
+
+  assert.deepEqual(calls.map((call) => call[0]), [
+    "workbench",
+    "automation_digest_create",
+    "workbench",
+    "automation_digest_review",
+    "workbench",
+    "automation_failure_policy_create",
+    "workbench",
+    "automation_failure_policy_review",
+    "workbench",
+    "automation_action_handoff_create",
+    "workbench",
+    "automation_action_handoff_deliver",
+    "workbench",
+    "automation_scheduler_worker_target_create",
+    "workbench",
+    "automation_scheduler_worker_target_review"
+  ]);
+  assert.equal(calls[3][1].digestId, "lgadig_1");
+  assert.equal(calls[7][1].policyId, "lgafp_1");
+  assert.equal(calls[9][1].digestId, "lgadig_1");
+  assert.equal(calls[11][1].handoffId, "lgahoff_1");
+  assert.deepEqual(calls[13][1].targetNodeIds, ["kg_science_node_1"]);
+  assert.equal(calls[15][1].targetId, "lgawt_1");
+});
+
+test("release workbench action fails closed for missing endpoint, blocked workbench, and privacy risk", async () => {
+  const missing = await serviceWith().service.recordAction({ workspaceId: "fanfan" });
   assert.equal(missing.ok, false);
   assert.equal(missing.error, "release_workbench_action_endpoint_required");
 
-  const blocked = serviceWith({
+  const blocked = await serviceWith({
     releaseWorkbenchService: {
       workbench() {
         return { ok: false, status: "blocked", error: "release_workbench_unavailable" };
@@ -702,7 +925,7 @@ test("release workbench action fails closed for missing endpoint, blocked workbe
   assert.equal(blocked.ok, false);
   assert.equal(blocked.error, "release_workbench_unavailable");
 
-  const privacy = serviceWith().service.recordAction({
+  const privacy = await serviceWith().service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_evidence",
     evidenceKey: "owner_daily_ui_evidence",
@@ -712,7 +935,7 @@ test("release workbench action fails closed for missing endpoint, blocked workbe
   assert.equal(privacy.error, "release_workbench_action_privacy_failed");
   assert.equal(privacy.privacyFindings.includes("privacy_key:rawPrompt"), true);
 
-  const privateValue = serviceWith().service.recordAction({
+  const privateValue = await serviceWith().service.recordAction({
     workspaceId: "fanfan",
     endpointKey: "release_evidence",
     evidenceKey: "owner_daily_ui_evidence",

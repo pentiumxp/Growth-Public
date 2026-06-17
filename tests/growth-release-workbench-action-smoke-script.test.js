@@ -52,6 +52,10 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--learner-id", "fanfan",
     "--endpoint-key", "release_evidence_collection",
     "--evidence-key", "owner_daily_ui_evidence",
+    "--digest-id", "lgadig_1",
+    "--policy-id", "lgafp_1",
+    "--handoff-id", "lgahoff_1",
+    "--worker-target-id", "lgawt_1",
     "--target-node-id", "kg_science_fair_test",
     "--tasks", "planner_readiness,learning_loop_state",
     "--required-task", "planner_readiness",
@@ -71,13 +75,19 @@ test("release workbench action smoke script parses bounded action input", () => 
     "--scheduler-run-ui-evidence-file", "/tmp/scheduler-run-ui.json",
     "--build-and-record-package",
     "--evidence-json", JSON.stringify({ evidenceId: "ui_1" }),
-    "--requested-by", "owner"
+    "--requested-by", "owner",
+    "--reviewed-by", "owner",
+    "--delivered-by", "owner"
   ]);
 
   assert.equal(input.workspaceId, "fanfan");
   assert.equal(input.operation, "record");
   assert.equal(input.endpointKey, "release_evidence_collection");
   assert.equal(input.evidenceKey, "owner_daily_ui_evidence");
+  assert.equal(input.digestId, "lgadig_1");
+  assert.equal(input.policyId, "lgafp_1");
+  assert.equal(input.handoffId, "lgahoff_1");
+  assert.equal(input.workerTargetId, "lgawt_1");
   assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
   assert.deepEqual(input.tasks, ["planner_readiness", "learning_loop_state"]);
   assert.deepEqual(input.requiredTaskIds, ["planner_readiness", "learning_loop_state"]);
@@ -97,6 +107,8 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.buildReleasePackage, true);
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
+  assert.equal(input.reviewedBy, "owner");
+  assert.equal(input.deliveredBy, "owner");
 });
 
 test("release workbench action smoke script parses action-audit list input", () => {
@@ -281,7 +293,7 @@ test("release workbench action smoke script projects top-level operator readback
   assert.equal(result.releaseWorkbenchActionBackgroundWorkerAllowed, false);
 });
 
-test("release workbench action smoke script delegates only to action service", () => {
+test("release workbench action smoke script delegates only to action service", async () => {
   const calls = [];
   const service = {
     recordAction(input) {
@@ -295,7 +307,7 @@ test("release workbench action smoke script delegates only to action service", (
     }
   };
 
-  const result = runOperation(service, {
+  const result = await runOperation(service, {
     workspaceId: "fanfan",
     endpointKey: "release_package",
     buildReleasePackage: true
@@ -307,7 +319,7 @@ test("release workbench action smoke script delegates only to action service", (
   assert.equal(calls[0].buildReleasePackage, true);
 });
 
-test("release workbench action smoke script delegates audit listing only to action service", () => {
+test("release workbench action smoke script delegates audit listing only to action service", async () => {
   const calls = [];
   const service = {
     listActionAudits(input) {
@@ -329,7 +341,7 @@ test("release workbench action smoke script delegates audit listing only to acti
     }
   };
 
-  const result = runOperation(service, {
+  const result = await runOperation(service, {
     operation: "list-audits",
     workspaceId: "fanfan",
     learnerId: "fanfan",
@@ -348,7 +360,7 @@ test("release workbench action smoke script delegates audit listing only to acti
   assert.equal(calls[0].limit, 3);
 });
 
-test("release workbench action smoke script accepts release preflight endpoint", () => {
+test("release workbench action smoke script accepts release preflight endpoint", async () => {
   const calls = [];
   const service = {
     recordAction(input) {
@@ -376,7 +388,7 @@ test("release workbench action smoke script accepts release preflight endpoint",
   ]);
 
   assert.equal(validateInput(input, true).ok, true);
-  const result = runOperation(service, input);
+  const result = await runOperation(service, input);
   assert.equal(result.ok, true);
   assert.equal(result.endpointKey, "release_preflight");
   assert.equal(result.actionRecord.recordId, "lgarpf_cli_1");

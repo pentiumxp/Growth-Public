@@ -5440,6 +5440,11 @@ test("growth automation release workbench action route is Owner-write and visibl
       actionKey: undefined,
       action: undefined,
       status: undefined,
+      digestId: undefined,
+      policyId: undefined,
+      handoffId: undefined,
+      targetId: undefined,
+      workerTargetId: undefined,
       evidenceKey: "owner_daily_ui_evidence",
       approvalKey: undefined,
       activationGate: undefined,
@@ -5477,11 +5482,15 @@ test("growth automation release workbench action route is Owner-write and visibl
       requestedBy: "weixin_owner",
       recordedBy: "weixin_owner",
       approvedBy: "weixin_owner",
+      reviewedBy: "weixin_owner",
+      deliveredBy: "weixin_owner",
       decidedBy: "weixin_owner",
       createdBy: "weixin_owner",
       recordedAt: undefined,
       approvedAt: undefined,
-	      decidedAt: undefined,
+      reviewedAt: undefined,
+      deliveredAt: undefined,
+      decidedAt: undefined,
       createdAt: undefined,
       writeCollectionRun: false,
       writeReleaseEvidenceRecords: false,
@@ -5540,6 +5549,11 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      actionKey: "release_collection_run",
 	      action: undefined,
 	      status: undefined,
+	      digestId: undefined,
+	      policyId: undefined,
+	      handoffId: undefined,
+	      targetId: undefined,
+	      workerTargetId: undefined,
 	      evidenceKey: undefined,
 	      approvalKey: undefined,
 	      activationGate: undefined,
@@ -5594,10 +5608,14 @@ test("growth automation release workbench action route is Owner-write and visibl
 	      requestedBy: "weixin_owner",
 	      recordedBy: "weixin_owner",
 	      approvedBy: "weixin_owner",
+	      reviewedBy: "weixin_owner",
+	      deliveredBy: "weixin_owner",
 	      decidedBy: "weixin_owner",
 	      createdBy: "weixin_owner",
 	      recordedAt: undefined,
 	      approvedAt: undefined,
+	      reviewedAt: undefined,
+	      deliveredAt: undefined,
 	      decidedAt: undefined,
 	      createdAt: "2026-06-16T10:40:00.000Z",
 	      writeCollectionRun: true,
@@ -5660,6 +5678,31 @@ test("growth automation release workbench action route is Owner-write and visibl
 	    assert.equal(calls[3].actionKey, "release_preflight");
 	    assert.equal(calls[3].collectionRunId, "lgacrn_route_1");
 	    assert.equal(calls[3].ownerAuthorizedWrite, true);
+
+    const stateResponse = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_fanfan"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        endpoint_key: "automation_digest",
+        action_key: "reviewed_automation_digest",
+        digest_id: "lgadig_route_1",
+        reviewed_by: "weixin_owner"
+      })
+    });
+    assert.equal(stateResponse.status, 201);
+    assert.equal((await stateResponse.json()).endpointKey, "automation_digest");
+    assert.equal(calls[4].endpointKey, "automation_digest");
+    assert.equal(calls[4].actionKey, "reviewed_automation_digest");
+    assert.equal(calls[4].digestId, "lgadig_route_1");
+    assert.equal(calls[4].reviewedBy, "weixin_owner");
 
 	    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/release-workbench/actions`, {
       method: "POST",

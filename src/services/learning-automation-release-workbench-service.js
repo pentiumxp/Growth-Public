@@ -25,28 +25,37 @@ const RELEASE_STATE_PREREQUISITE_ACTION_BY_KEY = Object.freeze({
     label: "Review automation digest",
     endpointKey: "automation_digest",
     path: "/api/v1/growth/automation/digests",
-    query: { status: "reviewed", limit: 5 }
+    query: { status: "reviewed", limit: 5 },
+    requiredSelectorKeys: ["digest_id"],
+    status: "reviewed"
   },
   active_failure_policy: {
     action: "activate_failure_policy",
     label: "Activate failure policy",
     endpointKey: "automation_failure_policy",
     path: "/api/v1/growth/automation/failure-policies/readiness",
-    query: {}
+    query: {},
+    requiredSelectorKeys: ["policy_id"],
+    status: "active"
   },
   delivered_action_handoff: {
     action: "deliver_action_handoff",
     label: "Deliver action handoff",
     endpointKey: "automation_action_handoff",
     path: "/api/v1/growth/automation/action-handoffs",
-    query: { deliveryStatus: "delivered", limit: 5 }
+    query: { deliveryStatus: "delivered", limit: 5 },
+    requiredSelectorKeys: ["handoff_id"],
+    fallbackSelectorKeys: ["digest_id"],
+    status: "delivered"
   },
   reviewed_enabled_worker_target: {
     action: "enable_reviewed_worker_target",
     label: "Review enabled worker target",
     endpointKey: "automation_scheduler_worker_target",
     path: "/api/v1/growth/automation/scheduler/worker-targets",
-    query: { status: "enabled", limit: 5 }
+    query: { status: "enabled", limit: 5 },
+    requiredSelectorKeys: ["target_id"],
+    status: "enabled"
   }
 });
 const ARTIFACT_BACKED_COLLECTION_TASK_IDS = new Set([
@@ -258,10 +267,42 @@ function statePrerequisiteRoute(scope = {}, key = "") {
   };
 }
 
+function statePrerequisiteBody(scope = {}, key = "") {
+  const definition = statePrerequisiteDefinition(key);
+  if (!definition) return {};
+  const body = Object.assign({}, scopeQuery(scope), {
+    endpoint_key: definition.endpointKey,
+    action_key: key,
+    status: definition.status || "",
+    requested_by: ""
+  });
+  if (key === "reviewed_automation_digest") body.digest_id = "";
+  if (key === "active_failure_policy") body.policy_id = "";
+  if (key === "delivered_action_handoff") {
+    body.handoff_id = "";
+    body.digest_id = "";
+  }
+  if (key === "reviewed_enabled_worker_target") {
+    body.target_id = "";
+    body.target_node_ids = [];
+  }
+  return body;
+}
+
+function statePrerequisiteActionRoute(scope = {}, key = "") {
+  const definition = statePrerequisiteDefinition(key);
+  if (!definition) return null;
+  return routeTemplate(
+    "/api/v1/growth/automation/release-workbench/actions",
+    statePrerequisiteBody(scope, key)
+  );
+}
+
 function statePrerequisiteAction(key = "", scope = {}) {
   const definition = statePrerequisiteDefinition(key);
   if (!definition) return null;
-  const route = statePrerequisiteRoute(scope, key);
+  const followupRoute = statePrerequisiteRoute(scope, key);
+  const route = statePrerequisiteActionRoute(scope, key);
   return {
     schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
     summaryOnly: true,
@@ -272,13 +313,16 @@ function statePrerequisiteAction(key = "", scope = {}) {
     source: "release_state_prerequisite",
     endpointKey: definition.endpointKey,
     route,
+    followupRoute,
     readyToSubmit: false,
     manualReviewRequired: true,
-    externalActionRequired: true,
+    externalActionRequired: false,
+    requiredSelectorKeys: asArray(definition.requiredSelectorKeys),
+    fallbackSelectorKeys: asArray(definition.fallbackSelectorKeys),
     externalAction: {
       kind: "growth_automation_state_prerequisite",
       action: definition.action,
-      followupRoute: route
+      followupRoute
     },
     configChangeApplied: false,
     runtimeConfigChange: false,
@@ -556,6 +600,22 @@ function recordRoutes(scope = {}, collectionTasks = {}) {
         activation_gates: ["writeful_execution"],
         enablement_decision: { summaryOnly: true, decision: "runtime_config_verified" }
       })
+    },
+    {
+      key: "automation_digest",
+      route: statePrerequisiteActionRoute(scope, "reviewed_automation_digest")
+    },
+    {
+      key: "automation_failure_policy",
+      route: statePrerequisiteActionRoute(scope, "active_failure_policy")
+    },
+    {
+      key: "automation_action_handoff",
+      route: statePrerequisiteActionRoute(scope, "delivered_action_handoff")
+    },
+    {
+      key: "automation_scheduler_worker_target",
+      route: statePrerequisiteActionRoute(scope, "reviewed_enabled_worker_target")
     }
   ];
 }

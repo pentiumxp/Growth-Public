@@ -561,8 +561,8 @@ readback gate set.
   release-dashboard DTOs into one summary-only
   `growth.learningAutomationReleaseWorkbench.v1` surface for Owner release UI.
   It reports bounded read routes, Owner-only record-route templates, missing
-  evidence/check/approval/record summaries, one next action, and external
-  manual-runtime-config follow-up hints without applying config. It owns no
+  evidence/check/approval/record summaries, one next action, internal
+  automation-state prerequisite action templates for digest/policy/handoff/worker-target selectors, and external manual-runtime-config follow-up hints without applying config. It owns no
   repository/table, calls no Gateway/model provider, writes no business state,
   and keeps all runtime mutation and scheduling permission flags false.
   Growth now also has `npm run smoke:release-workbench-action`,
@@ -572,11 +572,12 @@ readback gate set.
   requires the requested endpoint to be advertised, then delegates only to
   existing release-readiness snapshot, release evidence, release approval,
   collection-run, release-decision, release package-record or explicit package
-  build-and-record, release activation, or runtime enablement record services.
+  build-and-record, release activation, runtime enablement, automation digest,
+  failure-policy, action-handoff, or scheduler worker-target services.
   It requires only the
   selected endpoint's write service instead of requiring every possible
   release-workbench action dependency at construction time. It stores/passes only
-  summary-only bounded action/evidence/approval/decision/package data. The
+  summary-only bounded action/evidence/approval/decision/package and automation-state id/status data. The
   smoke CLI keeps `--operation record` write-gated behind `--allow-write` and
   also exposes no-write `--operation list-audits` / `--list-action-audits`
   readback through the same service. The CLI mirrors bounded top-level

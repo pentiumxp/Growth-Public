@@ -2750,6 +2750,14 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionService, /releasePreflightService\.recordReport/);
   assert.match(releaseWorkbenchActionService, /releaseActivationService\.recordActivation/);
   assert.match(releaseWorkbenchActionService, /runtimeEnablementService\.recordEnablement/);
+  assert.match(releaseWorkbenchActionService, /automationDigestService\.createDigest/);
+  assert.match(releaseWorkbenchActionService, /automationDigestService\.reviewDigest/);
+  assert.match(releaseWorkbenchActionService, /automationFailurePolicyService\.createPolicy/);
+  assert.match(releaseWorkbenchActionService, /automationFailurePolicyService\.reviewPolicy/);
+  assert.match(releaseWorkbenchActionService, /automationActionHandoffService\.createHandoff/);
+  assert.match(releaseWorkbenchActionService, /automationActionHandoffService\.deliverHandoff/);
+  assert.match(releaseWorkbenchActionService, /automationSchedulerWorkerTargetService\.createTarget/);
+  assert.match(releaseWorkbenchActionService, /automationSchedulerWorkerTargetService\.reviewTarget/);
   assert.doesNotMatch(releaseWorkbenchActionService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseWorkbenchActionService, /learning_growth_/);
   assert.doesNotMatch(releaseWorkbenchActionService, /spawnSync/);
@@ -2758,7 +2766,6 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(releaseWorkbenchActionService, /evaluateSubmission/);
   assert.doesNotMatch(releaseWorkbenchActionService, /executeOnce/);
   assert.doesNotMatch(releaseWorkbenchActionService, /runOnce/);
-  assert.doesNotMatch(releaseWorkbenchActionService, /deliverHandoff/);
   assert.doesNotMatch(releaseWorkbenchActionService, /activateStageAssessment/);
   assert.doesNotMatch(releaseWorkbenchActionService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 

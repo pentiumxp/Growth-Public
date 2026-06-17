@@ -667,16 +667,21 @@ function statePrerequisiteAction(action = {}) {
   const item = objectOnly(action);
   const key = cleanString(item.key, 160);
   if (!key) return null;
+  const route = objectOnly(item.route);
+  const followupRoute = item.followupRoute || objectOnly(item.externalAction).followupRoute || null;
   return actionPlanItem({
     key: `state:${key}`,
     kind: "release_state_prerequisite",
     action: cleanString(item.action, 160),
     endpointKey: cleanString(item.endpointKey, 120),
     requiredActor: cleanString(item.requiredActor || "owner", 80),
-    readyToSubmit: false,
-    externalActionRequired: true,
+    readyToSubmit: item.readyToSubmit === true,
+    externalActionRequired: item.externalActionRequired === true,
     manualReviewRequired: item.manualReviewRequired === undefined ? true : item.manualReviewRequired === true,
-    route: item.route || null
+    route: Object.keys(route).length ? route : null,
+    followupRoute,
+    requiredSelectorKeys: asArray(item.requiredSelectorKeys).map((value) => cleanString(value, 120)).filter(Boolean),
+    fallbackSelectorKeys: asArray(item.fallbackSelectorKeys).map((value) => cleanString(value, 120)).filter(Boolean)
   });
 }
 

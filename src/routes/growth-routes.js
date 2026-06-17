@@ -843,6 +843,11 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     actionKey: merged.actionKey || merged.action_key || merged.key,
     action: merged.action || merged.ownerAction || merged.owner_action,
     status: merged.status || merged.decision || merged.decisionStatus || merged.decision_status,
+    digestId: merged.digestId || merged.digest_id,
+    policyId: merged.policyId || merged.policy_id,
+    handoffId: merged.handoffId || merged.handoff_id,
+    targetId: merged.targetId || merged.target_id || merged.workerTargetId || merged.worker_target_id,
+    workerTargetId: merged.workerTargetId || merged.worker_target_id || merged.targetId || merged.target_id,
     evidenceKey: merged.evidenceKey || merged.evidence_key || merged.checkKey || merged.check_key,
     approvalKey: merged.approvalKey || merged.approval_key || merged.configGate || merged.config_gate,
     activationGate: merged.activationGate || merged.activation_gate,
@@ -871,10 +876,14 @@ function normalizeAutomationReleaseWorkbenchActionInput(body, workspaceId, targe
     requestedBy: merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     recordedBy: merged.recordedBy || merged.recorded_by || merged.approvedBy || merged.approved_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     approvedBy: merged.approvedBy || merged.approved_by || merged.recordedBy || merged.recorded_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    reviewedBy: merged.reviewedBy || merged.reviewed_by || merged.recordedBy || merged.recorded_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
+    deliveredBy: merged.deliveredBy || merged.delivered_by || merged.recordedBy || merged.recorded_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     decidedBy: merged.decidedBy || merged.decided_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     createdBy: merged.createdBy || merged.created_by || merged.requestedBy || merged.requested_by || requestedWorkspaceId(request, url, ""),
     recordedAt: merged.recordedAt || merged.recorded_at || merged.approvedAt || merged.approved_at,
     approvedAt: merged.approvedAt || merged.approved_at || merged.recordedAt || merged.recorded_at,
+    reviewedAt: merged.reviewedAt || merged.reviewed_at || merged.recordedAt || merged.recorded_at,
+    deliveredAt: merged.deliveredAt || merged.delivered_at || merged.recordedAt || merged.recorded_at,
     decidedAt: merged.decidedAt || merged.decided_at,
     createdAt: merged.createdAt || merged.created_at,
     writeCollectionRun: merged.writeCollectionRun === true || merged.write_collection_run === true || merged.recordCollectionRun === true || merged.record_collection_run === true,
@@ -2399,7 +2408,7 @@ async function handleGrowthRoute(request, response, url, services) {
       normalizeAutomationReleaseWorkbenchActionInput(body, serviceWorkspaceId, target, request, url),
       services
     );
-    const result = services.learningAutomationReleaseWorkbenchActionService.recordAction(
+    const result = await services.learningAutomationReleaseWorkbenchActionService.recordAction(
       input
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);

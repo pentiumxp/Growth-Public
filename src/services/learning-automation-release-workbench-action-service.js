@@ -24,7 +24,11 @@ const SUPPORTED_ENDPOINTS = Object.freeze([
   "release_package",
   "release_preflight",
   "release_activation",
-  "runtime_enablement"
+  "runtime_enablement",
+  "automation_digest",
+  "automation_failure_policy",
+  "automation_action_handoff",
+  "automation_scheduler_worker_target"
 ]);
 
 function cleanString(value, max = 180) {
@@ -123,7 +127,23 @@ function requireMethod(scope, key, service, method) {
   return null;
 }
 
-function requireEndpointService(scope, endpointKey, services) {
+function digestIdFrom(input = {}) {
+  return cleanString(input.digestId || input.digest_id, 180);
+}
+
+function policyIdFrom(input = {}) {
+  return cleanString(input.policyId || input.policy_id, 180);
+}
+
+function handoffIdFrom(input = {}) {
+  return cleanString(input.handoffId || input.handoff_id, 180);
+}
+
+function workerTargetIdFrom(input = {}) {
+  return cleanString(input.targetId || input.target_id || input.workerTargetId || input.worker_target_id, 180);
+}
+
+function requireEndpointService(scope, endpointKey, services, input = {}) {
   if (endpointKey === "release_readiness_snapshot") return requireMethod(scope, "release_readiness", services.releaseReadinessService, "createSnapshot");
   if (endpointKey === "release_evidence") return requireMethod(scope, "release_evidence", services.releaseEvidenceService, "recordEvidence");
   if (endpointKey === "release_approval") return requireMethod(scope, "release_approval", services.releaseApprovalService, "recordApproval");
@@ -134,6 +154,18 @@ function requireEndpointService(scope, endpointKey, services) {
   if (endpointKey === "release_preflight") return requireMethod(scope, "release_preflight", services.releasePreflightService, "recordReport");
   if (endpointKey === "release_activation") return requireMethod(scope, "release_activation", services.releaseActivationService, "recordActivation");
   if (endpointKey === "runtime_enablement") return requireMethod(scope, "runtime_enablement", services.runtimeEnablementService, "recordEnablement");
+  if (endpointKey === "automation_digest") {
+    return requireMethod(scope, "automation_digest", services.automationDigestService, digestIdFrom(input) ? "reviewDigest" : "createDigest");
+  }
+  if (endpointKey === "automation_failure_policy") {
+    return requireMethod(scope, "automation_failure_policy", services.automationFailurePolicyService, policyIdFrom(input) ? "reviewPolicy" : "createPolicy");
+  }
+  if (endpointKey === "automation_action_handoff") {
+    return requireMethod(scope, "automation_action_handoff", services.automationActionHandoffService, handoffIdFrom(input) ? "deliverHandoff" : "createHandoff");
+  }
+  if (endpointKey === "automation_scheduler_worker_target") {
+    return requireMethod(scope, "automation_scheduler_worker_target", services.automationSchedulerWorkerTargetService, workerTargetIdFrom(input) ? "reviewTarget" : "createTarget");
+  }
   return unavailable("release_workbench_action_endpoint_unsupported", scope, { endpointKey });
 }
 
@@ -177,16 +209,22 @@ function shouldBuildReleasePackage(input = {}) {
     || booleanFlag(input.record_package_from_build);
 }
 
+function reviewStatusFromInput(input = {}, fallback = "") {
+  return cleanString(input.status || input.reviewStatus || input.review_status || input.reviewAction || input.review_action || fallback, 120);
+}
+
 function baseInput(input = {}, scope = {}) {
   return Object.assign({}, input, scope, {
     requestedBy: input.requestedBy || input.requested_by,
     recordedBy: input.recordedBy || input.recorded_by || input.approvedBy || input.approved_by || input.requestedBy || input.requested_by,
     approvedBy: input.approvedBy || input.approved_by || input.recordedBy || input.recorded_by || input.requestedBy || input.requested_by,
-    createdBy: input.createdBy || input.created_by || input.requestedBy || input.requested_by
+    createdBy: input.createdBy || input.created_by || input.requestedBy || input.requested_by,
+    reviewedBy: input.reviewedBy || input.reviewed_by || input.recordedBy || input.recorded_by || input.requestedBy || input.requested_by,
+    deliveredBy: input.deliveredBy || input.delivered_by || input.recordedBy || input.recorded_by || input.requestedBy || input.requested_by
   });
 }
 
-function callWriteService(endpointKey, input, scope, services) {
+async function callWriteService(endpointKey, input, scope, services) {
   const base = baseInput(input, scope);
   if (endpointKey === "release_readiness_snapshot") {
     return services.releaseReadinessService.createSnapshot(base);
@@ -258,6 +296,55 @@ function callWriteService(endpointKey, input, scope, services) {
       evidence: defaultSummary(input, "evidence")
     }));
   }
+  if (endpointKey === "automation_digest") {
+    const digestId = digestIdFrom(input);
+    if (digestId) {
+      return services.automationDigestService.reviewDigest(Object.assign({}, base, {
+        digestId,
+        status: reviewStatusFromInput(input, "reviewed"),
+        reviewedBy: base.reviewedBy,
+        reviewedAt: input.reviewedAt || input.reviewed_at || input.recordedAt || input.recorded_at || input.createdAt || input.created_at
+      }));
+    }
+    return services.automationDigestService.createDigest(base);
+  }
+  if (endpointKey === "automation_failure_policy") {
+    const policyId = policyIdFrom(input);
+    if (policyId) {
+      return services.automationFailurePolicyService.reviewPolicy(Object.assign({}, base, {
+        policyId,
+        status: reviewStatusFromInput(input, "active"),
+        reviewedBy: base.reviewedBy,
+        reviewedAt: input.reviewedAt || input.reviewed_at || input.recordedAt || input.recorded_at || input.createdAt || input.created_at
+      }));
+    }
+    return services.automationFailurePolicyService.createPolicy(base);
+  }
+  if (endpointKey === "automation_action_handoff") {
+    const handoffId = handoffIdFrom(input);
+    if (handoffId) {
+      return await services.automationActionHandoffService.deliverHandoff(Object.assign({}, base, {
+        handoffId,
+        deliveredBy: base.deliveredBy,
+        deliveredAt: input.deliveredAt || input.delivered_at || input.recordedAt || input.recorded_at || input.createdAt || input.created_at
+      }));
+    }
+    return services.automationActionHandoffService.createHandoff(Object.assign({}, base, {
+      digestId: digestIdFrom(input)
+    }));
+  }
+  if (endpointKey === "automation_scheduler_worker_target") {
+    const targetId = workerTargetIdFrom(input);
+    if (targetId) {
+      return services.automationSchedulerWorkerTargetService.reviewTarget(Object.assign({}, base, {
+        targetId,
+        status: reviewStatusFromInput(input, "enabled"),
+        reviewedBy: base.reviewedBy,
+        reviewedAt: input.reviewedAt || input.reviewed_at || input.recordedAt || input.recorded_at || input.createdAt || input.created_at
+      }));
+    }
+    return services.automationSchedulerWorkerTargetService.createTarget(base);
+  }
   return unavailable("release_workbench_action_endpoint_unsupported", scope, { endpointKey });
 }
 
@@ -272,6 +359,10 @@ function resultRecord(endpointKey, result = {}) {
   if (endpointKey === "release_preflight") return result.report || null;
   if (endpointKey === "release_activation") return result.activation || null;
   if (endpointKey === "runtime_enablement") return result.enablement || null;
+  if (endpointKey === "automation_digest") return result.digest || null;
+  if (endpointKey === "automation_failure_policy") return result.policy || null;
+  if (endpointKey === "automation_action_handoff") return result.handoff || null;
+  if (endpointKey === "automation_scheduler_worker_target") return result.target || null;
   return null;
 }
 
@@ -297,8 +388,24 @@ function actionRecordId(record = {}) {
     record?.preflightReportId ||
     record?.reportId ||
     record?.activationId ||
-    record?.enablementId,
+    record?.enablementId ||
+    record?.handoffId ||
+    record?.targetId ||
+    record?.workerTargetId ||
+    record?.digestId ||
+    record?.policyId,
     180
+  );
+}
+
+function actionRecordStatus(record = {}) {
+  return cleanString(
+    record?.status ||
+    record?.deliveryStatus ||
+    record?.delivery_status ||
+    record?.reviewStatus ||
+    record?.review_status,
+    120
   );
 }
 
@@ -309,7 +416,7 @@ function actionRecordSummary(endpointKey, input = {}, record = {}) {
     endpointKey,
     actionKey: actionKeyFrom(input),
     recordId: actionRecordId(record),
-    recordStatus: cleanString(record?.status, 120)
+    recordStatus: actionRecordStatus(record)
   };
 }
 
@@ -394,6 +501,10 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   const releasePreflightService = options.releasePreflightService || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
+  const automationDigestService = options.automationDigestService || options.digestService || null;
+  const automationFailurePolicyService = options.automationFailurePolicyService || options.failurePolicyService || null;
+  const automationActionHandoffService = options.automationActionHandoffService || options.actionHandoffService || null;
+  const automationSchedulerWorkerTargetService = options.automationSchedulerWorkerTargetService || options.schedulerWorkerTargetService || null;
   const actionAuditRepository = options.actionAuditRepository || options.repository || null;
 
   function saveActionAudit(auditInput) {
@@ -411,7 +522,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
     });
   }
 
-  function recordAction(input = {}) {
+  async function recordAction(input = {}) {
     const scope = scopeFrom(input);
     if (!scope.workspaceId) return unavailable("release_workbench_action_scope_required", scope);
     const privacyScope = inputForPrivacyScan(input);
@@ -463,9 +574,13 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
       releasePackageService,
       releasePreflightService,
       releaseActivationService,
-      runtimeEnablementService
+      runtimeEnablementService,
+      automationDigestService,
+      automationFailurePolicyService,
+      automationActionHandoffService,
+      automationSchedulerWorkerTargetService
     };
-    const missing = requireEndpointService(scope, endpointKey, services);
+    const missing = requireEndpointService(scope, endpointKey, services, input);
     if (missing) {
       return attachActionAudit(missing, auditInputFrom({
         input,
@@ -477,7 +592,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
         error: missing.error
       }));
     }
-    const result = callWriteService(endpointKey, input, scope, services);
+    const result = await callWriteService(endpointKey, input, scope, services);
     if (!actionWriteSucceeded(endpointKey, result)) {
       const actionRecord = failureActionRecord(endpointKey, input, result);
       const response = Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {

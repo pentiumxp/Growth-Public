@@ -452,6 +452,10 @@ function createServices(config) {
     releasePreflightService: learningAutomationReleasePreflightService,
     releaseActivationService: learningAutomationReleaseActivationService,
     runtimeEnablementService: learningAutomationRuntimeEnablementService,
+    automationDigestService: learningAutomationDigestService,
+    automationFailurePolicyService: learningAutomationFailurePolicyService,
+    automationActionHandoffService: learningAutomationActionHandoffService,
+    automationSchedulerWorkerTargetService: learningAutomationSchedulerWorkerTargetService,
     actionAuditRepository: growthLearningStore.learningAutomationReleaseWorkbenchActionAuditRepository
   });
   const learningAutomationSchedulerExecutionService = createLearningAutomationSchedulerExecutionService({

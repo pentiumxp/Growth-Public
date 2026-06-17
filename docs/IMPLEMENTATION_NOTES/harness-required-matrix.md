@@ -52,8 +52,10 @@ until real artifacts are collected:
 - Do not satisfy service-owned release evidence with bare boolean `true`.
 - Do not satisfy readiness state prerequisites such as reviewed digest, active
   failure policy, delivered action handoff, or reviewed enabled worker target
-  through release-evidence collection records; they must remain external
-  automation-state actions until the owning service proves them.
+  through release-evidence collection records; they must remain automation-state
+  actions handled by the owning digest, failure-policy, action-handoff, or
+  worker-target service through the Owner workbench facade or direct Owner
+  route.
 - Do not treat release approvals as runtime config switches.
 - Do not treat learning-loop readback or operating-loop run history as
   permission to auto-complete every next action. `learning-operating-loop-service`

@@ -864,7 +864,8 @@ Implemented backend shape:
   action-plan projection with Owner-safe `POST
   /api/v1/growth/automation/release-workbench/actions` body templates for
   collection, approval, package, activation, or runtime-audit steps plus
-  external artifact/manual steps. Collection body templates list only
+  external artifact, internal state-prerequisite, and manual steps. Collection
+  body templates list only
   non-artifact tasks; blank `artifactManifest` templates are included only for
   later filling by Home AI central visual/UI tooling and are not executable
   evidence. The action plan is phase-gated: while artifact, collection,
