@@ -55,6 +55,13 @@ release-readiness, run both
 `tests/learning-automation-release-readiness-service.test.js`. The focused
 assertion must prove pass records keep `summaryOnly`, `privacyClass`,
 `schemaVersion`, `evidenceKey`, and `checkKey` in the bag projection.
+When changing the readiness evidence catalog membership or catalog cardinality,
+also run the downstream release package, inventory, dashboard, and
+`npm run test:release-union` gates. The focused assertion must prove persisted
+release package dashboard summaries and persisted readiness snapshot readbacks
+keep the correct `readinessEvidencePresentCount`,
+`readinessEvidenceMissingCount`, `latestReadinessEvidencePresentCount`, and
+`latestReadinessEvidenceMissingCount` values.
 
 When changing release-workbench Owner action route bodies, run
 `tests/learning-automation-release-workbench-service.test.js`,

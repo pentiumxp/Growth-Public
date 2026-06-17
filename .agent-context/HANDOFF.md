@@ -21929,3 +21929,34 @@
   - production visual/deploy evidence remains a separate gate;
   - final full release evidence should still be collected from real production
     artifacts before any production scheduling/runtime enablement decision.
+
+## 2026-06-17T23:30+0800 - Release-union readiness catalog cardinality closure
+
+- Status:
+  - Implemented local Growth Harness/docs closure after the Owner audit-review
+    release evidence catalog expansion.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - `tests/growth-release-package-script.test.js` now expects the empty
+    persisted release package dashboard readiness evidence catalog to report
+    `readinessEvidenceMissingCount=35`, matching the expanded readiness catalog
+    that includes `productionOwnerAuditReviewSmokeEvidence`.
+  - Existing release inventory/dashboard persisted-readback tests remain at
+    `34` only where one persisted evidence record is intentionally present.
+  - `docs/TEST_MATRIX.md` now records that catalog membership/cardinality
+    changes must run release package, inventory, dashboard, and
+    `npm run test:release-union` gates so downstream persisted summaries do not
+    drift.
+- Validation passed:
+  - `node --test tests/growth-release-package-script.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js`
+    passed `17/17`;
+  - `npm run test:release-union` passed `255/255`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent check` passed with `runtimeCount=222`;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported the index is up to date,
+    with the existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - commit and push this release-union Harness/docs closure;
+  - production visual/deploy evidence remains a separate gate.
