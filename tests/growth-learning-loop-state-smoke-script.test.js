@@ -185,6 +185,8 @@ test("learning-loop state smoke script projects top-level operator readback", ()
     stageAssessment: {
       status: "dormant",
       eligible: false,
+      reason: "insufficient_recent_practice",
+      cooldownUntil: "",
       cycleId: "",
       generatedTaskCardId: ""
     },
@@ -254,6 +256,8 @@ test("learning-loop state smoke script projects top-level operator readback", ()
   assert.equal(output.learningLoopStateStageAssessmentStatus, "dormant");
   assert.equal(output.learningLoopStateStageAssessmentEligible, false);
   assert.equal(output.learningLoopStateStageCheckpointActive, false);
+  assert.equal(output.learningLoopStateStageAssessmentReason, "insufficient_recent_practice");
+  assert.equal(output.learningLoopStateStageAssessmentCooldownUntil, "");
   assert.equal(output.learningLoopStateStageAssessmentCycleId, "");
   assert.equal(output.learningLoopStateStageAssessmentGeneratedTaskCardId, "");
 });
@@ -268,6 +272,8 @@ test("learning-loop state smoke script projects active stage checkpoint readback
     stageAssessment: {
       status: "active",
       eligible: true,
+      reason: "stage_assessment_already_active",
+      cooldownUntil: "",
       cycleId: "stage_cycle_active_1",
       generatedTaskCardId: "ltask_stage_assessment_1"
     },
@@ -295,10 +301,43 @@ test("learning-loop state smoke script projects active stage checkpoint readback
   assert.equal(output.learningLoopStateStageCheckpointActive, true);
   assert.equal(output.learningLoopStateStageAssessmentStatus, "active");
   assert.equal(output.learningLoopStateStageAssessmentEligible, true);
+  assert.equal(output.learningLoopStateStageAssessmentReason, "stage_assessment_already_active");
   assert.equal(output.learningLoopStateStageAssessmentCycleId, "stage_cycle_active_1");
   assert.equal(output.learningLoopStateStageAssessmentGeneratedTaskCardId, "ltask_stage_assessment_1");
   assert.equal(output.learningLoopStateNextAction, "complete_active_stage_assessment");
   assert.equal(output.learningLoopStateNextActionEndpoint, "/api/v1/growth/cards/{taskCardId}/evidence");
+});
+
+test("learning-loop state smoke script projects stage checkpoint cooldown readback", () => {
+  const output = projectLearningLoopStateSmokeReadback({
+    ok: true,
+    schemaVersion: "growth.learningLoopState.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: "ready_to_draft",
+    stageAssessment: {
+      status: "cooldown",
+      eligible: false,
+      reason: "stage_assessment_recently_completed",
+      cooldownUntil: "2026-06-20T01:05:00.000Z",
+      cycleId: "stage_cycle_done_1",
+      generatedTaskCardId: "ltask_stage_assessment_1"
+    },
+    nextAction: { action: "draft_daily_plan", enabled: true },
+    summary: {
+      status: "ready_to_draft",
+      readyForDraft: true,
+      readyForPublish: false,
+      stageCheckpointReady: false,
+      stageCheckpointActive: false,
+      missingRequired: []
+    }
+  });
+
+  assert.equal(output.learningLoopStateStageAssessmentStatus, "cooldown");
+  assert.equal(output.learningLoopStateStageAssessmentReason, "stage_assessment_recently_completed");
+  assert.equal(output.learningLoopStateStageAssessmentCooldownUntil, "2026-06-20T01:05:00.000Z");
+  assert.equal(output.learningLoopStateStageAssessmentCycleId, "stage_cycle_done_1");
 });
 
 test("learning-loop state smoke script delegates to service without writing", () => {

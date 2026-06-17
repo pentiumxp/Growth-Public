@@ -866,7 +866,7 @@ readback gate set.
   rows that explain the next
   recommendation. The smoke CLI also mirrors top-level `learningLoopState*`
   operator readback for status, draft/publish/checkpoint readiness, active
-  checkpoint state, next action, target/scope, readiness gates,
+  checkpoint state, checkpoint reason/cooldown, next action, target/scope, readiness gates,
   audit/profile/recommendation counts,
   reward counts/coins, and stage-assessment status while preserving the nested
   state DTO as canonical,

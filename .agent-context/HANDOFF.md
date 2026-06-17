@@ -9,6 +9,30 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:51+08:00 - Loop-State Checkpoint Cooldown Operator Readback
+
+- Status: implemented locally; focused Harness passed. No service behavior,
+  DB schema, route authorization, Gateway/model
+  call, publication, generation, evaluation, scheduler action, notification,
+  stage activation write, runtime config, UI behavior, production deployment,
+  or learner-state mutation changed.
+- Classification: Growth-local H2 smoke/readback projection change.
+- Scope:
+  - updated `scripts/smoke-growth-learning-loop-state.js` to mirror bounded
+    top-level `learningLoopStateStageAssessmentReason` and
+    `learningLoopStateStageAssessmentCooldownUntil`;
+  - expanded `tests/growth-learning-loop-state-smoke-script.test.js` to cover
+    active checkpoint reason and completed-checkpoint cooldown readback;
+  - updated Growth architecture, next-stage plan, test matrix, project context,
+    and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-learning-loop-state.js`
+  - `node --test tests/growth-learning-loop-state-smoke-script.test.js`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `npm run --silent smoke:learning-loop-state -- --workspace-id smoke_workspace --json`
+  - `codegraph sync && codegraph status`
+
 ## 2026-06-17T17:48+08:00 - Learner-Cycle Stage Assessment Completion Readback
 
 - Status: implemented locally; focused Harness passed. No DB schema, route

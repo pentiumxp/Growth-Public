@@ -179,6 +179,8 @@ function projectLearningLoopStateSmokeReadback(result = {}) {
     learningLoopStateTotalRewardCoins: Number(recommendationEvidenceSummary.totalRewardCoins || rewardSummary.totalCoinAmount || 0) || 0,
     learningLoopStateStageAssessmentStatus: cleanString(stageAssessment.status, 120),
     learningLoopStateStageAssessmentEligible: stageAssessment.eligible === true,
+    learningLoopStateStageAssessmentReason: cleanString(stageAssessment.reason, 180),
+    learningLoopStateStageAssessmentCooldownUntil: cleanString(stageAssessment.cooldownUntil, 120),
     learningLoopStateStageAssessmentCycleId: cleanString(stageAssessment.cycleId, 160),
     learningLoopStateStageAssessmentGeneratedTaskCardId: cleanString(stageAssessment.generatedTaskCardId, 160)
   };
