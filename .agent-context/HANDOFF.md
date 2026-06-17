@@ -9,6 +9,49 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T22:07+08:00 - Owner Reference Chain UI
+
+- Status: implemented locally; focused frontend/reference validation,
+  syntax/check/docs/diff gates, full local suite, and CodeGraph freshness
+  passed. No production deploy, production visual harness, runtime config
+  change, Gateway/model call, scheduler execution, notification, learner-state
+  mutation, or Home AI host logic change was performed.
+- Classification: Growth-local Owner UI consumption of the existing
+  V1-minimal Reference Contract. It does not change reference object-type,
+  MCP, route, or SQLite projection behavior.
+- Scope:
+  - `public/growth-api-client.js` now exposes read-only reference object-types
+    and reference summary helpers with normal and Home AI proxy query handling;
+  - `public/growth-card-generation-ui.js` now renders a `闭环引用` panel in
+    the Owner `生成` tab, with summary-only rows for current profile, program,
+    graph plan, plan draft, generated card, and selected-cycle evaluation ids
+    when those ids are already present in Growth summary DTOs;
+  - `public/app.js` refreshes the reference chain during context load,
+    draft/publish/advance refresh, target-provision refresh, manual refresh,
+    and historical-cycle selection;
+  - `public/growth-homeai-legacy.css` adds mobile and dark/system styling for
+    the panel and visible partial failures.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `docs/GROWTH_REFERENCE_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/TEST_MATRIX.md`
+- Validation evidence:
+  - `node --check public/growth-api-client.js public/growth-card-generation-ui.js public/app.js`;
+  - focused frontend/reference set -> 133/133;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` -> 1031/1031;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining gate:
+  - production deployment and Home AI central visual evidence remain deferred
+    by user instruction until later packages are complete.
+- AI Ops evidence id:
+  - `evidence-80439b26-f7d0-4686-a142-707f244a7464`.
+
 ## 2026-06-17T21:41+08:00 - Growth Reference Contract V1 Minimal
 
 - Status: implemented locally; full Growth test suite, syntax/check/docs/diff

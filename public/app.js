@@ -112,6 +112,13 @@
         selectedCycle: null,
         error: ""
       },
+      referenceChain: {
+        status: "idle",
+        objectTypes: null,
+        requests: [],
+        summaries: [],
+        error: ""
+      },
       error: "",
       progressStep: "",
       progressMessage: "",
@@ -796,6 +803,24 @@
           };
           renderShell();
         });
+        refreshReferenceChain(cardGenerationWorkspaceId(), pageState.cardGeneration.context).then(() => {
+          renderShell();
+        }).catch(() => null);
+      });
+    });
+    root.querySelectorAll("[data-reference-chain-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshReferenceChain(cardGenerationWorkspaceId(), pageState.cardGeneration.context).then(() => {
+          renderShell();
+        }).catch((error) => {
+          pageState.cardGeneration.referenceChain = Object.assign({}, pageState.cardGeneration.referenceChain || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
       });
     });
     root.querySelectorAll("[data-card-generation-correction-action]").forEach((select) => {
@@ -1187,6 +1212,13 @@
       data: null,
       error: ""
     };
+    pageState.cardGeneration.referenceChain = {
+      status: "loading",
+      objectTypes: pageState.cardGeneration.referenceChain?.objectTypes || null,
+      requests: [],
+      summaries: [],
+      error: ""
+    };
     pageState.cardGeneration.releaseWorkbench = {
       status: "loading",
       data: pageState.cardGeneration.releaseWorkbench?.data || null,
@@ -1278,6 +1310,7 @@
     await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
     await refreshCycleHistoryFromUi({ silent: true });
+    await refreshReferenceChain(requestedTargetWorkspaceId, context);
     await refreshAutomationProposals(requestedTargetWorkspaceId, context);
     await refreshAutomationDigests(requestedTargetWorkspaceId, context);
     await refreshAutomationActionHandoffs(requestedTargetWorkspaceId, context);
@@ -1308,6 +1341,63 @@
       pageState.cardGeneration.learningLoopState = {
         status: "failed",
         data: null,
+        error: error.message || String(error)
+      };
+      return null;
+    }
+  }
+
+  function createReferenceChainRequests(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createReferenceChainRequests !== "function") return [];
+    return ui.createReferenceChainRequests({
+      context,
+      workspaceId: clean(targetWorkspaceId || context?.target?.workspaceId || currentWorkspaceId),
+      state: pageState.cardGeneration
+    });
+  }
+
+  async function refreshReferenceChain(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.referenceChain || {};
+    const requests = createReferenceChainRequests(requestedTargetWorkspaceId, context);
+    pageState.cardGeneration.referenceChain = {
+      status: "loading",
+      objectTypes: previous.objectTypes || null,
+      requests,
+      summaries: previous.summaries || [],
+      error: ""
+    };
+    try {
+      const objectTypes = await api.fetchGrowthReferenceObjectTypes(requestedTargetWorkspaceId);
+      const settled = await Promise.allSettled(requests.map((item) => (
+        api.fetchGrowthReferenceSummary(item.objectType, item.objectId, requestedTargetWorkspaceId, { purpose: item.reason || "owner_loop" })
+          .then((summary) => Object.assign({}, item, summary))
+      )));
+      const summaries = settled.map((result, index) => {
+        if (result.status === "fulfilled") return result.value;
+        const item = requests[index] || {};
+        return Object.assign({}, item, {
+          ok: false,
+          error: result.reason?.message || String(result.reason || "reference_summary_failed")
+        });
+      });
+      const failedCount = summaries.filter((item) => item.ok === false).length;
+      pageState.cardGeneration.referenceChain = {
+        status: failedCount && failedCount < summaries.length ? "partial" : failedCount ? "failed" : "ready",
+        objectTypes,
+        requests,
+        summaries,
+        error: failedCount ? "部分引用暂不可读。" : ""
+      };
+      return pageState.cardGeneration.referenceChain;
+    } catch (error) {
+      pageState.cardGeneration.referenceChain = {
+        status: "failed",
+        objectTypes: previous.objectTypes || null,
+        requests,
+        summaries: [],
         error: error.message || String(error)
       };
       return null;
@@ -2236,6 +2326,7 @@
       await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshReferenceChain(requestedTargetWorkspaceId, context);
       await refreshAutomationProposals(requestedTargetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
@@ -2611,6 +2702,13 @@
         selectedCycle: null,
         error: ""
       };
+      pageState.cardGeneration.referenceChain = {
+        status: "loading",
+        objectTypes: pageState.cardGeneration.referenceChain?.objectTypes || null,
+        requests: [],
+        summaries: [],
+        error: ""
+      };
       pageState.cardGeneration.automationProposals = {
         status: "idle",
         data: null,
@@ -2661,6 +2759,7 @@
       };
       await refreshLearningLoopState(targetWorkspaceId, context);
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshReferenceChain(targetWorkspaceId, context);
       await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
       await refreshAutomationDigests(targetWorkspaceId, context, { silent: true });
       await refreshAutomationActionHandoffs(targetWorkspaceId, context, { silent: true });
@@ -2694,6 +2793,12 @@
     pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
       selectedCycleKey: "",
       selectedCycle: null,
+      error: ""
+    });
+    pageState.cardGeneration.referenceChain = Object.assign({}, pageState.cardGeneration.referenceChain || {}, {
+      status: "loading",
+      requests: [],
+      summaries: [],
       error: ""
     });
     pageState.cardGeneration.progressStep = "context";
@@ -2755,6 +2860,12 @@
       selectedCycle: null,
       error: ""
     });
+    pageState.cardGeneration.referenceChain = Object.assign({}, pageState.cardGeneration.referenceChain || {}, {
+      status: "loading",
+      requests: [],
+      summaries: [],
+      error: ""
+    });
     pageState.cardGeneration.progressStep = "context";
     pageState.cardGeneration.progressMessage = "正在整理学习图谱、画像摘要和近期信号。";
     renderShell();
@@ -2771,6 +2882,7 @@
       pageState.cardGeneration.progressStep = "validation";
       pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
       await refreshLearningLoopState(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshReferenceChain(targetWorkspaceId, pageState.cardGeneration.context);
       await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
@@ -2799,6 +2911,12 @@
     pageState.cardGeneration.cycleHistory = Object.assign({}, pageState.cardGeneration.cycleHistory || {}, {
       selectedCycleKey: "",
       selectedCycle: null,
+      error: ""
+    });
+    pageState.cardGeneration.referenceChain = Object.assign({}, pageState.cardGeneration.referenceChain || {}, {
+      status: "loading",
+      requests: [],
+      summaries: [],
       error: ""
     });
     pageState.cardGeneration.progressStep = "authoring";

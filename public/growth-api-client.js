@@ -302,6 +302,16 @@
       return query ? `?${query}` : "";
     }
 
+    function referenceQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const params = new URLSearchParams();
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "purpose", payload.purpose);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function updateWorkspaceUrl() {
       const currentWorkspaceId = clean(getWorkspaceId());
       if (!currentWorkspaceId || typeof historyRef?.replaceState !== "function") return;
@@ -440,6 +450,18 @@
 
     function fetchGrowthStageCheckpointControls(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("stage-assessments", "controls")}${stageAssessmentControlsQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function fetchGrowthReferenceObjectTypes(targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("references", "object-types")}${referenceQuery(targetWorkspaceId)}`);
+    }
+
+    function fetchGrowthReferenceSummary(objectType, objectId, targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const type = clean(objectType);
+      const id = clean(objectId);
+      if (!type) throw new Error("missing_reference_object_type");
+      if (!id) throw new Error("missing_reference_object_id");
+      return fetchJson(`${growthApiPath("references", encodeURIComponent(type), encodeURIComponent(id), "summary")}${referenceQuery(targetWorkspaceId, payload)}`);
     }
 
     function evaluateGrowthStageAssessment(payload = {}, targetWorkspaceId = getWorkspaceId()) {
@@ -591,6 +613,8 @@
       fetchGrowthCycleCompleteness,
       fetchGrowthCycleHistory,
       fetchGrowthCard,
+      fetchGrowthReferenceObjectTypes,
+      fetchGrowthReferenceSummary,
       fetchGrowthReleaseWorkbench,
       fetchGrowthStageCheckpointControls,
       fetchJson,

@@ -186,8 +186,14 @@ automation surfaces are not closed:
   for the Growth plugin shell. Browser older-cycle selection is now wired over
   `GET /api/v1/growth/learning-cycles/history`: Owner can refresh bounded
   history rows, select one row, and drill into audit/completeness through the
-  returned selectors without browser-side history reconstruction. Full
-  automation release evidence UI/production collection remains incomplete;
+  returned selectors without browser-side history reconstruction. The same
+  `生成` tab now renders a read-only Reference Chain panel over the Growth
+  Reference Contract: it reads object types and summary references for current
+  profile, program, graph plan, plan draft, generated card, and selected-cycle
+  evaluation ids when those ids already exist in summary DTOs. It does not
+  fabricate references, inspect SQLite, call Gateway, publish, evaluate, or
+  mutate learner state. Full automation release evidence UI/production
+  collection remains incomplete;
 - Owner audit/correction UI renders the implemented DTOs for current-cycle and
   selected historical-cycle audit. It still needs production visual/release
   evidence before product-complete release;

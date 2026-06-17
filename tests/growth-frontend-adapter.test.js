@@ -343,6 +343,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     target_node_ids: ["kg_main_idea"],
     subject: "science"
   }, "weixin_fanfan");
+  await client.fetchGrowthReferenceObjectTypes("weixin_fanfan");
+  await client.fetchGrowthReferenceSummary("task_card", "ltask_daily_1", "weixin_fanfan", { purpose: "owner_loop" });
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -514,6 +516,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     tasks: ["planner_readiness", "scheduler_dry_run"],
     required_task_ids: ["planner_readiness", "scheduler_dry_run"]
   });
+  assert.equal(calls[40].path, "/api/v1/growth/references/object-types?workspaceId=weixin_fanfan");
+  assert.equal(calls[41].path, "/api/v1/growth/references/task_card/ltask_daily_1/summary?workspaceId=weixin_fanfan&purpose=owner_loop");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -564,6 +568,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.reviewGrowthRecommendationLifecycle({ trajectory_id: "lgtraj_1", status: "expired" }, "weixin_stephen");
   await client.createGrowthAutomationDigest({ learner_id: "fanfan", limit: 3 }, "weixin_stephen");
   await client.advanceGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
+  await client.fetchGrowthReferenceObjectTypes("weixin_stephen");
+  await client.fetchGrowthReferenceSummary("plan_draft", "lgplan_proxy_1", "weixin_stephen", { purpose: "owner_loop" });
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -645,6 +651,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     target_node_ids: ["kg_english_main_idea"]
   });
+  assert.equal(calls[31].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/references/object-types?targetWorkspaceId=weixin_stephen");
+  assert.equal(calls[32].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/references/plan_draft/lgplan_proxy_1/summary?targetWorkspaceId=weixin_stephen&purpose=owner_loop");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1446,6 +1454,58 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        referenceChain: {
+          status: "partial",
+          objectTypes: {
+            ok: true,
+            schemaVersion: "growth.referenceObjectTypes.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            referenceContractObjectTypeCount: 8,
+            objectTypes: [{ objectType: "task_card" }, { objectType: "mastery_profile" }]
+          },
+          requests: [{
+            objectType: "mastery_profile",
+            objectId: "fanfan",
+            label: "学习画像",
+            reason: "profile_basis"
+          }, {
+            objectType: "plan_draft",
+            objectId: "lgplan_1",
+            label: "计划草稿",
+            reason: "plan_draft"
+          }, {
+            objectType: "task_card",
+            objectId: "ltask_science_1",
+            label: "学习卡片",
+            reason: "published_card"
+          }],
+          summaries: [{
+            ok: true,
+            objectType: "mastery_profile",
+            objectId: "fanfan",
+            referenceId: "growth:weixin_fanfan:mastery_profile:fanfan",
+            display: { title: "Fanfan mastery profile", subtitle: "Profile V2 summary" },
+            summary: { status: "active" },
+            privacyClass: "summary_only",
+            summaryOnly: true
+          }, {
+            ok: true,
+            objectType: "plan_draft",
+            objectId: "lgplan_1",
+            referenceId: "growth:weixin_fanfan:plan_draft:lgplan_1",
+            display: { title: "One short evidence repair card.", subtitle: "drafted / daily_plan" },
+            summary: { itemCount: 1 },
+            privacyClass: "summary_only",
+            summaryOnly: true
+          }, {
+            ok: false,
+            objectType: "task_card",
+            objectId: "ltask_missing",
+            label: "学习卡片",
+            error: "growth_reference_object_not_found"
+          }]
+        },
         releaseWorkbench: {
           status: "ready",
           data: context.releaseWorkbench,
@@ -1643,6 +1703,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /学习闭环/);
   assert.match(html, /起草日常计划/);
   assert.match(html, /下一张策略：repair/);
+  assert.match(html, /data-reference-chain-panel/);
+  assert.match(html, /data-reference-chain-status="partial"/);
+  assert.match(html, /闭环引用/);
+  assert.match(html, /Fanfan mastery profile/);
+  assert.match(html, /lgplan_1/);
+  assert.match(html, /growth_reference_object_not_found/);
+  assert.match(html, /summary-only/);
   assert.match(html, /data-automation-proposal-panel/);
   assert.match(html, /自动化建议/);
   assert.match(html, /data-automation-proposal-create/);
@@ -1785,6 +1852,37 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /daily_score_once/);
   assert.match(html, /mastery_trajectory_projection/);
   assert.match(html, /targetProvisioning/);
+
+  const referenceRequests = windowRef.HermesGrowthCardGenerationUi.createReferenceChainRequests({
+    context,
+    workspaceId: "weixin_fanfan",
+    state: {
+      dailyLoopDraftResult: {
+        planDraft: { planDraftId: "lgplan_1" }
+      },
+      generatedResult: {
+        published: { taskCardId: "ltask_science_1" },
+        learningGraphPlan: { learningGraphPlanId: "lgp_science_1" }
+      },
+      cycleHistory: {
+        selectedCycle: {
+          selectors: {
+            taskCardId: "ltask_history_1",
+            evaluationId: "eval_history_1"
+          }
+        }
+      }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(referenceRequests.map((item) => `${item.objectType}:${item.objectId}`).slice(0, 6))), [
+    "mastery_profile:fanfan",
+    "learning_graph_plan:lgp_science_1",
+    "plan_draft:lgplan_1",
+    "task_card:ltask_science_1",
+    "evaluation:eval_history_1"
+  ]);
+  assert.equal(JSON.stringify(referenceRequests).includes("raw_prompt"), false);
+  assert.equal(JSON.stringify(referenceRequests).includes("transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,

@@ -56,6 +56,24 @@ enumerate or resolve another workspace target.
 The object-types route returns only supported object type metadata and does not
 read learner records.
 
+## Owner UI Consumption
+
+The embedded Owner `生成` tab consumes this contract as a read-only Reference
+Chain panel. The browser may call:
+
+- `GET /api/v1/growth/references/object-types`
+- `GET /api/v1/growth/references/:objectType/:objectId/summary?purpose=owner_loop`
+
+The panel can summarize current profile, program, learning graph plan, plan
+draft, generated task card, and selected-cycle evaluation references when those
+ids are already present in Growth summary DTOs. Missing ids remain absent; the
+browser must not fabricate references, inspect SQLite tables, read raw learner
+content, call Gateway, or compute learning policy.
+
+Reference summaries are advisory audit readback for Owner visibility. They do
+not generate cards, publish plans, evaluate submissions, alter Profile V2, or
+change recommendation lifecycle state.
+
 ## MCP
 
 Growth MCP exposes matching read-only tools:
@@ -159,6 +177,12 @@ node --test tests/learning-reference-contract-service.test.js \
 npm run --silent check
 node scripts/check-growth-docs-locality.js
 git diff --check
+```
+
+Owner UI consumption is covered by:
+
+```text
+node --test tests/growth-frontend-adapter.test.js
 ```
 
 Operational smoke:
