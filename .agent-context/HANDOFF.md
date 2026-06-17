@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:00+08:00 - Profile Feedback Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-profile-feedback` delegated correctly to
+    `learning-profile-feedback-evidence-service.evaluate`, but
+    operator-critical status/readiness, scope selectors, check pass/missing/
+    blocked counts, evidence/profile/profile-delta counts, recommendation,
+    loop-state next action, reward settlement counts/coins, selector discovery/
+    auto-selection, selected-cycle ids, and missing-required counts were only
+    available inside the nested `growth.learningProfileFeedbackEvidence.v1`
+    DTO;
+  - this made completed-cycle feedback release evidence harder to inspect
+    without deep JSON.
+- Scope:
+  - added `projectProfileFeedbackSmokeReadback` in
+    `scripts/smoke-growth-profile-feedback.js`;
+  - projected bounded top-level `profileFeedback*` fields while preserving the
+    nested `growth.learningProfileFeedbackEvidence.v1` DTO as canonical;
+  - expanded `tests/growth-profile-feedback-smoke-script.test.js` to assert pure
+    projection plus the missing-evidence smoke readback;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-profile-feedback.js`
+  - `node --test tests/growth-profile-feedback-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` (`Index is up to date`;
+    earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if the profile-feedback evidence service, cycle-history selector,
+    release-bundle mapping, routes, repositories, schema, Gateway, UI,
+    scheduler, learner-state, or release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy was required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `profileFeedback*` fields do not add write permission, Gateway
+    access, publication rights, scheduling, reward settlement, stage activation,
+    or learner mutation.
+
 ## 2026-06-17T13:52+08:00 - Owner Audit Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

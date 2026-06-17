@@ -828,7 +828,13 @@ readback gate set.
   completeness, persisted evidence, persisted profile delta, Profile V2,
   recommendation, and next loop-state readback without Gateway calls, plan
   publication, card generation, evaluation, scheduling, stage activation,
-  direct repository access, SQLite writes, or learner-state mutation. When no
+  direct repository access, SQLite writes, or learner-state mutation. The smoke
+  CLI also mirrors top-level `profileFeedback*` operator readback for
+  status/readiness, target/scope selectors, check pass/missing/blocked counts,
+  evidence/profile/profile-delta counts, recommendation, loop-state next
+  action, reward settlement counts/coins, selector discovery/auto-selection,
+  selected-cycle ids, and missing-required counts while preserving the nested
+  `growth.learningProfileFeedbackEvidence.v1` DTO as canonical. When no
   selector is supplied, the same service may call the read-only
   `learning-cycle-history-service` for bounded selector discovery only. The
   default path then fails closed with `selectorDiscovery.status`, selector/cycle

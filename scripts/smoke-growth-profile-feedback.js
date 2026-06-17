@@ -83,6 +83,132 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 12) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
+function checkStatusCount(checks = [], status) {
+  return asArray(checks).filter((check) => objectOnly(check).status === status).length;
+}
+
+function projectProfileFeedbackSmokeReadback(result = {}) {
+  const feedback = objectOnly(result);
+  if (!Object.keys(feedback).length) return result;
+  const scope = objectOnly(feedback.scope);
+  const summary = objectOnly(feedback.summary);
+  const profile = objectOnly(feedback.profile);
+  const evidence = objectOnly(feedback.evidence);
+  const profileDelta = objectOnly(feedback.profileDelta);
+  const recommendation = objectOnly(feedback.recommendation);
+  const loopState = objectOnly(feedback.loopState);
+  const nextAction = objectOnly(loopState.nextAction);
+  const reward = objectOnly(loopState.reward);
+  const selectorDiscovery = objectOnly(feedback.selectorDiscovery);
+  const autoSelection = objectOnly(feedback.autoSelection);
+  const selectedCycle = objectOnly(feedback.selectedCompletedCycle || autoSelection.selected);
+  const checks = asArray(feedback.checks);
+  const missingRequired = uniqueBoundedStrings(summary.missingRequired);
+  const loopMissingRequired = uniqueBoundedStrings(loopState.missingRequired);
+  const targetNodeIds = uniqueBoundedStrings(scope.targetNodeIds);
+  const recommendationTargetNodeIds = uniqueBoundedStrings(recommendation.targetNodeIds);
+  return Object.assign({}, feedback, {
+    profileFeedbackStatus: cleanString(feedback.status || feedback.error, 140),
+    profileFeedbackReadyForNextPlan: feedback.readyForNextPlan === true || summary.readyForNextPlan === true,
+    profileFeedbackCycleComplete: feedback.complete === true || summary.cycleComplete === true,
+    profileFeedbackReadyForAutomation: feedback.readyForAutomation === true,
+    profileFeedbackTargetWorkspaceId: cleanString(scope.workspaceId, 160),
+    profileFeedbackTargetLearnerId: cleanString(scope.learnerId, 160),
+    profileFeedbackProgramId: cleanString(scope.programId, 160),
+    profileFeedbackDomainPackId: cleanString(scope.domainPackId, 160),
+    profileFeedbackDomain: cleanString(scope.domain, 120),
+    profileFeedbackSubject: cleanString(scope.subject, 120),
+    profileFeedbackHorizon: cleanString(scope.horizon, 80),
+    profileFeedbackAvailableMinutes: Number(scope.availableMinutes || 0) || 0,
+    profileFeedbackPlanDraftId: cleanString(scope.planDraftId, 180),
+    profileFeedbackTaskCardId: cleanString(scope.taskCardId, 180),
+    profileFeedbackEvaluationId: cleanString(scope.evaluationId, 180),
+    profileFeedbackProfileDeltaId: cleanString(scope.profileDeltaId, 180),
+    profileFeedbackEvidenceId: cleanString(scope.evidenceId, 180),
+    profileFeedbackCorrectionId: cleanString(scope.correctionId, 180),
+    profileFeedbackSourceId: cleanString(scope.sourceId, 180),
+    profileFeedbackTargetNodeIds: targetNodeIds,
+    profileFeedbackTargetNodeCount: targetNodeIds.length,
+    profileFeedbackAutoSelectCompletedCycle: scope.autoSelectCompletedCycle === true,
+    profileFeedbackAutoSelectLatestCompletedCycle: scope.autoSelectLatestCompletedCycle === true,
+    profileFeedbackLimit: Number(scope.limit || 0) || 0,
+    profileFeedbackCheckCount: checks.length,
+    profileFeedbackPassCheckCount: checkStatusCount(checks, "pass"),
+    profileFeedbackMissingCheckCount: checkStatusCount(checks, "missing"),
+    profileFeedbackBlockedCheckCount: checkStatusCount(checks, "blocked"),
+    profileFeedbackMissingRequired: missingRequired,
+    profileFeedbackMissingRequiredCount: missingRequired.length,
+    profileFeedbackEvidenceCount: Number(summary.evidenceCount || evidence.count || 0) || 0,
+    profileFeedbackEvidenceSourceTypes: uniqueBoundedStrings(evidence.sourceTypes, 8),
+    profileFeedbackEvidenceGraphNodeCount: countArray(evidence.graphNodeIds),
+    profileFeedbackProfileDeltaCount: Number(summary.profileDeltaCount || profileDelta.count || 0) || 0,
+    profileFeedbackLatestProfileDeltaId: cleanString(profileDelta.latestProfileDeltaId, 180),
+    profileFeedbackChangedCapabilityCount: Number(profileDelta.changedCapabilityCount || 0) || 0,
+    profileFeedbackProfileAvailable: profile.available === true,
+    profileFeedbackProfileEvidenceCount: Number(summary.profileEvidenceCount || profile.evidenceCount || 0) || 0,
+    profileFeedbackProfileCapabilityStateCount: Number(profile.capabilityStateCount || 0) || 0,
+    profileFeedbackProfileWeaknessCount: Number(summary.profileWeaknessCount || profile.weaknessCount || 0) || 0,
+    profileFeedbackProfileStrengthCount: Number(profile.strengthCount || 0) || 0,
+    profileFeedbackProfileStaleCount: Number(profile.staleCount || 0) || 0,
+    profileFeedbackPlannerStrategy: cleanString(profile.plannerStrategy, 120),
+    profileFeedbackRecommendationAvailable: recommendation.available === true,
+    profileFeedbackRecommendationMode: cleanString(summary.recommendationMode || recommendation.mode, 120),
+    profileFeedbackRecommendationStatus: cleanString(recommendation.status, 120),
+    profileFeedbackRecommendationStrategy: cleanString(summary.recommendationStrategy || recommendation.strategy, 120),
+    profileFeedbackRecommendationCardRole: cleanString(recommendation.cardRole, 120),
+    profileFeedbackRecommendationTargetNodeId: cleanString(recommendation.targetNodeId, 180),
+    profileFeedbackRecommendationTargetNodeIds: recommendationTargetNodeIds,
+    profileFeedbackRecommendationTargetNodeCount: recommendationTargetNodeIds.length,
+    profileFeedbackLoopStateAvailable: loopState.available === true,
+    profileFeedbackLoopStatus: cleanString(summary.loopStatus || loopState.status, 120),
+    profileFeedbackLoopNextAction: cleanString(summary.nextAction || nextAction.action, 140),
+    profileFeedbackLoopNextActionEnabled: nextAction.enabled !== false,
+    profileFeedbackLoopNextActionTargetNodeId: cleanString(nextAction.targetNodeId, 180),
+    profileFeedbackLoopAuditComplete: loopState.auditComplete === true,
+    profileFeedbackLoopMissingRequired: loopMissingRequired,
+    profileFeedbackLoopMissingRequiredCount: loopMissingRequired.length,
+    profileFeedbackRewardAvailable: reward.available === true,
+    profileFeedbackRewardSettlementCount: Number(summary.rewardSettlementCount || reward.rewardSettlementCount || 0) || 0,
+    profileFeedbackTotalRewardCoins: Number(summary.totalRewardCoins || reward.totalRewardCoins || 0) || 0,
+    profileFeedbackLatestRewardSettlementId: cleanString(reward.latestRewardSettlementId, 180),
+    profileFeedbackSelectorDiscoveryAvailable: selectorDiscovery.available === true,
+    profileFeedbackSelectorDiscoveryStatus: cleanString(summary.selectorDiscoveryStatus || selectorDiscovery.status, 120),
+    profileFeedbackSelectorCycleCount: Number(summary.cycleCount || selectorDiscovery.cycleCount || 0) || 0,
+    profileFeedbackSelectorCompleteCycleCount: Number(summary.completeCycleCount || selectorDiscovery.completeCount || 0) || 0,
+    profileFeedbackSelectorReadyForAutomationCount: Number(selectorDiscovery.readyForAutomationCount || 0) || 0,
+    profileFeedbackSelectorCandidateCount: Number(summary.selectorCandidateCount || selectorDiscovery.candidateCount || 0) || 0,
+    profileFeedbackAutoSelectionAttempted: autoSelection.attempted === true,
+    profileFeedbackAutoSelectionStatus: cleanString(summary.autoSelectionStatus || autoSelection.status, 120),
+    profileFeedbackAutoSelectionCandidateCount: Number(autoSelection.candidateCount || 0) || 0,
+    profileFeedbackSelectedCycleId: cleanString(summary.selectedCycleId || selectedCycle.cycleId, 180),
+    profileFeedbackSelectedTaskCardId: cleanString(summary.selectedTaskCardId || selectedCycle.taskCardId, 180),
+    profileFeedbackNextAction: cleanString(summary.nextAction, 140)
+  });
+}
+
 function inputFromArgs(args) {
   const jsonInput = parseJsonArg(args, ["--input-json", "--inputJson"], {});
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], jsonInput.workspaceId || jsonInput.workspace_id || "");
@@ -149,9 +275,9 @@ async function main() {
   const config = readEnv(process.env);
   const services = createServices(config);
   const service = services.learningProfileFeedbackEvidenceService;
-  const result = service && typeof service.evaluate === "function"
+  const result = projectProfileFeedbackSmokeReadback(service && typeof service.evaluate === "function"
     ? service.evaluate(input)
-    : { ok: false, error: "profile_feedback_service_unavailable" };
+    : { ok: false, error: "profile_feedback_service_unavailable" });
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -169,5 +295,6 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectProfileFeedbackSmokeReadback,
   targetNodeIds
 };
