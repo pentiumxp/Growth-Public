@@ -625,8 +625,9 @@ Use the Growth-owned release-readiness boundary:
   not grant scheduler permission, runtime config enablement, or deployment
   permission.
   Review, authorization, closure, controls, inventory, and dashboard readbacks
-  expose only latest-package dashboard summary fields for Owner status
-  surfaces; they must not expose full release evidence items. The
+  expose only latest-package dashboard summary fields, including the
+  package-dashboard preflight fields, for Owner status surfaces; they must not
+  expose full release evidence items. The
   package is not release
   approval, runtime config enablement, scheduler permission, deployment, or
   card publication.

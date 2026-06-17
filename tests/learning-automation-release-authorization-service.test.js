@@ -42,6 +42,13 @@ function approvedReview(overrides = {}) {
       status: "ready_for_release_review",
       packageVersion: "growth.learningAutomationReleasePackage.v1",
       privacyClass: "summary_only",
+      packageSummary: {
+        summaryOnly: true,
+        latestPreflightReportId: "lgarpf_package_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        latestPreflightReadyForProductionDeployReview: true,
+        latestPreflightReadyForOwnerReleaseActivation: true
+      },
       stepSummary: {
         summaryOnly: true,
         stepCount: 6
@@ -58,6 +65,10 @@ function approvedReview(overrides = {}) {
         latestReadinessEvidencePresentCount: 30,
         latestReadinessEvidenceMissingCount: 0,
         latestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
+        latestPreflightReportId: "lgarpf_package_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        latestPreflightReadyForProductionDeployReview: true,
+        latestPreflightReadyForOwnerReleaseActivation: true,
         persistedEvidenceKeys: ["ownerReviewEvidence"],
         nextAction: {
           key: "enable_runtime_config_manually",
@@ -86,6 +97,10 @@ function approvedReview(overrides = {}) {
       latestPackageDashboardLatestReadinessEvidenceMissingCount: 0,
       latestPackageDashboardLatestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
       latestPackageDashboardRequiredActionCount: 1,
+      latestPackageDashboardPreflightReportId: "lgarpf_package_1",
+      latestPackageDashboardPreflightStatus: "ready_for_owner_release_activation",
+      latestPackageDashboardPreflightReadyForProductionDeployReview: true,
+      latestPackageDashboardPreflightReadyForOwnerReleaseActivation: true,
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       configChangeApplied: false
@@ -108,7 +123,11 @@ function approvedReview(overrides = {}) {
       latestPackageDashboardLatestReadinessEvidencePresentCount: 30,
       latestPackageDashboardLatestReadinessEvidenceMissingCount: 0,
       latestPackageDashboardLatestReadinessEvidenceSourceBundleId: "lgerb_snapshot_1",
-      latestPackageDashboardRequiredActionCount: 1
+      latestPackageDashboardRequiredActionCount: 1,
+      latestPackageDashboardPreflightReportId: "lgarpf_package_1",
+      latestPackageDashboardPreflightStatus: "ready_for_owner_release_activation",
+      latestPackageDashboardPreflightReadyForProductionDeployReview: true,
+      latestPackageDashboardPreflightReadyForOwnerReleaseActivation: true
     },
     approvalSummary: {
       schemaVersion: "growth.learningAutomationReleaseReview.approvalSummary.v1",
@@ -163,13 +182,19 @@ test("release authorization grants summary-only execution authorization after ap
   assert.equal(result.review.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.review.latestPackageDashboardReadinessEvidencePresentCount, 30);
   assert.equal(result.review.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot_1");
+  assert.equal(result.review.latestPackageDashboardPreflightReportId, "lgarpf_package_1");
+  assert.equal(result.review.latestPackageDashboardPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceMissingCount, 0);
   assert.equal(result.packageReadback.latestPackageDashboardReadinessEvidenceSourceBundleId, "lgerb_ready_1");
   assert.equal(result.packageReadback.latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightReadyForProductionDeployReview, true);
   assert.equal(result.latestPackage.packageId, "lgapkg_ready_1");
+  assert.equal(result.latestPackage.packageSummary.latestPreflightReportId, "lgarpf_package_1");
   assert.equal(result.latestPackage.stepSummary.stepCount, 6);
   assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(result.latestPackage.releaseDashboardSummary.latestPreflightReportId, "lgarpf_package_1");
   assert.equal(result.latestPackage.releaseDashboardSummary.readinessEvidencePresentCount, 30);
   assert.deepEqual(result.latestPackage.releaseDashboardSummary.persistedEvidenceKeys, ["ownerReviewEvidence"]);
   assert.equal(result.latestPackage.writefulSchedulingAllowed, false);

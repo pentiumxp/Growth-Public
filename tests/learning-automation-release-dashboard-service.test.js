@@ -138,6 +138,10 @@ function createService(overrides = {}, calls = []) {
             latestPackageDashboardStatus: "manual_runtime_config_required",
             latestPackageDashboardNextActionKey: "enable_runtime_config_manually",
             latestPackageDashboardRequiredActionCount: 1,
+            latestPackageDashboardPreflightReportId: "lgarpf_package_1",
+            latestPackageDashboardPreflightStatus: "ready_for_owner_release_activation",
+            latestPackageDashboardPreflightReadyForProductionDeployReview: true,
+            latestPackageDashboardPreflightReadyForOwnerReleaseActivation: true,
             latestPreflightReportId: "lgarpf_1",
             latestPreflightStatus: "ready_for_owner_release_activation",
             latestPreflightReadyForProductionDeployReview: true,
@@ -195,6 +199,10 @@ function createService(overrides = {}, calls = []) {
                   summaryOnly: true,
                   status: "manual_runtime_config_required",
                   requiredActionCount: 1,
+                  latestPreflightReportId: "lgarpf_package_1",
+                  latestPreflightStatus: "ready_for_owner_release_activation",
+                  latestPreflightReadyForProductionDeployReview: true,
+                  latestPreflightReadyForOwnerReleaseActivation: true,
                   nextAction: {
                     key: "enable_runtime_config_manually",
                     action: "perform_platform_runtime_config_enablement",
@@ -294,6 +302,8 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.releaseDashboard.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.releaseDashboard.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.releaseDashboard.latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.releaseDashboard.latestPackageDashboardPreflightReportId, "lgarpf_package_1");
+  assert.equal(result.releaseDashboard.latestPackageDashboardPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(result.releaseDashboard.latestPreflightReportId, "lgarpf_1");
   assert.equal(result.releaseDashboard.latestPreflightStatus, "ready_for_owner_release_activation");
   assert.equal(result.releaseDashboard.latestPreflightReadyForProductionDeployReview, true);
@@ -325,6 +335,8 @@ test("release dashboard composes bounded Owner read model from release services"
   assert.equal(result.artifactReadback.packages.latestPackageStepCount, 6);
   assert.equal(result.artifactReadback.packages.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.artifactReadback.packages.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.artifactReadback.packages.latestPackageDashboardPreflightReportId, "lgarpf_package_1");
+  assert.equal(result.artifactReadback.packages.latestPackageDashboardPreflightReadyForProductionDeployReview, true);
   assert.equal(result.artifactReadback.releaseEvidence.latestId, "lgarev_1");
   assert.equal(result.artifactReadback.releaseEvidence.latestEvidenceKey, "ownerDailyUiEvidence");
   assert.equal(result.artifactReadback.releaseEvidence.latestCheckKey, "owner_daily_ui_evidence");

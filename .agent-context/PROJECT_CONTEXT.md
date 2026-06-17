@@ -492,14 +492,17 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   `releaseDashboardSummary` in `release_dashboard_summary_json`, including
   readiness-evidence present/missing counts, source bundle id, latest readiness
   snapshot id, latest snapshot evidence counts, compact Owner review
-  stage-summary counters when present, and persisted evidence keys.
+  stage-summary counters when present, persisted evidence keys, and latest
+  preflight report id/status/advisory readiness flags from the package's
+  release-dashboard summary.
   The
   release review, authorization, closure, controls, inventory, and dashboard
   readbacks project that dashboard summary as latest-package dashboard status,
-  next-action key, required-action count, step count, and bounded readiness
-  evidence count/source readbacks without exposing raw package artifacts; after
-  an approved release decision, release review and authorization require a
-  matching readable package audit record with
+  next-action key, required-action count, step count, bounded readiness
+  evidence count/source readbacks, and package-dashboard preflight readback
+  fields without exposing raw package artifacts; after an approved release
+  decision, release review and authorization require a matching readable package
+  audit record with
   `packageRecordStatus=ready_for_release_review`, while package dashboard
   fields remain readback only. The
   visible-target scoped

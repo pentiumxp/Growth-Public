@@ -959,7 +959,8 @@ Implemented backend shape:
   `nextAction.key`, `requiredActionCount`, `stepCount`,
   readiness-evidence present/missing counts, source bundle id, latest readiness
   snapshot id, latest snapshot evidence counts, compact Owner review
-  stage-summary counters when present, and persisted evidence keys)
+  stage-summary counters when present, persisted evidence keys, and
+  package-dashboard preflight report id/status/advisory readiness flags)
   instead of raw package artifacts. Visible-target scoped
   `GET /api/v1/growth/automation/release-packages` lists those records;
   Owner-only `POST /api/v1/growth/automation/release-packages/build` defaults

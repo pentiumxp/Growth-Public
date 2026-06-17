@@ -2931,6 +2931,8 @@ test("Growth release package builder stays summary-only orchestration over relea
   const reviewService = read(path.join("src", "services", "learning-automation-release-review-service.js"));
   assert.match(reviewService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(reviewService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(reviewService, /latestPackageDashboardPreflightReportId/);
+  assert.match(reviewService, /latestPackageDashboardPreflightReadyForOwnerReleaseActivation/);
   assert.match(reviewService, /PRIVATE_VALUE_PATTERN/);
   assert.match(reviewService, /scanPrivateValues/);
   assert.match(reviewService, /learning_automation_release_review_dependency_privacy_failed/);
@@ -2938,12 +2940,16 @@ test("Growth release package builder stays summary-only orchestration over relea
   const authorizationService = read(path.join("src", "services", "learning-automation-release-authorization-service.js"));
   assert.match(authorizationService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(authorizationService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(authorizationService, /latestPackageDashboardPreflightReportId/);
+  assert.match(authorizationService, /latestPackageDashboardPreflightReadyForOwnerReleaseActivation/);
   assert.match(authorizationService, /PRIVATE_VALUE_PATTERN/);
   assert.match(authorizationService, /scanPrivateValues/);
 
   const closureService = read(path.join("src", "services", "learning-automation-release-closure-service.js"));
   assert.match(closureService, /latestPackageDashboardReadinessEvidencePresentCount/);
   assert.match(closureService, /latestPackageDashboardLatestReadinessEvidenceSourceBundleId/);
+  assert.match(closureService, /latestPackageDashboardPreflightReportId/);
+  assert.match(closureService, /latestPackageDashboardPreflightReadyForOwnerReleaseActivation/);
   assert.match(closureService, /PRIVATE_VALUE_PATTERN/);
   assert.match(closureService, /scanPrivateValues/);
 
@@ -2956,6 +2962,7 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(serviceHarness, /readinessEvidencePresentCount/);
   assert.match(serviceHarness, /lgarpf_dashboard_1/);
   assert.match(serviceHarness, /lgarpf_activation_1/);
+  assert.match(serviceHarness, /latestPreflightReadyForOwnerReleaseActivation/);
 
   const scriptHarness = read(path.join("tests", "growth-release-package-script.test.js"));
   assert.match(scriptHarness, /parses package, bundle, and audit options/);

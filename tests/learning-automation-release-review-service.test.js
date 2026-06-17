@@ -153,7 +153,11 @@ test("release review reports approved state from latest decision and ready packa
         summaryOnly: true,
         ok: true,
         status: "ready_for_release_review",
-        collectionRunId: "lgacrn_ready"
+        collectionRunId: "lgacrn_ready",
+        latestPreflightReportId: "lgarpf_package_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        latestPreflightReadyForProductionDeployReview: true,
+        latestPreflightReadyForOwnerReleaseActivation: true
       },
       stepSummary: {
         schemaVersion: "growth.learningAutomationReleasePackage.stepSummary.v1",
@@ -184,6 +188,10 @@ test("release review reports approved state from latest decision and ready packa
         latestReadinessEvidencePresentCount: 30,
         latestReadinessEvidenceMissingCount: 0,
         latestReadinessEvidenceSourceBundleId: "lgerb_snapshot",
+        latestPreflightReportId: "lgarpf_package_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        latestPreflightReadyForProductionDeployReview: true,
+        latestPreflightReadyForOwnerReleaseActivation: true,
         writefulSchedulingAllowed: false,
         runtimeConfigChange: false,
         configChangeApplied: false
@@ -205,8 +213,10 @@ test("release review reports approved state from latest decision and ready packa
   assert.equal(result.packageRecordPresent, true);
   assert.equal(result.latestPackage.packageId, "lgapkg_ready");
   assert.equal(result.latestPackage.packageSummary.summaryOnly, true);
+  assert.equal(result.latestPackage.packageSummary.latestPreflightReportId, "lgarpf_package_1");
   assert.equal(result.latestPackage.stepSummary.stepCount, 6);
   assert.equal(result.latestPackage.releaseDashboardSummary.status, "manual_runtime_config_required");
+  assert.equal(result.latestPackage.releaseDashboardSummary.latestPreflightReportId, "lgarpf_package_1");
   assert.equal(result.latestPackage.releaseDashboardSummary.readinessEvidencePresentCount, 30);
   assert.equal(result.latestPackage.releaseDashboardSummary.latestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.packageReadback.latestPackageStepCount, 6);
@@ -218,6 +228,10 @@ test("release review reports approved state from latest decision and ready packa
   assert.equal(result.packageReadback.latestPackageDashboardLatestReadinessEvidenceMissingCount, 0);
   assert.equal(result.packageReadback.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.packageReadback.latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightReportId, "lgarpf_package_1");
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.packageReadback.latestPackageDashboardPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(result.releaseReview.latestPackageId, "lgapkg_ready");
   assert.equal(result.releaseReview.packageRecordStatus, "ready_for_release_review");
   assert.equal(result.releaseReview.latestPackageStepCount, 6);
@@ -225,6 +239,8 @@ test("release review reports approved state from latest decision and ready packa
   assert.equal(result.releaseReview.latestPackageDashboardReadinessEvidencePresentCount, 30);
   assert.equal(result.releaseReview.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, "lgerb_snapshot");
   assert.equal(result.releaseReview.latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.releaseReview.latestPackageDashboardPreflightReportId, "lgarpf_package_1");
+  assert.equal(result.releaseReview.latestPackageDashboardPreflightReadyForOwnerReleaseActivation, true);
   assert.equal(result.releaseReview.nextAction, null);
   assert.equal(result.releaseReview.requiredActionCount, 0);
   assert.deepEqual(result.approvalSummary.approvalKeys, ["writefulExecutionApproval"]);

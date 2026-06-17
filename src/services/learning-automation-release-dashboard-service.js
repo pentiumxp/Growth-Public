@@ -312,7 +312,17 @@ function packageDashboardFields(record = {}, latest = {}) {
     latestPackageDashboardControlsStatus: cleanString(latest.latestPackageDashboardControlsStatus || dashboard.controlsStatus || dashboard.controls_status, 120),
     latestPackageDashboardInventoryStatus: cleanString(latest.latestPackageDashboardInventoryStatus || dashboard.inventoryStatus || dashboard.inventory_status, 120),
     latestPackageDashboardRequiredActionCount: Number(record.latestPackageDashboardRequiredActionCount || latest.latestPackageDashboardRequiredActionCount || dashboard.requiredActionCount || dashboard.required_action_count || 0) || 0,
-    latestPackageDashboardNextActionKey: cleanString(record.latestPackageDashboardNextActionKey || latest.latestPackageDashboardNextActionKey || objectOnly(dashboard.nextAction || dashboard.next_action).key, 140)
+    latestPackageDashboardNextActionKey: cleanString(record.latestPackageDashboardNextActionKey || latest.latestPackageDashboardNextActionKey || objectOnly(dashboard.nextAction || dashboard.next_action).key, 140),
+    latestPackageDashboardPreflightReportId: cleanString(record.latestPackageDashboardPreflightReportId || latest.latestPackageDashboardPreflightReportId || dashboard.latestPreflightReportId || dashboard.latest_preflight_report_id, 180),
+    latestPackageDashboardPreflightStatus: cleanString(record.latestPackageDashboardPreflightStatus || latest.latestPackageDashboardPreflightStatus || dashboard.latestPreflightStatus || dashboard.latest_preflight_status, 120),
+    latestPackageDashboardPreflightReadyForProductionDeployReview: latest.latestPackageDashboardPreflightReadyForProductionDeployReview === true
+      || record.latestPackageDashboardPreflightReadyForProductionDeployReview === true
+      || dashboard.latestPreflightReadyForProductionDeployReview === true
+      || dashboard.latest_preflight_ready_for_production_deploy_review === true,
+    latestPackageDashboardPreflightReadyForOwnerReleaseActivation: latest.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true
+      || record.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true
+      || dashboard.latestPreflightReadyForOwnerReleaseActivation === true
+      || dashboard.latest_preflight_ready_for_owner_release_activation === true
   };
 }
 
@@ -391,6 +401,10 @@ function inventorySummary(inventory = {}) {
     latestPackageDashboardStatus: cleanString(summary.latestPackageDashboardStatus, 120),
     latestPackageDashboardNextActionKey: cleanString(summary.latestPackageDashboardNextActionKey, 140),
     latestPackageDashboardRequiredActionCount: Number(summary.latestPackageDashboardRequiredActionCount || 0) || 0,
+    latestPackageDashboardPreflightReportId: cleanString(summary.latestPackageDashboardPreflightReportId, 180),
+    latestPackageDashboardPreflightStatus: cleanString(summary.latestPackageDashboardPreflightStatus, 120),
+    latestPackageDashboardPreflightReadyForProductionDeployReview: summary.latestPackageDashboardPreflightReadyForProductionDeployReview === true,
+    latestPackageDashboardPreflightReadyForOwnerReleaseActivation: summary.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true,
     latestPreflightReportId: cleanString(summary.latestPreflightReportId, 180),
     latestPreflightStatus: cleanString(summary.latestPreflightStatus, 120),
     latestPreflightReadyForProductionDeployReview: summary.latestPreflightReadyForProductionDeployReview === true,
@@ -454,6 +468,10 @@ function releaseDashboardSummary(readiness, controls, inventory) {
     latestPackageDashboardStatus: inventoryPart.latestPackageDashboardStatus,
     latestPackageDashboardNextActionKey: inventoryPart.latestPackageDashboardNextActionKey,
     latestPackageDashboardRequiredActionCount: inventoryPart.latestPackageDashboardRequiredActionCount,
+    latestPackageDashboardPreflightReportId: inventoryPart.latestPackageDashboardPreflightReportId,
+    latestPackageDashboardPreflightStatus: inventoryPart.latestPackageDashboardPreflightStatus,
+    latestPackageDashboardPreflightReadyForProductionDeployReview: inventoryPart.latestPackageDashboardPreflightReadyForProductionDeployReview,
+    latestPackageDashboardPreflightReadyForOwnerReleaseActivation: inventoryPart.latestPackageDashboardPreflightReadyForOwnerReleaseActivation,
     latestPreflightReportId: inventoryPart.latestPreflightReportId,
     latestPreflightStatus: inventoryPart.latestPreflightStatus,
     latestPreflightReadyForProductionDeployReview: inventoryPart.latestPreflightReadyForProductionDeployReview,

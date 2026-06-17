@@ -140,6 +140,10 @@ function publicDashboardSummary(record = {}) {
     latestReadinessEvidencePresentCount: Number(dashboard.latestReadinessEvidencePresentCount || dashboard.latest_readiness_evidence_present_count || 0) || 0,
     latestReadinessEvidenceMissingCount: Number(dashboard.latestReadinessEvidenceMissingCount || dashboard.latest_readiness_evidence_missing_count || 0) || 0,
     latestReadinessEvidenceSourceBundleId: cleanString(dashboard.latestReadinessEvidenceSourceBundleId || dashboard.latest_readiness_evidence_source_bundle_id, 180),
+    latestPreflightReportId: cleanString(dashboard.latestPreflightReportId || dashboard.latest_preflight_report_id, 180),
+    latestPreflightStatus: cleanString(dashboard.latestPreflightStatus || dashboard.latest_preflight_status, 120),
+    latestPreflightReadyForProductionDeployReview: dashboard.latestPreflightReadyForProductionDeployReview === true || dashboard.latest_preflight_ready_for_production_deploy_review === true,
+    latestPreflightReadyForOwnerReleaseActivation: dashboard.latestPreflightReadyForOwnerReleaseActivation === true || dashboard.latest_preflight_ready_for_owner_release_activation === true,
     persistedEvidenceKeys: asArray(dashboard.persistedEvidenceKeys || dashboard.persisted_evidence_keys).map((key) => cleanString(key, 160)).filter(Boolean),
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
@@ -149,6 +153,7 @@ function publicDashboardSummary(record = {}) {
 
 function publicPackage(record = null) {
   if (!record) return null;
+  const packageSummary = objectOnly(record.packageSummary || record.package_summary);
   const stepSummary = objectOnly(record.stepSummary || record.step_summary);
   return {
     packageId: cleanString(record.packageId || record.package_id, 180),
@@ -156,6 +161,13 @@ function publicPackage(record = null) {
     packageVersion: cleanString(record.packageVersion || record.package_version || record.schemaVersion || record.schema_version, 180),
     collectionRunId: cleanString(record.collectionRunId || record.collection_run_id, 180),
     privacyClass: cleanString(record.privacyClass || record.privacy_class, 80),
+    packageSummary: {
+      summaryOnly: packageSummary.summaryOnly === true || packageSummary.summary_only === true,
+      latestPreflightReportId: cleanString(packageSummary.latestPreflightReportId || packageSummary.latest_preflight_report_id, 180),
+      latestPreflightStatus: cleanString(packageSummary.latestPreflightStatus || packageSummary.latest_preflight_status, 120),
+      latestPreflightReadyForProductionDeployReview: packageSummary.latestPreflightReadyForProductionDeployReview === true || packageSummary.latest_preflight_ready_for_production_deploy_review === true,
+      latestPreflightReadyForOwnerReleaseActivation: packageSummary.latestPreflightReadyForOwnerReleaseActivation === true || packageSummary.latest_preflight_ready_for_owner_release_activation === true
+    },
     stepSummary: {
       summaryOnly: stepSummary.summaryOnly === true || stepSummary.summary_only === true,
       stepCount: Number(stepSummary.stepCount || stepSummary.step_count || 0) || 0
@@ -188,6 +200,10 @@ function packageReadbackSummary(review = {}) {
     latestPackageDashboardLatestReadinessEvidenceMissingCount: Number(readback.latestPackageDashboardLatestReadinessEvidenceMissingCount || releaseReview.latestPackageDashboardLatestReadinessEvidenceMissingCount || 0) || 0,
     latestPackageDashboardLatestReadinessEvidenceSourceBundleId: cleanString(readback.latestPackageDashboardLatestReadinessEvidenceSourceBundleId || releaseReview.latestPackageDashboardLatestReadinessEvidenceSourceBundleId, 180),
     latestPackageDashboardRequiredActionCount: Number(readback.latestPackageDashboardRequiredActionCount || releaseReview.latestPackageDashboardRequiredActionCount || 0) || 0,
+    latestPackageDashboardPreflightReportId: cleanString(readback.latestPackageDashboardPreflightReportId || releaseReview.latestPackageDashboardPreflightReportId, 180),
+    latestPackageDashboardPreflightStatus: cleanString(readback.latestPackageDashboardPreflightStatus || releaseReview.latestPackageDashboardPreflightStatus, 120),
+    latestPackageDashboardPreflightReadyForProductionDeployReview: readback.latestPackageDashboardPreflightReadyForProductionDeployReview === true || releaseReview.latestPackageDashboardPreflightReadyForProductionDeployReview === true,
+    latestPackageDashboardPreflightReadyForOwnerReleaseActivation: readback.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true || releaseReview.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false,
     configChangeApplied: false
@@ -218,6 +234,10 @@ function reviewSummary(review = {}) {
     latestPackageDashboardLatestReadinessEvidencePresentCount: packageReadback.latestPackageDashboardLatestReadinessEvidencePresentCount,
     latestPackageDashboardLatestReadinessEvidenceMissingCount: packageReadback.latestPackageDashboardLatestReadinessEvidenceMissingCount,
     latestPackageDashboardLatestReadinessEvidenceSourceBundleId: packageReadback.latestPackageDashboardLatestReadinessEvidenceSourceBundleId,
+    latestPackageDashboardPreflightReportId: packageReadback.latestPackageDashboardPreflightReportId,
+    latestPackageDashboardPreflightStatus: packageReadback.latestPackageDashboardPreflightStatus,
+    latestPackageDashboardPreflightReadyForProductionDeployReview: packageReadback.latestPackageDashboardPreflightReadyForProductionDeployReview,
+    latestPackageDashboardPreflightReadyForOwnerReleaseActivation: packageReadback.latestPackageDashboardPreflightReadyForOwnerReleaseActivation,
     packageReadback,
     advisoryOnly: review.advisoryOnly === true,
     writefulSchedulingAllowed: review.writefulSchedulingAllowed === true,
