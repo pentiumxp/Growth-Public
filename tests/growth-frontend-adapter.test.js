@@ -359,6 +359,26 @@ test("Growth API client exposes card generation context and write helpers", asyn
     target_node_ids: ["kg_main_idea"],
     requested_by: "owner"
   }, "weixin_fanfan");
+  await client.fetchGrowthOwnerAuditReviews({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    task_card_id: "ltask_daily_1",
+    evaluation_id: "eval_daily_1",
+    profile_delta_id: "lgpdelta_1",
+    target_node_ids: ["kg_main_idea"],
+    limit: 4
+  }, "weixin_fanfan");
+  await client.recordGrowthOwnerAuditReview({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    decision: "accepted",
+    task_card_id: "ltask_daily_1",
+    evaluation_id: "eval_daily_1",
+    owner_note: "Owner accepted bounded summary."
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -543,6 +563,19 @@ test("Growth API client exposes card generation context and write helpers", asyn
     target_node_ids: ["kg_main_idea"],
     requested_by: "owner"
   });
+  const ownerAuditReviewListCall = calls.find((call) => call.path.startsWith("/api/v1/growth/owner-audit/reviews?"));
+  assert.equal(ownerAuditReviewListCall.path, "/api/v1/growth/owner-audit/reviews?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&taskCardId=ltask_daily_1&evaluationId=eval_daily_1&profileDeltaId=lgpdelta_1&targetNodeIds=kg_main_idea&limit=4");
+  const ownerAuditReviewRecordCall = calls.find((call) => call.path === "/api/v1/growth/owner-audit/reviews");
+  assert.ok(ownerAuditReviewRecordCall);
+  assert.deepEqual(JSON.parse(ownerAuditReviewRecordCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    program_id: "program_science",
+    decision: "accepted",
+    task_card_id: "ltask_daily_1",
+    evaluation_id: "eval_daily_1",
+    owner_note: "Owner accepted bounded summary."
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -597,6 +630,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchGrowthReferenceSummary("plan_draft", "lgplan_proxy_1", "weixin_stephen", { purpose: "owner_loop" });
   await client.fetchLearningOperatingLoopRuns({ learner_id: "fanfan", action: "draft_daily_plan" }, "weixin_stephen");
   await client.advanceLearningOperatingLoop({ action: "run_next", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
+  await client.fetchGrowthOwnerAuditReviews({ learner_id: "fanfan", task_card_id: "ltask_proxy_1" }, "weixin_stephen");
+  await client.recordGrowthOwnerAuditReview({ decision: "needs_follow_up", task_card_id: "ltask_proxy_1" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -688,6 +723,15 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     action: "run_next",
     target_node_ids: ["kg_english_main_idea"]
+  });
+  const proxyOwnerAuditReviewListCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/owner-audit/reviews?"));
+  assert.equal(proxyOwnerAuditReviewListCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/owner-audit/reviews?targetWorkspaceId=weixin_stephen&learnerId=fanfan&taskCardId=ltask_proxy_1&limit=5");
+  const proxyOwnerAuditReviewRecordCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/owner-audit/reviews");
+  assert.ok(proxyOwnerAuditReviewRecordCall);
+  assert.deepEqual(JSON.parse(proxyOwnerAuditReviewRecordCall.options.body), {
+    workspace_id: "weixin_stephen",
+    decision: "needs_follow_up",
+    task_card_id: "ltask_proxy_1"
   });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
@@ -1759,6 +1803,52 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }]
           },
           error: ""
+        },
+        ownerAuditReviewDraft: "本次画像更新可以接受，下一张保持低压力。",
+        ownerAuditReviews: {
+          status: "ready",
+          data: {
+            ok: true,
+            schemaVersion: "growth.learningOwnerAuditReviewList.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            count: 1,
+            reviews: [{
+              reviewId: "lgoar_history_1",
+              decision: "accepted",
+              status: "reviewed",
+              taskCardId: "ltask_history_1",
+              evaluationId: "eval_history_1",
+              feedbackSummary: {
+                readyForNextPlan: true,
+                cycleComplete: true,
+                evidenceCount: 1,
+                profileDeltaCount: 1
+              },
+              auditSummary: {
+                passCheckCount: 5,
+                missingRequiredCount: 0
+              },
+              recommendation: {
+                strategy: "repair"
+              },
+              nextAction: {
+                action: "draft_daily_plan"
+              },
+              createdAt: "2026-06-17T12:00:00.000Z"
+            }]
+          },
+          actionStatus: "reviewed",
+          actionResult: {
+            decision: "accepted",
+            review: {
+              reviewId: "lgoar_history_1"
+            },
+            nextAction: {
+              action: "draft_daily_plan"
+            }
+          },
+          actionError: ""
         }
       }
     },
@@ -1916,6 +2006,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /评价证据 · lgevidence_science_1/);
   assert.match(html, /画像变化审计/);
   assert.match(html, /待补齐/);
+  assert.match(html, /data-owner-audit-review-panel/);
+  assert.match(html, /完成周期审核/);
+  assert.match(html, /data-owner-audit-review-refresh/);
+  assert.match(html, /data-owner-audit-review-decision="accepted"/);
+  assert.match(html, /data-owner-audit-review-decision="needs_follow_up"/);
+  assert.match(html, /data-owner-audit-review-decision="correction_recorded"/);
+  assert.match(html, /data-owner-audit-review-decision="blocked"/);
+  assert.match(html, /data-owner-audit-review-note/);
+  assert.match(html, /lgoar_history_1/);
+  assert.match(html, /完成周期审核已记录：lgoar_history_1/);
+  assert.match(html, /本次画像更新可以接受/);
   assert.match(html, /推荐闭环/);
   assert.match(html, /已生成/);
   assert.match(html, /已替换/);
@@ -2024,6 +2125,78 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(operatingAdvancePayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(operatingAdvancePayload, "transcript"), false);
+
+  const ownerAuditReviewQueryPayload = windowRef.HermesGrowthCardGenerationUi.createOwnerAuditReviewQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        planDraftId: "lgplan_history_1",
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        profileDeltaId: "lgpdelta_history_1",
+        evidenceId: "lgevidence_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ownerAuditReviewQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    recipe_id: "daily_english_v1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    target_node_ids: ["kg_history_node"],
+    card_schema_version: "growth.card.authoring.v1",
+    plan_draft_id: "lgplan_history_1",
+    task_card_id: "ltask_history_1",
+    evaluation_id: "eval_history_1",
+    profile_delta_id: "lgpdelta_history_1",
+    evidence_id: "lgevidence_history_1",
+    source_id: "eval_history_1",
+    limit: 5
+  });
+
+  const ownerAuditReviewPayload = windowRef.HermesGrowthCardGenerationUi.createOwnerAuditReviewPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        correctionId: "lgcorr_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    },
+    decision: "correction_recorded",
+    note: "Owner accepted the bounded correction."
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ownerAuditReviewPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    recipe_id: "daily_english_v1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    target_node_ids: ["kg_history_node"],
+    card_schema_version: "growth.card.authoring.v1",
+    task_card_id: "ltask_history_1",
+    evaluation_id: "eval_history_1",
+    correction_id: "lgcorr_history_1",
+    source_id: "eval_history_1",
+    decision: "correction_recorded",
+    owner_note: "Owner accepted the bounded correction.",
+    requested_by: "owner",
+    reviewed_by: "owner"
+  });
+  assert.equal(windowRef.HermesGrowthCardGenerationUi.ownerAuditReviewHasAnchor(ownerAuditReviewPayload), true);
+  assert.equal(Object.hasOwn(ownerAuditReviewPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(ownerAuditReviewPayload, "transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -3634,7 +3807,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-operating-loop-ui-v1";
+  const staticVersion = "20260618-owner-audit-review-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -3719,6 +3892,10 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-action-handoff-deliver/);
   assert.match(source, /data-recommendation-lifecycle-review/);
   assert.match(source, /function createOwnerCorrectionPayload/);
+  assert.match(source, /function createOwnerAuditReviewQueryPayload/);
+  assert.match(source, /function createOwnerAuditReviewPayload/);
+  assert.match(source, /function refreshOwnerAuditReviews/);
+  assert.match(source, /function recordOwnerAuditReviewFromUi/);
   assert.match(source, /function submitOwnerCorrectionFromUi/);
   assert.match(source, /function createReleaseWorkbenchActionPayloadFromButton/);
   assert.match(source, /function createReleasePackageBuildPayloadFromButton/);
@@ -3759,6 +3936,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function createTargetProvisionPayload/);
   assert.match(source, /function provisionTargetDomainPackFromUi/);
   assert.match(source, /api\.submitGrowthProfileCorrection\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthOwnerAuditReviews\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.recordGrowthOwnerAuditReview\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.buildGrowthReleasePackage\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);

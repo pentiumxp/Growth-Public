@@ -723,7 +723,21 @@ GET /api/v1/growth/learning-cycles/audit
 GET /api/v1/growth/learning-cycles/completeness
 GET /api/v1/growth/profile-delta-audits
 GET /api/v1/growth/profile-corrections
+GET /api/v1/growth/owner-audit/reviews
+POST /api/v1/growth/owner-audit/reviews
 ```
+
+The Owner generation page includes a `完成周期审核` panel over
+`owner-audit/reviews`. The panel is for closure review after a completed daily
+cycle: Owner selects a history cycle, optionally enters one bounded summary
+note, then records `accepted`, `needs_follow_up`, `correction_recorded`, or
+`blocked`. The panel does not create correction evidence; `correction_recorded`
+is enabled only when the selected cycle already has a correction id from the
+separate Owner correction flow. The browser does not compute profile feedback,
+fabricate cycle selectors, call Gateway, generate or evaluate cards, schedule,
+or mutate learner state directly. It only lists review rows and submits
+selected-cycle selectors, decision, and bounded note to the service-owned
+Owner-only write route.
 
 Implemented supervised proposal routes:
 

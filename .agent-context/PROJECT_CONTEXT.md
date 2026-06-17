@@ -138,7 +138,16 @@ readback gate set.
   summaries, recommendation/next-action summaries, reviewer metadata, and
   bounded notes. It does not write learner evidence, mutate Profile V2, call
   Gateway, generate cards, evaluate submissions, schedule, notify, activate
-  stage assessments, or act as release/deploy permission.
+  stage assessments, or act as release/deploy permission. The embedded Owner
+  `生成` tab now consumes the same boundary through a `完成周期审核` panel:
+  it lists persisted review rows, builds review payloads only from the selected
+  history-cycle selectors plus an optional bounded Owner note, and posts
+  decisions `accepted`, `needs_follow_up`, `correction_recorded`, or `blocked`
+  to the Owner-only route. The browser must not compute profile feedback,
+  fabricate completed cycles, create correction evidence from that panel,
+  inspect review storage, call Gateway, generate/evaluate cards, or mutate
+  learner state directly; `correction_recorded` remains disabled unless the
+  selected cycle already carries a correction id.
   Growth also projects those persisted review rows back into the next planning
   loop through `learning-owner-review-signal-service`. The signal is read-only
   and summary-only (`growth.learningOwnerReviewSignal.v1`), excludes Owner

@@ -107,6 +107,15 @@
         result: null,
         error: ""
       },
+      ownerAuditReviewDraft: "",
+      ownerAuditReviews: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       cycleDrilldown: {
         status: "idle",
         audit: null,
@@ -751,6 +760,46 @@
         pageState.cardGeneration.ownerCorrectionDraft = textarea.value || "";
       });
     });
+    root.querySelectorAll("[data-owner-audit-review-note]").forEach((textarea) => {
+      textarea.addEventListener("input", () => {
+        pageState.cardGeneration.ownerAuditReviewDraft = textarea.value || "";
+      });
+    });
+    root.querySelectorAll("[data-owner-audit-review-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshOwnerAuditReviews().catch((error) => {
+          pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-owner-audit-review-decision]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const blockedReason = clean(button.dataset.ownerAuditReviewBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+            actionStatus: "blocked",
+            actionError: blockedReason
+          });
+          renderShell();
+          return;
+        }
+        if (button.disabled) return;
+        recordOwnerAuditReviewFromUi(button.dataset.ownerAuditReviewDecision).catch((error) => {
+          pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-card-generation-cycle-audit-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -812,6 +861,9 @@
           renderShell();
         });
         refreshReferenceChain(cardGenerationWorkspaceId(), pageState.cardGeneration.context).then(() => {
+          renderShell();
+        }).catch(() => null);
+        refreshOwnerAuditReviews(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
           renderShell();
         }).catch(() => null);
       });
@@ -1242,6 +1294,15 @@
       result: null,
       error: ""
     };
+    pageState.cardGeneration.ownerAuditReviewDraft = "";
+    pageState.cardGeneration.ownerAuditReviews = {
+      status: "loading",
+      data: pageState.cardGeneration.ownerAuditReviews?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.cycleDrilldown = {
       status: "idle",
       audit: null,
@@ -1367,6 +1428,7 @@
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
     await refreshOperatingLoopRuns(requestedTargetWorkspaceId, context);
     await refreshCycleHistoryFromUi({ silent: true });
+    await refreshOwnerAuditReviews(requestedTargetWorkspaceId, context, { silent: true });
     await refreshReferenceChain(requestedTargetWorkspaceId, context);
     await refreshAutomationProposals(requestedTargetWorkspaceId, context);
     await refreshAutomationDigests(requestedTargetWorkspaceId, context);
@@ -1528,6 +1590,51 @@
         summaries: [],
         error: error.message || String(error)
       };
+      return null;
+    }
+  }
+
+  async function refreshOwnerAuditReviews(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.ownerAuditReviews || {};
+    pageState.cardGeneration.ownerAuditReviews = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createOwnerAuditReviewQueryPayload({
+        context,
+        workspaceId: requestedTargetWorkspaceId,
+        selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
+      });
+      const result = await api.fetchGrowthOwnerAuditReviews(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.ownerAuditReviews = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.ownerAuditReviews = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
       return null;
     }
   }
@@ -2455,6 +2562,7 @@
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
       await refreshOperatingLoopRuns(requestedTargetWorkspaceId, context, { silent: true });
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshOwnerAuditReviews(requestedTargetWorkspaceId, context, { silent: true });
       await refreshReferenceChain(requestedTargetWorkspaceId, context);
       await refreshAutomationProposals(requestedTargetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
@@ -2629,6 +2737,38 @@
       }),
       targetWorkspaceId
     };
+  }
+
+  function createOwnerAuditReviewQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createOwnerAuditReviewQueryPayload !== "function") {
+      throw new Error("owner_audit_review_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const payload = ui.createOwnerAuditReviewQueryPayload({
+      context,
+      workspaceId: targetWorkspaceId,
+      selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
+    });
+    return { payload, targetWorkspaceId };
+  }
+
+  function createOwnerAuditReviewPayload(decision = "accepted") {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createOwnerAuditReviewPayload !== "function") {
+      throw new Error("owner_audit_review_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context;
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const payload = ui.createOwnerAuditReviewPayload({
+      context,
+      workspaceId: targetWorkspaceId,
+      selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {},
+      decision,
+      note: pageState.cardGeneration.ownerAuditReviewDraft || ""
+    });
+    return { payload, targetWorkspaceId };
   }
 
   function cycleHistoryItems() {
@@ -2838,6 +2978,15 @@
         summaries: [],
         error: ""
       };
+      pageState.cardGeneration.ownerAuditReviewDraft = "";
+      pageState.cardGeneration.ownerAuditReviews = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       pageState.cardGeneration.operatingLoop = {
         status: "idle",
         data: null,
@@ -2897,6 +3046,7 @@
       await refreshLearningLoopState(targetWorkspaceId, context);
       await refreshOperatingLoopRuns(targetWorkspaceId, context, { silent: true });
       await refreshCycleHistoryFromUi({ silent: true });
+      await refreshOwnerAuditReviews(targetWorkspaceId, context, { silent: true });
       await refreshReferenceChain(targetWorkspaceId, context);
       await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
       await refreshAutomationDigests(targetWorkspaceId, context, { silent: true });
@@ -3198,6 +3348,51 @@
         result: pageState.cardGeneration.ownerCorrection?.result || null,
         error: error.message || String(error)
       };
+      renderShell();
+    }
+  }
+
+  async function recordOwnerAuditReviewFromUi(decision = "accepted") {
+    const { payload, targetWorkspaceId } = createOwnerAuditReviewPayload(clean(decision) || "accepted");
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.ownerAuditReviewHasAnchor !== "function" || !ui.ownerAuditReviewHasAnchor(payload)) {
+      pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+        actionStatus: "blocked",
+        actionError: "请先选择一条完成周期。"
+      });
+      renderShell();
+      return;
+    }
+    if (payload.decision === "correction_recorded" && !clean(payload.correction_id)) {
+      pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+        actionStatus: "blocked",
+        actionError: "记录已纠偏前，需要先保存 Owner 纠偏。"
+      });
+      renderShell();
+      return;
+    }
+    pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.ownerAuditReviews?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.recordGrowthOwnerAuditReview(payload, targetWorkspaceId);
+      pageState.cardGeneration.ownerAuditReviewDraft = "";
+      pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+        actionStatus: "reviewed",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "完成周期审核已记录，但" });
+      await refreshOwnerAuditReviews(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
       renderShell();
     }
   }

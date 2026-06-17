@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T03:38+0800 - Owner Audit-Review UI Closure
+
+- Status: implemented locally; focused frontend/layout/architecture/docs
+  Harness, docs-locality, syntax coverage, and diff check passed. No
+  production deploy, Home AI central visual harness run, Gateway/model call,
+  learner evidence write, card generation, evaluation, scheduler execution,
+  runtime config change, release approval, or Home AI host logic change was
+  performed.
+- Classification: H2 Growth embedded UI consumption of the existing
+  service-owned Owner audit-review boundary. It does not add a new route,
+  table, model boundary, scheduler, release permission, or browser-side
+  profile-feedback policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthOwnerAuditReviews()` and `recordGrowthOwnerAuditReview()`
+    helpers for `GET /api/v1/growth/owner-audit/reviews` and Owner-only
+    `POST /api/v1/growth/owner-audit/reviews`;
+  - `public/growth-card-generation-ui.js` now renders the summary-only
+    `完成周期审核` panel, lists persisted review rows, builds review payloads
+    from selected history-cycle selectors plus bounded Owner note, and keeps
+    `correction_recorded` disabled unless the selected cycle already has a
+    correction id;
+  - `public/app.js` loads Owner audit-review rows with the generation context,
+    refreshes them after context/provision/cycle selection/review changes,
+    records `accepted`, `needs_follow_up`, `correction_recorded`, or `blocked`
+    through the Owner-only route, and refreshes loop/reference/readback state
+    after a successful write;
+  - `public/index.html` cache-busting moved to
+    `20260618-owner-audit-review-ui-v1`;
+  - Growth-local docs now state that the browser must not compute profile
+    feedback, fabricate cycle selectors, create correction evidence from this
+    panel, inspect SQLite/review storage, call Gateway, generate/evaluate
+    cards, schedule, activate stages, or mutate learner state directly.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    -> 76/76;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`, `checkedCount=225`;
+  - `git diff --check`;
+  - local current-worktree service check on `GROWTH_PORT=4882`: manifest
+    returned JSON, index used `20260618-owner-audit-review-ui-v1`, and
+    `growth-card-generation-ui.js` / `app.js` contained the new Owner
+    audit-review UI/action symbols.
+- Remaining gate:
+  - this does not replace Home AI central visual evidence. Before production
+    UI release, run the central embedded-plugin visual harness for the Owner
+    generation surface and persist the bounded UI/release evidence through the
+    existing Growth release-evidence path.
+
 ## 2026-06-18T03:04+0800 - Owner Operating-Loop UI Consumption
 
 - Status: implemented locally; frontend adapter Harness, docs-locality, syntax
