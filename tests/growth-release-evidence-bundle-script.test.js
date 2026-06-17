@@ -913,6 +913,10 @@ test("release evidence bundle script writes central visual evidence from central
     assert.equal(fileBundle.evidence.centralVisualEvidence.source, "growth-release-evidence-bundle-builder");
     assert.equal(fileBundle.evidence.centralVisualEvidence.smoke, "npm run smoke:central-visual-evidence");
     assert.equal(fileBundle.evidence.centralVisualEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.schemaVersion, "growth.learningAutomationCentralVisualEvidence.v1");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.privacyClass, "summary_only");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.summaryOnly, true);
+    assert.equal(fileBundle.evidence.centralVisualEvidence.readyForReleaseEvidence, true);
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.status, "pass");
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);

@@ -485,7 +485,12 @@ readback gate set.
   read-only release approval bag through
   `npm run smoke:release-approval -- --operation bag`,
   and can feed `npm run smoke:release-readiness -- --evidence-bundle-file`
-  without hand-splicing JSON in Codex. It also exposes an opt-in
+  without hand-splicing JSON in Codex. Every task evidence object in that
+  bundle is itself a formal summary-only evidence wrapper with a schema
+  version, `privacyClass=summary_only`, `summaryOnly=true`, bounded task/source
+  metadata, and `readyForReleaseEvidence`, so release-readiness can consume
+  pass evidence directly while blocked task evidence remains visibly blocked.
+  It also exposes an opt-in
   `learner_cycle` task that is part of the default set but allows only
   no-write `audit`; non-audit learner-cycle operations are blocked with a
   pointer to run `npm run smoke:learner-cycle` directly because write

@@ -515,6 +515,15 @@ unbounded automation. Priority order:
      The service bag used by readiness must preserve `schemaVersion`,
      `privacyClass=summary_only`, `summaryOnly=true`, `evidenceKey`, and
      `checkKey` from the stored evidence record projection;
+   - release evidence bundle task-evidence wrapper:
+     `learning-automation-release-evidence-bundle-service` does not expose
+     smoke stdout/stderr as evidence. It projects every task result into a
+     bounded summary-only evidence object with a schema version,
+     `privacyClass=summary_only`, `summaryOnly=true`, task/source metadata, and
+     a `readyForReleaseEvidence` pass/blocked signal. This allows
+     `learning-automation-release-readiness-service` to consume
+     `--evidence-bundle-file` output directly while keeping the same strict
+     summary-only validation used for persisted release-evidence records;
    - collection-run smoke entry:
      `npm run smoke:release-collection-run` delegates through the normal
      service graph, defaults to no-write evaluation, accepts explicit bundle,

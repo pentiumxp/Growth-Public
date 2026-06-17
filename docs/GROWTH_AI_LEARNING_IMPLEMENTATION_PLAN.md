@@ -169,6 +169,13 @@ AI-driven loop:
   from bounded smoke DTOs, while real transcript, raw prompt, answer-key,
   token, provider-config, or private-path fields still fail closed before
   release-readiness sees the bundle;
+- release evidence bundle task evidence is formal summary-only evidence, not a
+  loose script transcript. Each task evidence object carries a schema version,
+  `privacyClass=summary_only`, `summaryOnly=true`, bounded status/source/task
+  metadata, and `readyForReleaseEvidence` for pass/blocked distinction. When a
+  bundle is passed into `npm run smoke:release-readiness` through
+  `--evidence-bundle-file`, pass task evidence must be consumable directly by
+  readiness without triggering `release_evidence_summary_only_required`;
 - release package backend/CLI/API for composing bundle, bundle audit,
   release-readiness, collection-run, release-controls, and release-dashboard
   readback into one
@@ -815,7 +822,10 @@ Implemented backend shape:
   from a supplied Home AI central visual harness artifact without starting
   Appium or running `npm run ios:pwa:visual` inside Growth. The release bundle
   records only bounded visual summary fields and file-presence metadata, not
-  raw local artifact paths.
+  raw local artifact paths. The `centralVisualEvidence` task evidence keeps the
+  central visual smoke schema when provided, and otherwise still keeps the
+  bundle task-evidence summary-only wrapper so readiness can distinguish a
+  passing visual artifact from a blocked one without reading raw screenshots.
   The explicit non-default `release_package_review_ui` task maps
   `npm run smoke:ui-evidence` output to `releasePackageReviewUiEvidence`.
   It is selected only when the caller supplies that task and a summary

@@ -21,6 +21,7 @@ const SAFE_PRIVACY_ASSERTION_KEYS = new Set([
 ]);
 const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish", "advance"]);
 const LEARNER_CYCLE_BUNDLE_OPERATIONS = new Set(["audit"]);
+const RELEASE_EVIDENCE_BUNDLE_TASK_EVIDENCE_SCHEMA = "growth.learningAutomationReleaseEvidenceBundle.taskEvidence.v1";
 
 const TASK_BY_ID = new Map(TASK_DEFINITIONS.map((task) => [task.taskId, task]));
 
@@ -860,12 +861,16 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
         : cleanString(parsedValue.error || taskResult.error || "");
   const pass = parsed.ok && privacyFindings.length === 0 && taskResult.exitCode === 0 && parsedValue.ok === true;
   const evidence = {
+    schemaVersion: cleanString(parsedValue.schemaVersion || parsedValue.schema_version, 180) || RELEASE_EVIDENCE_BUNDLE_TASK_EVIDENCE_SCHEMA,
+    privacyClass: "summary_only",
+    summaryOnly: true,
     ok: pass,
     status: pass ? "pass" : "blocked",
     source: "growth-release-evidence-bundle-builder",
     smoke: task.commandName,
     taskId: task.taskId,
     evidenceId: `growth_release_evidence_${task.taskId}_${generatedAt.replace(/[^0-9A-Za-z]/g, "")}`,
+    readyForReleaseEvidence: pass,
     generatedAt,
     exitCode: taskResult.exitCode,
     summary: parsed.ok && !privacyFindings.length ? summaryForTask(task, parsedValue) : {}
@@ -884,12 +889,16 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
 
 function blockedEvidenceFromTask(task, generatedAt, error, details = {}) {
   const evidence = {
+    schemaVersion: RELEASE_EVIDENCE_BUNDLE_TASK_EVIDENCE_SCHEMA,
+    privacyClass: "summary_only",
+    summaryOnly: true,
     ok: false,
     status: "blocked",
     source: "growth-release-evidence-bundle-builder",
     smoke: task.commandName,
     taskId: task.taskId,
     evidenceId: `growth_release_evidence_${task.taskId}_${generatedAt.replace(/[^0-9A-Za-z]/g, "")}`,
+    readyForReleaseEvidence: false,
     generatedAt,
     exitCode: null,
     error: cleanString(error, 160),

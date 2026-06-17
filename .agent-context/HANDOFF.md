@@ -22270,3 +22270,65 @@
     config;
   - add richer subject-specific rubric catalogs as actual domain packs require
     them.
+
+## 2026-06-18T01:04+0800 - Release bundle task-evidence summary-only closure
+
+- Status:
+  - Fixed the release evidence bundle/readiness contract gap found during final
+    release-evidence validation.
+  - Overall Growth backend/release-evidence target is approximately 98.5%
+    complete after this slice. The remaining gap is not the card loop or bundle
+    shape; it is production-release evidence/config completion.
+- Implemented behavior:
+  - `learning-automation-release-evidence-bundle-service` now wraps every task
+    evidence object as formal summary-only evidence with:
+    `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
+    bounded task/source metadata, and `readyForReleaseEvidence`.
+  - Passing task evidence can now be consumed by
+    `npm run smoke:release-readiness -- --evidence-bundle-file <bundle>`
+    without being rejected as `release_evidence_summary_only_required`.
+  - Blocked task evidence remains `ok=false`, `status=blocked`, and
+    `readyForReleaseEvidence=false`; this does not convert missing external
+    prerequisites into pass evidence.
+  - Central visual/UI task evidence still preserves the more specific smoke
+    schema when provided, while retaining the summary-only/readiness wrapper.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js`
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js`
+    passed `49/49`.
+  - `node --test tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-release-evidence-bundle-audit-service.test.js tests/growth-release-evidence-bundle-audit-smoke-script.test.js`
+    passed `35/35`.
+  - Actual bundle/readiness smoke readback using the Home AI central visual
+    summary artifact:
+    - bundle: `taskCount=24`, `passedCount=18`, `blockedCount=6`;
+    - readiness from the new bundle:
+      `summaryOnlyFailureCount=0`;
+    - `centralVisualEvidence` read back as `checkStatus=pass`,
+      `evidenceStatus=pass`, schema
+      `growth.learningAutomationCentralVisualEvidence.v1`;
+    - readiness remains `blocked` because Owner/UI/platform/data evidence is
+      still incomplete, not because the bundle task-evidence wrapper is
+      invalid.
+  - `npm run test:release-union` passed `255/255`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `npm run --silent check` passed with `runtimeCount=223`.
+  - `git diff --check` passed.
+  - `codegraph sync && codegraph status` -> index up to date; existing earlier
+    engine advisory unchanged.
+- Remaining next-step candidates:
+  - close true release-readiness blockers: Gateway endpoint/config,
+    completed-cycle/profile-feedback evidence, visible target provisioning,
+    stage-assessment target selectors, platform Action Inbox/Web Push evidence,
+    Owner/UI visual evidence, reviewed digest/failure-policy/handoff/worker
+    target records, and explicit release approvals;
+  - do not treat the blocked bundle as production release approval;
+  - run production deploy only after the remaining release evidence and Owner
+    approval gates are intentionally satisfied.

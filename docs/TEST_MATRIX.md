@@ -55,6 +55,15 @@ release-readiness, run both
 `tests/learning-automation-release-readiness-service.test.js`. The focused
 assertion must prove pass records keep `summaryOnly`, `privacyClass`,
 `schemaVersion`, `evidenceKey`, and `checkKey` in the bag projection.
+When changing the release evidence bundle task evidence wrapper, run
+`tests/learning-automation-release-evidence-bundle-service.test.js`,
+`tests/growth-release-evidence-bundle-script.test.js`,
+`tests/learning-automation-release-readiness-service.test.js`, and
+`tests/growth-release-readiness-smoke-script.test.js`. The focused assertion
+must prove each bundle evidence object is itself summary-only
+(`privacyClass=summary_only`, `summaryOnly=true`, `schemaVersion` present), so
+`npm run smoke:release-readiness -- --evidence-bundle-file <bundle>` can consume
+pass evidence without reporting `release_evidence_summary_only_required`.
 When changing the readiness evidence catalog membership or catalog cardinality,
 also run the downstream release package, inventory, dashboard, and
 `npm run test:release-union` gates. The focused assertion must prove persisted

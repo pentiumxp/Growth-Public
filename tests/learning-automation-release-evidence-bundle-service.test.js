@@ -221,6 +221,10 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.taskEvidence.v1");
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.privacyClass, "summary_only");
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.summaryOnly, true);
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.readyForReleaseEvidence, true);
   assert.equal(result.bundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.operation, "readiness");
   assert.equal(result.bundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.runCount, 0);
   assert.equal(result.bundle.evidence.productionOwnerAuditReviewSmokeEvidence.summary.reviewCount, 1);
@@ -408,6 +412,10 @@ test("release evidence bundle service blocks learner-cycle write operations from
   assert.equal(calls.length, 0);
   assert.deepEqual(result.bundle.summary.failedTaskIds, ["learner_cycle"]);
   const evidence = result.bundle.evidence.productionLearnerCycleSmokeEvidence;
+  assert.equal(evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceBundle.taskEvidence.v1");
+  assert.equal(evidence.privacyClass, "summary_only");
+  assert.equal(evidence.summaryOnly, true);
+  assert.equal(evidence.readyForReleaseEvidence, false);
   assert.equal(evidence.status, "blocked");
   assert.equal(evidence.error, "release_evidence_bundle_learner_cycle_operation_invalid");
   assert.deepEqual(evidence.allowedOperations, ["audit"]);
@@ -544,6 +552,12 @@ test("release evidence bundle service keeps blocked smoke as bounded evidence", 
   assert.equal(result.bundle.summary.blockedCount, 1);
   assert.deepEqual(result.bundle.summary.failedTaskIds, ["scheduler_dry_run"]);
   assert.deepEqual(result.bundle.tasks.map((task) => task.status), ["pass", "blocked"]);
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.summaryOnly, true);
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.privacyClass, "summary_only");
+  assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.readyForReleaseEvidence, true);
+  assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.summaryOnly, true);
+  assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.privacyClass, "summary_only");
+  assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.readyForReleaseEvidence, false);
   assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.status, "blocked");
   assert.equal(result.bundle.evidence.productionSchedulerDryRunSmokeEvidence.error, "scheduler_dry_run_smoke_blocked");
 });
@@ -936,6 +950,9 @@ test("release evidence bundle service collects central visual evidence from read
     stdout: JSON.stringify({
       ok: true,
       source: "growth-learning-automation-central-visual-evidence-service",
+      schemaVersion: "growth.learningAutomationCentralVisualEvidence.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
       status: "pass",
       readyForReleaseEvidence: true,
       visualEvidence: {
@@ -960,6 +977,10 @@ test("release evidence bundle service collects central visual evidence from read
 
   assert.equal(result.ok, true);
   assert.equal(result.bundle.evidence.centralVisualEvidence.status, "pass");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.schemaVersion, "growth.learningAutomationCentralVisualEvidence.v1");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.privacyClass, "summary_only");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.summaryOnly, true);
+  assert.equal(result.bundle.evidence.centralVisualEvidence.readyForReleaseEvidence, true);
   assert.equal(result.bundle.evidence.centralVisualEvidence.smoke, "npm run smoke:central-visual-evidence");
   assert.equal(result.bundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
   assert.equal(result.bundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);
