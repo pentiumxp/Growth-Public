@@ -27,6 +27,7 @@ const RELEASE_EVIDENCE_KEYS = Object.freeze([
   "productionOperatingLoopHistorySmokeEvidence",
   "productionCycleHistorySmokeEvidence",
   "productionOwnerAuditSmokeEvidence",
+  "productionOwnerAuditReviewSmokeEvidence",
   "productionProfileFeedbackSmokeEvidence",
   "productionRecommendationLifecycleSmokeEvidence",
   "productionDailyLoopWriteSmokeEvidence",
@@ -64,6 +65,7 @@ const CHECK_KEY_BY_EVIDENCE_KEY = Object.freeze({
   productionOperatingLoopHistorySmokeEvidence: "production_operating_loop_history_smoke_evidence",
   productionCycleHistorySmokeEvidence: "production_cycle_history_smoke_evidence",
   productionOwnerAuditSmokeEvidence: "production_owner_audit_smoke_evidence",
+  productionOwnerAuditReviewSmokeEvidence: "production_owner_audit_review_smoke_evidence",
   productionProfileFeedbackSmokeEvidence: "production_profile_feedback_smoke_evidence",
   productionRecommendationLifecycleSmokeEvidence: "production_recommendation_lifecycle_smoke_evidence",
   productionDailyLoopWriteSmokeEvidence: "production_daily_loop_write_smoke_evidence",
@@ -320,6 +322,50 @@ function compactOwnerReviewBagFields(record = {}, evidence = {}) {
   return summary ? { ownerReviewStageSummary: summary } : {};
 }
 
+function compactOwnerAuditReviewSummary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const summary = {
+    reviewCount: Number(value.reviewCount || value.ownerAuditReviewCount || value.owner_audit_review_count || value.count || 0) || 0,
+    latestReviewId: cleanString(value.latestReviewId || value.latest_review_id || value.ownerAuditReviewReviewId || value.owner_audit_review_review_id || value.reviewId || value.review_id, 180),
+    decision: cleanString(value.decision || value.ownerAuditReviewDecision || value.owner_audit_review_decision, 120),
+    recordStatus: cleanString(value.recordStatus || value.record_status || value.ownerAuditReviewRecordStatus || value.owner_audit_review_record_status || value.status, 120),
+    operation: cleanString(value.operation || value.ownerAuditReviewOperation || value.owner_audit_review_operation, 80),
+    profileFeedbackOk: value.profileFeedbackOk === true || value.profile_feedback_ok === true || value.ownerAuditReviewProfileFeedbackOk === true || value.owner_audit_review_profile_feedback_ok === true,
+    profileFeedbackStatus: cleanString(value.profileFeedbackStatus || value.profile_feedback_status || value.ownerAuditReviewProfileFeedbackStatus || value.owner_audit_review_profile_feedback_status, 120),
+    cycleComplete: value.cycleComplete === true || value.cycle_complete === true || value.ownerAuditReviewCycleComplete === true || value.owner_audit_review_cycle_complete === true,
+    readyForNextPlan: value.readyForNextPlan === true || value.ready_for_next_plan === true || value.ownerAuditReviewReadyForNextPlan === true || value.owner_audit_review_ready_for_next_plan === true,
+    readyForAutomation: value.readyForAutomation === true || value.ready_for_automation === true || value.ownerAuditReviewReadyForAutomation === true || value.owner_audit_review_ready_for_automation === true,
+    evidenceCount: Number(value.evidenceCount || value.evidence_count || value.ownerAuditReviewEvidenceCount || value.owner_audit_review_evidence_count || 0) || 0,
+    profileDeltaCount: Number(value.profileDeltaCount || value.profile_delta_count || value.ownerAuditReviewProfileDeltaCount || value.owner_audit_review_profile_delta_count || 0) || 0,
+    rewardSettlementCount: Number(value.rewardSettlementCount || value.reward_settlement_count || value.ownerAuditReviewRewardSettlementCount || value.owner_audit_review_reward_settlement_count || 0) || 0,
+    totalRewardCoins: Number(value.totalRewardCoins || value.total_reward_coins || value.ownerAuditReviewTotalRewardCoins || value.owner_audit_review_total_reward_coins || 0) || 0,
+    checkCount: Number(value.checkCount || value.check_count || value.ownerAuditReviewCheckCount || value.owner_audit_review_check_count || 0) || 0,
+    passCheckCount: Number(value.passCheckCount || value.pass_check_count || value.ownerAuditReviewPassCheckCount || value.owner_audit_review_pass_check_count || 0) || 0,
+    missingCheckCount: Number(value.missingCheckCount || value.missing_check_count || value.ownerAuditReviewMissingCheckCount || value.owner_audit_review_missing_check_count || 0) || 0,
+    blockedCheckCount: Number(value.blockedCheckCount || value.blocked_check_count || value.ownerAuditReviewBlockedCheckCount || value.owner_audit_review_blocked_check_count || 0) || 0,
+    missingRequiredCount: Number(value.missingRequiredCount || value.missing_required_count || value.ownerAuditReviewMissingRequiredCount || value.owner_audit_review_missing_required_count || 0) || 0,
+    missingRequired: compactStringArray(value.missingRequired || value.missing_required || value.ownerAuditReviewMissingRequired || value.owner_audit_review_missing_required),
+    recommendationAvailable: value.recommendationAvailable === true || value.recommendation_available === true || value.ownerAuditReviewRecommendationAvailable === true || value.owner_audit_review_recommendation_available === true,
+    recommendationStrategy: cleanString(value.recommendationStrategy || value.recommendation_strategy || value.ownerAuditReviewRecommendationStrategy || value.owner_audit_review_recommendation_strategy, 120),
+    nextAction: cleanString(value.nextAction || value.next_action || value.ownerAuditReviewNextAction || value.owner_audit_review_next_action, 140),
+    ownerNotePresent: value.ownerNotePresent === true || value.owner_note_present === true || value.ownerAuditReviewLatestOwnerNotePresent === true || value.owner_audit_review_latest_owner_note_present === true
+  };
+  const hasEvidence = summary.reviewCount > 0 || Boolean(summary.latestReviewId) || Boolean(summary.decision) || Boolean(summary.recordStatus);
+  return hasEvidence ? summary : null;
+}
+
+function compactOwnerAuditReviewBagFields(record = {}, evidence = {}) {
+  const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
+  if (evidenceKey !== "productionOwnerAuditReviewSmokeEvidence") return {};
+  const summary = compactOwnerAuditReviewSummary(
+    evidence.ownerAuditReviewSummary
+      || evidence.owner_audit_review_summary
+      || evidence.summary
+      || evidence
+  );
+  return summary ? { ownerAuditReviewSummary: summary } : {};
+}
+
 function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "", uiEvidenceService = null }) {
   if (!UI_RELEASE_EVIDENCE_KEYS.has(evidenceKey)) {
     return { ok: true, evidence: evidenceSummary(input, evidenceKey) };
@@ -378,7 +424,7 @@ function compactBagEntry(record = {}) {
     runId: cleanString(evidence.runId || evidence.run_id, 180),
     taskId: cleanString(evidence.taskId || evidence.task_id, 180),
     readyForReleaseEvidence: evidence.readyForReleaseEvidence === true || evidence.ready_for_release_evidence === true
-  }, compactUiBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence));
+  }, compactUiBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence), compactOwnerAuditReviewBagFields(record, evidence));
 }
 
 function createLearningAutomationReleaseEvidenceService(options = {}) {

@@ -154,6 +154,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     "--production-operating-loop-history-smoke-evidence",
     "--production-cycle-history-smoke-evidence",
     "--production-owner-audit-smoke-evidence",
+    "--production-owner-audit-review-smoke-evidence",
     "--production-profile-feedback-smoke-evidence",
     "--production-recommendation-lifecycle-smoke-evidence",
     "--production-daily-loop-write-smoke-evidence",
@@ -197,6 +198,7 @@ test("release readiness smoke script parses bounded scope, evidence, and approva
     productionOperatingLoopHistorySmokeEvidence: deprecatedReleaseFlag("productionOperatingLoopHistorySmokeEvidence", "production_operating_loop_history_smoke_evidence"),
     productionCycleHistorySmokeEvidence: deprecatedReleaseFlag("productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence"),
     productionOwnerAuditSmokeEvidence: deprecatedReleaseFlag("productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence"),
+    productionOwnerAuditReviewSmokeEvidence: deprecatedReleaseFlag("productionOwnerAuditReviewSmokeEvidence", "production_owner_audit_review_smoke_evidence"),
     productionProfileFeedbackSmokeEvidence: deprecatedReleaseFlag("productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence"),
     productionRecommendationLifecycleSmokeEvidence: deprecatedReleaseFlag("productionRecommendationLifecycleSmokeEvidence", "production_recommendation_lifecycle_smoke_evidence"),
     productionDailyLoopWriteSmokeEvidence: deprecatedReleaseFlag("productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence"),
@@ -245,6 +247,19 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
   const bundleStageCheckpointEvidence = validReleaseEvidence("bundle_stage_smoke");
   const bundleStageCheckpointControlsEvidence = validReleaseEvidence("bundle_stage_controls");
   const bundlePlatformActionEvidence = validReleaseEvidence("bundle_platform_action");
+  const bundleOwnerAuditReviewEvidence = validReleaseEvidence("bundle_owner_audit_review", {
+    summary: {
+      reviewCount: 1,
+      latestReviewId: "lgoar_bundle_1",
+      decision: "accepted",
+      recordStatus: "reviewed",
+      profileFeedbackOk: true,
+      cycleComplete: true,
+      readyForNextPlan: true,
+      recommendationStrategy: "repair",
+      nextAction: "draft_daily_plan"
+    }
+  });
   const bundleOwnerReviewEvidence = validReleaseEvidence("bundle_owner_review", {
     dependencyIds: ["lgaprop_bundle_1", "lgaexec_bundle_1"],
     summary: {
@@ -282,6 +297,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       stageCheckpointEvidence: bundleStageCheckpointEvidence,
       stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
       platformActionEvidence: bundlePlatformActionEvidence,
+      productionOwnerAuditReviewSmokeEvidence: bundleOwnerAuditReviewEvidence,
       ownerReviewEvidence: bundleOwnerReviewEvidence
     },
     releaseApproval: {
@@ -336,6 +352,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         stageCheckpointEvidence: bundleStageCheckpointEvidence,
         stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
         platformActionEvidence: bundlePlatformActionEvidence,
+        productionOwnerAuditReviewSmokeEvidence: bundleOwnerAuditReviewEvidence,
         ownerReviewEvidence: bundleOwnerReviewEvidence,
         centralVisualEvidence: inlineCentralVisualEvidence
       },
@@ -351,6 +368,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
       stageCheckpointEvidence: bundleStageCheckpointEvidence,
       stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
       platformActionEvidence: bundlePlatformActionEvidence,
+      productionOwnerAuditReviewSmokeEvidence: bundleOwnerAuditReviewEvidence,
       ownerReviewEvidence: bundleOwnerReviewEvidence,
       centralVisualEvidence: inlineCentralVisualEvidence,
       ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
@@ -374,6 +392,7 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
         stageCheckpointEvidence: bundleStageCheckpointEvidence,
         stageCheckpointControlsEvidence: bundleStageCheckpointControlsEvidence,
         platformActionEvidence: bundlePlatformActionEvidence,
+        productionOwnerAuditReviewSmokeEvidence: bundleOwnerAuditReviewEvidence,
         ownerReviewEvidence: bundleOwnerReviewEvidence,
         centralVisualEvidence: inlineCentralVisualEvidence,
         ownerAuditUiEvidence: deprecatedUiFlag("ownerAuditUiEvidence")
@@ -404,6 +423,10 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
     });
     assert.equal(result.status, 0);
     const output = parseStdout(result);
+    const ownerAuditReviewReadback = output.evidenceReadback.items.find((item) => item.key === "productionOwnerAuditReviewSmokeEvidence");
+    assert.equal(ownerAuditReviewReadback.ownerAuditReviewSummary.reviewCount, 1);
+    assert.equal(ownerAuditReviewReadback.ownerAuditReviewSummary.latestReviewId, "lgoar_bundle_1");
+    assert.equal(ownerAuditReviewReadback.ownerAuditReviewSummary.nextAction, "draft_daily_plan");
     const ownerReviewReadback = output.evidenceReadback.items.find((item) => item.key === "ownerReviewEvidence");
     assert.equal(ownerReviewReadback.ownerReviewStageSummary.acceptedProposalCount, 1);
     assert.equal(ownerReviewReadback.ownerReviewStageSummary.digestRequiredActionCount, 1);

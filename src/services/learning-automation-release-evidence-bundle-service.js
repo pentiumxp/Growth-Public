@@ -36,6 +36,10 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
 function clampLimit(value, fallback = 12) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
@@ -609,6 +613,56 @@ function ownerReviewSummaryFromSmoke(value = {}) {
   };
 }
 
+function ownerAuditReviewSummaryFromSmoke(value = {}) {
+  const source = objectOnly(value.ownerAuditReviewSummary || value.owner_audit_review_summary || value.summary || value);
+  return {
+    source: cleanString(value.source || source.source || "growth-learning-owner-audit-review-service", 160),
+    status: cleanString(source.ownerAuditReviewStatus || source.status || (value.ok === true ? "pass" : ""), 120),
+    operation: cleanString(source.ownerAuditReviewOperation || source.operation || "list", 80),
+    writeOperation: source.ownerAuditReviewWriteOperation === true || source.writeOperation === true,
+    reviewCount: Number(source.ownerAuditReviewCount || source.reviewCount || source.count || 0) || 0,
+    latestReviewId: cleanString(source.ownerAuditReviewReviewId || source.latestReviewId || source.reviewId, 180),
+    decision: cleanString(source.ownerAuditReviewDecision || source.decision, 120),
+    recordStatus: cleanString(source.ownerAuditReviewRecordStatus || source.recordStatus || source.reviewStatus, 120),
+    duplicate: source.ownerAuditReviewDuplicate === true || source.duplicate === true,
+    workspaceId: cleanString(source.ownerAuditReviewTargetWorkspaceId || source.workspaceId, 160),
+    learnerId: cleanString(source.ownerAuditReviewTargetLearnerId || source.learnerId, 160),
+    programId: cleanString(source.ownerAuditReviewProgramId || source.programId, 160),
+    domainPackId: cleanString(source.ownerAuditReviewDomainPackId || source.domainPackId, 160),
+    domain: cleanString(source.ownerAuditReviewDomain || source.domain, 120),
+    subject: cleanString(source.ownerAuditReviewSubject || source.subject, 120),
+    horizon: cleanString(source.ownerAuditReviewHorizon || source.horizon, 80),
+    taskCardId: cleanString(source.ownerAuditReviewTaskCardId || source.taskCardId, 180),
+    evaluationId: cleanString(source.ownerAuditReviewEvaluationId || source.evaluationId, 180),
+    profileDeltaId: cleanString(source.ownerAuditReviewProfileDeltaId || source.profileDeltaId, 180),
+    evidenceId: cleanString(source.ownerAuditReviewEvidenceId || source.learningEvidenceId || source.learnerEvidenceId, 180),
+    correctionId: cleanString(source.ownerAuditReviewCorrectionId || source.correctionId, 180),
+    targetNodeCount: Number(source.ownerAuditReviewTargetNodeCount || source.targetNodeCount || 0) || 0,
+    ownerNotePresent: source.ownerAuditReviewLatestOwnerNotePresent === true || source.ownerNotePresent === true,
+    profileFeedbackOk: source.ownerAuditReviewProfileFeedbackOk === true || source.profileFeedbackOk === true,
+    profileFeedbackStatus: cleanString(source.ownerAuditReviewProfileFeedbackStatus || source.profileFeedbackStatus, 120),
+    cycleComplete: source.ownerAuditReviewCycleComplete === true || source.cycleComplete === true,
+    readyForNextPlan: source.ownerAuditReviewReadyForNextPlan === true || source.readyForNextPlan === true,
+    readyForAutomation: source.ownerAuditReviewReadyForAutomation === true || source.readyForAutomation === true,
+    evidenceCount: Number(source.ownerAuditReviewEvidenceCount || source.evidenceCount || 0) || 0,
+    profileDeltaCount: Number(source.ownerAuditReviewProfileDeltaCount || source.profileDeltaCount || 0) || 0,
+    rewardSettlementCount: Number(source.ownerAuditReviewRewardSettlementCount || source.rewardSettlementCount || 0) || 0,
+    totalRewardCoins: Number(source.ownerAuditReviewTotalRewardCoins || source.totalRewardCoins || 0) || 0,
+    checkCount: Number(source.ownerAuditReviewCheckCount || source.checkCount || 0) || 0,
+    passCheckCount: Number(source.ownerAuditReviewPassCheckCount || source.passCheckCount || 0) || 0,
+    missingCheckCount: Number(source.ownerAuditReviewMissingCheckCount || source.missingCheckCount || 0) || 0,
+    blockedCheckCount: Number(source.ownerAuditReviewBlockedCheckCount || source.blockedCheckCount || 0) || 0,
+    missingRequiredCount: Number(source.ownerAuditReviewMissingRequiredCount || source.missingRequiredCount || 0) || 0,
+    missingRequired: uniqueStrings(source.ownerAuditReviewMissingRequired || source.missingRequired || []).slice(0, 12),
+    recommendationAvailable: source.ownerAuditReviewRecommendationAvailable === true || source.recommendationAvailable === true,
+    recommendationStrategy: cleanString(source.ownerAuditReviewRecommendationStrategy || source.recommendationStrategy, 120),
+    recommendationTargetNodeId: cleanString(source.ownerAuditReviewRecommendationTargetNodeId || source.recommendationTargetNodeId, 180),
+    nextAction: cleanString(source.ownerAuditReviewNextAction || source.nextAction, 140),
+    nextActionEnabled: source.ownerAuditReviewNextActionEnabled !== false,
+    reviewedBy: cleanString(source.ownerAuditReviewReviewedBy || source.reviewedBy, 180)
+  };
+}
+
 function targetProvisioningSummaryFromSmoke(value = {}) {
   const graphOptions = value.graphOptions && typeof value.graphOptions === "object" && !Array.isArray(value.graphOptions)
     ? value.graphOptions
@@ -683,6 +737,7 @@ function summaryForTask(task, value) {
   if (task.taskId === "release_dashboard") return releaseDashboardSummaryFromSmoke(value);
   if (task.taskId === "release_workbench") return releaseWorkbenchSummaryFromSmoke(value);
   if (task.taskId === "owner_review_evidence") return ownerReviewSummaryFromSmoke(value);
+  if (task.taskId === "owner_audit_review") return ownerAuditReviewSummaryFromSmoke(value);
   if (task.taskId === "platform_action") return platformActionSummaryFromSmoke(value);
   if (task.taskId === "target_provisioning") return targetProvisioningSummaryFromSmoke(value);
   if (task.taskId === "recommendation_lifecycle") return recommendationLifecycleSummaryFromSmoke(value);
@@ -895,7 +950,7 @@ function preflightTaskEvidence(task, scope, generatedAt) {
 
 function taskSpecificArgs(task, scope) {
   const args = Array.from(task.extraArgs || []);
-  if (task.taskId === "profile_feedback") {
+  if (task.taskId === "profile_feedback" || task.taskId === "owner_audit_review") {
     if (scope.autoSelectCompletedCycle) args.push("--auto-select-completed-cycle");
     if (scope.autoSelectLatestCompletedCycle) args.push("--auto-select-latest-completed-cycle");
   }

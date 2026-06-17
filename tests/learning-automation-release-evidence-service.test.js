@@ -250,6 +250,23 @@ test("automation release evidence service returns evidence bag for release-readi
     }
   }));
   service.recordEvidence(Object.assign(scope(), {
+    evidenceKey: "production_owner_audit_review_smoke_evidence",
+    evidence: {
+      evidenceId: "owner_audit_review_1",
+      source: "owner_audit_review_smoke",
+      summary: {
+        reviewCount: 1,
+        latestReviewId: "lgoar_release_1",
+        decision: "accepted",
+        recordStatus: "reviewed",
+        profileFeedbackOk: true,
+        cycleComplete: true,
+        readyForNextPlan: true,
+        nextAction: "draft_daily_plan"
+      }
+    }
+  }));
+  service.recordEvidence(Object.assign(scope(), {
     evidenceKey: "production_target_provisioning_smoke_evidence",
     evidence: { evidenceId: "target_provisioning_1", source: "target_provisioning_smoke" }
   }));
@@ -282,7 +299,7 @@ test("automation release evidence service returns evidence bag for release-readi
   const bag = service.evidenceBag(scope());
 
   assert.equal(bag.ok, true);
-  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionOperatingLoopHistorySmokeEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releasePackageReviewUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
+  assert.deepEqual(bag.evidenceKeys, ["centralVisualEvidence", "ownerDailyUiEvidence", "ownerReviewEvidence", "productionOperatingLoopHistorySmokeEvidence", "productionOwnerAuditReviewSmokeEvidence", "productionRecommendationLifecycleSmokeEvidence", "productionTargetProvisioningSmokeEvidence", "releasePackageReviewUiEvidence", "releaseWorkbenchSmokeEvidence", "stageCheckpointControlsEvidence"]);
   assert.equal(bag.evidence.ownerDailyUiEvidence.ok, true);
   assert.equal(bag.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
   assert.equal(bag.evidence.ownerDailyUiEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
@@ -312,6 +329,11 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.passedGateCount, 7);
   assert.deepEqual(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.missingGateKeys, ["digest_owner_review_present"]);
   assert.equal(bag.evidence.ownerReviewEvidence.ownerReviewStageSummary.nextAction.action, "review_automation_digest");
+  assert.equal(bag.evidence.productionOwnerAuditReviewSmokeEvidence.source, "owner_audit_review_smoke");
+  assert.equal(bag.evidence.productionOwnerAuditReviewSmokeEvidence.ownerAuditReviewSummary.reviewCount, 1);
+  assert.equal(bag.evidence.productionOwnerAuditReviewSmokeEvidence.ownerAuditReviewSummary.latestReviewId, "lgoar_release_1");
+  assert.equal(bag.evidence.productionOwnerAuditReviewSmokeEvidence.ownerAuditReviewSummary.nextAction, "draft_daily_plan");
+  assert.equal(bag.evidence.productionOwnerAuditReviewSmokeEvidence.checkKey, "production_owner_audit_review_smoke_evidence");
   assert.equal(bag.evidence.productionRecommendationLifecycleSmokeEvidence.source, "recommendation_lifecycle_smoke");
   assert.equal(bag.evidence.productionOperatingLoopHistorySmokeEvidence.source, "operating_loop_history_smoke");
   assert.equal(bag.evidence.productionTargetProvisioningSmokeEvidence.source, "target_provisioning_smoke");
@@ -346,6 +368,7 @@ test("automation release evidence service rejects invalid evidence keys and priv
   assert.equal(canonicalReleaseEvidenceKey("central_visual_evidence"), "centralVisualEvidence");
   assert.equal(canonicalReleaseEvidenceKey("owner_review_evidence"), "ownerReviewEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_operating_loop_history_smoke_evidence"), "productionOperatingLoopHistorySmokeEvidence");
+  assert.equal(canonicalReleaseEvidenceKey("production_owner_audit_review_smoke_evidence"), "productionOwnerAuditReviewSmokeEvidence");
   assert.equal(canonicalReleaseEvidenceKey("production_recommendation_lifecycle_smoke_evidence"), "productionRecommendationLifecycleSmokeEvidence");
   assert.equal(canonicalReleaseEvidenceKey("stage_checkpoint_controls_evidence"), "stageCheckpointControlsEvidence");
   assert.equal(canonicalReleaseEvidenceKey("release_workbench_smoke_evidence"), "releaseWorkbenchSmokeEvidence");

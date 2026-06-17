@@ -23,6 +23,7 @@ const {
 test("release evidence task registry owns default and opt-in task definitions", () => {
   assert.equal(DEFAULT_TASK_IDS.includes("operating_loop_history"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("profile_feedback"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("owner_audit_review"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("release_approval"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("daily_loop_write"), false);
   assert.equal(DEFAULT_TASK_IDS.includes("release_package_review_ui"), false);
@@ -49,6 +50,14 @@ test("release evidence task registry maps camel and snake evidence keys", () => 
     taskIdFromReleaseEvidenceKey("production_operating_loop_history_smoke_evidence"),
     "operating_loop_history"
   );
+  assert.equal(
+    taskIdFromReleaseEvidenceKey("productionOwnerAuditReviewSmokeEvidence"),
+    "owner_audit_review"
+  );
+  assert.equal(
+    taskIdFromReleaseEvidenceKey("production_owner_audit_review_smoke_evidence"),
+    "owner_audit_review"
+  );
   assert.equal(taskIdFromReleaseEvidenceKey("releaseApproval"), "release_approval");
   assert.equal(taskIdFromReleaseEvidenceKey("release_approval"), "release_approval");
   assert.equal(TASK_ID_BY_RELEASE_EVIDENCE_KEY.release_approval, "release_approval");
@@ -64,6 +73,10 @@ test("release evidence task registry separates safe collection, write-gated, and
     "owner_daily_ui"
   );
   assert.equal(
+    releaseEvidenceCollectionTaskIdForKey("production_owner_audit_review_smoke_evidence"),
+    "owner_audit_review"
+  );
+  assert.equal(
     releaseEvidenceCollectionTaskIdForKey("production_daily_loop_write_smoke_evidence"),
     ""
   );
@@ -76,6 +89,7 @@ test("release evidence task registry separates safe collection, write-gated, and
     "daily_loop_write"
   );
   assert.equal(RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY.production_profile_feedback_smoke_evidence, "profile_feedback");
+  assert.equal(RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY.production_owner_audit_review_smoke_evidence, "owner_audit_review");
   assert.equal(RELEASE_EVIDENCE_COLLECTION_TASK_ORDER.includes("operating_loop_history"), true);
   assert.equal(COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS.has("release_evidence_bundle_audit"), true);
   assert.equal(isCollectionOwnedReleaseEvidenceKey("release_evidence_bundle_audit"), true);

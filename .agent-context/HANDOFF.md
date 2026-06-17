@@ -21872,3 +21872,60 @@
   - next larger package can move back to product-visible UI polish or release
     evidence gates, keeping visual validation/deploy separate until explicitly
     requested.
+
+## 2026-06-17T23:23+0800 - Owner audit-review release evidence integration
+
+- Status:
+  - Implemented local Growth release evidence/readiness integration.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - The release evidence task registry now includes default task
+    `owner_audit_review`, mapped to `npm run smoke:owner-audit-review` and
+    evidence key `productionOwnerAuditReviewSmokeEvidence`.
+  - The release evidence bundle service now runs that task by default, forwards
+    completed-cycle auto-selection flags to the Owner audit-review smoke, and
+    compacts bounded `ownerAuditReview*` readback into release-review summary
+    fields such as review count/id, decision/status, profile-feedback status,
+    reward counts, recommendation strategy, and next action.
+  - Release-readiness now checks
+    `production_owner_audit_review_smoke_evidence` through a dedicated Owner
+    audit-review validator. It blocks empty pass-looking evidence with
+    `owner_audit_review_summary_required`, requires a bounded review summary,
+    and exposes `ownerAuditReviewSummary` in `evidenceReadback.items`.
+  - The persisted release evidence service now canonicalizes
+    `production_owner_audit_review_smoke_evidence`, accepts pass records for
+    `productionOwnerAuditReviewSmokeEvidence`, and projects
+    `ownerAuditReviewSummary` from persisted records so readiness can consume
+    either bundle JSON or release-evidence records.
+  - Deprecated readiness boolean flag
+    `--production-owner-audit-review-smoke-evidence` is a blocked remediation
+    marker only; it cannot satisfy the readiness gate.
+  - Downstream release controls, inventory, and dashboard smoke harnesses were
+    updated for the expanded readiness evidence catalog count.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-task-registry.js`;
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js`;
+  - `node --check src/services/learning-automation-release-readiness-service.js`;
+  - `node --check src/services/learning-automation-release-evidence-service.js`;
+  - `node --check scripts/smoke-growth-release-readiness.js`;
+  - `node --test tests/learning-automation-release-evidence-task-registry.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-release-readiness-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-controls-smoke-script.test.js tests/growth-release-inventory-smoke-script.test.js tests/growth-release-dashboard-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    passed `138/138`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent check` passed with `runtimeCount=222`;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported the index is up to date,
+    with the existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - commit and push this Owner audit-review release evidence package;
+  - production visual/deploy evidence remains a separate gate;
+  - final full release evidence should still be collected from real production
+    artifacts before any production scheduling/runtime enablement decision.

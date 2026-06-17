@@ -1551,6 +1551,16 @@ readback gate set.
   stores only summary counts/reason from the Home AI notification response and
   still must not read Home AI Action Inbox/Web Push storage, push
   subscriptions, endpoints, or raw payloads.
+  Owner audit-review release evidence is now part of the default release
+  evidence bundle/readiness contract. The default `owner_audit_review` bundle
+  task runs `npm run smoke:owner-audit-review` and maps bounded readback into
+  `productionOwnerAuditReviewSmokeEvidence`; release-readiness checks
+  `production_owner_audit_review_smoke_evidence` with a dedicated summary
+  validator that requires a real bounded review summary instead of accepting an
+  empty pass marker. Persisted release evidence records also project this
+  summary through `ownerAuditReviewSummary` for readiness readback. This
+  release evidence is distinct from `ownerReviewEvidence`, which remains the
+  automation proposal/digest/action/scheduler review evidence model.
 - Platform `通宝` exchange, monthly Growth coin clearing, Action Inbox/Web Push
   handoff, and Owner manual decision flows remain in Home AI until their own
   migration stages are implemented and validated.

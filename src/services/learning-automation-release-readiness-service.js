@@ -372,6 +372,99 @@ function ownerReviewEvidenceCheck(input) {
   }, evidenceRef(input, evidenceKey), summary ? { ownerReviewStageSummary: summary } : {}));
 }
 
+function ownerAuditReviewSummary(value = {}) {
+  const source = objectOnly(value.ownerAuditReviewSummary || value.owner_audit_review_summary || value.summary || value);
+  const read = (...keys) => {
+    for (const key of keys) {
+      const valueForKey = fieldValue(source, key);
+      if (valueForKey !== undefined && valueForKey !== null && valueForKey !== "") return valueForKey;
+    }
+    return undefined;
+  };
+  const summary = {
+    reviewCount: numberField(read("reviewCount", "ownerAuditReviewCount", "count")),
+    latestReviewId: compactEvidenceField(read("latestReviewId", "ownerAuditReviewReviewId", "reviewId"), 180),
+    decision: compactEvidenceField(read("decision", "ownerAuditReviewDecision"), 120),
+    recordStatus: compactEvidenceField(read("recordStatus", "ownerAuditReviewRecordStatus", "reviewStatus", "status"), 120),
+    operation: compactEvidenceField(read("operation", "ownerAuditReviewOperation"), 80),
+    writeOperation: read("writeOperation", "ownerAuditReviewWriteOperation") === true,
+    duplicate: read("duplicate", "ownerAuditReviewDuplicate") === true,
+    profileFeedbackOk: read("profileFeedbackOk", "ownerAuditReviewProfileFeedbackOk") === true,
+    profileFeedbackStatus: compactEvidenceField(read("profileFeedbackStatus", "ownerAuditReviewProfileFeedbackStatus"), 120),
+    cycleComplete: read("cycleComplete", "ownerAuditReviewCycleComplete") === true,
+    readyForNextPlan: read("readyForNextPlan", "ownerAuditReviewReadyForNextPlan") === true,
+    readyForAutomation: read("readyForAutomation", "ownerAuditReviewReadyForAutomation") === true,
+    evidenceCount: numberField(read("evidenceCount", "ownerAuditReviewEvidenceCount")),
+    profileDeltaCount: numberField(read("profileDeltaCount", "ownerAuditReviewProfileDeltaCount")),
+    rewardSettlementCount: numberField(read("rewardSettlementCount", "ownerAuditReviewRewardSettlementCount")),
+    totalRewardCoins: numberField(read("totalRewardCoins", "ownerAuditReviewTotalRewardCoins")),
+    checkCount: numberField(read("checkCount", "ownerAuditReviewCheckCount")),
+    passCheckCount: numberField(read("passCheckCount", "ownerAuditReviewPassCheckCount")),
+    missingCheckCount: numberField(read("missingCheckCount", "ownerAuditReviewMissingCheckCount")),
+    blockedCheckCount: numberField(read("blockedCheckCount", "ownerAuditReviewBlockedCheckCount")),
+    missingRequiredCount: numberField(read("missingRequiredCount", "ownerAuditReviewMissingRequiredCount")),
+    missingRequired: compactStringList(read("missingRequired", "ownerAuditReviewMissingRequired"), 12),
+    recommendationAvailable: read("recommendationAvailable", "ownerAuditReviewRecommendationAvailable") === true,
+    recommendationStrategy: compactEvidenceField(read("recommendationStrategy", "ownerAuditReviewRecommendationStrategy"), 120),
+    nextAction: compactEvidenceField(read("nextAction", "ownerAuditReviewNextAction"), 140),
+    nextActionEnabled: read("nextActionEnabled", "ownerAuditReviewNextActionEnabled") !== false,
+    ownerNotePresent: read("ownerNotePresent", "ownerAuditReviewLatestOwnerNotePresent") === true
+  };
+  const hasEvidence = summary.reviewCount > 0
+    || Boolean(summary.latestReviewId)
+    || Boolean(summary.decision)
+    || Boolean(summary.recordStatus);
+  return hasEvidence ? summary : null;
+}
+
+function ownerAuditReviewEvidenceCheck(input) {
+  const evidenceKey = "productionOwnerAuditReviewSmokeEvidence";
+  const checkKey = "production_owner_audit_review_smoke_evidence";
+  const label = "Production Owner audit-review smoke";
+  const value = evidenceValue(input, evidenceKey);
+  if (!evidenceOk(input, evidenceKey)) {
+    if (evidenceProvided(input, evidenceKey)) {
+      return check(checkKey, "blocked", Object.assign({
+        label,
+        evidenceKey,
+        evidencePresent: false,
+        evidenceProvided: true,
+        ownerAuditReviewSummaryPresent: false,
+        invalidReason: evidenceFailureReason(value)
+      }, evidenceRef(input, evidenceKey)), evidenceRequiredAction(value, "run_production_owner_audit_review_smoke"));
+    }
+    return check(checkKey, "missing", {
+      label,
+      evidenceKey,
+      evidencePresent: false,
+      ownerAuditReviewSummaryPresent: false
+    }, {
+      action: "run_production_owner_audit_review_smoke",
+      requiredActor: "owner"
+    });
+  }
+  const summary = ownerAuditReviewSummary(value);
+  if (!summary) {
+    return check(checkKey, "blocked", Object.assign({
+      label,
+      evidenceKey,
+      evidencePresent: false,
+      evidenceProvided: true,
+      ownerAuditReviewSummaryPresent: false,
+      invalidReason: "owner_audit_review_summary_required"
+    }, evidenceRef(input, evidenceKey)), {
+      action: "record_owner_audit_review_and_rerun_smoke",
+      requiredActor: "owner"
+    });
+  }
+  return check(checkKey, "pass", Object.assign({
+    label,
+    evidenceKey,
+    evidencePresent: true,
+    ownerAuditReviewSummaryPresent: true
+  }, evidenceRef(input, evidenceKey), { ownerAuditReviewSummary: summary }));
+}
+
 function releaseApproved(input = {}, key) {
   const approvals = releaseApprovalBag(input);
   const value = hasOwn(input, key) ? input[key] : approvals[key];
@@ -601,7 +694,8 @@ function compactEvidenceItem(checkItem = {}) {
     artifactId: compactEvidenceField(summary.artifactId, 180),
     runId: compactEvidenceField(summary.runId, 180),
     taskId: compactEvidenceField(summary.taskId, 180),
-    ownerReviewStageSummary: summary.ownerReviewStageSummary || undefined
+    ownerReviewStageSummary: summary.ownerReviewStageSummary || undefined,
+    ownerAuditReviewSummary: summary.ownerAuditReviewSummary || undefined
   }).filter(([, value]) => value !== undefined && value !== ""));
 }
 
@@ -886,6 +980,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       presentCheck(inputWithReleaseEvidence, "productionOperatingLoopHistorySmokeEvidence", "production_operating_loop_history_smoke_evidence", "Production operating-loop history smoke", "run_production_operating_loop_history_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence", "Production cycle-history smoke", "run_production_cycle_history_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence", "Production Owner audit smoke", "run_production_owner_audit_smoke"),
+      ownerAuditReviewEvidenceCheck(inputWithReleaseEvidence),
       presentCheck(inputWithReleaseEvidence, "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence", "Production profile-feedback smoke", "run_production_profile_feedback_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionRecommendationLifecycleSmokeEvidence", "production_recommendation_lifecycle_smoke_evidence", "Production recommendation lifecycle smoke", "run_production_recommendation_lifecycle_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish/advance smoke", "run_controlled_daily_loop_write_smoke"),

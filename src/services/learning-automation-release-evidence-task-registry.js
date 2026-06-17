@@ -12,6 +12,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "operating_loop_history",
   "cycle_history",
   "owner_audit",
+  "owner_audit_review",
   "profile_feedback",
   "recommendation_lifecycle",
   "learner_cycle",
@@ -80,6 +81,12 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionOwnerAuditSmokeEvidence",
     script: "scripts/smoke-growth-owner-audit.js",
     commandName: "npm run smoke:owner-audit"
+  },
+  {
+    taskId: "owner_audit_review",
+    evidenceKey: "productionOwnerAuditReviewSmokeEvidence",
+    script: "scripts/smoke-growth-owner-audit-review.js",
+    commandName: "npm run smoke:owner-audit-review"
   },
   {
     taskId: "profile_feedback",
@@ -233,6 +240,7 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
   "operating_loop_history",
   "cycle_history",
   "owner_audit",
+  "owner_audit_review",
   "profile_feedback",
   "recommendation_lifecycle",
   "learner_cycle",
