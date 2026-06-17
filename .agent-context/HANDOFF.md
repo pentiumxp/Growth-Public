@@ -9,6 +9,24 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:30+08:00 - Operator Readback Doc Contract Tightening
+
+- Status: docs-only consistency update. No runtime code, service behavior,
+  repository schema, route authorization, Gateway/model calls, scheduler
+  execution, UI behavior, deployment, or learner state changed.
+- Classification: Growth-local H3 documentation contract cleanup.
+- Scope:
+  - updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md` so release activation and
+    runtime enablement gates state the existing concrete `releaseActivation*`
+    and `runtimeEnablement*` top-level operator readback contracts instead of
+    saying the CLIs may expose them;
+  - updated the cycle-history service row to state the existing concrete
+    `cycleHistory*` smoke readback contract instead of saying the CLI may
+    expose it.
+- Validation:
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+
 ## 2026-06-17T17:24+08:00 - Release Workbench Action Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production
