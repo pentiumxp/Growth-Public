@@ -311,6 +311,33 @@ release-readiness to call Gateway, publish cards, evaluate submissions, run
 schedulers, deliver notifications, activate stage assessments, or mutate learner
 state.
 
+## Growth-Local Backend Release Evidence Batch Addendum
+
+The existing `smoke:release-evidence-collection` harness may be used as an
+operational backend evidence batch only when it follows a two-step pattern:
+
+1. run a no-write preflight for the intended task ids and record pass versus
+   blocked task ids under the exact workspace/learner/domain/subject/horizon
+   scope;
+2. replay only the pass task ids with explicit
+   `--write-collection-run --write-release-evidence-records --allow-write`
+   and Owner/requested-by metadata when release tooling intentionally wants
+   persisted canonical pass records.
+
+Blocked tasks must keep their bounded reasons. Missing Gateway planner config,
+missing completed-cycle selectors, and missing graph/provision/target selector
+data are real prerequisites and cannot be replaced by synthetic release
+evidence. A local 2026-06-18 replay for
+`weixin_stephen/science/daily_plan` wrote collection run
+`lgacrn_136dd590d876f208a9` and 18 summary-only release-evidence records,
+moving readiness from `passCheckCount=6` to `passCheckCount=23` while status
+remained `incomplete`.
+
+This addendum does not change Home AI platform ownership, run visual tooling,
+call Gateway, publish or evaluate cards, activate stage assessments, deliver
+notifications, deploy, approve release state, apply runtime config, grant
+scheduler permission, or mutate learner state.
+
 ## Required Local Validation
 
 Run:

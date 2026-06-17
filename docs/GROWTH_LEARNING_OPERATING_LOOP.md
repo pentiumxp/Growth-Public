@@ -1792,7 +1792,23 @@ Implementation progress on 2026-06-15:
   local 2026-06-18 `embedded-plugin-shell --plugin-id growth` run has been
   recorded as persisted `centralVisualEvidence=pass`; release readiness remains
   incomplete until the other UI, platform, production-smoke, approval, package,
-  preflight, activation/runtime, deployment, and broad validation gates pass. The
+  preflight, activation/runtime, deployment, and broad validation gates pass. A
+  later 2026-06-18 local backend batch replay under
+  `weixin_stephen/science/daily_plan` used the same
+  `smoke:release-evidence-collection` boundary to persist only passing
+  backend task evidence. The no-write preflight covered 22 task ids, passed 17,
+  and blocked 5; the write replay stored collection run
+  `lgacrn_136dd590d876f208a9`, 17 passing task release-evidence records, and
+  one `releaseEvidenceBundleAudit`. This improved readiness from
+  `passCheckCount=6`, `missingRequiredCount=41`, `missingEvidenceCount=34` to
+  `passCheckCount=23`, `missingRequiredCount=24`,
+  `missingEvidenceCount=17`, but it did not deploy, approve release state,
+  change runtime config, grant scheduler permission, call Gateway, publish or
+  evaluate cards, activate stage assessments, or mutate learner state. The
+  remaining backend blockers for the current local scope are real missing
+  Gateway planner config, completed-cycle selector data, and scoped graph/
+  provision/target selectors; those must be fixed as data/config prerequisites
+  rather than release-evidence shortcuts. The
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner

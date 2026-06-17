@@ -217,3 +217,18 @@ smoke output, explicit release approvals, or Home AI macOS deployment-health
 checks; Growth can only validate the bounded deployment-health summary through
 `npm run smoke:production-deployment-evidence` or an already persisted pass
 release-evidence record.
+
+## Operational Backend Evidence Batch
+
+When the task is to advance release-readiness evidence without changing
+runtime code, run `npm run smoke:release-evidence-collection` first without
+write flags over the intended backend task list and record which tasks pass or
+block. A write replay may include only the pass task ids from that same scope,
+with `--write-collection-run --write-release-evidence-records --allow-write`
+and an explicit Owner/requested-by actor. Blocked tasks must keep their real
+bounded reasons such as missing Gateway config, missing completed-cycle
+selector, or missing graph/provision target data. This operational batch is
+local advisory evidence only; it does not replace UI artifacts, platform
+Action Inbox/Web Push evidence, production deployment health, explicit
+approvals, package/review/authorization/closure/preflight/activation/runtime
+records, broad checks, or deployment.

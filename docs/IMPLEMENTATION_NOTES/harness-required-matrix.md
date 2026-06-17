@@ -1,6 +1,6 @@
 # Growth Harness Required Matrix
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-18.
 
 ## Purpose
 
@@ -49,6 +49,11 @@ until real artifacts are collected:
   Growth may validate only from a bounded summary through
   `npm run smoke:production-deployment-evidence` or a matching persisted
   release-evidence record.
+- Backend batch collection may persist only pass evidence from tasks that
+  passed in a no-write preflight under the same scope. Missing Gateway config,
+  missing completed-cycle selectors, and missing graph/provision target data
+  remain blocked prerequisites; they must not be replaced by synthetic pass
+  evidence.
 
 ## Forbidden Harness Shortcuts
 

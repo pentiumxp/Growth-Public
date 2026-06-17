@@ -173,18 +173,22 @@ Growth already has substantial backend foundation:
   return `activationState=dormant` and `insufficient_recent_practice`, and the
   Owner activation action remains disabled until enough recent ordinary
   practice exists.
-  As of 2026-06-16, production Fanfan science also has 21 persisted
-  summary-only release evidence keys plus one active failure policy
-  (`lgafpol_4b530ed66506435f61`) created and activated through
-  `npm run smoke:failure-policy` with explicit `--allow-write`. The active
-  policy is summary-only, keeps manual Owner retry, sets automatic retries to
-  zero, and keeps `writefulSchedulingAllowed=false`. Central Home AI iOS PWA
-  visual evidence for `embedded-plugin-shell --plugin-id growth` is also
-  persisted as `centralVisualEvidence` from screenshot artifact
-  `ios-pwa-visual-embedded-plugin-shell-growth-20260616T090608Z.png`.
-  The active-policy and central-visual checks now pass in
-  `npm run smoke:release-readiness`; release-readiness remains incomplete with
-  `pass=26` and `missing=17`.
+  As of 2026-06-18, the current local Mac `weixin_stephen/science/daily_plan`
+  release-readiness scope has persisted scope-correct central visual evidence
+  plus a backend release-evidence batch collected through
+  `npm run smoke:release-evidence-collection`. The batch wrote collection run
+  `lgacrn_136dd590d876f208a9` and 18 summary-only release-evidence records:
+  17 passing backend task records plus `releaseEvidenceBundleAudit`.
+  Readiness moved from `passCheckCount=6`, `missingRequiredCount=41`, and
+  `missingEvidenceCount=34` to `passCheckCount=23`,
+  `missingRequiredCount=24`, and `missingEvidenceCount=17`; status is still
+  `incomplete` and `writefulSchedulingAllowed=false`. The current local scope
+  still blocks `planner_readiness` on Gateway planner endpoint/config,
+  `profile_feedback` on a real completed-cycle selector, and
+  `target_provisioning`, `stage_assessment`, and
+  `stage_checkpoint_controls` on real provisioned graph/target selector data.
+  Those blockers must be resolved from configured Gateway access or durable
+  learner/provision data, not by fabricated pass evidence.
   The release-readiness service itself now rejects bare boolean `true` for
   service-owned smoke/readback evidence and reports
   `validated_release_evidence_object_required`, so downstream release review,
@@ -262,17 +266,20 @@ automation surfaces are not closed:
   digest/action/execution/scheduler-run/worker-target local UI exists, but
   those surfaces still need production UI/release evidence before their gates
   can pass;
-- production backend read-only/default-disabled evidence now covers planner
-  readiness, daily-loop preview, learning-loop state, cycle history, Owner
-  audit, learner-cycle audit, target provisioning, stage checkpoint evidence,
-  stage checkpoint controls, scheduler dry-run, recommendation lifecycle,
-  proposal/digest/action/execution/run/worker/worker-target readback, release
-  workbench readback, Owner review readback, active failure-policy readiness,
-  and central embedded-plugin visual evidence. Remaining release gates are
-  product UI/visual evidence, reviewed digest/action/worker-target workflow
-  state, profile feedback from a real completed cycle, controlled daily-loop
-  write evidence, platform action receipt evidence, and explicit release
-  approvals;
+- current local backend read-only/default-disabled evidence now covers
+  scope-correct central embedded-plugin visual evidence plus daily-loop
+  preview, learning-loop state, operating-loop history, cycle history, Owner
+  audit, Owner audit-review, learner-cycle audit, recommendation lifecycle,
+  proposal, scheduler dry-run, action handoff, scheduler execution, scheduler
+  run, scheduler worker-target, scheduler worker, Owner review evidence,
+  release workbench readback, and release bundle audit evidence. Remaining
+  local release gates are product UI/visual evidence, reviewed digest/action/
+  worker-target workflow state, profile feedback from a real completed cycle,
+  configured planner readiness, target/provision/stage-checkpoint selectors
+  from durable graph data, controlled daily-loop write evidence, platform
+  action receipt evidence, production deployment health, explicit release
+  approvals, package/review/authorization/closure/preflight/activation/runtime
+  records, broad checks, and deployment when complete;
 - background writeful scheduling remains blocked.
 
 ## Current Execution Decision
@@ -654,7 +661,20 @@ Use the Growth-owned release-readiness boundary:
   such as `--task learning_loop_state --required-task learning_loop_state`
   remains valid collection-path smoke evidence when the goal is to prove the
   facade and readback chain without model variance or missing UI/release
-  evidence. The release workbench advertises missing `release_collection_run`
+  evidence. For backend batch replay, first run the broad task list without
+  write flags and inspect pass/blocked task ids. The write replay may include
+  only tasks that already passed in the same scope, with both
+  `--write-collection-run --allow-write` and
+  `--write-release-evidence-records --allow-write` when Owner/release tooling
+  intentionally wants canonical pass evidence persisted. Blocked tasks must
+  remain blocked with their bounded reasons; do not convert missing Gateway
+  config, missing completed-cycle selectors, or missing graph/provision target
+  data into synthetic pass evidence. A 2026-06-18 local
+  `weixin_stephen/science/daily_plan` replay followed this pattern and wrote
+  collection run `lgacrn_136dd590d876f208a9`, 17 passing backend task evidence
+  records, and one `releaseEvidenceBundleAudit`, moving readiness to
+  `passCheckCount=23` while leaving 24 required gates missing.
+  The release workbench advertises missing `release_collection_run`
   records as `release_evidence_collection` actions so Owner can trigger the
   same collection service from the embedded plugin UI through
   `POST /api/v1/growth/automation/release-workbench/actions`. The advertised

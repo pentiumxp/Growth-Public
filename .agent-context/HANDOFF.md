@@ -9,6 +9,56 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T05:27+0800 - Backend Release Evidence Batch Readback
+
+- Status: implemented locally as an advisory backend release-evidence batch.
+  No production deploy, release approval, runtime config mutation, scheduler
+  permission, Gateway/model call, card publication, evaluation, notification
+  delivery, stage activation, or learner-state mutation was performed.
+- Classification: H3 operational documentation/Harness record over the
+  existing H1 release-evidence collection boundary. The runtime services were
+  not changed; the existing `smoke:release-evidence-collection` harness wrote
+  only passing summary-only evidence records under the real
+  `weixin_stephen/science/daily_plan` scope.
+- Real evidence written locally:
+  - no-write preflight over 22 backend tasks passed 17 and blocked 5;
+  - write replay persisted collection run `lgacrn_136dd590d876f208a9` plus
+    18 release-evidence records: 17 passing backend task records and one
+    `releaseEvidenceBundleAudit`;
+  - persisted evidence keys now include central visual plus Owner review,
+    daily-loop preview, learning-loop state, operating-loop history,
+    cycle-history, Owner audit, Owner audit-review, recommendation lifecycle,
+    learner-cycle audit, proposal, scheduler dry-run, action handoff,
+    scheduler execution, scheduler run, scheduler worker-target,
+    scheduler worker, release workbench, and release bundle audit evidence.
+- Readiness movement for the real scope:
+  - before this batch: `passCheckCount=6`,
+    `missingRequiredCount=41`, `missingEvidenceCount=34`;
+  - after this batch: `passCheckCount=23`,
+    `missingRequiredCount=24`, `missingEvidenceCount=17`,
+    persisted evidence key count `19`;
+  - release status remains `incomplete` and
+    `writefulSchedulingAllowed=false`.
+- Blocked task classification:
+  - `planner_readiness` is blocked by missing Gateway planner endpoint/config
+    (`gateway_endpoint_required`);
+  - `profile_feedback` is blocked until a real completed-cycle selector is
+    available for this scope (`profile_feedback_cycle_selector_required`);
+  - `target_provisioning`, `stage_assessment`, and
+    `stage_checkpoint_controls` are blocked in the current local SQLite
+    readback because the scoped native graph/provision/target selector data is
+    not present; they must be satisfied from real provisioned target data, not
+    fabricated release evidence.
+- Remaining gates are external or stateful release prerequisites:
+  - Home AI central visual/UI artifacts for the remaining UI gates;
+  - reviewed automation digest, active failure policy, delivered action
+    handoff, and reviewed enabled worker-target state;
+  - platform Action Inbox/Web Push receipt evidence;
+  - production deployment health evidence;
+  - controlled daily-loop write evidence, explicit approvals, package/review/
+    authorization/closure/preflight/activation/runtime records, broad checks,
+    and deployment when complete.
+
 ## 2026-06-18T05:19+0800 - Release Workbench Artifact Slot Scope Closure
 
 - Status: implemented locally; focused workbench/artifact-template harness,

@@ -117,6 +117,23 @@ readback gate set.
   readiness complete, approve release state, mutate runtime config, grant
   scheduler permission, run Gateway, publish cards, evaluate learner evidence,
   or deploy.
+  A 2026-06-18 local advisory backend release-evidence batch was then replayed
+  under the real `weixin_stephen/science/daily_plan` scope through the existing
+  `smoke:release-evidence-collection` harness. It persisted collection run
+  `lgacrn_136dd590d876f208a9` and 18 summary-only release-evidence records
+  (17 passing backend task records plus `releaseEvidenceBundleAudit`), moving
+  release-readiness readback from `passCheckCount=6`,
+  `missingRequiredCount=41`, `missingEvidenceCount=34` to
+  `passCheckCount=23`, `missingRequiredCount=24`,
+  `missingEvidenceCount=17`, with persisted evidence key count `19`.
+  This batch did not deploy, approve release state, change runtime config,
+  grant scheduler permission, call Gateway, publish or evaluate cards, notify,
+  activate stage assessments, or mutate learner state. The remaining real
+  gaps are Home AI visual/UI artifacts, platform Action Inbox/Web Push receipt
+  evidence, production deployment health, write-gated daily-loop evidence,
+  explicit approvals and release lifecycle records, automation state
+  prerequisites, and real target/provision/completed-cycle selectors for the
+  tasks that blocked on data rather than harness execution.
   The embedded Owner panel now also renders a separate `发布记录` subpanel over
   existing preflight-report, activation-record, and runtime-enablement list
   routes plus their Owner-only record routes. That panel writes only

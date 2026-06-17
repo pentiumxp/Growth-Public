@@ -182,6 +182,17 @@ AI-driven loop:
   summary-only artifact, then optionally recording a bounded package audit row
   in Growth SQLite for Owner/release review without enabling scheduling,
   runtime config, deployment, or card publication.
+- a 2026-06-18 local advisory backend release-evidence batch for
+  `weixin_stephen/science/daily_plan` persisted collection run
+  `lgacrn_136dd590d876f208a9` and 18 summary-only release-evidence records
+  through the existing release evidence collection harness. The batch moved
+  release-readiness readback from `passCheckCount=6`,
+  `missingRequiredCount=41`, `missingEvidenceCount=34` to
+  `passCheckCount=23`, `missingRequiredCount=24`,
+  `missingEvidenceCount=17`. It does not represent production release,
+  deployment, runtime config enablement, scheduler permission, Gateway/model
+  execution, card publication, evaluation, stage activation, or learner-state
+  mutation.
 
 The product is not complete because several browser and automation-safety
 surfaces are still missing:
@@ -198,10 +209,15 @@ surfaces are still missing:
   prerequisite; Growth-owned automation action handoff backend is implemented,
   and the default-disabled Owner-explicit scheduler execution backend is
   implemented with a final release-authorization gate, but platform Action
-  Inbox/Web Push product UI and central visual evidence are not complete;
+  Inbox/Web Push evidence plus the remaining product-specific UI/visual
+  release evidence are not complete;
 - background writeful scheduling remains blocked;
-- production planner readiness smoke and central embedded-plugin visual
-  evidence are required before UI release.
+- remaining release gates include product UI/visual artifacts, platform Action
+  Inbox/Web Push receipt evidence, production deployment health, controlled
+  daily-loop write evidence, explicit approvals and release lifecycle records,
+  reviewed automation digest/action/worker-target state, configured planner
+  readiness, real completed-cycle profile-feedback selectors, and scoped
+  graph/provision/target data for target and stage-checkpoint evidence.
 
 ## Program-Level Workstreams
 
