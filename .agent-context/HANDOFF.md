@@ -9,6 +9,49 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:14+08:00 - Release Evidence Collection Smoke Operator Readback
+
+- Status: implemented, key-node validated, and ready to commit locally. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-release-evidence-collection` delegated correctly to
+    `learning-automation-release-evidence-collection-service.collect`, but
+    operator-critical collection status, step status/counts, collection-run
+    id/write state, release-evidence record counters, evidence keys, and
+    runtime/write flags were available only through the nested collection DTO;
+  - this made the Owner release-evidence execution path less consistent with
+    the other release smoke CLIs that now expose bounded top-level operator
+    readback.
+- Scope:
+  - added `projectReleaseEvidenceCollectionSmokeReadback` in
+    `scripts/smoke-growth-release-evidence-collection.js`;
+  - projected top-level `releaseEvidenceCollection*` fields onto both wrapper
+    result output and collection-file/default collection output while
+    preserving the nested collection DTO as canonical output;
+  - expanded `tests/growth-release-evidence-collection-smoke-script.test.js`
+    with pure projection coverage and assertions for no-write collection
+    output, collection-run writes, and release-evidence record writes;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-release-evidence-collection.js`;
+  - `node --test tests/growth-release-evidence-collection-smoke-script.test.js`
+    -> 8/8;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `node scripts/check-growth-docs-locality.js` -> ok, `requiredCount=37`;
+  - `git diff --check` -> ok;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,370 nodes, 23,575 edges, with the existing earlier-engine advisory.
+- Note: full `npm test` is intentionally not planned for this slice per the
+  current speed instruction; `npm run test:release-union` was also skipped for
+  speed because this slice is limited to smoke projection, Harness, and
+  documentation, with no service, route, schema, Gateway, UI, scheduler, or
+  runtime-config behavior change.
+
 ## 2026-06-17T13:06+08:00 - Release Activation/Runtime Enablement Smoke Operator Readback
 
 - Status: implemented, key-node validated, and ready to commit locally. No

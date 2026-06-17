@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-evidence
 const {
   inputFromArgs,
   outputFileFromArgs,
+  projectReleaseEvidenceCollectionSmokeReadback,
   requiredTaskIdsFromArgs,
   taskIds
 } = require("../scripts/smoke-growth-release-evidence-collection");
@@ -121,6 +122,85 @@ test("release evidence collection script maps artifact manifest into collection 
   }
 });
 
+test("release evidence collection script projects top-level operator readback", () => {
+  const result = projectReleaseEvidenceCollectionSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-release-evidence-collection-service",
+    collection: {
+      schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "ready_for_release_review",
+      writeCollectionRun: true,
+      writeReleaseEvidenceRecords: true,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false,
+      schedulerPermissionGranted: false,
+      steps: [{
+        key: "release_evidence_bundle",
+        status: "pass",
+        ok: true
+      }, {
+        key: "release_readiness",
+        status: "incomplete",
+        ok: false
+      }],
+      summary: {
+        schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.summary.v1",
+        status: "ready_for_release_review",
+        stepCount: 2,
+        passedCount: 1,
+        blockedCount: 0,
+        incompleteCount: 1,
+        readyForReleaseReview: true,
+        collectionRunId: "lgacrn_ready_1",
+        collectionRunWritten: true,
+        releaseEvidenceRecordsWritten: true,
+        releaseEvidenceRecordAttemptedCount: 3,
+        releaseEvidenceRecordRecordedCount: 2,
+        releaseEvidenceRecordDuplicateCount: 1,
+        releaseEvidenceRecordBlockedCount: 0,
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false,
+        schedulerPermissionGranted: false
+      },
+      artifacts: {
+        releaseEvidenceRecords: {
+          status: "pass",
+          evidenceKeys: ["releasePackageReviewUiEvidence", "releaseEvidenceBundleAudit"]
+        }
+      }
+    }
+  });
+
+  assert.equal(result.releaseEvidenceCollectionStatus, "ready_for_release_review");
+  assert.equal(result.releaseEvidenceCollectionStepCount, 2);
+  assert.equal(result.releaseEvidenceCollectionPassedCount, 1);
+  assert.equal(result.releaseEvidenceCollectionIncompleteCount, 1);
+  assert.deepEqual(result.releaseEvidenceCollectionNextStep, {
+    key: "release_readiness",
+    status: "incomplete",
+    ok: false
+  });
+  assert.equal(result.releaseEvidenceCollectionReadyForReleaseReview, true);
+  assert.equal(result.releaseEvidenceCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.releaseEvidenceCollectionRunWritten, true);
+  assert.equal(result.releaseEvidenceCollectionWriteCollectionRun, true);
+  assert.equal(result.releaseEvidenceCollectionWriteReleaseEvidenceRecords, true);
+  assert.equal(result.releaseEvidenceCollectionReleaseEvidenceRecordsWritten, true);
+  assert.equal(result.releaseEvidenceCollectionEvidenceRecordAttemptedCount, 3);
+  assert.equal(result.releaseEvidenceCollectionEvidenceRecordRecordedCount, 2);
+  assert.equal(result.releaseEvidenceCollectionEvidenceRecordDuplicateCount, 1);
+  assert.deepEqual(result.releaseEvidenceCollectionEvidenceKeys, ["releasePackageReviewUiEvidence", "releaseEvidenceBundleAudit"]);
+  assert.equal(result.releaseEvidenceCollectionWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseEvidenceCollectionRuntimeConfigChange, false);
+  assert.equal(result.releaseEvidenceCollectionConfigChangeApplied, false);
+  assert.equal(result.releaseEvidenceCollectionSchedulerPermissionGranted, false);
+  assert.equal(result.collection.releaseEvidenceCollectionStatus, "ready_for_release_review");
+});
+
 test("release evidence collection script fails closed for write without allow-write", () => {
   const result = runScript([
     "--workspace-id", "smoke_workspace",
@@ -186,6 +266,16 @@ test("release evidence collection script writes summary-only collection output",
     assert.equal(output.artifacts.releaseReadiness.summary.schemaVersion, "growth.learningAutomationReleaseReadiness.summary.v1");
     assert.equal(output.artifacts.releaseCollectionRun.schemaVersion, "growth.learningAutomationReleaseCollectionRun.v1");
     assert.equal(output.summary.stepCount, 4);
+    assert.equal(output.releaseEvidenceCollectionStatus, output.status);
+    assert.equal(output.releaseEvidenceCollectionStepCount, 4);
+    assert.equal(output.releaseEvidenceCollectionBlockedCount, output.summary.blockedCount);
+    assert.deepEqual(output.releaseEvidenceCollectionStepStatuses.map((step) => step.key), [
+      "release_evidence_bundle",
+      "release_evidence_bundle_audit",
+      "release_readiness",
+      "release_collection_run"
+    ]);
+    assert.equal(output.releaseEvidenceCollectionWritefulSchedulingAllowed, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(JSON.stringify(output).includes("stdout"), false);
@@ -219,6 +309,9 @@ test("release evidence collection script can record a summary-only collection ru
     assert.equal(output.collection.summary.collectionRunWritten, true);
     assert.equal(output.collection.artifacts.releaseCollectionRun.privacyClass, "summary_only");
     assert.equal(output.collection.artifacts.releaseCollectionRun.summary.writefulSchedulingAllowed, false);
+    assert.equal(output.releaseEvidenceCollectionRunWritten, true);
+    assert.equal(output.releaseEvidenceCollectionRunId, output.collection.summary.collectionRunId);
+    assert.equal(output.collection.releaseEvidenceCollectionRunWritten, true);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {
@@ -272,6 +365,9 @@ test("release evidence collection script persists release package review UI evid
     const output = parseStdout(result);
     assert.equal(output.collection.artifacts.releaseEvidenceRecords.status, "pass");
     assert.equal(output.collection.summary.releaseEvidenceRecordsWritten, true);
+    assert.equal(output.releaseEvidenceCollectionReleaseEvidenceRecordsWritten, true);
+    assert.equal(output.releaseEvidenceCollectionEvidenceRecordRecordedCount, 2);
+    assert.equal(output.collection.releaseEvidenceCollectionEvidenceRecordRecordedCount, 2);
     assert.ok(output.collection.artifacts.releaseEvidenceRecords.evidenceKeys.includes("releasePackageReviewUiEvidence"));
     assert.ok(output.collection.artifacts.releaseEvidenceRecords.evidenceKeys.includes("releaseEvidenceBundleAudit"));
     assert.equal(JSON.stringify(output).includes(uiEvidencePath), false);

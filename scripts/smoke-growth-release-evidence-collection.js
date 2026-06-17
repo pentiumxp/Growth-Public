@@ -53,6 +53,76 @@ function writeJsonFile(filePath, value) {
   return resolved;
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactStep(value = {}) {
+  const step = objectOnly(value);
+  if (!Object.keys(step).length) return null;
+  return {
+    key: cleanString(step.key || step.stepKey || step.step_key, 120),
+    status: cleanString(step.status, 120),
+    ok: step.ok === true
+  };
+}
+
+function releaseEvidenceCollectionReadbackFields(collection = {}) {
+  const summary = objectOnly(collection.summary);
+  const artifacts = objectOnly(collection.artifacts);
+  const releaseEvidenceRecords = objectOnly(artifacts.releaseEvidenceRecords);
+  const releaseCollectionRun = objectOnly(artifacts.releaseCollectionRun);
+  const steps = asArray(collection.steps).map(compactStep).filter(Boolean);
+  const nextStep = steps.find((step) => step.status && step.status !== "pass") || null;
+  const status = cleanString(collection.status || summary.status, 120);
+  return {
+    releaseEvidenceCollectionStatus: status,
+    releaseEvidenceCollectionStepCount: Number(summary.stepCount || steps.length || 0) || 0,
+    releaseEvidenceCollectionPassedCount: Number(summary.passedCount || steps.filter((step) => step.status === "pass").length || 0) || 0,
+    releaseEvidenceCollectionBlockedCount: Number(summary.blockedCount || steps.filter((step) => step.status === "blocked").length || 0) || 0,
+    releaseEvidenceCollectionIncompleteCount: Number(summary.incompleteCount || steps.filter((step) => step.status === "incomplete").length || 0) || 0,
+    releaseEvidenceCollectionStepStatuses: steps,
+    releaseEvidenceCollectionNextStep: nextStep,
+    releaseEvidenceCollectionReadyForReleaseReview: collection.readyForReleaseReview === true || summary.readyForReleaseReview === true || releaseCollectionRun.readyForReleaseReview === true,
+    releaseEvidenceCollectionRunId: cleanString(summary.collectionRunId || releaseCollectionRun.collectionRunId || releaseCollectionRun.collection_run_id, 160),
+    releaseEvidenceCollectionRunWritten: summary.collectionRunWritten === true,
+    releaseEvidenceCollectionWriteCollectionRun: collection.writeCollectionRun === true,
+    releaseEvidenceCollectionWriteReleaseEvidenceRecords: collection.writeReleaseEvidenceRecords === true,
+    releaseEvidenceCollectionReleaseEvidenceRecordsWritten: summary.releaseEvidenceRecordsWritten === true,
+    releaseEvidenceCollectionEvidenceRecordAttemptedCount: Number(summary.releaseEvidenceRecordAttemptedCount || releaseEvidenceRecords.attemptedCount || 0) || 0,
+    releaseEvidenceCollectionEvidenceRecordRecordedCount: Number(summary.releaseEvidenceRecordRecordedCount || releaseEvidenceRecords.recordedCount || 0) || 0,
+    releaseEvidenceCollectionEvidenceRecordDuplicateCount: Number(summary.releaseEvidenceRecordDuplicateCount || releaseEvidenceRecords.duplicateCount || 0) || 0,
+    releaseEvidenceCollectionEvidenceRecordBlockedCount: Number(summary.releaseEvidenceRecordBlockedCount || releaseEvidenceRecords.blockedCount || 0) || 0,
+    releaseEvidenceCollectionEvidenceKeys: asArray(releaseEvidenceRecords.evidenceKeys).map((key) => cleanString(key, 160)).filter(Boolean),
+    releaseEvidenceCollectionWritefulSchedulingAllowed: collection.writefulSchedulingAllowed === true || summary.writefulSchedulingAllowed === true,
+    releaseEvidenceCollectionRuntimeConfigChange: collection.runtimeConfigChange === true || summary.runtimeConfigChange === true,
+    releaseEvidenceCollectionConfigChangeApplied: collection.configChangeApplied === true || summary.configChangeApplied === true,
+    releaseEvidenceCollectionSchedulerPermissionGranted: collection.schedulerPermissionGranted === true || summary.schedulerPermissionGranted === true
+  };
+}
+
+function projectReleaseEvidenceCollectionSmokeReadback(result = {}) {
+  const collection = objectOnly(result.collection).schemaVersion
+    ? objectOnly(result.collection)
+    : objectOnly(result);
+  if (!Object.keys(collection).length) return result;
+  const projectedCollection = Object.assign({}, collection, releaseEvidenceCollectionReadbackFields(collection));
+  if (result.collection && typeof result.collection === "object") {
+    return Object.assign({}, result, releaseEvidenceCollectionReadbackFields(projectedCollection), {
+      collection: projectedCollection
+    });
+  }
+  return projectedCollection;
+}
+
 function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
 }
@@ -72,7 +142,9 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  const result = services.learningAutomationReleaseEvidenceCollectionService.collect(input);
+  const result = projectReleaseEvidenceCollectionSmokeReadback(
+    services.learningAutomationReleaseEvidenceCollectionService.collect(input)
+  );
   const outputFile = outputFileFromArgs(args);
   if (outputFile && result.collection) {
     const writtenPath = writeJsonFile(outputFile, result.collection);
@@ -107,6 +179,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   outputFileFromArgs,
+  projectReleaseEvidenceCollectionSmokeReadback,
   requiredApprovalKeys,
   requiredTaskIdsFromArgs,
   taskIds

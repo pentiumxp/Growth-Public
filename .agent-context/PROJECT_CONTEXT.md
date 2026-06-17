@@ -77,7 +77,12 @@ readback gate set.
   stripped after parsing and expands only whitelisted central visual/UI
   artifact slots into transient file fields plus collection task selectors. The
   HTTP route does not read server-local manifest file paths, run visual
-  tooling, persist evidence by itself, or call Gateway.
+  tooling, persist evidence by itself, or call Gateway. The
+  `smoke:release-evidence-collection` CLI now also mirrors bounded top-level
+  `releaseEvidenceCollection*` operator readback for collection status, step
+  counts/statuses, collection-run id/write state, release-evidence record
+  counters, evidence keys, and runtime/write flags while preserving the nested
+  collection DTO as canonical.
 - Current implementation owns plugin SQLite read projections, migrated audio
   playback, historical audio BLOB backfill tooling, workspace-bound read-only
   MCP tools, workspace-bearer submission/reflection evidence write endpoints,
