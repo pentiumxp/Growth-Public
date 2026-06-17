@@ -9,6 +9,37 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:44+08:00 - Scheduler Run Smoke Operator Readback
+
+- Status: implemented locally; key-node validation is in progress. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change scheduler-run service behavior, route authorization, repositories, DB
+  schema, Gateway/model calls, card publication, scheduler dry-run logic,
+  scheduler execution behavior, action-handoff delivery, worker timers, stage
+  activation, runtime config, UI behavior, production deployment, or learner
+  state.
+- Scope:
+  - added `projectAutomationSchedulerRunSmokeReadback()` in
+    `scripts/smoke-growth-automation-scheduler-run.js`;
+  - projected bounded top-level `automationSchedulerRun*` fields for operation,
+    write gate, blocked run-audit state, background scheduler state,
+    candidate/execution counts, no-direct flags, scope, and run status counts
+    while preserving nested list/run DTOs as canonical;
+  - kept run behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-scheduler-run-smoke-script.test.js` to
+    assert pure projection, default no-write list readback, and default-disabled
+    blocked run readback;
+  - updated Growth-local architecture, operating-loop, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-scheduler-run.js`
+  - `node --test tests/growth-automation-scheduler-run-smoke-script.test.js`
+  - `npm run --silent smoke:scheduler-run -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue with
+    scheduler worker-target smoke top-level readback.
+
 ## 2026-06-17T15:39+08:00 - Scheduler Execution Smoke Operator Readback
 
 - Status: implemented locally; key-node validation is in progress. No

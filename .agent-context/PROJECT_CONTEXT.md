@@ -1174,7 +1174,11 @@ readback gate set.
   `automation-scheduler-runs.js`,
   `learning_growth_automation_scheduler_runs`, visible-target scoped
   `GET /api/v1/growth/automation/scheduler/runs`, and Owner-only
-  `POST /api/v1/growth/automation/scheduler/run-once`. It also includes a
+  `POST /api/v1/growth/automation/scheduler/run-once`. Its smoke mirrors
+  bounded top-level `automationSchedulerRun*` operator readback for operation,
+  write gate, blocked run-audit state, background scheduler state,
+  candidate/execution counts, no-direct flags, and scope while preserving the
+  nested DTOs as canonical. It also includes a
   reviewed worker target configuration backend through
   `learning-automation-scheduler-worker-target-service`,
   `automation-scheduler-worker-targets.js`,
