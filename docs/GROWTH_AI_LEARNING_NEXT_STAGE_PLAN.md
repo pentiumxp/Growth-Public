@@ -685,17 +685,18 @@ Use the Growth-owned release-readiness boundary:
   Home AI central visual/UI summary artifact files. The same DTO also includes
   `growth.learningAutomationReleaseEvidenceChecklist.v1`, which separates
   visual/UI artifact items, supported collection tasks, write-gated tasks,
-  missing approvals, missing record actions, and unsupported/manual evidence
-  keys so Owner/release tooling can execute the remaining real-evidence steps
-  without fabricating passing evidence. It also includes
+  state prerequisite actions, missing approvals, missing record actions, and
+  unsupported/manual evidence keys so Owner/release tooling can execute the
+  remaining real-evidence and automation-state steps without fabricating
+  passing evidence. It also includes
   `growth.learningAutomationReleaseEvidenceActionPlan.v1`, which projects
   summary-only Owner workbench-action route/body templates for collection,
   approvals, package records, activation/runtime audit records, plus
-  non-submittable external artifact/manual steps. Collection body templates
-  include only non-artifact task selectors until the blank manifest is filled.
-  They do not run visual tooling, call Gateway, persist release evidence, write
-  collection runs, apply runtime config, or widen to default UI tasks when no
-  visual/UI evidence is missing.
+  non-submittable external artifact/state/manual steps. Collection body
+  templates include only non-artifact task selectors until the blank manifest
+  is filled. They do not run visual tooling, call Gateway, persist release
+  evidence, write collection runs, apply runtime config, or widen to default UI
+  tasks when no visual/UI evidence is missing.
 - release authorization smoke CLI:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes
@@ -819,6 +820,12 @@ Use the Growth-owned release-readiness boundary:
   generic record-route catalog may still expose blank `release_evidence`
   placeholders for explicit operator-filled records, but those placeholders are
   not concrete pass actions for a specific missing evidence key.
+  Non-evidence readiness state prerequisites (`reviewed_automation_digest`,
+  `active_failure_policy`, `delivered_action_handoff`, and
+  `reviewed_enabled_worker_target`) are projected separately as
+  `releaseStatePrerequisiteKeys` and `releaseStatePrerequisiteActions`; they
+  point to existing automation read surfaces and are not counted as unsupported
+  release evidence.
   Its bounded output can be passed to release-readiness through explicit
   `--evidence-json`, collected by the non-default `release_workbench` release
   evidence bundle task as `releaseWorkbenchSmokeEvidence`, or persisted through
@@ -882,14 +889,17 @@ Use the Growth-owned release-readiness boundary:
   `write_release_evidence_records=true` from the backend action template. Those
   task ids come from the workbench's missing-evidence-derived no-write plan,
   with `releaseEvidenceCollectionSupportedTaskIds` separating supported task
-  ids from unsupported/manual evidence and write-gated tasks. After a
-  collection-run exists, the backend may make
+  ids from unsupported/manual evidence, state prerequisites, and write-gated
+  tasks. After a collection-run exists, the backend may make
   `collect_missing_release_evidence` the next action for the supported subset;
   the UI still submits only the advertised template through the workbench action
   facade. When the action has `requiresPreparation=true`, the UI must first show
   the artifact-template preparation step and wait for Home AI central visual/UI
   summary artifacts before enabling the collection submit. Manual evidence and
   write-gated evidence are surfaced for Owner review but are not auto-collected
+  by the default collection button. State prerequisites are shown as external
+  Owner actions to the existing automation modules and are not submitted through
+  `POST /api/v1/growth/automation/release-workbench/actions`.
   by the normal button. For
   `release_decision`, the UI
   sends only the advertised status, summary-only decision metadata, and the
@@ -1253,6 +1263,16 @@ object contract: passing-looking non-UI smoke/readback evidence without
 `summaryOnly=true`, `summary_only=true`, or `privacyClass=summary_only` is
 blocked with `release_evidence_summary_only_required`, while explicit release
 approval booleans remain confined to the separate approval path.
+
+Release workbench state-prerequisite sub-contract: readiness checks that are
+proved by existing Growth automation state, such as reviewed digest, active
+failure policy, delivered action handoff, and reviewed enabled worker target,
+must be projected as `releaseStatePrerequisiteActions` with external Owner
+routes to those automation modules. They must not be counted as unsupported
+release evidence, must not be submitted through the release-evidence collection
+button, and must not create direct pass `release_evidence` actions. Harness
+coverage must assert both the workbench read model and artifact-template
+checklist/action-plan projection.
 
 Central visual evidence sub-contract: Growth may read Home AI visual harness
 artifacts only to derive summary fields such as plugin id, scenario,

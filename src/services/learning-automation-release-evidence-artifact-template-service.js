@@ -326,11 +326,30 @@ function unsupportedChecklistItems(summary = {}) {
   }));
 }
 
+function statePrerequisiteChecklistItems(summary = {}) {
+  return asArray(summary.releaseStatePrerequisiteActions).map((action) => {
+    const item = objectOnly(action);
+    const key = cleanString(item.key, 160);
+    if (!key) return null;
+    return checklistItem({
+      key: `state:${key}`,
+      kind: "release_state_prerequisite",
+      prerequisiteKey: key,
+      action: cleanString(item.action, 160),
+      endpointKey: cleanString(item.endpointKey, 120),
+      routePath: cleanString(item.route?.path, 220),
+      requiredActor: cleanString(item.requiredActor || "owner", 80),
+      required: true
+    });
+  }).filter(Boolean);
+}
+
 function releaseEvidenceChecklist(workbenchSummary = {}, slots = [], artifactTaskIds = []) {
   const items = [
     ...artifactChecklistItems(slots),
     ...releaseEvidenceCollectionItems(workbenchSummary, artifactTaskIds),
     ...writeGatedChecklistItems(workbenchSummary),
+    ...statePrerequisiteChecklistItems(workbenchSummary),
     ...approvalChecklistItems(workbenchSummary),
     ...recordChecklistItems(workbenchSummary),
     ...unsupportedChecklistItems(workbenchSummary)
@@ -343,6 +362,7 @@ function releaseEvidenceChecklist(workbenchSummary = {}, slots = [], artifactTas
     artifactItemCount: items.filter((item) => item.kind === "home_ai_visual_artifact").length,
     collectionTaskItemCount: items.filter((item) => item.kind === "release_evidence_collection_task").length,
     writeGatedItemCount: items.filter((item) => item.kind === "write_gated_release_evidence").length,
+    statePrerequisiteItemCount: items.filter((item) => item.kind === "release_state_prerequisite").length,
     approvalItemCount: items.filter((item) => item.kind === "release_approval").length,
     recordItemCount: items.filter((item) => item.kind === "release_record").length,
     unsupportedItemCount: items.filter((item) => item.kind === "manual_or_unsupported_release_evidence").length,
@@ -565,6 +585,23 @@ function writeGatedAction(taskId = "") {
   });
 }
 
+function statePrerequisiteAction(action = {}) {
+  const item = objectOnly(action);
+  const key = cleanString(item.key, 160);
+  if (!key) return null;
+  return actionPlanItem({
+    key: `state:${key}`,
+    kind: "release_state_prerequisite",
+    action: cleanString(item.action, 160),
+    endpointKey: cleanString(item.endpointKey, 120),
+    requiredActor: cleanString(item.requiredActor || "owner", 80),
+    readyToSubmit: false,
+    externalActionRequired: true,
+    manualReviewRequired: item.manualReviewRequired === undefined ? true : item.manualReviewRequired === true,
+    route: item.route || null
+  });
+}
+
 function unsupportedAction(evidenceKey = "") {
   return actionPlanItem({
     key: `manual:${evidenceKey}`,
@@ -582,6 +619,7 @@ function releaseEvidenceActionPlan(scope = {}, workbenchSummary = {}, slots = []
   const actions = [
     artifactPreparationAction(slots, manifestTemplate),
     collection,
+    ...asArray(workbenchSummary.releaseStatePrerequisiteActions).map(statePrerequisiteAction),
     ...uniqueStrings(workbenchSummary.missingApprovalKeys).map((key) => approvalAction(scope, key, workbenchSummary)),
     ...uniqueStrings(workbenchSummary.missingRecordKinds)
       .map((kind) => recordAction(scope, kind, workbenchSummary, Boolean(collection))),

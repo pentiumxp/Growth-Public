@@ -50,6 +50,10 @@ until real artifacts are collected:
 ## Forbidden Harness Shortcuts
 
 - Do not satisfy service-owned release evidence with bare boolean `true`.
+- Do not satisfy readiness state prerequisites such as reviewed digest, active
+  failure policy, delivered action handoff, or reviewed enabled worker target
+  through release-evidence collection records; they must remain external
+  automation-state actions until the owning service proves them.
 - Do not treat release approvals as runtime config switches.
 - Do not run Gateway, card generation, evaluation, scheduler execution,
   notification delivery, stage activation, visual tooling, or deployment from
@@ -58,4 +62,3 @@ until real artifacts are collected:
 - Do not store raw learner answers, transcripts, raw prompts, raw model output,
   source-document bodies, private paths, credentials, tokens, cookies, provider
   config, or long logs in docs, tests, evidence records, or handoffs.
-

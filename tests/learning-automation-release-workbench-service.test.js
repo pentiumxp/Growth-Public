@@ -20,7 +20,13 @@ test("release workbench composes release services into Owner action templates wi
           releaseReview: {
             status: "release_evidence_required",
             requiredActionCount: 2,
-            missingCheckKeys: ["owner_daily_ui_evidence"],
+            missingCheckKeys: [
+              "owner_daily_ui_evidence",
+              "reviewed_automation_digest",
+              "active_failure_policy",
+              "delivered_action_handoff",
+              "reviewed_enabled_worker_target"
+            ],
             missingEvidenceKeys: [
               "owner_daily_ui_evidence",
               "production_profile_feedback_smoke_evidence",
@@ -162,6 +168,40 @@ test("release workbench composes release services into Owner action templates wi
   assert.deepEqual(collectionAction.collectionTaskIds, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(collectionAction.writeGatedCollectionTaskIds, ["daily_loop_write"]);
   assert.deepEqual(collectionAction.unsupportedCollectionKeys, []);
+  assert.deepEqual(result.releaseWorkbench.releaseStatePrerequisiteKeys, [
+    "reviewed_automation_digest",
+    "active_failure_policy",
+    "delivered_action_handoff",
+    "reviewed_enabled_worker_target"
+  ]);
+  const stateActions = result.releaseWorkbench.ownerActions
+    .filter((action) => action.source === "release_state_prerequisite");
+  assert.deepEqual(stateActions.map((action) => action.key), [
+    "reviewed_automation_digest",
+    "active_failure_policy",
+    "delivered_action_handoff",
+    "reviewed_enabled_worker_target"
+  ]);
+  assert.equal(stateActions.every((action) => action.readyToSubmit === false), true);
+  assert.equal(stateActions.every((action) => action.manualReviewRequired === true), true);
+  assert.equal(stateActions.every((action) => action.externalActionRequired === true), true);
+  assert.equal(stateActions.every((action) => action.externalAction.kind === "growth_automation_state_prerequisite"), true);
+  const digestAction = stateActions.find((action) => action.key === "reviewed_automation_digest");
+  assert.equal(digestAction.endpointKey, "automation_digest");
+  assert.equal(digestAction.route.method, "GET");
+  assert.equal(digestAction.route.path, "/api/v1/growth/automation/digests");
+  assert.equal(digestAction.route.query.status, "reviewed");
+  assert.equal(digestAction.route.query.workspace_id, "fanfan");
+  const policyAction = stateActions.find((action) => action.key === "active_failure_policy");
+  assert.equal(policyAction.endpointKey, "automation_failure_policy");
+  assert.equal(policyAction.route.path, "/api/v1/growth/automation/failure-policies/readiness");
+  const handoffAction = stateActions.find((action) => action.key === "delivered_action_handoff");
+  assert.equal(handoffAction.endpointKey, "automation_action_handoff");
+  assert.equal(handoffAction.route.path, "/api/v1/growth/automation/action-handoffs");
+  assert.equal(handoffAction.route.query.deliveryStatus, "delivered");
+  const workerTargetAction = stateActions.find((action) => action.key === "reviewed_enabled_worker_target");
+  assert.equal(workerTargetAction.endpointKey, "automation_scheduler_worker_target");
+  assert.equal(workerTargetAction.route.path, "/api/v1/growth/automation/scheduler/worker-targets");
   assert.equal(collectionAction.route.body.central_visual_evidence_file, "");
   assert.equal(collectionAction.route.body.owner_daily_ui_evidence_file, "");
   assert.equal(collectionAction.route.body.release_package_review_ui_evidence_file, "");

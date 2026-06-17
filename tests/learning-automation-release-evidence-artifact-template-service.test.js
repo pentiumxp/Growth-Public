@@ -68,6 +68,37 @@ test("release artifact template maps only missing central visual and UI evidence
               }
             ],
             writeGatedReleaseEvidenceCollectionTasks: ["daily_loop_write"],
+            releaseStatePrerequisiteActions: [
+              {
+                key: "reviewed_automation_digest",
+                action: "review_automation_digest",
+                endpointKey: "automation_digest",
+                requiredActor: "owner",
+                manualReviewRequired: true,
+                route: {
+                  method: "GET",
+                  path: "/api/v1/growth/automation/digests",
+                  query: {
+                    workspace_id: "fanfan",
+                    status: "reviewed"
+                  }
+                }
+              },
+              {
+                key: "active_failure_policy",
+                action: "activate_failure_policy",
+                endpointKey: "automation_failure_policy",
+                requiredActor: "owner",
+                manualReviewRequired: true,
+                route: {
+                  method: "GET",
+                  path: "/api/v1/growth/automation/failure-policies/readiness",
+                  query: {
+                    workspace_id: "fanfan"
+                  }
+                }
+              }
+            ],
             unsupportedReleaseEvidenceCollectionKeys: ["manual_owner_signoff_evidence"]
           }
         };
@@ -111,6 +142,7 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.artifactItemCount, 4);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.collectionTaskItemCount, 2);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.writeGatedItemCount, 1);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.statePrerequisiteItemCount, 2);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.approvalItemCount, 1);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.recordItemCount, 1);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.unsupportedItemCount, 1);
@@ -118,6 +150,8 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:platform_action"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "artifact:central_visual"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "write_gated:daily_loop_write"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "state:reviewed_automation_digest"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "state:active_failure_policy"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "approval:writefulExecutionApproval"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "record:release_package"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "unsupported:manual_owner_signoff_evidence"), true);
@@ -138,9 +172,9 @@ test("release artifact template maps only missing central visual and UI evidence
   );
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.schemaVersion, "growth.learningAutomationReleaseEvidenceActionPlan.v1");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.status, "release_evidence_actions_required");
-  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actionCount, 6);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actionCount, 8);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.submittableActionCount, 2);
-  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.externalActionCount, 3);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.externalActionCount, 5);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.key, "prepare:release_evidence_artifact_manifest");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.readyToSubmit, false);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextSubmittableAction.key, "record:approval:writefulExecutionApproval");
@@ -187,6 +221,10 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(planActions.get("record:release_package").bodyTemplate.build_and_record_package, true);
   assert.deepEqual(planActions.get("record:release_package").bodyTemplate.tasks, ["planner_readiness", "scheduler_dry_run"]);
   assert.equal(planActions.get("authorize:daily_loop_write").writeGateRequired, true);
+  assert.equal(planActions.get("state:reviewed_automation_digest").externalActionRequired, true);
+  assert.equal(planActions.get("state:reviewed_automation_digest").route.path, "/api/v1/growth/automation/digests");
+  assert.equal(planActions.get("state:active_failure_policy").manualReviewRequired, true);
+  assert.equal(planActions.get("state:active_failure_policy").route.path, "/api/v1/growth/automation/failure-policies/readiness");
   assert.equal(planActions.get("manual:manual_owner_signoff_evidence").manualReviewRequired, true);
   assert.equal(result.releaseArtifactTemplate.readyForManifestInput, false);
   assert.equal(result.writefulSchedulingAllowed, false);

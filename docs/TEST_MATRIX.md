@@ -61,6 +61,19 @@ focused assertion must prove collection-owned evidence keys are routed through
 `release_evidence` actions, artifact-backed collection tasks advertise
 `requiresPreparation` plus the artifact-template read route, and generic
 record-route templates do not become browser-filled pass evidence shortcuts.
+For readiness state prerequisites such as reviewed digest, active failure
+policy, delivered action handoff, and reviewed enabled worker target, the
+focused assertion must prove they are projected as
+`releaseStatePrerequisiteActions`, not as
+`unsupportedReleaseEvidenceCollectionKeys`, not as collection task ids, and not
+as direct pass release evidence.
+
+When changing release artifact-template checklist or action-plan fields, run
+`tests/learning-automation-release-evidence-artifact-template-service.test.js`
+and `tests/growth-release-artifact-template-smoke-script.test.js`. The focused
+assertion must prove artifact-backed tasks remain behind the manifest template,
+state prerequisites are counted as `release_state_prerequisite`, and truly
+unknown manual evidence remains under unsupported/manual evidence.
 
 When changing `release_evidence_collection` workbench action success/failure
 semantics, run `tests/learning-automation-release-workbench-action-service.test.js`

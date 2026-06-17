@@ -9,6 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:24+08:00 - Release Workbench State Prerequisite Actions
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - release-readiness state prerequisites such as
+    `reviewed_automation_digest`, `active_failure_policy`,
+    `delivered_action_handoff`, and `reviewed_enabled_worker_target` were
+    surfaced through the workbench as unsupported release-evidence collection
+    keys;
+  - these gates are not release evidence. They are proved by existing Growth
+    automation services and should not be collected or recorded as direct pass
+    `release_evidence` records.
+- Scope:
+  - added `releaseStatePrerequisiteKeys` and
+    `releaseStatePrerequisiteActions` to the release workbench read model;
+  - each state prerequisite action points to the existing automation read
+    surface for digest, failure policy, action handoff, or scheduler worker
+    target and carries `externalActionRequired=true`;
+  - filtered those state keys out of
+    `unsupportedReleaseEvidenceCollectionKeys` and out of collection task ids;
+  - updated release artifact-template checklist/action-plan readback so those
+    items are counted as `release_state_prerequisite`, while truly unknown
+    manual evidence remains unsupported/manual;
+  - updated Growth architecture docs, the Home AI platform-contract pointer,
+    next-stage plan, test matrix, and Harness-required matrix.
+- Operational readback:
+  - `node scripts/smoke-growth-release-workbench.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` now reports
+    `ownerActionCount=11`, `unsupportedReleaseEvidenceCollectionKeys=[]`, and
+    four `releaseStatePrerequisiteActions` for digest, failure policy, action
+    handoff, and worker target;
+  - `node scripts/smoke-growth-release-artifact-template.js --workspace-id
+    owner --learner-id fanfan --domain science --subject science --json`
+    returns `ok=true`, `artifactSlotCount=8`,
+    `statePrerequisiteItemCount=4`, and `unsupportedItemCount=0`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - `node --check src/services/learning-automation-release-evidence-artifact-template-service.js`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/growth-release-workbench-smoke-script.test.js
+    tests/learning-automation-release-evidence-artifact-template-service.test.js
+    tests/growth-release-artifact-template-smoke-script.test.js
+    tests/learning-automation-release-preflight-service.test.js` passed `20/20`;
+  - `node --test tests/growth-routes.test.js
+    tests/growth-frontend-adapter.test.js
+    tests/growth-architecture-boundary.test.js` passed `115/115`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `235/235`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `922/922`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,281` nodes, and `23,007` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `94.5%`
+    complete;
+  - remaining work is still external release closure evidence: Home AI central
+    visual/UI summary artifacts, real automation state completion, explicit
+    Owner approvals/reviews, final release closure/preflight, and production
+    deploy evidence.
+
 ## 2026-06-17T11:13+08:00 - Release Workbench Collection-Owned Evidence Projection
 
 - Status: implemented and locally validated. No production deployment was

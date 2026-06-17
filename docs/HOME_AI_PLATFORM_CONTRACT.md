@@ -181,6 +181,23 @@ working copies for future Growth work.
 | `plugin_manifest_actions_status` | `declared`; Growth exposes manifest `actions` for host Dock `常用`, long-press menus, and search. |
 | `growth_docs_locality` | `node scripts/check-growth-docs-locality.js`; Growth-specific docs must exist in this plugin workspace, while broad platform contracts remain centralized in the Home AI app workspace. |
 
+## Growth-Local Release-Workbench State Prerequisite Addendum
+
+The release workbench is a read model and must not reinterpret Growth
+automation state prerequisites as release evidence. Missing
+`reviewed_automation_digest`, `active_failure_policy`,
+`delivered_action_handoff`, and `reviewed_enabled_worker_target` checks are
+projected as `releaseStatePrerequisiteKeys` and
+`releaseStatePrerequisiteActions`, each with an Owner-facing GET route to the
+existing automation digest, failure-policy, action-handoff, or scheduler
+worker-target surface and `externalActionRequired=true`.
+
+Those state prerequisite keys must not appear in
+`unsupportedReleaseEvidenceCollectionKeys` or in a direct pass
+`release_evidence` action. The artifact-template checklist/action-plan readback
+must count them as `release_state_prerequisite` items/actions, while truly
+unknown manual release evidence remains under unsupported/manual evidence.
+
 ## Growth-Local Release-Readiness Readback Addendum
 
 `plugin_learning_automation_release_readiness` now returns summary-only

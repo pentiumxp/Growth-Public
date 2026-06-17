@@ -67,6 +67,36 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
 const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
   production_daily_loop_write_smoke_evidence: "daily_loop_write"
 });
+const RELEASE_STATE_PREREQUISITE_ACTION_BY_KEY = Object.freeze({
+  reviewed_automation_digest: {
+    action: "review_automation_digest",
+    label: "Review automation digest",
+    endpointKey: "automation_digest",
+    path: "/api/v1/growth/automation/digests",
+    query: { status: "reviewed", limit: 5 }
+  },
+  active_failure_policy: {
+    action: "activate_failure_policy",
+    label: "Activate failure policy",
+    endpointKey: "automation_failure_policy",
+    path: "/api/v1/growth/automation/failure-policies/readiness",
+    query: {}
+  },
+  delivered_action_handoff: {
+    action: "deliver_action_handoff",
+    label: "Deliver action handoff",
+    endpointKey: "automation_action_handoff",
+    path: "/api/v1/growth/automation/action-handoffs",
+    query: { deliveryStatus: "delivered", limit: 5 }
+  },
+  reviewed_enabled_worker_target: {
+    action: "enable_reviewed_worker_target",
+    label: "Review enabled worker target",
+    endpointKey: "automation_scheduler_worker_target",
+    path: "/api/v1/growth/automation/scheduler/worker-targets",
+    query: { status: "enabled", limit: 5 }
+  }
+});
 const ARTIFACT_BACKED_COLLECTION_TASK_IDS = new Set([
   "central_visual",
   ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => task.taskId)
@@ -243,6 +273,70 @@ function isCollectionOwnedReleaseEvidenceAction(summary = {}) {
   return Boolean(collectionTaskIdForReleaseEvidenceKey(summary.key));
 }
 
+function statePrerequisiteDefinition(key = "") {
+  return RELEASE_STATE_PREREQUISITE_ACTION_BY_KEY[cleanString(key, 160)] || null;
+}
+
+function statePrerequisiteKeys(keys = []) {
+  return uniqueStrings(keys, 64).filter((key) => Boolean(statePrerequisiteDefinition(key)));
+}
+
+function scopeQuery(scope = {}) {
+  return {
+    workspace_id: scope.workspaceId,
+    learner_id: scope.learnerId,
+    program_id: scope.programId,
+    domain_pack_id: scope.domainPackId,
+    domain: scope.domain,
+    subject: scope.subject,
+    horizon: scope.horizon
+  };
+}
+
+function statePrerequisiteRoute(scope = {}, key = "") {
+  const definition = statePrerequisiteDefinition(key);
+  if (!definition) return null;
+  return {
+    method: "GET",
+    path: definition.path,
+    ownerOnly: false,
+    workspaceBearerRequired: true,
+    query: Object.assign({}, scopeQuery(scope), definition.query)
+  };
+}
+
+function statePrerequisiteAction(key = "", scope = {}) {
+  const definition = statePrerequisiteDefinition(key);
+  if (!definition) return null;
+  const route = statePrerequisiteRoute(scope, key);
+  return {
+    schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
+    summaryOnly: true,
+    key,
+    action: definition.action,
+    requiredActor: "owner",
+    label: definition.label,
+    source: "release_state_prerequisite",
+    endpointKey: definition.endpointKey,
+    route,
+    readyToSubmit: false,
+    manualReviewRequired: true,
+    externalActionRequired: true,
+    externalAction: {
+      kind: "growth_automation_state_prerequisite",
+      action: definition.action,
+      followupRoute: route
+    },
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    writefulSchedulingAllowed: false
+  };
+}
+
+function actionsFromStatePrerequisites(keys = [], scope = {}) {
+  return statePrerequisiteKeys(keys).map((key) => statePrerequisiteAction(key, scope)).filter(Boolean);
+}
+
 function collectionPreparation(scope = {}, collectionTasks = {}, route = null) {
   const artifactTaskIds = asArray(collectionTasks.taskIds)
     .filter((taskId) => ARTIFACT_BACKED_COLLECTION_TASK_IDS.has(taskId));
@@ -350,6 +444,7 @@ function collectionTaskPlan(keys = []) {
       writeGatedTaskSet.add(writeGatedTaskId);
       continue;
     }
+    if (statePrerequisiteDefinition(key)) continue;
     unsupported.push(key);
   }
   const taskIds = RELEASE_EVIDENCE_COLLECTION_TASK_ORDER.filter((taskId) => safeTaskSet.has(taskId));
@@ -837,11 +932,14 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
       ...dashboardSummary.missingApprovalKeys
     ]);
     const collectionTasks = collectionTaskPlan([...missingEvidenceKeys, ...missingCheckKeys]);
+    const releaseStatePrerequisiteKeys = statePrerequisiteKeys(missingCheckKeys);
+    const releaseStatePrerequisiteActions = actionsFromStatePrerequisites(releaseStatePrerequisiteKeys, scope);
     const ownerActions = dedupeActions([
       collectionActionFromSupportedEvidence(scope, collectionTasks, inventorySummary),
       ownerAction(dashboardSummary.nextAction, scope, "release_dashboard", collectionTasks),
       ownerAction(controlsSummary.nextAction, scope, "release_controls", collectionTasks),
       ownerAction(readinessSummary.nextAction, scope, "release_readiness", collectionTasks),
+      ...releaseStatePrerequisiteActions,
       ...actionsFromMissingEvidence(missingEvidenceKeys.length ? missingEvidenceKeys : missingCheckKeys, scope),
       ...actionsFromMissingApprovals(missingApprovalKeys, scope),
       shouldOfferReleasePreflight(missingEvidenceKeys, missingCheckKeys, missingApprovalKeys, inventorySummary)
@@ -871,6 +969,8 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
         releaseEvidenceCollectionSupportedTaskIds: collectionTasks.supportedTaskIds,
         writeGatedReleaseEvidenceCollectionTasks: collectionTasks.writeGatedTaskIds,
         unsupportedReleaseEvidenceCollectionKeys: collectionTasks.unsupportedKeys,
+        releaseStatePrerequisiteKeys,
+        releaseStatePrerequisiteActions,
         readiness: readinessSummary,
         controls: controlsSummary,
         dashboard: dashboardSummary,
