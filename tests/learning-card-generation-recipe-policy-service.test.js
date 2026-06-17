@@ -20,6 +20,8 @@ test("card generation recipe policy exposes daily English context without raw in
   assert.equal(result.completionPolicy.mode, "daily_score_once");
   assert.equal(result.completionPolicy.passScoreRequired, false);
   assert.equal(result.generationDefaults.cardSchemaVersion, "growth.card.authoring.v1");
+  assert.equal(result.generationDefaults.rubricPolicyId, "rubric:daily_english_v1");
+  assert.equal(result.rubricCatalog.some((item) => item.policyId === "rubric:daily_mathematics_v1"), true);
   assert.equal(result.recipes[0].rubricPolicy.policyId, "rubric:daily_english_v1");
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);
 });
@@ -93,12 +95,19 @@ test("card generation recipe policy can use selected subject scope for generic d
   assert.equal(context.selectedRecipeId, "daily_subject_practice_v1");
   assert.equal(context.generationDefaults.domain, "math");
   assert.equal(context.generationDefaults.subject, "mathematics");
+  assert.equal(context.generationDefaults.rubricPolicyId, "rubric:daily_mathematics_v1");
+  assert.deepEqual(context.generationDefaults.rubricDimensionIds, [
+    "math_concept_model",
+    "math_procedure_accuracy",
+    "math_reasoning_explanation",
+    "math_precision_check"
+  ]);
   assert.equal(result.ok, true);
   assert.equal(result.recipeId, "daily_subject_practice_v1");
   assert.equal(result.input.domain, "math");
   assert.equal(result.input.subject, "mathematics");
   assert.equal(result.input.completionPolicy.passScoreRequired, false);
-  assert.equal(result.input.rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
+  assert.equal(result.input.rubricPolicy.policyId, "rubric:daily_mathematics_v1");
 });
 
 test("card generation recipe policy leaves stage assessment outside daily defaults", () => {

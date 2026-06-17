@@ -1,6 +1,6 @@
 # Growth Card Generation Rules
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-18.
 
 This document consolidates the current Growth card-generation rules from the
 migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
@@ -513,12 +513,14 @@ does not ask Home AI old Growth routes to author cards.
 
 Subject-aware rubric policy is service-owned by
 `learning-card-rubric-policy-service`. V1 ships summary-only policies for
-`daily_english_v1`, `daily_science_v1`, and parameterized
-`daily_subject_practice_v1`. Generation passes that policy to Gateway
-authoring, the card publisher persists it inside bounded `raw_json`, Gateway
-evaluation validates returned `rubricResults` against the policy and graph
-targets, and `learning-evidence-ledger-service` stores only bounded rubric
-summaries inside `summary_json`.
+`daily_english_v1`, `daily_science_v1`, and `daily_subject_practice_v1`.
+The subject-practice recipe resolves mathematics, history, geography, and
+computer science to stable subject-specific rubric policies; unknown subjects
+fall back to a generic bounded subject-practice rubric. Generation passes that
+policy to Gateway authoring, the card publisher persists it inside bounded
+`raw_json`, Gateway evaluation validates returned `rubricResults` against the
+policy and graph targets, and `learning-evidence-ledger-service` stores only
+bounded rubric summaries inside `summary_json`.
 
 Rubric readback is service-owned. `learning-evidence-audit-service` and
 `learning-cycle-audit-service` project only bounded policy ids, dimension ids,
@@ -564,7 +566,9 @@ with `graphOptions`, draft plan, Owner preview, explicit publish, card
 authoring, learner evidence, evaluation, ledger/Profile V2 update, and next
 recommendation. Direct compact recipe generation is valid for
 `daily_english_v1`, `daily_science_v1`, and `daily_subject_practice_v1` only
-as a low-pressure daily-card shortcut; it still goes through target
+as a low-pressure daily-card shortcut. Subject practice has stable V1 rubric
+specializations for mathematics, history, geography, and computer science,
+then generic fallback for other subjects; it still goes through target
 provisioning, graph planning, graph evidence requirements, Gateway authoring,
 validation, and transactional card publishing. Recipe defaults must not
 override a selected graph node's evidence requirements.
@@ -792,6 +796,6 @@ publishing:
 New plugin-owned generated cards use the protected
 `POST /api/v1/growth/cards/generate` route or the same service directly. The
 remaining architecture work is broader learner policy configuration, additional
-subject-specific rubric catalogs beyond the V1 daily policies,
+subject-specific rubric catalogs beyond the current V1 daily set,
 stage-assessment expansion, Owner review/retry policy, and production Gateway
 configuration validation.

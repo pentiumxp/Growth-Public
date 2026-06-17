@@ -186,11 +186,16 @@ function createLearningCardGenerationRecipePolicyService(options = {}) {
   function context(input = {}) {
     const resolved = resolveRecipe(input);
     const recipe = resolved.ok && resolved.recipe ? resolved.recipe : dailyEnglishRecipe();
+    const recipeWithRubric = withRubricPolicy(recipe);
+    const rubricCatalog = rubricPolicyService && typeof rubricPolicyService.subjectCatalog === "function"
+      ? rubricPolicyService.subjectCatalog()
+      : [];
     return {
       ok: true,
       source: "growth-learning-card-generation-recipe-policy-service",
       recipes: recipes(),
       selectedRecipeId: recipe.id,
+      rubricCatalog,
       completionPolicy: dailyScoreOnceCompletionPolicy(),
       generationDefaults: {
         domain: recipe.domain,
@@ -198,7 +203,9 @@ function createLearningCardGenerationRecipePolicyService(options = {}) {
         defaultCardRole: recipe.defaultCardRole,
         defaultDifficultyBand: recipe.defaultDifficultyBand,
         cardSchemaVersion: recipe.cardSchemaVersion,
-        evidenceRequirements: uniqueStrings(recipe.evidenceRequirements)
+        evidenceRequirements: uniqueStrings(recipe.evidenceRequirements),
+        rubricPolicyId: cleanString(recipeWithRubric.rubricPolicy?.policyId),
+        rubricDimensionIds: uniqueStrings(asArray(recipeWithRubric.rubricPolicy?.rubricDimensions).map((item) => item.dimensionId))
       }
     };
   }

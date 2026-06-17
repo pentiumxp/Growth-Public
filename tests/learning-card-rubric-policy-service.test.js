@@ -31,24 +31,71 @@ test("rubric policy service returns bounded daily science rubric and evidence ma
   assert.equal(JSON.stringify(result.policy).includes("raw learner answer"), false);
 });
 
-test("rubric policy service parameterizes generic subject practice", () => {
+test("rubric policy service returns subject-specific daily practice policies before generic fallback", () => {
   const service = createLearningCardRubricPolicyService();
 
-  const result = service.resolveRubricPolicy({
+  const mathematics = service.resolveRubricPolicy({
+    recipeId: "daily_subject_practice_v1",
+    domain: "math",
+    subject: "mathematics"
+  });
+  const history = service.resolveRubricPolicy({
     recipeId: "daily_subject_practice_v1",
     domain: "history",
     subject: "history"
   });
+  const geography = service.resolveRubricPolicy({
+    recipeId: "daily_subject_practice_v1",
+    domain: "humanities",
+    subject: "geography"
+  });
+  const computing = service.resolveRubricPolicy({
+    recipeId: "daily_subject_practice_v1",
+    domain: "computing",
+    subject: "computer science"
+  });
+  const generic = service.resolveRubricPolicy({
+    recipeId: "daily_subject_practice_v1",
+    domain: "arts",
+    subject: "drama"
+  });
 
-  assert.equal(result.ok, true);
-  assert.equal(result.policy.recipeId, "daily_subject_practice_v1");
-  assert.equal(result.policy.domain, "history");
-  assert.equal(result.policy.subject, "history");
-  assert.equal(result.policy.policyId, "rubric:daily_subject_practice_v1:history");
-  assert.deepEqual(service.dimensionIds(result.policy), [
+  assert.equal(mathematics.ok, true);
+  assert.equal(mathematics.policy.policyId, "rubric:daily_mathematics_v1");
+  assert.deepEqual(service.dimensionIds(mathematics.policy), [
+    "math_concept_model",
+    "math_procedure_accuracy",
+    "math_reasoning_explanation",
+    "math_precision_check"
+  ]);
+  assert.equal(history.policy.policyId, "rubric:daily_history_v1");
+  assert.equal(history.policy.domain, "history");
+  assert.equal(history.policy.subject, "history");
+  assert.deepEqual(service.dimensionIds(history.policy), [
+    "history_context",
+    "history_evidence_use",
+    "history_cause_consequence",
+    "history_explanation_clarity"
+  ]);
+  assert.equal(geography.policy.policyId, "rubric:daily_geography_v1");
+  assert.equal(computing.policy.policyId, "rubric:daily_computer_science_v1");
+  assert.equal(generic.policy.policyId, "rubric:daily_subject_practice_v1:drama");
+  assert.deepEqual(service.dimensionIds(generic.policy), [
     "subject_understanding",
     "subject_application",
     "subject_evidence",
     "subject_communication"
   ]);
+});
+
+test("rubric policy service exposes bounded subject catalog summaries", () => {
+  const service = createLearningCardRubricPolicyService();
+  const catalog = service.subjectCatalog();
+
+  assert.equal(catalog.some((item) => item.policyId === "rubric:daily_mathematics_v1"), true);
+  assert.equal(catalog.some((item) => item.policyId === "rubric:daily_history_v1"), true);
+  assert.equal(catalog.some((item) => item.policyId === "rubric:daily_geography_v1"), true);
+  assert.equal(catalog.some((item) => item.policyId === "rubric:daily_computer_science_v1"), true);
+  assert.equal(catalog.every((item) => Array.isArray(item.dimensionIds) && item.dimensionIds.length > 0), true);
+  assert.equal(JSON.stringify(catalog).includes("raw learner answer"), false);
 });

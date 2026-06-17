@@ -2,7 +2,7 @@
 
 ## Home AI Platform Contract Pointer
 
-- Home AI platform contract version: `20260611-v3`.
+- Home AI platform contract version: `20260618-v4`.
 - Local pointer: `docs/HOME_AI_PLATFORM_CONTRACT.md`.
 - Canonical Home AI docs live under:
   `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/`.
@@ -22036,8 +22036,8 @@
   - production planner readiness smoke with real Gateway config;
   - central embedded visual/release evidence for implemented Owner controls;
   - richer Owner audit rendering over persisted rubric/profile-delta evidence;
-  - broader subject-specific rubric catalogs beyond V1 English/science/generic
-    daily policies.
+  - additional subject-specific rubric catalogs beyond the current V1 daily
+    set as domain packs require them.
 
 ## 2026-06-18T00:05+0800 - Rubric evidence audit/Profile V2 readback projection
 
@@ -22085,6 +22085,62 @@
     with the existing earlier-engine advisory.
 - Remaining next-step candidates:
   - render these rubric audit/Profile V2 fields in the embedded Owner UI;
-  - expand subject-specific rubric catalogs beyond V1 English/science/generic;
+  - add more subject-specific rubric policies beyond the current V1 daily set
+    as domain packs require them;
+  - collect central visual/release evidence and real production
+    profile-feedback evidence before treating the product surface as complete.
+
+## 2026-06-18T00:15+0800 - Subject-specific daily rubric catalog expansion
+
+- Status:
+  - Implemented local Growth H2 rubric catalog/generalization package.
+  - No SQLite schema migration, route permission change, UI change, Gateway
+    boundary change, production deploy, or release evidence collection was
+    executed in this slice.
+- Implemented behavior:
+  - `learning-card-rubric-policy-service` now resolves
+    `daily_subject_practice_v1` to stable subject-specific rubric policies for
+    mathematics, history, geography, and computer science, while preserving a
+    generic subject fallback for unknown subjects.
+  - The service exposes a bounded `subjectCatalog()` summary with policy ids,
+    recipe ids, domains/subjects, dimension ids, and evidence keys.
+  - `learning-card-generation-recipe-policy-service.context()` now includes
+    bounded `rubricCatalog` readback plus selected generation-default
+    `rubricPolicyId` and `rubricDimensionIds`.
+  - Generic daily subject generation for mathematics now sends
+    `rubric:daily_mathematics_v1` through the existing generation/authoring
+    path and persists that bounded policy in generated card `raw_json`.
+  - Gateway evaluation input now resolves the mathematics policy from card
+    raw metadata and validates mathematics rubric dimensions such as
+    `math_reasoning_explanation`.
+  - The Growth local platform pointer and handoff were updated to canonical
+    Home AI platform contract version `20260618-v4`.
+  - All new rubric fields remain summary-only and do not expose raw learner
+    answers, transcripts, raw prompts, raw model output, hidden answers,
+    private paths, provider config, credentials, or source document bodies.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --test tests/learning-card-rubric-policy-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-evaluation-service.test.js`
+    passed `29/29`.
+  - `node --test tests/learning-card-rubric-policy-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-evidence-ledger-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-profile-v2-service.test.js tests/learning-profile-feedback-evidence-service.test.js tests/learning-card-ai-loop-harness.test.js tests/growth-architecture-boundary.test.js`
+    passed `89/89`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `npm run --silent check` passed with `runtimeCount=223`.
+  - `git diff --check` passed.
+  - `codegraph sync && codegraph status` reported the index is up to date,
+    with the existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - render subject rubric catalog/readback in the embedded Owner UI;
+  - add more subject-specific rubric policies as actual domain packs require
+    them;
   - collect central visual/release evidence and real production
     profile-feedback evidence before treating the product surface as complete.

@@ -147,8 +147,9 @@ readback gate set.
   publication, and `learning-plan-publisher-service` propagates the selected
   recipe into card generation; the Owner browser should not recompute graph
   scope locally. `learning-card-rubric-policy-service` now owns V1
-  summary-only rubric policies for daily English, daily science, and generic
-  subject practice. Generation passes that policy into Gateway authoring and
+  summary-only rubric policies for daily English, daily science, mathematics,
+  history, geography, computer science, and generic subject fallback practice.
+  Generation passes that policy into Gateway authoring and
   persists it in bounded card `raw_json`; Gateway evaluation validates
   `rubricResults` and `skillResults[*].rubricDimensionId` against that policy
   plus graph targets; the evidence ledger stores only bounded per-node rubric

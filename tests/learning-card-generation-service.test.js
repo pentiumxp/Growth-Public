@@ -579,13 +579,19 @@ test("card generation can use a generic daily practice recipe for a selected sub
   assert.equal(gatewayCalls[0].input.learningGraphPlan.subject, "mathematics");
   assert.equal(gatewayCalls[0].input.cardRole, "practice");
   assert.deepEqual(gatewayCalls[0].input.evidenceRequirements, ["explain_ratio_comparison"]);
-  assert.equal(gatewayCalls[0].input.rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
+  assert.equal(gatewayCalls[0].input.rubricPolicy.policyId, "rubric:daily_mathematics_v1");
+  assert.deepEqual(gatewayCalls[0].input.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+    "math_concept_model",
+    "math_procedure_accuracy",
+    "math_reasoning_explanation",
+    "math_precision_check"
+  ]);
 
   const db = new DatabaseSync(dbPath);
   try {
     const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
     assert.equal(card.domain, "math");
-    assert.equal(JSON.parse(card.raw_json).rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
+    assert.equal(JSON.parse(card.raw_json).rubricPolicy.policyId, "rubric:daily_mathematics_v1");
     assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
   } finally {
     db.close();

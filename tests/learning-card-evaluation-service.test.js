@@ -92,6 +92,45 @@ function evaluationInput(overrides = {}) {
   }, overrides);
 }
 
+function mathematicsEvaluationInput(overrides = {}) {
+  return evaluationInput(Object.assign({
+    text: "I compare the ratio with a bar model, then simplify both parts by the same factor.",
+    taskCard: {
+      id: "ltask_math_1",
+      title: "Ratio model",
+      learner_id: "weixin_stephen",
+      workspace_id: "weixin_stephen",
+      program_id: "program_math",
+      raw_json: JSON.stringify({
+        cardRole: "practice",
+        recipeId: "daily_subject_practice_v1",
+        domain: "math",
+        subject: "mathematics",
+        learningGraph: { targetNodeIds: ["kg_ratio_intro"], domain: "math", subject: "mathematics" },
+        teachingFlow: {
+          learningTarget: "Compare ratios with a model.",
+          quickCheck: { expectedEvidence: ["worked_steps", "reasoning_check"] }
+        },
+        evidenceToRecord: ["worked_steps"],
+        completionPolicy: { mode: "daily_score_once", passScoreRequired: false }
+      })
+    },
+    taskRaw: {
+      cardRole: "practice",
+      recipeId: "daily_subject_practice_v1",
+      domain: "math",
+      subject: "mathematics",
+      learningGraph: { targetNodeIds: ["kg_ratio_intro"], domain: "math", subject: "mathematics" },
+      teachingFlow: {
+        learningTarget: "Compare ratios with a model.",
+        quickCheck: { expectedEvidence: ["worked_steps", "reasoning_check"] }
+      },
+      evidenceToRecord: ["worked_steps"],
+      completionPolicy: { mode: "daily_score_once", passScoreRequired: false }
+    }
+  }, overrides));
+}
+
 function sseForText(text) {
   const mid = Math.ceil(text.length / 2);
   return [
@@ -159,6 +198,46 @@ test("learning card evaluation service accepts ordinary JSON Gateway drafts", as
   assert.equal(result.gatewayMode, "json");
   assert.equal(result.evaluation.score, 91);
   assert.equal(result.evaluation.confidence, 0.9);
+});
+
+test("learning card evaluation service uses subject-specific mathematics rubric policy", async () => {
+  const { calls, service } = createEvaluationHarness({
+    json: {
+      output_text: JSON.stringify(validEvaluationDraft({
+        skillResults: [{
+          nodeId: "kg_ratio_intro",
+          rubricDimensionId: "math_reasoning_explanation",
+          score: 82,
+          confidence: 0.8,
+          status: "observed",
+          evidenceType: "learner_submission_summary",
+          evidenceSummary: "Explains why the same factor preserves the ratio."
+        }],
+        rubricResults: [{
+          dimensionId: "math_reasoning_explanation",
+          nodeId: "kg_ratio_intro",
+          score: 82,
+          confidence: 0.8,
+          status: "observed",
+          evidenceType: "learner_submission_summary",
+          evidenceSummary: "Explains why the same factor preserves the ratio."
+        }]
+      }))
+    }
+  });
+
+  const result = await service.evaluateSubmissionDraft(mathematicsEvaluationInput());
+
+  assert.equal(result.ok, true);
+  assert.equal(result.evaluation.rubricPolicyId, "rubric:daily_mathematics_v1");
+  assert.equal(result.evaluation.rubricResults[0].dimensionId, "math_reasoning_explanation");
+  assert.equal(calls[0].input.card.rubricPolicy.policyId, "rubric:daily_mathematics_v1");
+  assert.deepEqual(calls[0].input.card.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+    "math_concept_model",
+    "math_procedure_accuracy",
+    "math_reasoning_explanation",
+    "math_precision_check"
+  ]);
 });
 
 test("Gateway evaluation client can call an official Responses endpoint", async () => {
