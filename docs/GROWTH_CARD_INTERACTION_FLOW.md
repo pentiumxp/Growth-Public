@@ -299,9 +299,14 @@ sequence through `learning-learner-cycle-service`: submit once through
 `growthService.submitReflection`, then read cycle audit and completeness. The
 CLI output is summary-only (`growth.learningLearnerCycleSmoke.v1`) and must not
 echo learner answer text, reflection text, raw prompts, answer keys, raw model
-output, transcripts, credentials, or provider configuration. Production use
-should run the default audit readback unless the submitted text/reflection is a
-real learner action explicitly requested by Owner.
+output, transcripts, credentials, or provider configuration. The CLI also
+mirrors top-level `learnerCycle*` operator readback for operation/status, write
+gate, target/scope selectors, card/evaluation-job state, submission/evaluation/
+reflection ids and counts, cycle-audit counts, completeness readiness,
+missing-required counts, and finding counts while preserving the nested DTO as
+canonical. Production use should run the default audit readback unless the
+submitted text/reflection is a real learner action explicitly requested by
+Owner.
 
 Gateway-backed evaluation coverage lives in
 `tests/learning-card-evaluation-service.test.js` and asserts valid streaming

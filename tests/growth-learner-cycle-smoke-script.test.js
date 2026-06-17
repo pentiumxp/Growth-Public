@@ -16,6 +16,7 @@ const {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectLearnerCycleSmokeReadback,
   targetNodeIds,
   validateOperation
 } = require("../scripts/smoke-growth-learner-cycle");
@@ -540,6 +541,129 @@ test("learner-cycle smoke script parses operation, write guard, and bounded lear
   assert.equal(inputFromArgs(args).reflection.includes("checked"), true);
 });
 
+test("learner-cycle smoke script projects top-level operator readback", () => {
+  const output = projectLearnerCycleSmokeReadback({
+    ok: true,
+    operation: "full",
+    source: "growth-learning-learner-cycle-service",
+    schemaVersion: "growth.learningLearnerCycleSmoke.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    target: {
+      workspaceId: WORKSPACE_ID,
+      learnerId: LEARNER_ID,
+      programId: PROGRAM_ID,
+      taskCardId: TASK_CARD_ID,
+      planDraftId: "lgplan_cycle_1",
+      domainPackId: "domain_pack_learner_cycle_science",
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [TARGET_NODE_ID]
+    },
+    card: {
+      taskCardId: TASK_CARD_ID,
+      status: "completed",
+      laneId: "completed",
+      primaryAction: "review",
+      latestEvaluationJob: {
+        status: "done",
+        attemptCount: 1,
+        retryable: false,
+        failedVisible: false
+      }
+    },
+    submission: {
+      submissionId: "lsub_cycle_1",
+      status: "submitted",
+      submissionKind: "text",
+      hasAudio: true,
+      evaluationJob: { status: "pending", submissionId: "lsub_cycle_1" }
+    },
+    evaluationQueue: {
+      available: true,
+      processed: 1,
+      results: [{ jobId: "lejob_cycle_1", ok: true, status: "done" }]
+    },
+    reflection: {
+      reflectionId: "lref_cycle_1",
+      status: "submitted",
+      mode: "text",
+      hasAudio: true
+    },
+    cycleAudit: {
+      available: true,
+      summary: {
+        planDraftCount: 1,
+        evidenceCount: 2,
+        profileDeltaCount: 1,
+        correctionCount: 0,
+        hasPublishedPlan: true,
+        hasEvaluationEvidence: true,
+        hasProfileDelta: true,
+        latestActivityAt: "2026-06-15T01:10:00.000Z"
+      },
+      partialFailures: [],
+      timeline: [{ type: "evaluation", id: "leval_cycle_1", at: "2026-06-15T01:05:00.000Z" }]
+    },
+    completeness: {
+      available: true,
+      complete: true,
+      readyForAutomation: true,
+      summary: {
+        requiredCount: 3,
+        satisfiedRequiredCount: 3,
+        missingRequired: [],
+        planPublished: true,
+        evaluationEvidence: true,
+        profileDelta: true,
+        ownerCorrectionAvailable: false
+      },
+      findings: [
+        { code: "plan_published", ok: true, severity: "required" },
+        { code: "evaluation_evidence", ok: true, severity: "required" }
+      ]
+    }
+  });
+
+  assert.equal(output.learnerCycleStatus, "pass");
+  assert.equal(output.learnerCycleOk, true);
+  assert.equal(output.learnerCycleOperation, "full");
+  assert.equal(output.learnerCycleWriteOperation, true);
+  assert.equal(output.learnerCycleTargetWorkspaceId, WORKSPACE_ID);
+  assert.equal(output.learnerCycleTargetLearnerId, LEARNER_ID);
+  assert.equal(output.learnerCycleProgramId, PROGRAM_ID);
+  assert.equal(output.learnerCycleTaskCardId, TASK_CARD_ID);
+  assert.equal(output.learnerCyclePlanDraftId, "lgplan_cycle_1");
+  assert.equal(output.learnerCycleSubject, "science");
+  assert.deepEqual(output.learnerCycleTargetNodeIds, [TARGET_NODE_ID]);
+  assert.equal(output.learnerCycleTargetNodeCount, 1);
+  assert.equal(output.learnerCycleCardAvailable, true);
+  assert.equal(output.learnerCycleCardStatus, "completed");
+  assert.equal(output.learnerCycleLatestEvaluationJobStatus, "done");
+  assert.equal(output.learnerCycleSubmissionAvailable, true);
+  assert.equal(output.learnerCycleSubmissionStatus, "submitted");
+  assert.equal(output.learnerCycleSubmissionHasAudio, true);
+  assert.equal(output.learnerCycleSubmissionEvaluationJobStatus, "pending");
+  assert.equal(output.learnerCycleEvaluationQueueAvailable, true);
+  assert.equal(output.learnerCycleEvaluationProcessedCount, 1);
+  assert.equal(output.learnerCycleEvaluationDoneCount, 1);
+  assert.equal(output.learnerCycleReflectionAvailable, true);
+  assert.equal(output.learnerCycleReflectionHasAudio, true);
+  assert.equal(output.learnerCycleAuditAvailable, true);
+  assert.equal(output.learnerCycleAuditEvidenceCount, 2);
+  assert.equal(output.learnerCycleAuditProfileDeltaCount, 1);
+  assert.equal(output.learnerCycleAuditHasPublishedPlan, true);
+  assert.equal(output.learnerCycleAuditTimelineCount, 1);
+  assert.equal(output.learnerCycleCompletenessAvailable, true);
+  assert.equal(output.learnerCycleComplete, true);
+  assert.equal(output.learnerCycleReadyForAutomation, true);
+  assert.equal(output.learnerCycleRequiredCount, 3);
+  assert.equal(output.learnerCycleSatisfiedRequiredCount, 3);
+  assert.equal(output.learnerCycleMissingRequiredCount, 0);
+  assert.equal(output.learnerCycleFindingCount, 2);
+  assert.equal(output.learnerCycleFailedFindingCount, 0);
+});
+
 test("learner-cycle smoke script defaults to no-write audit", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -557,6 +681,11 @@ test("learner-cycle smoke script defaults to no-write audit", () => {
     assert.equal(output.ok, true);
     assert.equal(output.operation, "audit");
     assert.equal(output.privacyClass, "summary_only");
+    assert.equal(output.learnerCycleStatus, "pass");
+    assert.equal(output.learnerCycleOperation, "audit");
+    assert.equal(output.learnerCycleWriteOperation, false);
+    assert.equal(output.learnerCycleTargetWorkspaceId, WORKSPACE_ID);
+    assert.equal(output.learnerCycleTargetLearnerId, LEARNER_ID);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = ?").all("table");

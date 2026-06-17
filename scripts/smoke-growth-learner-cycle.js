@@ -86,6 +86,121 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 12) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
+function countQueueStatus(results = [], status) {
+  return asArray(results).filter((item) => objectOnly(item).status === status).length;
+}
+
+function countFindingFailures(findings = []) {
+  return asArray(findings).filter((finding) => objectOnly(finding).ok === false).length;
+}
+
+function projectLearnerCycleSmokeReadback(result = {}) {
+  const cycle = objectOnly(result);
+  if (!Object.keys(cycle).length) return result;
+  const target = objectOnly(cycle.target);
+  const card = objectOnly(cycle.card);
+  const latestEvaluationJob = objectOnly(card.latestEvaluationJob);
+  const submission = objectOnly(cycle.submission);
+  const submissionEvaluationJob = objectOnly(submission.evaluationJob);
+  const evaluationQueue = objectOnly(cycle.evaluationQueue);
+  const evaluationResults = asArray(evaluationQueue.results);
+  const reflection = objectOnly(cycle.reflection);
+  const cycleAudit = objectOnly(cycle.cycleAudit);
+  const cycleAuditSummary = objectOnly(cycleAudit.summary);
+  const completeness = objectOnly(cycle.completeness);
+  const completenessSummary = objectOnly(completeness.summary);
+  const targetNodeIds = uniqueBoundedStrings(target.targetNodeIds);
+  const missingRequired = uniqueBoundedStrings(completenessSummary.missingRequired);
+  return Object.assign({}, cycle, {
+    learnerCycleStatus: cleanString(cycle.ok === false ? cycle.error || "failed" : "pass", 140),
+    learnerCycleOk: cycle.ok !== false,
+    learnerCycleOperation: cleanString(cycle.operation, 80),
+    learnerCycleStoppedAt: cleanString(cycle.stoppedAt, 80),
+    learnerCycleWriteOperation: WRITE_OPERATIONS.has(cleanString(cycle.operation, 80)),
+    learnerCycleTargetWorkspaceId: cleanString(target.workspaceId, 160),
+    learnerCycleTargetLearnerId: cleanString(target.learnerId, 160),
+    learnerCycleProgramId: cleanString(target.programId, 160),
+    learnerCycleTaskCardId: cleanString(target.taskCardId, 180),
+    learnerCyclePlanDraftId: cleanString(target.planDraftId, 180),
+    learnerCycleDomainPackId: cleanString(target.domainPackId, 160),
+    learnerCycleDomain: cleanString(target.domain, 120),
+    learnerCycleSubject: cleanString(target.subject, 120),
+    learnerCycleTargetNodeIds: targetNodeIds,
+    learnerCycleTargetNodeCount: targetNodeIds.length,
+    learnerCycleCardAvailable: Boolean(card.taskCardId),
+    learnerCycleCardStatus: cleanString(card.status, 120),
+    learnerCycleCardLaneId: cleanString(card.laneId, 120),
+    learnerCycleCardPrimaryAction: cleanString(card.primaryAction, 120),
+    learnerCycleLatestEvaluationJobStatus: cleanString(latestEvaluationJob.status, 120),
+    learnerCycleLatestEvaluationJobAttemptCount: Number(latestEvaluationJob.attemptCount || 0) || 0,
+    learnerCycleLatestEvaluationJobRetryable: latestEvaluationJob.retryable === true,
+    learnerCycleLatestEvaluationJobFailedVisible: latestEvaluationJob.failedVisible === true,
+    learnerCycleSubmissionAvailable: Boolean(submission.submissionId),
+    learnerCycleSubmissionId: cleanString(submission.submissionId, 180),
+    learnerCycleSubmissionStatus: cleanString(submission.status, 120),
+    learnerCycleSubmissionKind: cleanString(submission.submissionKind, 120),
+    learnerCycleSubmissionHasAudio: submission.hasAudio === true,
+    learnerCycleSubmissionEvaluationJobStatus: cleanString(submissionEvaluationJob.status, 120),
+    learnerCycleEvaluationQueueAvailable: evaluationQueue.available !== false && Object.keys(evaluationQueue).length > 0,
+    learnerCycleEvaluationProcessedCount: Number(evaluationQueue.processed || 0) || 0,
+    learnerCycleEvaluationResultCount: countArray(evaluationResults),
+    learnerCycleEvaluationDoneCount: countQueueStatus(evaluationResults, "done"),
+    learnerCycleEvaluationFailedCount: countQueueStatus(evaluationResults, "failed"),
+    learnerCycleReflectionAvailable: Boolean(reflection.reflectionId),
+    learnerCycleReflectionId: cleanString(reflection.reflectionId, 180),
+    learnerCycleReflectionStatus: cleanString(reflection.status, 120),
+    learnerCycleReflectionMode: cleanString(reflection.mode, 120),
+    learnerCycleReflectionHasAudio: reflection.hasAudio === true,
+    learnerCycleAuditAvailable: cycleAudit.available !== false && Object.keys(cycleAudit).length > 0,
+    learnerCycleAuditPlanDraftCount: Number(cycleAuditSummary.planDraftCount || 0) || 0,
+    learnerCycleAuditEvidenceCount: Number(cycleAuditSummary.evidenceCount || 0) || 0,
+    learnerCycleAuditProfileDeltaCount: Number(cycleAuditSummary.profileDeltaCount || 0) || 0,
+    learnerCycleAuditCorrectionCount: Number(cycleAuditSummary.correctionCount || 0) || 0,
+    learnerCycleAuditHasPublishedPlan: cycleAuditSummary.hasPublishedPlan === true,
+    learnerCycleAuditHasEvaluationEvidence: cycleAuditSummary.hasEvaluationEvidence === true,
+    learnerCycleAuditHasProfileDelta: cycleAuditSummary.hasProfileDelta === true,
+    learnerCycleAuditLatestActivityAt: cleanString(cycleAuditSummary.latestActivityAt, 180),
+    learnerCycleAuditPartialFailureCount: countArray(cycleAudit.partialFailures),
+    learnerCycleAuditTimelineCount: countArray(cycleAudit.timeline),
+    learnerCycleCompletenessAvailable: completeness.available !== false && Object.keys(completeness).length > 0,
+    learnerCycleComplete: completeness.complete === true,
+    learnerCycleReadyForAutomation: completeness.readyForAutomation === true,
+    learnerCycleRequiredCount: Number(completenessSummary.requiredCount || 0) || 0,
+    learnerCycleSatisfiedRequiredCount: Number(completenessSummary.satisfiedRequiredCount || 0) || 0,
+    learnerCycleMissingRequired: missingRequired,
+    learnerCycleMissingRequiredCount: missingRequired.length,
+    learnerCyclePlanPublished: completenessSummary.planPublished === true,
+    learnerCycleEvaluationEvidence: completenessSummary.evaluationEvidence === true,
+    learnerCycleProfileDelta: completenessSummary.profileDelta === true,
+    learnerCycleOwnerCorrectionAvailable: completenessSummary.ownerCorrectionAvailable === true,
+    learnerCycleFindingCount: countArray(completeness.findings),
+    learnerCycleFailedFindingCount: countFindingFailures(completeness.findings)
+  });
+}
+
 function operationFromArgs(args) {
   const operation = firstArgValue(args, ["--operation", "--mode"], "audit").trim().toLowerCase();
   return operation || "audit";
@@ -192,7 +307,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services, operation, input);
+  const result = projectLearnerCycleSmokeReadback(await runOperation(services, operation, input));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -212,6 +327,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectLearnerCycleSmokeReadback,
   runOperation,
   targetNodeIds,
   validateOperation

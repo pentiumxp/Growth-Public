@@ -887,7 +887,12 @@ readback gate set.
   Growth service graph for submission, evaluation queue processing, reflection,
   profile/evidence/profile-delta effects, and audit readback. The smoke output
   must not echo learner text, reflections, transcripts, prompts, answer keys,
-  raw model output, credentials, or provider config. Its harness now also
+  raw model output, credentials, or provider config. The smoke CLI also mirrors
+  top-level `learnerCycle*` operator readback for operation/status, write gate,
+  target/scope selectors, card/evaluation-job state, submission/evaluation/
+  reflection ids and counts, cycle-audit counts, completeness readiness,
+  missing-required counts, and finding counts while preserving the nested
+  `growth.learningLearnerCycleSmoke.v1` DTO as canonical. Its harness now also
   chains a write-gated `full` learner-cycle smoke into a no-write
   `smoke-growth-learning-loop-state` read against the same temporary DB,
   proving the operational smoke artifacts can feed the next planning action

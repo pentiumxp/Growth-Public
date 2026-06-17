@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:13+08:00 - Learner Cycle Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation semantics,
+  reward settlement, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-learner-cycle` delegated correctly to
+    `learning-learner-cycle-service`, but operator-critical operation/status,
+    write gate, target/scope selectors, card/evaluation-job state,
+    submission/evaluation/reflection ids and counts, cycle-audit counts,
+    completeness readiness, missing-required counts, and finding counts were
+    only available inside nested DTOs;
+  - this made learner-cycle audit and release evidence harder to inspect
+    without deep JSON.
+- Scope:
+  - added `projectLearnerCycleSmokeReadback` in
+    `scripts/smoke-growth-learner-cycle.js`;
+  - projected bounded top-level `learnerCycle*` fields while preserving nested
+    `growth.learningLearnerCycleSmoke.v1` output as canonical;
+  - expanded `tests/growth-learner-cycle-smoke-script.test.js` to assert pure
+    projection and default no-write audit readback fields;
+  - updated Growth-local platform-contract, architecture, next-stage,
+    learner-interaction, test matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-learner-cycle.js`
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` (`Index is up to date`;
+    earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if the learner-cycle service, routes, repositories, schema,
+    Gateway/evaluation behavior, reward settlement, UI, scheduler,
+    learner-state, or release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy is required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `learnerCycle*` fields do not add write permission, Gateway
+    access, publication rights, scheduling, reward settlement, stage activation,
+    or learner mutation.
+
 ## 2026-06-17T14:00+08:00 - Profile Feedback Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment
