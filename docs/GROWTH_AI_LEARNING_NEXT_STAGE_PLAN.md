@@ -259,6 +259,10 @@ The next implementation slices should be:
    `daily_subject_practice_v1`; subject-scoped recipe generation remains
    guarded by target provisioning, graph planning, graph-node evidence
    requirements, Gateway authoring validation, and transactional publishing.
+   Generation context must apply recipe domain/subject defaults before calling
+   target provisioning and graph suggestion, so the Fanfan science sample can
+   be operated by selecting the science recipe rather than hand-entering graph
+   selectors.
    The controlled daily-loop smoke CLI now mirrors top-level `dailyLoop*`
    operator readback for operation/outcome, write gates, target/scope,
    readiness, actions, plan draft/item ids, generated/published card ids,

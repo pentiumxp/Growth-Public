@@ -1187,10 +1187,14 @@ metadata and must not include raw learner or source-document payloads.
 
 Defaulting rule:
 
-- an ordinary `daily_english_v1` request can still use recipe defaults when
-  Owner did not explicitly choose a graph selector;
+- ordinary `daily_english_v1`, `daily_science_v1`, and
+  `daily_subject_practice_v1` requests can use recipe defaults when Owner did
+  not explicitly choose a graph selector;
+- generation context must apply those recipe defaults before calling target
+  provisioning and graph suggestion, so service-side target policy and the
+  eventual draft/advance payload agree on the same domain and subject;
 - when Owner supplies `domain`, `subject`, or `domainPackId`, those selectors
-  override the English recipe defaults for preview and planner context;
+  override recipe defaults for preview and planner context;
 - card publication still validates actual target graph nodes before writing.
 
 ## Implementation Roadmap

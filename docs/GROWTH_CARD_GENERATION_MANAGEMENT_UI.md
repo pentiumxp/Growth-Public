@@ -12,8 +12,8 @@ follow those documents for state ownership, model boundaries, audit fields, and
 harness sequencing.
 
 V1 implementation status: the Owner `生成` tab, context route, frontend API
-helpers, daily English payload builder, generated-card learner submission /
-evaluation / optional-reflection UI, stage-assessment controls, target
+helpers, daily English/science payload builders, generated-card learner
+submission / evaluation / optional-reflection UI, stage-assessment controls, target
 domain-pack/subject controls, and focused harness are implemented in the
 plugin workspace. The backend operating-loop slice also exposes planner
 readiness, Profile V2, evidence audit, `graphOptions`, plan draft/publish
@@ -22,7 +22,8 @@ compact learning-loop state readback through
 `GET /api/v1/growth/learning-loop/state`, no-write learning-loop state smoke,
 and a no-write planner readiness smoke. The Owner `生成` tab now reads that
 state after loading generation context, renders a summary-only status/next
-action panel, renders `targetProvisioning` plus filtered `graphOptions`, lets
+action panel, applies recipe defaults before target-provisioning and graph
+suggestion, renders `targetProvisioning` plus filtered `graphOptions`, lets
 Owner apply a selected domain pack/subject to context refresh, and can call the
 Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
 target enablement. The same Owner tab now also reads
@@ -72,9 +73,10 @@ V1 is deliberately narrow:
 
 - Owner-only card generation surface inside the Growth plugin.
 - Initial sample target is Fanfan.
-- Initial recipe is a daily English card.
-- Next sample subject is Fanfan science from the imported UK/HK curriculum
-  domain pack.
+- Initial default recipe is a daily English card.
+- Fanfan science uses `daily_science_v1` from the imported UK/HK curriculum
+  domain pack, with service-side recipe defaults applied before target
+  provisioning and graph suggestion.
 - The generated card uses the existing Growth card renderer and board shape.
 - The model boundary is Gateway only.
 - Published daily cards use the `daily_score_once` policy from
@@ -152,7 +154,10 @@ selected learner target, not the iframe's Owner workspace.
    learner state directly.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
-8. Owner selects the `日常英语卡` recipe.
+8. Owner selects the `日常英语卡` or `日常科学卡` recipe.
+   The context service applies the recipe's domain/subject defaults before
+   target provisioning and graph suggestion, so Owner does not need to hand-type
+   science selectors for the Fanfan sample path.
 9. Growth shows readiness:
    - learner workspace is provisioned;
    - learning graph is imported;
@@ -173,10 +178,13 @@ selected learner target, not the iframe's Owner workspace.
    shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
    and must remain visible on mobile embedded viewports without relying on the
    user scrolling back to the generate button.
-13. Growth calls `POST /api/v1/growth/cards/generate`.
-14. Gateway output is converted to an authoring draft.
-15. Validation passes or returns a visible authoring error.
-16. A validated card is transactionally published to Growth SQLite, including
+13. Growth calls `POST /api/v1/growth/daily-loop/advance`.
+14. `learning-daily-loop-service.advance()` drafts the plan, publishes the
+    selected item, and returns bounded draft/publish summaries.
+15. Gateway output is converted to an authoring draft through the existing
+    Growth Gateway authoring boundary.
+16. Validation passes or returns a visible authoring error.
+17. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
 17. Owner sees the generated card preview and can open the card on the learner
     board.

@@ -217,6 +217,116 @@ test("card generation context enables provisioned non-Fanfan target selections",
   assert.equal(JSON.stringify(result).includes("RAW GRAPH JSON"), false);
 });
 
+test("card generation context applies recipe defaults before provisioning and graph selection", () => {
+  const provisioningInputs = [];
+  const suggestInputs = [];
+  const service = createLearningCardGenerationContextService({
+    gatewayConfigured: () => true,
+    evaluationGatewayConfigured: () => true,
+    targetProvisioningService: {
+      resolveSelection(input) {
+        provisioningInputs.push(input);
+        return {
+          ok: true,
+          targetEnabled: true,
+          mode: "sample_default",
+          selectedDomainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+          selectedDomain: input.domain,
+          selectedSubject: input.subject,
+          graphOptions: {
+            ok: true,
+            available: true,
+            selectedDomainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+            selectedDomain: input.domain,
+            selectedSubject: input.subject,
+            domainPacks: [{
+              domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+              domain: "science",
+              title: "UK/HK Curriculum Foundation",
+              subjects: ["science", "english"]
+            }],
+            subjects: ["science", "english"]
+          }
+        };
+      }
+    },
+    graphRepository: {
+      readback() {
+        return { ok: true, import_counts: { nodes: 2, edges: 1 } };
+      },
+      domainPackOptions() {
+        return [{
+          domainPackId: "domain_pack_english_first",
+          domain: "english",
+          title: "English First",
+          subjects: ["english"]
+        }, {
+          domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+          domain: "science",
+          title: "UK/HK Curriculum Foundation",
+          subjects: ["science", "english"]
+        }];
+      },
+      suggestNodes(input) {
+        suggestInputs.push(input);
+        assert.equal(input.domain, "science");
+        assert.equal(input.subject, "science");
+        return [{
+          nodeId: "kg_science_fair_test",
+          domain: "science",
+          subject: "science",
+          title: "Fair test reasoning",
+          stage: "foundation",
+          evidenceRequired: ["science_reasoning"]
+        }];
+      }
+    },
+    historySummaryRepository: {
+      summaryForAuthoringPlan() {
+        return {
+          ok: true,
+          learnerSummary: { recentCardCount: 1 },
+          masterySummary: { masteryStates: [] },
+          recentExperienceSignals: [],
+          recentTrajectory: []
+        };
+      }
+    },
+    nextCardStrategyService: {
+      chooseNextCardStrategy(input) {
+        assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
+        return {
+          ok: true,
+          strategy: "stabilize",
+          cardRole: "practice",
+          difficultyBand: "foundation",
+          targetNodeIds: ["kg_science_fair_test"],
+          reason: "Use one fair-test reasoning card."
+        };
+      }
+    }
+  });
+
+  const result = service.context({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    displayName: "凡凡",
+    recipeId: "daily_science_v1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.selectedRecipeId, "daily_science_v1");
+  assert.equal(result.generationDefaults.domain, "science");
+  assert.equal(result.targetProvisioning.selectedDomain, "science");
+  assert.equal(result.targetProvisioning.selectedSubject, "science");
+  assert.equal(result.graphOptions.selectedDomainPackId, "domain_pack_fanfan_cambridge_pathway_v1");
+  assert.equal(result.suggestedPlan.targetNodeId, "kg_science_fair_test");
+  assert.equal(provisioningInputs.length, 1);
+  assert.equal(provisioningInputs[0].domain, "science");
+  assert.equal(provisioningInputs[0].subject, "science");
+  assert.equal(suggestInputs.length, 1);
+});
+
 test("card generation context exposes bounded learning profile projection for selected target", () => {
   const { service } = (() => {
     const service = createLearningCardGenerationContextService({

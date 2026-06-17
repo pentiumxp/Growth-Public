@@ -20959,3 +20959,44 @@
     controlled production deployment when ready;
   - keep release-package visual evidence, Action Inbox/Web Push evidence,
     approvals, and scheduler/runtime enablement as separate high-risk gates.
+
+## 2026-06-17T18:18+0800 - Recipe defaults flow into target provisioning
+
+- Status:
+  - Implemented local Growth service/docs/harness slice.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - `learning-card-generation-context-service` now applies recipe
+    `generationDefaults` before target provisioning and graph suggestion.
+    Selecting `daily_science_v1` can therefore drive the Fanfan science sample
+    by recipe choice alone, without requiring Owner to hand-enter `domain` or
+    `subject` selectors.
+  - Explicit Owner selectors still win: `domainPackId`, `domain`, and
+    `subject` in the request override recipe defaults.
+  - Target provisioning and graph suggestion now receive the same service-side
+    selected domain/subject before daily-loop draft or advance payloads are
+    built.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-card-generation-context-service.js`;
+  - `node --check tests/learning-card-generation-context-service.test.js`;
+  - `node --test tests/learning-card-generation-context-service.test.js`
+    passed `11/11`;
+  - `node --test tests/learning-daily-loop-service.test.js` passed `8/8`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37` and no missing harness references;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - next larger package should make the Owner sample operation evidence visible
+    end-to-end: context selects Fanfan science, one-click advance publishes a
+    card, board/detail surfaces it, and the learner daily-card submission /
+    one-shot evaluation / one-shot reflection flow remains intact;
+  - keep central visual validation/deploy for a later controlled release step
+    rather than mixing it into this backend/context slice.

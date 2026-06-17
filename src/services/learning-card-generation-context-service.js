@@ -977,20 +977,21 @@ function createLearningCardGenerationContextService(options = {}) {
         generationDefaults: { domain: "english", subject: "english" }
       };
     const generationDefaults = recipeContext.generationDefaults || {};
-    let graphOptions = graphOptionProjection({
-      domainPackId: input.domainPackId,
-      domain: input.domain,
-      subject: input.subject
-    });
+    const selectorDefaults = {
+      domainPackId: cleanString(input.domainPackId) || cleanString(generationDefaults.domainPackId),
+      domain: cleanString(input.domain) || cleanString(generationDefaults.domain),
+      subject: cleanString(input.subject) || cleanString(generationDefaults.subject)
+    };
+    let graphOptions = graphOptionProjection(selectorDefaults);
     const targetProvisioning = targetProvisioningForContext({
       workspaceId,
       learnerId,
       displayName,
       label: input.label,
       programId: input.programId,
-      domainPackId: input.domainPackId,
-      domain: input.domain,
-      subject: input.subject
+      domainPackId: selectorDefaults.domainPackId || graphOptions.selectedDomainPackId,
+      domain: selectorDefaults.domain || graphOptions.selectedDomain,
+      subject: selectorDefaults.subject || graphOptions.selectedSubject
     }, graphOptions);
     graphOptions = targetProvisioning.graphOptions || graphOptions;
     target.enabled = Boolean(targetProvisioning.targetEnabled);
