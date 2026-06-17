@@ -62,6 +62,24 @@ function publicScope(input = {}, context = {}) {
   };
 }
 
+function inputWithContextScope(input = {}, context = {}) {
+  const target = publicTarget(input, context);
+  const scope = publicScope(input, context);
+  const explicitTargetNodeIds = uniqueStrings(input.targetNodeIds || input.target_node_ids);
+  return Object.assign({}, input, {
+    workspaceId: cleanString(input.workspaceId || input.workspace_id) || target.workspaceId,
+    learnerId: cleanString(input.learnerId || input.learner_id) || target.learnerId,
+    displayName: cleanString(input.displayName || input.label) || target.displayName,
+    programId: cleanString(input.programId || input.program_id) || scope.programId,
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id) || scope.domainPackId,
+    domain: cleanString(input.domain) || scope.domain,
+    subject: cleanString(input.subject) || scope.subject,
+    horizon: cleanString(input.horizon) || scope.horizon,
+    availableMinutes: Number(input.availableMinutes || input.available_minutes || 0) || scope.availableMinutes,
+    targetNodeIds: explicitTargetNodeIds.length ? explicitTargetNodeIds : scope.targetNodeIds
+  });
+}
+
 function publicReadiness(context = {}) {
   const readiness = context.readiness || {};
   const plannerReadiness = context.plannerReadiness || {};
@@ -355,8 +373,9 @@ function createLearningDailyLoopService(options = {}) {
     }
     const before = contextFor(input);
     if (!before?.ok) return before || unavailable("learning_daily_loop_context_failed");
-    const draftResult = await planPublisherService.draftPlan(input);
-    const after = contextFor(input);
+    const scopedInput = inputWithContextScope(input, before);
+    const draftResult = await planPublisherService.draftPlan(scopedInput);
+    const after = contextFor(scopedInput);
     return {
       ok: Boolean(draftResult?.ok),
       source: "growth-learning-daily-loop-service",
@@ -383,11 +402,12 @@ function createLearningDailyLoopService(options = {}) {
     }
     const before = contextFor(input);
     if (!before?.ok) return before || unavailable("learning_daily_loop_context_failed");
-    const publishResult = await planPublisherService.publishPlanItem(input);
-    const after = contextFor(input);
+    const scopedInput = inputWithContextScope(input, before);
+    const publishResult = await planPublisherService.publishPlanItem(scopedInput);
+    const after = contextFor(scopedInput);
     const context = after?.ok ? after : before;
-    const cycleAudit = auditFor(input, context, publishResult);
-    const completeness = completenessFor(input, context, publishResult);
+    const cycleAudit = auditFor(scopedInput, context, publishResult);
+    const completeness = completenessFor(scopedInput, context, publishResult);
     return {
       ok: Boolean(publishResult?.ok),
       source: "growth-learning-daily-loop-service",
@@ -395,9 +415,9 @@ function createLearningDailyLoopService(options = {}) {
       target: publicTarget(input, context),
       scope: publicScope(input, context),
       readiness: publicReadiness(context),
-      actions: actionModel(context, Object.assign({}, input, {
-        planDraftId: publishResult?.planDraft?.planDraftId || input.planDraftId || input.plan_draft_id,
-        taskCardId: publishResult?.planDraft?.generatedTaskCardId || publishResult?.generation?.published?.taskCardId || input.taskCardId || input.task_card_id
+      actions: actionModel(context, Object.assign({}, scopedInput, {
+        planDraftId: publishResult?.planDraft?.planDraftId || scopedInput.planDraftId || scopedInput.plan_draft_id,
+        taskCardId: publishResult?.planDraft?.generatedTaskCardId || publishResult?.generation?.published?.taskCardId || scopedInput.taskCardId || scopedInput.task_card_id
       })),
       planDraft: publicPlanDraft(publishResult?.planDraft),
       selectedItem: publicPlanItem(publishResult?.selectedItem),

@@ -238,11 +238,13 @@ test("learning plan publisher publishes one selected item through card generatio
   const result = await service.publishPlanItem({
     workspaceId: "weixin_stephen",
     planDraftId: draft.planDraft.planDraftId,
-    itemId: "plan_item_science_1"
+    itemId: "plan_item_science_1",
+    recipeId: "daily_science_v1"
   });
 
   assert.equal(result.ok, true);
   assert.equal(generationCalls.length, 1);
+  assert.equal(generationCalls[0].recipeId, "daily_science_v1");
   assert.equal(generationCalls[0].cardRole, "practice");
   assert.equal(generationCalls[0].sourceSummaries[0].plannerCardRole, "stretch");
   assert.equal(generationCalls[0].sourceSummaries[0].publishedCardRole, "practice");

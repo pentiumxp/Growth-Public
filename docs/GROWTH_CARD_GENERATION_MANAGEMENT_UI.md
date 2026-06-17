@@ -686,6 +686,13 @@ publish boundary. It is still an explicit Owner write action, not background
 scheduling or browser-side state recomputation. The separate `规划下一张` and
 `发布为卡片` buttons remain available for inspection and recovery.
 
+The Owner browser may pass only the selected recipe and target workspace for
+the normal sample path. `learning-daily-loop-service` must hydrate the
+domain-pack/domain/subject/target-node scope from card-generation context before
+delegating to plan publication, and `learning-plan-publisher-service` must pass
+the selected recipe into card generation. This keeps Fanfan science generation
+service-owned instead of depending on duplicated browser selectors.
+
 Implemented lower-level planner routes:
 
 ```http
@@ -1150,7 +1157,7 @@ Add focused tests before broad regression runs:
 | Graph option projection | `tests/learning-graph-repository.test.js` proves domain-pack and subject options project from native graph tables without `raw_json` |
 | Planner readiness smoke CLI | `tests/growth-planner-readiness-smoke-script.test.js` proves bounded argument parsing and target-node id de-duplication |
 | Planner draft/publish service | `tests/learning-plan-publisher-service.test.js` proves validated plan drafts persist summary-only previews and publish selected items only through the card-generation service |
-| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, and `tests/growth-routes.test.js` prove Owner-only preview/draft/advance/publish delegation, visible-target scope, bounded generation projection, publish failure visibility, daily card duration persistence, audit/completeness refresh, and privacy-risk input rejection |
+| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js`, `tests/learning-plan-publisher-service.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, `tests/growth-routes.test.js`, and `tests/learning-card-ai-loop-harness.test.js` prove Owner-only preview/draft/advance/publish delegation, visible-target scope, context-scope hydration, recipe propagation into card generation, bounded generation projection, board/detail visibility, publish failure visibility, daily card duration persistence, audit/completeness refresh, one submit/evaluate/reflect learner cycle, duplicate daily submission/reflection rejection, and privacy-risk input rejection |
 | Automation proposal repository/service | `tests/learning-automation-proposal-repository.test.js` and `tests/learning-automation-proposal-service.test.js` prove source-cycle id, audit-completeness gate, target provisioning, idempotent summary-only proposal persistence, Owner decision statuses, accepted-only publish execution, execution metadata, legacy decision/execution-column migration, DB-level privacy-class/privacy-key rejection, and no direct card-generation/Gateway/scheduler call |
 | Target provisioning service | `tests/learning-target-provisioning-service.test.js` proves sample fallback, non-sample blocking, explicit provision success, cross-subject domain-pack plus subject-domain selection, subject mismatch rejection, graph-node mismatch rejection, and summary-only public DTOs |
 | Target provisioning smoke CLI | `tests/growth-target-provisioning-smoke-script.test.js` and `npm run smoke:target-provisioning`; the CLI defaults to read-only resolve, requires explicit `--allow-write` for provision writes, delegates to `learning-target-provisioning-service`, and supports production cross-subject packs such as `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science` |

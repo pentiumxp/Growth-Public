@@ -101,7 +101,12 @@ readback gate set.
   `expected_duration_minutes_min=10` /
   `expected_duration_minutes_max=15`; stage assessment cards validate and
   persist the 25-30 minute formal-assessment range. The generated-card learner
-  UI may expose at most one active text submission box per stage.
+  UI may expose at most one active text submission box per stage. For
+  recipe-driven daily-loop generation, `learning-daily-loop-service` hydrates
+  context-derived domain-pack/domain/subject/target-node scope before plan
+  publication, and `learning-plan-publisher-service` propagates the selected
+  recipe into card generation; the Owner browser should not recompute graph
+  scope locally.
   Stage assessment cards are separate formal cards: activation is owned by
   `learning-stage-assessment-service`, formal evaluation writes higher-weight
   mastery evidence across declared assessment coverage nodes, and completed
@@ -160,8 +165,10 @@ readback gate set.
   read-only stage-assessment readiness through
   `learning-stage-assessment-service.stageReadiness()`, and the plan publisher
   refuses direct formal stage-assessment publication. A service-level
-  Fanfan science vertical harness now proves planner draft, publish, science
-  card generation, learner evidence, Gateway evaluation, evidence ledger, and
+  Fanfan science vertical harness now proves planner draft, publish, daily-loop
+  advance, generated-card board/detail visibility, science card generation,
+  learner evidence, one-submit/one-evaluate/one-reflect completion through
+  `learning-learner-cycle-service`, Gateway evaluation, evidence ledger, and
   Profile V2 feedback; it also projects the completed cycle through
   `learning-loop-state-service` as `ready_to_draft` with a `draft_daily_plan`
   next action from persisted reward/profile-delta/trajectory evidence. That

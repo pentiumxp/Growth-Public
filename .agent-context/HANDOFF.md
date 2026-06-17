@@ -21074,3 +21074,49 @@
     visibility, and learner one-submit/one-evaluate/one-reflect flow;
   - production write smoke should still be run only under explicit Owner intent
     and release gating.
+
+## 2026-06-17T18:42+0800 - Daily-loop advance service harness reaches learner completion
+
+- Status:
+  - Implemented local Growth service/docs/harness slice.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - `learning-daily-loop-service` now hydrates context-derived
+    domain-pack/domain/subject/target-node scope before it delegates draft or
+    publish work to `learning-plan-publisher-service`.
+  - `learning-plan-publisher-service` now propagates the selected `recipeId`
+    into `learning-card-generation-service`.
+  - The Owner one-click sample path can therefore select `daily_science_v1`
+    and rely on the Growth service graph to resolve the Fanfan science scope,
+    rather than requiring the browser to duplicate graph selectors.
+  - The AI-loop harness now proves the service path:
+    Fanfan science recipe context -> `learning-daily-loop-service.advance()` ->
+    generated science card visible in board/detail -> learner full cycle through
+    `learning-learner-cycle-service.full()` -> one submission, one evaluation,
+    one reflection, reward/evidence/profile persistence, and duplicate daily
+    submission/reflection rejection.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-daily-loop-service.js`;
+  - `node --check src/services/learning-plan-publisher-service.js`;
+  - `node --check tests/learning-daily-loop-service.test.js`;
+  - `node --check tests/learning-plan-publisher-service.test.js`;
+  - `node --check tests/learning-card-ai-loop-harness.test.js`;
+  - `node --test tests/learning-daily-loop-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-card-ai-loop-harness.test.js`
+    passed `22/22`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37` and no missing harness references;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - continue with product-visible UI/production evidence gates only after the
+    current service/harness slice is committed and pushed;
+  - keep visual validation/deploy as a separate release gate because this slice
+    changed service behavior and harnesses, not browser layout.

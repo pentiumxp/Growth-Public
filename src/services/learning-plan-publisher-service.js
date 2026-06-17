@@ -139,6 +139,7 @@ function generationInputFromPlanItem(record = {}, item = {}, input = {}) {
     difficultyBand: cleanString(item.difficultyBand),
     evidenceRequirements: uniqueStrings(item.evidenceRequirements),
     cardSchemaVersion: cleanString(input.cardSchemaVersion || input.card_schema_version || "growth.card.authoring.v1"),
+    recipeId: cleanString(input.recipeId || input.recipe_id),
     generationKey,
     sourceSummaries: [{
       sourceKind: "learning_plan_draft",

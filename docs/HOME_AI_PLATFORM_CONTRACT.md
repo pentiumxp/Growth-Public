@@ -197,6 +197,15 @@ Action Inbox delivery, runtime config changes, or deployment behavior.
 The separate `daily-loop/draft` and `daily-loop/publish` routes remain the
 auditable two-step path for review, recovery, and controlled smoke evidence.
 
+For recipe-driven daily generation, `learning-daily-loop-service` is
+responsible for hydrating context-derived scope before it calls
+`learning-plan-publisher-service`. A request that selects `daily_science_v1`
+can therefore carry only the learner target and recipe id on the normal sample
+path; the service fills domain-pack/domain/subject/target-node selectors from
+the Growth context DTO. `learning-plan-publisher-service` must then propagate
+the selected recipe into `learning-card-generation-service`. Routes and browser
+code must not compensate by recomputing graph scope locally.
+
 ## Growth-Local Release-Workbench State Prerequisite Addendum
 
 The release workbench is a read model and must not reinterpret Growth

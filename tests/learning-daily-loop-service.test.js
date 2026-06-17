@@ -259,6 +259,26 @@ test("daily loop draft delegates to plan publisher and returns bounded draft DTO
   assert.deepEqual(calls.map((call) => call.type), ["context", "draftPlan", "context"]);
 });
 
+test("daily loop draft hydrates recipe context scope before plan publication", async () => {
+  const { calls, service } = createService();
+
+  const result = await service.draft({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    recipeId: "daily_science_v1"
+  });
+
+  assert.equal(result.ok, true);
+  const draftCall = calls.find((call) => call.type === "draftPlan");
+  assert.equal(draftCall.input.recipeId, "daily_science_v1");
+  assert.equal(draftCall.input.domainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(draftCall.input.domain, "science");
+  assert.equal(draftCall.input.subject, "science");
+  assert.equal(draftCall.input.availableMinutes, 15);
+  assert.deepEqual(draftCall.input.targetNodeIds, ["kg_science_fair_test"]);
+});
+
 test("daily loop publish returns bounded generation and refreshes audit/completeness", async () => {
   const { calls, service } = createService();
 
@@ -319,6 +339,9 @@ test("daily loop advance drafts and publishes one card through service boundarie
   ]);
   assert.equal(calls[4].input.planDraftId, "lgplan_daily_1");
   assert.equal(calls[4].input.itemId, "plan_item_1");
+  assert.equal(calls[4].input.domainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(calls[4].input.domain, "science");
+  assert.equal(calls[4].input.subject, "science");
 });
 
 test("daily loop publish failure keeps bounded publish attempt visible", async () => {
