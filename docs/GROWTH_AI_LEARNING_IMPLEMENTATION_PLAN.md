@@ -1054,18 +1054,22 @@ Implemented backend shape:
   selected activation gates (`writeful_execution`, `background_scheduler`,
   `background_worker`) to approval keys/config keys/env names, reports current
   config state, missing approvals, `preflightPassed`,
-  `readyForOwnerRuntimeConfigDecision`, required actions, and one next action.
+  `readyForOwnerRuntimeConfigDecision`, required actions, latest persisted
+  preflight report id/status/advisory readiness flags, and one next action.
   `--operation list` reads existing activation audit rows, and
   `--operation record --allow-write` records summary-only Owner activation
   intent through `learning-automation-release-activation-service.recordActivation`
-  and `automation-release-activations.js`. It does not run smoke tasks, call
-  Gateway, publish, generate, evaluate, schedule, notify, activate stage
-  assessments, mutate learner state, or flip runtime config. It always keeps
-  `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
-  `runtimeConfigChange=false`. The activation row is not a permission grant,
-  but when writeful execution is separately enabled the scheduler execution
-  service must read back a valid summary-only `writeful_execution` activation
-  record before it can delegate publication.
+  and `automation-release-activations.js`. Activation reads preflight report
+  state only from the injected preflight report repository, stores only bounded
+  readback in `activationPreflight`, and does not write preflight reports. It
+  does not run smoke tasks, call Gateway, publish, generate, evaluate,
+  schedule, notify, activate stage assessments, mutate learner state, or flip
+  runtime config. It always keeps `configChangeApplied=false`,
+  `writefulSchedulingAllowed=false`, and `runtimeConfigChange=false`. The
+  activation row is not a permission grant, but when writeful execution is
+  separately enabled the scheduler execution service must read back a valid
+  summary-only `writeful_execution` activation record before it can delegate
+  publication.
   Release review, authorization, closure, and activation readbacks must scan
   public inputs, dependency outputs, and final public DTOs for private
   path/token-looking values as well as privacy-risk keys. Activation must also
@@ -1078,8 +1082,10 @@ Implemented backend shape:
   rows for selected gates, compares them with injected runtime config booleans,
   and reports `activation_record_required`, `activation_record_invalid`,
   `ready_for_manual_runtime_config_enablement`, `partial_config`, or
-  `verified_enabled`. `--operation list` reads existing runtime enablement
-  rows, and `--operation record --allow-write` writes only
+  `verified_enabled`. Runtime enablement projects latest preflight report
+  id/status/advisory readiness flags only from activation records and never
+  reads preflight reports directly. `--operation list` reads existing runtime
+  enablement rows, and `--operation record --allow-write` writes only
   `learning_growth_automation_runtime_enablements` through
   `learning-automation-runtime-enablement-service.recordEnablement` and
   `automation-runtime-enablements.js`. It does not flip runtime config, grant

@@ -351,6 +351,7 @@ function createServices(config) {
   const learningAutomationReleaseActivationService = createLearningAutomationReleaseActivationService({
     repository: growthLearningStore.learningAutomationReleaseActivationRepository,
     releaseClosureService: learningAutomationReleaseClosureService,
+    preflightReportRepository: growthLearningStore.learningAutomationReleasePreflightReportRepository,
     config: {
       automationWritefulExecutionEnabled: config.automationWritefulExecutionEnabled,
       automationBackgroundSchedulerEnabled: config.automationBackgroundSchedulerEnabled,

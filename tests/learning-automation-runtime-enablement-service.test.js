@@ -25,6 +25,26 @@ function activationRecord(overrides = {}) {
       schemaVersion: "growth.learningAutomationReleaseActivation.summary.v1",
       summaryOnly: true,
       preflightPassed: true,
+      latestPreflightReportId: "lgarpf_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
+      preflightReportReadback: {
+        schemaVersion: "growth.learningAutomationReleaseActivation.preflightReportReadback.v1",
+        summaryOnly: true,
+        status: "records_available",
+        latestPreflightReportId: "lgarpf_1",
+        latestPreflightStatus: "ready_for_owner_release_activation",
+        latestPreflightReadyForProductionDeployReview: true,
+        latestPreflightReadyForOwnerReleaseActivation: true,
+        latestReport: {
+          preflightReportId: "lgarpf_1",
+          status: "ready_for_owner_release_activation",
+          readyForProductionDeploy: false,
+          readyForProductionDeployReview: true,
+          readyForOwnerReleaseActivation: true
+        }
+      },
       configChangeApplied: false,
       runtimeConfigChange: false,
       writefulSchedulingAllowed: false
@@ -43,7 +63,10 @@ function activationRecord(overrides = {}) {
     evidenceSummary: {
       schemaVersion: "growth.learningAutomationReleaseActivation.evidence.v1",
       summaryOnly: true,
-      preflightPassed: true
+      preflightPassed: true,
+      latestPreflightReportId: "lgarpf_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForOwnerReleaseActivation: true
     }
   }, overrides);
 }
@@ -99,6 +122,9 @@ test("runtime enablement reports ready-for-manual-config when activation readbac
   assert.equal(result.ok, true);
   assert.equal(result.status, "ready_for_manual_runtime_config_enablement");
   assert.equal(result.activationSummary.validGateCount, 1);
+  assert.equal(result.activationSummary.latestPreflightReportId, "lgarpf_1");
+  assert.equal(result.activationSummary.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.runtimeEnablement.latestPreflightReportId, "lgarpf_1");
   assert.deepEqual(result.currentConfig.disabledConfigKeys, ["automationWritefulExecutionEnabled"]);
   assert.equal(result.readyForManualRuntimeConfigEnablement, true);
   assert.equal(result.runtimeConfigVerified, false);

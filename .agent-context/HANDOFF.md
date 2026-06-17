@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T07:57+08:00 - Release Preflight Readback In Activation Runtime Review
+
+- Status: implemented and full-Harness validated locally; commit and push still
+  pending. No production deployment in this slice.
+- Change intent:
+  - carry persisted preflight report visibility into Owner activation and
+    runtime enablement review surfaces;
+  - keep activation/runtime enablement advisory and record-only, with no
+    runtime config mutation, scheduler permission, or deployment permission;
+  - avoid a dependency cycle by having activation read only the injected
+    preflight report repository and runtime enablement read only activation
+    records.
+- Scope:
+  - `learning-automation-release-activation-service` now reads the latest
+    persisted preflight report through
+    `preflightReportRepository.listReports({ limit: 1 })`, projects bounded
+    latest report id/status/advisory readiness flags into the activation
+    preflight DTO, and persists that bounded readback inside activation records
+    when Owner records activation;
+  - `learning-automation-runtime-enablement-service` now projects latest
+    preflight report id/status/advisory readiness flags only from activation
+    record readback, not from the preflight repository;
+  - `src/app/services.js` injects
+    `growthLearningStore.learningAutomationReleasePreflightReportRepository`
+    into the release activation service.
+- Boundary notes:
+  - activation does not write preflight reports and does not call
+    `learning-automation-release-preflight-service`;
+  - runtime enablement does not read preflight reports directly;
+  - downstream projections keep `readyForProductionDeploy=false` and expose only
+    bounded advisory readiness fields;
+  - this does not call Gateway/model vendors, run smoke tasks internally,
+    publish/generate/evaluate cards, execute scheduler actions, run scheduler
+    ticks, deliver notifications, activate stage assessments, flip runtime
+    config, grant scheduler permission, deploy, or mutate learner state.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for changed service/app/test files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-activation-service.test.js tests/learning-automation-runtime-enablement-service.test.js tests/growth-architecture-boundary.test.js`
+    passed `46/46`.
+  - broader release-review Harness:
+    `node --test tests/learning-automation-release-activation-service.test.js tests/learning-automation-runtime-enablement-service.test.js tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/growth-release-activation-smoke-script.test.js tests/growth-runtime-enablement-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `122/122`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - `git diff --check`;
+  - `npm test` passed `908/908`;
+  - `codegraph sync && codegraph status` reported index up to date with `370`
+    files, `5,180` nodes, and `22,420` edges, plus the existing earlier-engine
+    advisory.
+- Remaining before commit/push:
+  - commit and push to `origin/main` and `public/main`;
+  - do not deploy unless explicitly requested.
+
 ## 2026-06-17T07:49+08:00 - Release Preflight Report Inventory Readback
 
 - Status: implemented and full-Harness validated locally. No production

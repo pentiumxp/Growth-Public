@@ -1006,6 +1006,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseActivationService, /createLearningAutomationReleaseActivationService/);
   assert.match(automationReleaseActivationService, /RELEASE_ACTIVATION_SCHEMA/);
   assert.match(automationReleaseActivationService, /releaseClosureService\.summarize/);
+  assert.match(automationReleaseActivationService, /preflightReportRepository\.listReports/);
+  assert.match(automationReleaseActivationService, /latestPreflightReportId/);
   assert.match(automationReleaseActivationService, /readyForOwnerRuntimeConfigDecision/);
   assert.match(automationReleaseActivationService, /recordActivation/);
   assert.match(automationReleaseActivationService, /listActivations/);
@@ -1039,6 +1041,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationRuntimeEnablementService, /createLearningAutomationRuntimeEnablementService/);
   assert.match(automationRuntimeEnablementService, /RUNTIME_ENABLEMENT_SCHEMA/);
   assert.match(automationRuntimeEnablementService, /releaseActivationService\.listActivations/);
+  assert.match(automationRuntimeEnablementService, /latestPreflightReportId/);
   assert.match(automationRuntimeEnablementService, /runtimeConfigVerified/);
   assert.match(automationRuntimeEnablementService, /readyForManualRuntimeConfigEnablement/);
   assert.match(automationRuntimeEnablementService, /recordEnablement/);

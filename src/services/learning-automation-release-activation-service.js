@@ -251,6 +251,60 @@ function activationActions(status, closure, gates) {
   }];
 }
 
+function preflightReportSummary(record = {}) {
+  const report = objectOnly(record);
+  const releasePreflight = objectOnly(report.releasePreflight || report.release_preflight || report.summary);
+  const preflightReportId = cleanString(
+    report.preflightReportId || report.preflight_report_id || report.reportId || report.report_id,
+    180
+  );
+  if (!preflightReportId && !cleanString(report.status || releasePreflight.status, 120)) return null;
+  return {
+    schemaVersion: "growth.learningAutomationReleaseActivation.preflightReportSummary.v1",
+    summaryOnly: true,
+    preflightReportId,
+    status: cleanString(report.status || releasePreflight.status, 120),
+    collectionRunId: cleanString(report.collectionRunId || report.collection_run_id || releasePreflight.latestCollectionRunId || releasePreflight.latest_collection_run_id, 180),
+    readyForProductionDeploy: false,
+    readyForProductionDeployReview: releasePreflight.readyForProductionDeployReview === true || releasePreflight.ready_for_production_deploy_review === true,
+    readyForOwnerReleaseActivation: releasePreflight.readyForOwnerReleaseActivation === true || releasePreflight.ready_for_owner_release_activation === true,
+    backendEvidenceComplete: releasePreflight.backendEvidenceComplete === true || releasePreflight.backend_evidence_complete === true,
+    createdAt: cleanString(report.createdAt || report.created_at, 80),
+    updatedAt: cleanString(report.updatedAt || report.updated_at, 80)
+  };
+}
+
+function preflightReportReadback(preflightReportRepository, input = {}) {
+  const base = {
+    schemaVersion: "growth.learningAutomationReleaseActivation.preflightReportReadback.v1",
+    summaryOnly: true,
+    status: "unavailable",
+    count: 0,
+    latestReport: null,
+    latestPreflightReportId: "",
+    latestPreflightStatus: "",
+    latestPreflightReadyForProductionDeployReview: false,
+    latestPreflightReadyForOwnerReleaseActivation: false,
+    readyForProductionDeploy: false,
+    configChangeApplied: false,
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false
+  };
+  if (!preflightReportRepository || typeof preflightReportRepository.listReports !== "function") return base;
+  const reports = preflightReportRepository.listReports(Object.assign({}, input, { limit: 1 }));
+  const records = Array.isArray(reports) ? reports : [];
+  const latestReport = preflightReportSummary(records[0]);
+  return Object.assign({}, base, {
+    status: latestReport ? "records_available" : "records_missing",
+    count: records.length,
+    latestReport,
+    latestPreflightReportId: cleanString(latestReport?.preflightReportId, 180),
+    latestPreflightStatus: cleanString(latestReport?.status, 120),
+    latestPreflightReadyForProductionDeployReview: latestReport?.readyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: latestReport?.readyForOwnerReleaseActivation === true
+  });
+}
+
 function activationDecisionSummary(input = {}, result = {}) {
   const requested = objectOnly(input.activationDecision || input.activation_decision || input.ownerActivationDecision || input.owner_activation_decision);
   const defaultDecision = result.status === "ready_for_owner_config_enablement"
@@ -264,6 +318,9 @@ function activationDecisionSummary(input = {}, result = {}) {
     preflightPassed: result.preflightPassed === true,
     readyForOwnerRuntimeConfigDecision: result.readyForOwnerRuntimeConfigDecision === true,
     activationAllowed: result.activationAllowed === true,
+    latestPreflightReportId: cleanString(result.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(result.latestPreflightStatus, 120),
+    latestPreflightReadyForOwnerReleaseActivation: result.latestPreflightReadyForOwnerReleaseActivation === true,
     recordOnly: true,
     advisoryOnly: true,
     configChangeApplied: false,
@@ -283,6 +340,9 @@ function activationEvidenceSummary(input = {}, result = {}) {
     requestedActivationGates: result.requestedActivationGates || [],
     requiredApprovalKeys: result.requiredApprovalKeys || [],
     missingApprovalKeys: result.missingApprovalKeys || [],
+    latestPreflightReportId: cleanString(result.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(result.latestPreflightStatus, 120),
+    latestPreflightReadyForOwnerReleaseActivation: result.latestPreflightReadyForOwnerReleaseActivation === true,
     configChangeApplied: false,
     writefulSchedulingAllowed: false,
     runtimeConfigChange: false
@@ -292,6 +352,7 @@ function activationEvidenceSummary(input = {}, result = {}) {
 function createLearningAutomationReleaseActivationService(options = {}) {
   const releaseClosureService = options.releaseClosureService || null;
   const repository = options.repository || null;
+  const preflightReportRepository = options.preflightReportRepository || null;
   const config = Object.assign({
     automationWritefulExecutionEnabled: false,
     automationBackgroundSchedulerEnabled: false,
@@ -339,6 +400,7 @@ function createLearningAutomationReleaseActivationService(options = {}) {
     }
 
     const closure = closureSummary(closureResult);
+    const reportReadback = preflightReportReadback(preflightReportRepository, Object.assign({}, input, scope));
     const gateSummaries = selected.gates.map((gate) => gateSummary(gate, closure, config));
     const status = activationStatus(closure, gateSummaries);
     const actions = activationActions(status, closure, gateSummaries);
@@ -365,6 +427,11 @@ function createLearningAutomationReleaseActivationService(options = {}) {
       missingApprovalKeys: unique(gateSummaries.filter((gate) => gate.missingApproval).map((gate) => gate.approvalKey)
         .concat(closure.missingApprovalKeys)),
       releaseClosure: closure,
+      preflightReportReadback: reportReadback,
+      latestPreflightReportId: reportReadback.latestPreflightReportId,
+      latestPreflightStatus: reportReadback.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: reportReadback.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: reportReadback.latestPreflightReadyForOwnerReleaseActivation,
       activationGates: gateSummaries,
       activationPreflight: {
         schemaVersion: "growth.learningAutomationReleaseActivation.summary.v1",
@@ -373,6 +440,11 @@ function createLearningAutomationReleaseActivationService(options = {}) {
         preflightPassed,
         readyForOwnerRuntimeConfigDecision,
         activationAllowed: readyForOwnerRuntimeConfigDecision,
+        preflightReportReadback: reportReadback,
+        latestPreflightReportId: reportReadback.latestPreflightReportId,
+        latestPreflightStatus: reportReadback.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: reportReadback.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: reportReadback.latestPreflightReadyForOwnerReleaseActivation,
         configChangeApplied: false,
         writefulSchedulingAllowed: false,
         runtimeConfigChange: false,

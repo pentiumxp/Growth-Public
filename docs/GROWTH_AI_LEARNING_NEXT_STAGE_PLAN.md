@@ -690,9 +690,11 @@ Use the Growth-owned release-readiness boundary:
   `background_scheduler`, and `background_worker`, and returns
   `growth.learningAutomationReleaseActivation.v1` with
   `preflightPassed`, `readyForOwnerRuntimeConfigDecision`,
+  latest preflight report id/status/advisory readiness flags,
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
   `runtimeConfigChange=false`. It is evidence for an Owner config decision,
-  not the config switch itself.
+  not the config switch itself. It reads preflight report state only through
+  the injected preflight report repository and does not write preflight reports.
 - release activation record smoke CLI:
   `npm run smoke:release-activation -- --operation record --allow-write --workspace-id <workspace> --learner-id <learner> --activation-gates writeful_execution --json`.
   This persists a summary-only audit row in
@@ -706,7 +708,9 @@ Use the Growth-owned release-readiness boundary:
   audit records through the normal Growth service graph, compares them with
   current injected runtime config booleans, and reports whether the selected
   gates still require manual runtime config enablement or have been verified
-  enabled. It is not a config writer and keeps scheduler permission false.
+  enabled. It projects latest preflight report id/status/advisory readiness
+  flags only from activation records, never directly from preflight reports. It
+  is not a config writer and keeps scheduler permission false.
 - runtime enablement record smoke CLI:
   `npm run smoke:runtime-enablement -- --operation record --allow-write --workspace-id <workspace> --learner-id <learner> --activation-gates writeful_execution --json`.
   This persists only summary-only audit/readback state in

@@ -630,14 +630,19 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   into `growth.learningAutomationReleaseActivation.v1`. It can report
   `readyForOwnerRuntimeConfigDecision=true`, but it applies no config and keeps
   `configChangeApplied=false`, `writefulSchedulingAllowed=false`, and
-  `runtimeConfigChange=false`. Growth also has visible-target scoped
+  `runtimeConfigChange=false`. It now also reads the latest persisted preflight
+  report through the injected
+  `learningAutomationReleasePreflightReportRepository.listReports` boundary
+  and projects only bounded latest preflight report id/status/advisory readiness
+  flags into activation preflight readback. Growth also has visible-target scoped
   `GET /api/v1/growth/automation/release-activations`, Owner-only
   `POST /api/v1/growth/automation/release-activations`, and
   `npm run smoke:release-activation -- --operation record --allow-write` for
   summary-only activation audit records in
   `learning_growth_automation_release_activations`. These records capture
-  Owner intent and preflight evidence only; they do not flip runtime config,
-  grant scheduler permission, or run scheduling. When
+  Owner intent, activation preflight evidence, and bounded preflight report
+  readback only; they do not flip runtime config, grant scheduler permission,
+  write preflight reports, or run scheduling. When
   `GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED=true`, scheduler execution now
   reads these records through `learning-automation-release-activation-service`
   and requires a valid summary-only `writeful_execution` record before it can
@@ -656,7 +661,9 @@ Home AI platform contracts remain in the Home AI app workspace by pointer.
   injected current runtime config booleans, and can report
   `activation_record_required`, `activation_record_invalid`,
   `ready_for_manual_runtime_config_enablement`, `partial_config`, or
-  `verified_enabled`, while still applying no config and keeping all runtime
+  `verified_enabled`, while projecting latest preflight report id/status and
+  advisory readiness flags only from activation records, never by reading
+  preflight reports directly. It still applies no config and keeps all runtime
   mutation/scheduling permission flags false.
   Growth now also has the no-write Owner release-controls aggregate:
   `learning-automation-release-controls-service`, visible-target scoped

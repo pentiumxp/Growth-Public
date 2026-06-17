@@ -37,10 +37,11 @@ function readyClosure(overrides = {}) {
   }, overrides);
 }
 
-function serviceWith(records = {}, config = {}, repository = null) {
+function serviceWith(records = {}, config = {}, repository = null, preflightReportRepository = null) {
   return createLearningAutomationReleaseActivationService({
     config,
     repository,
+    preflightReportRepository,
     releaseClosureService: {
       summarize(input) {
         records.input = input;
@@ -82,6 +83,53 @@ test("release activation preflight identifies disabled runtime gates that are re
     "automationWritefulExecutionEnabled",
     "automationBackgroundSchedulerEnabled"
   ]);
+});
+
+test("release activation preflight projects the latest persisted preflight report as advisory readback", () => {
+  const preflightInputs = [];
+  const service = serviceWith({}, {
+    automationWritefulExecutionEnabled: false
+  }, null, {
+    listReports(input) {
+      preflightInputs.push(input);
+      return [{
+        preflightReportId: "lgarpf_1",
+        status: "ready_for_owner_release_activation",
+        collectionRunId: "lgarrun_1",
+        privacyClass: "summary_only",
+        releasePreflight: {
+          schemaVersion: "growth.learningAutomationReleasePreflight.summary.v1",
+          summaryOnly: true,
+          readyForProductionDeploy: false,
+          readyForProductionDeployReview: true,
+          readyForOwnerReleaseActivation: true,
+          backendEvidenceComplete: true
+        },
+        createdAt: "2026-06-17T01:00:00.000Z"
+      }];
+    }
+  });
+
+  const result = service.preflight({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    activationGate: "writeful_execution"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.preflightPassed, true);
+  assert.equal(result.latestPreflightReportId, "lgarpf_1");
+  assert.equal(result.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.latestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.preflightReportReadback.status, "records_available");
+  assert.equal(result.preflightReportReadback.latestReport.readyForProductionDeploy, false);
+  assert.equal(result.activationPreflight.latestPreflightReportId, "lgarpf_1");
+  assert.equal(result.activationPreflight.preflightReportReadback.latestReport.collectionRunId, "lgarrun_1");
+  assert.equal(result.configChangeApplied, false);
+  assert.equal(result.runtimeConfigChange, false);
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.deepEqual(preflightInputs.map((input) => input.limit), [1]);
 });
 
 test("release activation preflight reports already enabled gates without applying config changes", () => {

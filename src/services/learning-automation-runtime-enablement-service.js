@@ -147,6 +147,55 @@ function activationRecordGateKeys(record = {}) {
   }));
 }
 
+function activationRecordPreflightReport(record = {}) {
+  const activationPreflight = objectOnly(record.activationPreflight || record.activation_preflight);
+  const evidenceSummary = objectOnly(record.evidenceSummary || record.evidence_summary);
+  const readback = objectOnly(activationPreflight.preflightReportReadback || activationPreflight.preflight_report_readback || record.preflightReportReadback || record.preflight_report_readback);
+  const latest = objectOnly(readback.latestReport || readback.latest_report);
+  const preflightReportId = cleanString(
+    activationPreflight.latestPreflightReportId
+      || activationPreflight.latest_preflight_report_id
+      || evidenceSummary.latestPreflightReportId
+      || evidenceSummary.latest_preflight_report_id
+      || readback.latestPreflightReportId
+      || readback.latest_preflight_report_id
+      || latest.preflightReportId
+      || latest.preflight_report_id
+      || latest.reportId
+      || latest.report_id,
+    180
+  );
+  if (!preflightReportId) return null;
+  return {
+    preflightReportId,
+    status: cleanString(
+      activationPreflight.latestPreflightStatus
+        || activationPreflight.latest_preflight_status
+        || evidenceSummary.latestPreflightStatus
+        || evidenceSummary.latest_preflight_status
+        || readback.latestPreflightStatus
+        || readback.latest_preflight_status
+        || latest.status,
+      120
+    ),
+    readyForProductionDeploy: false,
+    readyForProductionDeployReview: activationPreflight.latestPreflightReadyForProductionDeployReview === true
+      || activationPreflight.latest_preflight_ready_for_production_deploy_review === true
+      || readback.latestPreflightReadyForProductionDeployReview === true
+      || readback.latest_preflight_ready_for_production_deploy_review === true
+      || latest.readyForProductionDeployReview === true
+      || latest.ready_for_production_deploy_review === true,
+    readyForOwnerReleaseActivation: activationPreflight.latestPreflightReadyForOwnerReleaseActivation === true
+      || activationPreflight.latest_preflight_ready_for_owner_release_activation === true
+      || evidenceSummary.latestPreflightReadyForOwnerReleaseActivation === true
+      || evidenceSummary.latest_preflight_ready_for_owner_release_activation === true
+      || readback.latestPreflightReadyForOwnerReleaseActivation === true
+      || readback.latest_preflight_ready_for_owner_release_activation === true
+      || latest.readyForOwnerReleaseActivation === true
+      || latest.ready_for_owner_release_activation === true
+  };
+}
+
 function currentConfigSummary(gates, config) {
   const gatesSummary = gates.map((gate) => ({
     key: gate.key,
@@ -200,20 +249,30 @@ function summarizeActivationRecords(activationList, gates) {
   const byGate = gates.map((gate) => {
     const matching = records.filter((record) => activationRecordGateKeys(record).includes(gate.key));
     const valid = matching.find((record) => activationIsValidForGate(record, gate)) || null;
+    const preflightReport = activationRecordPreflightReport(valid || matching[0] || {});
     return {
       gate: gate.key,
       configKey: gate.configKey,
       activationRecordCount: matching.length,
       validActivationRecordId: cleanString(valid?.activationId || valid?.activation_id, 160),
-      valid: Boolean(valid)
+      valid: Boolean(valid),
+      latestPreflightReportId: cleanString(preflightReport?.preflightReportId, 180),
+      latestPreflightStatus: cleanString(preflightReport?.status, 120),
+      latestPreflightReadyForProductionDeployReview: preflightReport?.readyForProductionDeployReview === true,
+      latestPreflightReadyForOwnerReleaseActivation: preflightReport?.readyForOwnerReleaseActivation === true
     };
   });
+  const latestPreflightGate = byGate.find((entry) => entry.latestPreflightReportId) || {};
   return {
     schemaVersion: "growth.learningAutomationRuntimeActivationReadback.v1",
     summaryOnly: true,
     activationRecordCount: records.length,
     validGateCount: byGate.filter((entry) => entry.valid).length,
     missingActivationGates: byGate.filter((entry) => !entry.valid).map((entry) => entry.gate),
+    latestPreflightReportId: cleanString(latestPreflightGate.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(latestPreflightGate.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview: latestPreflightGate.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: latestPreflightGate.latestPreflightReadyForOwnerReleaseActivation === true,
     gates: byGate,
     configChangeApplied: false,
     runtimeConfigChange: false,
@@ -300,6 +359,9 @@ function evidenceSummary(input = {}, result = {}) {
     requestedActivationGates: result.requestedActivationGates || [],
     requiredConfigKeys: result.requiredConfigKeys || [],
     activationRecordCount: result.activationSummary?.activationRecordCount || 0,
+    latestPreflightReportId: cleanString(result.activationSummary?.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(result.activationSummary?.latestPreflightStatus, 120),
+    latestPreflightReadyForOwnerReleaseActivation: result.activationSummary?.latestPreflightReadyForOwnerReleaseActivation === true,
     configChangeApplied: false,
     runtimeConfigChange: false,
     runtimeConfigMutationPerformed: false,
@@ -373,12 +435,20 @@ function createLearningAutomationRuntimeEnablementService(options = {}) {
       backgroundWorkerAllowed: false,
       currentConfig,
       activationSummary,
+      latestPreflightReportId: activationSummary.latestPreflightReportId,
+      latestPreflightStatus: activationSummary.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: activationSummary.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: activationSummary.latestPreflightReadyForOwnerReleaseActivation,
       runtimeEnablement: {
         schemaVersion: "growth.learningAutomationRuntimeEnablement.summary.v1",
         summaryOnly: true,
         status,
         runtimeConfigVerified,
         readyForManualRuntimeConfigEnablement,
+        latestPreflightReportId: activationSummary.latestPreflightReportId,
+        latestPreflightStatus: activationSummary.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: activationSummary.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: activationSummary.latestPreflightReadyForOwnerReleaseActivation,
         requiredActionCount: requiredActions.length,
         requiredActions,
         nextAction: requiredActions[0] || null,
