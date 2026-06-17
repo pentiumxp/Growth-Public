@@ -1,6 +1,6 @@
 # Growth Card Generation Management UI
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-18.
 
 This document defines the Growth-owned Owner UI for generating learning cards
 inside the Growth plugin.
@@ -62,6 +62,13 @@ refresh state. It does not accept local file paths, run the Home AI visual
 toolchain, validate UI artifacts, persist release evidence, apply approvals,
 or enable scheduling; filled artifact manifests still enter Growth only through
 the existing release workbench action / release evidence collection boundary.
+The release workbench panel also reads the existing Owner-only
+`GET /api/v1/growth/automation/release-workbench/action-audits` boundary and
+renders a summary-only `操作审计` subpanel. The browser can list recent wrapper
+audit rows and refresh them after release-workbench readback, but it must not
+inspect raw request bodies, delegated `writeResult` payloads, local artifact
+paths, release storage, or use audit presence as release approval or scheduler
+permission.
 Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
@@ -169,6 +176,11 @@ selected learner target, not the iframe's Owner workspace.
    visible before recording it. It must not run smoke scripts in the browser,
    flip runtime config, schedule work, notify users, call Gateway, or mutate
    learner state directly.
+   The same surface reads
+   `GET /api/v1/growth/automation/release-workbench/action-audits` for recent
+   summary-only workbench wrapper audit rows and displays them as `操作审计`.
+   This is audit visibility only and does not expose raw request/write-result
+   payloads or grant any release permission.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
 8. Owner selects the `日常英语卡` or `日常科学卡` recipe.

@@ -1,6 +1,6 @@
 # Growth AI Learning Implementation Plan
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-18.
 
 ## Purpose
 
@@ -888,6 +888,13 @@ Implemented backend shape:
   `GET /api/v1/growth/automation/release-artifact-template`, shows artifact
   slots, checklist items, action-plan rows, manifest schema status, and a
   refresh control, and refreshes it whenever release workbench state refreshes.
+  The same embedded panel now also reads
+  `GET /api/v1/growth/automation/release-workbench/action-audits` and renders a
+  summary-only `操作审计` list for recent workbench wrapper action audit rows.
+  It exposes only bounded ids/statuses/endpoint/action summaries from the
+  service DTO and does not expose raw request bodies, delegated `writeResult`
+  payloads, local artifact paths, release storage internals, or release
+  permission.
   The browser still does not read server-local artifact files, run Home AI
   visual tooling, validate UI artifacts, persist release evidence, grant
   approval, or enable scheduling.

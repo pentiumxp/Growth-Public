@@ -1004,6 +1004,72 @@
     </div>`;
   }
 
+  function releaseWorkbenchActionAuditStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "listed") return "已读取";
+    if (value === "recorded") return "已记录";
+    if (value === "blocked") return "已阻塞";
+    if (value === "failed") return "失败";
+    if (value === "loading") return "读取中";
+    return releaseWorkbenchStatusText(value);
+  }
+
+  function releaseWorkbenchActionAuditRows(audits = [], escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(audits).slice(0, 5);
+    if (!rows.length) return `<div class="learning-card-generation-release-empty">暂无 release action audit。</div>`;
+    return rows.map((audit = {}) => {
+      const actionAuditId = clean(audit.actionAuditId || audit.action_audit_id);
+      const endpointKey = clean(audit.endpointKey || audit.endpoint_key);
+      const actionKey = clean(audit.actionKey || audit.action_key);
+      const recordId = clean(audit.recordId || audit.record_id);
+      const recordStatus = clean(audit.recordStatus || audit.record_status);
+      const detail = [
+        endpointKey,
+        actionKey,
+        recordId ? `record:${recordId}` : "",
+        recordStatus
+      ].filter(Boolean).join(" · ") || "summary-only audit";
+      return `<div class="learning-card-generation-release-row" data-release-workbench-action-audit-row data-release-workbench-action-audit-id="${escapeHtml(actionAuditId)}">
+        <span>
+          <strong>${escapeHtml(actionAuditId || actionKey || endpointKey || "action audit")}</strong>
+          <small>${escapeHtml(clean(audit.error) || detail)}</small>
+        </span>
+        <em>${escapeHtml(releaseWorkbenchActionAuditStatusText(audit.status))}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function releaseWorkbenchActionAuditsPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.releaseWorkbenchActionAudits || {};
+    const data = holder.data || context.releaseWorkbenchActionAudits || {};
+    const audits = asArray(data.actionAudits || data.action_audits);
+    const loading = holder.status === "loading";
+    const failed = holder.status === "failed";
+    const status = failed ? "failed" : loading ? "loading" : clean(data.status || holder.status || "idle");
+    const detail = failed
+      ? clean(holder.error) || "release_workbench_action_audits_unavailable"
+      : loading
+        ? "正在读取 release workbench action audit。"
+        : `${Number(data.actionAuditCount ?? audits.length ?? 0) || 0} 条 summary-only action audit。`;
+    return `<div class="learning-card-generation-release-action-audits" data-release-workbench-action-audits-panel data-release-workbench-action-audits-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-release-head">
+        <span>
+          <strong>操作审计</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <button type="button" data-release-workbench-action-audits-refresh ${loading ? "disabled" : ""}>${escapeHtml(loading ? "刷新中" : "刷新")}</button>
+      </div>
+      <div class="learning-card-generation-release-grid">
+        <span><small>Audit</small><strong>${escapeHtml(String(Number(data.actionAuditCount ?? audits.length ?? 0) || 0))}</strong></span>
+        <span><small>状态</small><strong>${escapeHtml(releaseWorkbenchActionAuditStatusText(status))}</strong></span>
+        <span><small>权限</small><strong>Owner</strong></span>
+      </div>
+      <div class="learning-card-generation-release-actions">
+        ${releaseWorkbenchActionAuditRows(audits, escapeHtml)}
+      </div>
+    </div>`;
+  }
+
   function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
     return ["release_evidence", "release_approval", "release_evidence_collection", "release_decision", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
   }
@@ -1028,6 +1094,12 @@
 
   function createReleaseArtifactTemplateQueryPayload({ context = {}, workspaceId = "" } = {}) {
     return Object.fromEntries(Object.entries(releaseWorkbenchScopeFromContext(context, workspaceId)).filter(([, value]) => clean(value)));
+  }
+
+  function createReleaseWorkbenchActionAuditQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    return Object.fromEntries(Object.entries(Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
+      limit: 5
+    })).filter(([, value]) => clean(value)));
   }
 
   function createReleasePackageBuildPayload({ context = {}, workspaceId = "", action = {} } = {}) {
@@ -1262,6 +1334,7 @@
         <span><small>记录缺口</small><strong>${escapeHtml(String(asArray(summary.missingRecordKinds || inventory.missingRecordKinds).length))}</strong></span>
       </div>
       ${releaseArtifactTemplatePanel(context, state, escapeHtml)}
+      ${releaseWorkbenchActionAuditsPanel(context, state, escapeHtml)}
       <div class="learning-card-generation-release-actions">
         ${releaseWorkbenchActionRows(actions, holder, escapeHtml)}
       </div>
@@ -3711,6 +3784,7 @@
     createOwnerAuditReviewQueryPayload,
     createOwnerCorrectionPayload,
     createReleaseArtifactTemplateQueryPayload,
+    createReleaseWorkbenchActionAuditQueryPayload,
     createReleasePackageBuildPayload,
     createReleaseWorkbenchActionPayload,
     createReferenceChainRequests,

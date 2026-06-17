@@ -72,6 +72,12 @@ readback gate set.
   checklist rows, action-plan rows, manifest schema status, and refresh
   wiring. It does not accept local artifact paths, run visual tooling, validate
   UI evidence, persist release evidence, apply approvals, or enable scheduling.
+  The embedded Owner `生成` tab now also consumes the existing Owner-only
+  `GET /api/v1/growth/automation/release-workbench/action-audits` read route as
+  a summary-only `操作审计` subpanel over recent wrapper action ids, statuses,
+  endpoints, and action summaries. It does not expose raw request bodies,
+  delegated `writeResult` payloads, local artifact paths, release storage
+  internals, runtime config, release permission, or scheduler permission.
   The
   route performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or

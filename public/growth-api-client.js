@@ -164,6 +164,26 @@
       return query ? `?${query}` : "";
     }
 
+    function releaseWorkbenchActionAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "collectionRunId", payload.collectionRunId || payload.collection_run_id);
+      appendQueryParam(params, "endpointKey", payload.endpointKey || payload.endpoint_key);
+      appendQueryParam(params, "actionKey", payload.actionKey || payload.action_key);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "limit", payload.limit || 5);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function automationProposalQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
       const params = new URLSearchParams();
@@ -433,6 +453,10 @@
 
     function fetchGrowthReleaseArtifactTemplate(targetWorkspaceId = getWorkspaceId(), context = {}) {
       return fetchJson(`${growthApiPath("automation", "release-artifact-template")}${releaseWorkbenchQuery(targetWorkspaceId, context)}`);
+    }
+
+    function fetchGrowthReleaseWorkbenchActionAudits(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "release-workbench", "action-audits")}${releaseWorkbenchActionAuditQuery(targetWorkspaceId, payload)}`);
     }
 
     function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
@@ -736,6 +760,7 @@
       fetchGrowthReferenceObjectTypes,
       fetchGrowthReferenceSummary,
       fetchGrowthReleaseArtifactTemplate,
+      fetchGrowthReleaseWorkbenchActionAudits,
       fetchGrowthReleaseWorkbench,
       fetchGrowthStageCheckpointControls,
       fetchJson,

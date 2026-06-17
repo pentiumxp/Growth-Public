@@ -1844,6 +1844,12 @@ Implementation progress on 2026-06-15:
   remain. This is guidance only: the browser does not read local artifact
   files, run visual tooling, validate evidence, persist pass records, approve a
   release, apply runtime config, or grant scheduler permission.
+- The embedded Owner generation tab also consumes the existing Owner-only
+  `GET /api/v1/growth/automation/release-workbench/action-audits` readback
+  inside the same release workbench panel as a summary-only `操作审计` list.
+  This closes recent wrapper-action audit visibility for Owner without exposing
+  raw requests, delegated write results, local artifact paths, release storage
+  internals, release permission, runtime config, or scheduler permission.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection

@@ -412,6 +412,13 @@ test("Growth API client exposes card generation context and write helpers", asyn
       }
     }
   });
+  await client.fetchGrowthReleaseWorkbenchActionAudits({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    endpoint_key: "release_evidence_collection",
+    status: "recorded",
+    limit: 3
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -632,6 +639,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
   const releaseArtifactTemplateCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/release-artifact-template?"));
   assert.equal(releaseArtifactTemplateCall.path, "/api/v1/growth/automation/release-artifact-template?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1");
+  const releaseWorkbenchActionAuditsCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/release-workbench/action-audits?"));
+  assert.equal(releaseWorkbenchActionAuditsCall.path, "/api/v1/growth/automation/release-workbench/action-audits?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&endpointKey=release_evidence_collection&status=recorded&limit=3");
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -693,6 +702,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.createGrowthAutomationFailurePolicy({ learner_id: "fanfan", policy: { summaryOnly: true } }, "weixin_stephen");
   await client.reviewGrowthAutomationFailurePolicy("lgafpol_proxy_1", { status: "archived" }, "weixin_stephen");
   await client.fetchGrowthReleaseArtifactTemplate("weixin_stephen", { target: { learnerId: "fanfan" } });
+  await client.fetchGrowthReleaseWorkbenchActionAudits({ learner_id: "fanfan", status: "blocked" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -813,6 +823,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   });
   const proxyReleaseArtifactTemplateCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-artifact-template?"));
   assert.equal(proxyReleaseArtifactTemplateCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-artifact-template?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
+  const proxyReleaseWorkbenchActionAuditsCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/action-audits?"));
+  assert.equal(proxyReleaseWorkbenchActionAuditsCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/action-audits?targetWorkspaceId=weixin_stephen&learnerId=fanfan&status=blocked&limit=5");
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1404,6 +1416,59 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
       },
       writefulSchedulingAllowed: false
     },
+    releaseWorkbenchActionAudits: {
+      ok: true,
+      schemaVersion: "growth.learningAutomationReleaseWorkbenchActionAuditList.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "listed",
+      actionAuditCount: 2,
+      actionAudits: [{
+        actionAuditId: "lgawba_release_collection_1",
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        collectionRunId: "lgacrn_1",
+        endpointKey: "release_evidence_collection",
+        actionKey: "release_collection_run",
+        status: "recorded",
+        recordId: "lgacrn_1",
+        recordStatus: "ready_for_release_review",
+        duplicate: false,
+        workbenchStatus: "blocked",
+        requestedBy: "owner",
+        privacyClass: "summary_only",
+        createdAt: "2026-06-18T03:40:00.000Z",
+        updatedAt: "2026-06-18T03:40:00.000Z",
+        actionRecord: {
+          schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.record.v1",
+          summaryOnly: true,
+          recordId: "lgacrn_1",
+          recordStatus: "ready_for_release_review"
+        },
+        actionSummary: {
+          schemaVersion: "growth.learningAutomationReleaseWorkbenchActionAudit.summary.v1",
+          summaryOnly: true
+        }
+      }, {
+        actionAuditId: "lgawba_runtime_blocked_1",
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        endpointKey: "runtime_enablement",
+        actionKey: "runtime_enablement",
+        status: "blocked",
+        error: "runtime_enablement_external_evidence_required",
+        duplicate: false,
+        requestedBy: "owner",
+        privacyClass: "summary_only",
+        createdAt: "2026-06-18T03:45:00.000Z",
+        updatedAt: "2026-06-18T03:45:00.000Z"
+      }]
+    },
     automationProposals: {
       ok: true,
       count: 2,
@@ -1948,6 +2013,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           data: context.releaseArtifactTemplate,
           error: ""
         },
+        releaseWorkbenchActionAudits: {
+          status: "ready",
+          data: context.releaseWorkbenchActionAudits,
+          error: ""
+        },
         automationProposals: {
           status: "ready",
           data: context.automationProposals,
@@ -2304,6 +2374,14 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-artifact-action-key="execute:release_evidence_collection"/);
   assert.match(html, /Manifest 待中心视觉\/UI artifact/);
   assert.match(html, /growth.learningAutomationReleaseEvidenceArtifactManifest.v1/);
+  assert.match(html, /data-release-workbench-action-audits-panel/);
+  assert.match(html, /data-release-workbench-action-audits-status="listed"/);
+  assert.match(html, /操作审计/);
+  assert.match(html, /data-release-workbench-action-audits-refresh/);
+  assert.match(html, /data-release-workbench-action-audit-row/);
+  assert.match(html, /data-release-workbench-action-audit-id="lgawba_release_collection_1"/);
+  assert.match(html, /release_evidence_collection/);
+  assert.match(html, /已记录/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -2549,6 +2627,21 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(releaseArtifactTemplateQueryPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseArtifactTemplateQueryPayload, "transcript"), false);
+
+  const releaseWorkbenchActionAuditQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionAuditQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseWorkbenchActionAuditQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    limit: 5
+  });
+  assert.equal(Object.hasOwn(releaseWorkbenchActionAuditQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseWorkbenchActionAuditQueryPayload, "transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -4244,7 +4337,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-release-artifact-template-ui-v1";
+  const staticVersion = "20260618-release-action-audit-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -4296,6 +4389,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-release-artifact-template-refresh/);
   assert.match(source, /releaseArtifactTemplate/);
   assert.match(source, /await refreshReleaseArtifactTemplate\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
+  assert.match(source, /function refreshReleaseWorkbenchActionAudits/);
+  assert.match(source, /api\.fetchGrowthReleaseWorkbenchActionAudits\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-release-workbench-action-audits-refresh/);
+  assert.match(source, /releaseWorkbenchActionAudits/);
+  assert.match(source, /await refreshReleaseWorkbenchActionAudits\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshAutomationProposals/);
   assert.match(source, /api\.fetchGrowthAutomationProposals\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)/);

@@ -4443,6 +4443,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /refreshReleaseArtifactTemplate/);
   assert.match(app, /fetchGrowthReleaseArtifactTemplate/);
   assert.match(app, /data-release-artifact-template-refresh/);
+  assert.match(app, /refreshReleaseWorkbenchActionAudits/);
+  assert.match(app, /fetchGrowthReleaseWorkbenchActionAudits/);
+  assert.match(app, /data-release-workbench-action-audits-refresh/);
   assert.match(app, /data-automation-failure-policy-create/);
   assert.match(app, /data-automation-failure-policy-review/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
@@ -4479,6 +4482,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /releaseArtifactTemplatePanel/);
   assert.match(generationUi, /createReleaseArtifactTemplateQueryPayload/);
   assert.match(generationUi, /data-release-artifact-checklist-item/);
+  assert.match(generationUi, /data-release-workbench-action-audits-panel/);
+  assert.match(generationUi, /releaseWorkbenchActionAuditsPanel/);
+  assert.match(generationUi, /createReleaseWorkbenchActionAuditQueryPayload/);
+  assert.match(generationUi, /data-release-workbench-action-audit-row/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
   assert.match(generationUi, /createAutomationProposalCreatePayload/);
@@ -4548,6 +4555,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /fetchGrowthAutomationSchedulerWorkerTargets/);
   assert.match(apiClient, /createGrowthAutomationSchedulerWorkerTarget/);
   assert.match(apiClient, /reviewGrowthAutomationSchedulerWorkerTarget/);
+  assert.match(apiClient, /fetchGrowthReleaseWorkbenchActionAudits/);
+  assert.match(apiClient, /automation", "release-workbench", "action-audits"/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
   assert.match(apiClient, /automation", "failure-policies"/);

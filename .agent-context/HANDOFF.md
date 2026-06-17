@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T04:12+0800 - Release Workbench Action Audit Owner UI
+
+- Status: implemented locally; syntax, focused frontend, architecture/docs,
+  docs-locality, global syntax coverage, combined embedded UI Harness, diff
+  check, and local static readback passed. No production deploy, Home AI
+  central visual harness run, Gateway/model call, learner evidence write,
+  release evidence persistence, visual/UI artifact validation, scheduler
+  execution, runtime config change, release approval, or Home AI host logic
+  change was performed.
+- Classification: H2 Growth embedded UI consumption over the existing
+  Owner-only release workbench action-audits read boundary. It adds no route,
+  table, release evidence writer, release policy, visual-tool runner,
+  scheduler permission, runtime config mutation, Gateway boundary, or
+  browser-side release approval.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthReleaseWorkbenchActionAudits()` for
+    `GET /api/v1/growth/automation/release-workbench/action-audits`;
+  - `public/growth-card-generation-ui.js` now renders a summary-only
+    `操作审计` subpanel inside the release workbench, showing recent wrapper
+    action audit ids, endpoint/action keys, record ids/statuses, errors, and
+    status labels from service readback only;
+  - `public/app.js` keeps `releaseWorkbenchActionAudits` UI state, wires the
+    refresh button, and refreshes action-audit readback after successful
+    release workbench refreshes;
+  - `public/index.html` cache-busting moved to
+    `20260618-release-action-audit-ui-v1`;
+  - Growth-local docs now state that the Owner UI consumes action-audits
+    readback but still cannot inspect raw request bodies, delegated
+    `writeResult` payloads, release storage, local artifact paths, runtime
+    config, release permission, or scheduler permission.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js public/growth-card-generation-ui.js
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`,
+    `checkedCount=225`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 76/76;
+  - `git diff --check`;
+  - local current-worktree service readback on `GROWTH_PORT=4884`: index used
+    `20260618-release-action-audit-ui-v1`;
+    `growth-card-generation-ui.js` contained
+    `data-release-workbench-action-audits-panel`,
+    `createReleaseWorkbenchActionAuditQueryPayload`, and `操作审计`; `app.js`
+    contained `refreshReleaseWorkbenchActionAudits` and refresh wiring; and
+    `growth-api-client.js` contained
+    `fetchGrowthReleaseWorkbenchActionAudits`.
+- Remaining gate:
+  - before production UI release, still run the Home AI central embedded-plugin
+    visual harness and persist bounded UI/release evidence through the existing
+    Growth release-evidence path.
+
 ## 2026-06-18T04:04+0800 - Release Artifact Template Owner UI
 
 - Status: implemented locally; syntax and focused frontend Harness passed. No
