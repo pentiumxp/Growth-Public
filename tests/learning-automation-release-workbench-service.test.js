@@ -29,6 +29,7 @@ test("release workbench composes release services into Owner action templates wi
             ],
             missingEvidenceKeys: [
               "owner_daily_ui_evidence",
+              "production_operating_loop_history_smoke_evidence",
               "production_profile_feedback_smoke_evidence",
               "production_daily_loop_write_smoke_evidence",
               "release_package_review_ui_evidence"
@@ -144,6 +145,7 @@ test("release workbench composes release services into Owner action templates wi
     "release_package_review_ui_evidence",
     "central_visual_evidence",
     "platform_action_evidence",
+    "production_operating_loop_history_smoke_evidence",
     "production_profile_feedback_smoke_evidence"
   ].includes(action.key)), false);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_approval"), true);
@@ -163,9 +165,9 @@ test("release workbench composes release services into Owner action templates wi
   assert.deepEqual(collectionAction.artifactTaskIds, ["central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(collectionAction.externalAction.artifactTaskIds, ["central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.equal(collectionAction.route.path, "/api/v1/growth/automation/release-evidence-collections/run");
-  assert.deepEqual(collectionAction.route.body.tasks, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
-  assert.deepEqual(collectionAction.route.body.required_task_ids, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
-  assert.deepEqual(collectionAction.collectionTaskIds, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.route.body.tasks, ["operating_loop_history", "profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.route.body.required_task_ids, ["operating_loop_history", "profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.collectionTaskIds, ["operating_loop_history", "profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(collectionAction.writeGatedCollectionTaskIds, ["daily_loop_write"]);
   assert.deepEqual(collectionAction.unsupportedCollectionKeys, []);
   assert.deepEqual(result.releaseWorkbench.releaseStatePrerequisiteKeys, [
@@ -211,8 +213,8 @@ test("release workbench composes release services into Owner action templates wi
   const decisionRoute = result.releaseWorkbench.recordRoutes.find((route) => route.key === "release_decision");
   assert.equal(decisionRoute.route.body.auto_select_latest_ready_collection_run, true);
   assert.equal(decisionRoute.route.body.status, "approved");
-  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
-  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionTasks, ["operating_loop_history", "profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["operating_loop_history", "profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(result.releaseWorkbench.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
   assert.deepEqual(result.releaseWorkbench.unsupportedReleaseEvidenceCollectionKeys, []);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_package"), true);
@@ -250,6 +252,7 @@ test("release workbench composes release services into Owner action templates wi
     "owner_daily_ui_evidence",
     "platform_action_evidence",
     "production_daily_loop_write_smoke_evidence",
+    "production_operating_loop_history_smoke_evidence",
     "production_profile_feedback_smoke_evidence",
     "release_package_review_ui_evidence"
   ].sort());
@@ -274,6 +277,7 @@ test("release workbench offers evidence collection for supported missing evidenc
             status: "release_evidence_required",
             missingCheckKeys: [],
             missingEvidenceKeys: [
+              "production_operating_loop_history_smoke_evidence",
               "production_profile_feedback_smoke_evidence",
               "central_visual_evidence"
             ],
@@ -343,15 +347,15 @@ test("release workbench offers evidence collection for supported missing evidenc
   assert.equal(result.releaseWorkbench.nextAction.key, "collect_missing_release_evidence");
   assert.equal(collectionActions[0].source, "missing_evidence_collection");
   assert.equal(collectionActions[0].route.path, "/api/v1/growth/automation/release-evidence-collections/run");
-  assert.deepEqual(collectionActions[0].route.body.tasks, ["profile_feedback", "central_visual"]);
-  assert.deepEqual(collectionActions[0].route.body.required_task_ids, ["profile_feedback", "central_visual"]);
+  assert.deepEqual(collectionActions[0].route.body.tasks, ["operating_loop_history", "profile_feedback", "central_visual"]);
+  assert.deepEqual(collectionActions[0].route.body.required_task_ids, ["operating_loop_history", "profile_feedback", "central_visual"]);
   assert.equal(collectionActions[0].route.body.auto_select_latest_completed_cycle, true);
   assert.equal(collectionActions[0].route.body.central_visual_evidence_file, "");
   assert.equal(collectionActions[0].requiresPreparation, true);
   assert.equal(collectionActions[0].preparationRoute.path, "/api/v1/growth/automation/release-artifact-template");
   assert.deepEqual(collectionActions[0].artifactTaskIds, ["central_visual"]);
-  assert.deepEqual(collectionActions[0].collectionTaskIds, ["profile_feedback", "central_visual"]);
-  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["profile_feedback", "central_visual"]);
+  assert.deepEqual(collectionActions[0].collectionTaskIds, ["operating_loop_history", "profile_feedback", "central_visual"]);
+  assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["operating_loop_history", "profile_feedback", "central_visual"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.key === "release_collection_run"), false);
   assert.equal(result.releaseWorkbench.writefulSchedulingAllowed, false);
 });

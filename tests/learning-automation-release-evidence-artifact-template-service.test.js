@@ -25,6 +25,7 @@ test("release artifact template maps only missing central visual and UI evidence
               "central_visual_evidence",
               "platform_action_evidence",
               "owner_daily_ui_evidence",
+              "production_operating_loop_history_smoke_evidence",
               "production_profile_feedback_smoke_evidence",
               "release_package_review_ui_evidence"
             ],
@@ -32,6 +33,7 @@ test("release artifact template maps only missing central visual and UI evidence
             missingApprovalKeys: ["writefulExecutionApproval"],
             missingRecordKinds: ["release_package"],
             releaseEvidenceCollectionSupportedTaskIds: [
+              "operating_loop_history",
               "profile_feedback",
               "platform_action",
               "central_visual",
@@ -40,6 +42,7 @@ test("release artifact template maps only missing central visual and UI evidence
               "scheduler_run_ui"
             ],
             releaseEvidenceCollectionRequiredTaskIds: [
+              "operating_loop_history",
               "profile_feedback",
               "platform_action",
               "central_visual",
@@ -140,7 +143,7 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.schemaVersion, "growth.learningAutomationReleaseEvidenceChecklist.v1");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.status, "release_evidence_actions_required");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.artifactItemCount, 4);
-  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.collectionTaskItemCount, 2);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.collectionTaskItemCount, 3);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.writeGatedItemCount, 1);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.statePrerequisiteItemCount, 2);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.approvalItemCount, 1);
@@ -148,6 +151,7 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.unsupportedItemCount, 1);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:profile_feedback"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:platform_action"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:operating_loop_history"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "artifact:central_visual"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "write_gated:daily_loop_write"), true);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "state:reviewed_automation_digest"), true);
@@ -206,6 +210,7 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(planActions.get("execute:release_evidence_collection").readyToSubmit, false);
   assert.equal(planActions.get("execute:release_evidence_collection").blockedUntilArtifactManifestFilled, true);
   assert.deepEqual(planActions.get("execute:release_evidence_collection").collectionTaskIds, [
+    "operating_loop_history",
     "profile_feedback",
     "platform_action"
   ]);
@@ -216,10 +221,12 @@ test("release artifact template maps only missing central visual and UI evidence
     "scheduler_run_ui"
   ]);
   assert.deepEqual(planActions.get("execute:release_evidence_collection").bodyTemplate.tasks, [
+    "operating_loop_history",
     "profile_feedback",
     "platform_action"
   ]);
   assert.deepEqual(planActions.get("execute:release_evidence_collection").bodyTemplate.required_task_ids, [
+    "operating_loop_history",
     "profile_feedback",
     "platform_action"
   ]);
@@ -370,6 +377,8 @@ test("release artifact template fails closed through the workbench boundary", ()
 
 test("release artifact template task-key mapping is registry-driven", () => {
   assert.equal(taskIdFromKey("centralVisualEvidence"), "central_visual");
+  assert.equal(taskIdFromKey("productionOperatingLoopHistorySmokeEvidence"), "operating_loop_history");
+  assert.equal(taskIdFromKey("production_operating_loop_history_smoke_evidence"), "operating_loop_history");
   assert.equal(taskIdFromKey("ownerDailyUiEvidence"), "owner_daily_ui");
   assert.equal(taskIdFromKey("owner_daily_ui_evidence"), "owner_daily_ui");
   assert.equal(taskIdFromKey("owner_daily"), "owner_daily_ui");

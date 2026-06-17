@@ -3069,6 +3069,14 @@ test("Growth release package builder stays summary-only orchestration over relea
 
   const releaseWorkbenchService = read(path.join("src", "services", "learning-automation-release-workbench-service.js"));
   assert.match(releaseWorkbenchService, /write_release_evidence_records: true/);
+  assert.match(releaseWorkbenchService, /production_operating_loop_history_smoke_evidence/);
+  assert.match(releaseWorkbenchService, /operating_loop_history/);
+  const releaseArtifactTemplateService = read(path.join("src", "services", "learning-automation-release-evidence-artifact-template-service.js"));
+  assert.match(releaseArtifactTemplateService, /TASK_ID_BY_RELEASE_EVIDENCE_KEY/);
+  assert.match(releaseArtifactTemplateService, /snakeCaseKey\(evidenceKey\)/);
+  const artifactTemplateHarness = read(path.join("tests", "learning-automation-release-evidence-artifact-template-service.test.js"));
+  assert.match(artifactTemplateHarness, /productionOperatingLoopHistorySmokeEvidence/);
+  assert.match(artifactTemplateHarness, /collection:operating_loop_history/);
   const releaseWorkbenchUi = read(path.join("public", "growth-card-generation-ui.js"));
   assert.match(releaseWorkbenchUi, /write_release_evidence_records/);
 
