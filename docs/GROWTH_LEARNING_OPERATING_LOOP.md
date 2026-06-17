@@ -510,11 +510,11 @@ The target loop is:
 
 | Layer | Responsibility | Current state | Next target |
 | --- | --- | --- | --- |
-| Knowledge layer | Imported graph nodes, prerequisites, evidence requirements, domain packs, assessment coverage. | Native KG import, graph planning, graph binding, and backend domain-pack/subject option projection are implemented. Graph import now infers a node's domain pack from node domain when multi-pack seeds omit explicit node `domainPackId`, and graph plans carry `domainPackId`, `domain`, and `subject` into downstream card audit metadata. | Expose domain-pack selection in the embedded Owner UI and add planner-facing graph summaries for more subjects. |
+| Knowledge layer | Imported graph nodes, prerequisites, evidence requirements, domain packs, assessment coverage. | Native KG import, graph planning, graph binding, backend domain-pack/subject option projection, and embedded Owner domain-pack/subject selection are implemented. Graph import now infers a node's domain pack from node domain when multi-pack seeds omit explicit node `domainPackId`, and graph plans carry `domainPackId`, `domain`, and `subject` into downstream card audit metadata. | Collect production visual evidence for the selector and add planner-facing graph summaries for more subjects. |
 | Evidence ledger | Unified summary-only evidence records across evaluations, reflections, learner signals, stage assessments, and Owner-reviewed corrections. | `learning-evidence-ledger-service` and `learning_growth_evidence_ledger` are implemented for daily evaluation, formal assessment, reflection, experience-signal, and Owner-reviewed correction evidence. `learning-evidence-audit-service` and `GET /api/v1/growth/evidence/audit` provide bounded readback over persisted evidence rows for visible targets. | Add broader Owner audit UI projection over the implemented backend DTOs. |
 | Profile layer | Mastery, confidence, stability, recency, misconceptions, habits, pressure signals, interests, and subject-specific descriptors. | `learning-profile-v2-service` projects ledger evidence plus optional legacy profile context, applies Owner-reviewed correction evidence as a bounded auditable state adjustment, exposes evidence-freshness metadata, and Owner generation context now exposes a bounded Profile V2 projection. | Add richer Owner audit explanations in the embedded UI. |
-| Planner layer | Multi-horizon objective selection and card-role decision. | Gateway planner context, client, validation, orchestrator, plan-draft storage, backend draft route, backend publish route, Owner generation-context planner readiness, and no-write readiness smoke are implemented. | Add embedded Owner plan preview UI, run production planner smoke with real config, and add weekly/stage-checkpoint horizons. |
-| Target provisioning layer | Learner/domain-pack/subject authorization for learning generation after view-target visibility passes. | Fanfan sample fallback and explicit domain-pack provisions are owned by `learning-target-provisioning-service`; V1 stores summary-only rows in `learning_growth_domain_pack_provisions`. | Expose Owner provision controls in the embedded UI and use the same policy for all non-sample learners. |
+| Planner layer | Multi-horizon objective selection and card-role decision. | Gateway planner context, client, validation, orchestrator, plan-draft storage, backend draft route, backend publish route, Owner generation-context planner readiness, embedded Owner plan preview/draft/publish controls, and no-write readiness smoke are implemented. | Run production planner smoke with real config, collect production visual evidence for the controls, and add weekly/stage-checkpoint horizons. |
+| Target provisioning layer | Learner/domain-pack/subject authorization for learning generation after view-target visibility passes. | Fanfan sample fallback, explicit domain-pack provisions, embedded Owner provision controls, and selected graph-scope context refresh are owned by `learning-target-provisioning-service` plus the Owner generation UI. V1 stores summary-only rows in `learning_growth_domain_pack_provisions`. | Collect production visual evidence and use the same policy for all non-sample learners. |
 | Authoring layer | Generate validated teaching, practice, repair, stretch, integration, project, or assessment cards. | Daily English, daily science, generic subject-scoped daily practice, stage assessment generation, and planner-backed single-item publication are implemented. Subject-scoped compact recipes still pass through target provisioning, graph planning, graph evidence requirements, Gateway authoring, validation, and transactional publishing. | Expand subject-specific recipe/rubric policy while keeping broader objective selection on validated planner drafts. |
 | Execution layer | Learner card UI, submission, optional audio, one evaluation, one reflection, low-pressure completion. | Implemented for generated daily cards. | Keep stable while adding subject-specific card content. |
 | Evaluation layer | Gateway evaluation, bounded DTO, visible failure/retry, evidence derivation. | Implemented with Gateway/fallback boundary. | Add subject-aware rubrics and evidence mapping into ledger. |
@@ -528,7 +528,7 @@ The target loop is:
 | Automation scheduler run layer | Default-disabled supervised tick over delivered handoff actions. | `learning-automation-scheduler-run-service`, `learning_growth_automation_scheduler_runs`, visible-target scoped `GET /api/v1/growth/automation/scheduler/runs`, and Owner-only `POST /api/v1/growth/automation/scheduler/run-once` are the safe target boundary. Disabled config records blocked run state; enabled ticks may list delivered handoffs and delegate candidates only to the execution service. `npm run smoke:scheduler-run` now mirrors top-level `automationSchedulerRun*` operator readback for run audit state, candidate/execution counts, background-scheduler gate state, and no-direct safety flags. | Keep production background scheduling blocked until scheduler-run harness, Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, and explicit release approval exist. |
 | Automation scheduler worker target layer | Owner-reviewed target configuration for any future worker. | `learning-automation-scheduler-worker-target-service`, `automation-scheduler-worker-targets.js`, `learning_growth_automation_scheduler_worker_targets`, and visible-target/Owner scoped worker-target routes are implemented. Creation requires target provisioning, review can enable/disable/archive, and enabling rechecks provisioning. `npm run smoke:scheduler-worker-target` now mirrors top-level `automationSchedulerWorkerTarget*` operator readback for list/runnable/create/review, target provisioning, Owner review, runnable ids, and `productionSchedulingAllowed=false`. | Use reviewed `enabled` targets for production; treat environment JSON target lists as local fallback only. |
 | Automation scheduler worker lease layer | Default-disabled timer/lease boundary over reviewed scheduler-run targets. | `learning-automation-scheduler-worker-service`, `automation-scheduler-worker-leases.js`, `learning_growth_automation_scheduler_worker_leases`, and optional HTTP timer glue are implemented. `GROWTH_AUTOMATION_BACKGROUND_WORKER_ENABLED=false` by default; when enabled, the worker prefers reviewed enabled targets, claims one lease per summary-only target, and calls only `learning-automation-scheduler-run-service.runOnce`. Active leases are protected and stale leases are reclaimable. `npm run smoke:scheduler-worker` now mirrors top-level `automationSchedulerWorker*` operator readback for disabled status, worker/target counts, lease/run status, scheduler-run delegation, and no-direct safety flags without exposing lease tokens. | Keep production unattended scheduling blocked until Owner automation UI, platform action evidence, visual evidence, production dry-run evidence, reviewed enabled target config, and explicit worker release approval exist. |
-| Generalization layer | Workspace, learner, graph pack, subject, and recipe become parameters. | Fanfan sample, daily English, daily science, and generic subject-scoped ordinary daily recipes are operational; Fanfan science is covered by a service-level vertical harness; backend context exposes `graphOptions`. A non-sample science vertical harness now proves unprovisioned blocking, explicit provision enablement, wrong-subject blocking, and target-workspace scoped plan/card/evidence/profile/audit rows. | Promote subject/domain-pack selection into Owner UI and route projections for any provisioned target, then add richer subject-specific rubrics. |
+| Generalization layer | Workspace, learner, graph pack, subject, and recipe become parameters. | Fanfan sample, daily English, daily science, and generic subject-scoped ordinary daily recipes are operational; Fanfan science is covered by a service-level vertical harness; backend context exposes `graphOptions`; the embedded Owner UI renders domain-pack/subject selection and target provisioning controls. A non-sample science vertical harness now proves unprovisioned blocking, explicit provision enablement, wrong-subject blocking, and target-workspace scoped plan/card/evidence/profile/audit rows. | Collect production visual evidence for the generalized controls and add richer subject-specific rubrics. |
 
 ## Learning Modes
 
@@ -1341,12 +1341,13 @@ Implemented:
   planner draft cannot bypass `learning-stage-assessment-service`;
 - plan draft persistence, publish success, publish failure, and route scoping
   harnesses;
+- embedded Owner plan preview, draft, and explicit publish controls in the
+  `生成` tab;
 - `smokePlannerReadiness()` and `npm run smoke:planner-readiness`, returning a
   bounded no-write draft summary for real Gateway readiness checks.
 
 Remaining:
 
-- embedded Owner UI for plan preview and explicit publish.
 - run the planner readiness smoke against production Gateway config before
   deploying planner UI.
 
@@ -1355,29 +1356,28 @@ without validation and explicit service-owned publication.
 
 ### Phase 4: Science daily-card vertical
 
-Status: service-level closed-loop harness implemented; explicit target
-provisioning policy is the backend guard for taking this beyond the Fanfan
-sample. Embedded Owner UI and production planner smoke remain later.
+Status: service-level closed-loop harness and embedded Owner controls are
+implemented; explicit target provisioning policy is the backend guard for
+taking this beyond the Fanfan sample. Production planner smoke and production
+visual evidence remain later.
 
 Implemented:
 
 - one science planner item using harness KG/domain data;
 - persisted plan preview for a Fanfan science daily card at the service/route
   boundary;
+- embedded Owner plan preview, draft, publish, domain-pack/subject selector,
+  target provisioning, and one-click advance controls;
 - Gateway authoring through the existing card authoring path;
 - learner completion through the existing daily card evidence flow;
 - evaluation to ledger to Profile V2 to next recommendation.
 
 Remaining:
 
-- embedded Owner UI for plan preview and explicit publish;
 - production planner readiness smoke execution with real Gateway config;
-- embedded subject/domain-pack selection. Backend context now exposes
-  `graphOptions`, accepts `domain`, `subject`, and `domainPackId` selectors,
-  and validates the science vertical at service level, but the embedded UI does
-  not yet expose the selector.
-- embedded Owner controls for creating or reviewing target/domain-pack
-  provisions.
+- central embedded visual/release evidence for the implemented Owner controls;
+- richer subject-specific recipe/rubric policy beyond the first science
+  vertical.
 
 This phase proves that the loop is subject-general, not English-specific.
 
@@ -1961,22 +1961,20 @@ Implementation progress on 2026-06-15:
 
 The next product-completeness slice is embedded UI and production readiness:
 
-1. add an Owner-safe embedded plan preview panel in the existing `生成` tab;
-2. render the provisioned `graphOptions` domain-pack/subject selector and
-   `targetProvisioning` status in the UI;
-3. call `POST /api/v1/growth/learning-plans/draft` from the UI for the
-   selected learner, domain pack, subject, horizon, and available minutes;
-4. render the validated draft with reason, target nodes, estimated minutes,
-   card role, and evidence requirements;
-5. call `POST /api/v1/growth/learning-plans/:planDraftId/publish` only after
-   explicit Owner action;
-6. refresh generation context after publish while preserving the published
-   card preview;
-7. add Owner provision controls for non-sample targets;
-8. render profile-delta audit from persisted public DTOs after learner
+1. collect central embedded visual evidence for the existing `生成` tab plan
+   preview, domain-pack/subject selector, target provisioning, draft/publish,
+   one-click advance, progress, mobile scroll, and dark-mode states;
+2. run `npm run smoke:planner-readiness`, `npm run smoke:daily-loop-preview`,
+   and controlled daily-loop write smoke against the target production
+   configuration before treating the Owner daily loop as production-complete;
+3. record the validated visual/UI summaries through the existing release
+   evidence collection/workbench boundaries;
+4. keep direct card publication behind explicit Owner action or one-click
+   daily-loop advance, never behind a background scheduler;
+5. render richer profile-delta audit from persisted public DTOs after learner
    completion;
-9. run `npm run smoke:planner-readiness` against real Gateway config and add
-   central visual harness coverage before production deploy.
+6. add richer subject-specific rubric/evidence mapping after the first science
+   vertical is visually validated.
 
 The next backend-only slice should be driven by the embedded UI/readback needs
-that appear while adding Owner planner, provision, and audit panels.
+that appear while validating Owner planner, provision, and audit panels.

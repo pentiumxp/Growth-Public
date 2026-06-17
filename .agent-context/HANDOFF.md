@@ -21958,5 +21958,29 @@
   - `codegraph sync && codegraph status` reported the index is up to date,
     with the existing earlier-engine advisory.
 - Remaining next-step candidates:
-  - commit and push this release-union Harness/docs closure;
+  - production visual/deploy evidence remains a separate gate.
+
+## 2026-06-17T23:34+0800 - Operating-loop doc state aligned with implemented Owner controls
+
+- Status:
+  - Implemented Growth-local documentation correction only.
+  - No runtime code, database schema, production deploy, or visual run was
+    changed in this slice.
+- Implemented behavior:
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md` no longer lists embedded Owner
+    plan preview, draft/publish controls, domain-pack/subject selector, or
+    target-provisioning controls as missing work.
+  - The document now matches the implemented Owner generation UI and
+    `growth-frontend-adapter` Harness: plan preview, draft, publish,
+    one-click advance, domain-pack/subject selection, selected graph-scope
+    context refresh, and explicit target provisioning are present locally.
+  - Remaining product-completeness language is narrowed to production planner
+    smoke, central embedded visual/release evidence, richer profile-delta audit
+    rendering, and richer subject-specific rubric/evidence mapping.
+- Validation passed:
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `git diff --check` passed.
+- Remaining next-step candidates:
   - production visual/deploy evidence remains a separate gate.
