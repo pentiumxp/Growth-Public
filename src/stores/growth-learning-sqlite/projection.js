@@ -30,9 +30,43 @@ function publicSubmission(row) {
   };
 }
 
+function publicSkillResult(item = {}) {
+  const result = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+  return {
+    nodeId: cleanString(result.nodeId || result.graphNodeId || result.targetNodeId || result.skillId),
+    rubricDimensionId: cleanString(result.rubricDimensionId || result.dimensionId || result.rubric_dimension_id),
+    score: numberValue(result.score),
+    confidence: numberValue(result.confidence),
+    status: cleanString(result.status).slice(0, 80),
+    evidenceType: cleanString(result.evidenceType || result.type).slice(0, 80),
+    evidenceTags: asArray(result.evidenceTags || result.tags).map((tag) => cleanString(tag).slice(0, 80)).filter(Boolean).slice(0, 8),
+    evidenceSummary: cleanString(result.evidenceSummary || result.summary || result.evidence).slice(0, 220)
+  };
+}
+
+function publicRubricResult(item = {}) {
+  const result = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+  return {
+    dimensionId: cleanString(result.dimensionId || result.rubricDimensionId || result.rubric_dimension_id),
+    nodeId: cleanString(result.nodeId || result.graphNodeId || result.targetNodeId),
+    score: numberValue(result.score),
+    confidence: numberValue(result.confidence),
+    status: cleanString(result.status).slice(0, 80),
+    evidenceType: cleanString(result.evidenceType || result.type).slice(0, 80),
+    evidenceTags: asArray(result.evidenceTags || result.tags).map((tag) => cleanString(tag).slice(0, 80)).filter(Boolean).slice(0, 8),
+    evidenceSummary: cleanString(result.evidenceSummary || result.summary || result.evidence).slice(0, 220)
+  };
+}
+
 function publicEvaluation(row) {
   if (!row) return null;
   const raw = parseJson(row.raw_json, {}) || {};
+  const skillResults = asArray(parseJson(row.skill_results_json, [])).map(publicSkillResult)
+    .filter((item) => item.nodeId)
+    .slice(0, 12);
+  const rubricResults = asArray(raw.rubricResults).map(publicRubricResult)
+    .filter((item) => item.dimensionId)
+    .slice(0, 16);
   return {
     evaluationId: row.id,
     taskCardId: row.task_card_id,
@@ -45,6 +79,9 @@ function publicEvaluation(row) {
     revisionRequirements: asArray(raw.revisionRequirements).slice(0, 6),
     remainingWeaknesses: asArray(raw.remainingWeaknesses).slice(0, 6),
     feedbackSections: raw.feedbackSections && typeof raw.feedbackSections === "object" ? raw.feedbackSections : {},
+    skillResults,
+    rubricPolicyId: cleanString(raw.rubricPolicyId).slice(0, 160),
+    rubricResults,
     evaluatedAt: row.created_at,
     createdAt: row.created_at,
     evaluationCount: 1,

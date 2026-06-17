@@ -511,16 +511,21 @@ imported knowledge graph and historical Growth SQLite summaries when a Gateway
 authoring endpoint is configured. It does not direct-call model vendors and it
 does not ask Home AI old Growth routes to author cards.
 
-Subject-aware rubric policy is service-owned by
+Subject-aware and formal-checkpoint rubric policy is service-owned by
 `learning-card-rubric-policy-service`. V1 ships summary-only policies for
-`daily_english_v1`, `daily_science_v1`, and `daily_subject_practice_v1`.
-The subject-practice recipe resolves mathematics, history, geography, and
-computer science to stable subject-specific rubric policies; unknown subjects
-fall back to a generic bounded subject-practice rubric. Generation passes that
-policy to Gateway authoring, the card publisher persists it inside bounded
-`raw_json`, Gateway evaluation validates returned `rubricResults` against the
-policy and graph targets, and `learning-evidence-ledger-service` stores only
-bounded rubric summaries inside `summary_json`.
+`daily_english_v1`, `daily_science_v1`, `daily_subject_practice_v1`, and the
+formal `stage_assessment_v1` checkpoint policy. The subject-practice recipe
+resolves mathematics, history, geography, and computer science to stable
+subject-specific rubric policies; unknown subjects fall back to a generic
+bounded subject-practice rubric. Formal `stage_assessment` cards resolve before
+daily subject fallback, use `rubric:stage_assessment_v1:<subject>`, and keep
+independent understanding, transfer/application, evidence/reasoning, and one
+reflection-calibration dimension. Generation passes the resolved policy to
+Gateway authoring, the card publisher persists it inside bounded `raw_json`,
+Gateway evaluation validates returned `rubricResults` against the policy and
+graph targets, the SQLite evaluation record preserves only bounded rubric
+readback, and `learning-evidence-ledger-service` stores only bounded rubric
+summaries inside `summary_json`.
 
 Rubric readback is service-owned. `learning-evidence-audit-service` and
 `learning-cycle-audit-service` project only bounded policy ids, dimension ids,
@@ -710,7 +715,10 @@ The Growth plugin owns the implementation boundary:
 - `POST /api/v1/growth/stage-assessments/challenge` is the learner self-start
   boundary and can only target the executor's own workspace;
 - activated formal cards are generated through
-  `learning-card-generation-service`, not by a separate model path.
+  `learning-card-generation-service`, not by a separate model path;
+- stage activation carries `domainPackId`, `domain`, and `subject` into card
+  generation so the formal checkpoint rubric is resolved for the selected
+  subject instead of falling back to a daily-card rubric.
 
 Activated cards must include:
 
@@ -722,6 +730,7 @@ Activated cards must include:
   `enough_recent_practice`;
 - `activationSource` such as `owner_manual`, `executor_challenge`, or `system`;
 - `formal_assessment` completion metadata;
+- summary-only `rubric:stage_assessment_v1:<subject>` policy metadata;
 - default `300` coin reward metadata and mastery evidence weight `1`.
 
 When a formal assessment evaluation is persisted, it is a profile update
@@ -732,8 +741,8 @@ boundary as well as a card result. Growth must:
 - apply the formal mastery evidence weight when updating
   `learning_growth_mastery_states`;
 - preserve evidence metadata such as role, weight, source evaluation ref, and
-  bounded weakness summaries without storing raw learner answers, transcripts,
-  prompts, answer keys, or provider output;
+  bounded weakness and rubric summaries without storing raw learner answers,
+  transcripts, prompts, answer keys, or provider output;
 - close the linked `learning_growth_stage_assessment_cycles` row and set the
   next cooldown window.
 
@@ -796,6 +805,6 @@ publishing:
 New plugin-owned generated cards use the protected
 `POST /api/v1/growth/cards/generate` route or the same service directly. The
 remaining architecture work is broader learner policy configuration, additional
-subject-specific rubric catalogs beyond the current V1 daily set,
-stage-assessment expansion, Owner review/retry policy, and production Gateway
+subject-specific rubric catalogs beyond the current V1 daily/formal set, Owner
+review/retry policy, richer Owner audit rendering, and production Gateway
 configuration validation.

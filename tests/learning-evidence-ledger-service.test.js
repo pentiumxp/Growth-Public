@@ -6,7 +6,10 @@ const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 
 const { createLearningEvidenceLedgerService } = require("../src/services/learning-evidence-ledger-service");
-const { dailySciencePolicy } = require("../src/services/learning-card-rubric-policy-service");
+const {
+  dailySciencePolicy,
+  formalStageAssessmentPolicy
+} = require("../src/services/learning-card-rubric-policy-service");
 const { createLearningEvidenceLedgerRepository } = require("../src/stores/growth-learning-sqlite/evidence-ledger");
 
 function withLedger(callback) {
@@ -135,6 +138,7 @@ test("evidence ledger records formal assessment as high-weight stage evidence", 
         mastery_evidence_weight: 1,
         raw_json: JSON.stringify({
           completionPolicy: { mode: "formal_assessment" },
+          rubricPolicy: formalStageAssessmentPolicy({ domain: "science", subject: "science" }),
           learningGraph: {
             targetNodeIds: ["kg_science_fair_test"],
             assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_variables"]
@@ -148,7 +152,17 @@ test("evidence ledger records formal assessment as high-weight stage evidence", 
         passed: true,
         confidence: 0.91,
         summary: "Formal evidence confirms independent fair-test reasoning.",
-        remainingWeaknesses: []
+        remainingWeaknesses: [],
+        rubricPolicyId: "rubric:stage_assessment_v1:science",
+        rubricResults: [{
+          dimensionId: "stage_evidence_reasoning",
+          nodeId: "kg_science_fair_test",
+          score: 90,
+          confidence: 0.9,
+          status: "mastered",
+          evidenceType: "formal_assessment_summary",
+          evidenceSummary: "Reasoning is independent and evidence-backed."
+        }]
       }
     });
 
@@ -157,6 +171,8 @@ test("evidence ledger records formal assessment as high-weight stage evidence", 
     assert.equal(result.entries.every((item) => item.sourceType === "stage_assessment"), true);
     assert.equal(result.entries.every((item) => item.evidenceWeight === 1), true);
     assert.deepEqual(result.entries.map((item) => item.graphNodeId).sort(), ["kg_science_fair_test", "kg_science_variables"]);
+    assert.equal(result.entries[0].summary.rubricPolicyId, "rubric:stage_assessment_v1:science");
+    assert.equal(result.entries[0].summary.rubricResults[0].dimensionId, "stage_evidence_reasoning");
   });
 });
 

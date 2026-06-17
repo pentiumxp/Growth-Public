@@ -215,13 +215,15 @@ function createServices(config) {
     nextTargetService: learningCardNextTargetService,
     nextCardStrategyService: learningNextCardStrategyService,
     recipePolicyService: learningCardGenerationRecipePolicyService,
+    rubricPolicyService: learningCardRubricPolicyService,
     targetProvisioningService: learningTargetProvisioningService,
     authoringService: learningCardAuthoringService
   });
   const learningStageAssessmentService = createLearningStageAssessmentService({
     repository: growthLearningStore.stageAssessmentCycleRepository,
     profileProjectionService: learningProfileProjectionService,
-    cardGenerationService: learningCardGenerationService
+    cardGenerationService: learningCardGenerationService,
+    rubricPolicyService: learningCardRubricPolicyService
   });
   const learningStageCheckpointControlsService = createLearningStageCheckpointControlsService({
     stageAssessmentService: learningStageAssessmentService

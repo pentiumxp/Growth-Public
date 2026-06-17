@@ -102,7 +102,11 @@ function rubricPolicyFromTask(input = {}, rubricPolicyService = null) {
     recipeId: raw.recipeId || raw.recipe_id || taskCard.recipe_id,
     domain: raw.domain || graph.domain || taskCard.domain,
     subject: raw.subject || graph.subject || taskCard.subject,
-    cardRole: raw.cardRole || raw.card_role || taskCard.card_role
+    cardRole: raw.cardRole || raw.card_role || taskCard.card_role,
+    completionPolicy: raw.completionPolicy
+      || raw.completion_policy
+      || taskCard.completionPolicy
+      || parseJson(taskCard.completion_policy_json, {})
   });
   return resolved?.ok ? resolved.policy : null;
 }
@@ -128,7 +132,7 @@ function structuredEvaluationInput(input = {}, options = {}) {
   const graph = learningGraphFromTaskRaw(taskRaw);
   const submissionRaw = parseJson(submission.raw_json, {}) || {};
   const targetNodeIds = targetNodeIdsFromTask(input);
-  const cardRole = boundedText(taskRaw.cardRole || taskRaw.card_role || taskRaw.learningGraphPlan?.cardRole || "practice", 80);
+  const cardRole = boundedText(taskRaw.cardRole || taskRaw.card_role || taskRaw.learningGraphPlan?.cardRole || taskCard.card_role || taskCard.cardRole || "practice", 80);
   const completionPolicy = taskRaw.completionPolicy || taskRaw.completion_policy || {};
   const rubricPolicy = rubricPolicyFromTask(input, options.rubricPolicyService);
   return {

@@ -131,6 +131,54 @@ function mathematicsEvaluationInput(overrides = {}) {
   }, overrides));
 }
 
+function stageAssessmentEvaluationInput(overrides = {}) {
+  return evaluationInput(Object.assign({
+    text: "I independently explain the fair-test variable, apply it to a new setup, and justify the conclusion with evidence.",
+    taskCard: {
+      id: "ltask_stage_science_1",
+      title: "Fair test checkpoint",
+      learner_id: "weixin_stephen",
+      workspace_id: "weixin_stephen",
+      program_id: "program_science",
+      card_role: "stage_assessment",
+      raw_json: JSON.stringify({
+        cardRole: "stage_assessment",
+        domain: "science",
+        subject: "science",
+        learningGraph: {
+          domain: "science",
+          subject: "science",
+          targetNodeIds: ["kg_science_fair_test"],
+          assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_variables"]
+        },
+        teachingFlow: {
+          learningTarget: "Explain fair-test variables independently.",
+          quickCheck: { expectedEvidence: ["formal_answer", "coverage_reasoning"] }
+        },
+        evidenceToRecord: ["formal_answer", "coverage_reasoning"],
+        completionPolicy: { mode: "formal_assessment", passScoreRequired: false }
+      })
+    },
+    taskRaw: {
+      cardRole: "stage_assessment",
+      domain: "science",
+      subject: "science",
+      learningGraph: {
+        domain: "science",
+        subject: "science",
+        targetNodeIds: ["kg_science_fair_test"],
+        assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_variables"]
+      },
+      teachingFlow: {
+        learningTarget: "Explain fair-test variables independently.",
+        quickCheck: { expectedEvidence: ["formal_answer", "coverage_reasoning"] }
+      },
+      evidenceToRecord: ["formal_answer", "coverage_reasoning"],
+      completionPolicy: { mode: "formal_assessment", passScoreRequired: false }
+    }
+  }, overrides));
+}
+
 function sseForText(text) {
   const mid = Math.ceil(text.length / 2);
   return [
@@ -237,6 +285,47 @@ test("learning card evaluation service uses subject-specific mathematics rubric 
     "math_procedure_accuracy",
     "math_reasoning_explanation",
     "math_precision_check"
+  ]);
+});
+
+test("learning card evaluation service uses formal stage assessment rubric policy", async () => {
+  const { calls, service } = createEvaluationHarness({
+    json: {
+      output_text: JSON.stringify(validEvaluationDraft({
+        skillResults: [{
+          nodeId: "kg_science_fair_test",
+          rubricDimensionId: "stage_evidence_reasoning",
+          score: 88,
+          confidence: 0.86,
+          status: "mastered",
+          evidenceType: "formal_assessment_summary",
+          evidenceSummary: "Justifies the fair-test conclusion with evidence."
+        }],
+        rubricResults: [{
+          dimensionId: "stage_evidence_reasoning",
+          nodeId: "kg_science_fair_test",
+          score: 88,
+          confidence: 0.86,
+          status: "mastered",
+          evidenceType: "formal_assessment_summary",
+          evidenceSummary: "Justifies the fair-test conclusion with evidence."
+        }]
+      }))
+    }
+  });
+
+  const result = await service.evaluateSubmissionDraft(stageAssessmentEvaluationInput());
+
+  assert.equal(result.ok, true);
+  assert.equal(result.evaluation.rubricPolicyId, "rubric:stage_assessment_v1:science");
+  assert.equal(result.evaluation.rubricResults[0].dimensionId, "stage_evidence_reasoning");
+  assert.equal(calls[0].input.policy.completionPolicy, "formal_assessment");
+  assert.equal(calls[0].input.card.rubricPolicy.policyId, "rubric:stage_assessment_v1:science");
+  assert.deepEqual(calls[0].input.card.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+    "stage_independent_understanding",
+    "stage_transfer_application",
+    "stage_evidence_reasoning",
+    "stage_reflection_calibration"
   ]);
 });
 

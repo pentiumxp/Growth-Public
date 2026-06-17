@@ -22144,3 +22144,69 @@
     them;
   - collect central visual/release evidence and real production
     profile-feedback evidence before treating the product surface as complete.
+
+## 2026-06-18T00:45+0800 - Formal stage-assessment rubric closure
+
+- Status:
+  - Implemented local Growth H1/H2 formal-checkpoint rubric/evidence package.
+  - No SQLite schema migration, route permission change, UI change, Gateway
+    boundary change, production deploy, or release evidence collection was
+    executed in this slice.
+- Implemented behavior:
+  - `learning-card-rubric-policy-service` now resolves formal
+    `stage_assessment` / `formal_assessment` cards to
+    `rubric:stage_assessment_v1:<subject>` before daily subject fallback.
+    The V1 formal rubric uses independent understanding,
+    transfer/application, evidence/reasoning, and reflection-calibration
+    dimensions.
+  - `learning-card-generation-service` can resolve rubric policy for
+    non-recipe formal cards without applying daily recipe defaults.
+  - `learning-stage-assessment-service` now preserves target
+    `domainPackId`, `domain`, and `subject` scope into card generation and
+    injects the formal checkpoint rubric through the Growth service graph.
+  - Stage assessment route normalization accepts `domainPackId`, `domain`, and
+    `subject` only when present, preserving old route DTO shape for existing
+    callers.
+  - `learning-card-evaluation-service` resolves rubric policy from explicit
+    card raw metadata, card role, or `formal_assessment` completion policy, so
+    legacy formal cards can still validate formal rubric dimensions.
+  - `evaluation-jobs` / `projection` now preserve only bounded public
+    `skillResults`, `rubricPolicyId`, and `rubricResults` readback from
+    stored evaluations. The evidence ledger can therefore write formal
+    rubric-bearing high-weight stage evidence from persisted public DTOs.
+  - `learning-card-ai-loop-harness` now proves Owner activation -> generated
+    formal card -> one submission -> Gateway evaluation with formal rubric ->
+    ledger/Profile update -> cooldown, including duplicate submission and
+    reflection rejection.
+  - All new rubric fields remain summary-only and do not expose raw learner
+    answers, transcripts, raw prompts, raw model output, hidden answers,
+    private paths, provider config, credentials, or source document bodies.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_DOCS_INDEX.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --test tests/learning-card-rubric-policy-service.test.js tests/learning-stage-assessment-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-evidence-ledger-service.test.js tests/learning-card-ai-loop-harness.test.js`
+    passed `40/40`.
+  - `node --test tests/growth-routes.test.js tests/learning-stage-assessment-service.test.js tests/learning-card-ai-loop-harness.test.js`
+    passed `67/67`.
+  - `node --test tests/growth-learning-sqlite-evaluation-jobs.test.js tests/growth-learning-sqlite-projection.test.js tests/growth-evaluation-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-profile-v2-service.test.js tests/learning-profile-feedback-evidence-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `125/125`.
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining next-step candidates:
+  - render formal rubric readback in the embedded Owner audit UI;
+  - collect central visual/release evidence for the implemented Owner controls;
+  - run production planner/daily-loop/profile-feedback smoke with real target
+    config before treating the product surface as complete;
+  - add richer subject-specific rubric catalogs as actual domain packs require
+    them.

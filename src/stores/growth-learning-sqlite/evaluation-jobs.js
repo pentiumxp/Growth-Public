@@ -31,6 +31,22 @@ function publicGrowthEvaluationJob(row) {
   };
 }
 
+function boundedRubricResults(results = []) {
+  return asArray(results).map((item) => {
+    const result = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+    return {
+      dimensionId: cleanString(result.dimensionId || result.rubricDimensionId || result.rubric_dimension_id),
+      nodeId: cleanString(result.nodeId || result.graphNodeId || result.targetNodeId),
+      score: Number(result.score || 0) || 0,
+      confidence: Number(result.confidence || 0) || 0,
+      status: cleanString(result.status).slice(0, 80),
+      evidenceType: cleanString(result.evidenceType || result.type).slice(0, 80),
+      evidenceTags: asArray(result.evidenceTags || result.tags).map((tag) => cleanString(tag).slice(0, 80)).filter(Boolean).slice(0, 8),
+      evidenceSummary: cleanString(result.evidenceSummary || result.summary || result.evidence).slice(0, 220)
+    };
+  }).filter((item) => item.dimensionId).slice(0, 16);
+}
+
 function createEvaluationJobRepository({ open }) {
   function getGrowthEvaluationJob(db, jobId) {
     if (!tableExists(db, "learning_growth_evaluation_jobs")) return null;
@@ -254,7 +270,9 @@ function createEvaluationJobRepository({ open }) {
         revisionRequirements: asArray(evaluation.revisionRequirements).slice(0, 8),
         remainingWeaknesses: asArray(evaluation.remainingWeaknesses).slice(0, 8),
         feedbackSections: evaluation.feedbackSections && typeof evaluation.feedbackSections === "object" ? evaluation.feedbackSections : {},
-        evidenceRefs: asArray(evaluation.evidenceRefs).slice(0, 8)
+        evidenceRefs: asArray(evaluation.evidenceRefs).slice(0, 8),
+        rubricPolicyId: cleanString(evaluation.rubricPolicyId || evaluation.rubric_policy_id),
+        rubricResults: boundedRubricResults(evaluation.rubricResults)
       };
       const values = {
         id: evaluationId,

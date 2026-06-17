@@ -23,6 +23,7 @@ const { createLearningCardGenerationRecipePolicyService } = require("../src/serv
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
+const { createLearningCardRubricPolicyService } = require("../src/services/learning-card-rubric-policy-service");
 const { createLearningCardTrajectoryService } = require("../src/services/learning-card-trajectory-service");
 const { createLearningCycleAuditService } = require("../src/services/learning-cycle-audit-service");
 const { createLearningDailyLoopService } = require("../src/services/learning-daily-loop-service");
@@ -609,6 +610,9 @@ function validDraftForRequest(request = {}, titleSuffix = "") {
 function validEvaluationDraftForRequest(request = {}) {
   const targetNodeId = request.card?.targetNodeIds?.[0] || TARGET_NODE_ID;
   const formal = request.policy?.completionPolicy === "formal_assessment" || request.card?.cardRole === "stage_assessment";
+  const rubricDimensionId = formal
+    ? "stage_evidence_reasoning"
+    : request.card?.rubricPolicy?.rubricDimensions?.[1]?.dimensionId || "";
   return {
     schemaVersion: "growth.card.evaluation.v1",
     evaluationId: "eval_ai_loop_1",
@@ -629,11 +633,22 @@ function validEvaluationDraftForRequest(request = {}) {
     remainingWeaknesses: formal ? [] : ["Quote the exact words that prove the claim."],
     skillResults: [{
       nodeId: targetNodeId,
+      rubricDimensionId,
       score: formal ? 90 : 48,
       confidence: formal ? 0.9 : 0.82,
       status: formal ? "mastered" : "developing",
+      evidenceType: formal ? "formal_assessment_summary" : "learner_submission_summary",
       evidenceSummary: formal ? "Independent checkpoint evidence is strong." : "Reason is present; exact quote is missing."
     }],
+    rubricResults: rubricDimensionId ? [{
+      dimensionId: rubricDimensionId,
+      nodeId: targetNodeId,
+      score: formal ? 90 : 48,
+      confidence: formal ? 0.9 : 0.82,
+      status: formal ? "mastered" : "developing",
+      evidenceType: formal ? "formal_assessment_summary" : "learner_submission_summary",
+      evidenceSummary: formal ? "Independent checkpoint evidence is strong." : "Reason is present; exact quote is missing."
+    }] : [],
     evidenceRefs: ["growth-ai-loop-harness:evaluation-gateway:v1"],
     reward: {
       eligible: true,
@@ -723,8 +738,10 @@ function createLoopHarness() {
       };
     }
   });
+  const rubricPolicyService = createLearningCardRubricPolicyService();
   const learningCardEvaluationService = createLearningCardEvaluationService({
-    gatewayClient: evaluationGatewayClient
+    gatewayClient: evaluationGatewayClient,
+    rubricPolicyService
   });
   const authoringService = createLearningCardAuthoringService({
     gatewayClient,
@@ -785,7 +802,8 @@ function createLoopHarness() {
     historySummaryRepository: store.learningHistorySummaryRepository,
     nextTargetService,
     nextCardStrategyService,
-    recipePolicyService: createLearningCardGenerationRecipePolicyService(),
+    recipePolicyService: createLearningCardGenerationRecipePolicyService({ rubricPolicyService }),
+    rubricPolicyService,
     targetProvisioningService,
     authoringService
   });
@@ -846,7 +864,7 @@ function createLoopHarness() {
     plannerContextService,
     targetProvisioningService,
     nextCardStrategyService,
-    recipePolicyService: createLearningCardGenerationRecipePolicyService(),
+    recipePolicyService: createLearningCardGenerationRecipePolicyService({ rubricPolicyService }),
     gatewayConfigured: () => true,
     authoringGatewayConfigured: () => true,
     evaluationGatewayConfigured: () => true,
@@ -870,6 +888,7 @@ function createLoopHarness() {
     repository: store.stageAssessmentCycleRepository,
     profileProjectionService,
     cardGenerationService: generationService,
+    rubricPolicyService,
     now: () => new Date("2026-06-14T08:12:00.000Z")
   });
   const rewardAuditService = createLearningRewardAuditService({
@@ -1896,6 +1915,13 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
     assert.equal(activation.ok, true);
     assert.equal(activation.activationState, "active");
     assert.equal(activation.generation.published.card.cardRole, "stage_assessment");
+    assert.equal(harness.gatewayCalls[0].input.rubricPolicy.policyId, "rubric:stage_assessment_v1:english");
+    assert.deepEqual(harness.gatewayCalls[0].input.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+      "stage_independent_understanding",
+      "stage_transfer_application",
+      "stage_evidence_reasoning",
+      "stage_reflection_calibration"
+    ]);
 
     const stageTaskCardId = activation.published.taskCardId;
     const board = await harness.growthService.board({ workspaceId: WORKSPACE_ID, limit: 20 });
@@ -1997,6 +2023,7 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
     assert.equal(harness.evaluationGatewayCalls.length, 1);
     assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "formal_assessment");
     assert.equal(harness.evaluationGatewayCalls[0].input.card.cardRole, "stage_assessment");
+    assert.equal(harness.evaluationGatewayCalls[0].input.card.rubricPolicy.policyId, "rubric:stage_assessment_v1:english");
     assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
 
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
@@ -2005,7 +2032,9 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
         .get(stageTaskCardId);
       assert.equal(stageCard.card_role, "stage_assessment");
       assert.equal(stageCard.mastery_evidence_weight, 1);
+      const stageCardRaw = JSON.parse(stageCard.raw_json);
       assert.equal(JSON.parse(stageCard.completion_policy_json).mode, "formal_assessment");
+      assert.equal(stageCardRaw.rubricPolicy.policyId, "rubric:stage_assessment_v1:english");
 
       const cycle = db.prepare("SELECT * FROM learning_growth_stage_assessment_cycles WHERE id = ?")
         .get(activation.cycle.cycleId);
@@ -2024,6 +2053,12 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
       assert.equal(raw.formalEvidenceCount, 1);
       assert.equal(raw.summaryOnly, true);
       assert.equal(JSON.stringify(raw).includes(RAW_MARKER), false);
+
+      const formalLedger = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE source_type = 'stage_assessment' AND workspace_id = ?")
+        .all(WORKSPACE_ID);
+      assert.equal(formalLedger.length >= 1, true);
+      assert.equal(formalLedger.some((row) => JSON.parse(row.summary_json).rubricPolicyId === "rubric:stage_assessment_v1:english"), true);
+      assert.equal(formalLedger.some((row) => JSON.parse(row.summary_json).rubricResults?.some((item) => item.dimensionId === "stage_evidence_reasoning")), true);
     } finally {
       db.close();
     }

@@ -148,21 +148,26 @@ readback gate set.
   recipe into card generation; the Owner browser should not recompute graph
   scope locally. `learning-card-rubric-policy-service` now owns V1
   summary-only rubric policies for daily English, daily science, mathematics,
-  history, geography, computer science, and generic subject fallback practice.
-  Generation passes that policy into Gateway authoring and
+  history, geography, computer science, generic subject fallback practice, and
+  formal `stage_assessment_v1` checkpoints. Formal checkpoint rubric policies
+  resolve before daily subject fallback and use independent understanding,
+  transfer/application, evidence/reasoning, and one reflection-calibration
+  dimension. Generation passes the resolved policy into Gateway authoring and
   persists it in bounded card `raw_json`; Gateway evaluation validates
   `rubricResults` and `skillResults[*].rubricDimensionId` against that policy
-  plus graph targets; the evidence ledger stores only bounded per-node rubric
-  summaries in `summary_json`.
+  plus graph targets; SQLite evaluation records and the evidence ledger store
+  only bounded rubric readback / per-node rubric summaries.
   Stage assessment cards are separate formal cards: activation is owned by
-  `learning-stage-assessment-service`, the persisted `formal_assessment`
+  `learning-stage-assessment-service`, activation preserves domain-pack/domain
+  / subject scope into card generation, the persisted `formal_assessment`
   policy allows one formal submission, one formal evaluation, and one formal
-  reflection after evaluation, formal evaluation writes higher-weight mastery
-  evidence across declared assessment coverage nodes, public card projection
-  stays `reflection_required` until the formal reflection is stored, and
-  completed assessment cycles move into cooldown. Active checkpoint loop-state
-  readback is capability-scoped; callers that need the same active cycle must
-  pass the activation `capabilityClusterId` plus `assessmentCoverageNodeIds`.
+  reflection after evaluation, formal evaluation writes higher-weight
+  rubric-bearing mastery evidence across declared assessment coverage nodes,
+  public card projection stays `reflection_required` until the formal
+  reflection is stored, and completed assessment cycles move into cooldown.
+  Active checkpoint loop-state readback is capability-scoped; callers that
+  need the same active cycle must pass the activation `capabilityClusterId`
+  plus `assessmentCoverageNodeIds`.
   The Owner generation panel forwards those selectors from the selected plan
   and, when the loop-state service returns `stage_checkpoint_active`, renders
   an open-card action for the existing formal task card rather than drafting or

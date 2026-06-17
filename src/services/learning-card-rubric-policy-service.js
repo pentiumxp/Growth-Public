@@ -478,6 +478,78 @@ function dailySubjectPracticePolicy(input = {}) {
   });
 }
 
+function formalStageAssessmentPolicy(input = {}) {
+  const domain = cleanString(input.domain || input.learningGraph?.domain || input.learning_graph?.domain) || "learning";
+  const subject = cleanString(
+    input.subject
+      || input.subjectId
+      || input.subject_id
+      || input.learningGraph?.subject
+      || input.learning_graph?.subject
+  ) || domain;
+  const key = subjectKey(subject || domain) || "learning";
+  const policy = normalizedPolicy({
+    policyId: key === "learning" ? "rubric:stage_assessment_v1" : `rubric:stage_assessment_v1:${key}`,
+    recipeId: "stage_assessment_v1",
+    domain,
+    subject,
+    cardRole: "stage_assessment",
+    dimensions: [
+      {
+        dimensionId: "stage_independent_understanding",
+        label: "Independent understanding",
+        description: "Shows the target ideas independently without daily-card scaffolding.",
+        scoreWeight: 0.3,
+        evidenceTags: ["independent", "concept", "accuracy"],
+        masterySignals: ["Uses the target idea accurately without guided prompts."],
+        profileTargets: ["independent_understanding"]
+      },
+      {
+        dimensionId: "stage_transfer_application",
+        label: "Transfer and application",
+        description: "Applies the knowledge across the declared checkpoint coverage nodes.",
+        scoreWeight: 0.3,
+        evidenceTags: ["transfer", "application", "coverage"],
+        masterySignals: ["Applies the idea to a new problem, example, or source."],
+        profileTargets: ["transfer_application"]
+      },
+      {
+        dimensionId: "stage_evidence_reasoning",
+        label: "Evidence and reasoning",
+        description: "Explains the answer with enough evidence, steps, data, or source details.",
+        scoreWeight: 0.25,
+        evidenceTags: ["evidence", "reasoning", "justification"],
+        masterySignals: ["Justifies the answer with a concrete reason or evidence trail."],
+        profileTargets: ["evidence_reasoning"]
+      },
+      {
+        dimensionId: "stage_reflection_calibration",
+        label: "Reflection calibration",
+        description: "Uses one low-pressure reflection to calibrate confidence and next focus.",
+        scoreWeight: 0.15,
+        evidenceTags: ["reflection", "confidence", "next_focus"],
+        masterySignals: ["Names one realistic next focus after the formal checkpoint."],
+        profileTargets: ["metacognition"]
+      }
+    ],
+    evidenceMapping: [
+      { evidenceKey: "formal_answer", dimensionIds: ["stage_independent_understanding", "stage_evidence_reasoning"] },
+      { evidenceKey: "independent_application", dimensionIds: ["stage_transfer_application"] },
+      { evidenceKey: "coverage_reasoning", dimensionIds: ["stage_evidence_reasoning", "stage_transfer_application"] },
+      { evidenceKey: "formal_reflection_once", dimensionIds: ["stage_reflection_calibration"], source: "reflection_once" }
+    ]
+  });
+  return Object.assign({}, policy, {
+    assessmentPolicy: {
+      completionPolicy: "formal_assessment",
+      evidenceWeight: "high",
+      expectedDurationMinutes: { min: 25, max: 30 },
+      evaluationAttempts: 1,
+      reflectionAttempts: 1
+    }
+  });
+}
+
 function recipeIdFromInput(input = {}) {
   return cleanString(input.recipeId || input.recipe_id || input.selectedRecipeId || input.selected_recipe_id || input.id);
 }
@@ -487,7 +559,26 @@ function domainFromInput(input = {}) {
 }
 
 function subjectFromInput(input = {}) {
-  return cleanString(input.subject || input.learningGraph?.subject || input.learning_graph?.subject);
+  return cleanString(input.subject || input.subjectId || input.subject_id || input.learningGraph?.subject || input.learning_graph?.subject);
+}
+
+function cardRoleFromInput(input = {}) {
+  return cleanString(input.cardRole || input.card_role || input.learningGraph?.cardRole || input.learning_graph?.card_role).toLowerCase();
+}
+
+function completionPolicyModeFromInput(input = {}) {
+  return cleanString(
+    input.completionPolicy?.mode
+      || input.completion_policy?.mode
+      || input.completionMode
+      || input.completion_mode
+  ).toLowerCase();
+}
+
+function isFormalStageAssessmentInput(input = {}) {
+  return cardRoleFromInput(input) === "stage_assessment"
+    || completionPolicyModeFromInput(input) === "formal_assessment"
+    || recipeIdFromInput(input) === "stage_assessment_v1";
 }
 
 function createLearningCardRubricPolicyService() {
@@ -498,6 +589,9 @@ function createLearningCardRubricPolicyService() {
     const recipeId = recipeIdFromInput(input);
     const domain = domainFromInput(input).toLowerCase();
     const subject = subjectFromInput(input).toLowerCase();
+    if (isFormalStageAssessmentInput(input)) {
+      return { ok: true, source: "growth-learning-card-rubric-policy-service", policy: formalStageAssessmentPolicy(input) };
+    }
     if (recipeId === "daily_science_v1" || domain === "science" || subject === "science") {
       return { ok: true, source: "growth-learning-card-rubric-policy-service", policy: dailySciencePolicy() };
     }
@@ -526,12 +620,14 @@ function createLearningCardRubricPolicyService() {
       dailyMathematicsPolicy({ domain: "math", subject: "mathematics" }),
       dailyHistoryPolicy(),
       dailyGeographyPolicy(),
-      dailyComputerSciencePolicy()
+      dailyComputerSciencePolicy(),
+      formalStageAssessmentPolicy()
     ].map((policy) => ({
       policyId: policy.policyId,
       recipeId: policy.recipeId,
       domain: policy.domain,
       subject: policy.subject,
+      cardRole: policy.cardRole,
       dimensionIds: policy.rubricDimensions.map((item) => item.dimensionId),
       evidenceKeys: policy.evidenceMapping.map((item) => item.evidenceKey)
     }));
@@ -546,6 +642,7 @@ function createLearningCardRubricPolicyService() {
     dailySciencePolicy,
     dailySubjectPracticePolicy,
     dimensionIds,
+    formalStageAssessmentPolicy,
     resolveRubricPolicy,
     subjectCatalog
   };
@@ -560,5 +657,6 @@ module.exports = {
   dailyHistoryPolicy,
   dailyMathematicsPolicy,
   dailySciencePolicy,
-  dailySubjectPracticePolicy
+  dailySubjectPracticePolicy,
+  formalStageAssessmentPolicy
 };

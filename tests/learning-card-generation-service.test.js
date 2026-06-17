@@ -12,6 +12,7 @@ const { createLearningCardGenerationRecipePolicyService } = require("../src/serv
 const { createLearningCardGenerationService } = require("../src/services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../src/services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../src/services/learning-card-recommendation-service");
+const { createLearningCardRubricPolicyService } = require("../src/services/learning-card-rubric-policy-service");
 const { createLearningGraphPlanService } = require("../src/services/learning-graph-plan-service");
 const { createLearningNextCardStrategyService } = require("../src/services/learning-next-card-strategy-service");
 const { createLearningProfileProjectionService } = require("../src/services/learning-profile-projection-service");
@@ -390,7 +391,8 @@ function setup(options = {}) {
     repository: store.masteryProfileRepository,
     profileProjectionService
   });
-  const recipePolicyService = createLearningCardGenerationRecipePolicyService();
+  const rubricPolicyService = createLearningCardRubricPolicyService();
+  const recipePolicyService = createLearningCardGenerationRecipePolicyService({ rubricPolicyService });
   const nextTargetService = createLearningCardNextTargetService({
     graphRepository: store.learningGraphRepository,
     historySummaryRepository: store.learningHistorySummaryRepository,
@@ -405,6 +407,7 @@ function setup(options = {}) {
     nextTargetService,
     nextCardStrategyService,
     recipePolicyService,
+    rubricPolicyService,
     targetProvisioningService: options.targetProvisioningService,
     authoringService
   });
@@ -709,6 +712,13 @@ test("stage assessment generation persists activation metadata and formal assess
   assert.equal(gatewayCalls[0].input.cardRole, "stage_assessment");
   assert.equal(gatewayCalls[0].input.stageAssessmentCycleId, "cycle_ratio_1");
   assert.equal(gatewayCalls[0].input.activationSource, "owner_manual");
+  assert.equal(gatewayCalls[0].input.rubricPolicy.policyId, "rubric:stage_assessment_v1:mathematics");
+  assert.deepEqual(gatewayCalls[0].input.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+    "stage_independent_understanding",
+    "stage_transfer_application",
+    "stage_evidence_reasoning",
+    "stage_reflection_calibration"
+  ]);
 
   const db = new DatabaseSync(dbPath);
   try {
@@ -731,6 +741,7 @@ test("stage assessment generation persists activation metadata and formal assess
     assert.equal(raw.stageAssessment.cycleId, "cycle_ratio_1");
     assert.equal(raw.stageAssessment.activationSource, "owner_manual");
     assert.equal(raw.completionPolicy.mode, "formal_assessment");
+    assert.equal(raw.rubricPolicy.policyId, "rubric:stage_assessment_v1:mathematics");
   } finally {
     db.close();
   }

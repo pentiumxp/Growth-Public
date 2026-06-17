@@ -56,6 +56,9 @@ function normalizeAssessmentTarget(input = {}) {
     workspaceId: cleanString(input.workspaceId || input.workspace_id || input.learnerWorkspaceId),
     learnerId: cleanString(input.learnerId || input.learner_id || input.workspaceId || input.workspace_id || input.learnerWorkspaceId),
     programId: cleanString(input.programId || input.program_id),
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id),
+    domain: cleanString(input.domain),
+    subject: cleanString(input.subject),
     subjectId: cleanString(input.subjectId || input.subject_id),
     capabilityClusterId: cleanString(input.capabilityClusterId || input.capability_cluster_id || input.subjectId || input.subject_id || targetNodeId),
     targetNodeId,
@@ -149,6 +152,9 @@ function assessmentTargetFromTask(taskCard = {}, input = {}) {
     workspaceId: input.workspaceId || taskCard.workspace_id || taskCard.workspaceId,
     learnerId: input.learnerId || taskCard.learner_id || taskCard.learnerId || taskCard.workspace_id || taskCard.workspaceId,
     programId: input.programId || taskCard.program_id || taskCard.programId,
+    domainPackId: input.domainPackId || raw.learningGraph?.domainPackId || raw.learning_graph?.domain_pack_id || taskCard.domain_pack_id,
+    domain: input.domain || raw.domain || learningGraph.domain || taskCard.domain,
+    subject: input.subject || raw.subject || learningGraph.subject || taskCard.subject,
     subjectId: input.subjectId || taskCard.subject_id || taskCard.subjectId || taskCard.domain,
     capabilityClusterId: input.capabilityClusterId || taskCard.capability_cluster_id || taskCard.capabilityClusterId,
     assessmentCoverageNodeIds: uniqueStrings(
@@ -168,6 +174,7 @@ function createLearningStageAssessmentService(options = {}) {
   const repository = options.repository;
   const profileProjectionService = options.profileProjectionService;
   const cardGenerationService = options.cardGenerationService;
+  const rubricPolicyService = options.rubricPolicyService || null;
   const now = typeof options.now === "function" ? options.now : () => new Date();
   const minRecentOrdinaryCards = Number(options.minRecentOrdinaryCards || 4) || 4;
   const cooldownDays = Number(options.cooldownDays || 5) || 5;
@@ -182,6 +189,20 @@ function createLearningStageAssessmentService(options = {}) {
       programId: target.programId,
       targetNodeIds: target.assessmentCoverageNodeIds
     });
+  }
+
+  function resolveStageRubricPolicy(input = {}, target = {}) {
+    if (input.rubricPolicy) return input.rubricPolicy;
+    if (!rubricPolicyService || typeof rubricPolicyService.resolveRubricPolicy !== "function") return null;
+    const resolved = rubricPolicyService.resolveRubricPolicy({
+      domainPackId: input.domainPackId || input.domain_pack_id || target.domainPackId,
+      domain: input.domain || target.domain,
+      subject: input.subject || target.subject || target.subjectId,
+      subjectId: input.subjectId || input.subject_id || target.subjectId,
+      cardRole: "stage_assessment",
+      completionPolicy: { mode: "formal_assessment" }
+    });
+    return resolved?.ok ? resolved.policy : null;
   }
 
   function evaluateEligibility(input = {}) {
@@ -386,10 +407,15 @@ function createLearningStageAssessmentService(options = {}) {
       workspaceId: target.workspaceId,
       learnerId: target.learnerId,
       programId: target.programId,
+      domainPackId: target.domainPackId,
+      domain: target.domain,
+      subject: target.subject || target.subjectId,
+      subjectId: target.subjectId,
       targetNodeId: target.targetNodeId,
       targetNodeIds: target.assessmentCoverageNodeIds,
       assessmentCoverageNodeIds: target.assessmentCoverageNodeIds,
       cardRole: "stage_assessment",
+      rubricPolicy: resolveStageRubricPolicy(input, target),
       difficultyBand: cleanString(input.difficultyBand || input.difficulty_band || "assessment"),
       evidenceRequirements: input.evidenceRequirements || input.evidence_requirements,
       generationKey: cleanString(input.generationKey || input.generation_key) || `stage_assessment:${cycleId}`,

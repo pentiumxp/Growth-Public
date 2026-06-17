@@ -96,6 +96,33 @@ test("rubric policy service exposes bounded subject catalog summaries", () => {
   assert.equal(catalog.some((item) => item.policyId === "rubric:daily_history_v1"), true);
   assert.equal(catalog.some((item) => item.policyId === "rubric:daily_geography_v1"), true);
   assert.equal(catalog.some((item) => item.policyId === "rubric:daily_computer_science_v1"), true);
+  assert.equal(catalog.some((item) => item.policyId === "rubric:stage_assessment_v1" && item.cardRole === "stage_assessment"), true);
   assert.equal(catalog.every((item) => Array.isArray(item.dimensionIds) && item.dimensionIds.length > 0), true);
   assert.equal(JSON.stringify(catalog).includes("raw learner answer"), false);
+});
+
+test("rubric policy service returns formal stage assessment rubric before daily subject fallback", () => {
+  const service = createLearningCardRubricPolicyService();
+
+  const result = service.resolveRubricPolicy({
+    cardRole: "stage_assessment",
+    completionPolicy: { mode: "formal_assessment" },
+    domain: "science",
+    subject: "science"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.policy.policyId, "rubric:stage_assessment_v1:science");
+  assert.equal(result.policy.recipeId, "stage_assessment_v1");
+  assert.equal(result.policy.cardRole, "stage_assessment");
+  assert.equal(result.policy.assessmentPolicy.completionPolicy, "formal_assessment");
+  assert.equal(result.policy.assessmentPolicy.evidenceWeight, "high");
+  assert.deepEqual(service.dimensionIds(result.policy), [
+    "stage_independent_understanding",
+    "stage_transfer_application",
+    "stage_evidence_reasoning",
+    "stage_reflection_calibration"
+  ]);
+  assert.equal(result.policy.evidenceMapping.some((item) => item.evidenceKey === "formal_reflection_once"), true);
+  assert.equal(JSON.stringify(result.policy).includes("raw learner answer"), false);
 });

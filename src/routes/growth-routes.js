@@ -1659,7 +1659,7 @@ function normalizeAutomationProposalPublishInput(body, workspaceId, target, requ
 }
 
 function normalizeStageAssessmentInput(body, workspaceId) {
-  return {
+  const input = {
     cycleId: body.cycleId || body.cycle_id || body.id,
     workspaceId,
     learnerId: body.learnerId || body.learner_id || workspaceId,
@@ -1680,6 +1680,11 @@ function normalizeStageAssessmentInput(body, workspaceId) {
     sourceCardIds: body.sourceCardIds || body.source_card_ids,
     note: body.note
   };
+  const domainPackId = body.domainPackId || body.domain_pack_id;
+  if (domainPackId) input.domainPackId = domainPackId;
+  if (body.domain) input.domain = body.domain;
+  if (body.subject) input.subject = body.subject;
+  return input;
 }
 
 function normalizeEvaluationOwnerReviewInput(body, workspaceId, request, url) {

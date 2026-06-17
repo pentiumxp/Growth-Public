@@ -117,6 +117,7 @@ function createLearningCardGenerationService(options = {}) {
   const nextTargetService = options.nextTargetService || null;
   const nextCardStrategyService = options.nextCardStrategyService;
   const recipePolicyService = options.recipePolicyService || null;
+  const rubricPolicyService = options.rubricPolicyService || null;
   const targetProvisioningService = options.targetProvisioningService || null;
   const authoringService = options.authoringService;
 
@@ -230,6 +231,22 @@ function createLearningCardGenerationService(options = {}) {
     }
   }
 
+  function resolveRubricPolicy(input = {}, plan = {}, policy = {}) {
+    if (input.rubricPolicy) return input.rubricPolicy;
+    if (policy.recipe?.rubricPolicy) return policy.recipe.rubricPolicy;
+    if (!rubricPolicyService || typeof rubricPolicyService.resolveRubricPolicy !== "function") return null;
+    const firstCard = firstPlanCard(plan);
+    const resolved = rubricPolicyService.resolveRubricPolicy(Object.assign({}, input, {
+      recipeId: policy.recipeId || input.recipeId || input.recipe_id,
+      domain: input.domain || plan.domain,
+      subject: input.subject || plan.subject,
+      subjectId: input.subjectId || input.subject_id,
+      cardRole: input.cardRole || input.card_role || firstCard.cardRole,
+      completionPolicy: input.completionPolicy || input.completion_policy
+    }));
+    return resolved?.ok ? resolved.policy : null;
+  }
+
   async function generateCard(input = {}) {
     const policy = normalizeGenerationInput(input);
     if (!policy?.ok) return unavailable(policy?.error || "learning_card_generation_recipe_policy_failed", { stage: "recipe", recipePolicy: policy || null });
@@ -261,6 +278,7 @@ function createLearningCardGenerationService(options = {}) {
       })
       : null;
     const nextCardStrategy = selectedStrategy || computedStrategy || normalizedInput.nextCardStrategy || normalizedInput.next_card_strategy || null;
+    const rubricPolicy = resolveRubricPolicy(normalizedInput, plan, policy);
     const authoring = await authoringService.authorCard({
       learningGraphPlan: plan,
       learnerSummary: history.learnerSummary,
@@ -271,7 +289,7 @@ function createLearningCardGenerationService(options = {}) {
       recipeId: policy.recipeId || normalizedInput.recipeId || normalizedInput.recipe_id,
       domain: normalizedInput.domain || plan.domain,
       subject: normalizedInput.subject || plan.subject,
-      rubricPolicy: normalizedInput.rubricPolicy || policy.recipe?.rubricPolicy || null,
+      rubricPolicy,
       cardRole: normalizedInput.cardRole || normalizedInput.card_role || firstCard.cardRole || recipeDefault(policy, "defaultCardRole"),
       difficultyBand: normalizedInput.difficultyBand || normalizedInput.difficulty_band || firstCard.difficultyBand || recipeDefault(policy, "defaultDifficultyBand"),
       evidenceRequirements: normalizedInput.evidenceRequirements || normalizedInput.evidence_requirements || firstCard.evidenceRequired || policy.recipe?.evidenceRequirements,

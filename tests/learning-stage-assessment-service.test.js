@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const { createLearningStageAssessmentService } = require("../src/services/learning-stage-assessment-service");
+const { createLearningCardRubricPolicyService } = require("../src/services/learning-card-rubric-policy-service");
 
 function fakeRepository(initialCycle = null) {
   const saved = [];
@@ -61,6 +62,9 @@ function baseInput(overrides = {}) {
     workspaceId: "weixin_fanfan",
     learnerId: "weixin_fanfan",
     programId: "program_english",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "english",
+    subject: "english",
     subjectId: "english",
     capabilityClusterId: "reading_main_idea",
     targetNodeId: "kg_main_idea",
@@ -148,6 +152,7 @@ test("owner manual activation bypasses cooldown and generates a stage assessment
         return { ok: true, published: { taskCardId: "stage_card_1" } };
       }
     },
+    rubricPolicyService: createLearningCardRubricPolicyService(),
     now: () => new Date("2026-06-14T08:00:00.000Z")
   });
 
@@ -165,6 +170,10 @@ test("owner manual activation bypasses cooldown and generates a stage assessment
   assert.equal(generationCalls[0].activationState, "active");
   assert.equal(generationCalls[0].activationReason, "owner_manual");
   assert.equal(generationCalls[0].activationSource, "owner_manual");
+  assert.equal(generationCalls[0].domainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(generationCalls[0].domain, "english");
+  assert.equal(generationCalls[0].subject, "english");
+  assert.equal(generationCalls[0].rubricPolicy.policyId, "rubric:stage_assessment_v1:english");
   assert.deepEqual(generationCalls[0].assessmentCoverageNodeIds, ["kg_main_idea", "kg_inference"]);
 });
 
