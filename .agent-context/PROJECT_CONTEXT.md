@@ -53,8 +53,12 @@ readback gate set.
   release-workbench summary through the normal service graph and emit only
   missing central-visual/UI artifact slots plus a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
-  Home AI central visual-toolchain summary artifacts. The route performs only
-  visible-target scope normalization. It does not run visual
+  Home AI central visual-toolchain summary artifacts. The same readback now
+  includes a summary-only `growth.learningAutomationReleaseEvidenceChecklist.v1`
+  checklist that separates artifact slots, supported collection tasks,
+  write-gated tasks, missing approvals, missing record actions, and
+  unsupported/manual evidence keys for Owner execution planning. The route
+  performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or
   widen to default UI tasks when no visual/UI evidence is missing. The normal
   service graph also wires

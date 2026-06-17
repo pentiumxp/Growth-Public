@@ -93,6 +93,8 @@ test("release artifact template smoke script runs no-write template against a te
     assert.equal(output.releaseArtifactTemplate.summaryOnly, true);
     assert.equal(output.releaseArtifactTemplate.artifactManifestTemplate.schemaVersion, "growth.learningAutomationReleaseEvidenceArtifactManifest.v1");
     assert.equal(Array.isArray(output.releaseArtifactTemplate.artifactSlots), true);
+    assert.equal(output.releaseArtifactTemplate.releaseEvidenceChecklist.schemaVersion, "growth.learningAutomationReleaseEvidenceChecklist.v1");
+    assert.equal(Array.isArray(output.releaseArtifactTemplate.releaseEvidenceChecklist.items), true);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);

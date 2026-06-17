@@ -29,8 +29,46 @@ test("release artifact template maps only missing central visual and UI evidence
               "release_package_review_ui_evidence"
             ],
             missingCheckKeys: ["scheduler_run_ui_evidence"],
+            missingApprovalKeys: ["writefulExecutionApproval"],
+            missingRecordKinds: ["release_package"],
+            releaseEvidenceCollectionSupportedTaskIds: [
+              "profile_feedback",
+              "platform_action",
+              "central_visual",
+              "owner_daily_ui",
+              "release_package_review_ui",
+              "scheduler_run_ui"
+            ],
+            releaseEvidenceCollectionRequiredTaskIds: [
+              "profile_feedback",
+              "platform_action",
+              "central_visual",
+              "owner_daily_ui",
+              "release_package_review_ui",
+              "scheduler_run_ui"
+            ],
+            recordRoutes: [
+              {
+                key: "release_evidence_collection",
+                route: {
+                  path: "/api/v1/growth/automation/release-evidence-collections/run"
+                }
+              },
+              {
+                key: "release_approval",
+                route: {
+                  path: "/api/v1/growth/automation/release-approvals"
+                }
+              },
+              {
+                key: "release_package",
+                route: {
+                  path: "/api/v1/growth/automation/release-packages"
+                }
+              }
+            ],
             writeGatedReleaseEvidenceCollectionTasks: ["daily_loop_write"],
-            unsupportedReleaseEvidenceCollectionKeys: []
+            unsupportedReleaseEvidenceCollectionKeys: ["manual_owner_signoff_evidence"]
           }
         };
       }
@@ -68,6 +106,36 @@ test("release artifact template maps only missing central visual and UI evidence
   });
   assert.equal(result.releaseArtifactTemplate.artifactSlots.some((slot) => slot.taskId === "platform_action"), false);
   assert.equal(result.releaseArtifactTemplate.artifactSlots.some((slot) => slot.taskId === "profile_feedback"), false);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.schemaVersion, "growth.learningAutomationReleaseEvidenceChecklist.v1");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.status, "release_evidence_actions_required");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.artifactItemCount, 4);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.collectionTaskItemCount, 2);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.writeGatedItemCount, 1);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.approvalItemCount, 1);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.recordItemCount, 1);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.unsupportedItemCount, 1);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:profile_feedback"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "collection:platform_action"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "artifact:central_visual"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "write_gated:daily_loop_write"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "approval:writefulExecutionApproval"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "record:release_package"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.items.some((item) => item.key === "unsupported:manual_owner_signoff_evidence"), true);
+  assert.equal(
+    result.releaseArtifactTemplate.releaseEvidenceChecklist.items
+      .find((item) => item.key === "collection:profile_feedback").commandName,
+    "npm run smoke:profile-feedback"
+  );
+  assert.equal(
+    result.releaseArtifactTemplate.releaseEvidenceChecklist.items
+      .find((item) => item.key === "collection:platform_action").routePath,
+    "/api/v1/growth/automation/release-evidence-collections/run"
+  );
+  assert.equal(
+    result.releaseArtifactTemplate.releaseEvidenceChecklist.items
+      .find((item) => item.key === "record:release_package").routePath,
+    "/api/v1/growth/automation/release-packages"
+  );
   assert.equal(result.releaseArtifactTemplate.readyForManifestInput, false);
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
@@ -99,6 +167,8 @@ test("release artifact template does not widen to advertised default collection 
   assert.equal(result.ok, true);
   assert.equal(result.status, "no_artifact_manifest_required");
   assert.deepEqual(result.releaseArtifactTemplate.artifactTaskIds, []);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.status, "release_evidence_ready_for_review");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.itemCount, 0);
   assert.deepEqual(result.releaseArtifactTemplate.artifactManifestTemplate, {
     schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
     privacyClass: "summary_only",

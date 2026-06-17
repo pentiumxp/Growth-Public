@@ -4,6 +4,9 @@ const {
   RELEASE_EVIDENCE_ARTIFACT_MANIFEST_SCHEMA
 } = require("./learning-automation-release-evidence-artifact-manifest-service");
 const {
+  TASK_DEFINITIONS
+} = require("./learning-automation-release-evidence-bundle-service");
+const {
   UI_EVIDENCE_COLLECTION_TASKS,
   UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
   UI_EVIDENCE_COLLECTION_TASK_BY_ID
@@ -17,12 +20,25 @@ const UI_TASK_BY_EVIDENCE_KEY = Object.freeze(Object.fromEntries(
 const UI_TASK_BY_UI_GATE = Object.freeze(Object.fromEntries(
   UI_EVIDENCE_COLLECTION_TASKS.map((task) => [task.uiGate, task])
 ));
+const TASK_BY_ID = new Map(TASK_DEFINITIONS.map((task) => [task.taskId, task]));
 const CENTRAL_VISUAL_KEYS = new Set([
   "central_visual",
   "centralVisual",
   "centralVisualEvidence",
   "central_visual_evidence"
 ]);
+const RECORD_ROUTE_KEY_BY_KIND = Object.freeze({
+  release_readiness_snapshot: "release_readiness_snapshot",
+  release_package: "release_package",
+  release_evidence: "release_evidence",
+  release_approval: "release_approval",
+  release_activation: "release_activation",
+  runtime_enablement: "runtime_enablement",
+  release_evidence_collection: "release_evidence_collection",
+  release_collection_run: "release_evidence_collection",
+  release_decision: "release_decision",
+  release_preflight: "release_preflight"
+});
 
 function cleanString(value, max = 180) {
   return String(value || "").trim().slice(0, max);
@@ -181,6 +197,162 @@ function manifestTemplateFromSlots(slots = []) {
   return template;
 }
 
+function compactObject(value = {}) {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    return item !== undefined && item !== null && item !== "";
+  }));
+}
+
+function routePathFor(summary = {}, key = "") {
+  const route = asArray(objectOnly(summary).recordRoutes)
+    .find((item) => cleanString(item?.key, 140) === key);
+  return cleanString(route?.route?.path || route?.path, 220);
+}
+
+function taskDefinition(taskId = "") {
+  return TASK_BY_ID.get(cleanString(taskId, 140)) || {};
+}
+
+function checklistItem(value = {}) {
+  return compactObject(Object.assign({
+    schemaVersion: "growth.learningAutomationReleaseEvidenceChecklistItem.v1",
+    summaryOnly: true
+  }, value));
+}
+
+function artifactChecklistItems(slots = []) {
+  return slots.map((slot) => {
+    const task = taskDefinition(slot.taskId);
+    return checklistItem({
+      key: `artifact:${slot.taskId}`,
+      kind: "home_ai_visual_artifact",
+      taskId: slot.taskId,
+      evidenceKey: slot.evidenceKey,
+      checkKey: slot.checkKey,
+      uiGate: slot.uiGate,
+      source: slot.source,
+      commandName: task.commandName,
+      action: "collect_home_ai_central_visual_ui_summary_artifact",
+      required: slot.required === true,
+      manifestField: slot.manifestField || slot.manifestKey,
+      fileBodyField: slot.fileBodyField
+    });
+  });
+}
+
+function releaseEvidenceCollectionItems(summary = {}, artifactTaskIds = []) {
+  const artifactSet = new Set(artifactTaskIds);
+  const supportedTaskIds = uniqueStrings(asArray(summary.releaseEvidenceCollectionSupportedTaskIds));
+  const fallbackTaskIds = supportedTaskIds.length
+    ? supportedTaskIds
+    : uniqueStrings(collectionTaskIdsFrom(summary));
+  const requiredSet = new Set(uniqueStrings(asArray(summary.releaseEvidenceCollectionRequiredTaskIds)));
+  const routePath = routePathFor(summary, "release_evidence_collection");
+  return fallbackTaskIds
+    .filter((taskId) => !artifactSet.has(taskId))
+    .map((taskId) => {
+      const task = taskDefinition(taskId);
+      return checklistItem({
+        key: `collection:${taskId}`,
+        kind: "release_evidence_collection_task",
+        taskId,
+        evidenceKey: task.evidenceKey || task.outputKey,
+        commandName: task.commandName,
+        action: "run_release_evidence_collection",
+        endpointKey: "release_evidence_collection",
+        routePath,
+        required: requiredSet.size ? requiredSet.has(taskId) : true
+      });
+    });
+}
+
+function writeGatedChecklistItems(summary = {}) {
+  return uniqueStrings(summary.writeGatedReleaseEvidenceCollectionTasks).map((taskId) => {
+    const task = taskDefinition(taskId);
+    return checklistItem({
+      key: `write_gated:${taskId}`,
+      kind: "write_gated_release_evidence",
+      taskId,
+      evidenceKey: task.evidenceKey || task.outputKey,
+      commandName: task.commandName,
+      action: "explicit_owner_write_evidence_authorization_required",
+      requiredActor: "owner",
+      required: true
+    });
+  });
+}
+
+function approvalChecklistItems(summary = {}) {
+  const routePath = routePathFor(summary, "release_approval");
+  return uniqueStrings(summary.missingApprovalKeys).map((approvalKey) => checklistItem({
+    key: `approval:${approvalKey}`,
+    kind: "release_approval",
+    approvalKey,
+    action: "record_release_approval",
+    endpointKey: "release_approval",
+    routePath,
+    requiredActor: "owner",
+    required: true
+  }));
+}
+
+function recordChecklistItems(summary = {}) {
+  return uniqueStrings(summary.missingRecordKinds).map((kind) => {
+    const endpointKey = RECORD_ROUTE_KEY_BY_KIND[kind] || "";
+    return checklistItem({
+      key: `record:${kind}`,
+      kind: "release_record",
+      recordKind: kind,
+      action: endpointKey === "release_evidence_collection" ? "run_release_evidence_collection" : `record_${kind}`,
+      endpointKey,
+      routePath: endpointKey ? routePathFor(summary, endpointKey) : "",
+      requiredActor: "owner",
+      required: true
+    });
+  });
+}
+
+function unsupportedChecklistItems(summary = {}) {
+  return uniqueStrings(summary.unsupportedReleaseEvidenceCollectionKeys).map((evidenceKey) => checklistItem({
+    key: `unsupported:${evidenceKey}`,
+    kind: "manual_or_unsupported_release_evidence",
+    evidenceKey,
+    action: "owner_review_required",
+    requiredActor: "owner",
+    required: true
+  }));
+}
+
+function releaseEvidenceChecklist(workbenchSummary = {}, slots = [], artifactTaskIds = []) {
+  const items = [
+    ...artifactChecklistItems(slots),
+    ...releaseEvidenceCollectionItems(workbenchSummary, artifactTaskIds),
+    ...writeGatedChecklistItems(workbenchSummary),
+    ...approvalChecklistItems(workbenchSummary),
+    ...recordChecklistItems(workbenchSummary),
+    ...unsupportedChecklistItems(workbenchSummary)
+  ];
+  return {
+    schemaVersion: "growth.learningAutomationReleaseEvidenceChecklist.v1",
+    summaryOnly: true,
+    status: items.length ? "release_evidence_actions_required" : "release_evidence_ready_for_review",
+    itemCount: items.length,
+    artifactItemCount: items.filter((item) => item.kind === "home_ai_visual_artifact").length,
+    collectionTaskItemCount: items.filter((item) => item.kind === "release_evidence_collection_task").length,
+    writeGatedItemCount: items.filter((item) => item.kind === "write_gated_release_evidence").length,
+    approvalItemCount: items.filter((item) => item.kind === "release_approval").length,
+    recordItemCount: items.filter((item) => item.kind === "release_record").length,
+    unsupportedItemCount: items.filter((item) => item.kind === "manual_or_unsupported_release_evidence").length,
+    items,
+    nextAction: items[0] ? {
+      key: items[0].key,
+      action: items[0].action,
+      requiredActor: items[0].requiredActor || "owner"
+    } : null
+  };
+}
+
 function createLearningAutomationReleaseEvidenceArtifactTemplateService(options = {}) {
   const releaseWorkbenchService = options.releaseWorkbenchService || null;
 
@@ -205,6 +377,7 @@ function createLearningAutomationReleaseEvidenceArtifactTemplateService(options 
       .filter((taskId) => taskIds.includes(taskId));
     const slots = artifactSlotsFor(taskIds, requiredTaskIds);
     const artifactTaskIds = slots.map((slot) => slot.taskId);
+    const checklist = releaseEvidenceChecklist(workbenchSummary, slots, artifactTaskIds);
     const status = slots.length ? "artifact_manifest_required" : "no_artifact_manifest_required";
 
     return Object.assign({}, scope, {
@@ -228,6 +401,7 @@ function createLearningAutomationReleaseEvidenceArtifactTemplateService(options 
         missingCheckKeys: uniqueStrings(workbenchSummary.missingCheckKeys),
         unsupportedReleaseEvidenceCollectionKeys: uniqueStrings(workbenchSummary.unsupportedReleaseEvidenceCollectionKeys),
         writeGatedReleaseEvidenceCollectionTasks: uniqueStrings(workbenchSummary.writeGatedReleaseEvidenceCollectionTasks),
+        releaseEvidenceChecklist: checklist,
         nextAction: slots.length ? {
           key: "fill_release_evidence_artifact_manifest",
           action: "collect_home_ai_central_visual_ui_summary_artifacts",

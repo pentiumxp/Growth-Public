@@ -829,11 +829,17 @@ Implemented backend shape:
   missing central-visual/UI artifact slots plus a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template that
   Owner/release tooling can fill with Home AI central visual-toolchain summary
-  artifacts. The route performs only target-scope normalization and delegates to
-  the service; the template service does not run visual tooling, widen to default
-  collection tasks when no visual/UI evidence is missing, persist release
-  evidence, call Gateway, inspect SQLite directly, or expose local artifact
-  paths. The Owner workbench action HTTP route accepts an inline
+  artifacts. It now also returns
+  `growth.learningAutomationReleaseEvidenceChecklist.v1`, a summary-only
+  checklist that separates Home AI visual/UI artifact slots, supported
+  release-evidence collection tasks, write-gated evidence tasks, missing
+  approvals, missing record actions, and unsupported/manual evidence keys so
+  Owner/release tooling can plan the remaining real evidence without Codex
+  hand-splicing DTOs. The route performs only target-scope normalization and
+  delegates to the service; the template service does not run visual tooling,
+  widen to default collection tasks when no visual/UI evidence is missing,
+  persist release evidence, call Gateway, inspect SQLite directly, or expose
+  local artifact paths. The Owner workbench action HTTP route accepts an inline
   `artifactManifest` / `releaseEvidenceArtifactManifest` summary body for the
   same artifact slots, strips it after parsing, expands only whitelisted central
   visual/UI task selectors into transient collection inputs, and deliberately

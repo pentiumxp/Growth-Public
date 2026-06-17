@@ -670,10 +670,14 @@ Use the Growth-owned release-readiness boundary:
   bounded `growth.learningAutomationReleaseEvidenceArtifactTemplate.v1` DTO with
   missing central-visual/UI artifact slots and a blank
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
-  Home AI central visual/UI summary artifact files. They do not run visual
-  tooling, call Gateway, persist release evidence, write collection runs, apply
-  runtime config, or widen to default UI tasks when no visual/UI evidence is
-  missing.
+  Home AI central visual/UI summary artifact files. The same DTO also includes
+  `growth.learningAutomationReleaseEvidenceChecklist.v1`, which separates
+  visual/UI artifact items, supported collection tasks, write-gated tasks,
+  missing approvals, missing record actions, and unsupported/manual evidence
+  keys so Owner/release tooling can execute the remaining real-evidence steps
+  without fabricating passing evidence. They do not run visual tooling, call
+  Gateway, persist release evidence, write collection runs, apply runtime
+  config, or widen to default UI tasks when no visual/UI evidence is missing.
 - release authorization smoke CLI:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes

@@ -9,6 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T09:05+08:00 - Release Artifact Template Evidence Checklist
+
+- Status: implemented, compressed-Harness validated locally, and ready for
+  commit/push. No production deployment in this slice.
+- Change intent:
+  - make the existing no-write release artifact-template output a
+    summary-only release evidence checklist, so Owner/release tooling can see
+    the remaining release-evidence work without inferring it from code;
+  - separate artifact slots, supported collection tasks, write-gated tasks,
+    missing approvals, missing record actions, and unsupported/manual evidence
+    keys;
+  - preserve the no-write template boundary: no visual tooling execution, no
+    Gateway/model calls, no SQLite writes, no scheduler/runtime changes, and
+    no raw local artifact paths.
+- Scope:
+  - `learning-automation-release-evidence-artifact-template-service` now
+    includes `growth.learningAutomationReleaseEvidenceChecklist.v1` in the
+    `releaseArtifactTemplate` readback;
+  - checklist task labels and command names come from the existing release
+    evidence bundle task registry instead of duplicated ad hoc strings;
+  - the route and smoke script remain one no-write template operation.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-artifact-template-service.js`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `91/91`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent test:release-union` passed `206/206`;
+  - `npm run --silent check` passed with `runtimeCount=209` and
+    `checkedCount=209`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` reported index up to date with `372`
+    files, `5,214` nodes, and `22,639` edges, plus the existing earlier-engine
+    advisory.
+- Validation intentionally not run in this accelerated slice:
+  - full `npm test`; run it before a production deployment if this release
+    artifact-template change is bundled with runtime deployment.
+- Remaining:
+  - collect real Home AI central visual/UI summary artifacts;
+  - record supported release evidence, explicit approvals, package/preflight,
+    activation/runtime enablement readbacks, and production health evidence;
+  - do not deploy until the release evidence chain is complete.
+
 ## 2026-06-17T08:52+08:00 - Release Workbench Supported Evidence Collection Action
 
 - Status: implemented and full-Harness validated locally. No production
