@@ -895,6 +895,13 @@ Implemented backend shape:
   service DTO and does not expose raw request bodies, delegated `writeResult`
   payloads, local artifact paths, release storage internals, or release
   permission.
+  It also consumes the existing no-write release controls, dashboard,
+  inventory, review, authorization, closure, preflight, activation, and runtime
+  enablement read routes as a summary-only `发布总览` panel. The browser batches
+  those reads only to display bounded status and next-action summaries. It does
+  not record release decisions, package rows, preflight reports, activation or
+  runtime enablement rows, mutate runtime config, grant release permission, or
+  grant scheduler permission.
   The browser still does not read server-local artifact files, run Home AI
   visual tooling, validate UI artifacts, persist release evidence, grant
   approval, or enable scheduling.

@@ -419,6 +419,16 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "recorded",
     limit: 3
   }, "weixin_fanfan");
+  await client.fetchGrowthReleaseStatusReadbacks({
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    collection_run_id: "release_run_1",
+    limit: 2,
+    activation_record_limit: 3,
+    runtime_enablement_record_limit: 4
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -641,6 +651,15 @@ test("Growth API client exposes card generation context and write helpers", asyn
   assert.equal(releaseArtifactTemplateCall.path, "/api/v1/growth/automation/release-artifact-template?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1");
   const releaseWorkbenchActionAuditsCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/release-workbench/action-audits?"));
   assert.equal(releaseWorkbenchActionAuditsCall.path, "/api/v1/growth/automation/release-workbench/action-audits?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&endpointKey=release_evidence_collection&status=recorded&limit=3");
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-controls?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-dashboard?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-inventory?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-review?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-authorization?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-closure?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-preflight?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-activation?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/runtime-enablement?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -703,6 +722,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.reviewGrowthAutomationFailurePolicy("lgafpol_proxy_1", { status: "archived" }, "weixin_stephen");
   await client.fetchGrowthReleaseArtifactTemplate("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.fetchGrowthReleaseWorkbenchActionAudits({ learner_id: "fanfan", status: "blocked" }, "weixin_stephen");
+  await client.fetchGrowthReleaseStatusReadbacks({ learner_id: "fanfan", horizon: "daily_plan", limit: 2 }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -825,6 +845,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(proxyReleaseArtifactTemplateCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-artifact-template?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan");
   const proxyReleaseWorkbenchActionAuditsCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/action-audits?"));
   assert.equal(proxyReleaseWorkbenchActionAuditsCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/action-audits?targetWorkspaceId=weixin_stephen&learnerId=fanfan&status=blocked&limit=5");
+  assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-controls?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
+  assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/runtime-enablement?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1469,6 +1491,85 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         updatedAt: "2026-06-18T03:45:00.000Z"
       }]
     },
+    releaseStatusReadbacks: {
+      ok: true,
+      schemaVersion: "growth.releaseStatusReadbacks.ui.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      controls: {
+        ok: true,
+        status: "blocked",
+        releaseControls: {
+          status: "blocked",
+          nextAction: { key: "collect_release_evidence", label: "Collect release evidence" },
+          writefulSchedulingAllowed: false
+        }
+      },
+      dashboard: {
+        ok: true,
+        status: "blocked",
+        releaseDashboard: {
+          status: "blocked",
+          nextAction: { key: "prepare_release_package", label: "Prepare release package" }
+        }
+      },
+      inventory: {
+        ok: true,
+        status: "listed",
+        releaseInventory: {
+          status: "listed",
+          latestCollectionRunId: "lgacrn_1"
+        }
+      },
+      review: {
+        ok: true,
+        status: "blocked",
+        releaseReview: {
+          status: "blocked",
+          nextAction: { key: "record_release_decision", label: "Record release decision" }
+        }
+      },
+      authorization: {
+        ok: true,
+        status: "blocked",
+        releaseAuthorization: {
+          status: "blocked",
+          nextAction: { key: "approval_required", label: "Approval required" }
+        }
+      },
+      closure: {
+        ok: true,
+        status: "blocked",
+        releaseClosure: {
+          status: "blocked",
+          nextAction: { key: "preflight_required", label: "Preflight required" }
+        }
+      },
+      preflight: {
+        ok: true,
+        status: "pending",
+        releasePreflight: {
+          status: "pending",
+          latestPreflightReportId: "lgapflt_1"
+        }
+      },
+      activation: {
+        ok: true,
+        status: "blocked",
+        releaseActivation: {
+          status: "blocked",
+          nextAction: { key: "runtime_config_owner_decision", label: "Runtime config Owner decision" }
+        }
+      },
+      runtimeEnablement: {
+        ok: true,
+        status: "waiting",
+        runtimeEnablement: {
+          status: "waiting",
+          nextAction: { key: "manual_runtime_config", label: "Manual runtime config" }
+        }
+      }
+    },
     automationProposals: {
       ok: true,
       count: 2,
@@ -2018,6 +2119,11 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           data: context.releaseWorkbenchActionAudits,
           error: ""
         },
+        releaseStatusReadbacks: {
+          status: "ready",
+          data: context.releaseStatusReadbacks,
+          error: ""
+        },
         automationProposals: {
           status: "ready",
           data: context.automationProposals,
@@ -2382,6 +2488,15 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-workbench-action-audit-id="lgawba_release_collection_1"/);
   assert.match(html, /release_evidence_collection/);
   assert.match(html, /已记录/);
+  assert.match(html, /data-release-status-readbacks-panel/);
+  assert.match(html, /data-release-status-readbacks-status="ready"/);
+  assert.match(html, /发布总览/);
+  assert.match(html, /data-release-status-readbacks-refresh/);
+  assert.match(html, /data-release-status-readback-row/);
+  assert.match(html, /data-release-status-readback-key="controls"/);
+  assert.match(html, /data-release-status-readback-key="preflight"/);
+  assert.match(html, /data-release-status-readback-key="runtimeEnablement"/);
+  assert.match(html, /Collect release evidence/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -2642,6 +2757,23 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(releaseWorkbenchActionAuditQueryPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseWorkbenchActionAuditQueryPayload, "transcript"), false);
+
+  const releaseStatusReadbackQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseStatusReadbackQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseStatusReadbackQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    limit: 4,
+    activation_record_limit: 5,
+    runtime_enablement_record_limit: 5
+  });
+  assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -4337,7 +4469,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-release-action-audit-ui-v1";
+  const staticVersion = "20260618-release-status-readback-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -4394,6 +4526,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-release-workbench-action-audits-refresh/);
   assert.match(source, /releaseWorkbenchActionAudits/);
   assert.match(source, /await refreshReleaseWorkbenchActionAudits\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
+  assert.match(source, /function refreshReleaseStatusReadbacks/);
+  assert.match(source, /api\.fetchGrowthReleaseStatusReadbacks\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-release-status-readbacks-refresh/);
+  assert.match(source, /releaseStatusReadbacks/);
+  assert.match(source, /await refreshReleaseStatusReadbacks\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshAutomationProposals/);
   assert.match(source, /api\.fetchGrowthAutomationProposals\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)/);

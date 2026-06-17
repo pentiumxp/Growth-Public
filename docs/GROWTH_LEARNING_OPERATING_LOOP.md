@@ -1850,6 +1850,13 @@ Implementation progress on 2026-06-15:
   This closes recent wrapper-action audit visibility for Owner without exposing
   raw requests, delegated write results, local artifact paths, release storage
   internals, release permission, runtime config, or scheduler permission.
+- The embedded Owner generation tab also consumes release controls, dashboard,
+  inventory, review, authorization, closure, preflight, activation, and runtime
+  enablement readbacks as a summary-only `发布总览` panel inside release
+  workbench. This makes the release ladder visible from the plugin UI without
+  writing release decisions, package records, preflight reports, activation or
+  runtime enablement rows, applying runtime config, approving release state, or
+  granting scheduler permission.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection

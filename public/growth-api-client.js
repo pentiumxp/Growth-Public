@@ -184,6 +184,25 @@
       return query ? `?${query}` : "";
     }
 
+    function releaseStatusReadbackQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "collectionRunId", payload.collectionRunId || payload.collection_run_id);
+      appendQueryParam(params, "limit", payload.limit || 4);
+      appendQueryParam(params, "activationRecordLimit", payload.activationRecordLimit || payload.activation_record_limit);
+      appendQueryParam(params, "runtimeEnablementRecordLimit", payload.runtimeEnablementRecordLimit || payload.runtime_enablement_record_limit);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function automationProposalQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
       const params = new URLSearchParams();
@@ -457,6 +476,46 @@
 
     function fetchGrowthReleaseWorkbenchActionAudits(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("automation", "release-workbench", "action-audits")}${releaseWorkbenchActionAuditQuery(targetWorkspaceId, payload)}`);
+    }
+
+    async function fetchGrowthReleaseStatusReadbacks(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const query = releaseStatusReadbackQuery(targetWorkspaceId, payload);
+      const [
+        controls,
+        dashboard,
+        inventory,
+        review,
+        authorization,
+        closure,
+        preflight,
+        activation,
+        runtimeEnablement
+      ] = await Promise.all([
+        fetchJson(`${growthApiPath("automation", "release-controls")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-dashboard")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-inventory")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-review")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-authorization")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-closure")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-preflight")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-activation")}${query}`),
+        fetchJson(`${growthApiPath("automation", "runtime-enablement")}${query}`)
+      ]);
+      return {
+        ok: true,
+        schemaVersion: "growth.releaseStatusReadbacks.ui.v1",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        controls,
+        dashboard,
+        inventory,
+        review,
+        authorization,
+        closure,
+        preflight,
+        activation,
+        runtimeEnablement
+      };
     }
 
     function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
@@ -761,6 +820,7 @@
       fetchGrowthReferenceSummary,
       fetchGrowthReleaseArtifactTemplate,
       fetchGrowthReleaseWorkbenchActionAudits,
+      fetchGrowthReleaseStatusReadbacks,
       fetchGrowthReleaseWorkbench,
       fetchGrowthStageCheckpointControls,
       fetchJson,

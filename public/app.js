@@ -45,6 +45,11 @@
         data: null,
         error: ""
       },
+      releaseStatusReadbacks: {
+        status: "idle",
+        data: null,
+        error: ""
+      },
       automationProposals: {
         status: "idle",
         data: null,
@@ -1011,6 +1016,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-status-readbacks-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshReleaseStatusReadbacks().catch((error) => {
+          pageState.cardGeneration.releaseStatusReadbacks = Object.assign({}, pageState.cardGeneration.releaseStatusReadbacks, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1468,6 +1486,11 @@
       data: pageState.cardGeneration.releaseWorkbenchActionAudits?.data || null,
       error: ""
     };
+    pageState.cardGeneration.releaseStatusReadbacks = {
+      status: "loading",
+      data: pageState.cardGeneration.releaseStatusReadbacks?.data || null,
+      error: ""
+    };
     pageState.cardGeneration.automationProposals = {
       status: "loading",
       data: pageState.cardGeneration.automationProposals?.data || null,
@@ -1807,6 +1830,9 @@
       if (!options.skipActionAudits) {
         await refreshReleaseWorkbenchActionAudits(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
       }
+      if (!options.skipStatusReadbacks) {
+        await refreshReleaseStatusReadbacks(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
+      }
       return result;
     } catch (error) {
       pageState.cardGeneration.releaseWorkbench = {
@@ -1884,6 +1910,41 @@
       return result;
     } catch (error) {
       pageState.cardGeneration.releaseWorkbenchActionAudits = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error)
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  async function refreshReleaseStatusReadbacks(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.releaseStatusReadbacks || {};
+    pageState.cardGeneration.releaseStatusReadbacks = {
+      status: "loading",
+      data: previous.data || null,
+      error: ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createReleaseStatusReadbackQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthReleaseStatusReadbacks(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.releaseStatusReadbacks = {
+        status: "ready",
+        data: result,
+        error: ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        releaseStatusReadbacks: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.releaseStatusReadbacks = {
         status: "failed",
         data: previous.data || null,
         error: error.message || String(error)

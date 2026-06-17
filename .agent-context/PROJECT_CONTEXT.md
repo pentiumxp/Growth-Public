@@ -78,6 +78,13 @@ readback gate set.
   endpoints, and action summaries. It does not expose raw request bodies,
   delegated `writeResult` payloads, local artifact paths, release storage
   internals, runtime config, release permission, or scheduler permission.
+  The same embedded Owner panel now also consumes existing release controls,
+  dashboard, inventory, review, authorization, closure, preflight, activation,
+  and runtime-enablement readbacks as a summary-only `发布总览` subpanel. That
+  browser batch read shows only bounded status/next-action summaries and cannot
+  write release decisions, package records, preflight reports, activation or
+  runtime enablement rows, mutate runtime config, approve release state, or
+  grant scheduler permission.
   The
   route performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or

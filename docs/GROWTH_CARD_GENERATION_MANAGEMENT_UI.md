@@ -69,6 +69,15 @@ audit rows and refresh them after release-workbench readback, but it must not
 inspect raw request bodies, delegated `writeResult` payloads, local artifact
 paths, release storage, or use audit presence as release approval or scheduler
 permission.
+The same release workbench panel now also renders a read-only `发布总览`
+subpanel backed by existing release readbacks:
+`release-controls`, `release-dashboard`, `release-inventory`,
+`release-review`, `release-authorization`, `release-closure`,
+`release-preflight`, `release-activation`, and `runtime-enablement`. The
+browser batches those reads only to show bounded status/next-action summaries;
+it does not record preflight reports, activation/runtime enablement rows,
+release decisions, package records, runtime config changes, release permission,
+or scheduler permission.
 Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
@@ -181,6 +190,11 @@ selected learner target, not the iframe's Owner workspace.
    summary-only workbench wrapper audit rows and displays them as `操作审计`.
    This is audit visibility only and does not expose raw request/write-result
    payloads or grant any release permission.
+   It also batches the existing release controls/dashboard/inventory/review/
+   authorization/closure/preflight/activation/runtime-enablement readbacks into
+   a summary-only `发布总览` panel. This panel is release-status visibility only
+   and cannot write records, approve release state, mutate runtime config, or
+   enable scheduling.
 7. Owner can switch back to the Fanfan sample learner if a future navigation
    state lands on another target.
 8. Owner selects the `日常英语卡` or `日常科学卡` recipe.

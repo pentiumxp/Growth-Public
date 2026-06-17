@@ -1070,6 +1070,95 @@
     </div>`;
   }
 
+  function releaseStatusReadbackDataForKey(data = {}, key = "") {
+    const value = data[key] || {};
+    if (key === "controls") return value.releaseControls || value.controls || value;
+    if (key === "dashboard") return value.releaseDashboard || value.dashboard || value;
+    if (key === "inventory") return value.releaseInventory || value.inventory || value;
+    if (key === "review") return value.releaseReview || value.review || value;
+    if (key === "authorization") return value.releaseAuthorization || value.authorization || value;
+    if (key === "closure") return value.releaseClosure || value.closure || value;
+    if (key === "preflight") return value.releasePreflight || value.preflight || value;
+    if (key === "activation") return value.releaseActivation || value.activation || value;
+    if (key === "runtimeEnablement") return value.runtimeEnablement || value.runtime_enablement || value;
+    return value;
+  }
+
+  function releaseStatusReadbackStatus(readback = {}, key = "") {
+    const item = releaseStatusReadbackDataForKey(readback, key);
+    return clean(
+      item.status
+        || item.releaseStatus
+        || item.releaseReviewStatus
+        || item.releaseAuthorizationStatus
+        || item.releaseClosureStatus
+        || item.releasePreflightStatus
+        || item.releaseActivationStatus
+        || item.runtimeEnablementStatus
+        || readback[key]?.status
+        || "idle"
+    );
+  }
+
+  function releaseStatusReadbackDetail(readback = {}, key = "") {
+    const item = releaseStatusReadbackDataForKey(readback, key);
+    const nextAction = item.nextAction || item.next_action || {};
+    const latestId = item.latestPreflightReportId || item.latest_preflight_report_id
+      || item.latestPackageId || item.latest_package_id
+      || item.latestCollectionRunId || item.latest_collection_run_id
+      || item.latestDecisionId || item.latest_decision_id;
+    return clean(nextAction.label || nextAction.key || nextAction.action || item.reason || item.blockingReason || latestId || "summary-only");
+  }
+
+  function releaseStatusReadbackRows(data = {}, escapeHtml = defaultEscapeHtml) {
+    const rows = [
+      ["controls", "Controls"],
+      ["dashboard", "Dashboard"],
+      ["inventory", "Inventory"],
+      ["review", "Review"],
+      ["authorization", "Authorization"],
+      ["closure", "Closure"],
+      ["preflight", "Preflight"],
+      ["activation", "Activation"],
+      ["runtimeEnablement", "Runtime"]
+    ];
+    return rows.map(([key, label]) => {
+      const status = releaseStatusReadbackStatus(data, key);
+      return `<div class="learning-card-generation-release-row" data-release-status-readback-row data-release-status-readback-key="${escapeHtml(key)}">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(releaseStatusReadbackDetail(data, key))}</small>
+        </span>
+        <em>${escapeHtml(releaseWorkbenchStatusText(status))}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function releaseStatusReadbacksPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.releaseStatusReadbacks || {};
+    const data = holder.data || context.releaseStatusReadbacks || {};
+    const loading = holder.status === "loading";
+    const failed = holder.status === "failed";
+    const status = failed ? "failed" : loading ? "loading" : clean(holder.status || data.status || "idle");
+    const detail = failed
+      ? clean(holder.error) || "release_status_readbacks_unavailable"
+      : loading
+        ? "正在读取 release controls、dashboard、review 和 activation 摘要。"
+        : "只读汇总 release controls、dashboard、review、closure、preflight 和 runtime 状态。";
+    return `<div class="learning-card-generation-release-status-readbacks" data-release-status-readbacks-panel data-release-status-readbacks-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-release-head">
+        <span>
+          <strong>发布总览</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <button type="button" data-release-status-readbacks-refresh ${loading ? "disabled" : ""}>${escapeHtml(loading ? "刷新中" : "刷新")}</button>
+      </div>
+      <div class="learning-card-generation-release-actions">
+        ${releaseStatusReadbackRows(data, escapeHtml)}
+      </div>
+    </div>`;
+  }
+
   function releaseWorkbenchSupportedEndpoint(endpointKey = "") {
     return ["release_evidence", "release_approval", "release_evidence_collection", "release_decision", "release_package", "release_activation", "runtime_enablement"].includes(clean(endpointKey).toLowerCase());
   }
@@ -1099,6 +1188,14 @@
   function createReleaseWorkbenchActionAuditQueryPayload({ context = {}, workspaceId = "" } = {}) {
     return Object.fromEntries(Object.entries(Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
       limit: 5
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createReleaseStatusReadbackQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    return Object.fromEntries(Object.entries(Object.assign({}, releaseWorkbenchScopeFromContext(context, workspaceId), {
+      limit: 4,
+      activation_record_limit: 5,
+      runtime_enablement_record_limit: 5
     })).filter(([, value]) => clean(value)));
   }
 
@@ -1335,6 +1432,7 @@
       </div>
       ${releaseArtifactTemplatePanel(context, state, escapeHtml)}
       ${releaseWorkbenchActionAuditsPanel(context, state, escapeHtml)}
+      ${releaseStatusReadbacksPanel(context, state, escapeHtml)}
       <div class="learning-card-generation-release-actions">
         ${releaseWorkbenchActionRows(actions, holder, escapeHtml)}
       </div>
@@ -3785,6 +3883,7 @@
     createOwnerCorrectionPayload,
     createReleaseArtifactTemplateQueryPayload,
     createReleaseWorkbenchActionAuditQueryPayload,
+    createReleaseStatusReadbackQueryPayload,
     createReleasePackageBuildPayload,
     createReleaseWorkbenchActionPayload,
     createReferenceChainRequests,

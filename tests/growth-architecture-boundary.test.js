@@ -4446,6 +4446,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /refreshReleaseWorkbenchActionAudits/);
   assert.match(app, /fetchGrowthReleaseWorkbenchActionAudits/);
   assert.match(app, /data-release-workbench-action-audits-refresh/);
+  assert.match(app, /refreshReleaseStatusReadbacks/);
+  assert.match(app, /fetchGrowthReleaseStatusReadbacks/);
+  assert.match(app, /data-release-status-readbacks-refresh/);
   assert.match(app, /data-automation-failure-policy-create/);
   assert.match(app, /data-automation-failure-policy-review/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
@@ -4486,6 +4489,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /releaseWorkbenchActionAuditsPanel/);
   assert.match(generationUi, /createReleaseWorkbenchActionAuditQueryPayload/);
   assert.match(generationUi, /data-release-workbench-action-audit-row/);
+  assert.match(generationUi, /data-release-status-readbacks-panel/);
+  assert.match(generationUi, /releaseStatusReadbacksPanel/);
+  assert.match(generationUi, /createReleaseStatusReadbackQueryPayload/);
+  assert.match(generationUi, /data-release-status-readback-row/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
   assert.match(generationUi, /createAutomationProposalCreatePayload/);
@@ -4557,6 +4564,11 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /reviewGrowthAutomationSchedulerWorkerTarget/);
   assert.match(apiClient, /fetchGrowthReleaseWorkbenchActionAudits/);
   assert.match(apiClient, /automation", "release-workbench", "action-audits"/);
+  assert.match(apiClient, /fetchGrowthReleaseStatusReadbacks/);
+  assert.match(apiClient, /automation", "release-controls"/);
+  assert.match(apiClient, /automation", "release-dashboard"/);
+  assert.match(apiClient, /automation", "release-preflight"/);
+  assert.match(apiClient, /automation", "runtime-enablement"/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
   assert.match(apiClient, /automation", "failure-policies"/);

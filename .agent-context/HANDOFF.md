@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T04:20+0800 - Release Status Readback Owner UI
+
+- Status: implemented locally; syntax, focused frontend, architecture/docs,
+  docs-locality, global syntax coverage, combined embedded UI Harness, diff
+  check, and local static readback passed. No production deploy, Home AI
+  central visual harness run, Gateway/model call, learner evidence write,
+  release evidence persistence, release decision/package/preflight/activation
+  write, runtime config change, scheduler execution, release approval, or Home
+  AI host logic change was performed.
+- Classification: H2 Growth embedded UI consumption over existing no-write
+  release status readbacks. It adds no route, table, release evidence writer,
+  release decision writer, package writer, preflight/activation/runtime
+  writer, scheduler permission, runtime config mutation, Gateway boundary, or
+  browser-side release approval.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthReleaseStatusReadbacks()`, which batches no-write
+    `GET` calls for release controls, dashboard, inventory, review,
+    authorization, closure, preflight, activation, and runtime enablement;
+  - `public/growth-card-generation-ui.js` now renders a summary-only
+    `发布总览` subpanel inside the release workbench, showing bounded status
+    and next-action summaries from service readback only;
+  - `public/app.js` keeps `releaseStatusReadbacks` UI state, wires the refresh
+    button, and refreshes the batch readback after successful release workbench
+    refreshes;
+  - `public/index.html` cache-busting moved to
+    `20260618-release-status-readback-ui-v1`;
+  - Growth-local docs now state that the Owner UI consumes release status
+    readbacks but still cannot write release decisions, package records,
+    preflight reports, activation/runtime enablement rows, mutate runtime
+    config, approve release state, or grant scheduler permission.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js public/growth-card-generation-ui.js
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`,
+    `checkedCount=225`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 76/76;
+  - `git diff --check`;
+  - local current-worktree service readback on `GROWTH_PORT=4885`: index used
+    `20260618-release-status-readback-ui-v1`;
+    `growth-card-generation-ui.js` contained
+    `data-release-status-readbacks-panel`,
+    `createReleaseStatusReadbackQueryPayload`, and `发布总览`; `app.js`
+    contained `refreshReleaseStatusReadbacks` and refresh wiring; and
+    `growth-api-client.js` contained `fetchGrowthReleaseStatusReadbacks`,
+    `release-controls`, and `runtime-enablement`.
+- Remaining gate:
+  - before production UI release, still run the Home AI central embedded-plugin
+    visual harness and persist bounded UI/release evidence through the existing
+    Growth release-evidence path.
+
 ## 2026-06-18T04:12+0800 - Release Workbench Action Audit Owner UI
 
 - Status: implemented locally; syntax, focused frontend, architecture/docs,
