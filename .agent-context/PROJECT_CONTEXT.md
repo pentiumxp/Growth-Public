@@ -561,6 +561,11 @@ readback gate set.
   privacy-risk keys, and private path/value leaks, emits
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1`, and intentionally
   stays outside the bundle being audited to avoid circular release artifacts.
+  The audit smoke mirrors bounded top-level `releaseEvidenceBundleAudit*`
+  operator readback for status, scope, bundle schema/privacy/file/counts,
+  required-task coverage, missing/blocked tasks, missing evidence keys, privacy
+  finding counts, and false runtime/scheduling flags while preserving the
+  service DTO as canonical.
   Growth now also has `npm run smoke:release-package`, a service-owned release
   evidence package builder plus package audit-record boundary implemented by
   `learning-automation-release-package-service` and

@@ -556,6 +556,11 @@ Use the Growth-owned release-readiness boundary:
   coverage, pass counts, required evidence keys, privacy-risk keys, and
   private path/value leaks, and emits
   `growth.learningAutomationReleaseEvidenceBundleAudit.v1` summary evidence.
+  The smoke also mirrors bounded top-level `releaseEvidenceBundleAudit*`
+  operator readback for status, scope, bundle schema/privacy/file/counts,
+  required-task coverage, missing/blocked tasks, missing evidence keys, privacy
+  finding counts, and false runtime/scheduling flags while preserving the
+  service DTO as canonical.
   Pass that output into release-readiness as `releaseEvidenceBundleAudit`
   through `--evidence-json` or the boolean
   `--release-evidence-bundle-audit` flag. The audit is intentionally not

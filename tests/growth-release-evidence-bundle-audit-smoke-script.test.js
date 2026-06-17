@@ -15,7 +15,8 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-evidence
 
 const {
   collectRequiredTasks,
-  inputFromArgs
+  inputFromArgs,
+  projectReleaseEvidenceBundleAuditSmokeReadback
 } = require("../scripts/smoke-growth-release-evidence-bundle-audit");
 
 function passingBundle() {
@@ -111,6 +112,84 @@ test("release evidence bundle audit smoke script parses scope and required tasks
   });
 });
 
+test("release evidence bundle audit smoke script projects top-level operator readback", () => {
+  const output = projectReleaseEvidenceBundleAuditSmokeReadback({
+    ok: false,
+    source: "growth-learning-automation-release-evidence-bundle-audit-service",
+    schemaVersion: "growth.learningAutomationReleaseEvidenceBundleAudit.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "blocked",
+    readyForReleaseEvidence: false,
+    bundle: {
+      schemaVersion: "growth.learningAutomationReleaseEvidenceBundle.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      bundleFilePresent: true,
+      bundleFileName: "release-bundle.json",
+      taskCount: 2,
+      passedCount: 1,
+      blockedCount: 1,
+      evidenceKeyCount: 2,
+      releaseApprovalKeyCount: 1
+    },
+    audit: {
+      requiredTaskCount: 2,
+      defaultTaskCoverage: false,
+      missingRequiredTasks: [],
+      unknownRequiredTasks: [],
+      blockedRequiredTasks: ["scheduler_dry_run"],
+      missingRequiredEvidenceKeys: ["productionSchedulerDryRunSmokeEvidence"],
+      summaryCountsMatch: true,
+      taskCountMatches: true,
+      passedCountMatches: true,
+      blockedCountMatches: true,
+      privacyFindingCount: 0,
+      privateValueFindingCount: 0
+    },
+    missingRequired: ["passing_required_bundle_tasks", "passing_required_evidence_keys"],
+    error: "release_evidence_bundle_audit_failed"
+  });
+
+  assert.equal(output.releaseEvidenceBundleAuditStatus, "blocked");
+  assert.equal(output.releaseEvidenceBundleAuditOk, false);
+  assert.equal(output.releaseEvidenceBundleAuditReadyForReleaseEvidence, false);
+  assert.equal(output.releaseEvidenceBundleAuditWorkspaceId, "weixin_fanfan");
+  assert.equal(output.releaseEvidenceBundleAuditLearnerId, "fanfan");
+  assert.equal(output.releaseEvidenceBundleAuditProgramId, "program_science");
+  assert.equal(output.releaseEvidenceBundleAuditDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(output.releaseEvidenceBundleAuditDomain, "science");
+  assert.equal(output.releaseEvidenceBundleAuditSubject, "science");
+  assert.equal(output.releaseEvidenceBundleAuditHorizon, "daily_plan");
+  assert.equal(output.releaseEvidenceBundleAuditBundleFilePresent, true);
+  assert.equal(output.releaseEvidenceBundleAuditBundleFileName, "release-bundle.json");
+  assert.equal(output.releaseEvidenceBundleAuditBundleTaskCount, 2);
+  assert.equal(output.releaseEvidenceBundleAuditBundlePassedCount, 1);
+  assert.equal(output.releaseEvidenceBundleAuditBundleBlockedCount, 1);
+  assert.equal(output.releaseEvidenceBundleAuditEvidenceKeyCount, 2);
+  assert.equal(output.releaseEvidenceBundleAuditReleaseApprovalKeyCount, 1);
+  assert.equal(output.releaseEvidenceBundleAuditRequiredTaskCount, 2);
+  assert.equal(output.releaseEvidenceBundleAuditDefaultTaskCoverage, false);
+  assert.equal(output.releaseEvidenceBundleAuditSummaryCountsMatch, true);
+  assert.deepEqual(output.releaseEvidenceBundleAuditBlockedRequiredTasks, ["scheduler_dry_run"]);
+  assert.deepEqual(output.releaseEvidenceBundleAuditMissingRequiredEvidenceKeys, ["productionSchedulerDryRunSmokeEvidence"]);
+  assert.deepEqual(output.releaseEvidenceBundleAuditMissingRequired, [
+    "passing_required_bundle_tasks",
+    "passing_required_evidence_keys"
+  ]);
+  assert.equal(output.releaseEvidenceBundleAuditWritefulSchedulingAllowed, false);
+  assert.equal(output.releaseEvidenceBundleAuditRuntimeConfigChange, false);
+  assert.equal(output.releaseEvidenceBundleAuditConfigChangeApplied, false);
+  assert.equal(output.releaseEvidenceBundleAuditSchedulerPermissionGranted, false);
+});
+
 test("release evidence bundle audit smoke script validates a summary-only bundle file", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-bundle-audit-"));
   const bundlePath = path.join(dir, "release-bundle.json");
@@ -127,6 +206,19 @@ test("release evidence bundle audit smoke script validates a summary-only bundle
     assert.equal(output.ok, true);
     assert.equal(output.status, "pass");
     assert.equal(output.readyForReleaseEvidence, true);
+    assert.equal(output.releaseEvidenceBundleAuditStatus, "pass");
+    assert.equal(output.releaseEvidenceBundleAuditOk, true);
+    assert.equal(output.releaseEvidenceBundleAuditReadyForReleaseEvidence, true);
+    assert.equal(output.releaseEvidenceBundleAuditWorkspaceId, "weixin_fanfan");
+    assert.equal(output.releaseEvidenceBundleAuditLearnerId, "weixin_fanfan");
+    assert.equal(output.releaseEvidenceBundleAuditBundleFilePresent, true);
+    assert.equal(output.releaseEvidenceBundleAuditBundleFileName, "release-bundle.json");
+    assert.equal(output.releaseEvidenceBundleAuditBundleTaskCount, DEFAULT_TASK_IDS.length);
+    assert.equal(output.releaseEvidenceBundleAuditBundlePassedCount, DEFAULT_TASK_IDS.length);
+    assert.equal(output.releaseEvidenceBundleAuditBundleBlockedCount, 0);
+    assert.equal(output.releaseEvidenceBundleAuditDefaultTaskCoverage, true);
+    assert.equal(output.releaseEvidenceBundleAuditSummaryCountsMatch, true);
+    assert.equal(output.releaseEvidenceBundleAuditWritefulSchedulingAllowed, false);
     assert.equal(output.bundle.bundleFileName, "release-bundle.json");
     assert.equal(output.audit.defaultTaskCoverage, true);
     assert.equal(JSON.stringify(output).includes(bundlePath), false);
@@ -138,7 +230,11 @@ test("release evidence bundle audit smoke script validates a summary-only bundle
 test("release evidence bundle audit smoke script fails closed for missing bundle and privacy risk", () => {
   const missing = runScript(["--workspace-id", "weixin_fanfan", "--json"]);
   assert.equal(missing.status, 0);
-  assert.equal(parseStdout(missing).error, "release_evidence_bundle_audit_bundle_required");
+  const missingOutput = parseStdout(missing);
+  assert.equal(missingOutput.error, "release_evidence_bundle_audit_bundle_required");
+  assert.equal(missingOutput.releaseEvidenceBundleAuditStatus, "missing");
+  assert.equal(missingOutput.releaseEvidenceBundleAuditOk, false);
+  assert.equal(missingOutput.releaseEvidenceBundleAuditWorkspaceId, "weixin_fanfan");
 
   const privateBundle = passingBundle();
   privateBundle.evidence.productionSchedulerDryRunSmokeEvidence.rawPrompt = "not allowed";
@@ -151,4 +247,6 @@ test("release evidence bundle audit smoke script fails closed for missing bundle
   const output = parseStdout(privacy);
   assert.equal(output.ok, false);
   assert.ok(output.missingRequired.includes("no_privacy_risk_keys"));
+  assert.equal(output.releaseEvidenceBundleAuditStatus, "blocked");
+  assert.equal(output.releaseEvidenceBundleAuditPrivacyFindingCount > 0, true);
 });
