@@ -1573,7 +1573,12 @@ readback gate set.
   an Action Inbox item id and a bounded Web Push `sent > 0` summary. Growth
   stores only summary counts/reason from the Home AI notification response and
   still must not read Home AI Action Inbox/Web Push storage, push
-  subscriptions, endpoints, or raw payloads.
+  subscriptions, endpoints, or raw payloads. The same summary-only evidence is
+  now available through visible-target scoped
+  `GET /api/v1/growth/automation/platform-action-evidence`, which delegates
+  only to `learning-automation-platform-action-evidence-service.evaluate()`;
+  the route is read-only and does not send notifications, grant release
+  permission, grant scheduler permission, or mutate learner/runtime state.
   Owner audit-review release evidence is now part of the default release
   evidence bundle/readiness contract. The default `owner_audit_review` bundle
   task runs `npm run smoke:owner-audit-review` and maps bounded readback into

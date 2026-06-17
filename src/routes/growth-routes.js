@@ -529,6 +529,23 @@ function normalizeAutomationActionHandoffListInput(url, target) {
   };
 }
 
+function normalizeAutomationPlatformActionEvidenceInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "daily_plan",
+    actionHandoffId: url.searchParams.get("actionHandoffId") || url.searchParams.get("action_handoff_id") || url.searchParams.get("handoffId") || url.searchParams.get("handoff_id") || "",
+    digestId: url.searchParams.get("digestId") || url.searchParams.get("digest_id") || "",
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
 function normalizeAutomationSchedulerExecutionListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1870,6 +1887,14 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/action-handoffs") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationActionHandoffService.listHandoffs(normalizeAutomationActionHandoffListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/platform-action-evidence") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationPlatformActionEvidenceService.evaluate(
+      normalizeAutomationPlatformActionEvidenceInput(url, target)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

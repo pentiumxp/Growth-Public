@@ -1,6 +1,6 @@
 # Growth AI Learning Automation Action Handoff
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-18.
 
 ## Purpose
 
@@ -93,12 +93,13 @@ Responsibilities:
   state.
 
 Platform action release evidence is a separate read-only boundary:
-`learning-automation-platform-action-evidence-service` and
+`learning-automation-platform-action-evidence-service`, visible-target scoped
+`GET /api/v1/growth/automation/platform-action-evidence`, and
 `npm run smoke:platform-action-evidence` read delivered
 `growth.automation.action_required` receipts from Growth's event outbox and
 project summary-only `growth.learningAutomationPlatformActionEvidence.v1`.
 They do not post notifications, read Home AI Action Inbox/Web Push internals,
-or mutate learner state.
+grant release/scheduler permission, or mutate learner state.
 
 Public service methods:
 

@@ -4929,6 +4929,112 @@ test("growth automation owner review evidence route returns visible-target summa
   }
 });
 
+test("growth automation platform action evidence route returns visible-target receipt readback", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationPlatformActionEvidenceService: {
+      evaluate(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-automation-platform-action-evidence-service",
+          schemaVersion: "growth.learningAutomationPlatformActionEvidence.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          status: "pass",
+          readyForReleaseEvidence: true,
+          count: 1,
+          latestReceipt: {
+            eventId: "event_route_1",
+            workspaceId: input.workspaceId,
+            actionHandoffId: input.actionHandoffId,
+            digestId: input.digestId,
+            actionInboxReceiptPresent: true,
+            webPushReceiptPresent: true,
+            webPushSent: 1
+          },
+          platformBoundary: {
+            summaryOnly: true,
+            homeAiOwnsActionInbox: true,
+            homeAiOwnsWebPush: true,
+            growthReadsOnlyBoundedReceiptSummary: true,
+            growthDoesNotReadPushSubscriptions: true
+          },
+          writefulSchedulingAllowed: false,
+          runtimeConfigChange: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/platform-action-evidence?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&actionHandoffId=lgahand_route_1&digestId=lgadig_route_1&limit=4`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningAutomationPlatformActionEvidence.v1");
+    assert.equal(body.latestReceipt.actionInboxReceiptPresent, true);
+    assert.equal(body.latestReceipt.webPushReceiptPresent, true);
+    assert.equal(body.platformBoundary.homeAiOwnsActionInbox, true);
+    assert.equal(body.platformBoundary.homeAiOwnsWebPush, true);
+    assert.equal(body.writefulSchedulingAllowed, false);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      actionHandoffId: "lgahand_route_1",
+      digestId: "lgadig_route_1",
+      limit: "4"
+    });
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/platform-action-evidence?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth automation release workbench route returns visible-target Owner action read model", async () => {
   const calls = [];
   const server = createServer({

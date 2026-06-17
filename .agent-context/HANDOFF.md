@@ -9,6 +9,46 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T00:35+08:00 - Platform Action Evidence HTTP Readback
+
+- Status: implemented locally; focused platform-action evidence service/smoke,
+  route, architecture, syntax, and docs-locality Harness passed. No production
+  deploy, production visual harness, runtime config change, notification
+  delivery, scheduler execution, Gateway/model call, learner-state mutation, or
+  Home AI host logic change was performed.
+- Classification: H2 Growth readback extension. It adds a visible-target
+  scoped HTTP read route over the existing platform-action evidence service
+  and does not add a write path, table, scheduler/release permission, or Home AI
+  Action Inbox/Web Push internal access.
+- Scope:
+  - added `GET /api/v1/growth/automation/platform-action-evidence`;
+  - added `normalizeAutomationPlatformActionEvidenceInput` for bounded
+    workspace/learner/program/domain/subject/horizon/action-handoff/digest
+    selectors;
+  - route delegates only to
+    `learningAutomationPlatformActionEvidenceService.evaluate()`;
+  - public readback remains summary-only over delivered Growth event-outbox
+    `growth.automation.action_required` receipts and requires both Action Inbox
+    item id and bounded Web Push `sent > 0` evidence before pass.
+- Harness/docs updated:
+  - `tests/growth-routes.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - `node --check src/routes/growth-routes.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-platform-action-evidence-service.test.js tests/growth-platform-action-evidence-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    -> 103/103;
+  - `node scripts/check-growth-docs-locality.js`.
+- Remaining gate:
+  - real production Action Inbox/Web Push receipt evidence still depends on
+    delivering through the Home AI notification boundary in production; this
+    local package only exposes Growth-side readback of bounded delivered
+    receipts.
+
 ## 2026-06-18T00:00+08:00 - Release Workbench State Prerequisite Action Facade
 
 - Status: implemented locally; focused release-workbench/action/route Harness,
