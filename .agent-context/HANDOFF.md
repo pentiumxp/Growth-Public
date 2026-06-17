@@ -9,6 +9,40 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:22+08:00 - Automation Digest Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change digest service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan/card publication, scheduler execution,
+  notifications, action handoff creation, runtime config, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `npm run smoke:digest` correctly delegated list/get/create/review to
+    `learning-automation-digest-service`, but operator-critical digest status,
+    write gate, dry-run safety flags, candidate/blocked/required-action counts,
+    required action endpoints, review state, and no-write list state were not
+    mirrored at the CLI top level.
+- Scope:
+  - added `projectAutomationDigestSmokeReadback()` in
+    `scripts/smoke-growth-automation-digest.js`;
+  - projected bounded top-level `automationDigest*` fields while preserving
+    nested digest DTOs as canonical;
+  - kept create/review behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-digest-smoke-script.test.js` to assert
+    pure projection, default no-write list readback, create readback, and review
+    readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-digest.js`
+  - `node --test tests/growth-automation-digest-smoke-script.test.js`
+  - `npm run --silent smoke:digest -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - continue with action-handoff smoke top-level readback as the next automation
+    loop visibility slice.
+
 ## 2026-06-17T15:16+08:00 - Automation Proposal Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

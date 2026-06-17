@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-diges
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationDigestSmokeReadback,
   shouldAllowWrite,
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-digest");
@@ -108,6 +109,76 @@ test("automation digest smoke script parses operation, scope, review notes, and 
   });
 });
 
+test("automation digest smoke script projects operator readback", () => {
+  const projected = projectAutomationDigestSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-digest-service",
+    count: 2,
+    digests: [{
+      digestId: "lgadig_pending",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      status: "pending",
+      privacyClass: "summary_only",
+      summary: {
+        inspected: 2,
+        wouldPublish: 1,
+        blocked: 1,
+        skipped: 0,
+        requiredActions: 1,
+        dryRun: true,
+        writePlanned: false,
+        writesPerformed: false,
+        publishPlanned: false
+      },
+      candidates: [{ candidateId: "candidate_1" }, { candidateId: "candidate_2" }],
+      blocked: [{ candidateId: "candidate_2" }],
+      requiredActions: [{ endpoint: "/api/v1/growth/automation/proposals/lgauto_ready/publish" }],
+      sourcePolicy: { schemaVersion: "growth.learningAutomationDigest.sourcePolicy.v1" }
+    }, {
+      digestId: "lgadig_reviewed",
+      status: "reviewed"
+    }]
+  }, "list", {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan"
+  }, false);
+
+  assert.equal(projected.automationDigestStatus, "pending");
+  assert.equal(projected.automationDigestOk, true);
+  assert.equal(projected.automationDigestOperation, "list");
+  assert.equal(projected.automationDigestWriteOperation, false);
+  assert.equal(projected.automationDigestWriteAllowed, false);
+  assert.equal(projected.automationDigestWritesPerformed, false);
+  assert.equal(projected.automationDigestWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationDigestLearnerId, "fanfan");
+  assert.equal(projected.automationDigestProgramId, "program_science");
+  assert.equal(projected.automationDigestDomain, "science");
+  assert.equal(projected.automationDigestSubject, "science");
+  assert.equal(projected.automationDigestCount, 2);
+  assert.equal(projected.automationDigestDigestId, "lgadig_pending");
+  assert.deepEqual(projected.automationDigestDigestIds, ["lgadig_pending", "lgadig_reviewed"]);
+  assert.deepEqual(projected.automationDigestStatuses, ["pending", "reviewed"]);
+  assert.equal(projected.automationDigestPendingCount, 1);
+  assert.equal(projected.automationDigestReviewedCount, 1);
+  assert.equal(projected.automationDigestDryRun, true);
+  assert.equal(projected.automationDigestWritePlanned, false);
+  assert.equal(projected.automationDigestSourceWritesPerformed, false);
+  assert.equal(projected.automationDigestPublishPlanned, false);
+  assert.equal(projected.automationDigestPublishRequiresOwnerAction, true);
+  assert.equal(projected.automationDigestInspectedCount, 2);
+  assert.equal(projected.automationDigestWouldPublishCount, 1);
+  assert.equal(projected.automationDigestBlockedCount, 1);
+  assert.equal(projected.automationDigestRequiredActionCount, 1);
+  assert.deepEqual(projected.automationDigestCandidateIds, ["candidate_1", "candidate_2"]);
+  assert.deepEqual(projected.automationDigestRequiredActionEndpoints, ["/api/v1/growth/automation/proposals/lgauto_ready/publish"]);
+});
+
 test("automation digest smoke script lists without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -126,6 +197,16 @@ test("automation digest smoke script lists without writing by default", () => {
     assert.equal(output.source, "growth-learning-automation-digest-service");
     assert.equal(output.count, 0);
     assert.deepEqual(output.digests, []);
+    assert.equal(output.automationDigestStatus, "listed");
+    assert.equal(output.automationDigestOk, true);
+    assert.equal(output.automationDigestOperation, "list");
+    assert.equal(output.automationDigestWriteOperation, false);
+    assert.equal(output.automationDigestWriteAllowed, false);
+    assert.equal(output.automationDigestWritesPerformed, false);
+    assert.equal(output.automationDigestWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationDigestLearnerId, "fanfan");
+    assert.equal(output.automationDigestCount, 0);
+    assert.deepEqual(output.automationDigestDigestIds, []);
     assert.equal(tableExists(dbPath, "learning_growth_automation_digests"), undefined);
   });
 });
@@ -173,6 +254,13 @@ test("automation digest smoke script creates, reviews, gets, and lists only with
     assert.equal(createOutput.digest.summary.writePlanned, false);
     assert.equal(createOutput.digest.summary.writesPerformed, false);
     assert.equal(createOutput.digest.summary.publishPlanned, false);
+    assert.equal(createOutput.automationDigestStatus, "pending");
+    assert.equal(createOutput.automationDigestOperation, "create");
+    assert.equal(createOutput.automationDigestWriteOperation, true);
+    assert.equal(createOutput.automationDigestWriteAllowed, true);
+    assert.equal(createOutput.automationDigestWritesPerformed, true);
+    assert.equal(createOutput.automationDigestDryRun, true);
+    assert.equal(createOutput.automationDigestPublishRequiresOwnerAction, false);
 
     const reviewed = runScript([
       "--operation", "review",
@@ -194,6 +282,10 @@ test("automation digest smoke script creates, reviews, gets, and lists only with
     assert.equal(reviewOutput.digest.status, "reviewed");
     assert.equal(reviewOutput.digest.review.summaryOnly, true);
     assert.equal(reviewOutput.digest.review.note, "Owner reviewed bounded dry-run packet.");
+    assert.equal(reviewOutput.automationDigestStatus, "reviewed");
+    assert.equal(reviewOutput.automationDigestOperation, "review");
+    assert.equal(reviewOutput.automationDigestWriteOperation, true);
+    assert.equal(reviewOutput.automationDigestWriteAllowed, true);
 
     const got = runScript([
       "--operation", "get",

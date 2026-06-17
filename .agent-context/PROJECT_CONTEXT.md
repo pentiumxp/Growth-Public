@@ -1091,7 +1091,11 @@ readback gate set.
   `npm run smoke:digest` is the service-owned operational smoke for this
   boundary: `list` is the default read-only operation, `get` is read-only, and
   `create`/`review` require explicit `--allow-write` while delegating only to
-  `learning-automation-digest-service`.
+  `learning-automation-digest-service`. The smoke CLI mirrors bounded
+  top-level `automationDigest*` operator readback for operation/status, write
+  gate, digest counts/statuses, dry-run flags, candidate/blocked/required-action
+  counts, required action endpoints, and review state while preserving nested
+  digest DTOs as canonical.
   The automation failure-policy backend is now implemented through
   `learning-automation-failure-policy-service`,
   `automation-failure-policies.js`,

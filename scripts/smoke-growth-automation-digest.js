@@ -16,6 +16,28 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return uniqueStrings(asArray(values).map((value) => cleanString(value, 160))).slice(0, maxItems);
+}
+
+function numberValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric;
+}
+
 function firstArgValue(args, names, fallback = "") {
   for (const name of names) {
     const value = argValue(args, name, "");
@@ -64,7 +86,7 @@ function collectCsvValues(args, names) {
 }
 
 function uniqueStrings(values = []) {
-  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
+  return Array.from(new Set(asArray(values).map((value) => String(value || "").trim()).filter(Boolean)));
 }
 
 function collectIds(args, repeatedNames, csvNames) {
@@ -153,6 +175,73 @@ function runOperation(service, operation, input) {
   return service.listDigests(input);
 }
 
+function summarizeStatuses(digests = []) {
+  return asArray(digests).reduce((counts, digest) => {
+    const status = cleanString(digest && digest.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationDigestSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const digests = asArray(readback.digests);
+  const digest = objectOnly(readback.digest || digests[0]);
+  const summary = objectOnly(digest.summary);
+  const sourcePolicy = objectOnly(digest.sourcePolicy);
+  const review = objectOnly(digest.review);
+  const statusCounts = summarizeStatuses(digests.length ? digests : digest.digestId ? [digest] : []);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const requiredActions = asArray(digest.requiredActions);
+  const candidates = asArray(digest.candidates);
+  const blocked = asArray(digest.blocked);
+  return Object.assign({}, readback, {
+    automationDigestStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : digest.status || (operation === "list" ? "listed" : "pass"),
+      140
+    ),
+    automationDigestOk: readback.ok !== false,
+    automationDigestOperation: cleanString(operation, 80),
+    automationDigestWriteOperation: writeOperation,
+    automationDigestWriteAllowed: writeAllowed === true,
+    automationDigestWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationDigestDuplicate: readback.duplicate === true,
+    automationDigestWorkspaceId: cleanString(readback.workspaceId || digest.workspaceId || input.workspaceId, 160),
+    automationDigestLearnerId: cleanString(readback.learnerId || digest.learnerId || input.learnerId, 160),
+    automationDigestProgramId: cleanString(digest.programId || input.programId, 160),
+    automationDigestDomainPackId: cleanString(digest.domainPackId || input.domainPackId, 180),
+    automationDigestDomain: cleanString(digest.domain || input.domain, 120),
+    automationDigestSubject: cleanString(digest.subject || input.subject, 120),
+    automationDigestHorizon: cleanString(digest.horizon || input.horizon, 80),
+    automationDigestCount: numberValue(readback.count, digests.length),
+    automationDigestDigestId: cleanString(digest.digestId || input.digestId, 180),
+    automationDigestDigestIds: uniqueBoundedStrings(digests.map((item) => item && item.digestId)),
+    automationDigestStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationDigestPendingCount: numberValue(statusCounts.pending, 0),
+    automationDigestReviewedCount: numberValue(statusCounts.reviewed, 0),
+    automationDigestArchivedCount: numberValue(statusCounts.archived, 0),
+    automationDigestSupersededCount: numberValue(statusCounts.superseded, 0),
+    automationDigestPrivacyClass: cleanString(digest.privacyClass, 80),
+    automationDigestDryRun: readback.dryRun === true || summary.dryRun === true || sourcePolicy.dryRun === true,
+    automationDigestWritePlanned: readback.writePlanned === true || summary.writePlanned === true,
+    automationDigestSourceWritesPerformed: readback.writesPerformed === true || summary.writesPerformed === true,
+    automationDigestPublishPlanned: readback.publishPlanned === true || summary.publishPlanned === true,
+    automationDigestPublishRequiresOwnerAction: readback.publishRequiresOwnerAction === true || requiredActions.length > 0,
+    automationDigestInspectedCount: numberValue(summary.inspected, candidates.length),
+    automationDigestWouldPublishCount: numberValue(summary.wouldPublish, 0),
+    automationDigestBlockedCount: numberValue(summary.blocked, blocked.length),
+    automationDigestSkippedCount: numberValue(summary.skipped, 0),
+    automationDigestRequiredActionCount: numberValue(summary.requiredActions, requiredActions.length),
+    automationDigestCandidateIds: uniqueBoundedStrings(candidates.map((item) => item && item.candidateId), 24),
+    automationDigestRequiredActionEndpoints: uniqueBoundedStrings(requiredActions.map((item) => item && item.endpoint), 12),
+    automationDigestReviewedBy: cleanString(digest.reviewedBy || review.reviewedBy || input.requestedBy, 160),
+    automationDigestReviewedAt: cleanString(digest.reviewedAt || review.reviewedAt, 80),
+    automationDigestReviewStatus: cleanString(review.status || digest.status, 80),
+    automationDigestSourcePolicySchemaVersion: cleanString(sourcePolicy.schemaVersion, 120)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -187,7 +276,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services.learningAutomationDigestService, operation, input);
+  const result = projectAutomationDigestSmokeReadback(
+    Object.assign({ operation }, runOperation(services.learningAutomationDigestService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -206,6 +300,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationDigestSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput
