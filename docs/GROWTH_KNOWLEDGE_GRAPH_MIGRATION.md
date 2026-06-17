@@ -24,7 +24,10 @@ K12.
 ## Current Runtime State
 
 As of the 2026-06-11 import, the Growth plugin production SQLite database owns
-the native graph import/source tables for the recovered Fan Fan seed pack.
+the native graph import/source tables for the recovered Fan Fan seed pack. As
+of 2026-06-18, the current Mac dev runtime SQLite database has also re-imported
+the same recovered seed pack and can use it for Fanfan science target
+provisioning and release-readiness evidence.
 
 The currently migrated Growth plugin runtime is focused on:
 
@@ -307,6 +310,31 @@ Production import completed on 2026-06-11:
 - SQLite `PRAGMA quick_check`: `ok`;
 - Growth status/board smoke after import still returned
   `source=growth-plugin-sqlite` for `weixin_stephen`.
+
+Mac dev runtime import completed again on 2026-06-18 after the local
+`data/growth-learning.sqlite3` readback showed no `learning_graph_*` tables:
+
+- target DB: `data/growth-learning.sqlite3`;
+- source SHA matched
+  `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+- import id: `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1`;
+- `learning_graph_imports`: `1`;
+- `learning_graph_domain_packs`: `1`;
+- `learning_graph_nodes`: `294`;
+- `learning_graph_edges`: `329`;
+- `learning_graph_plans`: `0`;
+- `learning_card_graph_bindings`: `0`;
+- import prerequisite edges: `34`;
+- importer created a pre-write SQLite backup;
+- Owner provision `lgprov_c0ce9e40906966ad51` now enables
+  `workspaceId=weixin_stephen`, `learnerId=weixin_stephen`,
+  `domainPackId=domain_pack_fanfan_cambridge_pathway_v1`,
+  `domain=science`, `subject=science`;
+- target node
+  `kg_ls_science_scientific_enquiry_plan_investigative_work` resolves through
+  `npm run smoke:target-provisioning`, `npm run smoke:stage-assessment`, and
+  `npm run smoke:stage-checkpoint-controls` without writing a card, activating
+  a stage assessment, calling Gateway, or mutating learner evidence.
 
 ### Phase 4: Graph Plan Service
 

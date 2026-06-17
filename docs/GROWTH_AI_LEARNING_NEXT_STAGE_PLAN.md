@@ -183,12 +183,17 @@ Growth already has substantial backend foundation:
   `missingEvidenceCount=34` to `passCheckCount=23`,
   `missingRequiredCount=24`, and `missingEvidenceCount=17`; status is still
   `incomplete` and `writefulSchedulingAllowed=false`. The current local scope
-  still blocks `planner_readiness` on Gateway planner endpoint/config,
-  `profile_feedback` on a real completed-cycle selector, and
-  `target_provisioning`, `stage_assessment`, and
-  `stage_checkpoint_controls` on real provisioned graph/target selector data.
-  Those blockers must be resolved from configured Gateway access or durable
-  learner/provision data, not by fabricated pass evidence.
+  was then advanced by importing the recovered KG into the current Growth
+  SQLite runtime, writing the real science provision, persisting pass release
+  evidence for target provisioning, stage checkpoint readiness, and stage
+  checkpoint controls through collection run `lgacrn_9285159d4f01bd3ca2`, and
+  recording active failure-policy, reviewed worker-target, and reviewed digest
+  state through Owner smoke gates. Current readiness is now
+  `passCheckCount=29`, `missingRequiredCount=18`,
+  `missingEvidenceCount=14`; it still blocks planner readiness on Gateway
+  endpoint/config, profile feedback on a real completed-cycle selector, and
+  delivered action handoff because the current reviewed digest has no required
+  action.
   The release-readiness service itself now rejects bare boolean `true` for
   service-owned smoke/readback evidence and reports
   `validated_release_evidence_object_required`, so downstream release review,
@@ -272,14 +277,15 @@ automation surfaces are not closed:
   audit, Owner audit-review, learner-cycle audit, recommendation lifecycle,
   proposal, scheduler dry-run, action handoff, scheduler execution, scheduler
   run, scheduler worker-target, scheduler worker, Owner review evidence,
-  release workbench readback, and release bundle audit evidence. Remaining
-  local release gates are product UI/visual evidence, reviewed digest/action/
-  worker-target workflow state, profile feedback from a real completed cycle,
-  configured planner readiness, target/provision/stage-checkpoint selectors
-  from durable graph data, controlled daily-loop write evidence, platform
-  action receipt evidence, production deployment health, explicit release
-  approvals, package/review/authorization/closure/preflight/activation/runtime
-  records, broad checks, and deployment when complete;
+  release workbench readback, target provisioning, stage checkpoint readiness,
+  stage checkpoint controls, active failure policy, reviewed worker target,
+  reviewed digest, and release bundle audit evidence. Remaining local release
+  gates are product UI/visual evidence, a real delivered action handoff,
+  profile feedback from a real completed cycle, configured planner readiness,
+  controlled daily-loop write evidence, platform action receipt evidence,
+  production deployment health, explicit release approvals, package/review/
+  authorization/closure/preflight/activation/runtime records, broad checks,
+  and deployment when complete;
 - background writeful scheduling remains blocked.
 
 ## Current Execution Decision

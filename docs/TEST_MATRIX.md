@@ -232,3 +232,13 @@ local advisory evidence only; it does not replace UI artifacts, platform
 Action Inbox/Web Push evidence, production deployment health, explicit
 approvals, package/review/authorization/closure/preflight/activation/runtime
 records, broad checks, or deployment.
+
+If a backend batch blocks because `learning_graph_*` or
+`learning_growth_domain_pack_provisions` data is absent, recover the data
+foundation before replaying release evidence: run
+`node scripts/import-learning-graph-pack.js --dry-run --expected-sha256 ...`,
+then write only the validated KG seed with `--target-db ... --write`, verify
+readback, create the explicit Owner provision through
+`npm run smoke:target-provisioning -- --operation provision --allow-write`,
+and only then rerun target/stage release-evidence collection with the real
+domain pack and target node selectors.

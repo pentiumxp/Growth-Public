@@ -54,6 +54,10 @@ until real artifacts are collected:
   missing completed-cycle selectors, and missing graph/provision target data
   remain blocked prerequisites; they must not be replaced by synthetic pass
   evidence.
+- When graph/provision target data is missing, restore validated KG data and
+  explicit Owner provision first, then rerun no-write target/stage smoke and
+  collection. The recovery proof must include KG dry-run/readback, provision
+  smoke, target-provisioning resolve, and stage assessment/control readback.
 
 ## Forbidden Harness Shortcuts
 

@@ -134,6 +134,23 @@ readback gate set.
   explicit approvals and release lifecycle records, automation state
   prerequisites, and real target/provision/completed-cycle selectors for the
   tasks that blocked on data rather than harness execution.
+  The same local release scope now also has the recovered UK/HK curriculum
+  foundation KG imported into the current Growth SQLite runtime:
+  `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1`, one domain pack,
+  294 nodes, 329 edges, and 34 prerequisite edges. Owner provision
+  `lgprov_c0ce9e40906966ad51` enables
+  `domain_pack_fanfan_cambridge_pathway_v1` / science / science for
+  `weixin_stephen`, and collection run `lgacrn_9285159d4f01bd3ca2` persisted
+  pass release evidence for target provisioning, stage checkpoint readiness,
+  and stage checkpoint controls using target node
+  `kg_ls_science_scientific_enquiry_plan_investigative_work`. Active failure
+  policy `lgafpol_4d4615a8aa2a8ffeda`, reviewed worker target
+  `lgastgt_024972de96897d65cb`, and reviewed digest
+  `lgadig_47d07d9abe34f1fcc4` were also written through Owner smoke gates,
+  but action-handoff creation correctly remains blocked because that digest has
+  no required action. Current release-readiness readback is
+  `passCheckCount=29`, `missingRequiredCount=18`,
+  `missingEvidenceCount=14`, still incomplete and still non-writeful.
   The embedded Owner panel now also renders a separate `发布记录` subpanel over
   existing preflight-report, activation-record, and runtime-enablement list
   routes plus their Owner-only record routes. That panel writes only

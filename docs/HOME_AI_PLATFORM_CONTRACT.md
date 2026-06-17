@@ -333,6 +333,19 @@ evidence. A local 2026-06-18 replay for
 moving readiness from `passCheckCount=6` to `passCheckCount=23` while status
 remained `incomplete`.
 
+For target/stage blockers caused by absent runtime data, the correct recovery
+path is to restore real KG/provision data first. The local 2026-06-18 KG
+recovery imported `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1` into the
+current Growth SQLite runtime and wrote Owner provision
+`lgprov_c0ce9e40906966ad51` for `weixin_stephen` science. A follow-up
+collection run `lgacrn_9285159d4f01bd3ca2` persisted pass evidence for target
+provisioning, stage checkpoint readiness, and stage checkpoint controls.
+Active failure-policy, reviewed worker-target, and reviewed digest state were
+also recorded through Owner smoke gates, moving current readiness to
+`passCheckCount=29`, `missingRequiredCount=18`, and
+`missingEvidenceCount=14`. Action-handoff delivery still requires a real
+required action; the current reviewed digest has none.
+
 This addendum does not change Home AI platform ownership, run visual tooling,
 call Gateway, publish or evaluate cards, activate stage assessments, deliver
 notifications, deploy, approve release state, apply runtime config, grant

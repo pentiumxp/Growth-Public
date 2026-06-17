@@ -1805,10 +1805,21 @@ Implementation progress on 2026-06-15:
   `missingEvidenceCount=17`, but it did not deploy, approve release state,
   change runtime config, grant scheduler permission, call Gateway, publish or
   evaluate cards, activate stage assessments, or mutate learner state. The
-  remaining backend blockers for the current local scope are real missing
-  Gateway planner config, completed-cycle selector data, and scoped graph/
-  provision/target selectors; those must be fixed as data/config prerequisites
-  rather than release-evidence shortcuts. The
+  recovered KG was then imported into the current local Growth SQLite runtime,
+  creating one domain pack, 294 nodes, 329 edges, and 34 prerequisite edges.
+  Owner provision `lgprov_c0ce9e40906966ad51` now enables
+  `domain_pack_fanfan_cambridge_pathway_v1` / science / science for
+  `weixin_stephen`, and collection run `lgacrn_9285159d4f01bd3ca2` persisted
+  pass release evidence for target provisioning, stage checkpoint readiness,
+  and stage checkpoint controls with target node
+  `kg_ls_science_scientific_enquiry_plan_investigative_work`. Active
+  failure-policy, reviewed worker-target, and reviewed digest state were also
+  recorded through Owner smoke gates, bringing current local readiness to
+  `passCheckCount=29`, `missingRequiredCount=18`,
+  `missingEvidenceCount=14`. The remaining backend blockers for the current
+  local scope are Gateway planner config, completed-cycle selector data, and a
+  delivered action handoff with a real required action; they must not be
+  replaced by release-evidence shortcuts. The
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner

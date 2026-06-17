@@ -193,6 +193,18 @@ AI-driven loop:
   deployment, runtime config enablement, scheduler permission, Gateway/model
   execution, card publication, evaluation, stage activation, or learner-state
   mutation.
+- the recovered UK/HK curriculum foundation KG has also been imported into the
+  current local Growth SQLite runtime for the same scope. The import readback
+  for `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1` reports one domain
+  pack, 294 nodes, 329 edges, and 34 prerequisite edges. Owner provision
+  `lgprov_c0ce9e40906966ad51` enables Fanfan science over
+  `domain_pack_fanfan_cambridge_pathway_v1`, and collection run
+  `lgacrn_9285159d4f01bd3ca2` persisted pass release evidence for target
+  provisioning, stage checkpoint readiness, and stage checkpoint controls.
+  Active failure policy, reviewed worker target, and reviewed digest state were
+  also recorded through Owner smoke gates. Current release-readiness readback
+  is `passCheckCount=29`, `missingRequiredCount=18`,
+  `missingEvidenceCount=14`, still incomplete and non-writeful.
 
 The product is not complete because several browser and automation-safety
 surfaces are still missing:
@@ -215,9 +227,10 @@ surfaces are still missing:
 - remaining release gates include product UI/visual artifacts, platform Action
   Inbox/Web Push receipt evidence, production deployment health, controlled
   daily-loop write evidence, explicit approvals and release lifecycle records,
-  reviewed automation digest/action/worker-target state, configured planner
-  readiness, real completed-cycle profile-feedback selectors, and scoped
-  graph/provision/target data for target and stage-checkpoint evidence.
+  configured planner readiness, real completed-cycle profile-feedback
+  selectors, and a real delivered action handoff. The handoff cannot be
+  created from the current reviewed digest because that digest has no required
+  action.
 
 ## Program-Level Workstreams
 

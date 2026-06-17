@@ -9,6 +9,53 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T05:36+0800 - KG Data Foundation And State Prerequisite Advance
+
+- Status: implemented locally as Growth runtime data recovery plus advisory
+  release-readiness evidence/state advancement. No production deploy, release
+  approval, runtime config mutation, scheduler permission, Gateway/model call,
+  card publication, evaluation, notification delivery, stage activation, or
+  learner-state mutation was performed.
+- KG/runtime data:
+  - `import-learning-graph-pack` dry-run and write succeeded for
+    `kg_import_20260527_fanfan_uk_hk_igcse_a_level_v1` with SHA
+    `b42d5afdb02f71316ab5ab8692854d32ae3ec37762bd77c989d7255c0c85fc36`;
+  - imported `learning_graph_*` tables now read back `domain_packs=1`,
+    `nodes=294`, `edges=329`, `prerequisite_edges=34`; the importer created a
+    SQLite backup before writing;
+  - a real Owner target provision was written for
+    `weixin_stephen/science/daily_plan`:
+    `lgprov_c0ce9e40906966ad51` over
+    `domain_pack_fanfan_cambridge_pathway_v1`, `domain=science`,
+    `subject=science`.
+- Release evidence written locally:
+  - `target_provisioning`, `stage_assessment`, and
+    `stage_checkpoint_controls` preflight all passed with target node
+    `kg_ls_science_scientific_enquiry_plan_investigative_work`;
+  - `smoke:release-evidence-collection` wrote collection run
+    `lgacrn_9285159d4f01bd3ca2` plus pass evidence records for
+    `productionTargetProvisioningSmokeEvidence`, `stageCheckpointEvidence`,
+    `stageCheckpointControlsEvidence`, and `releaseEvidenceBundleAudit`;
+  - active failure policy `lgafpol_4d4615a8aa2a8ffeda` was created and
+    reviewed active; reviewed worker target `lgastgt_024972de96897d65cb` was
+    created and reviewed enabled; both keep scheduling/runtime flags false;
+  - digest `lgadig_47d07d9abe34f1fcc4` was created and reviewed, but action
+    handoff creation correctly blocked with
+    `learning_automation_action_handoff_no_action`, so delivered handoff is
+    still a real missing prerequisite.
+- Current readiness readback for `weixin_stephen/science/daily_plan`:
+  `status=incomplete`, `passCheckCount=29`, `missingRequiredCount=18`,
+  `missingEvidenceCount=14`.
+- Remaining gates:
+  - UI/visual artifact evidence: owner daily, owner audit, proposal review,
+    automation digest, action handoff, scheduler execution/run/worker-target,
+    and release package review;
+  - model/write/platform evidence: planner readiness Gateway config,
+    profile-feedback from a real completed cycle, controlled daily-loop write,
+    platform action receipt, production deployment health;
+  - state/approval gates: delivered action handoff still needs a real action,
+    and writeful/background release approvals remain intentionally unapproved.
+
 ## 2026-06-18T05:27+0800 - Backend Release Evidence Batch Readback
 
 - Status: implemented locally as an advisory backend release-evidence batch.
