@@ -9,6 +9,67 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T22:35+08:00 - Owner Audit Review Closure Records
+
+- Status: implemented locally; syntax/check/docs/diff/focused/full local suite
+  and CodeGraph freshness passed. No production deploy, production visual
+  harness, runtime config change, Gateway/model call, scheduler execution,
+  notification, learner-state mutation outside the audit-review row, stage
+  activation, or Home AI host logic change was performed.
+- Classification: H1 Growth Owner audit review write boundary. It adds
+  summary-only `growth.learningOwnerAuditReview.v1` closure records for Owner
+  review of completed-cycle profile-feedback. It does not create central
+  Reference/Memory Graph edges, release approval/evidence, scheduler
+  permission, card generation, evaluation, profile mutation, or correction
+  evidence writes.
+- Scope:
+  - added `learning_growth_owner_audit_reviews` via `owner-audit-reviews.js`
+    and `stableLearningOwnerAuditReviewId`;
+  - added `learning-owner-audit-review-service`, which delegates to
+    `learning-profile-feedback-evidence-service.evaluate()` before
+    persistence;
+  - wired service graph and SQLite store;
+  - added visible-target `GET /api/v1/growth/owner-audit/reviews` and
+    Owner-only `POST /api/v1/growth/owner-audit/reviews`;
+  - added `npm run smoke:owner-audit-review`; default list mode is no-write,
+    record mode requires `--allow-write`;
+  - supported decisions are `accepted`, `needs_follow_up`,
+    `correction_recorded`, and `blocked`; `correction_recorded` requires an
+    existing correction id.
+- Harness/docs updated:
+  - `tests/learning-owner-audit-review-repository.test.js`
+  - `tests/learning-owner-audit-review-service.test.js`
+  - `tests/growth-owner-audit-review-smoke-script.test.js`
+  - `tests/growth-routes.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - targeted `node --check` for touched runtime/store/route/smoke files;
+  - new owner-audit-review repository/service/smoke tests -> 14/14;
+  - focused owner-audit-review route/service/repository/smoke/architecture
+    suite -> 106/106;
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm test` -> 1048/1048;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- AI Ops:
+  - intake classified the write boundary as H1 and returned the platform
+    default deployment-required gate; deployment was not run because the user
+    directed that later packages should be completed before deployment.
+  - evidence id:
+    `evidence-51bd71d3-1912-4c7d-8d8d-f4e2f0a386c1`.
+- Remaining gate:
+  - production deployment and Home AI central visual evidence remain deferred
+    by user instruction until later packages are complete.
+
 ## 2026-06-17T22:08+08:00 - Profile Feedback Reference Contract
 
 - Status: implemented locally; focused reference/MCP/route/frontend/architecture

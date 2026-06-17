@@ -1474,6 +1474,65 @@ function normalizeProfileCorrectionInput(body, workspaceId, target, request, url
   };
 }
 
+function normalizeOwnerAuditReviewListInput(url, target) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "daily_plan",
+    decision: url.searchParams.get("decision") || url.searchParams.get("reviewDecision") || url.searchParams.get("review_decision") || "",
+    status: url.searchParams.get("status") || url.searchParams.get("reviewStatus") || url.searchParams.get("review_status") || "",
+    reviewId: url.searchParams.get("reviewId") || url.searchParams.get("review_id") || url.searchParams.get("ownerAuditReviewId") || "",
+    planDraftId: url.searchParams.get("planDraftId") || url.searchParams.get("plan_draft_id") || "",
+    taskCardId: url.searchParams.get("taskCardId") || url.searchParams.get("task_card_id") || "",
+    evaluationId: url.searchParams.get("evaluationId") || url.searchParams.get("evaluation_id") || "",
+    profileDeltaId: url.searchParams.get("profileDeltaId") || url.searchParams.get("profile_delta_id") || "",
+    evidenceId: url.searchParams.get("evidenceId") || url.searchParams.get("evidence_id") || "",
+    correctionId: url.searchParams.get("correctionId") || url.searchParams.get("correction_id") || "",
+    sourceId: url.searchParams.get("sourceId") || url.searchParams.get("source_id") || "",
+    targetNodeIds: csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || url.searchParams.get("nodeIds") || ""),
+    limit: url.searchParams.get("limit") || ""
+  };
+}
+
+function normalizeOwnerAuditReviewInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    horizon: body.horizon,
+    availableMinutes: body.availableMinutes || body.available_minutes,
+    reviewId: body.reviewId || body.review_id || body.ownerAuditReviewId || body.owner_audit_review_id,
+    decision: body.decision || body.reviewDecision || body.review_decision,
+    status: body.status || body.reviewStatus || body.review_status,
+    ownerNote: body.ownerNote || body.owner_note || body.note,
+    planDraftId: body.planDraftId || body.plan_draft_id,
+    taskCardId: body.taskCardId || body.task_card_id,
+    evaluationId: body.evaluationId || body.evaluation_id,
+    profileDeltaId: body.profileDeltaId || body.profile_delta_id,
+    evidenceId: body.evidenceId || body.evidence_id,
+    correctionId: body.correctionId || body.correction_id,
+    sourceId: body.sourceId || body.source_id,
+    targetNodeIds: body.targetNodeIds || body.target_node_ids || body.nodeIds || body.node_ids,
+    autoSelectCompletedCycle: body.autoSelectCompletedCycle === true || body.auto_select_completed_cycle === true,
+    autoSelectLatestCompletedCycle: body.autoSelectLatestCompletedCycle === true || body.auto_select_latest_completed_cycle === true,
+    limit: body.limit,
+    reviewedBy: body.reviewedBy || body.reviewed_by || requestedWorkspaceId(request, url, ""),
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, ""),
+    reviewedAt: body.reviewedAt || body.reviewed_at
+  };
+}
+
 function normalizeLearningPlanPublishInput(body, workspaceId, request, url, planDraftId) {
   return {
     workspaceId,
@@ -1981,6 +2040,12 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/owner-audit/reviews") {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningOwnerAuditReviewService.listReviews(normalizeOwnerAuditReviewListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
   const cardMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)$/);
   if (request.method === "GET" && cardMatch) {
     const workspaceId = requestedWorkspaceId(request, url);
@@ -2061,6 +2126,19 @@ async function handleGrowthRoute(request, response, url, services) {
       normalizeProfileCorrectionInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.evidenceLedger?.duplicateCount ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/owner-audit/reviews") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_owner_audit_review_owner_required", "Owner audit review requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = services.learningOwnerAuditReviewService.review(
+      normalizeOwnerAuditReviewInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-coins/balance") {

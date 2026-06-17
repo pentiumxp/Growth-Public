@@ -40,7 +40,8 @@ target outcome is an auditable learning operating loop:
 8. evaluate current evidence once through Gateway;
 9. write evaluation, reward, evidence ledger, profile, recommendation, and
    profile-delta audit records;
-10. let Owner review and correct the audit;
+10. let Owner review the audit, record a bounded review decision, and correct
+    profile evidence when needed;
 11. use the updated durable state for the next plan.
 
 The operating principle is scientific accumulation: daily work stays small and
@@ -63,6 +64,7 @@ card generator.
 | Learner completes | One submission, one evaluation, one optional reflection for daily practice. Audio metadata and BLOB storage stay plugin-owned. | Evaluation Gateway receives only current-card evidence. |
 | Persist evidence | Evaluation, reward, evidence ledger, Profile V2 effects, trajectory, recommendation lifecycle, and profile-delta audit. | None. |
 | Owner audit | Cycle audit, profile delta, evidence audit, completeness, and correction readback. | None. |
+| Owner review closure | Summary-only audit-review decision rows linked to completed-cycle profile-feedback and optional correction ids. | None. |
 | Next plan | The next planner run consumes the updated summary-only state. | Planner Gateway only. |
 
 Daily practice is the high-frequency evidence loop. Stage assessments are
@@ -120,11 +122,21 @@ Growth already has substantial backend foundation:
 - Owner audit/correction smoke CLI for read-only cycle audit/completeness/
   evidence audit/profile-delta audit/correction readback and explicit
   `--allow-write` correction recording through the normal service graph. The
-  smoke CLI now mirrors top-level `ownerAudit*` operator readback for
+  smoke CLI mirrors top-level `ownerAudit*` operator readback for
   operation/status, write gate, scope selectors, downstream audit availability,
   counts, completeness, missing-required counts, partial failures, latest
   activity, and correction-record metadata while keeping nested audit DTOs
   canonical;
+- summary-only Owner audit review closure through
+  `learning-owner-audit-review-service`,
+  `learning_growth_owner_audit_reviews`,
+  visible-target scoped `GET /api/v1/growth/owner-audit/reviews`,
+  Owner-only `POST /api/v1/growth/owner-audit/reviews`, and
+  `npm run smoke:owner-audit-review`. This records `accepted`,
+  `needs_follow_up`, `correction_recorded`, or `blocked` review decisions for
+  one completed-cycle profile-feedback packet without writing learner evidence,
+  calling Gateway, generating cards, evaluating submissions, scheduling, or
+  activating stage assessments;
 - Fanfan science vertical and non-sample provisioned vertical harnesses;
 - supervised automation proposal, scheduler dry-run, digest, failure policy,
   action handoff, Owner-explicit execution, scheduler run, reviewed worker

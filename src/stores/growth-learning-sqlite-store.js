@@ -40,6 +40,7 @@ const { createLearningGraphRepository } = require("./growth-learning-sqlite/grap
 const { createLearningHistorySummaryRepository } = require("./growth-learning-sqlite/history-summary");
 const { createLearningPlanDraftRepository } = require("./growth-learning-sqlite/learning-plan-drafts");
 const { createLearningOperatingLoopRunRepository } = require("./growth-learning-sqlite/operating-loop-runs");
+const { createLearningOwnerAuditReviewRepository } = require("./growth-learning-sqlite/owner-audit-reviews");
 const { createMasteryProfileRepository } = require("./growth-learning-sqlite/mastery-profile");
 const { createProfileDeltaAuditRepository } = require("./growth-learning-sqlite/profile-delta-audits");
 const { createLearningReferenceProjectionRepository } = require("./growth-learning-sqlite/reference-projection");
@@ -106,6 +107,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [], sqlite
   const learningHistorySummaryRepository = createLearningHistorySummaryRepository({ open });
   const learningPlanDraftRepository = createLearningPlanDraftRepository({ open });
   const learningOperatingLoopRunRepository = createLearningOperatingLoopRunRepository({ open });
+  const learningOwnerAuditReviewRepository = createLearningOwnerAuditReviewRepository({ open });
   const learningReferenceProjectionRepository = createLearningReferenceProjectionRepository({ open });
   const learningCardAuthoringPublisherRepository = createLearningCardAuthoringPublisherRepository({ open });
   const profileDeltaAuditRepository = createProfileDeltaAuditRepository({ open });
@@ -210,6 +212,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [], sqlite
     learningGraphRepository,
     learningHistorySummaryRepository,
     learningOperatingLoopRunRepository,
+    learningOwnerAuditReviewRepository,
     learningReferenceProjectionRepository,
     learningPlanDraftRepository,
     masteryProfileRepository,

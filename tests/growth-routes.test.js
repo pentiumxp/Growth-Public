@@ -6074,6 +6074,158 @@ test("growth profile correction routes are Owner-only and limited to visible tar
   }
 });
 
+test("growth owner audit review routes are Owner-only, visible-target scoped, and service-owned", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "workspace-key" || workspaceId !== "weixin_stephen") {
+          const error = new Error("Invalid workspace credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { ok: true, workspace_id: workspaceId, hermes_workspace_id: workspaceId };
+      },
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningOwnerAuditReviewService: {
+      listReviews(input) {
+        calls.push({ type: "list", input });
+        return {
+          ok: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          count: 1,
+          reviews: [{
+            reviewId: input.reviewId || "lgaudit_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            taskCardId: input.taskCardId,
+            privacyClass: "summary_only",
+            summaryOnly: true
+          }]
+        };
+      },
+      review(input) {
+        calls.push({ type: "record", input });
+        return {
+          ok: true,
+          duplicate: false,
+          schemaVersion: "growth.learningOwnerAuditReview.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          review: {
+            reviewId: "lgaudit_route_1",
+            workspaceId: input.workspaceId,
+            learnerId: input.learnerId,
+            taskCardId: input.taskCardId,
+            privacyClass: "summary_only",
+            summaryOnly: true
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const listResponse = await fetch(`${baseUrl}/api/v1/growth/owner-audit/reviews?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&reviewId=lgaudit_route_1&taskCardId=ltask_daily_1&evaluationId=leval_daily_1&targetNodeIds=kg_science_fair_test&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(listResponse.status, 200);
+    assert.equal((await listResponse.json()).reviews[0].privacyClass, "summary_only");
+    assert.equal(calls[0].type, "list");
+    assert.equal(calls[0].input.workspaceId, "weixin_fanfan");
+    assert.equal(calls[0].input.learnerId, "fanfan");
+    assert.equal(calls[0].input.displayName, "凡凡");
+    assert.equal(calls[0].input.reviewId, "lgaudit_route_1");
+    assert.equal(calls[0].input.taskCardId, "ltask_daily_1");
+    assert.deepEqual(calls[0].input.targetNodeIds, ["kg_science_fair_test"]);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/owner-audit/reviews`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        subject: "science",
+        targetNodeIds: ["kg_science_fair_test"],
+        taskCardId: "ltask_daily_1",
+        evaluationId: "leval_daily_1",
+        profileDeltaId: "lgpdelta_daily_1",
+        evidenceId: "lgevd_daily_1",
+        decision: "accepted",
+        ownerNote: "Bounded Owner review."
+      })
+    });
+    assert.equal(accepted.status, 201);
+    assert.equal((await accepted.json()).review.reviewId, "lgaudit_route_1");
+    assert.equal(calls[1].type, "record");
+    assert.equal(calls[1].input.workspaceId, "weixin_fanfan");
+    assert.equal(calls[1].input.learnerId, "fanfan");
+    assert.equal(calls[1].input.displayName, "凡凡");
+    assert.equal(calls[1].input.decision, "accepted");
+    assert.equal(calls[1].input.ownerNote, "Bounded Owner review.");
+    assert.equal(calls[1].input.taskCardId, "ltask_daily_1");
+    assert.equal(calls[1].input.reviewedBy, "weixin_stephen");
+
+    const memberList = await fetch(`${baseUrl}/api/v1/growth/owner-audit/reviews?workspaceId=weixin_fanfan`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberList.status, 403);
+    assert.equal((await memberList.json()).error.code, "growth_target_not_visible");
+
+    const memberPost = await fetch(`${baseUrl}/api/v1/growth/owner-audit/reviews`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer workspace-key",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "growth:weixin_fanfan", taskCardId: "ltask_daily_1", decision: "accepted" })
+    });
+    assert.equal(memberPost.status, 403);
+    assert.equal((await memberPost.json()).error.code, "growth_owner_audit_review_owner_required");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth read routes fall back to proxy workspace header", async () => {
   const calls = [];
   const server = createServer({

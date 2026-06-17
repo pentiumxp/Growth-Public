@@ -3239,6 +3239,77 @@ test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {
   assert.match(scriptHarness, /fails closed for missing workspace, invalid JSON, privacy-risk input, and blocked writes/);
 });
 
+test("Growth Owner audit review closure stays service-owned, persisted, and summary-only", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:owner-audit-review/);
+  assert.match(packageJson, /smoke-growth-owner-audit-review\.js/);
+
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningOwnerAuditReviewService/);
+  assert.match(services, /learningOwnerAuditReviewService/);
+  assert.match(services, /learningOwnerAuditReviewRepository/);
+  assert.match(services, /profileFeedbackService: learningProfileFeedbackEvidenceService/);
+
+  const store = read(path.join("src", "stores", "growth-learning-sqlite-store.js"));
+  assert.match(store, /createLearningOwnerAuditReviewRepository/);
+  assert.match(store, /learningOwnerAuditReviewRepository/);
+
+  const repository = read(path.join("src", "stores", "growth-learning-sqlite", "owner-audit-reviews.js"));
+  assert.match(repository, /learning_growth_owner_audit_reviews/);
+  assert.match(repository, /growth\.learningOwnerAuditReview\.v1/);
+  assert.match(repository, /summaryOnly: true/);
+  assert.match(repository, /learning_owner_audit_review_privacy_failed/);
+  assert.match(repository, /privacy_class TEXT NOT NULL DEFAULT 'summary_only'/);
+  assert.doesNotMatch(repository, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(repository, /generateCard|processEvaluationJob|activateStageAssessment|executeOnce|runOnce/);
+  assert.doesNotMatch(repository, /rawAnswer:/);
+  assert.doesNotMatch(repository, /rawPrompt:/);
+
+  const service = read(path.join("src", "services", "learning-owner-audit-review-service.js"));
+  assert.match(service, /createLearningOwnerAuditReviewService/);
+  assert.match(service, /profileFeedbackService\.evaluate/);
+  assert.match(service, /repository\.recordReview/);
+  assert.match(service, /repository\.listReviews/);
+  assert.match(service, /growth\.learningOwnerAuditReview\.v1/);
+  assert.match(service, /summary_only/);
+  assert.match(service, /learning_owner_audit_review_cycle_selector_required/);
+  assert.match(service, /learning_owner_audit_review_correction_required/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(service, /learningDailyLoopService|draftPlan|publishPlanItem|generateCard|evaluateSubmission|processEvaluationJob/);
+  assert.doesNotMatch(service, /executeOnce|runOnce|dryRun|deliverHandoff|activateStageAssessment/);
+  assert.doesNotMatch(service, /rawAnswer:/);
+  assert.doesNotMatch(service, /rawPrompt:/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /\/api\/v1\/growth\/owner-audit\/reviews/);
+  assert.match(routes, /learningOwnerAuditReviewService\.listReviews/);
+  assert.match(routes, /learningOwnerAuditReviewService\.review/);
+  assert.match(routes, /growth_owner_audit_review_owner_required/);
+
+  const script = read(path.join("scripts", "smoke-growth-owner-audit-review.js"));
+  assert.match(script, /createServices/);
+  assert.match(script, /learningOwnerAuditReviewService/);
+  assert.match(script, /listReviews/);
+  assert.match(script, /review/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /owner_audit_review_smoke_write_requires_allow_write/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService|draftPlan|publishPlanItem|generateCard|evaluateSubmission|processEvaluationJob/);
+  assert.doesNotMatch(script, /executeOnce|runOnce|dryRun|deliverHandoff|activateStageAssessment/);
+
+  const serviceHarness = read(path.join("tests", "learning-owner-audit-review-service.test.js"));
+  assert.match(serviceHarness, /records completed-cycle review through profile feedback and repository/);
+  assert.match(serviceHarness, /requires explicit cycle selector unless auto-select is requested/);
+  assert.match(serviceHarness, /fails closed for privacy risk/);
+
+  const scriptHarness = read(path.join("tests", "growth-owner-audit-review-smoke-script.test.js"));
+  assert.match(scriptHarness, /read-only by default and write-gated/);
+  assert.match(scriptHarness, /lists empty local DB through normal service graph/);
+});
+
 test("Growth automation action handoff smoke CLI stays service-owned and write-gated", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:action-handoff/);

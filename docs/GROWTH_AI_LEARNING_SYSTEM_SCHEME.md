@@ -245,7 +245,8 @@ The target loop is:
     boundary.
 11. Growth writes evaluation, reward, evidence ledger, Profile V2 effects,
     trajectory, recommendation lifecycle, and profile-delta audit records.
-12. Owner reviews the cycle audit and may add bounded correction evidence.
+12. Owner reviews the cycle audit, records a bounded review decision, and may
+    add bounded correction evidence.
 13. The next planner run uses the updated persisted state.
 
 The loop is product-complete only when steps 1-13 are operable from the Growth
@@ -348,7 +349,7 @@ Growth should expose five Owner modes over the same service-owned state.
 | Generate | What should this learner do next today? | Select target scope, show readiness, draft, preview, publish one daily item, and show progress/failure. |
 | Audit | Why did this card happen and what changed? | Render plan reason, evidence basis, publish attempt, evaluation, profile delta, correction history, and next recommendation. |
 | Assess | Is this learner ready for a formal checkpoint? | Show readiness, coverage, cooldown, and activation controls owned by stage assessment. |
-| Review | Is Growth's profile judgment correct? | Add bounded Owner correction or confirmation evidence without editing raw history. |
+| Review | Is Growth's profile judgment correct? | Record a bounded Owner review decision and add bounded correction evidence when needed, without editing raw history. |
 | Automate | Which repeated Owner actions can be safely proposed or scheduled later? | Start with proposals, dry-run digest, failure policy, and action handoff before any writeful scheduler. |
 
 The first complete product path is Fanfan science or English daily practice:
@@ -630,6 +631,7 @@ Minimum harness by boundary:
 | Cycle history readback | `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, route/architecture guards, and `npm run smoke:cycle-history` prove selectable historical-cycle readback from public audit services without Gateway calls, writes, direct repository access, publication, generation, evaluation, scheduling, notification, stage activation, or learner-state mutation. |
 | Learner daily-cycle smoke | `tests/growth-learner-cycle-smoke-script.test.js` and `npm run smoke:learner-cycle` prove the service-owned submit -> evaluate -> reflect -> audit path. The CLI defaults to no-write audit, requires `--allow-write` for learner-state writes, and returns summary-only ids/status/counts/findings without learner text, transcripts, raw prompts, answer keys, raw model output, credentials, or provider config. |
 | Owner audit/correction | `tests/growth-owner-audit-smoke-script.test.js` and `npm run smoke:owner-audit` prove read-only cycle audit/completeness/correction readback by default, explicit `--allow-write` before correction writes, privacy-risk input rejection, default release-bundle `owner_audit` collection into `productionOwnerAuditSmokeEvidence`, and no direct repository, Gateway, generation, evaluation, scheduler, notification, or stage-activation calls from the CLI. |
+| Owner audit review closure | `tests/learning-owner-audit-review-repository.test.js`, `tests/learning-owner-audit-review-service.test.js`, `tests/growth-owner-audit-review-smoke-script.test.js`, route/architecture guards, and `npm run smoke:owner-audit-review` prove persisted summary-only Owner review decisions over completed-cycle profile-feedback. This row is an audit fact, not learner evidence, generation permission, scheduler permission, or profile mutation. |
 | Non-sample loop | Visible but unprovisioned target blocks before model calls; explicit provision enables; wrong subject blocks; target workspace owns rows. |
 | UI boundary | Progress states, visible errors, mobile scroll, dark-mode contrast, no hidden controls, and no silent generate action. |
 | Automation boundary | Proposal, scheduler dry-run, digest, failure policy, action handoff, Owner-explicit scheduler execution, and future background scheduling prove no forbidden direct Gateway/card-generation/stage-activation/table access. |

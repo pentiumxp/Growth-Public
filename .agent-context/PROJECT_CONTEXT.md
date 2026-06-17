@@ -109,6 +109,18 @@ readback gate set.
   ids when those ids already exist in summary DTOs. The browser does not
   fabricate references, inspect SQLite, call Gateway, publish, evaluate, compute
   profile-feedback readiness, or mutate learner state from that panel.
+  Growth now also persists summary-only Owner audit review closure records
+  through `learning-owner-audit-review-service`,
+  `learning_growth_owner_audit_reviews`,
+  `GET /api/v1/growth/owner-audit/reviews`, Owner-only
+  `POST /api/v1/growth/owner-audit/reviews`, and
+  `npm run smoke:owner-audit-review`. The service delegates to completed-cycle
+  `learning-profile-feedback-evidence-service.evaluate()` before writing a
+  review row and records only review decisions, selector ids, readiness/count
+  summaries, recommendation/next-action summaries, reviewer metadata, and
+  bounded notes. It does not write learner evidence, mutate Profile V2, call
+  Gateway, generate cards, evaluate submissions, schedule, notify, activate
+  stage assessments, or act as release/deploy permission.
   Compact ordinary-card
   recipe generation now supports `daily_english_v1`, `daily_science_v1`, and
   `daily_subject_practice_v1` while preserving target provisioning, graph
