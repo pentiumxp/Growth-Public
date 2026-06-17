@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:21+08:00 - Target Provisioning Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation,
+  reward settlement, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-target-provisioning` delegated correctly to
+    `learning-target-provisioning-service`, but operator-critical
+    operation/status, write gate, target-enabled status, learner/program scope,
+    selected domain-pack/domain/subject, selected graph-node counts, provision
+    status, graph option counts, subjects, and node mismatch/missing ids were
+    available only inside the service DTO;
+  - this made target-provisioning release evidence harder to inspect without
+    deep JSON.
+- Scope:
+  - added `projectTargetProvisioningSmokeReadback` in
+    `scripts/smoke-growth-target-provisioning.js`;
+  - projected bounded top-level `targetProvisioning*` fields while preserving
+    the service DTO as canonical;
+  - expanded `tests/growth-target-provisioning-smoke-script.test.js` to assert
+    pure projection plus resolve/provision smoke readback fields;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-target-provisioning.js`
+  - `node --test tests/growth-target-provisioning-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` (`Index is up to date`;
+    earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if target-provisioning service behavior, routes, repositories,
+    schema, Gateway, generation, UI, scheduler, learner-state, release-bundle
+    mapping, or release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy is required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `targetProvisioning*` fields do not add write permission, Gateway
+    access, publication rights, scheduling, reward settlement, stage activation,
+    or learner mutation.
+
 ## 2026-06-17T14:13+08:00 - Learner Cycle Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

@@ -906,8 +906,13 @@ readback gate set.
   delegates only to `learning-target-provisioning-service`, defaults to
   read-only resolve, requires explicit `--allow-write` for provision writes,
   and covers cross-subject domain-pack plus subject-domain selection such as
-  `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science`. It is now
-  also part of the default release evidence bundle as `target_provisioning`,
+  `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science`. The smoke
+  CLI also mirrors top-level `targetProvisioning*` operator readback for
+  operation/status, write gate, target-enabled status, learner/program scope,
+  selected domain-pack/domain/subject, selected graph-node counts,
+  provision status, graph option counts, subjects, and node mismatch/missing
+  ids while preserving the service DTO as canonical. It is now also part of the
+  default release evidence bundle as `target_provisioning`,
   maps to `productionTargetProvisioningSmokeEvidence`, and feeds
   release-readiness as `production_target_provisioning_smoke_evidence` so
   multi-workspace/domain-pack rollout cannot pass release review without

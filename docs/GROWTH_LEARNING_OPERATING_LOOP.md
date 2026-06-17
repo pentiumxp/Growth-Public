@@ -1671,7 +1671,11 @@ Implementation progress on 2026-06-15:
   evidence. The default `target_provisioning` task maps to
   `productionTargetProvisioningSmokeEvidence` and proves the selected visible
   learner/domain-pack/subject/node resolves through the target-provisioning
-  service without writing provisions or exposing raw graph content. The
+  service without writing provisions or exposing raw graph content. The smoke
+  CLI also mirrors top-level `targetProvisioning*` operator readback for
+  operation/status, write gate, target-enabled status, selected scope,
+  provision status, graph option counts, subjects, and node mismatch/missing
+  ids while preserving the service DTO as canonical. The
   stage-assessment readiness and stage-checkpoint controls tasks must be run
   with a real `targetNodeIds` coverage selector. For the Fanfan science sample,
   `kg_ls_science_scientific_enquiry_plan_investigative_work` is a valid

@@ -53,6 +53,66 @@ function targetNodeIds(args) {
   ]);
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
+function projectTargetProvisioningSmokeReadback(result = {}, operation = "resolve") {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const graphOptions = objectOnly(readback.graphOptions);
+  const provision = objectOnly(readback.provision);
+  const domainPacks = asArray(graphOptions.domainPacks);
+  const selectedTargetNodeIds = uniqueBoundedStrings(readback.selectedTargetNodeIds || readback.targetNodeIds);
+  const selectedSubjects = uniqueBoundedStrings(graphOptions.subjects, 40);
+  const selectedDomainPackId = cleanString(readback.selectedDomainPackId || graphOptions.selectedDomainPackId || provision.domainPackId, 180);
+  return Object.assign({}, readback, {
+    targetProvisioningStatus: cleanString(readback.ok === false ? readback.error || "failed" : "pass", 140),
+    targetProvisioningOk: readback.ok !== false,
+    targetProvisioningOperation: cleanString(operation, 80),
+    targetProvisioningWriteOperation: WRITE_OPERATIONS.has(cleanString(operation, 80)),
+    targetProvisioningTargetEnabled: readback.targetEnabled === true,
+    targetProvisioningMode: cleanString(readback.mode, 120),
+    targetProvisioningWorkspaceId: cleanString(readback.workspaceId || provision.workspaceId, 160),
+    targetProvisioningLearnerId: cleanString(readback.learnerId || provision.learnerId, 160),
+    targetProvisioningProgramId: cleanString(readback.programId || provision.programId, 160),
+    targetProvisioningSelectedDomainPackId: selectedDomainPackId,
+    targetProvisioningSelectedDomain: cleanString(readback.selectedDomain || graphOptions.selectedDomain || provision.domain, 120),
+    targetProvisioningSelectedSubject: cleanString(readback.selectedSubject || graphOptions.selectedSubject || provision.subject, 120),
+    targetProvisioningSelectedTargetNodeIds: selectedTargetNodeIds,
+    targetProvisioningSelectedTargetNodeCount: selectedTargetNodeIds.length,
+    targetProvisioningProvisionAvailable: Boolean(provision.provisionId),
+    targetProvisioningProvisionId: cleanString(provision.provisionId, 180),
+    targetProvisioningProvisionStatus: cleanString(provision.status, 120),
+    targetProvisioningProvisionSource: cleanString(provision.source, 120),
+    targetProvisioningProvisionUpdatedAt: cleanString(provision.updatedAt, 180),
+    targetProvisioningGraphOptionsAvailable: graphOptions.available === true,
+    targetProvisioningGraphDomainPackCount: domainPacks.length,
+    targetProvisioningGraphSubjectCount: selectedSubjects.length,
+    targetProvisioningGraphSubjects: selectedSubjects,
+    targetProvisioningGraphSelectedDomainPackId: cleanString(graphOptions.selectedDomainPackId, 180),
+    targetProvisioningGraphSelectedDomain: cleanString(graphOptions.selectedDomain, 120),
+    targetProvisioningGraphSelectedSubject: cleanString(graphOptions.selectedSubject, 120),
+    targetProvisioningMissingTargetNodeIds: uniqueBoundedStrings(readback.missingTargetNodeIds),
+    targetProvisioningMismatchedTargetNodeIds: uniqueBoundedStrings(readback.mismatchedTargetNodeIds)
+  });
+}
+
 function operationFromArgs(args) {
   const operation = firstArgValue(args, ["--operation", "--mode"], "resolve").trim().toLowerCase();
   return operation || "resolve";
@@ -128,7 +188,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services, operation, input);
+  const result = projectTargetProvisioningSmokeReadback(runOperation(services, operation, input), operation);
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -148,6 +208,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectTargetProvisioningSmokeReadback,
   runOperation,
   targetNodeIds,
   validateOperation
