@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseDashboardSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-dashboard");
@@ -113,7 +114,69 @@ test("release dashboard smoke script delegates only to service dashboard", () =>
 
   assert.equal(result.ok, true);
   assert.equal(result.status, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboardStatus, "manual_runtime_config_required");
   assert.deepEqual(calls[0].activationGates, ["writeful_execution"]);
+});
+
+test("release dashboard smoke script projects top-level operator readback", () => {
+  const result = projectReleaseDashboardSmokeReadback({
+    ok: true,
+    status: "release_evidence_required",
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    releaseDashboard: {
+      status: "release_evidence_required",
+      readinessStatus: "incomplete",
+      controlsStatus: "release_evidence_required",
+      inventoryStatus: "records_missing",
+      requiredActionCount: 5,
+      nextAction: {
+        key: "owner_daily_ui_evidence",
+        action: "complete_owner_daily_ui_visual_validation",
+        requiredActor: "owner"
+      },
+      missingCheckKeys: ["owner_daily_ui_evidence"],
+      blockedCheckKeys: ["release_decision"],
+      missingEvidenceKeys: ["ownerDailyUiEvidence"],
+      missingApprovalKeys: ["writefulExecutionApproval"],
+      missingRecordKinds: ["release_package"],
+      blockedRecordKinds: ["runtime_enablement"],
+      readinessEvidencePresentCount: 2,
+      readinessEvidenceMissingCount: 31,
+      latestCollectionRunId: "lgacrn_1",
+      latestPackageId: "lgarpkg_1",
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPreflightReportId: "lgarpf_1",
+      latestPreflightStatus: "blocked",
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false
+    }
+  });
+
+  assert.equal(result.releaseDashboardStatus, "release_evidence_required");
+  assert.equal(result.releaseDashboardReadinessStatus, "incomplete");
+  assert.equal(result.releaseDashboardControlsStatus, "release_evidence_required");
+  assert.equal(result.releaseDashboardInventoryStatus, "records_missing");
+  assert.equal(result.releaseDashboardRequiredActionCount, 5);
+  assert.equal(result.releaseDashboardNextAction.key, "owner_daily_ui_evidence");
+  assert.equal(result.releaseDashboardMissingCheckCount, 1);
+  assert.equal(result.releaseDashboardBlockedCheckCount, 1);
+  assert.equal(result.releaseDashboardMissingEvidenceCount, 1);
+  assert.equal(result.releaseDashboardMissingApprovalCount, 1);
+  assert.equal(result.releaseDashboardMissingRecordKindCount, 1);
+  assert.equal(result.releaseDashboardBlockedRecordKindCount, 1);
+  assert.equal(result.releaseDashboardReadinessEvidencePresentCount, 2);
+  assert.equal(result.releaseDashboardReadinessEvidenceMissingCount, 31);
+  assert.equal(result.releaseDashboardLatestCollectionRunId, "lgacrn_1");
+  assert.equal(result.releaseDashboardLatestPackageId, "lgarpkg_1");
+  assert.equal(result.releaseDashboardLatestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseDashboardLatestPreflightReportId, "lgarpf_1");
+  assert.equal(result.releaseDashboardLatestPreflightStatus, "blocked");
+  assert.equal(result.releaseDashboardWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseDashboardRuntimeConfigChange, false);
+  assert.equal(result.releaseDashboardRuntimeConfigMutationPerformed, false);
 });
 
 test("release dashboard smoke script runs no-write read model against a temporary SQLite db", () => {
@@ -142,8 +205,28 @@ test("release dashboard smoke script runs no-write read model against a temporar
     assert.equal(output.status, "release_evidence_required");
     assert.equal(output.releaseDashboard.summaryOnly, true);
     assert.equal(output.releaseDashboard.status, "release_evidence_required");
+    assert.equal(output.releaseDashboardStatus, output.releaseDashboard.status);
+    assert.equal(output.releaseDashboardReadinessStatus, output.releaseDashboard.readinessStatus);
+    assert.equal(output.releaseDashboardControlsStatus, output.releaseDashboard.controlsStatus);
+    assert.equal(output.releaseDashboardInventoryStatus, output.releaseDashboard.inventoryStatus);
+    assert.equal(output.releaseDashboardRequiredActionCount, output.releaseDashboard.requiredActionCount);
+    assert.equal(output.releaseDashboardNextAction.key, output.releaseDashboard.nextAction.key);
+    assert.equal(output.releaseDashboardMissingCheckCount, output.releaseDashboard.missingCheckKeys.length);
+    assert.equal(output.releaseDashboardBlockedCheckCount, output.releaseDashboard.blockedCheckKeys.length);
+    assert.equal(output.releaseDashboardMissingEvidenceCount, output.releaseDashboard.missingEvidenceKeys.length);
+    assert.equal(output.releaseDashboardMissingApprovalCount, output.releaseDashboard.missingApprovalKeys.length);
+    assert.equal(output.releaseDashboardMissingRecordKindCount, output.releaseDashboard.missingRecordKinds.length);
+    assert.equal(output.releaseDashboardBlockedRecordKindCount, output.releaseDashboard.blockedRecordKinds.length);
     assert.equal(output.releaseDashboard.readinessEvidencePresentCount, 0);
     assert.equal(output.releaseDashboard.readinessEvidenceMissingCount, 33);
+    assert.equal(
+      output.releaseDashboardReadinessEvidencePresentCount,
+      output.releaseDashboard.readinessEvidencePresentCount
+    );
+    assert.equal(
+      output.releaseDashboardReadinessEvidenceMissingCount,
+      output.releaseDashboard.readinessEvidenceMissingCount
+    );
     assert.equal(output.releaseReadiness.evidenceReadback.summaryOnly, true);
     assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_daily_ui_evidence"), true);
     assert.equal(output.releaseReadiness.evidenceReadback.missingCheckKeys.includes("owner_review_evidence"), true);
@@ -151,9 +234,12 @@ test("release dashboard smoke script runs no-write read model against a temporar
     assert.equal(output.releaseInventory.releaseEvidenceRecordCount, 0);
     assert.equal(output.artifactReadback.summaryOnly, true);
     assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.releaseDashboardWritefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
+    assert.equal(output.releaseDashboardRuntimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
+    assert.equal(output.releaseDashboardRuntimeConfigMutationPerformed, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

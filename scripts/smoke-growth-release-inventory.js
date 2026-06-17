@@ -73,8 +73,44 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function projectReleaseInventorySmokeReadback(result = {}) {
+  const inventory = objectOnly(result.releaseInventory);
+  return Object.assign({}, result, {
+    releaseInventoryStatus: cleanString(inventory.status || result.status, 120),
+    releaseInventoryArtifactCount: Number(inventory.artifactCount || 0) || 0,
+    releaseInventoryReadbackKindCount: asArray(inventory.readbackKinds).length,
+    releaseInventoryMissingRecordKindCount: asArray(inventory.missingRecordKinds).length,
+    releaseInventoryBlockedRecordKindCount: asArray(inventory.blockedRecordKinds).length,
+    releaseInventoryLatestCollectionRunId: cleanString(inventory.latestCollectionRunId, 140),
+    releaseInventoryLatestReadinessSnapshotId: cleanString(inventory.latestReadinessSnapshotId, 140),
+    releaseInventoryLatestPackageId: cleanString(inventory.latestPackageId, 140),
+    releaseInventoryLatestPackageDashboardStatus: cleanString(inventory.latestPackageDashboardStatus, 120),
+    releaseInventoryLatestReleaseEvidenceRecordId: cleanString(inventory.latestReleaseEvidenceRecordId, 140),
+    releaseInventoryLatestReleaseEvidenceKey: cleanString(inventory.latestReleaseEvidenceKey, 140),
+    releaseInventoryLatestReleaseEvidenceStatus: cleanString(inventory.latestReleaseEvidenceStatus, 120),
+    releaseInventoryLatestPreflightReportId: cleanString(inventory.latestPreflightReportId, 140),
+    releaseInventoryLatestPreflightStatus: cleanString(inventory.latestPreflightStatus, 120),
+    releaseInventoryControlsStatus: cleanString(inventory.controlsStatus, 120),
+    releaseInventoryWritefulSchedulingAllowed: inventory.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
+    releaseInventoryRuntimeConfigChange: inventory.runtimeConfigChange === true || result.runtimeConfigChange === true,
+    releaseInventoryRuntimeConfigMutationPerformed: inventory.runtimeConfigMutationPerformed === true || result.runtimeConfigMutationPerformed === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.inventory(input);
+  return projectReleaseInventorySmokeReadback(service.inventory(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -110,6 +146,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseInventorySmokeReadback,
   runOperation,
   validateInput
 };

@@ -7,6 +7,7 @@ const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 const {
   inputFromArgs,
+  projectReleaseInventorySmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-inventory");
@@ -102,7 +103,57 @@ test("release inventory smoke script delegates to inventory service only", () =>
   });
   assert.equal(result.ok, true);
   assert.equal(result.schemaVersion, "growth.learningAutomationReleaseInventory.v1");
+  assert.equal(result.releaseInventoryStatus, "records_available");
   assert.deepEqual(calls, [{ workspaceId: "weixin_fanfan", learnerId: "fanfan", limit: 5 }]);
+});
+
+test("release inventory smoke script projects top-level operator readback", () => {
+  const result = projectReleaseInventorySmokeReadback({
+    ok: true,
+    status: "release_evidence_required",
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    releaseInventory: {
+      status: "release_evidence_required",
+      artifactCount: 3,
+      readbackKinds: ["release_readiness_snapshot", "release_collection_run"],
+      missingRecordKinds: ["release_package"],
+      blockedRecordKinds: ["runtime_enablement"],
+      latestCollectionRunId: "lgacrn_1",
+      latestReadinessSnapshotId: "lgarr_1",
+      latestPackageId: "lgarpkg_1",
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestReleaseEvidenceRecordId: "lgarev_1",
+      latestReleaseEvidenceKey: "centralVisualEvidence",
+      latestReleaseEvidenceStatus: "pass",
+      latestPreflightReportId: "lgarpf_1",
+      latestPreflightStatus: "blocked",
+      controlsStatus: "release_evidence_required",
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false
+    }
+  });
+
+  assert.equal(result.releaseInventoryStatus, "release_evidence_required");
+  assert.equal(result.releaseInventoryArtifactCount, 3);
+  assert.equal(result.releaseInventoryReadbackKindCount, 2);
+  assert.equal(result.releaseInventoryMissingRecordKindCount, 1);
+  assert.equal(result.releaseInventoryBlockedRecordKindCount, 1);
+  assert.equal(result.releaseInventoryLatestCollectionRunId, "lgacrn_1");
+  assert.equal(result.releaseInventoryLatestReadinessSnapshotId, "lgarr_1");
+  assert.equal(result.releaseInventoryLatestPackageId, "lgarpkg_1");
+  assert.equal(result.releaseInventoryLatestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseInventoryLatestReleaseEvidenceRecordId, "lgarev_1");
+  assert.equal(result.releaseInventoryLatestReleaseEvidenceKey, "centralVisualEvidence");
+  assert.equal(result.releaseInventoryLatestReleaseEvidenceStatus, "pass");
+  assert.equal(result.releaseInventoryLatestPreflightReportId, "lgarpf_1");
+  assert.equal(result.releaseInventoryLatestPreflightStatus, "blocked");
+  assert.equal(result.releaseInventoryControlsStatus, "release_evidence_required");
+  assert.equal(result.releaseInventoryWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseInventoryRuntimeConfigChange, false);
+  assert.equal(result.releaseInventoryRuntimeConfigMutationPerformed, false);
 });
 
 test("release inventory smoke script reads persisted readiness snapshot evidence from SQLite", () => {
@@ -167,7 +218,13 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
     assert.equal(releaseEvidence.evidence.evidenceKey, "ownerDailyUiEvidence");
     assert.equal(output.operation, "inventory");
     assert.equal(output.ok, true);
+    assert.equal(output.releaseInventoryStatus, output.releaseInventory.status);
+    assert.equal(output.releaseInventoryArtifactCount, output.releaseInventory.artifactCount);
+    assert.equal(output.releaseInventoryReadbackKindCount, output.releaseInventory.readbackKinds.length);
+    assert.equal(output.releaseInventoryMissingRecordKindCount, output.releaseInventory.missingRecordKinds.length);
+    assert.equal(output.releaseInventoryBlockedRecordKindCount, output.releaseInventory.blockedRecordKinds.length);
     assert.equal(output.releaseInventory.latestReadinessSnapshotId, readiness.snapshot.readinessId);
+    assert.equal(output.releaseInventoryLatestReadinessSnapshotId, output.releaseInventory.latestReadinessSnapshotId);
     assert.equal(output.releaseInventory.latestReadinessEvidencePresentCount, 1);
     assert.equal(output.releaseInventory.latestReadinessEvidenceMissingCount, 32);
     assert.equal(output.releaseInventory.latestReadinessOwnerReviewStageSummary.proposalCount, 5);
@@ -175,9 +232,15 @@ test("release inventory smoke script reads persisted readiness snapshot evidence
     assert.equal(output.releaseInventory.latestReadinessOwnerReviewStageSummary.failurePolicyStatus, "ready");
     assert.equal(output.releaseInventory.releaseEvidenceRecordCount, 1);
     assert.equal(output.releaseInventory.latestReleaseEvidenceRecordId, releaseEvidence.evidence.evidenceRecordId);
+    assert.equal(
+      output.releaseInventoryLatestReleaseEvidenceRecordId,
+      output.releaseInventory.latestReleaseEvidenceRecordId
+    );
     assert.equal(output.releaseInventory.latestReleaseEvidenceKey, "ownerDailyUiEvidence");
+    assert.equal(output.releaseInventoryLatestReleaseEvidenceKey, output.releaseInventory.latestReleaseEvidenceKey);
     assert.equal(output.releaseInventory.latestReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
     assert.equal(output.releaseInventory.latestReleaseEvidenceStatus, "pass");
+    assert.equal(output.releaseInventoryLatestReleaseEvidenceStatus, output.releaseInventory.latestReleaseEvidenceStatus);
     assert.equal(output.artifactReadback.snapshots.latest.id, readiness.snapshot.readinessId);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.summaryOnly, true);
     assert.equal(output.artifactReadback.snapshots.latest.evidenceReadback.missingCount, 32);

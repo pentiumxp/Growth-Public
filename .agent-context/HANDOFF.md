@@ -9,6 +9,88 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:23+08:00 - Release Dashboard/Inventory Smoke Operator Readback
+
+- Status: implemented, validated, and ready to commit locally. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 projection/readback change. Home AI AI Ops
+  intake over-selected H1 deployment because the task text included release
+  readiness and completion language; this slice intentionally avoids deployment
+  per current user direction and changes only plugin-local smoke CLI readbacks,
+  tests, docs, and handoff.
+- Problem found:
+  - `smoke-growth-release-dashboard` and
+    `smoke-growth-release-inventory` returned canonical service DTOs correctly,
+    but quick operator fields such as status, missing counts, record-kind
+    counts, latest artifact ids, next action, evidence counts, and runtime/write
+    flags were nested under `releaseDashboard` or `releaseInventory`;
+  - this made final no-write release readback less consistent with the already
+    hardened release-readiness, controls, closure, workbench, and
+    artifact-template smoke outputs.
+- Scope:
+  - added top-level, summary-only projection helpers in
+    `scripts/smoke-growth-release-dashboard.js` and
+    `scripts/smoke-growth-release-inventory.js`;
+  - expanded `tests/growth-release-dashboard-smoke-script.test.js` and
+    `tests/growth-release-inventory-smoke-script.test.js` so focused Harness
+    assertions prove those top-level fields mirror the nested DTOs;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff;
+  - preserved nested service DTOs as canonical output and did not change service
+    behavior, SQLite schema, write paths, Gateway boundaries, runtime config,
+    scheduler permissions, visual tooling, or release permissions.
+- Operational readback:
+  - `node scripts/smoke-growth-release-dashboard.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `status=release_evidence_required`,
+    `releaseDashboardStatus=release_evidence_required`,
+    `releaseDashboardReadinessStatus=incomplete`,
+    `releaseDashboardControlsStatus=release_evidence_required`,
+    `releaseDashboardInventoryStatus=release_evidence_required`,
+    `releaseDashboardRequiredActionCount=39`,
+    `releaseDashboardNextAction.key=owner_daily_ui_evidence`,
+    `releaseDashboardMissingCheckCount=24`,
+    `releaseDashboardMissingEvidenceCount=24`,
+    `releaseDashboardMissingRecordKindCount=7`,
+    `releaseDashboardReadinessEvidencePresentCount=2`,
+    `releaseDashboardReadinessEvidenceMissingCount=31`, and
+    `releaseDashboardWritefulSchedulingAllowed=false`;
+  - `node scripts/smoke-growth-release-inventory.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `status=release_evidence_required`,
+    `releaseInventoryStatus=release_evidence_required`,
+    `releaseInventoryArtifactCount=3`,
+    `releaseInventoryReadbackKindCount=9`,
+    `releaseInventoryMissingRecordKindCount=7`,
+    `releaseInventoryBlockedRecordKindCount=0`,
+    `releaseInventoryLatestCollectionRunId=lgacrn_cc6edbc0a3fd8a0211`,
+    `releaseInventoryLatestReleaseEvidenceKey=centralVisualEvidence`,
+    `releaseInventoryLatestReleaseEvidenceStatus=pass`, and
+    `releaseInventoryWritefulSchedulingAllowed=false`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-release-dashboard.js`;
+  - `node --check scripts/smoke-growth-release-inventory.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `node --test tests/growth-release-dashboard-smoke-script.test.js
+    tests/growth-release-inventory-smoke-script.test.js` passed `11/11`.
+  - `node --test tests/learning-automation-release-dashboard-service.test.js
+    tests/learning-automation-release-inventory-service.test.js
+    tests/growth-release-dashboard-smoke-script.test.js
+    tests/growth-release-inventory-smoke-script.test.js` passed `19/19`;
+  - `npm run --silent test:release-union` passed `240/240`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `932/932`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported the index up to date with `374` files,
+    `5,326` nodes, and `23,304` edges, plus the existing earlier-engine
+    advisory.
+- Interface status:
+  - this slice does not complete the Growth UI and does not replace central
+    visual-toolchain evidence.
+
 ## 2026-06-17T12:16+08:00 - Release Controls/Closure Smoke Operator Readback
 
 - Status: implemented, validated, and ready to commit locally. No production

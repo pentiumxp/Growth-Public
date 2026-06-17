@@ -383,6 +383,10 @@ readback gate set.
   next-action, and artifact readback surface for Owner UI/release audit use. It
   owns no repository/table, calls no Gateway/model provider, writes no business
   state, and keeps all runtime mutation and scheduling permission flags false.
+  Release inventory and dashboard smoke CLIs now mirror selected nested DTO
+  fields into top-level operator readbacks for status, missing/blocked record
+  counts, latest artifact/record ids, one next action, evidence counts, and
+  runtime/write flags only.
   The release evidence bundle can also collect it explicitly through the
   non-default `release_dashboard` task, which stores bounded
   `releaseDashboardSmokeEvidence` as final readback packaging only.
@@ -691,7 +695,8 @@ readback gate set.
   `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
   required actions, and one next action while still keeping
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
-  Release-controls and release-closure smoke CLIs now mirror selected nested DTO
+  Release-controls, release-closure, release-inventory, and release-dashboard
+  smoke CLIs now mirror selected nested DTO
   fields into top-level operator readbacks for status, missing counts, required
   action count, one next action, package/record status, and runtime/write flags
   only; those projections are not new release decisions or write permissions.

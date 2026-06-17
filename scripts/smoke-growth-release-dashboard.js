@@ -73,8 +73,58 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80)
+  };
+}
+
+function projectReleaseDashboardSmokeReadback(result = {}) {
+  const dashboard = objectOnly(result.releaseDashboard);
+  return Object.assign({}, result, {
+    releaseDashboardStatus: cleanString(dashboard.status || result.status, 120),
+    releaseDashboardReadinessStatus: cleanString(dashboard.readinessStatus, 120),
+    releaseDashboardControlsStatus: cleanString(dashboard.controlsStatus, 120),
+    releaseDashboardInventoryStatus: cleanString(dashboard.inventoryStatus, 120),
+    releaseDashboardRequiredActionCount: Number(dashboard.requiredActionCount || 0) || 0,
+    releaseDashboardNextAction: compactAction(dashboard.nextAction),
+    releaseDashboardMissingCheckCount: asArray(dashboard.missingCheckKeys).length,
+    releaseDashboardBlockedCheckCount: asArray(dashboard.blockedCheckKeys).length,
+    releaseDashboardMissingEvidenceCount: asArray(dashboard.missingEvidenceKeys).length,
+    releaseDashboardMissingApprovalCount: asArray(dashboard.missingApprovalKeys).length,
+    releaseDashboardMissingRecordKindCount: asArray(dashboard.missingRecordKinds).length,
+    releaseDashboardBlockedRecordKindCount: asArray(dashboard.blockedRecordKinds).length,
+    releaseDashboardReadinessEvidencePresentCount: Number(dashboard.readinessEvidencePresentCount || 0) || 0,
+    releaseDashboardReadinessEvidenceMissingCount: Number(dashboard.readinessEvidenceMissingCount || 0) || 0,
+    releaseDashboardLatestCollectionRunId: cleanString(dashboard.latestCollectionRunId, 140),
+    releaseDashboardLatestPackageId: cleanString(dashboard.latestPackageId, 140),
+    releaseDashboardLatestPackageDashboardStatus: cleanString(dashboard.latestPackageDashboardStatus, 120),
+    releaseDashboardLatestPreflightReportId: cleanString(dashboard.latestPreflightReportId, 140),
+    releaseDashboardLatestPreflightStatus: cleanString(dashboard.latestPreflightStatus, 120),
+    releaseDashboardWritefulSchedulingAllowed: dashboard.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
+    releaseDashboardRuntimeConfigChange: dashboard.runtimeConfigChange === true || result.runtimeConfigChange === true,
+    releaseDashboardRuntimeConfigMutationPerformed: dashboard.runtimeConfigMutationPerformed === true || result.runtimeConfigMutationPerformed === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.dashboard(input);
+  return projectReleaseDashboardSmokeReadback(service.dashboard(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -110,6 +160,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseDashboardSmokeReadback,
   runOperation,
   validateInput
 };

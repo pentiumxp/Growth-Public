@@ -79,12 +79,14 @@ prove phase gating: downstream approval/record actions are visible but not
 submittable while artifact, collection, write-gated, state, or unsupported
 evidence prerequisites remain; once evidence prerequisites clear, approvals can
 become the next submittable action while records remain approval-blocked.
-When changing release-readiness, release-controls, release-closure, workbench, or
-artifact-template smoke CLI
+When changing release-readiness, release-controls, release-closure,
+release-inventory, release-dashboard, workbench, or artifact-template smoke CLI
 top-level readback projection fields, run the matching smoke-script test:
 `tests/growth-release-readiness-smoke-script.test.js`,
 `tests/growth-release-controls-smoke-script.test.js`,
 `tests/growth-release-closure-smoke-script.test.js`,
+`tests/growth-release-inventory-smoke-script.test.js`,
+`tests/growth-release-dashboard-smoke-script.test.js`,
 `tests/growth-release-workbench-smoke-script.test.js`, and/or
 `tests/growth-release-artifact-template-smoke-script.test.js`. The focused
 assertion must prove top-level operator fields mirror the nested service DTO

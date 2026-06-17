@@ -313,12 +313,15 @@ record projection that readiness may consume, and it must preserve
 `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
 `evidenceKey`, and `checkKey`; otherwise the record may appear in
 `persistedEvidenceKeys` but still fail the summary-only evidence contract.
-The release-readiness, release-controls, and release-closure smoke CLIs should
-keep top-level operator readback aligned with their nested service DTOs.
+The release-readiness, release-controls, release-closure, release-inventory, and
+release-dashboard smoke CLIs should keep top-level operator readback aligned
+with their nested service DTOs.
 `releaseReadinessStatus`, readiness booleans, check/evidence/approval/action
 counts, `nextRequiredAction`, `releaseControlsStatus`,
 `releaseControlsNextAction`, `releaseClosureStatus`,
-`releaseClosureNextAction`, and `evidenceReadback...` counters are convenience
+`releaseClosureNextAction`, `releaseInventoryStatus`,
+`releaseInventoryMissingRecordKindCount`, `releaseDashboardStatus`,
+`releaseDashboardNextAction`, and `evidenceReadback...` counters are convenience
 projections over the nested summary DTOs; they are not new release decisions,
 runtime config switches, Gateway calls, writes, or permission grants.
 
@@ -806,7 +809,11 @@ Use the Growth-owned release-readiness boundary:
   nested controls state. It owns no repository/table, does not run smoke tasks
   internally, and does not write, publish, schedule, notify, call Gateway, flip
   runtime config, grant scheduler permission, write preflight reports, or mutate
-  learner state. For
+  learner state.
+  The smoke CLI also mirrors top-level operator fields for status, artifact
+  count, readback-kind count, missing/blocked record-kind counts, latest
+  artifact ids, latest evidence/preflight/package status, controls status, and
+  runtime/write flags only. For
   final release evidence packaging, the same readback can be collected with
   `npm run smoke:release-evidence-bundle -- --task release_inventory ...`;
   keep that task non-default and read the nested inventory/controls status for
@@ -824,7 +831,11 @@ Use the Growth-owned release-readiness boundary:
   report id/status/advisory readiness flags from inventory. It owns no
   repository/table, does not run smoke tasks internally, and does not write,
   publish, schedule, notify, call Gateway, flip runtime config, grant scheduler
-  permission, write preflight reports, or mutate learner state.
+  permission, write preflight reports, or mutate learner state. The smoke CLI
+  also mirrors top-level operator fields for status, readiness/controls/
+  inventory status, required-action count, next action, missing check/evidence/
+  approval/record counts, readiness evidence counts, latest artifact/preflight
+  status, and runtime/write flags only.
 - release workbench readback smoke CLI:
   `npm run smoke:release-workbench -- --workspace-id <workspace> --learner-id <learner> --activation-gates writeful_execution --json`.
   This returns one no-write `growth.learningAutomationReleaseWorkbench.v1`
