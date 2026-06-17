@@ -224,8 +224,12 @@ full operating loop:
   compact `growth.learningLoopState.v1` state/next-action evidence plus
   summary-only `recommendationEvidence` trace from daily-loop preview,
   Owner audit readback, reward settlement readback, Profile V2, trajectory
-  recommendation lifecycle, and stage-assessment readiness without writing,
-  publishing, generating, evaluating, scheduling, notifying, or activating
+  recommendation lifecycle, and stage-assessment readiness. The smoke CLI also
+  mirrors top-level `learningLoopState*` operator readback for status,
+  draft/publish/checkpoint readiness, next action, target/scope, readiness
+  gates, audit/profile/recommendation counts, reward counts/coins, and
+  stage-assessment status while preserving the nested state DTO as canonical
+  without writing, publishing, generating, evaluating, scheduling, notifying, or activating
   stage assessments;
 - no-write profile-feedback smoke CLI is implemented locally through
   `npm run smoke:profile-feedback`; it delegates to

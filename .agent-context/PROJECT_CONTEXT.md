@@ -805,7 +805,11 @@ readback gate set.
   settlement ids/coin totals, plan drafts, profile-delta audits, Owner
   corrections, Profile V2 summaries, and trajectory recommendation lifecycle
   rows that explain the next
-  recommendation,
+  recommendation. The smoke CLI also mirrors top-level `learningLoopState*`
+  operator readback for status, draft/publish/checkpoint readiness, next
+  action, target/scope, readiness gates, audit/profile/recommendation counts,
+  reward counts/coins, and stage-assessment status while preserving the nested
+  state DTO as canonical,
   without Gateway calls, plan publication, card generation, evaluation,
   reward settlement, scheduling, stage activation, direct repository access,
   SQLite writes, or learner-state mutation. It strips idempotency keys,

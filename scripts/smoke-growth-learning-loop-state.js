@@ -83,6 +83,105 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 12) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
+function projectLearningLoopStateSmokeReadback(result = {}) {
+  const state = objectOnly(result);
+  if (!Object.keys(state).length) return result;
+  const target = objectOnly(state.target);
+  const scope = objectOnly(state.scope);
+  const summary = objectOnly(state.summary);
+  const nextAction = objectOnly(state.nextAction);
+  const readiness = objectOnly(state.readiness);
+  const audit = objectOnly(state.audit);
+  const profile = objectOnly(state.profile);
+  const recommendation = objectOnly(state.recommendation);
+  const recommendationEvidence = objectOnly(state.recommendationEvidence);
+  const recommendationEvidenceSummary = objectOnly(recommendationEvidence.summary);
+  const recommendationEvidenceTrace = objectOnly(recommendationEvidence.evidenceTrace);
+  const rewardTrace = objectOnly(recommendationEvidence.rewardTrace);
+  const rewardSummary = objectOnly(rewardTrace.summary);
+  const stageAssessment = objectOnly(state.stageAssessment);
+  const targetNodeIds = uniqueBoundedStrings(scope.targetNodeIds);
+  const missingRequired = uniqueBoundedStrings(summary.missingRequired || audit.missingRequired);
+  const fields = {
+    learningLoopStateStatus: cleanString(state.status || summary.status, 120),
+    learningLoopStateReadyForDraft: summary.readyForDraft === true,
+    learningLoopStateReadyForPublish: summary.readyForPublish === true,
+    learningLoopStateStageCheckpointReady: summary.stageCheckpointReady === true,
+    learningLoopStateAuditComplete: summary.auditComplete === true,
+    learningLoopStateRecommendationEvidenceReady: summary.recommendationEvidenceReady === true,
+    learningLoopStateWeaknessCount: Number(summary.weaknessCount || profile.weaknessCount || 0) || 0,
+    learningLoopStateMissingRequired: missingRequired,
+    learningLoopStateMissingRequiredCount: missingRequired.length,
+    learningLoopStateNextAction: cleanString(nextAction.action, 140),
+    learningLoopStateNextActionEnabled: nextAction.enabled !== false,
+    learningLoopStateNextActionReason: cleanString(nextAction.reason, 180),
+    learningLoopStateNextActionEndpoint: cleanString(nextAction.endpoint, 180),
+    learningLoopStateTargetWorkspaceId: cleanString(target.workspaceId, 160),
+    learningLoopStateTargetLearnerId: cleanString(target.learnerId, 160),
+    learningLoopStateProgramId: cleanString(scope.programId, 160),
+    learningLoopStateDomainPackId: cleanString(scope.domainPackId, 160),
+    learningLoopStateDomain: cleanString(scope.domain, 120),
+    learningLoopStateSubject: cleanString(scope.subject, 120),
+    learningLoopStateHorizon: cleanString(scope.horizon, 80),
+    learningLoopStateAvailableMinutes: Number(scope.availableMinutes || 0) || 0,
+    learningLoopStateTargetNodeIds: targetNodeIds,
+    learningLoopStateTargetNodeCount: targetNodeIds.length,
+    learningLoopStateReadinessReady: readiness.ready === true,
+    learningLoopStateTargetProvisioned: readiness.targetProvisioned === true,
+    learningLoopStateLearningGraphReady: readiness.learningGraphReady === true,
+    learningLoopStatePlannerReady: readiness.plannerReady === true,
+    learningLoopStateAuthoringGatewayConfigured: readiness.authoringGatewayConfigured === true,
+    learningLoopStateEvaluationGatewayConfigured: readiness.evaluationGatewayConfigured === true,
+    learningLoopStatePlannerGatewayConfigured: readiness.plannerGatewayConfigured === true,
+    learningLoopStateOperatingLoopGatewayReady: readiness.operatingLoopGatewayReady === true,
+    learningLoopStateBlockingOpenGeneration: readiness.blockingOpenGeneration === true,
+    learningLoopStatePlanDraftCount: Number(audit.planDraftCount || 0) || 0,
+    learningLoopStatePublishedPlanCount: Number(audit.publishedPlanCount || 0) || 0,
+    learningLoopStateEvidenceCount: Number(audit.evidenceCount || profile.evidenceCount || 0) || 0,
+    learningLoopStateProfileDeltaCount: Number(audit.profileDeltaCount || 0) || 0,
+    learningLoopStateCorrectionCount: Number(audit.correctionCount || 0) || 0,
+    learningLoopStateRecommendationAvailable: recommendation.available === true,
+    learningLoopStateRecommendationId: cleanString(recommendation.recommendationId, 160),
+    learningLoopStateRecommendationStatus: cleanString(recommendation.recommendationStatus, 120),
+    learningLoopStateRecommendationStrategy: cleanString(recommendation.strategy, 120),
+    learningLoopStateRecommendationTargetNodeId: cleanString(recommendation.targetNodeId, 160),
+    learningLoopStateRecommendationTargetNodeCount: countArray(recommendation.targetNodeIds),
+    learningLoopStateRecommendationEvidenceItemCount: Number(recommendationEvidenceSummary.evidenceItemCount || 0) || 0,
+    learningLoopStateRecommendationEvidenceIdCount: Number(recommendationEvidenceSummary.evidenceIdCount || countArray(recommendationEvidenceTrace.evidenceIds) || 0) || 0,
+    learningLoopStateRecommendationProfileDeltaCount: Number(recommendationEvidenceSummary.profileDeltaCount || 0) || 0,
+    learningLoopStateRecommendationCorrectionCount: Number(recommendationEvidenceSummary.correctionCount || 0) || 0,
+    learningLoopStateRecommendationLifecycleCount: Number(recommendationEvidenceSummary.recommendationLifecycleCount || 0) || 0,
+    learningLoopStateRewardSettlementCount: Number(recommendationEvidenceSummary.rewardSettlementCount || rewardSummary.rewardSettlementCount || 0) || 0,
+    learningLoopStateTotalRewardCoins: Number(recommendationEvidenceSummary.totalRewardCoins || rewardSummary.totalCoinAmount || 0) || 0,
+    learningLoopStateStageAssessmentStatus: cleanString(stageAssessment.status, 120),
+    learningLoopStateStageAssessmentEligible: stageAssessment.eligible === true
+  };
+  return Object.assign({}, state, fields);
+}
+
 function inputFromArgs(args) {
   const jsonInput = parseJsonArg(args, ["--input-json", "--inputJson"], {});
   const workspaceId = firstArgValue(args, ["--workspace-id", "--workspaceId"], jsonInput.workspaceId || jsonInput.workspace_id || "");
@@ -139,7 +238,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = services.learningLoopStateService.state(input);
+  const result = projectLearningLoopStateSmokeReadback(services.learningLoopStateService.state(input));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -157,5 +256,6 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectLearningLoopStateSmokeReadback,
   targetNodeIds
 };

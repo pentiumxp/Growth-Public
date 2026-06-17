@@ -9,6 +9,46 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:30+08:00 - Learning Loop State Smoke Operator Readback
+
+- Status: implemented and key-node validated. No production deployment or
+  visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-learning-loop-state` delegated correctly to
+    `learning-loop-state-service.state`, but operator-critical loop status,
+    draft/publish/checkpoint readiness, next action, target/scope, readiness
+    gates, audit/profile/recommendation counts, reward count/coins, and
+    stage-assessment status were available only inside the nested state DTO;
+  - this made the product-visible Owner loop harder to audit from smoke output
+    and release evidence without reading deep JSON.
+- Scope:
+  - added `projectLearningLoopStateSmokeReadback` in
+    `scripts/smoke-growth-learning-loop-state.js`;
+  - projected top-level `learningLoopState*` fields while preserving the
+    nested `growth.learningLoopState.v1` DTO as canonical output;
+  - expanded `tests/growth-learning-loop-state-smoke-script.test.js` with pure
+    projection coverage plus no-write script-output assertions;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-learning-loop-state.js`;
+  - `node --test tests/growth-learning-loop-state-smoke-script.test.js` -> 6/6;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `node scripts/check-growth-docs-locality.js` -> ok, `requiredCount=37`;
+  - `git diff --check` -> ok;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,383 nodes, 23,681 edges, with the existing earlier-engine advisory.
+- Note: full `npm test` is intentionally not planned for this slice per the
+  current speed instruction; `npm run test:release-union` was not relevant
+  because this slice is limited to learning-loop-state smoke projection,
+  Harness, and documentation, with no service, route, schema, Gateway, UI,
+  scheduler, or runtime-config behavior change.
+
 ## 2026-06-17T13:22+08:00 - Release Package Smoke Operator Readback
 
 - Status: implemented and key-node validated. No production deployment or
