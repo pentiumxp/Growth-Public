@@ -78,6 +78,15 @@ readback gate set.
   artifact slots into transient file fields plus collection task selectors. The
   HTTP route does not read server-local manifest file paths, run visual
   tooling, persist evidence by itself, or call Gateway. The
+  central visual evidence boundary also has a visible-target scoped no-write
+  `POST /api/v1/growth/automation/central-visual-evidence` API that delegates
+  only to `learningAutomationCentralVisualEvidenceService.evaluate()`, accepts
+  inline Home AI visual-harness summary JSON only, and does not read or forward
+  server-local artifact file paths. It validates and returns bounded
+  summary-only central visual readback but does not create the required Home AI
+  central visual artifact, run visual tooling, persist release evidence, call
+  Gateway, mutate learner state, apply runtime config, or grant scheduler /
+  release permission. The
   `smoke:release-evidence-collection` CLI now also mirrors bounded top-level
   `releaseEvidenceCollection*` operator readback for collection status, step
   counts/statuses, collection-run id/write state, release-evidence record

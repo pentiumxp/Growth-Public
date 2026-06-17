@@ -626,6 +626,16 @@ closure, activation, controls, inventory, dashboard, and workbench scripts may
 retain legacy flag parsing for compatibility only; those booleans produce
 blocked readback and must not become passing evidence.
 
+Central visual evidence now has two no-write entrypoints: the existing
+`npm run smoke:central-visual-evidence` CLI and visible-target scoped
+`POST /api/v1/growth/automation/central-visual-evidence`. Both delegate only
+to `learningAutomationCentralVisualEvidenceService.evaluate`. The HTTP route
+accepts inline Home AI visual-harness summary JSON only and must not read or
+forward server-local artifact file paths; artifact paths remain CLI/operator
+inputs only for deriving basenames and presence booleans. This route does not
+run visual tooling, persist release evidence, call Gateway, mutate learner
+state, apply runtime config, or grant scheduler/release permission.
+
 | Learning loop state smoke script | `scripts/smoke-growth-learning-loop-state.js` | CLI-only no-write state evidence for `npm run smoke:learning-loop-state`. It instantiates the normal service graph and calls only `learningLoopStateService.state`, returning compact `growth.learningLoopState.v1` summary-only status and next action for Owner UI/harness review. It must not import repositories, call Gateway directly, draft or publish plans, generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state. |
 | Learning cycle history smoke script | `scripts/smoke-growth-cycle-history.js` | CLI-only no-write selectable history evidence for `npm run smoke:cycle-history`. It instantiates the normal service graph and calls only `learningCycleHistoryService.listCycleHistory`, returning `growth.learningCycleHistory.v1` summary-only cycle rows from plan-audit, evidence-audit, profile-delta-audit, correction, and optional completeness readbacks. It mirrors bounded top-level `cycleHistory*` operator readback for audit/release evidence while preserving the nested history DTO as canonical. It must not import repositories, call Gateway directly, draft or publish plans, generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state. |
 | Profile feedback smoke script | `scripts/smoke-growth-profile-feedback.js` | CLI-only no-write completed-cycle feedback evidence for `npm run smoke:profile-feedback`. It instantiates the normal service graph and calls only `learningProfileFeedbackEvidenceService.evaluate`, returning `growth.learningProfileFeedbackEvidence.v1` summary-only status, cycle-completeness, evidence/profile-delta counts, rubric evidence/dimension counts, Profile V2 availability, recommendation, next loop-state readiness, and bounded reward readback counts/coin totals from the next loop state. It requires `workspaceId` plus at least one completed-cycle selector and must not import repositories, call Gateway directly, draft or publish plans, generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state. |
