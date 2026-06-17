@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-sched
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerWorkerSmokeReadback,
   shouldAllowWrite,
   validateOperationInput,
   wrapStatusResult
@@ -102,6 +103,98 @@ test("automation scheduler worker smoke script parses operation, target scope, a
   });
 });
 
+test("automation scheduler worker smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationSchedulerWorkerSmokeReadback({
+    ok: false,
+    source: "growth-learning-automation-scheduler-worker-service",
+    error: "learning_automation_background_scheduler_disabled",
+    workerEnabled: true,
+    targetSource: "default_config",
+    targetCount: 1,
+    attemptedTargets: 1,
+    succeeded: 0,
+    failed: 1,
+    results: [{
+      ok: false,
+      error: "learning_automation_background_scheduler_disabled",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      lease: {
+        leaseId: "lgaslease_1",
+        status: "blocked",
+        runId: "lgasrun_1",
+        runStatus: "blocked",
+        summary: {
+          schedulerRunOk: false,
+          schedulerRunError: "learning_automation_background_scheduler_disabled",
+          schedulerRunStatus: "blocked",
+          schedulerRunId: "lgasrun_1",
+          attemptedExecutions: 0,
+          noDirectGateway: true,
+          noDirectPublish: true,
+          noDirectCardGeneration: true,
+          schedulerRunServiceOnly: true
+        }
+      },
+      run: {
+        runId: "lgasrun_1",
+        status: "blocked"
+      }
+    }]
+  }, "tick-targets", {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    workerMode: "background_worker_tick",
+    workerId: "growth-worker-smoke",
+    leaseMs: 9000,
+    limit: 7,
+    maxTargets: 2,
+    generationKey: "background-worker-smoke",
+    cardSchemaVersion: "growth.learningCard.v1",
+    targetNodeIds: ["kg_science_fair_test"]
+  }, true);
+
+  assert.equal(projected.automationSchedulerWorkerStatus, "blocked");
+  assert.equal(projected.automationSchedulerWorkerOk, false);
+  assert.equal(projected.automationSchedulerWorkerOperation, "tick-targets");
+  assert.equal(projected.automationSchedulerWorkerWriteOperation, true);
+  assert.equal(projected.automationSchedulerWorkerWriteAllowed, true);
+  assert.equal(projected.automationSchedulerWorkerWritesPerformed, true);
+  assert.equal(projected.automationSchedulerWorkerWorkerEnabled, true);
+  assert.equal(projected.automationSchedulerWorkerWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationSchedulerWorkerLearnerId, "fanfan");
+  assert.equal(projected.automationSchedulerWorkerProgramId, "program_science");
+  assert.equal(projected.automationSchedulerWorkerDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(projected.automationSchedulerWorkerDomain, "science");
+  assert.equal(projected.automationSchedulerWorkerSubject, "science");
+  assert.equal(projected.automationSchedulerWorkerMode, "background_worker_tick");
+  assert.equal(projected.automationSchedulerWorkerWorkerId, "growth-worker-smoke");
+  assert.equal(projected.automationSchedulerWorkerTargetSource, "default_config");
+  assert.equal(projected.automationSchedulerWorkerTargetCount, 1);
+  assert.equal(projected.automationSchedulerWorkerAttemptedTargetCount, 1);
+  assert.equal(projected.automationSchedulerWorkerSucceededCount, 0);
+  assert.equal(projected.automationSchedulerWorkerFailedCount, 1);
+  assert.equal(projected.automationSchedulerWorkerResultCount, 1);
+  assert.deepEqual(projected.automationSchedulerWorkerResultWorkspaceIds, ["weixin_fanfan"]);
+  assert.equal(projected.automationSchedulerWorkerTargetNodeCount, 1);
+  assert.deepEqual(projected.automationSchedulerWorkerTargetNodeIds, ["kg_science_fair_test"]);
+  assert.equal(projected.automationSchedulerWorkerLeaseId, "lgaslease_1");
+  assert.equal(projected.automationSchedulerWorkerLeaseStatus, "blocked");
+  assert.equal(projected.automationSchedulerWorkerRunId, "lgasrun_1");
+  assert.equal(projected.automationSchedulerWorkerRunStatus, "blocked");
+  assert.equal(projected.automationSchedulerWorkerSchedulerRunOk, false);
+  assert.equal(projected.automationSchedulerWorkerSchedulerRunError, "learning_automation_background_scheduler_disabled");
+  assert.equal(projected.automationSchedulerWorkerSchedulerRunServiceOnly, true);
+  assert.equal(projected.automationSchedulerWorkerNoDirectGateway, true);
+  assert.equal(projected.automationSchedulerWorkerNoDirectPublish, true);
+  assert.equal(projected.automationSchedulerWorkerNoDirectCardGeneration, true);
+});
+
 test("automation scheduler worker smoke script reports disabled status without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -122,6 +215,18 @@ test("automation scheduler worker smoke script reports disabled status without w
     assert.equal(output.error, "learning_automation_scheduler_worker_disabled");
     assert.equal(output.workerEnabled, false);
     assert.deepEqual(output.results, []);
+    assert.equal(output.automationSchedulerWorkerStatus, "disabled");
+    assert.equal(output.automationSchedulerWorkerOk, true);
+    assert.equal(output.automationSchedulerWorkerOperation, "status");
+    assert.equal(output.automationSchedulerWorkerWriteOperation, false);
+    assert.equal(output.automationSchedulerWorkerWriteAllowed, false);
+    assert.equal(output.automationSchedulerWorkerWritesPerformed, false);
+    assert.equal(output.automationSchedulerWorkerWorkerEnabled, false);
+    assert.equal(output.automationSchedulerWorkerDisabled, true);
+    assert.equal(output.automationSchedulerWorkerExpectedDisabled, true);
+    assert.equal(output.automationSchedulerWorkerWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationSchedulerWorkerLearnerId, "fanfan");
+    assert.equal(output.automationSchedulerWorkerResultCount, 0);
     assert.equal(tableExists(dbPath, "learning_growth_automation_scheduler_worker_leases"), undefined);
     assert.equal(tableExists(dbPath, "learning_growth_automation_scheduler_runs"), undefined);
   });
@@ -186,6 +291,21 @@ test("automation scheduler worker smoke script ticks configured targets only wit
     assert.equal(output.results[0].lease.summary.noDirectCardGeneration, true);
     assert.equal(output.results[0].run.status, "blocked");
     assert.equal(output.results[0].run.reason, "learning_automation_background_scheduler_disabled");
+    assert.equal(output.automationSchedulerWorkerStatus, "blocked");
+    assert.equal(output.automationSchedulerWorkerOperation, "tick-targets");
+    assert.equal(output.automationSchedulerWorkerWriteOperation, true);
+    assert.equal(output.automationSchedulerWorkerWriteAllowed, true);
+    assert.equal(output.automationSchedulerWorkerWritesPerformed, true);
+    assert.equal(output.automationSchedulerWorkerWorkerEnabled, true);
+    assert.equal(output.automationSchedulerWorkerTargetSource, "default_config");
+    assert.equal(output.automationSchedulerWorkerAttemptedTargetCount, 1);
+    assert.equal(output.automationSchedulerWorkerFailedCount, 1);
+    assert.equal(output.automationSchedulerWorkerLeaseStatus, "blocked");
+    assert.equal(output.automationSchedulerWorkerRunStatus, "blocked");
+    assert.equal(output.automationSchedulerWorkerSchedulerRunServiceOnly, true);
+    assert.equal(output.automationSchedulerWorkerNoDirectGateway, true);
+    assert.equal(output.automationSchedulerWorkerNoDirectPublish, true);
+    assert.equal(output.automationSchedulerWorkerNoDirectCardGeneration, true);
     assert.ok(tableExists(dbPath, "learning_growth_automation_scheduler_worker_leases"));
     assert.ok(tableExists(dbPath, "learning_growth_automation_scheduler_runs"));
   });

@@ -9,6 +9,39 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:53+08:00 - Scheduler Worker Smoke Operator Readback
+
+- Status: implemented locally; key-node validation is in progress. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change worker service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, card publication, scheduler dry-run logic, scheduler
+  run/execution behavior, action-handoff delivery, worker-target review,
+  runtime config, UI behavior, production deployment, or learner state.
+- Scope:
+  - added `projectAutomationSchedulerWorkerSmokeReadback()` in
+    `scripts/smoke-growth-automation-scheduler-worker.js`;
+  - projected bounded top-level `automationSchedulerWorker*` fields for
+    disabled status, worker enablement, write gate, target counts, lease/run
+    state, scheduler-run delegation, and no-direct safety flags without
+    exposing lease tokens while preserving nested status/tick/tick-targets DTOs
+    as canonical;
+  - kept enabled tick/tick-targets behind the existing explicit
+    `--allow-write` gate;
+  - expanded `tests/growth-automation-scheduler-worker-smoke-script.test.js` to
+    assert pure projection, default disabled no-write status readback, and
+    write-gated blocked lease/run readback;
+  - updated Growth-local architecture, operating-loop, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-scheduler-worker.js`
+  - `node --test tests/growth-automation-scheduler-worker-smoke-script.test.js`
+  - `npm run --silent smoke:scheduler-worker -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then re-check the
+    remaining release-evidence/readback gaps and continue with the next highest
+    operator-visibility gap.
+
 ## 2026-06-17T15:48+08:00 - Scheduler Worker Target Smoke Operator Readback
 
 - Status: implemented locally; key-node validation is in progress. No

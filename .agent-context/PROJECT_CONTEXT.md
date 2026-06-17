@@ -1253,10 +1253,13 @@ readback gate set.
   `tick` / `tick-targets` operations require explicit `--allow-write` and
   still delegate only to the worker service. With the scheduler run gate still
   disabled, write-gated worker evidence records blocked lease/run state rather
-  than publishing. The CLI must not import repositories, call Gateway, call
-  scheduler run/execution services directly, inspect handoffs, publish,
-  generate cards, activate stage assessments, or mutate learner evidence/
-  profile state.
+  than publishing. The smoke mirrors bounded top-level
+  `automationSchedulerWorker*` operator readback for disabled status, worker
+  enablement, write gate, target counts, lease/run state, scheduler-run
+  delegation, and no-direct safety flags without exposing lease tokens. The CLI
+  must not import repositories, call Gateway, call scheduler run/execution
+  services directly, inspect handoffs, publish, generate cards, activate stage
+  assessments, or mutate learner evidence/profile state.
   The Owner daily-loop backend facade is now implemented through
   `learning-daily-loop-service` and Owner-only
   `GET /api/v1/growth/daily-loop/preview`,

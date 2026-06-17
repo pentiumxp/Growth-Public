@@ -75,6 +75,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 16) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function scanPrivacyKeys(value, path = "$", findings = []) {
   if (!value || typeof value !== "object") return findings;
   if (Array.isArray(value)) {
@@ -188,6 +210,73 @@ function wrapStatusResult(result) {
   return result;
 }
 
+function projectAutomationSchedulerWorkerSmokeReadback(result = {}, operation = "status", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const results = asArray(readback.results);
+  const firstResult = objectOnly(results[0]);
+  const lease = objectOnly(readback.lease || firstResult.lease);
+  const leaseSummary = objectOnly(lease.summary);
+  const run = objectOnly(readback.run || firstResult.run);
+  const schedulerRun = objectOnly(readback.schedulerRun);
+  const schedulerRunRun = objectOnly(schedulerRun.run);
+  const writeOperation = POTENTIAL_WRITE_OPERATIONS.has(operation);
+  const targetNodeIds = uniqueBoundedStrings(input.targetNodeIds, 24);
+  const status = cleanString(
+    readback.disabled === true || readback.expectedDisabled === true
+      ? "disabled"
+      : lease.status || run.status || schedulerRunRun.status || readback.error || (readback.ok === true ? "pass" : "failed"),
+    140
+  );
+  return Object.assign({}, readback, {
+    automationSchedulerWorkerStatus: status,
+    automationSchedulerWorkerOk: readback.ok === true,
+    automationSchedulerWorkerOperation: cleanString(operation, 80),
+    automationSchedulerWorkerWriteOperation: writeOperation,
+    automationSchedulerWorkerWriteAllowed: writeAllowed === true,
+    automationSchedulerWorkerWritesPerformed: writeOperation && writeAllowed === true && readback.workerEnabled === true && Boolean(lease.leaseId || readback.attemptedTargets),
+    automationSchedulerWorkerWorkerEnabled: readback.workerEnabled === true,
+    automationSchedulerWorkerDisabled: readback.disabled === true,
+    automationSchedulerWorkerExpectedDisabled: readback.expectedDisabled === true,
+    automationSchedulerWorkerWorkspaceId: cleanString(readback.workspaceId || firstResult.workspaceId || input.workspaceId, 160),
+    automationSchedulerWorkerLearnerId: cleanString(readback.learnerId || firstResult.learnerId || input.learnerId, 160),
+    automationSchedulerWorkerProgramId: cleanString(input.programId, 160),
+    automationSchedulerWorkerDomainPackId: cleanString(input.domainPackId, 180),
+    automationSchedulerWorkerDomain: cleanString(input.domain, 120),
+    automationSchedulerWorkerSubject: cleanString(input.subject, 120),
+    automationSchedulerWorkerHorizon: cleanString(input.horizon, 80),
+    automationSchedulerWorkerMode: cleanString(input.workerMode, 120),
+    automationSchedulerWorkerWorkerId: cleanString(input.workerId, 160),
+    automationSchedulerWorkerLeaseMs: numberValue(input.leaseMs, 0),
+    automationSchedulerWorkerLimit: numberValue(input.limit, 0),
+    automationSchedulerWorkerMaxTargets: numberValue(input.maxTargets, 0),
+    automationSchedulerWorkerGenerationKey: cleanString(input.generationKey, 160),
+    automationSchedulerWorkerCardSchemaVersion: cleanString(input.cardSchemaVersion, 120),
+    automationSchedulerWorkerTargetSource: cleanString(readback.targetSource, 120),
+    automationSchedulerWorkerTargetCount: numberValue(readback.targetCount, asArray(input.targets).length),
+    automationSchedulerWorkerAttemptedTargetCount: numberValue(readback.attemptedTargets, results.length),
+    automationSchedulerWorkerSucceededCount: numberValue(readback.succeeded, 0),
+    automationSchedulerWorkerFailedCount: numberValue(readback.failed, results.filter((item) => item && item.ok === false).length),
+    automationSchedulerWorkerResultCount: results.length,
+    automationSchedulerWorkerResultWorkspaceIds: uniqueBoundedStrings(results.map((item) => item && item.workspaceId), 24),
+    automationSchedulerWorkerTargetNodeCount: targetNodeIds.length,
+    automationSchedulerWorkerTargetNodeIds: targetNodeIds,
+    automationSchedulerWorkerLeaseId: cleanString(lease.leaseId, 180),
+    automationSchedulerWorkerLeaseStatus: cleanString(lease.status, 120),
+    automationSchedulerWorkerLeaseRunId: cleanString(lease.runId, 180),
+    automationSchedulerWorkerLeaseRunStatus: cleanString(lease.runStatus, 120),
+    automationSchedulerWorkerRunId: cleanString(run.runId || schedulerRunRun.runId, 180),
+    automationSchedulerWorkerRunStatus: cleanString(run.status || schedulerRunRun.status, 120),
+    automationSchedulerWorkerSchedulerRunOk: schedulerRun.ok === true || leaseSummary.schedulerRunOk === true,
+    automationSchedulerWorkerSchedulerRunError: cleanString(schedulerRun.error || leaseSummary.schedulerRunError || firstResult.error || readback.error, 220),
+    automationSchedulerWorkerSchedulerRunServiceOnly: leaseSummary.schedulerRunServiceOnly === true,
+    automationSchedulerWorkerAttemptedExecutionCount: numberValue(leaseSummary.attemptedExecutions, 0),
+    automationSchedulerWorkerNoDirectGateway: leaseSummary.noDirectGateway === true,
+    automationSchedulerWorkerNoDirectPublish: leaseSummary.noDirectPublish === true,
+    automationSchedulerWorkerNoDirectCardGeneration: leaseSummary.noDirectCardGeneration === true
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -224,7 +313,12 @@ async function main() {
   }
   const services = createServices(config);
   const rawResult = await runOperation(services.learningAutomationSchedulerWorkerService, operation, input);
-  const result = operation === "status" ? wrapStatusResult(rawResult) : rawResult;
+  const result = projectAutomationSchedulerWorkerSmokeReadback(
+    operation === "status" ? wrapStatusResult(rawResult) : rawResult,
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -243,6 +337,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerWorkerSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput,
