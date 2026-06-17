@@ -684,6 +684,10 @@ readback gate set.
   release-readiness artifacts. It delegates to
   `learning-automation-release-collection-run-service`, evaluates
   `growth.learningAutomationReleaseCollectionRun.v1` no-write by default,
+  mirrors bounded top-level `releaseCollectionRun*` operator readback for
+  status, write/record state, target scope, bundle/audit/readiness counts and
+  statuses, evidence keys, artifact file names, and false runtime/scheduling
+  flags,
   strips artifact paths to file names, writes
   `learning_growth_automation_release_collection_runs` only with
   `--write-record`, and exposes visible-target scoped

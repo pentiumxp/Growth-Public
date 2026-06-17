@@ -11,6 +11,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-collecti
 
 const {
   inputFromArgs,
+  projectReleaseCollectionRunSmokeReadback,
   shouldWriteRecord
 } = require("../scripts/smoke-growth-release-collection-run");
 
@@ -167,6 +168,110 @@ test("release collection run smoke script parses bounded artifact selectors", ()
   assert.equal(input.releaseReadiness.status, "ready_for_release_review");
 });
 
+test("release collection run smoke script projects top-level operator readback", () => {
+  const result = projectReleaseCollectionRunSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-release-collection-run-service",
+    duplicate: false,
+    run: {
+      runId: "lgacrn_ready_1",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      status: "ready_for_release_review",
+      privacyClass: "summary_only",
+      bundleSummary: {
+        taskCount: 2,
+        passedCount: 2,
+        blockedCount: 0,
+        evidenceKeys: ["productionPlannerReadinessEvidence"],
+        releaseApprovalKeys: ["writefulExecutionApproval"],
+        artifactFileName: "release-bundle.json"
+      },
+      auditSummary: {
+        status: "pass",
+        readyForReleaseEvidence: true,
+        artifactFileName: "release-audit.json"
+      },
+      readinessSummary: {
+        status: "ready_for_release_review",
+        missingCheckCount: 0,
+        blockedCheckCount: 0,
+        requiredActionCount: 0,
+        artifactFileName: "release-readiness.json"
+      },
+      evidenceSummary: {
+        bundleEvidenceKeys: ["productionPlannerReadinessEvidence"],
+        readinessExternalEvidenceKeys: ["releaseEvidenceBundleAudit"],
+        releaseApprovalKeys: ["writefulExecutionApproval"]
+      },
+      releaseReview: {
+        missingCheckKeys: [],
+        blockedCheckKeys: [],
+        missingEvidenceKeys: [],
+        requiredActionCount: 0
+      },
+      summary: {
+        readyForReleaseEvidence: true,
+        readyForReleaseReview: true,
+        bundleTaskCount: 2,
+        bundlePassedCount: 2,
+        bundleBlockedCount: 0,
+        auditStatus: "pass",
+        readinessStatus: "ready_for_release_review",
+        missingCheckCount: 0,
+        blockedCheckCount: 0,
+        requiredActionCount: 0,
+        artifactFileNames: {
+          bundle: "release-bundle.json",
+          audit: "release-audit.json",
+          readiness: "release-readiness.json"
+        }
+      }
+    },
+    evaluated: {
+      schemaVersion: "growth.learningAutomationReleaseCollectionRun.v1"
+    }
+  }, true);
+
+  assert.equal(result.releaseCollectionRunStatus, "ready_for_release_review");
+  assert.equal(result.releaseCollectionRunOk, true);
+  assert.equal(result.releaseCollectionRunWriteRecord, true);
+  assert.equal(result.releaseCollectionRunRecordWritten, true);
+  assert.equal(result.releaseCollectionRunDuplicate, false);
+  assert.equal(result.releaseCollectionRunRunId, "lgacrn_ready_1");
+  assert.equal(result.releaseCollectionRunWorkspaceId, "weixin_fanfan");
+  assert.equal(result.releaseCollectionRunLearnerId, "fanfan");
+  assert.equal(result.releaseCollectionRunProgramId, "program_science");
+  assert.equal(result.releaseCollectionRunDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(result.releaseCollectionRunDomain, "science");
+  assert.equal(result.releaseCollectionRunSubject, "science");
+  assert.equal(result.releaseCollectionRunHorizon, "daily_plan");
+  assert.equal(result.releaseCollectionRunReadyForReleaseReview, true);
+  assert.equal(result.releaseCollectionRunReadyForReleaseEvidence, true);
+  assert.equal(result.releaseCollectionRunBundleTaskCount, 2);
+  assert.equal(result.releaseCollectionRunBundlePassedCount, 2);
+  assert.equal(result.releaseCollectionRunBundleBlockedCount, 0);
+  assert.equal(result.releaseCollectionRunAuditStatus, "pass");
+  assert.equal(result.releaseCollectionRunReadinessStatus, "ready_for_release_review");
+  assert.deepEqual(result.releaseCollectionRunBundleEvidenceKeys, ["productionPlannerReadinessEvidence"]);
+  assert.deepEqual(result.releaseCollectionRunReadinessExternalEvidenceKeys, ["releaseEvidenceBundleAudit"]);
+  assert.deepEqual(result.releaseCollectionRunReleaseApprovalKeys, ["writefulExecutionApproval"]);
+  assert.deepEqual(result.releaseCollectionRunArtifactFileNames, {
+    bundle: "release-bundle.json",
+    audit: "release-audit.json",
+    readiness: "release-readiness.json"
+  });
+  assert.equal(result.releaseCollectionRunWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseCollectionRunRuntimeConfigChange, false);
+  assert.equal(result.releaseCollectionRunConfigChangeApplied, false);
+  assert.equal(result.releaseCollectionRunSchedulerPermissionGranted, false);
+});
+
 test("release collection run smoke script evaluates without writes and strips artifact paths", () => {
   withTempFiles(({ auditPath, bundlePath, readinessPath, dir }) => {
     const result = runScript([
@@ -180,7 +285,20 @@ test("release collection run smoke script evaluates without writes and strips ar
     const json = parseStdout(result);
     assert.equal(json.ok, true);
     assert.equal(json.status, "ready_for_release_review");
+    assert.equal(json.releaseCollectionRunStatus, "ready_for_release_review");
+    assert.equal(json.releaseCollectionRunWriteRecord, false);
+    assert.equal(json.releaseCollectionRunRecordWritten, false);
+    assert.equal(json.releaseCollectionRunWorkspaceId, "weixin_fanfan");
+    assert.equal(json.releaseCollectionRunLearnerId, "fanfan");
+    assert.equal(json.releaseCollectionRunBundleTaskCount, 1);
+    assert.equal(json.releaseCollectionRunBundlePassedCount, 1);
+    assert.equal(json.releaseCollectionRunBundleBlockedCount, 0);
+    assert.equal(json.releaseCollectionRunAuditStatus, "pass");
+    assert.equal(json.releaseCollectionRunReadinessStatus, "ready_for_release_review");
+    assert.deepEqual(json.releaseCollectionRunBundleEvidenceKeys, ["productionPlannerReadinessEvidence"]);
+    assert.deepEqual(json.releaseCollectionRunReleaseApprovalKeys, []);
     assert.equal(json.summary.artifactFileNames.bundle, "release-bundle.json");
+    assert.equal(json.releaseCollectionRunArtifactFileNames.bundle, "release-bundle.json");
     assert.equal(result.stdout.includes(dir), false);
     assert.equal(result.stdout.includes("/Users/"), false);
   });
@@ -203,6 +321,12 @@ test("release collection run smoke script writes summary-only record only when r
     assert.equal(json.ok, true);
     assert.equal(json.run.status, "ready_for_release_review");
     assert.equal(json.run.privacyClass, "summary_only");
+    assert.equal(json.releaseCollectionRunStatus, "ready_for_release_review");
+    assert.equal(json.releaseCollectionRunWriteRecord, true);
+    assert.equal(json.releaseCollectionRunRecordWritten, true);
+    assert.equal(Boolean(json.releaseCollectionRunRunId), true);
+    assert.equal(json.releaseCollectionRunReadyForReleaseReview, true);
+    assert.equal(json.releaseCollectionRunWritefulSchedulingAllowed, false);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {

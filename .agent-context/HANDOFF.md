@@ -9,6 +9,38 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:06+08:00 - Release Collection-Run Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change release collection-run service behavior, repository schema, route
+  authorization, Gateway/model calls, card publication, scheduler
+  execution/tick behavior, action-handoff delivery, runtime config, UI
+  behavior, production deployment, or learner state.
+- Scope:
+  - added `projectReleaseCollectionRunSmokeReadback()` in
+    `scripts/smoke-growth-release-collection-run.js`;
+  - projected bounded top-level `releaseCollectionRun*` fields for status,
+    write/record state, run id, target scope, bundle/audit/readiness counts
+    and statuses, evidence keys, artifact file names, privacy finding counts,
+    and false runtime/scheduling flags while preserving the service DTO as
+    canonical;
+  - kept `evaluateRun` no-write by default and `recordRun` behind the existing
+    `--write-record` flag;
+  - expanded `tests/growth-release-collection-run-smoke-script.test.js` to
+    assert pure projection, no-write evaluation readback, write-record readback,
+    and invalid JSON failure;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-release-collection-run.js`
+  - `node --test tests/growth-release-collection-run-smoke-script.test.js`
+  - `npm run --silent smoke:release-collection-run -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with remaining release readback gaps.
+
 ## 2026-06-17T17:01+08:00 - Release Evidence Bundle Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production

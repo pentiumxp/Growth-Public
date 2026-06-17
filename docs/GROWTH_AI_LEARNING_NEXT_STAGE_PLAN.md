@@ -655,6 +655,10 @@ Use the Growth-owned release-readiness boundary:
   summary artifacts, strips artifact paths to file names, derives
   `ready_for_release_review`, `incomplete`, or `blocked`, and emits
   `growth.learningAutomationReleaseCollectionRun.v1` no-write by default.
+  The CLI mirrors bounded top-level `releaseCollectionRun*` operator readback
+  for status, write/record state, target scope, bundle/audit/readiness counts
+  and statuses, evidence keys, artifact file names, and false
+  runtime/scheduling flags.
   Add `--write-record` only when Owner/release tooling intentionally wants a
   persistent `learning_growth_automation_release_collection_runs` audit row.
   The CLI does not run the bundle builder, run smoke tasks, call Gateway, or
