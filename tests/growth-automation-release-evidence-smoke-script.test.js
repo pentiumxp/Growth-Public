@@ -12,6 +12,7 @@ const readinessScriptPath = path.join(repoRoot, "scripts", "smoke-growth-release
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationReleaseEvidenceSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput
@@ -193,6 +194,81 @@ test("automation release evidence smoke script delegates operations to service o
   assert.deepEqual(calls.map((call) => call.type), ["listEvidence", "evidenceBag", "recordEvidence"]);
 });
 
+test("automation release evidence smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationReleaseEvidenceSmokeReadback({
+    ok: true,
+    count: 2,
+    evidenceKeys: ["ownerDailyUiEvidence", "releasePackageReviewUiEvidence"],
+    evidence: [{
+      evidenceRecordId: "lgarev_owner_daily",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      evidenceKey: "ownerDailyUiEvidence",
+      checkKey: "owner_daily_ui_evidence",
+      status: "pass",
+      evidenceVersion: "growth.learningAutomationReleaseEvidenceRecord.v1",
+      evidence: {
+        schemaVersion: "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1",
+        privacyClass: "summary_only",
+        source: "growth-learning-automation-ui-evidence-service",
+        evidenceKey: "ownerDailyUiEvidence",
+        checkKey: "owner_daily_ui_evidence",
+        uiGate: "owner_daily",
+        readyForReleaseEvidence: true,
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      recordedBy: "weixin_owner",
+      observedAt: "2026-06-17T08:00:00.000Z",
+      privacyClass: "summary_only"
+    }, {
+      evidenceRecordId: "lgarev_blocked",
+      evidenceKey: "releasePackageReviewUiEvidence",
+      status: "blocked"
+    }]
+  }, "list", { workspaceId: "weixin_fanfan", learnerId: "fanfan" }, false);
+
+  assert.equal(projected.automationReleaseEvidenceStatus, "pass");
+  assert.equal(projected.automationReleaseEvidenceOk, true);
+  assert.equal(projected.automationReleaseEvidenceOperation, "list");
+  assert.equal(projected.automationReleaseEvidenceWriteOperation, false);
+  assert.equal(projected.automationReleaseEvidenceWriteAllowed, false);
+  assert.equal(projected.automationReleaseEvidenceWritesPerformed, false);
+  assert.equal(projected.automationReleaseEvidenceWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationReleaseEvidenceLearnerId, "fanfan");
+  assert.equal(projected.automationReleaseEvidenceProgramId, "program_science");
+  assert.equal(projected.automationReleaseEvidenceDomainPackId, "domain_pack_fanfan_cambridge_pathway_v1");
+  assert.equal(projected.automationReleaseEvidenceDomain, "science");
+  assert.equal(projected.automationReleaseEvidenceSubject, "science");
+  assert.equal(projected.automationReleaseEvidenceHorizon, "daily_plan");
+  assert.equal(projected.automationReleaseEvidenceCount, 2);
+  assert.equal(projected.automationReleaseEvidenceRecordId, "lgarev_owner_daily");
+  assert.deepEqual(projected.automationReleaseEvidenceRecordIds, ["lgarev_owner_daily", "lgarev_blocked"]);
+  assert.equal(projected.automationReleaseEvidenceEvidenceKey, "ownerDailyUiEvidence");
+  assert.deepEqual(projected.automationReleaseEvidenceEvidenceKeys, ["ownerDailyUiEvidence", "releasePackageReviewUiEvidence"]);
+  assert.equal(projected.automationReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
+  assert.deepEqual(projected.automationReleaseEvidenceStatuses, ["pass", "blocked"]);
+  assert.equal(projected.automationReleaseEvidencePassCount, 1);
+  assert.equal(projected.automationReleaseEvidenceBlockedCount, 1);
+  assert.equal(projected.automationReleaseEvidencePrivacyClass, "summary_only");
+  assert.equal(projected.automationReleaseEvidenceVersion, "growth.learningAutomationReleaseEvidenceRecord.v1");
+  assert.equal(projected.automationReleaseEvidenceSchemaVersion, "growth.learningAutomationReleaseEvidenceRecord.uiEvidence.v1");
+  assert.equal(projected.automationReleaseEvidenceSource, "growth-learning-automation-ui-evidence-service");
+  assert.equal(projected.automationReleaseEvidenceUiGate, "owner_daily");
+  assert.equal(projected.automationReleaseEvidenceReadyForReleaseEvidence, true);
+  assert.equal(projected.automationReleaseEvidenceRecordedBy, "weixin_owner");
+  assert.equal(projected.automationReleaseEvidenceObservedAt, "2026-06-17T08:00:00.000Z");
+  assert.equal(projected.automationReleaseEvidenceWritefulSchedulingAllowed, false);
+  assert.equal(projected.automationReleaseEvidenceRuntimeConfigChange, false);
+  assert.equal(projected.automationReleaseEvidenceConfigChangeApplied, false);
+});
+
 test("automation release evidence smoke script rejects invalid JSON before service construction", () => {
   const result = spawnSync(process.execPath, [scriptPath, "--workspace-id", "weixin_fanfan", "--evidence-json", "{"], {
     cwd: repoRoot,
@@ -232,6 +308,14 @@ test("automation release evidence smoke script can record against a temporary SQ
     assert.equal(recordOutput.ok, true);
     assert.equal(recordOutput.operation, "record");
     assert.equal(recordOutput.evidence.evidenceKey, "ownerDailyUiEvidence");
+    assert.equal(recordOutput.automationReleaseEvidenceOperation, "record");
+    assert.equal(recordOutput.automationReleaseEvidenceWriteOperation, true);
+    assert.equal(recordOutput.automationReleaseEvidenceWriteAllowed, true);
+    assert.equal(recordOutput.automationReleaseEvidenceWritesPerformed, true);
+    assert.equal(recordOutput.automationReleaseEvidenceEvidenceKey, "ownerDailyUiEvidence");
+    assert.equal(recordOutput.automationReleaseEvidenceCheckKey, "owner_daily_ui_evidence");
+    assert.equal(recordOutput.automationReleaseEvidenceReadyForReleaseEvidence, true);
+    assert.equal(recordOutput.automationReleaseEvidenceWritefulSchedulingAllowed, false);
 
     const bag = spawnSync(process.execPath, [
       scriptPath,
@@ -251,6 +335,11 @@ test("automation release evidence smoke script can record against a temporary SQ
     assert.equal(bagOutput.ok, true);
     assert.equal(bagOutput.evidence.ownerDailyUiEvidence.source, "growth-learning-automation-ui-evidence-service");
     assert.equal(bagOutput.evidence.ownerDailyUiEvidence.evidenceRecordId, recordOutput.evidence.evidenceRecordId);
+    assert.equal(bagOutput.automationReleaseEvidenceOperation, "bag");
+    assert.equal(bagOutput.automationReleaseEvidenceWriteOperation, false);
+    assert.deepEqual(bagOutput.automationReleaseEvidenceBagKeys, ["ownerDailyUiEvidence"]);
+    assert.equal(bagOutput.automationReleaseEvidenceBagKeyCount, 1);
+    assert.equal(bagOutput.automationReleaseEvidenceWritefulSchedulingAllowed, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

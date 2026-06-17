@@ -296,7 +296,11 @@ readback gate set.
   path. The release-evidence record service now re-runs that validator before
   saving any pass UI evidence key, and its evidence bag preserves the
   validator schema/projection summary plus top-level evidence/check keys for
-  readiness readback. Release-readiness
+  readiness readback. `npm run smoke:release-evidence` now mirrors bounded
+  top-level `automationReleaseEvidence*` operator readback for list, bag, and
+  record operations, including write gate, evidence ids/keys, status counts,
+  bag keys, UI validation metadata, and false runtime/writeful flags while
+  preserving nested service DTOs as canonical. Release-readiness
   one-off UI inputs must be `growth.learningAutomationUiEvidence.v1` validator
   summaries or validated release-evidence record projections, so deprecated UI
   flags and unvalidated direct `{ok:true}` UI evidence cannot satisfy

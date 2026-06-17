@@ -58,6 +58,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 24) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function operationFromArgs(args) {
   const explicit = firstArgValue(args, ["--operation"], "");
   const operation = explicit || (hasFlag(args, "--record") ? "record" : hasFlag(args, "--bag") ? "bag" : "list");
@@ -114,6 +136,89 @@ function runOperation(service, operation, input) {
   return service.listEvidence(input);
 }
 
+function summarizeStatuses(records = []) {
+  return asArray(records).reduce((counts, record) => {
+    const status = cleanString(record && record.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function evidenceRowsFrom(readback = {}) {
+  return Array.isArray(readback.evidence) ? readback.evidence : [];
+}
+
+function evidenceRecordFrom(readback = {}) {
+  if (Array.isArray(readback.evidence)) return objectOnly(readback.evidence[0]);
+  const evidence = objectOnly(readback.evidence);
+  return evidence.evidenceRecordId ? evidence : {};
+}
+
+function evidenceBagFrom(readback = {}) {
+  if (Array.isArray(readback.evidence)) return {};
+  const evidence = objectOnly(readback.evidence);
+  return evidence.evidenceRecordId ? {} : evidence;
+}
+
+function projectAutomationReleaseEvidenceSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const rows = evidenceRowsFrom(readback);
+  const record = evidenceRecordFrom(readback);
+  const evidence = objectOnly(record.evidence);
+  const bag = evidenceBagFrom(readback);
+  const bagKeys = uniqueBoundedStrings(readback.evidenceKeys || Object.keys(bag), 40);
+  const statusRows = rows.length ? rows : record.evidenceRecordId ? [record] : [];
+  const statusCounts = summarizeStatuses(statusRows);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const evidenceStatus = cleanString(record.status || evidence.status || readback.status || (operation === "bag" ? "evidence_bag_ready" : operation === "list" ? "listed" : ""), 120);
+  return Object.assign({}, readback, {
+    automationReleaseEvidenceStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : evidenceStatus || "ready",
+      140
+    ),
+    automationReleaseEvidenceOk: readback.ok !== false,
+    automationReleaseEvidenceOperation: cleanString(operation, 80),
+    automationReleaseEvidenceWriteOperation: writeOperation,
+    automationReleaseEvidenceWriteAllowed: writeAllowed === true,
+    automationReleaseEvidenceWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationReleaseEvidenceDuplicate: readback.duplicate === true,
+    automationReleaseEvidenceWorkspaceId: cleanString(readback.workspaceId || record.workspaceId || input.workspaceId, 160),
+    automationReleaseEvidenceLearnerId: cleanString(readback.learnerId || record.learnerId || input.learnerId, 160),
+    automationReleaseEvidenceProgramId: cleanString(record.programId || input.programId, 160),
+    automationReleaseEvidenceDomainPackId: cleanString(record.domainPackId || input.domainPackId, 180),
+    automationReleaseEvidenceDomain: cleanString(record.domain || input.domain, 120),
+    automationReleaseEvidenceSubject: cleanString(record.subject || input.subject, 120),
+    automationReleaseEvidenceHorizon: cleanString(record.horizon || input.horizon, 80),
+    automationReleaseEvidenceCount: numberValue(readback.count, rows.length),
+    automationReleaseEvidenceRecordId: cleanString(record.evidenceRecordId || evidence.evidenceRecordId || evidence.evidenceId, 180),
+    automationReleaseEvidenceRecordIds: uniqueBoundedStrings(rows.map((item) => item && item.evidenceRecordId), 24),
+    automationReleaseEvidenceEvidenceKey: cleanString(record.evidenceKey || evidence.evidenceKey || input.evidenceKey, 160),
+    automationReleaseEvidenceEvidenceKeys: uniqueBoundedStrings(readback.evidenceKeys || rows.map((item) => item && item.evidenceKey), 40),
+    automationReleaseEvidenceBagKeys: bagKeys,
+    automationReleaseEvidenceBagKeyCount: bagKeys.length,
+    automationReleaseEvidenceCheckKey: cleanString(record.checkKey || evidence.checkKey, 160),
+    automationReleaseEvidenceStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationReleaseEvidencePassCount: numberValue(statusCounts.pass, 0),
+    automationReleaseEvidenceMissingCount: numberValue(statusCounts.missing, 0),
+    automationReleaseEvidenceBlockedCount: numberValue(statusCounts.blocked, 0),
+    automationReleaseEvidenceStaleCount: numberValue(statusCounts.stale, 0),
+    automationReleaseEvidenceRevokedCount: numberValue(statusCounts.revoked, 0),
+    automationReleaseEvidenceSupersededCount: numberValue(statusCounts.superseded, 0),
+    automationReleaseEvidencePrivacyClass: cleanString(record.privacyClass || evidence.privacyClass, 80),
+    automationReleaseEvidenceVersion: cleanString(record.evidenceVersion, 140),
+    automationReleaseEvidenceSchemaVersion: cleanString(evidence.schemaVersion, 180),
+    automationReleaseEvidenceSource: cleanString(evidence.source, 180),
+    automationReleaseEvidenceUiGate: cleanString(evidence.uiGate || evidence.uiEvidence?.uiGate, 120),
+    automationReleaseEvidenceReadyForReleaseEvidence: evidence.readyForReleaseEvidence === true,
+    automationReleaseEvidenceRecordedBy: cleanString(record.recordedBy, 160),
+    automationReleaseEvidenceObservedAt: cleanString(record.observedAt || evidence.observedAt, 120),
+    automationReleaseEvidenceWritefulSchedulingAllowed: readback.writefulSchedulingAllowed === true || evidence.writefulSchedulingAllowed === true,
+    automationReleaseEvidenceRuntimeConfigChange: readback.runtimeConfigChange === true || evidence.runtimeConfigChange === true,
+    automationReleaseEvidenceConfigChangeApplied: readback.configChangeApplied === true || evidence.configChangeApplied === true
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -148,7 +253,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services.learningAutomationReleaseEvidenceService, operation, input);
+  const result = projectAutomationReleaseEvidenceSmokeReadback(
+    Object.assign({ operation }, runOperation(services.learningAutomationReleaseEvidenceService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -167,6 +277,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationReleaseEvidenceSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

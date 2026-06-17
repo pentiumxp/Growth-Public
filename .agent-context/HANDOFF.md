@@ -9,6 +9,36 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T16:24+08:00 - Release Evidence Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change release-evidence service behavior, route authorization, repositories,
+  DB schema, Gateway/model calls, card publication, scheduler run/execution
+  behavior, action-handoff delivery, runtime config, UI behavior, production
+  deployment, or learner state.
+- Scope:
+  - added `projectAutomationReleaseEvidenceSmokeReadback()` in
+    `scripts/smoke-growth-automation-release-evidence.js`;
+  - projected bounded top-level `automationReleaseEvidence*` fields for
+    list/bag/record, operation/write gate, evidence ids/keys/status counts,
+    bag keys, UI validation metadata, and false runtime/writeful flags while
+    preserving nested DTOs as canonical;
+  - kept record behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-release-evidence-smoke-script.test.js`
+    to assert pure projection plus explicit record and bag readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-release-evidence.js`
+  - `node --test tests/growth-automation-release-evidence-smoke-script.test.js`
+  - `npm run --silent smoke:release-evidence -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with platform action, central visual, UI evidence, or scheduler-dry-run
+    smoke readback gaps.
+
 ## 2026-06-17T16:17+08:00 - Release Approval Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production
