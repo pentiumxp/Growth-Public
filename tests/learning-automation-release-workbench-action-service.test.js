@@ -382,6 +382,66 @@ test("release workbench action runs evidence collection even when readiness rema
   assert.equal(calls[1][1].ownerAuthorizedWrite, true);
 });
 
+test("release workbench action reports blocked evidence collection as visible failure", () => {
+  const saved = [];
+  const { service } = serviceWith({
+    releaseEvidenceCollectionService: {
+      collect() {
+        return {
+          ok: false,
+          error: "release_evidence_collection_blocked",
+          collection: {
+            schemaVersion: "growth.learningAutomationReleaseEvidenceCollection.v1",
+            summaryOnly: true,
+            status: "blocked",
+            summary: {
+              collectionRunId: "lgacrn_blocked_1",
+              status: "blocked",
+              collectionRunWritten: true
+            }
+          }
+        };
+      }
+    },
+    actionAuditRepository: {
+      saveActionAudit(input) {
+        saved.push(input);
+        return {
+          ok: true,
+          actionAudit: Object.assign({ actionAuditId: "lgawba_blocked_collection_1" }, input)
+        };
+      }
+    }
+  });
+
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence_collection",
+    actionKey: "release_collection_run",
+    tasks: ["owner_daily_ui"],
+    requiredTaskIds: ["owner_daily_ui"],
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.status, "blocked");
+  assert.equal(result.error, "release_evidence_collection_blocked");
+  assert.equal(result.endpointKey, "release_evidence_collection");
+  assert.equal(result.actionRecord.recordId, "lgacrn_blocked_1");
+  assert.equal(result.actionRecord.recordStatus, "blocked");
+  assert.equal(result.actionAuditStatus, "recorded");
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].status, "blocked");
+  assert.equal(saved[0].recordId, "lgacrn_blocked_1");
+  assert.equal(saved[0].recordStatus, "blocked");
+  assert.equal(saved[0].actionSummary.recordStatus, "blocked");
+  assert.equal(saved[0].writeResult, undefined);
+  assert.equal(JSON.stringify(saved[0]).includes("owner_daily_ui"), false);
+});
+
 test("release workbench action still blocks private paths outside transient artifact fields", () => {
   const { service, calls } = serviceWith();
   const result = service.recordAction({

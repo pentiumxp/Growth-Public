@@ -9,6 +9,58 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:00+08:00 - Release Workbench Blocked Collection Action Semantics
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - a delegated `release_evidence_collection` action could return
+    `ok=false/status=blocked` from the owning collection service before any
+    release-evidence record was written, while the workbench action facade
+    still surfaced the wrapper action as recorded/successful;
+  - this made Owner-visible action state less precise and could hide a blocked
+    evidence collection behind a successful button result.
+- Scope:
+  - tightened `learning-automation-release-workbench-action-service` so a
+    `release_evidence_collection` action is considered successful only when the
+    delegated collection wrote or deduped release-evidence records, or when the
+    collection status is not `blocked` / `failed` / `error`;
+  - preserved the existing partial-success behavior where written
+    release-evidence records can complete the wrapper action even if wider
+    release-readiness remains incomplete;
+  - added visible blocked failure output with bounded `actionRecord` and
+    summary-only wrapper action-audit persistence when the delegated collection
+    is blocked before any release-evidence record;
+  - updated Growth architecture docs, the Home AI platform-contract pointer,
+    next-stage plan, and the test matrix with the same rule.
+- Local operational note:
+  - one local diagnostic probe was run with `--allow-write` against the current
+    local Growth DB for `workspaceId=owner`, `learnerId=fanfan`,
+    `domain=science`, `subject=science`, `task=owner_daily_ui`;
+  - it wrote a summary-only blocked collection/action-audit row and did not
+    write pass release-evidence records. Treat it as local diagnostic state,
+    not release evidence or production deployment evidence.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-workbench-action-service.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js
+    tests/growth-release-workbench-action-smoke-script.test.js` passed `25/25`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `235/235`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `922/922`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,268` nodes, and `22,965` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `93.5%`
+    complete;
+  - remaining work is still the external release evidence ladder: real
+    UI/platform/production evidence, explicit Owner approvals/reviews, final
+    release closure, and production deploy evidence.
+
 ## 2026-06-17T10:45+08:00 - Release Workbench Evidence Action Template Fix
 
 - Status: implemented and locally validated. No production deployment was

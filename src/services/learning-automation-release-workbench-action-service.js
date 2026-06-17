@@ -359,9 +359,27 @@ function auditInputFrom({ input, scope, endpointKey, status, actionRecord, dupli
 }
 
 function actionWriteSucceeded(endpointKey, result = {}) {
-  if (endpointKey === "release_evidence_collection") return Boolean(result?.collection);
+  if (endpointKey === "release_evidence_collection") {
+    const collection = objectOnly(result?.collection);
+    if (!Object.keys(collection).length) return false;
+    const summary = objectOnly(collection.summary);
+    if (summary.releaseEvidenceRecordsWritten === true) return true;
+    if (Number(summary.releaseEvidenceRecordRecordedCount || 0) > 0) return true;
+    if (Number(summary.releaseEvidenceRecordDuplicateCount || 0) > 0) return true;
+    const status = cleanString(collection.status || collection.summary?.status, 120);
+    return !["blocked", "failed", "error"].includes(status);
+  }
   if (endpointKey === "release_package" && result?.record) return result.record.ok === true;
   return result?.ok === true;
+}
+
+function failureActionRecord(endpointKey, input = {}, result = {}) {
+  if (endpointKey !== "release_evidence_collection") return null;
+  const record = resultRecord(endpointKey, result);
+  if (!record) return null;
+  const status = cleanString(record.status || objectOnly(record.summary).status, 120);
+  if (!["blocked", "failed", "error"].includes(status)) return null;
+  return actionRecordSummary(endpointKey, input, record);
 }
 
 function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
@@ -461,8 +479,10 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
     }
     const result = callWriteService(endpointKey, input, scope, services);
     if (!actionWriteSucceeded(endpointKey, result)) {
+      const actionRecord = failureActionRecord(endpointKey, input, result);
       const response = Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {
         endpointKey,
+        actionRecord,
         writeResult: result || null
       }), { duplicate: result?.duplicate === true });
       return attachActionAudit(response, auditInputFrom({
@@ -470,6 +490,7 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
         scope,
         endpointKey,
         status: "blocked",
+        actionRecord,
         duplicate: response.duplicate === true,
         workbenchStatus: cleanString(workbench.status, 120),
         error: response.error

@@ -301,8 +301,8 @@ test("release workbench action smoke script can run evidence collection through 
       "--subject", "science",
       "--endpoint-key", "release_evidence_collection",
       "--action-key", "release_collection_run",
-      "--task", "planner_readiness",
-      "--required-task", "planner_readiness",
+      "--task", "learning_loop_state",
+      "--required-task", "learning_loop_state",
       "--write-collection-run",
       "--write-release-evidence-records",
       "--requested-by", "owner",
@@ -372,6 +372,82 @@ test("release workbench action smoke script can run evidence collection through 
     } finally {
       db.close();
     }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("release workbench action smoke script surfaces blocked evidence collection", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-release-workbench-action-blocked-"));
+  const dbPath = path.join(dir, "growth-learning.sqlite3");
+  new DatabaseSync(dbPath).close();
+  try {
+    const result = childProcess.spawnSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-workbench-action.js"),
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--program-id", "program_science",
+      "--domain", "science",
+      "--subject", "science",
+      "--endpoint-key", "release_evidence_collection",
+      "--action-key", "release_collection_run",
+      "--task", "owner_daily_ui",
+      "--required-task", "owner_daily_ui",
+      "--write-collection-run",
+      "--write-release-evidence-records",
+      "--requested-by", "owner",
+      "--allow-write",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+
+    assert.equal(result.status, 1);
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.operation, "record");
+    assert.equal(output.ok, false);
+    assert.equal(output.status, "blocked");
+    assert.equal(output.endpointKey, "release_evidence_collection");
+    assert.equal(output.actionRecord.endpointKey, "release_evidence_collection");
+    assert.equal(output.actionRecord.recordStatus, "blocked");
+    assert.match(output.actionRecord.recordId, /^lgacrn_/);
+    assert.equal(output.actionAuditStatus, "recorded");
+    assert.equal(output.actionAudit.status, "blocked");
+    assert.equal(output.actionAudit.recordStatus, "blocked");
+    assert.equal(JSON.stringify(output.actionAudit).includes("writeResult"), false);
+    assert.equal(JSON.stringify(output.actionAudit).includes(dir), false);
+
+    const auditStdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-workbench-action.js"),
+      "--operation", "list-audits",
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--endpoint-key", "release_evidence_collection",
+      "--action-key", "release_collection_run",
+      "--status", "blocked",
+      "--limit", "5",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    const auditOutput = JSON.parse(auditStdout);
+    assert.equal(auditOutput.ok, true);
+    assert.equal(auditOutput.actionAuditCount, 1);
+    assert.equal(auditOutput.actionAudits[0].status, "blocked");
+    assert.equal(auditOutput.actionAudits[0].recordStatus, "blocked");
+    assert.match(auditOutput.actionAudits[0].recordId, /^lgacrn_/);
+    assert.equal(JSON.stringify(auditOutput).includes("owner_daily_ui"), false);
+    assert.equal(JSON.stringify(auditOutput).includes(dir), false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
