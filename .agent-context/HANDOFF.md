@@ -9,6 +9,38 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T16:03+08:00 - Automation Failure Policy Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change failure-policy service behavior, route authorization, repositories, DB
+  schema, Gateway/model calls, card publication, scheduler dry-run logic,
+  scheduler run/execution behavior, action-handoff delivery, worker timers,
+  stage activation, runtime config, UI behavior, production deployment, or
+  learner state.
+- Scope:
+  - added `projectAutomationFailurePolicySmokeReadback()` in
+    `scripts/smoke-growth-automation-failure-policy.js`;
+  - projected bounded top-level `automationFailurePolicy*` fields for
+    readiness/list/create/review, operation/write gate, scope, policy
+    ids/status counts, Owner review state, retry/rollback/failure flags,
+    missing prerequisites, and `writefulSchedulingAllowed=false` while
+    preserving nested readiness/list/create/review DTOs as canonical;
+  - kept create/review behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-failure-policy-smoke-script.test.js` to
+    assert pure projection, default no-write readiness readback, create/review
+    readback, post-review readiness readback, and list readback;
+  - updated Growth-local architecture, operating-loop, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-failure-policy.js`
+  - `node --test tests/growth-automation-failure-policy-smoke-script.test.js`
+  - `npm run --silent smoke:failure-policy -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with the remaining release/platform/UI evidence smoke readback gaps.
+
 ## 2026-06-17T15:53+08:00 - Scheduler Worker Smoke Operator Readback
 
 - Status: implemented locally; key-node validation is in progress. No

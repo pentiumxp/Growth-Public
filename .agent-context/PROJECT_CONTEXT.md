@@ -1109,7 +1109,11 @@ readback gate set.
   `npm run smoke:failure-policy` is the service-owned operational smoke for
   this boundary: `readiness` is the default read-only operation, `list` is
   read-only, and `create`/`review` require explicit `--allow-write` while
-  delegating only to `learning-automation-failure-policy-service`.
+  delegating only to `learning-automation-failure-policy-service`. The smoke
+  also mirrors bounded top-level `automationFailurePolicy*` operator readback
+  for operation/status, write gate, scope, policy ids/status counts, Owner
+  review state, retry/rollback/failure flags, missing prerequisites, and
+  `writefulSchedulingAllowed=false` while keeping nested DTOs canonical.
   The automation action handoff backend is now implemented through
   `learning-automation-action-handoff-service`,
   `automation-action-handoffs.js`,
