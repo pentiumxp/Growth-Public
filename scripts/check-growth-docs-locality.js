@@ -7,6 +7,8 @@ const ROOT = path.resolve(__dirname, "..");
 
 const REQUIRED_DOCS = Object.freeze([
   "docs/GROWTH_DOCS_INDEX.md",
+  "docs/TEST_MATRIX.md",
+  "docs/IMPLEMENTATION_NOTES/harness-required-matrix.md",
   "docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md",
   "docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md",
   "docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md",
@@ -52,6 +54,8 @@ const FORBIDDEN_CURRENT_POINTERS = Object.freeze([
 
 const CURRENT_DOCS = Object.freeze([
   "docs/GROWTH_DOCS_INDEX.md",
+  "docs/TEST_MATRIX.md",
+  "docs/IMPLEMENTATION_NOTES/harness-required-matrix.md",
   "docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md",
   "docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md",
   "docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md",

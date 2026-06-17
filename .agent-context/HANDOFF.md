@@ -9,6 +9,49 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T08:44+08:00 - Growth Harness Matrix And Release Union Shortcut
+
+- Status: implemented and focused-Harness validated locally. No production
+  deployment in this slice.
+- Change intent:
+  - replace thread-local release test selection with Growth-local durable
+    Harness matrices;
+  - provide a stable `npm run test:release-union` shortcut for the release
+    package/review/authorization/closure/preflight/activation/runtime readback
+    gate set;
+  - keep production Action Inbox/Web Push, central visual, real completed-cycle
+    profile feedback, controlled daily-loop write, explicit approvals, and
+    deployment evidence as external release evidence rather than local
+    fabricated checks.
+- Scope:
+  - added `docs/TEST_MATRIX.md`;
+  - added `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`;
+  - added `scripts/run-growth-release-union-tests.js`;
+  - added `tests/growth-release-union-script.test.js`;
+  - registered the new docs in `scripts/check-growth-docs-locality.js`;
+  - registered the new runtime script in `package.json` syntax coverage and
+    added `test:release-union`;
+  - updated `.agent-context/PROJECT_CONTEXT.md` and `docs/GROWTH_DOCS_INDEX.md`.
+- Validation passed:
+  - `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('package.json ok')"`;
+  - `node --check scripts/run-growth-release-union-tests.js`;
+  - `node scripts/check-growth-docs-locality.js` with `requiredCount=37`;
+  - `node scripts/check-growth-syntax-coverage.js` with `runtimeCount=209`
+    and `checkedCount=209`;
+  - `node --test tests/growth-release-union-script.test.js tests/growth-docs-locality.test.js`
+    passed `2/2`;
+  - `npm run --silent test:release-union` passed `205/205`;
+  - `npm run --silent check` passed with `runtimeCount=209` and
+    `checkedCount=209`;
+  - `git diff --check`;
+  - `npm test` passed `909/909`;
+  - `codegraph sync && codegraph status` reported index up to date with `372`
+    files, `5,200` nodes, and `22,582` edges, plus the existing earlier-engine
+    advisory.
+- Remaining:
+  - commit and push to `origin/main` and `public/main`;
+  - do not deploy unless explicitly requested.
+
 ## 2026-06-17T08:34+08:00 - Package Preflight Readback In Final Release Gates
 
 - Status: implemented and full-Harness validated locally. No production

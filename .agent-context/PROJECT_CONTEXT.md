@@ -17,6 +17,11 @@ Growth-specific documents are owned by this plugin workspace. Use
 `docs/GROWTH_DOCS_INDEX.md` as the local index for Growth product,
 architecture, card-generation, implementation, and runbook documents. Broad
 Home AI platform contracts remain in the Home AI app workspace by pointer.
+Growth-local Harness selection is now recorded in `docs/TEST_MATRIX.md` and
+`docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`; docs-locality requires
+both files, and `npm run test:release-union` is the local shortcut for the
+release package/review/authorization/closure/preflight/activation/runtime
+readback gate set.
 
 ## Current State
 

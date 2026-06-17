@@ -19,6 +19,8 @@ they become Growth-owned.
 | Document | Purpose |
 | --- | --- |
 | `docs/HOME_AI_PLATFORM_CONTRACT.md` | Growth-local platform pointer and validation matrix. |
+| `docs/TEST_MATRIX.md` | Growth-local focused test matrix for service, route, smoke, release, UI, and docs-only validation selection. |
+| `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` | Required Harness obligation by H1/H2/H3 change class, including release-evidence shortcuts that remain forbidden. |
 | `docs/GROWTH_PLUGIN_ARCHITECTURE.md` | Current plugin service/module architecture, operational smoke scripts, and harness map. |
 | `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md` | Durable system scheme for Growth's AI-guided learning product: product thesis, supervised learning-program model, daily/checkpoint/program time scales, strategic product planes, closed loop, learner state model, model-entered steps, daily versus stage-assessment card families, Owner modes, automation maturity, implementation packages, and harness contract. |
 | `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md` | Closed-loop product contract for the supervised AI learning scheme: product goal, learner state model, daily versus stage-assessment card families, Gateway model boundaries, service-first architecture, Owner workflow, audit requirements, supervised automation proposal policy, generalization rules, staged implementation plan, and harness contract. |
@@ -99,7 +101,10 @@ For the AI-driven learning scheme, use this reading order before implementation:
 16. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
    runtime layers, architecture backlog, and route/service/repository
    ownership rules.
-17. UI-specific work then reads
+17. `docs/TEST_MATRIX.md` and
+   `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` for focused
+   Harness selection and H1/H2/H3 validation obligations.
+18. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 
