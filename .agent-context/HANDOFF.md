@@ -9,6 +9,29 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:59+08:00 - Card Authoring Validation Service Harness
+
+- Status: implemented locally; focused Harness passed. No production service
+  behavior, Gateway/model call, DB schema, route authorization, publication,
+  generation orchestration, evaluation, reward settlement, scheduler,
+  notification, stage activation write, runtime config, UI behavior,
+  production deployment, or learner-state mutation changed.
+- Classification: Growth-local H2 service-level Harness/readback coverage.
+- Scope:
+  - added `tests/learning-card-authoring-validation-service.test.js`, closing
+    the missing service-level Harness referenced by `docs/TEST_MATRIX.md`;
+  - covered valid ordinary daily-card validation from JSON, valid formal
+    stage-assessment timing/coverage validation, low-pressure daily duration
+    rejection, graph-plan mismatch rejection, and privacy-scan rejection;
+  - preserved the existing Service First boundary: validation remains inside
+    `learning-card-authoring-validation-service` and publication stays outside
+    this test slice.
+- Validation:
+  - `node --check src/services/learning-card-authoring-validation-service.js`
+  - `node --check tests/learning-card-authoring-validation-service.test.js`
+  - `node --test tests/learning-card-authoring-validation-service.test.js`
+  - `node --test tests/learning-card-authoring-service.test.js`
+
 ## 2026-06-17T17:57+08:00 - Learner-Cycle Service Stage Readback Harness
 
 - Status: implemented locally; focused Harness passed. No production service
