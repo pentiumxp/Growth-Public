@@ -1140,9 +1140,13 @@ readback gate set.
   only existing proposal, digest, failure-policy, action-handoff, scheduler
   execution/run, worker-target, and release-readiness service DTOs, returns
   `growth.learningAutomationOwnerReviewEvidence.v1` summary-only evidence, and
-  keeps all writeful scheduling/runtime flags false. This is backend evidence
-  only and does not replace proposal/digest/action/execution UI or central
-  visual evidence.
+  keeps all writeful scheduling/runtime flags false. The smoke also mirrors
+  bounded top-level `automationOwnerReviewEvidence*` operator readback for
+  scope, gate counts/keys, next Owner action, proposal/digest/action/scheduler/
+  worker/failure-policy counters, release-readiness status, and scheduling/
+  runtime false flags while keeping nested DTOs canonical. This is backend
+  evidence only and does not replace proposal/digest/action/execution UI or
+  central visual evidence.
   The automation scheduler execution backend is now implemented through
   `learning-automation-scheduler-execution-service`,
   `automation-scheduler-executions.js`,
