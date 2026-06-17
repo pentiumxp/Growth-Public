@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-stage-checkpoint
 const {
   inputFromArgs,
   operationFromArgs,
+  projectStageCheckpointControlsSmokeReadback,
   runControls,
   targetNodeIds,
   validateInput
@@ -104,8 +105,149 @@ test("stage checkpoint controls smoke script is read-only and delegates to contr
   assert.equal(calls[0].targetNodeId, "kg_science_fair_test");
 });
 
+test("stage checkpoint controls smoke script projects operator readback", () => {
+  const projected = projectStageCheckpointControlsSmokeReadback({
+    ok: true,
+    source: "growth-learning-stage-checkpoint-controls-service",
+    schemaVersion: "growth.stageCheckpointControls.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    target: {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "Fanfan"
+    },
+    scope: {
+      programId: "program_science",
+      domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+      domain: "science",
+      subject: "science",
+      subjectId: "science",
+      capabilityClusterId: "science_observation",
+      targetNodeId: "kg_science_fair_test",
+      targetNodeIds: ["kg_science_fair_test"],
+      assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_observation_language"]
+    },
+    readiness: {
+      available: true,
+      activationState: "eligible",
+      eligible: true,
+      reason: "enough_recent_practice",
+      cooldownUntil: "",
+      evidence: {
+        minimumRecentOrdinaryCards: 4,
+        recentTrajectoryCount: 5,
+        recentExperienceSignalCount: 2,
+        highPressureSignalCount: 0,
+        challengeSignalCount: 1,
+        sourceCardIds: ["ltask_daily_1", "ltask_daily_2"]
+      },
+      profileSummary: {
+        masteryStateCount: 7,
+        weaknessCount: 2,
+        strengthCount: 3
+      }
+    },
+    policy: {
+      formalAssessmentActivationService: "learning-stage-assessment-service",
+      dailyPlanDirectPublicationAllowed: false,
+      ownerManualActivationAllowed: true,
+      learnerChallengeAllowed: true,
+      lowPressureDailyPracticeSeparate: true
+    },
+    actions: [{
+      key: "refresh_stage_checkpoint_controls",
+      write: false,
+      enabled: true
+    }, {
+      key: "activate_stage_assessment",
+      write: true,
+      enabled: true,
+      disabledReason: ""
+    }, {
+      key: "learner_challenge_route",
+      write: true,
+      enabled: true,
+      disabledReason: ""
+    }],
+    summary: {
+      status: "ready_for_owner_activation",
+      eligible: true,
+      activationState: "eligible",
+      readyForOwnerActivation: true,
+      inCooldown: false,
+      active: false,
+      recentTrajectoryCount: 5,
+      highPressureSignalCount: 0,
+      challengeSignalCount: 1,
+      sourceCardCount: 2
+    }
+  }, "readback");
+
+  assert.equal(projected.stageCheckpointControlsStatus, "ready_for_owner_activation");
+  assert.equal(projected.stageCheckpointControlsOk, true);
+  assert.equal(projected.stageCheckpointControlsOperation, "readback");
+  assert.equal(projected.stageCheckpointControlsWriteOperation, false);
+  assert.equal(projected.stageCheckpointControlsWritesPerformed, false);
+  assert.equal(projected.stageCheckpointControlsSchemaVersion, "growth.stageCheckpointControls.v1");
+  assert.equal(projected.stageCheckpointControlsPrivacyClass, "summary_only");
+  assert.equal(projected.stageCheckpointControlsSummaryOnly, true);
+  assert.equal(projected.stageCheckpointControlsWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.stageCheckpointControlsLearnerId, "fanfan");
+  assert.equal(projected.stageCheckpointControlsProgramId, "program_science");
+  assert.equal(projected.stageCheckpointControlsTargetNodeId, "kg_science_fair_test");
+  assert.deepEqual(projected.stageCheckpointControlsAssessmentCoverageNodeIds, ["kg_science_fair_test", "kg_science_observation_language"]);
+  assert.equal(projected.stageCheckpointControlsEligible, true);
+  assert.equal(projected.stageCheckpointControlsActivationState, "eligible");
+  assert.equal(projected.stageCheckpointControlsReason, "enough_recent_practice");
+  assert.equal(projected.stageCheckpointControlsReadyForOwnerActivation, true);
+  assert.equal(projected.stageCheckpointControlsRecentTrajectoryCount, 5);
+  assert.equal(projected.stageCheckpointControlsChallengeSignalCount, 1);
+  assert.equal(projected.stageCheckpointControlsSourceCardCount, 2);
+  assert.deepEqual(projected.stageCheckpointControlsSourceCardIds, ["ltask_daily_1", "ltask_daily_2"]);
+  assert.equal(projected.stageCheckpointControlsProfileWeaknessCount, 2);
+  assert.equal(projected.stageCheckpointControlsPolicyActivationService, "learning-stage-assessment-service");
+  assert.equal(projected.stageCheckpointControlsDailyPlanDirectPublicationAllowed, false);
+  assert.equal(projected.stageCheckpointControlsOwnerManualActivationAllowed, true);
+  assert.equal(projected.stageCheckpointControlsRefreshEnabled, true);
+  assert.equal(projected.stageCheckpointControlsActivateEnabled, true);
+  assert.equal(projected.stageCheckpointControlsActivateWrite, true);
+  assert.equal(projected.stageCheckpointControlsChallengeEnabled, true);
+  assert.deepEqual(projected.stageCheckpointControlsActionKeys, [
+    "refresh_stage_checkpoint_controls",
+    "activate_stage_assessment",
+    "learner_challenge_route"
+  ]);
+});
+
 test("stage checkpoint controls smoke script runs readback on a temporary SQLite db without creating stage cycles", () => {
   withTempDb(({ dir, dbPath }) => {
+    const setup = new DatabaseSync(dbPath, { open: true });
+    try {
+      setup.exec(`
+        CREATE TABLE learning_growth_card_trajectories (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL,
+          learner_id TEXT NOT NULL DEFAULT '',
+          task_card_id TEXT NOT NULL DEFAULT '',
+          source_evaluation_id TEXT NOT NULL DEFAULT '',
+          strategy TEXT NOT NULL DEFAULT '',
+          difficulty_band TEXT NOT NULL DEFAULT '',
+          target_node_ids_json TEXT NOT NULL DEFAULT '[]',
+          performance_summary TEXT NOT NULL DEFAULT '',
+          confirmed_strengths_json TEXT NOT NULL DEFAULT '[]',
+          remaining_weaknesses_json TEXT NOT NULL DEFAULT '[]',
+          mastery_changes_json TEXT NOT NULL DEFAULT '[]',
+          next_recommendation_json TEXT NOT NULL DEFAULT '{}',
+          raw_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `);
+    } finally {
+      setup.close();
+    }
+
     const result = runScript([
       "--workspace-id", "weixin_fanfan",
       "--learner-id", "fanfan",
@@ -130,6 +272,30 @@ test("stage checkpoint controls smoke script runs readback on a temporary SQLite
     assert.equal(output.policy.formalAssessmentActivationService, "learning-stage-assessment-service");
     assert.equal(output.policy.dailyPlanDirectPublicationAllowed, false);
     assert.equal(output.actions.find((action) => action.key === "activate_stage_assessment").enabled, false);
+    assert.equal(output.stageCheckpointControlsStatus, "not_ready");
+    assert.equal(output.stageCheckpointControlsOk, true);
+    assert.equal(output.stageCheckpointControlsOperation, "controls");
+    assert.equal(output.stageCheckpointControlsWriteOperation, false);
+    assert.equal(output.stageCheckpointControlsWritesPerformed, false);
+    assert.equal(output.stageCheckpointControlsSchemaVersion, "growth.stageCheckpointControls.v1");
+    assert.equal(output.stageCheckpointControlsPrivacyClass, "summary_only");
+    assert.equal(output.stageCheckpointControlsSummaryOnly, true);
+    assert.equal(output.stageCheckpointControlsWorkspaceId, "weixin_fanfan");
+    assert.equal(output.stageCheckpointControlsLearnerId, "fanfan");
+    assert.equal(output.stageCheckpointControlsProgramId, "program_science");
+    assert.equal(output.stageCheckpointControlsDomain, "science");
+    assert.equal(output.stageCheckpointControlsSubject, "science");
+    assert.equal(output.stageCheckpointControlsTargetNodeId, "kg_science_fair_test");
+    assert.deepEqual(output.stageCheckpointControlsAssessmentCoverageNodeIds, ["kg_science_fair_test"]);
+    assert.equal(output.stageCheckpointControlsActivationState, "dormant");
+    assert.equal(output.stageCheckpointControlsEligible, false);
+    assert.equal(output.stageCheckpointControlsReadyForOwnerActivation, false);
+    assert.equal(output.stageCheckpointControlsRecentTrajectoryCount, 0);
+    assert.equal(output.stageCheckpointControlsPolicyActivationService, "learning-stage-assessment-service");
+    assert.equal(output.stageCheckpointControlsDailyPlanDirectPublicationAllowed, false);
+    assert.equal(output.stageCheckpointControlsOwnerManualActivationAllowed, true);
+    assert.equal(output.stageCheckpointControlsActivateEnabled, false);
+    assert.equal(output.stageCheckpointControlsActivateDisabledReason, "insufficient_recent_practice");
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {

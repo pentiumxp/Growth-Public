@@ -9,6 +9,54 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:57+08:00 - Stage Checkpoint Controls Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change plus a small
+  legacy read compatibility fix. It does not change route authorization,
+  repositories' write semantics, DB schema creation, Gateway/model calls, plan
+  draft/publish behavior, card generation, evaluation, reward settlement,
+  runtime config, scheduler permission, UI behavior, production deployment, or
+  learner state.
+- Problem found:
+  - `npm run smoke:stage-checkpoint-controls` returned the canonical nested
+    `growth.stageCheckpointControls.v1` DTO, but release/Owner evidence had no
+    bounded top-level `stageCheckpointControls*` operator fields;
+  - the default local Growth SQLite had an older profile table shape where a
+    read-only mastery/profile query could still add a `program_id = ?` filter
+    even when that column was absent, causing `no such column: program_id`
+    during checkpoint-readiness projection.
+- Scope:
+  - added `projectStageCheckpointControlsSmokeReadback()` in
+    `scripts/smoke-growth-stage-checkpoint-controls.js`;
+  - projected top-level `stageCheckpointControls*` fields for status, write
+    gate, target/scope, readiness/cooldown counts, policy flags, action
+    availability, and no-write status while preserving the nested DTO as
+    canonical;
+  - updated `mastery-profile` read selection to add workspace/learner/program
+    filters only when the table has those columns, so old summary tables do not
+    break read-only profile projection;
+  - expanded `tests/growth-stage-checkpoint-controls-smoke-script.test.js` to
+    assert top-level readback and reproduce the legacy missing-`program_id`
+    trajectory table case;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check src/stores/growth-learning-sqlite/mastery-profile.js`
+  - `node --check scripts/smoke-growth-stage-checkpoint-controls.js`
+  - `node --test tests/growth-stage-checkpoint-controls-smoke-script.test.js`
+  - `npm run --silent smoke:stage-checkpoint-controls -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --target-node-id kg_science_fair_test --json`
+  - `GROWTH_DATA_DIR=/tmp/growth-stage-checkpoint-controls-smoke-current GROWTH_LEARNING_DB_PATH=/tmp/growth-stage-checkpoint-controls-smoke-current/growth-learning.sqlite3 npm run --silent smoke:stage-checkpoint-controls -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --domain science --subject science --target-node-id kg_science_fair_test --json`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+- Follow-up:
+  - continue the AI learning-loop closure by exposing the next missing
+    backend/CLI readback slice rather than expanding full-suite tests;
+  - if more old-table `program_id` drift appears, handle it as a focused
+    SQLite compatibility slice instead of mixing it into feature work.
+
 ## 2026-06-17T14:48+08:00 - Daily Loop Preview Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

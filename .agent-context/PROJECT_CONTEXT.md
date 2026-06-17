@@ -114,8 +114,11 @@ readback gate set.
   SQLite tables, or mutate learner state. The same boundary now has a no-write
   operational smoke through `npm run smoke:stage-checkpoint-controls`, which
   delegates only to `learningStageCheckpointControlsService.controls()` through
-  the normal service graph and feeds `stageCheckpointControlsEvidence` into
-  release evidence bundles/readiness. The embedded Owner generation panel now
+  the normal service graph, mirrors bounded top-level
+  `stageCheckpointControls*` operator readback for status, write gate,
+  target/scope, readiness/cooldown counts, policy flags, and action
+  availability, and feeds `stageCheckpointControlsEvidence` into release
+  evidence bundles/readiness. The embedded Owner generation panel now
   fetches that controls DTO through `GET /api/v1/growth/stage-assessments/controls`,
   displays bounded readiness evidence, and enables formal-checkpoint generation
   only when the `activate_stage_assessment` action is enabled; the actual write

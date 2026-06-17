@@ -6,6 +6,7 @@ const {
   insertDynamic,
   numberValue,
   parseJson,
+  tableColumns,
   tableExists,
   upsertDynamic
 } = require("./core");
@@ -207,20 +208,21 @@ function findTrajectoryRecommendationRow(db, input = {}) {
 
 function selectByWorkspace(db, tableName, input = {}, order = "updated_at DESC", limit = 24) {
   if (!tableExists(db, tableName)) return [];
+  const columns = tableColumns(db, tableName);
   const values = [];
   const where = [];
   const workspaceId = cleanString(input.workspaceId);
   const learnerId = cleanString(input.learnerId);
   const programId = cleanString(input.programId);
-  if (workspaceId) {
+  if (workspaceId && columns.includes("workspace_id")) {
     where.push("workspace_id = ?");
     values.push(workspaceId);
   }
-  if (learnerId) {
+  if (learnerId && columns.includes("learner_id")) {
     where.push("learner_id = ?");
     values.push(learnerId);
   }
-  if (programId) {
+  if (programId && columns.includes("program_id")) {
     where.push("program_id = ?");
     values.push(programId);
   }

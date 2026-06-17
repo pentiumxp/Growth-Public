@@ -15,6 +15,28 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return uniqueStrings(asArray(values).map((value) => cleanString(value, 160))).slice(0, maxItems);
+}
+
+function numberValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric;
+}
+
 function firstArgValue(args, names, fallback = "") {
   for (const name of names) {
     const value = argValue(args, name, "");
@@ -162,6 +184,81 @@ function runControls(service, input) {
   return service.controls(input);
 }
 
+function actionByKey(actions = [], key = "") {
+  return asArray(actions).find((action) => action && action.key === key) || {};
+}
+
+function projectStageCheckpointControlsSmokeReadback(result = {}, operation = "controls") {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const target = objectOnly(readback.target);
+  const scope = objectOnly(readback.scope);
+  const readiness = objectOnly(readback.readiness);
+  const evidence = objectOnly(readiness.evidence);
+  const profileSummary = objectOnly(readiness.profileSummary);
+  const policy = objectOnly(readback.policy);
+  const summary = objectOnly(readback.summary);
+  const refreshAction = actionByKey(readback.actions, "refresh_stage_checkpoint_controls");
+  const activateAction = actionByKey(readback.actions, "activate_stage_assessment");
+  const challengeAction = actionByKey(readback.actions, "learner_challenge_route");
+  return Object.assign({}, readback, {
+    stageCheckpointControlsStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : summary.status || readiness.activationState || "pass",
+      140
+    ),
+    stageCheckpointControlsOk: readback.ok !== false,
+    stageCheckpointControlsOperation: cleanString(operation || readback.operation || "controls", 80),
+    stageCheckpointControlsWriteOperation: false,
+    stageCheckpointControlsWritesPerformed: false,
+    stageCheckpointControlsSchemaVersion: cleanString(readback.schemaVersion, 120),
+    stageCheckpointControlsPrivacyClass: cleanString(readback.privacyClass, 80),
+    stageCheckpointControlsSummaryOnly: readback.summaryOnly === true,
+    stageCheckpointControlsWorkspaceId: cleanString(target.workspaceId, 160),
+    stageCheckpointControlsLearnerId: cleanString(target.learnerId, 160),
+    stageCheckpointControlsDisplayName: cleanString(target.displayName || target.label, 120),
+    stageCheckpointControlsProgramId: cleanString(scope.programId, 160),
+    stageCheckpointControlsDomainPackId: cleanString(scope.domainPackId, 180),
+    stageCheckpointControlsDomain: cleanString(scope.domain, 120),
+    stageCheckpointControlsSubject: cleanString(scope.subject, 120),
+    stageCheckpointControlsSubjectId: cleanString(scope.subjectId, 160),
+    stageCheckpointControlsCapabilityClusterId: cleanString(scope.capabilityClusterId, 160),
+    stageCheckpointControlsTargetNodeId: cleanString(scope.targetNodeId, 180),
+    stageCheckpointControlsTargetNodeIds: uniqueBoundedStrings(scope.targetNodeIds),
+    stageCheckpointControlsAssessmentCoverageNodeIds: uniqueBoundedStrings(scope.assessmentCoverageNodeIds),
+    stageCheckpointControlsAvailable: readiness.available !== false,
+    stageCheckpointControlsEligible: readiness.eligible === true || summary.eligible === true,
+    stageCheckpointControlsActivationState: cleanString(summary.activationState || readiness.activationState, 80),
+    stageCheckpointControlsReason: cleanString(readiness.reason, 180),
+    stageCheckpointControlsCooldownUntil: cleanString(readiness.cooldownUntil, 80),
+    stageCheckpointControlsReadyForOwnerActivation: summary.readyForOwnerActivation === true,
+    stageCheckpointControlsInCooldown: summary.inCooldown === true,
+    stageCheckpointControlsActive: summary.active === true,
+    stageCheckpointControlsMinimumRecentOrdinaryCards: numberValue(evidence.minimumRecentOrdinaryCards, 0),
+    stageCheckpointControlsRecentTrajectoryCount: numberValue(summary.recentTrajectoryCount ?? evidence.recentTrajectoryCount, 0),
+    stageCheckpointControlsRecentExperienceSignalCount: numberValue(evidence.recentExperienceSignalCount, 0),
+    stageCheckpointControlsHighPressureSignalCount: numberValue(summary.highPressureSignalCount ?? evidence.highPressureSignalCount, 0),
+    stageCheckpointControlsChallengeSignalCount: numberValue(summary.challengeSignalCount ?? evidence.challengeSignalCount, 0),
+    stageCheckpointControlsSourceCardCount: numberValue(summary.sourceCardCount, uniqueBoundedStrings(evidence.sourceCardIds, 12).length),
+    stageCheckpointControlsSourceCardIds: uniqueBoundedStrings(evidence.sourceCardIds, 12),
+    stageCheckpointControlsProfileMasteryStateCount: numberValue(profileSummary.masteryStateCount, 0),
+    stageCheckpointControlsProfileWeaknessCount: numberValue(profileSummary.weaknessCount, 0),
+    stageCheckpointControlsProfileStrengthCount: numberValue(profileSummary.strengthCount, 0),
+    stageCheckpointControlsPolicyActivationService: cleanString(policy.formalAssessmentActivationService, 140),
+    stageCheckpointControlsDailyPlanDirectPublicationAllowed: policy.dailyPlanDirectPublicationAllowed === true,
+    stageCheckpointControlsOwnerManualActivationAllowed: policy.ownerManualActivationAllowed === true,
+    stageCheckpointControlsLearnerChallengeAllowed: policy.learnerChallengeAllowed === true,
+    stageCheckpointControlsLowPressureDailyPracticeSeparate: policy.lowPressureDailyPracticeSeparate === true,
+    stageCheckpointControlsRefreshEnabled: refreshAction.enabled === true,
+    stageCheckpointControlsActivateEnabled: activateAction.enabled === true,
+    stageCheckpointControlsActivateDisabledReason: cleanString(activateAction.disabledReason, 180),
+    stageCheckpointControlsActivateWrite: activateAction.write === true,
+    stageCheckpointControlsChallengeEnabled: challengeAction.enabled === true,
+    stageCheckpointControlsChallengeDisabledReason: cleanString(challengeAction.disabledReason, 180),
+    stageCheckpointControlsChallengeWrite: challengeAction.write === true,
+    stageCheckpointControlsActionKeys: uniqueBoundedStrings(asArray(readback.actions).map((action) => action && action.key), 12)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -190,7 +287,10 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runControls(services.learningStageCheckpointControlsService, input);
+  const result = projectStageCheckpointControlsSmokeReadback(
+    Object.assign({ operation: "controls" }, runControls(services.learningStageCheckpointControlsService, input)),
+    operation
+  );
   process.stdout.write(formatResult(Object.assign({ operation: "controls" }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -209,6 +309,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectStageCheckpointControlsSmokeReadback,
   runControls,
   targetNodeIds,
   validateInput
