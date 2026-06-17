@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:34+08:00 - Scoped Release Evidence Bag Readiness Fix
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - previous central visual release evidence records were persisted without
+    `domain` / `subject`, so `release-evidence bag` without domain showed
+    `centralVisualEvidence` and `releaseEvidenceBundleAudit`, while the
+    `domain=science` / `subject=science` readiness scope could not see them;
+  - after replaying those two pass records through the existing
+    `learning-automation-release-evidence-collection-service` with
+    `--domain science --subject science`, readiness still treated the persisted
+    rows as `blocked` because `learning-automation-release-evidence-service`
+    compacted bag entries without the summary-only evidence contract fields.
+- Scope:
+  - updated `learning-automation-release-evidence-service` so persisted pass
+    bag entries preserve `schemaVersion`, `privacyClass=summary_only`,
+    `summaryOnly=true`, `evidenceKey`, and `checkKey` before readiness consumes
+    them;
+  - added service Harness assertions proving non-UI persisted release evidence
+    bag entries keep those contract fields;
+  - updated Growth-local docs to record scope-strict release evidence readback
+    and the persisted bag projection contract.
+- Local data/evidence action:
+  - replayed the already existing bounded central visual summary artifact
+    `$HOME/.homeai-qa/artifacts/growth-central-visual-summary-20260617T020537Z.json`
+    through the existing release-evidence collection path for
+    `workspaceId=owner`, `learnerId=fanfan`, `domain=science`,
+    `subject=science`;
+  - the collection remained advisory `blocked` because other release gates are
+    still missing, but it wrote two pass release-evidence records:
+    `centralVisualEvidence` and `releaseEvidenceBundleAudit`;
+  - scoped release-evidence bag readback now returns those two keys for
+    `domain=science` / `subject=science`;
+  - scoped release-readiness now reports `status=incomplete`, no blocked check
+    keys, `presentEvidenceKeys=[centralVisualEvidence,
+    releaseEvidenceBundleAudit]`, and `requiredActionCount=38`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-service.js`;
+  - `node --test tests/learning-automation-release-evidence-service.test.js
+    tests/learning-automation-release-readiness-service.test.js
+    tests/growth-automation-release-evidence-smoke-script.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `233/233`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `920/920`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,264` nodes, and `22,940` edges, plus the existing
+    earlier-engine advisory;
+  - scoped operational readback through
+    `node scripts/smoke-growth-automation-release-evidence.js --operation bag
+    --workspace-id owner --learner-id fanfan --domain science --subject
+    science --json`;
+  - scoped readiness readback through
+    `node scripts/smoke-growth-release-readiness.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json`.
+- Remaining:
+  - remaining release gates are still real product/UI/platform/production
+    evidence and explicit Owner approval items, not scheduler/runtime
+    permission;
+  - no deployment until those gates are closed and the user asks for the final
+    deploy.
+
 ## 2026-06-17T10:18+08:00 - Release Evidence Artifact Input Stripping And Readback
 
 - Status: implemented and validated locally. No production deployment was

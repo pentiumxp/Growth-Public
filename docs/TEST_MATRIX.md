@@ -45,6 +45,13 @@ crosses rows.
 | Embedded plugin UI adapter or learner UI behavior | `tests/growth-frontend-adapter.test.js`, `tests/growth-embedded-layout.test.js`, `tests/growth-routes.test.js` | Run Home AI central embedded-plugin visual harness before production UI release. |
 | Docs-only Growth contract change | `tests/growth-docs-locality.test.js` plus `node scripts/check-growth-docs-locality.js` | No production or runtime evidence is implied. |
 
+When changing persisted release-evidence bag fields consumed by
+release-readiness, run both
+`tests/learning-automation-release-evidence-service.test.js` and
+`tests/learning-automation-release-readiness-service.test.js`. The focused
+assertion must prove pass records keep `summaryOnly`, `privacyClass`,
+`schemaVersion`, `evidenceKey`, and `checkKey` in the bag projection.
+
 ## Release Union Harness
 
 `npm run test:release-union` runs the release readback and gate chain that is

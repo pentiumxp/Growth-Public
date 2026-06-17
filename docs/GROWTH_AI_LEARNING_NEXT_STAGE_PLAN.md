@@ -305,6 +305,15 @@ Backend-only work remains valid only when it adds harness or release evidence
 for an existing boundary. It must not be described as product closure unless
 the matching browser flow and visual evidence exist.
 
+Release-evidence closure must be scope-consistent. Persisted pass records are
+accepted by release-readiness only when their stored `workspaceId`,
+`learnerId`, `programId`, `domainPackId`, `domain`, `subject`, and `horizon`
+match the readiness request. The release-evidence bag is the only persisted
+record projection that readiness may consume, and it must preserve
+`schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
+`evidenceKey`, and `checkKey`; otherwise the record may appear in
+`persistedEvidenceKeys` but still fail the summary-only evidence contract.
+
 ## Non-Negotiable Boundaries
 
 Every next-stage slice must preserve these boundaries:

@@ -426,7 +426,17 @@ unbounded automation. Priority order:
    - operational smoke/snapshot entry:
      `npm run smoke:release-readiness` delegates to the service, defaults to
      no-write evaluation, accepts only structured summary evidence/approval
-     inputs, and writes a snapshot only with `--write-snapshot`;
+     inputs, reads persisted release-evidence records only through their
+     summary-only service bag, and writes a snapshot only with
+     `--write-snapshot`;
+   - persisted release-evidence pass records are scoped evidence, not global
+     release facts. The release-evidence repository filters by stored
+     `workspaceId`, `learnerId`, `programId`, `domainPackId`, `domain`,
+     `subject`, and `horizon`; collection commands for a domain release must
+     include the same domain/subject selectors that readiness will evaluate.
+     The service bag used by readiness must preserve `schemaVersion`,
+     `privacyClass=summary_only`, `summaryOnly=true`, `evidenceKey`, and
+     `checkKey` from the stored evidence record projection;
    - collection-run smoke entry:
      `npm run smoke:release-collection-run` delegates through the normal
      service graph, defaults to no-write evaluation, accepts explicit bundle,

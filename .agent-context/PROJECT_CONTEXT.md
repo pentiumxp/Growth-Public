@@ -581,7 +581,16 @@ readback gate set.
   read explicit summary-artifact inputs. The release-evidence CLI `bag`/`list`
   default limit remains `20` when `--limit` is omitted, so multi-record
   readback such as `centralVisualEvidence` plus `releaseEvidenceBundleAudit`
-  is visible without an explicit limit. The release workbench now maps missing
+  is visible without an explicit limit. Persisted release-evidence bag
+  projection now preserves the readiness contract fields
+  `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
+  `evidenceKey`, and `checkKey`, so persisted pass records can be consumed by
+  `learning-automation-release-readiness-service` instead of appearing only in
+  `persistedEvidenceKeys`. Release evidence records are strict to their stored
+  `workspaceId` / `learnerId` / `programId` / `domainPackId` / `domain` /
+  `subject` / `horizon` scope; a domain-scoped release such as Fanfan science
+  must collect or replay evidence with matching `--domain` and `--subject`
+  values. The release workbench now maps missing
   `release_package_review_ui_evidence` to
   that collection task, Owner action routing accepts the matching transient
   artifact-file field only as a whitelisted collection input, and the embedded

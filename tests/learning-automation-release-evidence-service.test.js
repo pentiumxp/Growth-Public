@@ -287,7 +287,17 @@ test("automation release evidence service returns evidence bag for release-readi
   assert.equal(bag.evidence.ownerDailyUiEvidence.readyForReleaseEvidence, true);
   assert.deepEqual(bag.evidence.ownerDailyUiEvidence.uiEvidence.missingCoverage, []);
   assert.equal(bag.evidence.ownerDailyUiEvidence.uiEvidence.failedAssertionCount, 0);
+  assert.equal(bag.evidence.centralVisualEvidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.evidence.v1");
+  assert.equal(bag.evidence.centralVisualEvidence.privacyClass, "summary_only");
+  assert.equal(bag.evidence.centralVisualEvidence.summaryOnly, true);
+  assert.equal(bag.evidence.centralVisualEvidence.evidenceKey, "centralVisualEvidence");
+  assert.equal(bag.evidence.centralVisualEvidence.checkKey, "central_visual_evidence");
+  assert.equal(bag.evidence.centralVisualEvidence.ok, true);
+  assert.equal(bag.evidence.centralVisualEvidence.present, true);
   assert.equal(bag.evidence.centralVisualEvidence.artifactId, "central_harness_artifact");
+  assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.summaryOnly, true);
+  assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.privacyClass, "summary_only");
+  assert.equal(bag.evidence.releaseWorkbenchSmokeEvidence.checkKey, "release_workbench_smoke_evidence");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.evidenceKey, "releasePackageReviewUiEvidence");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.checkKey, "release_package_review_ui_evidence");
   assert.equal(bag.evidence.releasePackageReviewUiEvidence.uiGate, "release_package_review");

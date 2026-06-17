@@ -356,7 +356,15 @@ function validateUiReleaseEvidencePass({ input = {}, scope = {}, evidenceKey = "
 
 function compactBagEntry(record = {}) {
   const evidence = record.evidence || {};
+  const evidenceKey = canonicalReleaseEvidenceKey(record.evidenceKey || evidence.evidenceKey);
   return Object.assign({
+    schemaVersion: cleanString(evidence.schemaVersion || evidence.schema_version, 180) || "growth.learningAutomationReleaseEvidenceRecord.evidence.v1",
+    privacyClass: cleanString(evidence.privacyClass || evidence.privacy_class || record.privacyClass || record.privacy_class || "summary_only", 80) || "summary_only",
+    summaryOnly: true,
+    evidenceKey,
+    checkKey: cleanString(evidence.checkKey || evidence.check_key || record.checkKey || record.check_key, 160)
+      || CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey]
+      || "",
     ok: record.status === "pass",
     status: record.status,
     present: record.status === "pass",
@@ -366,7 +374,8 @@ function compactBagEntry(record = {}) {
     source: cleanString(evidence.source || "growth_release_evidence_record", 180),
     artifactId: cleanString(evidence.artifactId || evidence.artifact_id, 180),
     runId: cleanString(evidence.runId || evidence.run_id, 180),
-    taskId: cleanString(evidence.taskId || evidence.task_id, 180)
+    taskId: cleanString(evidence.taskId || evidence.task_id, 180),
+    readyForReleaseEvidence: evidence.readyForReleaseEvidence === true || evidence.ready_for_release_evidence === true
   }, compactUiBagFields(record, evidence), compactOwnerReviewBagFields(record, evidence));
 }
 
