@@ -9,6 +9,78 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T03:50+0800 - Failure Policy Owner UI
+
+- Status: implemented locally; focused frontend/layout/architecture/docs
+  Harness, docs-locality, syntax coverage, global check, diff check, and local
+  static readback passed. No production deploy, Home AI central visual harness
+  run, Gateway/model call, learner evidence write, card generation,
+  evaluation, scheduler execution, runtime config change, release approval, or
+  Home AI host logic change was performed.
+- Classification: H2 Growth embedded UI consumption over the existing
+  service-owned automation failure-policy boundary. It adds no route, table,
+  model boundary, scheduler permission, release permission, or browser-side
+  automation policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe helpers for
+    failure-policy list, readiness, create, and review routes;
+  - `public/growth-card-generation-ui.js` now renders the Owner `失败策略`
+    panel between automation digest and action handoff, builds summary-only
+    visible-failure / Owner-retry / transactional-rollback create payloads,
+    builds bounded active/archive/supersede review payloads, and keeps
+    `writefulSchedulingAllowed=false` plus `maxAutomaticRetries=0`;
+  - `public/app.js` loads failure-policy list/readiness with generation
+    context, resets and refreshes it on target/context changes, creates and
+    reviews policies through the Growth service boundary, and refreshes
+    action-handoff, scheduler execution/run, and release-workbench readbacks
+    after policy writes; the broader proposal refresh stack still refreshes
+    worker-target readback after proposal actions;
+  - `public/index.html` cache-busting moved to
+    `20260618-failure-policy-ui-v1`;
+  - Growth-local docs now state that failure-policy UI is implemented locally,
+    while production visual/UI evidence, platform receipt evidence, production
+    dry-run evidence, release evidence, and writeful scheduling remain gated.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js`, `node --check
+    public/growth-card-generation-ui.js`, and `node --check
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 76/76;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`, `checkedCount=225`;
+  - `git diff --check`;
+  - local current-worktree service readback on `GROWTH_PORT=4882`: index used
+    `20260618-failure-policy-ui-v1`; `growth-card-generation-ui.js`
+    contained `data-automation-failure-policy-panel`, the create/review
+    payload builders, and `失败策略`; `app.js` contained
+    `refreshAutomationFailurePolicies`, create/review handlers, and readiness
+    client usage; `growth-api-client.js` contained list/readiness/create/review
+    helpers.
+- Visual note:
+  - the Browser plugin skill was read, but the required `node_repl js` control
+    tool was not exposed in this session, and this workspace has no local
+    Playwright dependency. No Home AI central visual-toolchain artifact was
+    produced in this package; before production UI release, run the central
+    embedded-plugin visual harness for the Owner generation surface and persist
+    bounded UI/release evidence through the existing Growth release-evidence
+    path.
+
 ## 2026-06-18T03:38+0800 - Proposal Review Feedback And Refresh Stack
 
 - Status: implemented locally; focused frontend/architecture/docs Harness,

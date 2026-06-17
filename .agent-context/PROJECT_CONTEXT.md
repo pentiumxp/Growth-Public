@@ -1336,6 +1336,16 @@ readback gate set.
   for operation/status, write gate, scope, policy ids/status counts, Owner
   review state, retry/rollback/failure flags, missing prerequisites, and
   `writefulSchedulingAllowed=false` while keeping nested DTOs canonical.
+  The embedded Owner `生成` tab now consumes the same boundary through a
+  `失败策略` panel between automation digest and action handoff. The panel
+  reads failure-policy list/readiness through direct/proxy Growth API helpers,
+  creates the default summary-only visible-failure / Owner-retry /
+  transactional-rollback draft policy, reviews draft policies to active,
+  archived, or superseded, shows ready/draft/active readback, and refreshes
+  action-handoff, scheduler execution/run, and release-workbench state after
+  policy writes. It does not infer scheduler permission locally, call Gateway,
+  call Home AI old Growth logic, or mutate learner evidence/profile/card state;
+  `writefulSchedulingAllowed` remains false.
   The automation action handoff backend is now implemented through
   `learning-automation-action-handoff-service`,
   `automation-action-handoffs.js`,

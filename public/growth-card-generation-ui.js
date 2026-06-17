@@ -1252,6 +1252,68 @@
     return "Owner reviewed automation digest.";
   }
 
+  function createAutomationFailurePolicyQueryPayload({ context = {}, workspaceId = "", status = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      status: clean(status),
+      limit: 6
+    })).filter(([, value]) => clean(value)));
+  }
+
+  function createAutomationFailurePolicyCreatePayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      policy_version: "growth.learningAutomationFailurePolicy.v1",
+      policy: {
+        schemaVersion: "growth.learningAutomationPolicy.v1",
+        summaryOnly: true,
+        ownerReviewRequired: true,
+        digestReviewRequired: true,
+        actionHandoffRequiredBeforeScheduling: true,
+        writefulSchedulingAllowed: false
+      },
+      rollback_policy: {
+        schemaVersion: "growth.learningAutomationFailurePolicy.rollback.v1",
+        summaryOnly: true,
+        transactionalPublishRequired: true,
+        partialPublishBehavior: "service_transaction_rollback",
+        proposalExecutionFailure: "record_bounded_execution_failure_owner_retry",
+        actionHandoffFailure: "no_learning_write_visible_owner_retry",
+        retryRequiresOwner: true,
+        maxAutomaticRetries: 0
+      },
+      failure_policy: {
+        schemaVersion: "growth.learningAutomationFailurePolicy.failure.v1",
+        summaryOnly: true,
+        visibleFailureRequired: true,
+        ownerReviewRequired: true,
+        retryRequiresOwner: true,
+        maxAutomaticRetries: 0,
+        writefulSchedulingAllowed: false
+      },
+      requested_by: "owner"
+    })).filter(([, value]) => {
+      if (value && typeof value === "object") return true;
+      return clean(value);
+    }));
+  }
+
+  function createAutomationFailurePolicyReviewPayload({ context = {}, workspaceId = "", policy = {}, status = "" } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const targetStatus = clean(status);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      policy_id: clean(policy.policyId || policy.policy_id),
+      status: targetStatus,
+      reason: targetStatus === "active"
+        ? "Owner activated failure policy for supervised automation readiness; writeful scheduling remains disabled."
+        : `Owner marked failure policy ${targetStatus || "reviewed"}; no scheduler permission changed.`,
+      note: targetStatus === "active"
+        ? "Visible failure and Owner retry policy activated."
+        : "Owner reviewed failure policy without enabling scheduling.",
+      reviewed_by: "owner"
+    })).filter(([, value]) => clean(value)));
+  }
+
   function createAutomationActionHandoffQueryPayload({ context = {}, workspaceId = "" } = {}) {
     const scope = automationProposalScopeFromContext(context, workspaceId);
     return Object.fromEntries(Object.entries(Object.assign({}, scope, {
@@ -1674,6 +1736,118 @@
         ${automationDigestRows(holder, escapeHtml)}
       </div>
       ${automationDigestActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationFailurePolicyStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "draft") return "草稿";
+    if (value === "active") return "已激活";
+    if (value === "archived") return "已归档";
+    if (value === "superseded") return "已替代";
+    if (value === "created") return "已创建";
+    if (value === "reviewed") return "已复核";
+    if (value === "failed") return "失败";
+    if (value === "failure_policy_ready") return "策略已就绪";
+    if (value === "missing_active_failure_policy") return "缺少激活策略";
+    return value || "待策略";
+  }
+
+  function automationFailurePolicyActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const policy = result.policy || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "created"
+      ? `失败策略已创建：${clean(policy.policyId || policy.policy_id) || "failure policy"}。`
+      : status === "reviewed"
+        ? `失败策略已记录为 ${automationFailurePolicyStatusText(policy.status)}。`
+        : status === "submitting"
+          ? "正在通过 Growth failure policy service 写入。"
+          : error || "失败策略操作失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-failure-policy-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationFailurePolicyStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationFailurePolicyRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const policies = asArray(data.policies).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取 failure policy。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">Failure policy 读取失败：${escapeHtml(clean(holder.error) || "automation_failure_policies_failed")}</div>`;
+    if (!policies.length) return `<div class="learning-card-generation-proposal-empty">暂无 failure policy。创建并激活后，action handoff 才有失败可见性前置条件。</div>`;
+    return policies.map((policy) => {
+      const policyId = clean(policy.policyId || policy.policy_id);
+      const policyStatus = clean(policy.status);
+      const canReview = policyId && policyStatus === "draft";
+      const failurePolicy = policy.failurePolicy || policy.failure_policy || {};
+      const rollbackPolicy = policy.rollbackPolicy || policy.rollback_policy || {};
+      const visibleFailure = failurePolicy.visibleFailureRequired !== false;
+      const retryRequiresOwner = failurePolicy.retryRequiresOwner !== false;
+      const transactional = rollbackPolicy.transactionalPublishRequired !== false;
+      const meta = [
+        visibleFailure ? "visible failure" : "hidden failure blocked",
+        retryRequiresOwner ? "Owner retry" : "retry policy disabled",
+        transactional ? "transactional publish" : "transaction not proven"
+      ].join(" · ");
+      return `<div class="learning-card-generation-proposal-row" data-automation-failure-policy-row data-automation-failure-policy-id="${escapeHtml(policyId)}">
+        <span>
+          <strong>${escapeHtml(policyId || "failure policy")}</strong>
+          <small>${escapeHtml(meta)}</small>
+          <small>激活策略只满足监督自动化前置条件，不开启调度。</small>
+        </span>
+        <em>${escapeHtml(automationFailurePolicyStatusText(policyStatus))}</em>
+        <div class="learning-card-generation-proposal-actions">
+          <button type="button" data-automation-failure-policy-review data-automation-failure-policy-id="${escapeHtml(policyId)}" data-automation-failure-policy-status="active" ${busy || !canReview ? "disabled" : ""}>激活</button>
+          <button type="button" data-automation-failure-policy-review data-automation-failure-policy-id="${escapeHtml(policyId)}" data-automation-failure-policy-status="archived" ${busy || !canReview ? "disabled" : ""}>归档</button>
+          <button type="button" data-automation-failure-policy-review data-automation-failure-policy-id="${escapeHtml(policyId)}" data-automation-failure-policy-status="superseded" ${busy || !canReview ? "disabled" : ""}>替代</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function automationFailurePolicyPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationFailurePolicies || {};
+    const data = holder.data || {};
+    const policies = asArray(data.policies);
+    const readiness = data.readiness || {};
+    const activeCount = policies.filter((item) => clean(item.status) === "active").length;
+    const draftCount = policies.filter((item) => clean(item.status) === "draft").length;
+    const ready = readiness.readyForWritefulAutomationPrerequisite === true;
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    const busy = holder.actionStatus === "submitting";
+    const reason = status === "loading"
+      ? "正在读取 failure policy。"
+      : status === "failed"
+        ? clean(holder.error) || "automation_failure_policies_failed"
+        : ready
+          ? "失败可见性和 Owner retry 策略已激活；调度仍保持关闭。"
+          : "需要创建并激活 failure policy，才能进入 action handoff / scheduler 前置检查。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-failure-policies" data-automation-failure-policy-panel data-automation-failure-policy-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>失败策略</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-failure-policy-create ${busy ? "disabled" : ""}>${busy ? "创建中" : "创建策略"}</button>
+          <button type="button" data-automation-failure-policy-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新策略"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>就绪</small><strong>${escapeHtml(ready ? "1" : "0")}</strong></span>
+        <span><small>草稿</small><strong>${escapeHtml(String(draftCount))}</strong></span>
+        <span><small>激活</small><strong>${escapeHtml(String(activeCount))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationFailurePolicyRows(holder, escapeHtml)}
+      </div>
+      ${automationFailurePolicyActionStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -3348,6 +3522,7 @@
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
+          ${automationFailurePolicyPanel(context, state, escapeHtml)}
           ${automationActionHandoffPanel(context, state, escapeHtml)}
           ${automationSchedulerExecutionPanel(context, state, escapeHtml)}
           ${automationSchedulerRunPanel(context, state, escapeHtml)}
@@ -3399,6 +3574,9 @@
     createAutomationDigestCreatePayload,
     createAutomationDigestQueryPayload,
     createAutomationDigestReviewPayload,
+    createAutomationFailurePolicyCreatePayload,
+    createAutomationFailurePolicyQueryPayload,
+    createAutomationFailurePolicyReviewPayload,
     createAutomationActionHandoffQueryPayload,
     createAutomationActionHandoffPayload,
     createAutomationActionHandoffDeliverPayload,

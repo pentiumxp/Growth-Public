@@ -379,6 +379,27 @@ test("Growth API client exposes card generation context and write helpers", asyn
     evaluation_id: "eval_daily_1",
     owner_note: "Owner accepted bounded summary."
   }, "weixin_fanfan");
+  await client.fetchGrowthAutomationFailurePolicies({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    status: "draft",
+    limit: 4
+  }, "weixin_fanfan");
+  await client.fetchGrowthAutomationFailurePolicyReadiness({
+    learner_id: "fanfan",
+    program_id: "program_science"
+  }, "weixin_fanfan");
+  await client.createGrowthAutomationFailurePolicy({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    policy_version: "growth.learningAutomationFailurePolicy.v1",
+    policy: { summaryOnly: true, writefulSchedulingAllowed: false },
+    failure_policy: { summaryOnly: true, visibleFailureRequired: true, retryRequiresOwner: true }
+  }, "weixin_fanfan");
+  await client.reviewGrowthAutomationFailurePolicy("lgafpol_draft_1", {
+    status: "active",
+    reason: "Owner activated bounded failure policy."
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -576,6 +597,27 @@ test("Growth API client exposes card generation context and write helpers", asyn
     evaluation_id: "eval_daily_1",
     owner_note: "Owner accepted bounded summary."
   });
+  const failurePolicyListCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/failure-policies?") && call.path.includes("status=draft"));
+  assert.equal(failurePolicyListCall.path, "/api/v1/growth/automation/failure-policies?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&status=draft&limit=4");
+  const failurePolicyReadinessCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/failure-policies/readiness?"));
+  assert.equal(failurePolicyReadinessCall.path, "/api/v1/growth/automation/failure-policies/readiness?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&limit=6");
+  const failurePolicyCreateCall = calls.find((call) => call.path === "/api/v1/growth/automation/failure-policies");
+  assert.ok(failurePolicyCreateCall);
+  assert.deepEqual(JSON.parse(failurePolicyCreateCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    program_id: "program_science",
+    policy_version: "growth.learningAutomationFailurePolicy.v1",
+    policy: { summaryOnly: true, writefulSchedulingAllowed: false },
+    failure_policy: { summaryOnly: true, visibleFailureRequired: true, retryRequiresOwner: true }
+  });
+  const failurePolicyReviewCall = calls.find((call) => call.path === "/api/v1/growth/automation/failure-policies/lgafpol_draft_1/review");
+  assert.ok(failurePolicyReviewCall);
+  assert.deepEqual(JSON.parse(failurePolicyReviewCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    status: "active",
+    reason: "Owner activated bounded failure policy."
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -632,6 +674,10 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.advanceLearningOperatingLoop({ action: "run_next", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.fetchGrowthOwnerAuditReviews({ learner_id: "fanfan", task_card_id: "ltask_proxy_1" }, "weixin_stephen");
   await client.recordGrowthOwnerAuditReview({ decision: "needs_follow_up", task_card_id: "ltask_proxy_1" }, "weixin_stephen");
+  await client.fetchGrowthAutomationFailurePolicies({ learner_id: "fanfan", status: "active" }, "weixin_stephen");
+  await client.fetchGrowthAutomationFailurePolicyReadiness({ learner_id: "fanfan" }, "weixin_stephen");
+  await client.createGrowthAutomationFailurePolicy({ learner_id: "fanfan", policy: { summaryOnly: true } }, "weixin_stephen");
+  await client.reviewGrowthAutomationFailurePolicy("lgafpol_proxy_1", { status: "archived" }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -732,6 +778,23 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     decision: "needs_follow_up",
     task_card_id: "ltask_proxy_1"
+  });
+  const proxyFailurePolicyListCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies?") && call.path.includes("status=active"));
+  assert.equal(proxyFailurePolicyListCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies?targetWorkspaceId=weixin_stephen&learnerId=fanfan&status=active&limit=6");
+  const proxyFailurePolicyReadinessCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies/readiness?"));
+  assert.equal(proxyFailurePolicyReadinessCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies/readiness?targetWorkspaceId=weixin_stephen&learnerId=fanfan&limit=6");
+  const proxyFailurePolicyCreateCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies");
+  assert.ok(proxyFailurePolicyCreateCall);
+  assert.deepEqual(JSON.parse(proxyFailurePolicyCreateCall.options.body), {
+    workspace_id: "weixin_stephen",
+    learner_id: "fanfan",
+    policy: { summaryOnly: true }
+  });
+  const proxyFailurePolicyReviewCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/failure-policies/lgafpol_proxy_1/review");
+  assert.ok(proxyFailurePolicyReviewCall);
+  assert.deepEqual(JSON.parse(proxyFailurePolicyReviewCall.options.body), {
+    workspace_id: "weixin_stephen",
+    status: "archived"
   });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
@@ -1306,6 +1369,101 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         updatedAt: "2026-06-16T10:00:00.000Z"
       }]
     },
+    automationFailurePolicies: {
+      ok: true,
+      count: 2,
+      policies: [{
+        policyId: "lgafpol_draft_1",
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        status: "draft",
+        policy: {
+          schemaVersion: "growth.learningAutomationPolicy.v1",
+          summaryOnly: true,
+          ownerReviewRequired: true,
+          digestReviewRequired: true,
+          actionHandoffRequiredBeforeScheduling: true,
+          writefulSchedulingAllowed: false
+        },
+        rollbackPolicy: {
+          schemaVersion: "growth.learningAutomationFailurePolicy.rollback.v1",
+          summaryOnly: true,
+          transactionalPublishRequired: true,
+          partialPublishBehavior: "service_transaction_rollback",
+          actionHandoffFailure: "no_learning_write_visible_owner_retry",
+          retryRequiresOwner: true,
+          maxAutomaticRetries: 0
+        },
+        failurePolicy: {
+          schemaVersion: "growth.learningAutomationFailurePolicy.failure.v1",
+          summaryOnly: true,
+          visibleFailureRequired: true,
+          ownerReviewRequired: true,
+          retryRequiresOwner: true,
+          maxAutomaticRetries: 0,
+          writefulSchedulingAllowed: false
+        }
+      }, {
+        policyId: "lgafpol_active_1",
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        domainPackId: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        status: "active",
+        policy: {
+          schemaVersion: "growth.learningAutomationPolicy.v1",
+          summaryOnly: true,
+          ownerReviewRequired: true,
+          digestReviewRequired: true,
+          actionHandoffRequiredBeforeScheduling: true,
+          writefulSchedulingAllowed: false
+        },
+        rollbackPolicy: {
+          schemaVersion: "growth.learningAutomationFailurePolicy.rollback.v1",
+          summaryOnly: true,
+          transactionalPublishRequired: true,
+          partialPublishBehavior: "service_transaction_rollback",
+          actionHandoffFailure: "no_learning_write_visible_owner_retry",
+          retryRequiresOwner: true,
+          maxAutomaticRetries: 0
+        },
+        failurePolicy: {
+          schemaVersion: "growth.learningAutomationFailurePolicy.failure.v1",
+          summaryOnly: true,
+          visibleFailureRequired: true,
+          ownerReviewRequired: true,
+          retryRequiresOwner: true,
+          maxAutomaticRetries: 0,
+          writefulSchedulingAllowed: false
+        }
+      }],
+      readiness: {
+        ok: true,
+        status: "failure_policy_ready",
+        readyForWritefulAutomationPrerequisite: true,
+        writefulSchedulingAllowed: false,
+        summary: {
+          policyId: "lgafpol_active_1",
+          status: "active",
+          visibleFailureRequired: true,
+          retryRequiresOwner: true,
+          maxAutomaticRetries: 0,
+          transactionalPublishRequired: true,
+          partialPublishBehavior: "service_transaction_rollback",
+          actionHandoffFailure: "no_learning_write_visible_owner_retry"
+        },
+        missingRequired: [],
+        requiredActions: []
+      }
+    },
     automationActionHandoffs: {
       ok: true,
       count: 1,
@@ -1673,6 +1831,17 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        automationFailurePolicies: {
+          status: "ready",
+          data: context.automationFailurePolicies,
+          actionStatus: "reviewed",
+          actionResult: {
+            policy: {
+              policyId: "lgafpol_draft_1",
+              status: "active"
+            }
+          }
+        },
         automationActionHandoffs: {
           status: "ready",
           data: context.automationActionHandoffs,
@@ -1919,6 +2088,20 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /lgauto_ready_1/);
   assert.match(html, /手动发布，不自动执行/);
   assert.match(html, /Digest 已记录为 已复核/);
+  assert.match(html, /data-automation-failure-policy-panel/);
+  assert.match(html, /失败策略/);
+  assert.match(html, /data-automation-failure-policy-create/);
+  assert.match(html, /data-automation-failure-policy-refresh/);
+  assert.match(html, /data-automation-failure-policy-review/);
+  assert.match(html, /data-automation-failure-policy-status="active"/);
+  assert.match(html, /data-automation-failure-policy-status="archived"/);
+  assert.match(html, /data-automation-failure-policy-status="superseded"/);
+  assert.match(html, /data-automation-failure-policy-id="lgafpol_draft_1"/);
+  assert.match(html, /lgafpol_active_1/);
+  assert.match(html, /失败可见性和 Owner retry 策略已激活/);
+  assert.match(html, /visible failure · Owner retry · transactional publish/);
+  assert.match(html, /data-automation-failure-policy-action-status="reviewed"/);
+  assert.match(html, /失败策略已记录为 已激活/);
   assert.match(html, /data-automation-action-handoff-panel/);
   assert.match(html, /行动 Handoff/);
   assert.match(html, /data-automation-action-handoff-refresh/);
@@ -2516,6 +2699,91 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(digestReviewPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(digestReviewPayload, "transcript"), false);
+
+  const failurePolicyQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationFailurePolicyQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    status: "draft"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(failurePolicyQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "draft",
+    limit: 6
+  });
+
+  const failurePolicyCreatePayload = windowRef.HermesGrowthCardGenerationUi.createAutomationFailurePolicyCreatePayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(failurePolicyCreatePayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    policy_version: "growth.learningAutomationFailurePolicy.v1",
+    policy: {
+      schemaVersion: "growth.learningAutomationPolicy.v1",
+      summaryOnly: true,
+      ownerReviewRequired: true,
+      digestReviewRequired: true,
+      actionHandoffRequiredBeforeScheduling: true,
+      writefulSchedulingAllowed: false
+    },
+    rollback_policy: {
+      schemaVersion: "growth.learningAutomationFailurePolicy.rollback.v1",
+      summaryOnly: true,
+      transactionalPublishRequired: true,
+      partialPublishBehavior: "service_transaction_rollback",
+      proposalExecutionFailure: "record_bounded_execution_failure_owner_retry",
+      actionHandoffFailure: "no_learning_write_visible_owner_retry",
+      retryRequiresOwner: true,
+      maxAutomaticRetries: 0
+    },
+    failure_policy: {
+      schemaVersion: "growth.learningAutomationFailurePolicy.failure.v1",
+      summaryOnly: true,
+      visibleFailureRequired: true,
+      ownerReviewRequired: true,
+      retryRequiresOwner: true,
+      maxAutomaticRetries: 0,
+      writefulSchedulingAllowed: false
+    },
+    requested_by: "owner"
+  });
+  assert.equal(failurePolicyCreatePayload.policy.writefulSchedulingAllowed, false);
+  assert.equal(failurePolicyCreatePayload.failure_policy.writefulSchedulingAllowed, false);
+  assert.equal(failurePolicyCreatePayload.failure_policy.maxAutomaticRetries, 0);
+  assert.equal(Object.hasOwn(failurePolicyCreatePayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(failurePolicyCreatePayload, "transcript"), false);
+
+  const failurePolicyReviewPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationFailurePolicyReviewPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    policy: context.automationFailurePolicies.policies[0],
+    status: "active"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(failurePolicyReviewPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    policy_id: "lgafpol_draft_1",
+    status: "active",
+    reason: "Owner activated failure policy for supervised automation readiness; writeful scheduling remains disabled.",
+    note: "Visible failure and Owner retry policy activated.",
+    reviewed_by: "owner"
+  });
+  assert.equal(Object.hasOwn(failurePolicyReviewPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(failurePolicyReviewPayload, "transcript"), false);
 
   const handoffQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationActionHandoffQueryPayload({
     context,
@@ -3810,7 +4078,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-proposal-review-stack-ui-v1";
+  const staticVersion = "20260618-failure-policy-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -3891,6 +4159,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-digest-create/);
   assert.match(source, /data-automation-digest-refresh/);
   assert.match(source, /data-automation-digest-review/);
+  assert.match(source, /data-automation-failure-policy-refresh/);
+  assert.match(source, /data-automation-failure-policy-create/);
+  assert.match(source, /data-automation-failure-policy-review/);
   assert.match(source, /data-automation-action-handoff-refresh/);
   assert.match(source, /data-automation-action-handoff-create/);
   assert.match(source, /data-automation-action-handoff-deliver/);
@@ -3918,6 +4189,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.createGrowthAutomationDigest\(payload, targetWorkspaceId\)/);
   assert.match(source, /function createAutomationDigestReviewPayload/);
   assert.match(source, /function reviewAutomationDigestFromUi/);
+  assert.match(source, /function refreshAutomationFailurePolicies/);
+  assert.match(source, /function createAutomationFailurePolicyCreatePayload/);
+  assert.match(source, /function createAutomationFailurePolicyReviewPayload/);
+  assert.match(source, /function createAutomationFailurePolicyFromUi/);
+  assert.match(source, /function reviewAutomationFailurePolicyFromUi/);
   assert.match(source, /function refreshAutomationActionHandoffs/);
   assert.match(source, /function createAutomationActionHandoffPayload/);
   assert.match(source, /function createAutomationActionHandoffDeliverPayload/);
@@ -3953,6 +4229,10 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
   assert.match(source, /api\.fetchGrowthAutomationDigests\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationDigest\(digestId, payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthAutomationFailurePolicies\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthAutomationFailurePolicyReadiness\(readinessPayload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.createGrowthAutomationFailurePolicy\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.reviewGrowthAutomationFailurePolicy\(policyId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthAutomationActionHandoffs\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationActionHandoff\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.deliverGrowthAutomationActionHandoff\(handoffId, payload, targetWorkspaceId\)/);
@@ -3963,6 +4243,10 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.fetchGrowthAutomationSchedulerWorkerTargets\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationSchedulerWorkerTarget\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationSchedulerWorkerTarget\(targetId, payload, targetWorkspaceId\)/);
+  assert.match(source, /await refreshAutomationDigests\(requestedTargetWorkspaceId, context, \{ silent: true \}\);[\s\S]*await refreshAutomationFailurePolicies\(requestedTargetWorkspaceId, context, \{ silent: true \}\);[\s\S]*await refreshAutomationActionHandoffs\(requestedTargetWorkspaceId, context, \{ silent: true \}\);/);
+  assert.match(source, /await refreshAutomationDigests\(targetWorkspaceId, context, \{ silent: true \}\);[\s\S]*await refreshAutomationFailurePolicies\(targetWorkspaceId, context, \{ silent: true \}\);[\s\S]*await refreshAutomationActionHandoffs\(targetWorkspaceId, context, \{ silent: true \}\);/);
+  assert.match(source, /api\.createGrowthAutomationFailurePolicy\(payload, targetWorkspaceId\)[\s\S]*await refreshAutomationFailurePolicies\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)[\s\S]*await refreshAutomationActionHandoffs\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
+  assert.match(source, /api\.reviewGrowthAutomationFailurePolicy\(policyId, payload, targetWorkspaceId\)[\s\S]*await refreshAutomationFailurePolicies\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)[\s\S]*await refreshAutomationActionHandoffs\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
   assert.match(source, /api\.reviewGrowthRecommendationLifecycle\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.provisionGrowthDomainPack\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthCycleAudit\(payload, targetWorkspaceId\)/);

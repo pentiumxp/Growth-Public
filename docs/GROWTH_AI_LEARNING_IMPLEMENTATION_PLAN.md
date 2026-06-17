@@ -1392,10 +1392,12 @@ The next implementation slice should be chosen by product goal:
   `would_publish` candidate, and a pending digest required action without
   automatic publication. Proposal operational smoke is also available through
   `npm run smoke:proposal`, which defaults to read-only list and gates
-  create/review/publish with explicit `--allow-write`. Implement the remaining
-  UI/evidence around P5-P10 next: failure-policy UI, real
-  `releasePackageReviewUiEvidence`, platform Action Inbox/Web Push evidence,
-  production dry-run evidence through
+  create/review/publish with explicit `--allow-write`. The embedded Owner
+  automation UI now covers proposal, digest, failure-policy, action-handoff,
+  scheduler execution/run, worker-target, and release-workbench readback over
+  the existing service boundaries. Implement the remaining evidence around
+  P5-P10 next: real `releasePackageReviewUiEvidence`, platform Action
+  Inbox/Web Push evidence, production dry-run evidence through
   `npm run smoke:scheduler-dry-run`, central visual evidence, and a
   release-readiness evidence snapshot. The P8 and P9 backend boundaries are
   implemented locally and remain default-disabled; the P10 backend boundary is

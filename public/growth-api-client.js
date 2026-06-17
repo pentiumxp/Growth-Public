@@ -195,6 +195,23 @@
       return query ? `?${query}` : "";
     }
 
+    function automationFailurePolicyQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "limit", payload.limit || 6);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function automationActionHandoffQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
       const params = new URLSearchParams();
@@ -428,6 +445,14 @@
       return fetchJson(`${growthApiPath("automation", "digests")}${automationDigestQuery(targetWorkspaceId, payload)}`);
     }
 
+    function fetchGrowthAutomationFailurePolicies(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "failure-policies")}${automationFailurePolicyQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function fetchGrowthAutomationFailurePolicyReadiness(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "failure-policies", "readiness")}${automationFailurePolicyQuery(targetWorkspaceId, payload)}`);
+    }
+
     function fetchGrowthAutomationActionHandoffs(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("automation", "action-handoffs")}${automationActionHandoffQuery(targetWorkspaceId, payload)}`);
     }
@@ -452,6 +477,12 @@
 
     function createGrowthAutomationDigest(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "digests"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function createGrowthAutomationFailurePolicy(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "failure-policies"), Object.assign({
         workspace_id: targetWorkspaceId
       }, payload));
     }
@@ -608,6 +639,14 @@
       }, payload));
     }
 
+    function reviewGrowthAutomationFailurePolicy(policyId, payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const id = clean(policyId);
+      if (!id) throw new Error("missing_failure_policy_id");
+      return postJson(growthApiPath("automation", "failure-policies", encodeURIComponent(id), "review"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function createGrowthAutomationActionHandoff(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "action-handoffs"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -672,12 +711,15 @@
       executeGrowthAutomationSchedulerOnce,
       createGrowthAutomationActionHandoff,
       createGrowthAutomationDigest,
+      createGrowthAutomationFailurePolicy,
       createGrowthAutomationSchedulerWorkerTarget,
       createGrowthAutomationProposal,
       buildGrowthReleasePackage,
       fetchCardGenerationContext,
       fetchGrowthAutomationActionHandoffs,
       fetchGrowthAutomationDigests,
+      fetchGrowthAutomationFailurePolicies,
+      fetchGrowthAutomationFailurePolicyReadiness,
       fetchGrowthAutomationProposals,
       fetchGrowthAutomationSchedulerExecutions,
       fetchGrowthAutomationSchedulerRuns,
@@ -706,6 +748,7 @@
       retryGrowthEvaluation,
       deliverGrowthAutomationActionHandoff,
       reviewGrowthAutomationDigest,
+      reviewGrowthAutomationFailurePolicy,
       reviewGrowthAutomationSchedulerWorkerTarget,
       reviewGrowthAutomationProposal,
       reviewGrowthRecommendationLifecycle,

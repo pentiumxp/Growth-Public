@@ -4435,6 +4435,13 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /data-automation-proposal-create/);
   assert.match(app, /data-automation-proposal-review/);
   assert.match(app, /data-automation-proposal-publish/);
+  assert.match(app, /refreshAutomationFailurePolicies/);
+  assert.match(app, /fetchGrowthAutomationFailurePolicies/);
+  assert.match(app, /fetchGrowthAutomationFailurePolicyReadiness/);
+  assert.match(app, /createGrowthAutomationFailurePolicy/);
+  assert.match(app, /reviewGrowthAutomationFailurePolicy/);
+  assert.match(app, /data-automation-failure-policy-create/);
+  assert.match(app, /data-automation-failure-policy-review/);
   assert.match(app, /refreshCardGenerationContextAfterPublish/);
   assert.match(app, /data-learning-growth-evaluation-retry/);
   assert.match(app, /retryEvaluation/);
@@ -4480,6 +4487,15 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createAutomationDigestReviewPayload/);
   assert.match(generationUi, /data-automation-digest-create/);
   assert.match(generationUi, /data-automation-digest-review/);
+  assert.match(generationUi, /data-automation-failure-policy-panel/);
+  assert.match(generationUi, /automationFailurePolicyPanel/);
+  assert.match(generationUi, /createAutomationFailurePolicyQueryPayload/);
+  assert.match(generationUi, /createAutomationFailurePolicyCreatePayload/);
+  assert.match(generationUi, /createAutomationFailurePolicyReviewPayload/);
+  assert.match(generationUi, /data-automation-failure-policy-create/);
+  assert.match(generationUi, /data-automation-failure-policy-review/);
+  assert.match(generationUi, /writefulSchedulingAllowed: false/);
+  assert.match(generationUi, /maxAutomaticRetries: 0/);
   assert.match(generationUi, /data-automation-action-handoff-panel/);
   assert.match(generationUi, /createAutomationActionHandoffQueryPayload/);
   assert.match(generationUi, /createAutomationActionHandoffPayload/);
@@ -4511,6 +4527,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /fetchGrowthAutomationDigests/);
   assert.match(apiClient, /createGrowthAutomationDigest/);
   assert.match(apiClient, /reviewGrowthAutomationDigest/);
+  assert.match(apiClient, /fetchGrowthAutomationFailurePolicies/);
+  assert.match(apiClient, /fetchGrowthAutomationFailurePolicyReadiness/);
+  assert.match(apiClient, /createGrowthAutomationFailurePolicy/);
+  assert.match(apiClient, /reviewGrowthAutomationFailurePolicy/);
   assert.match(apiClient, /fetchGrowthAutomationActionHandoffs/);
   assert.match(apiClient, /createGrowthAutomationActionHandoff/);
   assert.match(apiClient, /deliverGrowthAutomationActionHandoff/);
@@ -4523,6 +4543,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /reviewGrowthAutomationSchedulerWorkerTarget/);
   assert.match(apiClient, /automation", "proposals"/);
   assert.match(apiClient, /automation", "digests"/);
+  assert.match(apiClient, /automation", "failure-policies"/);
   assert.match(apiClient, /automation", "action-handoffs"/);
   assert.match(apiClient, /automation", "scheduler", "executions"/);
   assert.match(apiClient, /automation", "scheduler", "execute-once"/);
