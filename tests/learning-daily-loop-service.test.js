@@ -285,6 +285,42 @@ test("daily loop publish returns bounded generation and refreshes audit/complete
   assert.equal(calls[3].input.taskCardId, "ltask_daily_1");
 });
 
+test("daily loop advance drafts and publishes one card through service boundaries", async () => {
+  const { calls, service } = createService();
+
+  const result = await service.advance({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domain: "science",
+    subject: "science"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.operation, "advance");
+  assert.equal(result.stage, "published");
+  assert.equal(result.draftStep.operation, "draft");
+  assert.equal(result.draftStep.planDraftId, "lgplan_daily_1");
+  assert.equal(result.publishStep.operation, "publish");
+  assert.equal(result.publishStep.taskCardId, "ltask_daily_1");
+  assert.equal(result.planDraft.status, "published");
+  assert.equal(result.generation.published.taskCardId, "ltask_daily_1");
+  assert.equal(result.cycleAudit.summary.hasPublishedPlan, true);
+  assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
+  assert.deepEqual(calls.map((call) => call.type), [
+    "context",
+    "draftPlan",
+    "context",
+    "context",
+    "publishPlanItem",
+    "context",
+    "cycleAudit",
+    "completeness"
+  ]);
+  assert.equal(calls[4].input.planDraftId, "lgplan_daily_1");
+  assert.equal(calls[4].input.itemId, "plan_item_1");
+});
+
 test("daily loop publish failure keeps bounded publish attempt visible", async () => {
   const { service } = createService({ publishFails: true });
 

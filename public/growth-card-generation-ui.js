@@ -44,6 +44,7 @@
     if (value === "loading_context") return "加载中";
     if (value === "drafting") return "规划中";
     if (value === "drafted") return "已规划";
+    if (value === "advancing") return "生成中";
     if (value === "publishing") return "发布中";
     if (value === "generating") return "生成中";
     if (value === "published") return "已发布";
@@ -2514,6 +2515,13 @@
     return "";
   }
 
+  function dailyLoopAdvanceBlockedReason({ state = {}, context = {}, readiness = {}, plan = {} } = {}) {
+    const draftBlocked = dailyLoopDraftBlockedReason({ state, context, readiness, plan });
+    if (draftBlocked) return draftBlocked;
+    if (!(readiness.authoringGatewayConfigured ?? readiness.gatewayConfigured)) return "Gateway authoring 尚未配置，暂不能生成卡片。";
+    return "";
+  }
+
   function progressStepRows(activeStep = "prepare", escapeHtml = defaultEscapeHtml) {
     const steps = [
       ["context", "整理上下文", "图谱、画像、近期信号"],
@@ -2534,7 +2542,7 @@
   }
 
   function progressPanel(state = {}, escapeHtml = defaultEscapeHtml) {
-    const visible = state.status === "generating" || state.status === "drafting" || state.status === "publishing";
+    const visible = state.status === "generating" || state.status === "drafting" || state.status === "publishing" || state.status === "advancing";
     if (!visible) return "";
     const step = clean(state.progressStep || "context") || "context";
     const message = clean(state.progressMessage || "正在处理学习闭环，请稍等。");
@@ -2542,6 +2550,8 @@
       ? "正在规划下一张"
       : state.status === "publishing"
         ? "正在发布卡片"
+        : state.status === "advancing"
+          ? "正在生成卡片"
         : "正在生成卡片";
     return `<section class="learning-card-generation-progress" data-card-generation-progress role="status" aria-live="polite">
       <div class="learning-card-generation-progress-head">
@@ -2599,6 +2609,10 @@
       if (Array.isArray(value)) return value.length > 0;
       return clean(value);
     }));
+  }
+
+  function createDailyLoopAdvancePayload({ context = {}, workspaceId = "", selection = {} } = {}) {
+    return createDailyLoopDraftPayload({ context, workspaceId, selection });
   }
 
   function createDailyLoopPublishPayload({ context = {}, workspaceId = "", draftResult = {}, selection = {} } = {}) {
@@ -2696,20 +2710,26 @@
     const plan = context.suggestedPlan || {};
     const generated = state.generatedResult || {};
     const loading = state.status === "loading_context";
-    const busy = state.status === "generating" || state.status === "drafting" || state.status === "publishing";
+    const busy = state.status === "generating" || state.status === "drafting" || state.status === "publishing" || state.status === "advancing";
     const draftResult = state.dailyLoopDraftResult || {};
     const publishResult = state.dailyLoopPublishResult || {};
     const draftBlockedReason = busy ? "" : dailyLoopDraftBlockedReason({ state, context, readiness, plan });
     const publishBlockedReason = busy ? "" : dailyLoopPublishBlockedReason({ state, context, readiness, draftResult });
+    const advanceBlockedReason = busy ? "" : dailyLoopAdvanceBlockedReason({ state, context, readiness, plan });
     const canDraft = Boolean(!busy && !draftBlockedReason);
     const canPublish = Boolean(!busy && !publishBlockedReason);
+    const canAdvance = Boolean(!busy && !advanceBlockedReason);
     const draftClass = `${canDraft ? "" : "disabled"}`;
     const publishClass = `primary${canPublish ? "" : " disabled"}`;
+    const advanceClass = `primary${canAdvance ? "" : " disabled"}`;
     const draftBlockedAttrs = !canDraft
       ? `data-card-generation-blocked-reason="${escapeHtml(draftBlockedReason)}" aria-disabled="true"`
       : "";
     const publishBlockedAttrs = !canPublish
       ? `data-card-generation-blocked-reason="${escapeHtml(publishBlockedReason)}" aria-disabled="true"`
+      : "";
+    const advanceBlockedAttrs = !canAdvance
+      ? `data-card-generation-blocked-reason="${escapeHtml(advanceBlockedReason)}" aria-disabled="true"`
       : "";
     return `<section class="learning-card-generation-manager" data-card-generation-manager data-card-generation-status="${escapeHtml(state.status || "idle")}" aria-busy="${busy ? "true" : "false"}">
       <section class="learning-coin-panel learning-card-generation-intro">
@@ -2768,6 +2788,7 @@
           <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
           <div class="learning-card-generation-actions">
             <button type="button" data-card-generation-refresh>刷新状态</button>
+            <button type="button" class="${advanceClass}" data-card-generation-advance ${advanceBlockedAttrs} ${state.status === "advancing" ? "disabled" : ""}>${state.status === "advancing" ? "正在生成" : "生成卡片"}</button>
             <button type="button" class="${draftClass}" data-card-generation-draft ${draftBlockedAttrs} ${state.status === "drafting" ? "disabled" : ""}>${state.status === "drafting" ? "正在规划" : "规划下一张"}</button>
             <button type="button" class="${publishClass}" data-card-generation-publish ${publishBlockedAttrs} ${state.status === "publishing" ? "disabled" : ""}>${state.status === "publishing" ? "正在发布" : "发布为卡片"}</button>
           </div>
@@ -2811,6 +2832,7 @@
     createAutomationSchedulerWorkerTargetPayload,
     createAutomationSchedulerWorkerTargetReviewPayload,
     createRecommendationLifecycleDecisionPayload,
+    createDailyLoopAdvancePayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
     createCycleAuditQueryPayload,

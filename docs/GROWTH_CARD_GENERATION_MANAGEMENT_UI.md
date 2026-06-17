@@ -235,11 +235,15 @@ This browser operation is implemented for the supervised daily-loop path.
    - current learner/profile/evidence summary for the selected target.
 5. Owner selects a horizon and time budget, normally `daily_plan` and
    `15` minutes for a daily card.
-6. Owner clicks `规划下一张`.
-7. UI calls `POST /api/v1/growth/daily-loop/draft` with target workspace,
+6. Owner normally clicks `生成卡片`.
+7. UI calls `POST /api/v1/growth/daily-loop/advance` with target workspace,
    learner id, selected domain pack, subject, horizon, and available minutes.
-   The facade delegates to the existing plan-publisher draft boundary.
-8. Growth renders an Owner-safe plan preview:
+   The facade delegates to the existing daily-loop service, which drafts a
+   validated daily plan and publishes the selected item through the same
+   service boundaries used by the two-step path.
+8. If Owner wants inspection first, Owner clicks `规划下一张`; UI calls
+   `POST /api/v1/growth/daily-loop/draft` and renders an Owner-safe plan
+   preview:
    - plan id and validation status;
    - target graph nodes and labels;
    - card role and mapped generation role;
@@ -247,7 +251,7 @@ This browser operation is implemented for the supervised daily-loop path.
    - estimated minutes;
    - evidence requirements;
    - bounded reason and basis evidence ids.
-9. Owner clicks `发布为卡片`.
+9. In the two-step path, Owner clicks `发布为卡片`.
 10. UI calls `POST /api/v1/growth/daily-loop/publish` for the selected plan
     item. The facade delegates to the existing plan-publisher publish
     boundary, strips generated authoring draft internals, and refreshes audit
@@ -658,8 +662,17 @@ Implemented daily-loop facade routes:
 ```http
 GET /api/v1/growth/daily-loop/preview
 POST /api/v1/growth/daily-loop/draft
+POST /api/v1/growth/daily-loop/advance
 POST /api/v1/growth/daily-loop/publish
 ```
+
+`daily-loop/advance` is the product-visible one-click Owner path for daily
+card generation. It delegates to `learning-daily-loop-service.advance()`, which
+first drafts a validated daily plan through the existing planner/publisher
+boundary and then publishes the selected daily item through the existing
+publish boundary. It is still an explicit Owner write action, not background
+scheduling or browser-side state recomputation. The separate `规划下一张` and
+`发布为卡片` buttons remain available for inspection and recovery.
 
 Implemented lower-level planner routes:
 
@@ -1065,6 +1078,7 @@ to proxied write requests. Direct calls to `http://127.0.0.1:4881` still need
    - `fetchLearningLoopState(targetWorkspaceId, context)`;
    - `fetchGrowthReleaseWorkbench(targetWorkspaceId, context)`;
    - `recordGrowthReleaseWorkbenchAction(payload, targetWorkspaceId)`;
+   - `advanceGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `draftGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `publishGrowthDailyLoop(payload, targetWorkspaceId)`;
    - `fetchGrowthCycleAudit(payload, targetWorkspaceId)`;
@@ -1124,15 +1138,15 @@ Add focused tests before broad regression runs:
 | Graph option projection | `tests/learning-graph-repository.test.js` proves domain-pack and subject options project from native graph tables without `raw_json` |
 | Planner readiness smoke CLI | `tests/growth-planner-readiness-smoke-script.test.js` proves bounded argument parsing and target-node id de-duplication |
 | Planner draft/publish service | `tests/learning-plan-publisher-service.test.js` proves validated plan drafts persist summary-only previews and publish selected items only through the card-generation service |
-| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, and `tests/growth-routes.test.js` prove Owner-only preview/draft/publish delegation, visible-target scope, bounded generation projection, publish failure visibility, daily card duration persistence, audit/completeness refresh, and privacy-risk input rejection |
+| Daily-loop backend facade | `tests/learning-daily-loop-service.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, and `tests/growth-routes.test.js` prove Owner-only preview/draft/advance/publish delegation, visible-target scope, bounded generation projection, publish failure visibility, daily card duration persistence, audit/completeness refresh, and privacy-risk input rejection |
 | Automation proposal repository/service | `tests/learning-automation-proposal-repository.test.js` and `tests/learning-automation-proposal-service.test.js` prove source-cycle id, audit-completeness gate, target provisioning, idempotent summary-only proposal persistence, Owner decision statuses, accepted-only publish execution, execution metadata, legacy decision/execution-column migration, DB-level privacy-class/privacy-key rejection, and no direct card-generation/Gateway/scheduler call |
 | Target provisioning service | `tests/learning-target-provisioning-service.test.js` proves sample fallback, non-sample blocking, explicit provision success, cross-subject domain-pack plus subject-domain selection, subject mismatch rejection, graph-node mismatch rejection, and summary-only public DTOs |
 | Target provisioning smoke CLI | `tests/growth-target-provisioning-smoke-script.test.js` and `npm run smoke:target-provisioning`; the CLI defaults to read-only resolve, requires explicit `--allow-write` for provision writes, delegates to `learning-target-provisioning-service`, and supports production cross-subject packs such as `domain_pack_fanfan_cambridge_pathway_v1` with `subject=science` |
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, separate draft/publish buttons, visible progress, and bounded plan preview |
+| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, and absence of `writefulSchedulingAllowed`, raw prompts, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |

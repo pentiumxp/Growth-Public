@@ -7773,6 +7773,23 @@ test("growth daily loop draft and publish delegate through service with Owner wr
           },
           generation: { published: { taskCardId: "ltask_route_1" } }
         };
+      },
+      async advance(input) {
+        calls.push({ type: "advance", input });
+        return {
+          ok: true,
+          operation: "advance",
+          stage: "published",
+          draftStep: { ok: true, operation: "draft", planDraftId: "lgplan_route_advance_1" },
+          publishStep: { ok: true, operation: "publish", taskCardId: "ltask_route_advance_1" },
+          planDraft: {
+            planDraftId: "lgplan_route_advance_1",
+            workspaceId: input.workspaceId,
+            status: "published",
+            generatedTaskCardId: "ltask_route_advance_1"
+          },
+          generation: { published: { taskCardId: "ltask_route_advance_1" } }
+        };
       }
     },
     growthService: {}
@@ -7824,6 +7841,31 @@ test("growth daily loop draft and publish delegate through service with Owner wr
     assert.equal(publishResponse.status, 201);
     assert.equal((await publishResponse.json()).generation.published.taskCardId, "ltask_route_1");
 
+    const advanceResponse = await fetch(`${baseUrl}/api/v1/growth/daily-loop/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        available_minutes: 15,
+        target_node_ids: ["kg_science_fair_test"]
+      })
+    });
+    assert.equal(advanceResponse.status, 201);
+    const advanceBody = await advanceResponse.json();
+    assert.equal(advanceBody.operation, "advance");
+    assert.equal(advanceBody.generation.published.taskCardId, "ltask_route_advance_1");
+
     assert.deepEqual(calls[0], {
       type: "draft",
       input: {
@@ -7860,6 +7902,10 @@ test("growth daily loop draft and publish delegate through service with Owner wr
     assert.equal(calls[1].input.workspaceId, "weixin_fanfan");
     assert.equal(calls[1].input.planDraftId, "lgplan_route_1");
     assert.equal(calls[1].input.itemId, "plan_item_1");
+    assert.equal(calls[2].type, "advance");
+    assert.equal(calls[2].input.workspaceId, "weixin_fanfan");
+    assert.equal(calls[2].input.learnerId, "fanfan");
+    assert.equal(calls[2].input.targetNodeIds[0], "kg_science_fair_test");
 
     const denied = await fetch(`${baseUrl}/api/v1/growth/daily-loop/draft`, {
       method: "POST",

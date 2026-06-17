@@ -73,7 +73,7 @@ function publicReadiness(context = {}) {
     learningGraphReady: Boolean(readiness.learningGraphReady),
     plannerReady: Boolean(readiness.plannerReady || plannerReadiness.ready),
     plannerContextReady: Boolean(readiness.plannerContextReady || plannerReadiness.contextReady),
-    authoringGatewayConfigured: Boolean(readiness.authoringGatewayConfigured),
+    authoringGatewayConfigured: Boolean(readiness.authoringGatewayConfigured || readiness.gatewayConfigured),
     evaluationGatewayConfigured: Boolean(readiness.evaluationGatewayConfigured),
     plannerGatewayConfigured: Boolean(readiness.plannerGatewayConfigured),
     operatingLoopGatewayReady: Boolean(readiness.operatingLoopGatewayReady),
@@ -177,6 +177,23 @@ function publicGeneration(generation = {}) {
   };
 }
 
+function publicLoopStep(result = {}) {
+  const planDraft = result.planDraft || {};
+  const generation = result.generation || {};
+  return {
+    ok: result.ok !== false,
+    operation: cleanString(result.operation),
+    stage: cleanString(result.stage),
+    error: boundedText(result.error, 160),
+    duplicate: Boolean(result.duplicate),
+    gatewayMode: cleanString(result.gatewayMode || generation.gatewayMode),
+    planDraftId: cleanString(planDraft.planDraftId),
+    selectedItemId: cleanString(planDraft.selectedItemId || result.selectedItem?.itemId),
+    generatedTaskCardId: cleanString(planDraft.generatedTaskCardId || generation.published?.taskCardId),
+    taskCardId: cleanString(generation.published?.taskCardId || planDraft.generatedTaskCardId)
+  };
+}
+
 function shouldReadCycle(input = {}, publishResult = null) {
   return Boolean(
     cleanString(input.planDraftId || input.plan_draft_id)
@@ -217,6 +234,12 @@ function actionModel(context = {}, input = {}) {
   return {
     canDraft: Boolean(readiness.targetEnabled && readiness.plannerContextReady),
     canPublish: Boolean(planDraftId),
+    canAdvance: Boolean(readiness.targetEnabled && readiness.plannerContextReady && readiness.authoringGatewayConfigured),
+    advanceAction: {
+      method: "POST",
+      path: "/api/v1/growth/daily-loop/advance",
+      enabled: Boolean(readiness.targetEnabled && readiness.plannerContextReady && readiness.authoringGatewayConfigured)
+    },
     draftAction: {
       method: "POST",
       path: "/api/v1/growth/daily-loop/draft",
@@ -292,6 +315,38 @@ function createLearningDailyLoopService(options = {}) {
     };
   }
 
+  async function advance(input = {}) {
+    const privacy = privacyCheck(input);
+    if (privacy) return privacy;
+    const draftResult = await draft(input);
+    if (!draftResult?.ok) {
+      return Object.assign({}, draftResult || unavailable("learning_daily_loop_draft_failed"), {
+        ok: false,
+        operation: "advance",
+        stage: "draft",
+        draftStep: publicLoopStep(draftResult || {}),
+        publishStep: null
+      });
+    }
+    const planDraft = draftResult.planDraft || {};
+    const item = planDraft.selectedItem || asArray(planDraft.items)[0] || {};
+    const publishInput = Object.assign({}, input, {
+      planDraftId: planDraft.planDraftId,
+      itemId: planDraft.selectedItemId || item.itemId,
+      targetNodeIds: asArray(item.targetNodeIds).length ? item.targetNodeIds : planDraft.targetNodeIds
+    });
+    const publishResult = await publish(publishInput);
+    return Object.assign({}, publishResult || unavailable("learning_daily_loop_publish_failed"), {
+      ok: Boolean(publishResult?.ok),
+      operation: "advance",
+      stage: publishResult?.ok ? "published" : cleanString(publishResult?.stage || "publish"),
+      draftStep: publicLoopStep(draftResult),
+      publishStep: publicLoopStep(publishResult || {}),
+      gatewayMode: cleanString(publishResult?.generation?.gatewayMode || draftResult.gatewayMode),
+      error: cleanString(publishResult?.error)
+    });
+  }
+
   async function draft(input = {}) {
     const privacy = privacyCheck(input);
     if (privacy) return privacy;
@@ -358,6 +413,7 @@ function createLearningDailyLoopService(options = {}) {
   }
 
   return {
+    advance,
     preview,
     draft,
     publish

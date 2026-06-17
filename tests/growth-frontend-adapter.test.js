@@ -336,8 +336,19 @@ test("Growth API client exposes card generation context and write helpers", asyn
     tasks: ["planner_readiness", "scheduler_dry_run"],
     required_task_ids: ["planner_readiness", "scheduler_dry_run"]
   }, "weixin_fanfan");
+  await client.advanceGrowthDailyLoop({
+    target_node_ids: ["kg_main_idea"],
+    subject: "science"
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan");
+  const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
+  assert.ok(advanceCall);
+  assert.deepEqual(JSON.parse(advanceCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    target_node_ids: ["kg_main_idea"],
+    subject: "science"
+  });
   assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
   assert.equal(calls[2].path, "/api/v1/growth/cards/generate");
   assert.equal(calls[2].options.method, "POST");
@@ -549,6 +560,7 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchGrowthStageCheckpointControls({ target_node_id: "kg_science_observation" }, "weixin_stephen");
   await client.reviewGrowthRecommendationLifecycle({ trajectory_id: "lgtraj_1", status: "expired" }, "weixin_stephen");
   await client.createGrowthAutomationDigest({ learner_id: "fanfan", limit: 3 }, "weixin_stephen");
+  await client.advanceGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen");
@@ -623,6 +635,12 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
     workspace_id: "weixin_stephen",
     learner_id: "fanfan",
     limit: 3
+  });
+  const proxyAdvanceCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/daily-loop/advance");
+  assert.ok(proxyAdvanceCall);
+  assert.deepEqual(JSON.parse(proxyAdvanceCall.options.body), {
+    workspace_id: "weixin_stephen",
+    target_node_ids: ["kg_english_main_idea"]
   });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
@@ -1608,6 +1626,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /日常英语卡/);
   assert.match(html, /data-card-generation-draft/);
   assert.match(html, /data-card-generation-publish/);
+  assert.match(html, /data-card-generation-advance/);
+  assert.match(html, /生成卡片/);
   assert.match(html, /规划下一张/);
   assert.match(html, /发布为卡片/);
   assert.match(html, /data-card-generation-plan-preview/);
@@ -3307,6 +3327,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /await refreshReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function draftDailyLoopFromUi/);
   assert.match(source, /api\.draftGrowthDailyLoop\(payload, targetWorkspaceId\)/);
+  assert.match(source, /function advanceDailyLoopFromUi/);
+  assert.match(source, /api\.advanceGrowthDailyLoop\(payload, targetWorkspaceId\)/);
   assert.match(source, /pageState\.cardGeneration\.status = "drafted";[\s\S]*pageState\.cardGeneration\.dailyLoopDraftResult = result;[\s\S]*await refreshLearningLoopState\(targetWorkspaceId, pageState\.cardGeneration\.context\)/);
   assert.match(source, /function publishDailyLoopFromUi/);
   assert.match(source, /api\.publishGrowthDailyLoop\(payload, targetWorkspaceId\)/);

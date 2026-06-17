@@ -20899,3 +20899,63 @@
     release approvals;
   - run docs locality, `npm run check`, full `npm test`, `git diff --check`,
     and CodeGraph sync/status before the next commit/push.
+
+## 2026-06-17T18:14+0800 - Owner daily loop one-click advance path
+
+- Status:
+  - Implemented local Growth backend/frontend/docs/harness slice.
+  - No production deploy was executed in this slice.
+  - Execution mode adjusted to larger product-visible packages: avoid
+    micro-slice commits and validate only the key Service First / route /
+    frontend adapter / docs-locality nodes before push unless a risk boundary
+    requires broader tests.
+- Implemented behavior:
+  - `learning-daily-loop-service.advance()` is the Owner-visible one-click
+    daily-card generation operation. It composes the existing service-owned
+    `draft()` and `publish()` boundaries and returns bounded `draftStep` /
+    `publishStep` summaries.
+  - Added Owner-only write route
+    `POST /api/v1/growth/daily-loop/advance`. The route only authorizes,
+    normalizes, scopes to the visible target, and delegates to
+    `learning-daily-loop-service.advance()`.
+  - Added `advanceGrowthDailyLoop()` to the browser API client.
+  - Added a primary Owner `生成卡片` action and visible `生成中` progress state
+    to the Growth card-generation UI. Existing separate draft/publish controls
+    remain available for inspection and recovery.
+  - Readiness now treats either `authoringGatewayConfigured` or the older
+    `gatewayConfigured` signal as authoring Gateway readiness so service action
+    state and UI readiness stay aligned.
+- Boundary decisions:
+  - This does not add scheduling, background auto-publish, direct route-to-
+    Gateway calls, browser policy computation, stage-assessment activation, or
+    deployment behavior.
+  - Gateway access remains behind existing Growth service/client boundaries;
+    the browser only triggers the explicit Owner action.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node --check src/services/learning-daily-loop-service.js`;
+  - `node --check src/routes/growth-routes.js`;
+  - `node --check public/growth-api-client.js`;
+  - `node --check public/growth-card-generation-ui.js`;
+  - `node --check public/app.js`;
+  - `node --test tests/learning-daily-loop-service.test.js` passed `8/8`;
+  - `node --test tests/growth-routes.test.js` passed `51/51`;
+  - `node --test tests/growth-frontend-adapter.test.js` passed `31/31`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37` and no missing harness references;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - continue in larger packages rather than micro-slices;
+  - next likely package: connect the daily-loop generated-card path to a
+    practical Owner sample flow for Fanfan with minimal visual verification and
+    controlled production deployment when ready;
+  - keep release-package visual evidence, Action Inbox/Web Push evidence,
+    approvals, and scheduler/runtime enablement as separate high-risk gates.

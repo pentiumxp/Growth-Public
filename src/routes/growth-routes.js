@@ -2043,6 +2043,19 @@ async function handleGrowthRoute(request, response, url, services) {
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
   }
 
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/daily-loop/advance") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_daily_loop_owner_required", "Daily loop advance requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = await services.learningDailyLoopService.advance(
+      normalizeDailyLoopBodyInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
   if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/proposals") {
     const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
     if (requestedActorRole(request) !== "owner") {

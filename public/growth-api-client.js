@@ -393,6 +393,12 @@
       }, payload));
     }
 
+    function advanceGrowthDailyLoop(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("daily-loop", "advance"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function publishGrowthDailyLoop(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("daily-loop", "publish"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -554,6 +560,7 @@
     }
 
     return {
+      advanceGrowthDailyLoop,
       appendWorkspaceQuery,
       activateGrowthStageAssessment,
       draftGrowthDailyLoop,

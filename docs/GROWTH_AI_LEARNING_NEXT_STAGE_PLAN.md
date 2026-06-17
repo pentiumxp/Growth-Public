@@ -249,9 +249,10 @@ The next implementation slices should be:
 
 1. **Owner daily loop closure**: the minimal `生成` tab operation path now
    runs over the existing daily-loop facade. Owner can load context, inspect
-   compact learning-loop state, draft one plan, preview the selected plan
-   item, explicitly publish one card, and refresh board/context/loop state
-   without Codex. Owner can also apply a domain-pack/subject selector and
+   compact learning-loop state, explicitly click `生成卡片` to draft and publish
+   one daily card through `learning-daily-loop-service.advance()`, or use the
+   separate draft/publish controls for inspection and recovery, then refresh
+   board/context/loop state without Codex. Owner can also apply a domain-pack/subject selector and
    explicitly create/update target provision rows through the Growth service
    facade. The compact ordinary-card recipe policy now supports
    `daily_english_v1`, `daily_science_v1`, and
@@ -1303,9 +1304,10 @@ Expected steps:
 2. UI loads preview/context for the selected target and scope.
 3. UI shows provisioning, graph options, Profile V2, evidence/audit summaries,
    and model boundary readiness.
-4. Owner drafts a plan.
-5. Owner reviews one validated daily item.
-6. Owner explicitly publishes.
+4. Owner either clicks `生成卡片` for one explicit draft-then-publish action, or
+   drafts a plan first.
+5. Owner reviews one validated daily item when using the two-step path.
+6. Owner explicitly publishes when using the two-step path.
 7. Learner completes one submission, one evaluation, and one optional
    reflection.
 8. Owner refreshes audit and sees what changed, what stayed uncertain, and
@@ -1319,7 +1321,7 @@ becomes future planning evidence, not a required retry loop.
 | Boundary | Required harness |
 | --- | --- |
 | Planner/author/evaluator Gateway clients | Fake valid stream, valid JSON, empty output, invalid JSON, timeout, repair failure, privacy-risk output, `tests/growth-planner-readiness-smoke-script.test.js`, `npm run smoke:planner-readiness`, and top-level `plannerReadiness*` smoke operator readback that mirrors the nested planner readiness DTO without adding writes, publication, generation, evaluation, scheduler, notification, stage activation, direct repository access, or release-bundle mapping changes. |
-| Daily loop service | Preview, draft, publish, failed publish, audit refresh, ordinary daily duration validation/persistence at 10-15 minutes, `tests/growth-daily-loop-preview-smoke-script.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, `npm run smoke:daily-loop-preview`, controlled `npm run smoke:daily-loop` with explicit `--allow-write` for draft/publish, top-level `dailyLoop*` smoke operator readback from both preview and controlled CLIs that mirrors nested preview/draft/publish DTOs, and no direct Gateway/card-generation calls from routes or the CLI. |
+| Daily loop service | Preview, draft, advance, publish, failed publish, audit refresh, ordinary daily duration validation/persistence at 10-15 minutes, `tests/growth-daily-loop-preview-smoke-script.test.js`, `tests/growth-daily-loop-smoke-script.test.js`, `npm run smoke:daily-loop-preview`, controlled `npm run smoke:daily-loop` with explicit `--allow-write` for draft/publish, top-level `dailyLoop*` smoke operator readback from both preview and controlled CLIs that mirrors nested preview/draft/publish DTOs, and no direct Gateway/card-generation calls from routes or the CLI. |
 | Learning loop state | `tests/learning-loop-state-service.test.js`, `tests/learning-reward-audit-service.test.js`, `tests/growth-learning-loop-state-smoke-script.test.js`, route visible-target/Owner tests, `npm run smoke:learning-loop-state`, summary-only `growth.learningLoopState.v1`, nested summary-only `growth.learningLoopState.recommendationEvidence.v1`, top-level `learningLoopState*` smoke operator readback, and `tests/learning-card-ai-loop-harness.test.js` post-cycle coverage proving a completed Fanfan science daily card can refresh cycle completeness, consume persisted Profile V2/profile-delta/trajectory/reward evidence, and return `ready_to_draft` with `draft_daily_plan`. The service harness proves the next recommendation can be explained from bounded evidence ids, source card/evaluation ids, plan drafts, profile-delta audits, Owner corrections, Profile V2 node summaries, reward settlement ids/coin totals, and trajectory lifecycle rows without exposing raw learner/model content, idempotency keys, ledger-entry JSON, or raw settlement payloads. Scalar selectors such as `taskCardId` and `evaluationId` are normalized before reward-audit readback so HTTP/CLI callers do not silently drop a completed-cycle selector. Active formal checkpoints must take precedence over daily drafting and return `stage_checkpoint_active` / `complete_active_stage_assessment` with bounded cycle/task-card ids; cooldown states must keep bounded reason/cooldown readback visible at smoke top level. `tests/growth-learner-cycle-smoke-script.test.js` also chains a write-gated learner-cycle full smoke into a no-write learning-loop state smoke against the same temporary DB. Architecture guard still requires no Gateway, publication, generation, evaluation, scheduler, notification, stage activation, learner-state mutation, or direct repository access from the state boundary. |
 | Recommendation lifecycle decisions | `tests/learning-recommendation-lifecycle-service.test.js`, `tests/growth-routes.test.js`, `tests/growth-recommendation-lifecycle-smoke-script.test.js`, `tests/growth-frontend-adapter.test.js`, and architecture guards prove the lifecycle boundary can list pending/accepted/skipped/expired/superseded recommendation rows, lets an Owner explicitly mark a pending recommendation `skipped` or `expired` through `POST /api/v1/growth/recommendations/lifecycle/review`, exposes only pending-row `跳过` / `过期` controls in the embedded Owner generation panel, constructs summary-only review payloads from service-provided selectors, rejects invalid/private/accepted/superseded overrides, keeps `npm run smoke:recommendation-lifecycle` no-write for release evidence, and mirrors top-level `recommendationLifecycle*` operator readback for operation/status, write gate, scope, filters, lifecycle counts, status counts, latest trajectory, pending trajectory ids, accepted generated-card ids, and write-performed flags while preserving the nested DTO as canonical. This boundary must not mark accepted recommendations, call Gateway, publish/generate cards, evaluate submissions, schedule work, deliver handoffs, activate stage assessments, or mutate learner state beyond the bounded lifecycle status update. |
 | Cycle history release evidence | `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, top-level `cycleHistory*` smoke operator readback, the default release-bundle `cycle_history` task, `productionCycleHistorySmokeEvidence`, release-readiness key `production_cycle_history_smoke_evidence`, and architecture guards prove selectable historical-cycle readback can be collected as summary-only release evidence without Gateway, direct repository access, writes, publication, generation, evaluation, scheduling, notification, stage activation, or learner-state mutation. |
