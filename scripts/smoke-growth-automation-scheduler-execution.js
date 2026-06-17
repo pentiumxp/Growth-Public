@@ -62,6 +62,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 16) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function normalizeOperation(operation) {
   return operation === "execute-once" ? "execute" : operation;
 }
@@ -139,6 +161,85 @@ async function runOperation(service, operation, input) {
   return service.listExecutions(input);
 }
 
+function summarizeStatuses(executions = []) {
+  return asArray(executions).reduce((counts, execution) => {
+    const status = cleanString(execution && execution.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationSchedulerExecutionSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const executions = asArray(readback.executions);
+  const execution = objectOnly(readback.execution || executions[0]);
+  const gate = objectOnly(execution.gate);
+  const action = objectOnly(execution.action);
+  const executionSummary = objectOnly(execution.execution);
+  const publishResult = objectOnly(readback.publishResult || execution.publishResult);
+  const statusRows = executions.length ? executions : execution.executionId ? [execution] : [];
+  const statusCounts = summarizeStatuses(statusRows);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const recordWritten = Boolean(execution.executionId);
+  const status = cleanString(execution.status || executionSummary.status || (readback.ok === false ? readback.error || "failed" : operation === "list" ? "listed" : "pass"), 140);
+  return Object.assign({}, readback, {
+    automationSchedulerExecutionStatus: status,
+    automationSchedulerExecutionOk: readback.ok === true,
+    automationSchedulerExecutionOperation: cleanString(operation, 80),
+    automationSchedulerExecutionWriteOperation: writeOperation,
+    automationSchedulerExecutionWriteAllowed: writeAllowed === true,
+    automationSchedulerExecutionRecordWritten: writeOperation && writeAllowed === true && recordWritten,
+    automationSchedulerExecutionWritesPerformed: writeOperation && writeAllowed === true && recordWritten,
+    automationSchedulerExecutionPublished: status === "published" || publishResult.ok === true,
+    automationSchedulerExecutionWorkspaceId: cleanString(readback.workspaceId || execution.workspaceId || input.workspaceId, 160),
+    automationSchedulerExecutionLearnerId: cleanString(readback.learnerId || execution.learnerId || input.learnerId, 160),
+    automationSchedulerExecutionProgramId: cleanString(execution.programId || input.programId, 160),
+    automationSchedulerExecutionCount: numberValue(readback.count, executions.length),
+    automationSchedulerExecutionExecutionId: cleanString(execution.executionId || input.executionId, 180),
+    automationSchedulerExecutionExecutionIds: uniqueBoundedStrings(executions.map((item) => item && item.executionId), 24),
+    automationSchedulerExecutionStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationSchedulerExecutionStartedCount: numberValue(statusCounts.started, 0),
+    automationSchedulerExecutionPublishedCount: numberValue(statusCounts.published, 0),
+    automationSchedulerExecutionFailedCount: numberValue(statusCounts.failed, 0),
+    automationSchedulerExecutionBlockedCount: numberValue(statusCounts.blocked, 0),
+    automationSchedulerExecutionSkippedCount: numberValue(statusCounts.skipped, 0),
+    automationSchedulerExecutionMode: cleanString(execution.mode || gate.executionMode || input.executionMode, 120),
+    automationSchedulerExecutionReason: cleanString(execution.reason || executionSummary.reason || readback.reason || readback.error, 240),
+    automationSchedulerExecutionError: cleanString(execution.error || readback.error || publishResult.error, 240),
+    automationSchedulerExecutionRetryRequiresOwner: executionSummary.retryRequiresOwner === true,
+    automationSchedulerExecutionHandoffId: cleanString(execution.handoffId || action.handoffId || input.handoffId, 180),
+    automationSchedulerExecutionDigestId: cleanString(execution.digestId || action.digestId || input.digestId, 180),
+    automationSchedulerExecutionPolicyId: cleanString(execution.policyId || input.policyId, 180),
+    automationSchedulerExecutionProposalId: cleanString(execution.proposalId || action.proposalId || input.proposalId, 180),
+    automationSchedulerExecutionPlanDraftId: cleanString(execution.planDraftId || action.planDraftId || input.planDraftId, 180),
+    automationSchedulerExecutionSelectedItemId: cleanString(execution.selectedItemId || action.selectedItemId || input.selectedItemId, 180),
+    automationSchedulerExecutionCollectionRunId: cleanString(input.collectionRunId, 180),
+    automationSchedulerExecutionDomainPackId: cleanString(input.domainPackId, 180),
+    automationSchedulerExecutionDomain: cleanString(input.domain, 120),
+    automationSchedulerExecutionSubject: cleanString(input.subject, 120),
+    automationSchedulerExecutionHorizon: cleanString(input.horizon, 80),
+    automationSchedulerExecutionPrivacyClass: cleanString(execution.privacyClass, 80),
+    automationSchedulerExecutionWritefulExecutionEnabled: gate.writefulExecutionEnabled === true || readback.writefulExecutionEnabled === true,
+    automationSchedulerExecutionWritefulSchedulingAllowed: gate.failurePolicy?.writefulSchedulingAllowed === true || gate.releaseAuthorization?.writefulSchedulingAllowed === true,
+    automationSchedulerExecutionReleaseAuthorized: gate.releaseAuthorization?.authorized === true,
+    automationSchedulerExecutionRuntimeConfigChange: gate.releaseAuthorization?.runtimeConfigChange === true,
+    automationSchedulerExecutionActivationReady: gate.releaseActivation?.ok === true || gate.releaseActivation?.activationRecordPresent === true,
+    automationSchedulerExecutionRuntimeEnablementReady: gate.runtimeEnablement?.ok === true || gate.runtimeEnablement?.valid === true,
+    automationSchedulerExecutionDryRunOk: gate.dryRun?.ok === true,
+    automationSchedulerExecutionDryRunWritePlanned: gate.dryRun?.writePlanned === true,
+    automationSchedulerExecutionDryRunWritesPerformed: gate.dryRun?.writesPerformed === true,
+    automationSchedulerExecutionDryRunPublishPlanned: gate.dryRun?.publishPlanned === true,
+    automationSchedulerExecutionCandidateDecision: cleanString(gate.candidate?.decision, 120),
+    automationSchedulerExecutionCandidateWouldPublish: gate.candidate?.wouldPublish === true,
+    automationSchedulerExecutionCandidateSafeToPublish: gate.candidate?.safeToPublish === true,
+    automationSchedulerExecutionPublishDelegation: cleanString(action.publishDelegation, 180),
+    automationSchedulerExecutionGeneratedTaskCardId: cleanString(executionSummary.generatedTaskCardId, 180),
+    automationSchedulerExecutionProposalExecutionStatus: cleanString(executionSummary.proposalExecutionStatus, 120),
+    automationSchedulerExecutionPublishError: cleanString(publishResult.error, 220)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -173,7 +274,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services.learningAutomationSchedulerExecutionService, operation, input);
+  const result = projectAutomationSchedulerExecutionSmokeReadback(
+    Object.assign({ operation }, await runOperation(services.learningAutomationSchedulerExecutionService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -192,6 +298,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerExecutionSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

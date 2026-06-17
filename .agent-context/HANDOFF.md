@@ -9,6 +9,37 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:39+08:00 - Scheduler Execution Smoke Operator Readback
+
+- Status: implemented locally; key-node validation is in progress. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change scheduler-execution service behavior, route authorization,
+  repositories, DB schema, Gateway/model calls, card publication, scheduler
+  dry-run logic, scheduler ticks, action-handoff delivery, stage activation,
+  runtime config, UI behavior, production deployment, or learner state.
+- Scope:
+  - added `projectAutomationSchedulerExecutionSmokeReadback()` in
+    `scripts/smoke-growth-automation-scheduler-execution.js`;
+  - projected bounded top-level `automationSchedulerExecution*` fields for
+    operation/write gate, blocked audit-row write state, publish state, scope,
+    execution ids/status counts, gate flags, action selectors, retry/error
+    visibility, and publish delegation while preserving nested list/execute
+    DTOs as canonical;
+  - kept execute behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-scheduler-execution-smoke-script.test.js`
+    to assert pure projection, default no-write list readback, and
+    default-disabled blocked execution readback;
+  - updated Growth-local architecture, operating-loop, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-scheduler-execution.js`
+  - `node --test tests/growth-automation-scheduler-execution-smoke-script.test.js`
+  - `npm run --silent smoke:scheduler-execution -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue with
+    scheduler run smoke top-level readback.
+
 ## 2026-06-17T15:32+08:00 - Automation Action Handoff Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

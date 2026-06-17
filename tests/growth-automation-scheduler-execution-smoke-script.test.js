@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-sched
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerExecutionSmokeReadback,
   shouldAllowWrite,
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-scheduler-execution");
@@ -114,6 +115,99 @@ test("automation scheduler execution smoke script parses operation, scope, and w
   });
 });
 
+test("automation scheduler execution smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationSchedulerExecutionSmokeReadback({
+    ok: true,
+    count: 2,
+    executions: [{
+      executionId: "lgasexec_blocked",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      handoffId: "lgahand_ready",
+      digestId: "lgadig_ready",
+      policyId: "lgafpol_active",
+      proposalId: "lgauto_ready",
+      planDraftId: "lgplan_next",
+      selectedItemId: "plan_item_next",
+      mode: "owner_explicit_once",
+      status: "blocked",
+      reason: "learning_automation_scheduler_execution_disabled",
+      error: "learning_automation_scheduler_execution_disabled",
+      privacyClass: "summary_only",
+      gate: {
+        writefulExecutionEnabled: false,
+        executionMode: "owner_explicit_once",
+        failurePolicy: { writefulSchedulingAllowed: false },
+        dryRun: { ok: true, writePlanned: false, writesPerformed: false, publishPlanned: false },
+        candidate: { decision: "would_publish", wouldPublish: true, safeToPublish: true },
+        releaseAuthorization: { authorized: false, runtimeConfigChange: false, writefulSchedulingAllowed: false }
+      },
+      action: {
+        publishDelegation: "learning-automation-proposal-service.publishAcceptedProposal"
+      },
+      execution: {
+        status: "blocked",
+        retryRequiresOwner: true
+      }
+    }, {
+      executionId: "lgasexec_published",
+      status: "published"
+    }]
+  }, "list", {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    collectionRunId: "lgacrn_ready",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan"
+  }, false);
+
+  assert.equal(projected.automationSchedulerExecutionStatus, "blocked");
+  assert.equal(projected.automationSchedulerExecutionOk, true);
+  assert.equal(projected.automationSchedulerExecutionOperation, "list");
+  assert.equal(projected.automationSchedulerExecutionWriteOperation, false);
+  assert.equal(projected.automationSchedulerExecutionWriteAllowed, false);
+  assert.equal(projected.automationSchedulerExecutionRecordWritten, false);
+  assert.equal(projected.automationSchedulerExecutionWritesPerformed, false);
+  assert.equal(projected.automationSchedulerExecutionPublished, false);
+  assert.equal(projected.automationSchedulerExecutionWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationSchedulerExecutionLearnerId, "fanfan");
+  assert.equal(projected.automationSchedulerExecutionProgramId, "program_science");
+  assert.equal(projected.automationSchedulerExecutionCount, 2);
+  assert.equal(projected.automationSchedulerExecutionExecutionId, "lgasexec_blocked");
+  assert.deepEqual(projected.automationSchedulerExecutionExecutionIds, ["lgasexec_blocked", "lgasexec_published"]);
+  assert.deepEqual(projected.automationSchedulerExecutionStatuses, ["blocked", "published"]);
+  assert.equal(projected.automationSchedulerExecutionBlockedCount, 1);
+  assert.equal(projected.automationSchedulerExecutionPublishedCount, 1);
+  assert.equal(projected.automationSchedulerExecutionMode, "owner_explicit_once");
+  assert.equal(projected.automationSchedulerExecutionReason, "learning_automation_scheduler_execution_disabled");
+  assert.equal(projected.automationSchedulerExecutionError, "learning_automation_scheduler_execution_disabled");
+  assert.equal(projected.automationSchedulerExecutionRetryRequiresOwner, true);
+  assert.equal(projected.automationSchedulerExecutionHandoffId, "lgahand_ready");
+  assert.equal(projected.automationSchedulerExecutionDigestId, "lgadig_ready");
+  assert.equal(projected.automationSchedulerExecutionPolicyId, "lgafpol_active");
+  assert.equal(projected.automationSchedulerExecutionProposalId, "lgauto_ready");
+  assert.equal(projected.automationSchedulerExecutionPlanDraftId, "lgplan_next");
+  assert.equal(projected.automationSchedulerExecutionSelectedItemId, "plan_item_next");
+  assert.equal(projected.automationSchedulerExecutionCollectionRunId, "lgacrn_ready");
+  assert.equal(projected.automationSchedulerExecutionDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(projected.automationSchedulerExecutionDomain, "science");
+  assert.equal(projected.automationSchedulerExecutionSubject, "science");
+  assert.equal(projected.automationSchedulerExecutionWritefulExecutionEnabled, false);
+  assert.equal(projected.automationSchedulerExecutionWritefulSchedulingAllowed, false);
+  assert.equal(projected.automationSchedulerExecutionReleaseAuthorized, false);
+  assert.equal(projected.automationSchedulerExecutionDryRunOk, true);
+  assert.equal(projected.automationSchedulerExecutionDryRunWritePlanned, false);
+  assert.equal(projected.automationSchedulerExecutionDryRunWritesPerformed, false);
+  assert.equal(projected.automationSchedulerExecutionDryRunPublishPlanned, false);
+  assert.equal(projected.automationSchedulerExecutionCandidateDecision, "would_publish");
+  assert.equal(projected.automationSchedulerExecutionCandidateWouldPublish, true);
+  assert.equal(projected.automationSchedulerExecutionCandidateSafeToPublish, true);
+  assert.equal(projected.automationSchedulerExecutionPublishDelegation, "learning-automation-proposal-service.publishAcceptedProposal");
+});
+
 test("automation scheduler execution smoke script lists without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -132,6 +226,17 @@ test("automation scheduler execution smoke script lists without writing by defau
     assert.equal(output.source, "growth-learning-automation-scheduler-execution-service");
     assert.equal(output.count, 0);
     assert.deepEqual(output.executions, []);
+    assert.equal(output.automationSchedulerExecutionStatus, "listed");
+    assert.equal(output.automationSchedulerExecutionOk, true);
+    assert.equal(output.automationSchedulerExecutionOperation, "list");
+    assert.equal(output.automationSchedulerExecutionWriteOperation, false);
+    assert.equal(output.automationSchedulerExecutionWriteAllowed, false);
+    assert.equal(output.automationSchedulerExecutionRecordWritten, false);
+    assert.equal(output.automationSchedulerExecutionWritesPerformed, false);
+    assert.equal(output.automationSchedulerExecutionWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationSchedulerExecutionLearnerId, "fanfan");
+    assert.equal(output.automationSchedulerExecutionCount, 0);
+    assert.deepEqual(output.automationSchedulerExecutionExecutionIds, []);
     assert.equal(tableExists(dbPath, "learning_growth_automation_scheduler_executions"), undefined);
   });
 });
@@ -180,6 +285,20 @@ test("automation scheduler execution smoke script records disabled execution onl
     assert.equal(executeOutput.execution.gate.writefulExecutionEnabled, false);
     assert.equal(executeOutput.execution.action.publishDelegation, "learning-automation-proposal-service.publishAcceptedProposal");
     assert.equal(executeOutput.execution.execution.retryRequiresOwner, true);
+    assert.equal(executeOutput.automationSchedulerExecutionStatus, "blocked");
+    assert.equal(executeOutput.automationSchedulerExecutionOk, false);
+    assert.equal(executeOutput.automationSchedulerExecutionOperation, "execute");
+    assert.equal(executeOutput.automationSchedulerExecutionWriteOperation, true);
+    assert.equal(executeOutput.automationSchedulerExecutionWriteAllowed, true);
+    assert.equal(executeOutput.automationSchedulerExecutionRecordWritten, true);
+    assert.equal(executeOutput.automationSchedulerExecutionWritesPerformed, true);
+    assert.equal(executeOutput.automationSchedulerExecutionPublished, false);
+    assert.equal(executeOutput.automationSchedulerExecutionExecutionId, "lgasexec_disabled_1");
+    assert.equal(executeOutput.automationSchedulerExecutionReason, "learning_automation_scheduler_execution_disabled");
+    assert.equal(executeOutput.automationSchedulerExecutionError, "learning_automation_scheduler_execution_disabled");
+    assert.equal(executeOutput.automationSchedulerExecutionRetryRequiresOwner, true);
+    assert.equal(executeOutput.automationSchedulerExecutionWritefulExecutionEnabled, false);
+    assert.equal(executeOutput.automationSchedulerExecutionPublishDelegation, "learning-automation-proposal-service.publishAcceptedProposal");
 
     const listed = runScript([
       "--operation", "list",
@@ -197,6 +316,9 @@ test("automation scheduler execution smoke script records disabled execution onl
     assert.equal(listOutput.count, 1);
     assert.equal(listOutput.executions[0].executionId, "lgasexec_disabled_1");
     assert.equal(listOutput.executions[0].status, "blocked");
+    assert.equal(listOutput.automationSchedulerExecutionStatus, "blocked");
+    assert.equal(listOutput.automationSchedulerExecutionBlockedCount, 1);
+    assert.deepEqual(listOutput.automationSchedulerExecutionExecutionIds, ["lgasexec_disabled_1"]);
   });
 });
 

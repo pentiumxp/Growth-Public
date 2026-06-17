@@ -1158,7 +1158,11 @@ readback gate set.
   operation, while `execute` requires explicit `--allow-write` and still
   delegates only to `learning-automation-scheduler-execution-service`. With
   writeful execution disabled, explicit execution records a bounded blocked
-  row rather than publishing. The embedded Owner `生成` tab now lists
+  row rather than publishing. The smoke mirrors bounded top-level
+  `automationSchedulerExecution*` operator readback for operation, write gate,
+  audit-row write state, publish state, scope, execution ids/status counts,
+  gate flags, action selectors, and retry/error visibility while preserving the
+  nested DTOs as canonical. The embedded Owner `生成` tab now lists
   scheduler execution rows and can explicitly call `execute-once` from a
   delivered handoff through the Growth API client; the UI is glue only and does
   not call Gateway, scheduler run, worker targets, release internals, or card
