@@ -131,6 +131,7 @@ test("reference contract smoke script lists object types without writes", () => 
     assert.equal(output.referenceContractWritePerformed, false);
     assert.equal(output.referenceContractSummaryOnly, true);
     assert.equal(output.referenceContractObjectTypes.includes("task_card"), true);
+    assert.equal(output.referenceContractObjectTypes.includes("profile_feedback"), true);
   });
 });
 

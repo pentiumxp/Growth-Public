@@ -546,7 +546,8 @@ function createServices(config) {
     growthService,
     graphRepository: growthLearningStore.learningGraphRepository,
     planDraftRepository: growthLearningStore.learningPlanDraftRepository,
-    profileV2Service: learningProfileV2Service
+    profileV2Service: learningProfileV2Service,
+    profileFeedbackService: learningProfileFeedbackEvidenceService
   });
   return {
     config,

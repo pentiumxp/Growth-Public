@@ -96,15 +96,19 @@ readback gate set.
   `growth.reference_summarize` MCP tools, and `npm run smoke:references`.
   The contract is summary-only for Growth-owned `program`, `task_card`,
   `submission`, `evaluation`, `reflection`, `mastery_profile`,
-  `learning_graph_plan`, and `plan_draft` objects. It deliberately does not
-  implement central Reference/Memory Graph edges, global search/resolve, note
-  links, or central graph tables. The embedded Owner `生成` tab consumes the
+  `learning_graph_plan`, `plan_draft`, and completed-cycle
+  `profile_feedback` objects. The `profile_feedback` object type delegates
+  through `learning-profile-feedback-evidence-service.evaluate()` and exposes
+  only readiness/count/reward/recommendation/next-action summaries plus related
+  Growth object references. It deliberately does not implement central
+  Reference/Memory Graph edges, global search/resolve, note links, or central
+  graph tables. The embedded Owner `生成` tab consumes the
   same contract through a read-only `闭环引用` panel: it requests object types
   and reference summaries for current profile, program, graph plan, plan draft,
-  generated card, and selected-cycle evaluation ids when those ids already
-  exist in summary DTOs. The browser does not fabricate references, inspect
-  SQLite, call Gateway, publish, evaluate, or mutate learner state from that
-  panel.
+  generated card, selected-cycle evaluation, and selected-cycle profile-feedback
+  ids when those ids already exist in summary DTOs. The browser does not
+  fabricate references, inspect SQLite, call Gateway, publish, evaluate, compute
+  profile-feedback readiness, or mutate learner state from that panel.
   Compact ordinary-card
   recipe generation now supports `daily_english_v1`, `daily_science_v1`, and
   `daily_subject_practice_v1` while preserving target provisioning, graph

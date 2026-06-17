@@ -9,6 +9,64 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T22:08+08:00 - Profile Feedback Reference Contract
+
+- Status: implemented locally; focused reference/MCP/route/frontend/architecture
+  validation and docs-locality passed. No production deploy, production visual
+  harness, runtime config change, Gateway/model call, scheduler execution,
+  notification, learner-state mutation, or Home AI host logic change was
+  performed.
+- Classification: H1/H2 Growth Reference Contract extension. It adds a
+  summary-only `profile_feedback` object type over the existing
+  `learning-profile-feedback-evidence-service` read model. It does not create a
+  new table, route family, central graph edge, search/resolve API, Gateway
+  boundary, or write path.
+- Scope:
+  - `learning-reference-contract-service` now supports canonical
+    `profile_feedback` with aliases `learning_profile_feedback` and
+    `completed_cycle_feedback`;
+  - supported URL-safe anchors are `task_card:<id>`, `evaluation:<id>`,
+    `profile_delta:<id>`, `evidence:<id>`, `correction:<id>`,
+    `plan_draft:<id>`, `source:<id>`, `latest_completed`, and
+    `unique_completed`;
+  - the projection delegates to
+    `learning-profile-feedback-evidence-service.evaluate()` and returns only
+    readiness/count/reward/recommendation/next-action summaries plus related
+    Growth object references;
+  - `src/app/services.js` wires the profile-feedback service into the
+    reference-contract service;
+  - MCP schema descriptions and `npm run smoke:references` object-types
+    readback include `profile_feedback`;
+  - the embedded Owner `生成` tab Reference Chain now adds a selected-cycle
+    `profile_feedback` summary request when it already has a task-card or
+    evaluation selector from Growth summary DTOs.
+- Harness/docs updated:
+  - `tests/learning-reference-contract-service.test.js`
+  - `tests/growth-reference-contract-smoke-script.test.js`
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/GROWTH_REFERENCE_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - targeted `node --check` for touched runtime/frontend files;
+  - focused reference/MCP/route/frontend/architecture set -> 138/138;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `npm test` -> 1032/1032;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining gate:
+  - production deployment and Home AI central visual evidence remain deferred
+    by user instruction until later packages are complete.
+- AI Ops evidence id:
+  - `evidence-ca4a7d60-5fa5-48e6-b3ae-94b7593bd4d3`.
+
 ## 2026-06-17T22:07+08:00 - Owner Reference Chain UI
 
 - Status: implemented locally; focused frontend/reference validation,

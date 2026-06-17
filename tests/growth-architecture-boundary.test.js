@@ -1709,6 +1709,7 @@ test("Growth reference contract stays service-owned and summary-only", () => {
   assert.match(services, /createLearningReferenceContractService/);
   assert.match(services, /learningReferenceContractService/);
   assert.match(services, /learningReferenceProjectionRepository/);
+  assert.match(services, /profileFeedbackService: learningProfileFeedbackEvidenceService/);
   assert.match(services, /referenceContractService: learningReferenceContractService/);
 
   const store = read(path.join("src", "stores", "growth-learning-sqlite-store.js"));
@@ -1718,6 +1719,8 @@ test("Growth reference contract stays service-owned and summary-only", () => {
   const referenceService = read(path.join("src", "services", "learning-reference-contract-service.js"));
   assert.match(referenceService, /growth\.referenceObject\.v1/);
   assert.match(referenceService, /growth\.referenceSummary\.v1/);
+  assert.match(referenceService, /profile_feedback/);
+  assert.match(referenceService, /profileFeedbackService\.evaluate/);
   assert.match(referenceService, /summary_only/);
   assert.doesNotMatch(referenceService, /raw_json/);
   assert.doesNotMatch(referenceService, /answerText/);

@@ -1461,8 +1461,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             schemaVersion: "growth.referenceObjectTypes.v1",
             privacyClass: "summary_only",
             summaryOnly: true,
-            referenceContractObjectTypeCount: 8,
-            objectTypes: [{ objectType: "task_card" }, { objectType: "mastery_profile" }]
+            referenceContractObjectTypeCount: 9,
+            objectTypes: [{ objectType: "task_card" }, { objectType: "mastery_profile" }, { objectType: "profile_feedback" }]
           },
           requests: [{
             objectType: "mastery_profile",
@@ -1496,6 +1496,15 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             referenceId: "growth:weixin_fanfan:plan_draft:lgplan_1",
             display: { title: "One short evidence repair card.", subtitle: "drafted / daily_plan" },
             summary: { itemCount: 1 },
+            privacyClass: "summary_only",
+            summaryOnly: true
+          }, {
+            ok: true,
+            objectType: "profile_feedback",
+            objectId: "task_card:ltask_daily_1",
+            referenceId: "growth:weixin_fanfan:profile_feedback:task_card:ltask_daily_1",
+            display: { title: "Profile feedback task_card:ltask_daily_1", subtitle: "pass / draft_daily_plan / repair" },
+            summary: { evidenceCount: 2, profileDeltaCount: 1, nextAction: "draft_daily_plan" },
             privacyClass: "summary_only",
             summaryOnly: true
           }, {
@@ -1879,7 +1888,8 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     "learning_graph_plan:lgp_science_1",
     "plan_draft:lgplan_1",
     "task_card:ltask_science_1",
-    "evaluation:eval_history_1"
+    "evaluation:eval_history_1",
+    "profile_feedback:task_card:ltask_history_1"
   ]);
   assert.equal(JSON.stringify(referenceRequests).includes("raw_prompt"), false);
   assert.equal(JSON.stringify(referenceRequests).includes("transcript"), false);

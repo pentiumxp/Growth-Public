@@ -6,8 +6,9 @@ Last updated: 2026-06-17.
 
 Growth exposes a V1-minimal Reference / Memory Graph contract for stable
 Growth-owned objects. The contract lets Home AI central graph tooling point at
-Growth programs, cards, learner evidence, profiles, graph plans, and plan
-drafts without copying full Growth facts into the central graph.
+Growth programs, cards, learner evidence, profiles, graph plans, plan drafts,
+and completed-cycle profile-feedback readbacks without copying full Growth
+facts into the central graph.
 
 This is not the full Home AI Reference / Memory Graph implementation. Growth
 only implements the plugin-side reference methods:
@@ -34,10 +35,11 @@ The V1-minimal Growth object types are:
 | `mastery_profile` | `learner_id` | `learning-profile-v2-service.profileV2()`. |
 | `learning_graph_plan` | `learning_graph_plan_id` | `learningGraphRepository.plan()`. |
 | `plan_draft` | `plan_draft_id` | `learning-reference-projection` / plan-draft summary projection. |
+| `profile_feedback` | `task_card:<id>`, `evaluation:<id>`, `profile_delta:<id>`, `evidence:<id>`, `plan_draft:<id>`, `source:<id>`, `latest_completed`, or `unique_completed` | `learning-profile-feedback-evidence-service.evaluate()` through the normal service graph. |
 
 Aliases such as `card`, `learning_task_card`, `learner_profile`, `profile`,
-`graph_plan`, and `learning_plan_draft` normalize to the canonical object
-types above.
+`graph_plan`, `learning_plan_draft`, `learning_profile_feedback`, and
+`completed_cycle_feedback` normalize to the canonical object types above.
 
 ## API
 
@@ -65,10 +67,11 @@ Chain panel. The browser may call:
 - `GET /api/v1/growth/references/:objectType/:objectId/summary?purpose=owner_loop`
 
 The panel can summarize current profile, program, learning graph plan, plan
-draft, generated task card, and selected-cycle evaluation references when those
-ids are already present in Growth summary DTOs. Missing ids remain absent; the
-browser must not fabricate references, inspect SQLite tables, read raw learner
-content, call Gateway, or compute learning policy.
+draft, generated task card, selected-cycle evaluation, and selected-cycle
+profile-feedback references when those ids are already present in Growth
+summary DTOs. Missing ids remain absent; the browser must not fabricate
+references, inspect SQLite tables, read raw learner content, call Gateway, or
+compute learning policy.
 
 Reference summaries are advisory audit readback for Owner visibility. They do
 not generate cards, publish plans, evaluate submissions, alter Profile V2, or
@@ -146,6 +149,17 @@ ids, and related references, but do not pass through full card detail objects.
 SQLite-backed references read only summary columns plus existing public
 submission/evaluation/reflection DTO helpers. `raw_json` is never returned.
 
+`profile_feedback` references deliberately delegate to
+`learning-profile-feedback-evidence-service.evaluate()` instead of reading
+ledger, cycle-history, profile-delta, reward, or recommendation tables. The
+stable object id can anchor the completed cycle by task card, evaluation,
+profile-delta, evidence, plan draft, correction, or source id. `latest_completed`
+and `unique_completed` are read-only discovery aliases; when one resolves, the
+returned reference object id is recropped to the selected concrete cycle anchor.
+The output keeps only readiness, evidence/profile/profile-delta counts,
+reward-count totals, recommendation strategy, next action, target-node ids, and
+related Growth object references.
+
 ## Service Ownership
 
 The owning service is:
@@ -191,6 +205,7 @@ Operational smoke:
 npm run smoke:references -- --operation object-types --workspace-id <workspace> --json
 npm run smoke:references -- --operation get --workspace-id <workspace> --object-type task_card --object-id <task-card-id> --json
 npm run smoke:references -- --operation summarize --workspace-id <workspace> --object-type mastery_profile --object-id <learner-id> --purpose graph --json
+npm run smoke:references -- --operation summarize --workspace-id <workspace> --object-type profile_feedback --object-id task_card:<task-card-id> --purpose owner_loop --json
 ```
 
 The smoke is read-only and reports `referenceContractWritePerformed=false`.

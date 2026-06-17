@@ -581,7 +581,8 @@
       reflection: "反思",
       mastery_profile: "画像",
       learning_graph_plan: "图谱计划",
-      plan_draft: "计划草稿"
+      plan_draft: "计划草稿",
+      profile_feedback: "画像闭环"
     };
     return map[value] || value || "引用";
   }
@@ -629,8 +630,12 @@
     addReferenceRequest(requests, "program", firstCleanValue(context.programId, plan.programId, defaults.programId, planDraft.programId), "学习项目", "scope");
     addReferenceRequest(requests, "learning_graph_plan", firstCleanValue(learningGraphPlan.learningGraphPlanId, generated.learningGraphPlanId, publishResult.learningGraphPlanId, plan.learningGraphPlanId), "图谱计划", "graph_plan");
     addReferenceRequest(requests, "plan_draft", firstCleanValue(planDraft.planDraftId, selectors.planDraftId, selectedCycle.planDraftId), "计划草稿", "plan_draft");
-    addReferenceRequest(requests, "task_card", firstCleanValue(published.taskCardId, generated.taskCardId, publishResult.taskCardId, selectors.taskCardId, selectedCycle.taskCardId), "学习卡片", "published_card");
-    addReferenceRequest(requests, "evaluation", firstCleanValue(selectors.evaluationId, selectedCycle.evaluationId), "批改证据", "cycle_audit");
+    const taskCardId = firstCleanValue(published.taskCardId, generated.taskCardId, publishResult.taskCardId, selectors.taskCardId, selectedCycle.taskCardId);
+    const evaluationId = firstCleanValue(selectors.evaluationId, selectedCycle.evaluationId);
+    addReferenceRequest(requests, "task_card", taskCardId, "学习卡片", "published_card");
+    addReferenceRequest(requests, "evaluation", evaluationId, "批改证据", "cycle_audit");
+    const feedbackTaskCardId = firstCleanValue(selectors.taskCardId, selectedCycle.taskCardId, taskCardId);
+    addReferenceRequest(requests, "profile_feedback", feedbackTaskCardId ? `task_card:${feedbackTaskCardId}` : evaluationId ? `evaluation:${evaluationId}` : "", "画像闭环", "profile_feedback");
     for (const entry of auditTimeline) {
       addReferenceRequest(requests, "task_card", firstCleanValue(entry.taskCardId), "审计卡片", "cycle_timeline");
       addReferenceRequest(requests, "evaluation", firstCleanValue(entry.evaluationId), "审计批改", "cycle_timeline");

@@ -88,7 +88,7 @@ const GROWTH_MCP_SCHEMAS = Object.freeze([
         },
         object_type: {
           type: "string",
-          description: "Growth reference object type, such as task_card, submission, evaluation, reflection, mastery_profile, learning_graph_plan, or plan_draft."
+          description: "Growth reference object type, such as task_card, submission, evaluation, reflection, mastery_profile, learning_graph_plan, plan_draft, or profile_feedback."
         },
         object_id: {
           type: "string",

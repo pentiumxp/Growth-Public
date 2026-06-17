@@ -34,7 +34,10 @@ const TYPE_ALIASES = Object.freeze({
   learning_graph_plan: "learning_graph_plan",
   graph_plan: "learning_graph_plan",
   plan_draft: "plan_draft",
-  learning_plan_draft: "plan_draft"
+  learning_plan_draft: "plan_draft",
+  profile_feedback: "profile_feedback",
+  learning_profile_feedback: "profile_feedback",
+  completed_cycle_feedback: "profile_feedback"
 });
 
 const OBJECT_TYPES = Object.freeze([
@@ -98,6 +101,14 @@ const OBJECT_TYPES = Object.freeze([
     objectType: "plan_draft",
     aliases: ["learning_plan_draft"],
     idField: "plan_draft_id",
+    summaryOnly: true,
+    supportsGet: true,
+    supportsSummarize: true
+  }),
+  Object.freeze({
+    objectType: "profile_feedback",
+    aliases: ["learning_profile_feedback", "completed_cycle_feedback"],
+    idField: "profile_feedback_id",
     summaryOnly: true,
     supportsGet: true,
     supportsSummarize: true
@@ -406,6 +417,109 @@ function compactPlanDraft(draft = {}) {
   };
 }
 
+function parseProfileFeedbackObjectId(objectId = "") {
+  const id = cleanString(objectId);
+  const lower = id.toLowerCase();
+  if (lower === "latest_completed") return { autoSelectLatestCompletedCycle: true };
+  if (lower === "unique_completed") return { autoSelectCompletedCycle: true };
+  const separator = id.indexOf(":");
+  if (separator > 0) {
+    const prefix = id.slice(0, separator).toLowerCase();
+    const value = id.slice(separator + 1);
+    const key = {
+      plan_draft: "planDraftId",
+      plan: "planDraftId",
+      task_card: "taskCardId",
+      card: "taskCardId",
+      evaluation: "evaluationId",
+      profile_delta: "profileDeltaId",
+      evidence: "evidenceId",
+      correction: "correctionId",
+      source: "sourceId"
+    }[prefix];
+    if (key && cleanString(value)) return { [key]: cleanString(value) };
+  }
+  return { sourceId: id };
+}
+
+function profileFeedbackObjectId(feedback = {}, requestedObjectId = "") {
+  const scope = feedback.scope || {};
+  const selected = feedback.selectedCompletedCycle || {};
+  const values = [
+    ["task_card", selected.taskCardId || scope.taskCardId],
+    ["evaluation", selected.evaluationId || scope.evaluationId],
+    ["profile_delta", selected.profileDeltaId || scope.profileDeltaId],
+    ["evidence", selected.evidenceId || scope.evidenceId],
+    ["correction", selected.correctionId || scope.correctionId],
+    ["plan_draft", selected.planDraftId || scope.planDraftId],
+    ["source", selected.sourceId || scope.sourceId]
+  ];
+  const found = values.find(([, value]) => cleanString(value));
+  if (found) return `${found[0]}:${cleanString(found[1])}`;
+  return cleanString(requestedObjectId);
+}
+
+function compactProfileFeedback(feedback = {}, objectId = "") {
+  const scope = feedback.scope || {};
+  const summary = feedback.summary || {};
+  const profile = feedback.profile || {};
+  const evidence = feedback.evidence || {};
+  const profileDelta = feedback.profileDelta || {};
+  const recommendation = feedback.recommendation || {};
+  const loopState = feedback.loopState || {};
+  const nextAction = loopState.nextAction || {};
+  const workspaceId = cleanString(scope.workspaceId || feedback.workspaceId);
+  const learnerId = cleanString(scope.learnerId || workspaceId);
+  const feedbackObjectId = profileFeedbackObjectId(feedback, objectId);
+  const targetNodeIds = uniqueStrings([
+    ...uniqueStrings(scope.targetNodeIds, 12),
+    ...uniqueStrings(recommendation.targetNodeIds, 12),
+    cleanString(recommendation.targetNodeId),
+    cleanString(nextAction.targetNodeId)
+  ], 12);
+  return {
+    workspaceId,
+    objectId: feedbackObjectId,
+    display: {
+      title: `Profile feedback ${feedbackObjectId}`,
+      subtitle: [feedback.status, summary.nextAction, summary.recommendationStrategy].map(cleanString).filter(Boolean).join(" / "),
+      time: cleanString(feedback.selectedCompletedCycle?.latestActivityAt),
+      thumbnailHint: "growth_profile_feedback"
+    },
+    summary: {
+      profileFeedbackId: feedbackObjectId,
+      learnerId,
+      programId: cleanString(scope.programId),
+      status: cleanString(feedback.status),
+      readyForNextPlan: Boolean(feedback.readyForNextPlan),
+      readyForAutomation: Boolean(feedback.readyForAutomation),
+      cycleComplete: Boolean(summary.cycleComplete),
+      evidenceCount: Number(evidence.count || summary.evidenceCount || 0) || 0,
+      profileDeltaCount: Number(profileDelta.count || summary.profileDeltaCount || 0) || 0,
+      profileEvidenceCount: Number(profile.evidenceCount || summary.profileEvidenceCount || 0) || 0,
+      profileWeaknessCount: Number(profile.weaknessCount || summary.profileWeaknessCount || 0) || 0,
+      rewardSettlementCount: Number(summary.rewardSettlementCount || loopState.reward?.rewardSettlementCount || 0) || 0,
+      totalRewardCoins: Number(summary.totalRewardCoins || loopState.reward?.totalRewardCoins || 0) || 0,
+      recommendationMode: cleanString(recommendation.mode || summary.recommendationMode),
+      recommendationStrategy: cleanString(recommendation.strategy || summary.recommendationStrategy),
+      loopStatus: cleanString(loopState.status || summary.loopStatus),
+      nextAction: cleanString(summary.nextAction || nextAction.action),
+      selectedCycleId: cleanString(summary.selectedCycleId || feedback.selectedCompletedCycle?.cycleId),
+      selectedTaskCardId: cleanString(summary.selectedTaskCardId || feedback.selectedCompletedCycle?.taskCardId || scope.taskCardId),
+      targetNodeIds,
+      missingRequired: uniqueStrings(summary.missingRequired, 12),
+      privacyClass: cleanString(feedback.privacyClass)
+    },
+    relatedObjectRefs: [
+      relatedRef(workspaceId, "mastery_profile", learnerId, { title: "Mastery profile", thumbnailHint: "growth_mastery_profile" }),
+      relatedRef(workspaceId, "program", scope.programId, { title: scope.programId, thumbnailHint: "growth_program" }),
+      relatedRef(workspaceId, "task_card", scope.taskCardId || feedback.selectedCompletedCycle?.taskCardId, { title: "Completed task card", thumbnailHint: "growth_card" }),
+      relatedRef(workspaceId, "evaluation", scope.evaluationId || feedback.selectedCompletedCycle?.evaluationId, { title: "Completed evaluation", thumbnailHint: "growth_evaluation" }),
+      relatedRef(workspaceId, "plan_draft", scope.planDraftId || feedback.selectedCompletedCycle?.planDraftId, { title: "Source plan draft", thumbnailHint: "growth_plan_draft" })
+    ].filter(Boolean)
+  };
+}
+
 function compactProjection(objectType, value, objectId) {
   if (!value) return null;
   if (objectType === "program") return compactProgram(value);
@@ -416,6 +530,7 @@ function compactProjection(objectType, value, objectId) {
   if (objectType === "mastery_profile") return compactProfile(value, objectId);
   if (objectType === "learning_graph_plan") return compactGraphPlan(value);
   if (objectType === "plan_draft") return compactPlanDraft(value);
+  if (objectType === "profile_feedback") return compactProfileFeedback(value, objectId);
   return null;
 }
 
@@ -489,6 +604,7 @@ function createLearningReferenceContractService(options = {}) {
   const graphRepository = options.graphRepository || null;
   const planDraftRepository = options.planDraftRepository || null;
   const profileV2Service = options.profileV2Service || null;
+  const profileFeedbackService = options.profileFeedbackService || null;
 
   function referenceObjectTypes(input = {}) {
     return {
@@ -545,6 +661,16 @@ function createLearningReferenceContractService(options = {}) {
           ? planDraftRepository.getDraft({ workspaceId, planDraftId: objectId })
           : null;
       return compactProjection(objectType, result, objectId);
+    }
+    if (objectType === "profile_feedback") {
+      const result = profileFeedbackService && typeof profileFeedbackService.evaluate === "function"
+        ? profileFeedbackService.evaluate(Object.assign({}, input, parseProfileFeedbackObjectId(objectId), {
+          workspaceId,
+          learnerId: input.learnerId || input.learner_id || workspaceId,
+          purpose: input.purpose
+        }))
+        : null;
+      return result?.ok !== false && result?.summaryOnly === true ? compactProjection(objectType, result, objectId) : null;
     }
     const method = {
       program: "getProgram",

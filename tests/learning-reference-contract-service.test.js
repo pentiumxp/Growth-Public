@@ -189,6 +189,79 @@ function serviceFor(dbPath) {
         };
       }
     },
+    profileFeedbackService: {
+      evaluate(input = {}) {
+        assert.equal(input.workspaceId, "weixin_fanfan");
+        if (input.taskCardId !== "card_1" && input.evaluationId !== "evaluation_1" && input.autoSelectLatestCompletedCycle !== true) {
+          return { ok: false, error: "profile_feedback_cycle_selector_required", summaryOnly: true };
+        }
+        return {
+          ok: true,
+          source: "growth-learning-profile-feedback-evidence-service",
+          schemaVersion: "growth.learningProfileFeedbackEvidence.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          status: "pass",
+          readyForNextPlan: true,
+          readyForAutomation: true,
+          scope: {
+            workspaceId: "weixin_fanfan",
+            learnerId: "fanfan",
+            programId: "program_1",
+            taskCardId: "card_1",
+            evaluationId: "evaluation_1",
+            planDraftId: "plan_draft_1",
+            targetNodeIds: ["node_science"]
+          },
+          profile: {
+            evidenceCount: 3,
+            weaknessCount: 1
+          },
+          evidence: {
+            count: 2
+          },
+          profileDelta: {
+            count: 1,
+            latestProfileDeltaId: "profile_delta_1"
+          },
+          recommendation: {
+            mode: "trajectory",
+            strategy: "repair",
+            targetNodeIds: ["node_science"],
+            targetNodeId: "node_science"
+          },
+          loopState: {
+            status: "ready_to_draft",
+            nextAction: { action: "draft_daily_plan", targetNodeId: "node_science" },
+            reward: { rewardSettlementCount: 1, totalRewardCoins: 8 }
+          },
+          summary: {
+            readyForNextPlan: true,
+            missingRequired: [],
+            cycleComplete: true,
+            evidenceCount: 2,
+            profileDeltaCount: 1,
+            profileEvidenceCount: 3,
+            profileWeaknessCount: 1,
+            rewardSettlementCount: 1,
+            totalRewardCoins: 8,
+            recommendationMode: "trajectory",
+            recommendationStrategy: "repair",
+            loopStatus: "ready_to_draft",
+            selectedCycleId: "cycle_1",
+            selectedTaskCardId: "card_1",
+            nextAction: "draft_daily_plan"
+          },
+          selectedCompletedCycle: {
+            cycleId: "cycle_1",
+            taskCardId: "card_1",
+            evaluationId: "evaluation_1",
+            planDraftId: "plan_draft_1",
+            latestActivityAt: "2026-06-17T06:00:00.000Z"
+          }
+        };
+      }
+    },
     graphRepository: {
       plan({ learningGraphPlanId }) {
         if (learningGraphPlanId !== "graph_plan_1") return null;
@@ -235,7 +308,8 @@ test("Growth reference contract lists V1-minimal summary-only object types", () 
     "reflection",
     "mastery_profile",
     "learning_graph_plan",
-    "plan_draft"
+    "plan_draft",
+    "profile_feedback"
   ]);
   assert.equal(result.boundaries.summaryOnly, true);
 });
@@ -300,6 +374,39 @@ test("Growth reference contract summarizes profile and graph-plan references", a
   });
 });
 
+test("Growth reference contract resolves profile-feedback references through the feedback service", async () => {
+  await tmpDb(async ({ dbPath }) => {
+    const service = serviceFor(dbPath);
+    const feedback = await service.referenceGet({
+      workspaceId: "weixin_fanfan",
+      objectType: "profile_feedback",
+      objectId: "task_card:card_1"
+    });
+    assert.equal(feedback.ok, true);
+    assert.equal(feedback.reference.object_type, "profile_feedback");
+    assert.equal(feedback.objectId, "task_card:card_1");
+    assert.equal(feedback.summary.readyForNextPlan, true);
+    assert.equal(feedback.summary.evidenceCount, 2);
+    assert.equal(feedback.summary.profileDeltaCount, 1);
+    assert.equal(feedback.summary.rewardSettlementCount, 1);
+    assert.equal(feedback.summary.totalRewardCoins, 8);
+    assert.equal(feedback.summary.nextAction, "draft_daily_plan");
+    assert.deepEqual(feedback.summary.targetNodeIds, ["node_science"]);
+    assert.equal(feedback.relatedObjectRefs.some((ref) => ref.object_type === "task_card" && ref.object_id === "card_1"), true);
+    assert.equal(feedback.relatedObjectRefs.some((ref) => ref.object_type === "mastery_profile" && ref.object_id === "fanfan"), true);
+    const summary = await service.referenceSummarize({
+      workspaceId: "weixin_fanfan",
+      objectType: "completed_cycle_feedback",
+      objectId: "evaluation:evaluation_1",
+      purpose: "owner_loop"
+    });
+    assert.equal(summary.objectType, "profile_feedback");
+    assert.equal(summary.summary.counts.evidenceCount, 2);
+    assert.equal(summary.summary.counts.targetNodeCount, 1);
+    assertSummaryOnly({ feedback, summary });
+  });
+});
+
 test("Growth reference contract fails closed for unsupported, missing, or invisible objects", async () => {
   await tmpDb(async ({ dbPath }) => {
     const service = serviceFor(dbPath);
@@ -307,5 +414,6 @@ test("Growth reference contract fails closed for unsupported, missing, or invisi
     assert.equal((await service.referenceGet({ workspaceId: "weixin_fanfan", objectType: "task_card" })).error, "growth_reference_object_id_required");
     assert.equal((await service.referenceGet({ workspaceId: "other", objectType: "submission", objectId: "submission_1" })).error, "growth_reference_object_not_found");
     assert.equal((await service.referenceGet({ workspaceId: "other", objectType: "learning_graph_plan", objectId: "graph_plan_1" })).error, "growth_reference_object_not_found");
+    assert.equal((await service.referenceGet({ workspaceId: "weixin_fanfan", objectType: "profile_feedback", objectId: "source:missing" })).error, "growth_reference_object_not_found");
   });
 });
