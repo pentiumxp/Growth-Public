@@ -57,11 +57,69 @@ function validateInput(input = {}) {
 }
 
 function runOperation(service, input) {
-  return service.template(input);
+  return projectArtifactTemplateSmokeReadback(service.template(input));
 }
 
 function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
+}
+
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function itemCountByKind(items = [], kind = "") {
+  return asArray(items).filter((item) => cleanString(item?.kind, 160) === kind).length;
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key, 160),
+    action: cleanString(action.action, 160),
+    endpointKey: cleanString(action.endpointKey || action.endpoint_key, 120),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || "owner", 80)
+  };
+}
+
+function projectArtifactTemplateSmokeReadback(result = {}) {
+  const template = objectOnly(result.releaseArtifactTemplate);
+  const manifest = objectOnly(template.artifactManifestTemplate);
+  const checklist = objectOnly(template.releaseEvidenceChecklist);
+  const checklistItems = asArray(checklist.items);
+  const actionPlan = objectOnly(template.releaseEvidenceActionPlan);
+  const actionItems = asArray(actionPlan.actions);
+  return Object.assign({}, result, {
+    releaseArtifactTemplateStatus: cleanString(template.status || result.status, 120),
+    manifestSchemaVersion: cleanString(template.manifestSchemaVersion || manifest.schemaVersion, 180),
+    artifactSlotCount: Number(template.artifactSlotCount || asArray(template.artifactSlots).length || 0) || 0,
+    artifactTaskIds: asArray(template.artifactTaskIds).map((item) => cleanString(item, 140)).filter(Boolean),
+    readyForManifestInput: template.readyForManifestInput === true,
+    releaseEvidenceChecklistStatus: cleanString(checklist.status, 120),
+    checklistItemCount: checklistItems.length,
+    artifactChecklistItemCount: itemCountByKind(checklistItems, "home_ai_visual_artifact"),
+    collectionChecklistItemCount: itemCountByKind(checklistItems, "release_evidence_collection_task"),
+    writeGatedItemCount: itemCountByKind(checklistItems, "write_gated_release_evidence"),
+    statePrerequisiteItemCount: itemCountByKind(checklistItems, "release_state_prerequisite"),
+    approvalItemCount: itemCountByKind(checklistItems, "release_approval"),
+    recordItemCount: itemCountByKind(checklistItems, "release_record"),
+    unsupportedItemCount: itemCountByKind(checklistItems, "manual_or_unsupported_release_evidence"),
+    releaseEvidenceActionPlanStatus: cleanString(actionPlan.status, 120),
+    actionCount: Number(actionPlan.actionCount || actionItems.length || 0) || 0,
+    submittableActionCount: Number(actionPlan.submittableActionCount || 0) || 0,
+    phaseBlockedActionCount: Number(actionPlan.phaseBlockedActionCount || 0) || 0,
+    readyPhase: cleanString(actionPlan.readyPhase, 120),
+    nextSubmittableAction: compactAction(actionPlan.nextSubmittableAction)
+  });
 }
 
 async function main() {
@@ -93,6 +151,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectArtifactTemplateSmokeReadback,
   runOperation,
   validateInput
 };

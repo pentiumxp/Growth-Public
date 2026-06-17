@@ -9,6 +9,75 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:58+08:00 - Release Workbench Smoke Operator Readback
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - `smoke-growth-release-workbench` and
+    `smoke-growth-release-artifact-template` returned the canonical service DTOs
+    correctly, but key operator fields were only nested under
+    `releaseWorkbench` / `releaseArtifactTemplate`;
+  - quick readbacks could therefore appear to have empty top-level summaries
+    even though the release workbench/action-plan state was present.
+- Scope:
+  - added top-level, summary-only operator readback projection in
+    `scripts/smoke-growth-release-workbench.js`:
+    `releaseWorkbenchStatus`, `ownerActionCount`, `nextOwnerAction`,
+    collection task ids, write-gated task ids, state-prerequisite keys,
+    missing check/evidence/approval counts, and missing/blocked record-kind
+    counts;
+  - added top-level, summary-only operator readback projection in
+    `scripts/smoke-growth-release-artifact-template.js`:
+    `releaseArtifactTemplateStatus`, `manifestSchemaVersion`,
+    `artifactSlotCount`, `artifactTaskIds`, checklist item counts,
+    action-plan counts, `phaseBlockedActionCount`, `readyPhase`, and
+    `nextSubmittableAction`;
+  - preserved the nested service DTOs as canonical output and did not change
+    service behavior, SQLite schema, write paths, Gateway boundaries, runtime
+    config, or release permissions;
+  - updated Growth next-stage plan, plugin architecture, local platform pointer,
+    and test matrix.
+- Operational readback:
+  - `node scripts/smoke-growth-release-workbench.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `ok=true`, `status=release_evidence_required`,
+    `ownerActionCount=11`, `releaseEvidenceCollectionTaskIds.length=24`,
+    `releaseStatePrerequisiteKeys.length=4`, `missingCheckCount=24`,
+    `missingEvidenceCount=24`, `missingRecordKindCount=7`, and
+    `writefulSchedulingAllowed=false`;
+  - `node scripts/smoke-growth-release-artifact-template.js --workspace-id
+    owner --learner-id fanfan --domain science --subject science --json`
+    returned `ok=true`, `status=artifact_manifest_required`,
+    `artifactSlotCount=8`, `checklistItemCount=35`,
+    `statePrerequisiteItemCount=4`, `unsupportedItemCount=0`,
+    `actionCount=13`, `submittableActionCount=0`,
+    `phaseBlockedActionCount=7`, `readyPhase=release_evidence_prerequisites`,
+    `nextSubmittableAction=null`, and `writefulSchedulingAllowed=false`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-release-workbench.js &&
+    node --check scripts/smoke-growth-release-artifact-template.js`;
+  - `node --test tests/growth-release-workbench-smoke-script.test.js
+    tests/growth-release-artifact-template-smoke-script.test.js
+    tests/learning-automation-release-workbench-service.test.js
+    tests/learning-automation-release-evidence-artifact-template-service.test.js`
+    passed `20/20`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `236/236`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `926/926`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,301` nodes, and `23,142` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work remains about `95%`
+    complete;
+  - remaining work is still real release evidence and final Owner UI visual
+    evidence before deployment, not local service DTO availability.
+
 ## 2026-06-17T11:42+08:00 - Release Artifact Action-Plan Phase Gate
 
 - Status: implemented and focused-Harness validated. No production deployment

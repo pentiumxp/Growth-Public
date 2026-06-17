@@ -694,9 +694,14 @@ Use the Growth-owned release-readiness boundary:
   approvals, package records, activation/runtime audit records, plus
   non-submittable external artifact/state/manual steps. Collection body
   templates include only non-artifact task selectors until the blank manifest
-  is filled. They do not run visual tooling, call Gateway, persist release
-  evidence, write collection runs, apply runtime config, or widen to default UI
-  tasks when no visual/UI evidence is missing.
+  is filled. The smoke CLI also mirrors the operator-critical readback at the
+  top level: `artifactSlotCount`, `artifactTaskIds`, checklist item counts,
+  action-plan counts, `phaseBlockedActionCount`, `readyPhase`, and
+  `nextSubmittableAction`, so release tooling does not need to inspect nested
+  DTOs just to decide the next preparation step. They do not run visual
+  tooling, call Gateway, persist release evidence, write collection runs, apply
+  runtime config, or widen to default UI tasks when no visual/UI evidence is
+  missing.
 - release authorization smoke CLI:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes
@@ -826,6 +831,11 @@ Use the Growth-owned release-readiness boundary:
   `releaseStatePrerequisiteKeys` and `releaseStatePrerequisiteActions`; they
   point to existing automation read surfaces and are not counted as unsupported
   release evidence.
+  The smoke CLI mirrors the operator-critical readback at the top level:
+  `releaseWorkbenchStatus`, `ownerActionCount`, `nextOwnerAction`,
+  collection task ids, write-gated task ids, state-prerequisite keys, missing
+  check/evidence/approval counts, and missing/blocked record-kind counts. The
+  nested `releaseWorkbench` DTO remains the canonical service output.
   Its bounded output can be passed to release-readiness through explicit
   `--evidence-json`, collected by the non-default `release_workbench` release
   evidence bundle task as `releaseWorkbenchSmokeEvidence`, or persisted through

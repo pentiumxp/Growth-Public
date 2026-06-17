@@ -74,11 +74,55 @@ function validateInput(input = {}) {
 }
 
 function runOperation(service, input) {
-  return service.workbench(input);
+  return projectWorkbenchSmokeReadback(service.workbench(input));
 }
 
 function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
+}
+
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key || action.evidenceKey || action.evidence_key, 140),
+    action: cleanString(action.action || action.type || action.reason, 140),
+    endpointKey: cleanString(action.endpointKey || action.endpoint_key, 120),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80),
+    readyToSubmit: action.readyToSubmit === true
+  };
+}
+
+function projectWorkbenchSmokeReadback(result = {}) {
+  const workbench = objectOnly(result.releaseWorkbench);
+  return Object.assign({}, result, {
+    releaseWorkbenchStatus: cleanString(workbench.status || result.status, 120),
+    ownerActionCount: Number(workbench.ownerActionCount || asArray(workbench.ownerActions).length || 0) || 0,
+    nextOwnerAction: compactAction(workbench.nextAction),
+    releaseEvidenceCollectionTaskIds: asArray(workbench.releaseEvidenceCollectionTasks).map((item) => cleanString(item, 140)).filter(Boolean),
+    releaseEvidenceCollectionRequiredTaskIds: asArray(workbench.releaseEvidenceCollectionRequiredTaskIds).map((item) => cleanString(item, 140)).filter(Boolean),
+    releaseEvidenceCollectionSupportedTaskIds: asArray(workbench.releaseEvidenceCollectionSupportedTaskIds).map((item) => cleanString(item, 140)).filter(Boolean),
+    writeGatedReleaseEvidenceCollectionTasks: asArray(workbench.writeGatedReleaseEvidenceCollectionTasks).map((item) => cleanString(item, 140)).filter(Boolean),
+    unsupportedReleaseEvidenceCollectionKeys: asArray(workbench.unsupportedReleaseEvidenceCollectionKeys).map((item) => cleanString(item, 140)).filter(Boolean),
+    releaseStatePrerequisiteKeys: asArray(workbench.releaseStatePrerequisiteKeys).map((item) => cleanString(item, 140)).filter(Boolean),
+    missingCheckCount: asArray(workbench.missingCheckKeys).length,
+    missingEvidenceCount: asArray(workbench.missingEvidenceKeys).length,
+    missingApprovalCount: asArray(workbench.missingApprovalKeys).length,
+    missingRecordKindCount: asArray(workbench.missingRecordKinds).length,
+    blockedRecordKindCount: asArray(workbench.blockedRecordKinds).length
+  });
 }
 
 async function main() {
@@ -110,6 +154,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectWorkbenchSmokeReadback,
   runOperation,
   validateInput
 };

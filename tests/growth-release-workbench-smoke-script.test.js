@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectWorkbenchSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-workbench");
@@ -67,7 +68,53 @@ test("release workbench smoke script delegates only to service workbench", () =>
 
   assert.equal(result.ok, true);
   assert.equal(result.status, "manual_runtime_config_required");
+  assert.equal(result.releaseWorkbenchStatus, "manual_runtime_config_required");
+  assert.equal(result.ownerActionCount, 0);
   assert.deepEqual(calls[0].activationGates, ["writeful_execution"]);
+});
+
+test("release workbench smoke script projects top-level operator readback", () => {
+  const result = projectWorkbenchSmokeReadback({
+    ok: true,
+    status: "release_evidence_required",
+    releaseWorkbench: {
+      status: "release_evidence_required",
+      ownerActionCount: 3,
+      nextAction: {
+        key: "release_evidence_collection",
+        action: "run_release_evidence_collection",
+        endpointKey: "release_evidence_collection",
+        requiredActor: "owner",
+        readyToSubmit: false
+      },
+      releaseEvidenceCollectionTasks: ["owner_daily_ui", "central_visual"],
+      releaseEvidenceCollectionRequiredTaskIds: ["owner_daily_ui"],
+      releaseEvidenceCollectionSupportedTaskIds: ["central_visual"],
+      writeGatedReleaseEvidenceCollectionTasks: ["daily_loop_write"],
+      unsupportedReleaseEvidenceCollectionKeys: ["manual_gate"],
+      releaseStatePrerequisiteKeys: ["reviewed_automation_digest"],
+      missingCheckKeys: ["owner_daily_ui_evidence", "reviewed_automation_digest"],
+      missingEvidenceKeys: ["ownerDailyUiEvidence"],
+      missingApprovalKeys: ["writefulExecutionApproval"],
+      missingRecordKinds: ["release_package"],
+      blockedRecordKinds: ["runtime_enablement"]
+    }
+  });
+
+  assert.equal(result.releaseWorkbenchStatus, "release_evidence_required");
+  assert.equal(result.ownerActionCount, 3);
+  assert.equal(result.nextOwnerAction.endpointKey, "release_evidence_collection");
+  assert.deepEqual(result.releaseEvidenceCollectionTaskIds, ["owner_daily_ui", "central_visual"]);
+  assert.deepEqual(result.releaseEvidenceCollectionRequiredTaskIds, ["owner_daily_ui"]);
+  assert.deepEqual(result.releaseEvidenceCollectionSupportedTaskIds, ["central_visual"]);
+  assert.deepEqual(result.writeGatedReleaseEvidenceCollectionTasks, ["daily_loop_write"]);
+  assert.deepEqual(result.unsupportedReleaseEvidenceCollectionKeys, ["manual_gate"]);
+  assert.deepEqual(result.releaseStatePrerequisiteKeys, ["reviewed_automation_digest"]);
+  assert.equal(result.missingCheckCount, 2);
+  assert.equal(result.missingEvidenceCount, 1);
+  assert.equal(result.missingApprovalCount, 1);
+  assert.equal(result.missingRecordKindCount, 1);
+  assert.equal(result.blockedRecordKindCount, 1);
 });
 
 test("release workbench smoke script runs no-write read model against a temporary SQLite db", () => {
@@ -95,6 +142,14 @@ test("release workbench smoke script runs no-write read model against a temporar
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseWorkbench.v1");
     assert.equal(output.status, "release_evidence_required");
     assert.equal(output.releaseWorkbench.summaryOnly, true);
+    assert.equal(output.releaseWorkbenchStatus, output.releaseWorkbench.status);
+    assert.equal(output.ownerActionCount, output.releaseWorkbench.ownerActionCount);
+    assert.equal(output.nextOwnerAction.endpointKey, output.releaseWorkbench.nextAction.endpointKey);
+    assert.equal(output.releaseEvidenceCollectionTaskIds.includes("owner_daily_ui"), true);
+    assert.equal(output.releaseEvidenceCollectionRequiredTaskIds.includes("owner_daily_ui"), true);
+    assert.equal(output.releaseStatePrerequisiteKeys.includes("reviewed_automation_digest"), true);
+    assert.equal(output.missingCheckCount, output.releaseWorkbench.missingCheckKeys.length);
+    assert.equal(output.missingEvidenceCount, output.releaseWorkbench.missingEvidenceKeys.length);
     assert.equal(output.releaseWorkbench.ownerActions.some((action) => (
       action.endpointKey === "release_evidence"
       && action.key !== "release_evidence"
