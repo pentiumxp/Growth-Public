@@ -637,6 +637,21 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(dailyLoopService, /rawAnswer:/);
   assert.doesNotMatch(dailyLoopService, /rawPrompt:/);
 
+  const operatingLoopService = read(path.join("src", "services", "learning-operating-loop-service.js"));
+  assert.match(operatingLoopService, /createLearningOperatingLoopService/);
+  assert.match(operatingLoopService, /loopStateService\.state/);
+  assert.match(operatingLoopService, /dailyLoopService\.advance/);
+  assert.match(operatingLoopService, /dailyLoopService\.publish/);
+  assert.match(operatingLoopService, /stageAssessmentService\.activateStageAssessment/);
+  assert.match(operatingLoopService, /stage_assessment_owner_confirmation_required/);
+  assert.match(operatingLoopService, /learning_operating_loop_privacy_failed/);
+  assert.doesNotMatch(operatingLoopService, /createGrowthGateway/);
+  assert.doesNotMatch(operatingLoopService, /gatewayClient/);
+  assert.doesNotMatch(operatingLoopService, /openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(operatingLoopService, /learning_growth_/);
+  assert.doesNotMatch(operatingLoopService, /rawAnswer:/);
+  assert.doesNotMatch(operatingLoopService, /rawPrompt:/);
+
   const automationProposalService = read(path.join("src", "services", "learning-automation-proposal-service.js"));
   assert.match(automationProposalService, /createProposal/);
   assert.match(automationProposalService, /listProposals/);
@@ -1781,7 +1796,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.doesNotMatch(script, /evaluateSubmission/);
   assert.doesNotMatch(script, /executeOnce/);
   assert.doesNotMatch(script, /runOnce/);
-  assert.doesNotMatch(script, /learningAutomationSchedulerService|\.dryRun/);
+  assert.doesNotMatch(script, /learningAutomationSchedulerService|schedulerService\.dryRun/);
   assert.doesNotMatch(script, /deliverHandoff/);
   assert.doesNotMatch(script, /activateStageAssessment/);
 
@@ -3181,7 +3196,7 @@ test("Growth automation digest smoke CLI stays service-owned and write-gated", (
   assert.doesNotMatch(script, /evaluateSubmission/);
   assert.doesNotMatch(script, /executeOnce/);
   assert.doesNotMatch(script, /runOnce/);
-  assert.doesNotMatch(script, /learningAutomationSchedulerService|\.dryRun/);
+  assert.doesNotMatch(script, /learningAutomationSchedulerService|schedulerService\.dryRun/);
   assert.doesNotMatch(script, /deliverHandoff/);
   assert.doesNotMatch(script, /activateStageAssessment/);
 
@@ -3461,7 +3476,7 @@ test("Growth automation scheduler execution smoke CLI stays service-owned and wr
   assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
   assert.doesNotMatch(script, /learningDailyLoopService/);
   assert.doesNotMatch(script, /learningAutomationProposalService/);
-  assert.doesNotMatch(script, /learningAutomationSchedulerService|\.dryRun/);
+  assert.doesNotMatch(script, /learningAutomationSchedulerService|schedulerService\.dryRun/);
   assert.doesNotMatch(script, /draftPlan/);
   assert.doesNotMatch(script, /publishPlanItem/);
   assert.doesNotMatch(script, /publishAcceptedProposal/);
@@ -3714,6 +3729,51 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
   assert.match(scriptHarness, /fails closed for missing workspace and invalid JSON/);
 });
 
+test("Growth operating-loop smoke CLI stays service-owned and gates writes", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:operating-loop/);
+  assert.match(packageJson, /smoke-growth-operating-loop\.js/);
+  assert.match(packageJson, /learning-operating-loop-service\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-operating-loop.js"));
+  assert.match(script, /learningOperatingLoopService\.recommend/);
+  assert.match(script, /learningOperatingLoopService\.runNext/);
+  assert.match(script, /operating_loop_write_requires_allow_write/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /--allow-stage-activation/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const service = read(path.join("src", "services", "learning-operating-loop-service.js"));
+  assert.match(service, /growth\.learningOperatingLoop\.v1/);
+  assert.match(service, /loopStateService\.state/);
+  assert.match(service, /dailyLoopService\.advance/);
+  assert.match(service, /dailyLoopService\.publish/);
+  assert.match(service, /stageAssessmentService\.activateStageAssessment/);
+  assert.match(service, /stage_assessment_owner_confirmation_required/);
+  assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+
+  const route = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(route, /learning-loop\/advance/);
+  assert.match(route, /learningOperatingLoopService\.runNext/);
+
+  const serviceHarness = read(path.join("tests", "learning-operating-loop-service.test.js"));
+  assert.match(serviceHarness, /requires explicit owner confirmation before stage activation/);
+  assert.match(serviceHarness, /executes ready-to-draft through daily-loop advance/);
+  assert.match(serviceHarness, /publishes a selected plan item/);
+
+  const scriptHarness = read(path.join("tests", "growth-operating-loop-smoke-script.test.js"));
+  assert.match(scriptHarness, /defaults to no-write recommend readback/);
+  assert.match(scriptHarness, /blocks run-next writes without allow-write/);
+});
+
 test("Growth learner-cycle smoke CLI stays service-owned and gates learner writes", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:learner-cycle/);
@@ -3811,7 +3871,7 @@ test("Growth daily-loop smoke CLI requires explicit writes and stays service-own
 
   const scriptHarness = read(path.join("tests", "growth-daily-loop-smoke-script.test.js"));
   assert.match(scriptHarness, /defaults to no-write preview/);
-  assert.match(scriptHarness, /rejects draft and publish without explicit write flag/);
+  assert.match(scriptHarness, /rejects draft, publish, and advance without explicit write flag/);
   assert.match(scriptHarness, /drafts a summary-only plan only with explicit write flag/);
   assert.match(scriptHarness, /publishes a selected daily plan item only with explicit write flag/);
   assert.match(scriptHarness, /fails closed for invalid JSON and missing publish draft id/);

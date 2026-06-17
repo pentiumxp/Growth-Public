@@ -7730,6 +7730,131 @@ test("growth learning loop state is Owner-only and limited to visible targets", 
   }
 });
 
+test("growth operating loop advance delegates current next action through Owner write authorization", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "owner-token" || workspaceId !== "weixin_stephen") {
+          const error = new Error("denied");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { workspace_id: "growth:weixin_stephen", hermes_workspace_id: "weixin_stephen" };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningOperatingLoopService: {
+      async runNext(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-operating-loop-service",
+          schemaVersion: "growth.learningOperatingLoop.v1",
+          operation: "run_next",
+          status: "executed",
+          writePerformed: true,
+          executedAction: input.action,
+          actionResult: {
+            taskCardId: "ltask_operating_route_1",
+            planDraftId: "lgplan_operating_route_1"
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/learning-loop/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        action: "review_stage_assessment",
+        program_id: "program_science",
+        domain_pack_id: "domain_pack_fanfan_cambridge_pathway_v1",
+        domain: "science",
+        subject: "science",
+        subject_id: "science",
+        capability_cluster_id: "science.fair_test",
+        target_node_ids: ["kg_science_fair_test"],
+        assessment_coverage_node_ids: ["kg_science_fair_test", "kg_science_variables"],
+        allow_stage_activation: true,
+        confirm_stage_assessment: true,
+        activation_reason: "owner_confirmed_checkpoint"
+      })
+    });
+    assert.equal(response.status, 201);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningOperatingLoop.v1");
+    assert.equal(body.status, "executed");
+    assert.equal(body.actionResult.taskCardId, "ltask_operating_route_1");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].workspaceId, "weixin_fanfan");
+    assert.equal(calls[0].learnerId, "fanfan");
+    assert.equal(calls[0].displayName, "凡凡");
+    assert.equal(calls[0].operation, "review_stage_assessment");
+    assert.equal(calls[0].action, "review_stage_assessment");
+    assert.equal(calls[0].subjectId, "science");
+    assert.equal(calls[0].capabilityClusterId, "science.fair_test");
+    assert.deepEqual(calls[0].targetNodeIds, ["kg_science_fair_test"]);
+    assert.deepEqual(calls[0].assessmentCoverageNodeIds, ["kg_science_fair_test", "kg_science_variables"]);
+    assert.equal(calls[0].allowStageActivation, true);
+    assert.equal(calls[0].confirmStageAssessment, true);
+    assert.equal(calls[0].activationReason, "owner_confirmed_checkpoint");
+
+    const memberDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen" })
+    });
+    assert.equal(memberDenied.status, 403);
+    assert.equal((await memberDenied.json()).error.code, "growth_operating_loop_owner_required");
+
+    const invisibleDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_missing" })
+    });
+    assert.equal(invisibleDenied.status, 403);
+    assert.equal((await invisibleDenied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth daily loop draft and publish delegate through service with Owner write authorization", async () => {
   const calls = [];
   const server = createServer({

@@ -887,7 +887,7 @@ function createLearningAutomationReleaseReadinessService(options = {}) {
       presentCheck(inputWithReleaseEvidence, "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence", "Production Owner audit smoke", "run_production_owner_audit_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence", "Production profile-feedback smoke", "run_production_profile_feedback_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionRecommendationLifecycleSmokeEvidence", "production_recommendation_lifecycle_smoke_evidence", "Production recommendation lifecycle smoke", "run_production_recommendation_lifecycle_smoke"),
-      presentCheck(inputWithReleaseEvidence, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish smoke", "run_controlled_daily_loop_write_smoke"),
+      presentCheck(inputWithReleaseEvidence, "productionDailyLoopWriteSmokeEvidence", "production_daily_loop_write_smoke_evidence", "Production daily-loop draft/publish/advance smoke", "run_controlled_daily_loop_write_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionLearnerCycleSmokeEvidence", "production_learner_cycle_smoke_evidence", "Production learner daily-cycle smoke", "run_production_learner_cycle_smoke"),
       presentCheck(inputWithReleaseEvidence, "productionSchedulerDryRunSmokeEvidence", "production_scheduler_dry_run_smoke_evidence", "Production scheduler dry-run smoke", "run_production_scheduler_dry_run_smoke"),
       presentCheck(inputWithReleaseEvidence, "releaseEvidenceBundleAudit", "release_evidence_bundle_audit", "Release evidence bundle self-audit", "run_release_evidence_bundle_audit"),

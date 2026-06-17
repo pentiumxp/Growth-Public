@@ -1589,7 +1589,7 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
   }
 });
 
-test("provisioned non-sample science daily loop advances, completes, and stays target-scoped", async () => {
+test("provisioned non-sample science operating loop advances, completes, and stays target-scoped", async () => {
   const harness = createLoopHarness();
   const learnerWorkspaceId = "weixin_alice";
   const learnerId = "alice";

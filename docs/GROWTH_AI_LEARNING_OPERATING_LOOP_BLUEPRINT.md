@@ -320,6 +320,12 @@ Backend facade status:
 - The service composes existing context, plan-publisher, cycle-audit, and
   audit-completeness services. It is not a new model boundary and not a
   scheduler.
+- `learning-operating-loop-service` is the service-owned execution facade for
+  the current loop state's next action. It can recommend without writes, or
+  run the current next action through the daily-loop or stage-assessment
+  services with explicit write gates. It must not auto-complete learner work,
+  audit/correction, target provisioning, graph import/selection, Gateway
+  configuration, scheduling, or notification steps.
 - UI work should consume this facade first, then use lower-level audit routes
   only for explicit single-card drilldown.
 
@@ -430,7 +436,7 @@ Backend shape:
   and release-approval bag projection by default. The learner-cycle bundle
   path is audit-only and maps to `productionLearnerCycleSmokeEvidence`; write
   operations must use direct `npm run smoke:learner-cycle` with explicit
-  Owner-requested evidence. The controlled daily-loop draft/publish evidence
+  Owner-requested evidence. The controlled daily-loop draft/publish/advance evidence
   path is the explicit non-default `daily_loop_write` task, gated by
   `--allow-write-evidence` and delegated to `scripts/smoke-growth-daily-loop.js`.
 
@@ -1121,6 +1127,7 @@ gate.
 | Owner profile correction backend | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-owner-correction-service.test.js tests/learning-profile-v2-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner audit readback context | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-card-generation-context-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner daily-loop backend facade | `node --test tests/learning-daily-loop-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
+| Learning operating loop facade | `node --test tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` plus `npm run smoke:operating-loop`; the smoke defaults to no-write recommendation and gates `run-next` / `advance` with `--allow-write`, with a separate Owner checkpoint confirmation gate for formal assessment activation. |
 | Learning-cycle audit aggregate | `node --test tests/learning-cycle-audit-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Learning-cycle history readback | `node --test tests/learning-cycle-history-service.test.js tests/growth-cycle-history-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` and `npm run smoke:cycle-history`; the CLI defaults to no-write summary-only history over the normal service graph. |
 | Audit completeness readback | `node --test tests/learning-audit-completeness-service.test.js tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |

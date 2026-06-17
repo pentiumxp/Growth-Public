@@ -59,6 +59,7 @@ const { createLearningCycleHistoryService } = require("../services/learning-cycl
 const { createLearningDailyLoopService } = require("../services/learning-daily-loop-service");
 const { createLearningLoopStateService } = require("../services/learning-loop-state-service");
 const { createLearningLearnerCycleService } = require("../services/learning-learner-cycle-service");
+const { createLearningOperatingLoopService } = require("../services/learning-operating-loop-service");
 const { createLearningEvidenceAuditService } = require("../services/learning-evidence-audit-service");
 const { createLearningEvidenceLedgerService } = require("../services/learning-evidence-ledger-service");
 const { createLearningEvaluationOwnerReviewService } = require("../services/learning-evaluation-owner-review-service");
@@ -505,6 +506,11 @@ function createServices(config) {
     rewardAuditService: learningRewardAuditService,
     stageAssessmentService: learningStageAssessmentService
   });
+  const learningOperatingLoopService = createLearningOperatingLoopService({
+    loopStateService: learningLoopStateService,
+    dailyLoopService: learningDailyLoopService,
+    stageAssessmentService: learningStageAssessmentService
+  });
   const learningProfileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
     auditCompletenessService: learningAuditCompletenessService,
     evidenceAuditService: learningEvidenceAuditService,
@@ -600,6 +606,7 @@ function createServices(config) {
     learningMasteryProfileService,
     learningNextCardStrategyService,
     learningOwnerCorrectionService,
+    learningOperatingLoopService,
     learningPlanAuditService,
     learningPlanOrchestratorService,
     learningPlanPublisherService,

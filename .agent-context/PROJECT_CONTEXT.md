@@ -174,7 +174,19 @@ readback gate set.
   through `learning-stage-assessment-service`; planner context now includes
   read-only stage-assessment readiness through
   `learning-stage-assessment-service.stageReadiness()`, and the plan publisher
-  refuses direct formal stage-assessment publication. A service-level
+  refuses direct formal stage-assessment publication. Growth now also wires a
+  service-owned learning operating-loop execution facade through
+  `learning-operating-loop-service`, Owner-only
+  `POST /api/v1/growth/learning-loop/advance`, and
+  `npm run smoke:operating-loop`. The facade recommends the current
+  `learning-loop-state` next action without writing by default. Writeful
+  `runNext` can execute only the current next action: daily draft/publish via
+  `learning-daily-loop-service` and formal checkpoint activation via
+  `learning-stage-assessment-service` only after explicit Owner stage
+  confirmation. Learner work, audit/correction, target provisioning, graph
+  import/selection, context refresh, and Gateway configuration remain separate
+  flows and return blocked/separate-flow DTOs instead of automatic side
+  effects. A service-level
   Fanfan science vertical harness now proves planner draft, publish, daily-loop
   advance, generated-card board/detail visibility, science card generation,
   learner evidence, one-submit/one-evaluate/one-reflect completion through
@@ -251,7 +263,7 @@ readback gate set.
   summary, step summary, and persisted package-record summaries without adding
   a preflight repository read or changing deployment/runtime/scheduler
   permission. It now treats
-  production controlled daily-loop draft/publish smoke evidence as a separate
+  production controlled daily-loop draft/publish/advance smoke evidence as a separate
   required readiness check, treats production cycle-history smoke evidence as a
   separate required readiness check, and treats production learner daily-cycle
   smoke evidence as a separate required readiness check while still never
@@ -395,12 +407,12 @@ readback gate set.
   pointer to run `npm run smoke:learner-cycle` directly because write
   operations require Owner-requested real learner evidence and raw text must
   not pass through the bundle. It also exposes an opt-in
-  `daily_loop_write` task for controlled daily-loop draft/publish smoke
+  `daily_loop_write` task for controlled daily-loop draft/publish/advance smoke
   evidence; the task is outside the default set, fails closed without
-  `--allow-write-evidence`, requires `--daily-loop-write-operation draft` or
-  `publish`, requires `--plan-draft-id` for publish, and then delegates to the
-  existing `scripts/smoke-growth-daily-loop.js` write gate instead of calling
-  daily-loop services directly. The builder maps persisted approvals into the
+  `--allow-write-evidence`, accepts `--daily-loop-write-operation draft`,
+  `publish`, or `advance`, requires `--plan-draft-id` for publish, and then
+  delegates to the existing `scripts/smoke-growth-daily-loop.js` write gate
+  instead of calling daily-loop services directly. The builder maps persisted approvals into the
   versioned bundle `releaseApproval` field only and maps profile-feedback smoke
   into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
   `productionCycleHistorySmokeEvidence`, Owner audit smoke into

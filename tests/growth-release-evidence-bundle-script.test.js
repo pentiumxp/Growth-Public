@@ -676,6 +676,21 @@ test("release evidence bundle script fails closed before write smoke when contro
   assert.equal(JSON.stringify(bundle).includes("stdout"), false);
 });
 
+test("release evidence bundle script accepts controlled advance as a daily-loop write operation", () => {
+  const args = [
+    "--workspace-id", "smoke_workspace",
+    "--learner-id", "smoke_learner",
+    "--task", "daily_loop_write",
+    "--allow-write-evidence",
+    "--daily-loop-write-operation", "advance",
+    "--json"
+  ];
+
+  const input = inputFromArgs(args);
+  assert.equal(input.dailyLoopWriteOperation, "advance");
+  assert.equal(input.planDraftId, "");
+});
+
 test("release evidence bundle script writes a summary-only bundle from a read-only smoke", () => {
   withTempDb(({ dir, dbPath }) => {
     const bundlePath = path.join(dir, "bundle.json");

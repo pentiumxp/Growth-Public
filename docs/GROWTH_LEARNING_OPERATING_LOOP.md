@@ -370,13 +370,20 @@ As of 2026-06-15, Growth owns these implemented or documented boundaries:
 - Owner daily-loop backend facade through `learning-daily-loop-service` and
   Owner-only `GET /api/v1/growth/daily-loop/preview`,
   `POST /api/v1/growth/daily-loop/draft`, and
+  `POST /api/v1/growth/daily-loop/advance`, and
   `POST /api/v1/growth/daily-loop/publish`, composing context, draft/publish,
-  cycle audit, and completeness without a new model or scheduler boundary;
+  one-click advance, cycle audit, and completeness without a new model or
+  scheduler boundary;
 - Owner learning-loop state readback through `learning-loop-state-service` and
   Owner-only `GET /api/v1/growth/learning-loop/state`, composing daily-loop
   preview and read-only stage-assessment readiness into
   `growth.learningLoopState.v1` without writes, Gateway calls, publication,
   generation, evaluation, scheduling, notifications, or stage activation;
+- Owner operating-loop execution through `learning-operating-loop-service`,
+  Owner-only `POST /api/v1/growth/learning-loop/advance`, and
+  `npm run smoke:operating-loop`, delegating the current next action to the
+  owning daily-loop or stage-assessment service with explicit write gates and
+  no automatic learner/audit/provision/config side effects;
 - bounded plan/evidence/profile-delta/correction audit aggregation through
   `learning-cycle-audit-service` and
   `GET /api/v1/growth/learning-cycles/audit`;
@@ -759,6 +766,8 @@ It provides:
 - `preview`: bounded readiness/context plus optional cycle audit and
   completeness readback;
 - `draft`: context preflight plus plan draft delegation;
+- `advance`: context preflight plus draft-then-publish delegation through the
+  existing plan publisher and card-generation service boundaries;
 - `publish`: plan publish delegation, bounded generation ids, publish-attempt
   failure visibility, and post-publish audit/completeness refresh.
 
@@ -766,6 +775,7 @@ Routes:
 
 - Owner-only `GET /api/v1/growth/daily-loop/preview`;
 - Owner-only `POST /api/v1/growth/daily-loop/draft`;
+- Owner-only `POST /api/v1/growth/daily-loop/advance`;
 - Owner-only `POST /api/v1/growth/daily-loop/publish`.
 
 The service must not call Gateway directly, call card generation directly,
@@ -809,6 +819,51 @@ deliver notifications or handoffs, activate stage assessments, or mutate
 learner state. Reward readback must stay summary-only and must not expose
 idempotency keys, ledger-entry JSON, raw settlement payloads, learner answers,
 transcripts, prompts, credentials, or provider configuration.
+
+### `learning-operating-loop-service`
+
+Owns the Growth-internal execution facade for the current learning-loop next
+action. It is a service coordinator, not a model boundary, scheduler, or
+browser policy layer.
+
+Implementation status: implemented for backend V1. The service composes
+`learning-loop-state-service`, `learning-daily-loop-service`, and
+`learning-stage-assessment-service` through dependency injection.
+
+It returns:
+
+- `recommend`: no-write `growth.learningOperatingLoop.v1` readback over the
+  current target/scope/state/nextAction;
+- `runNext`: write-gated execution of only the current next action.
+
+Allowed executions:
+
+- `draft_daily_plan` delegates to `learning-daily-loop-service.advance()`;
+- `publish_selected_plan_item` delegates to
+  `learning-daily-loop-service.publish()`;
+- `review_stage_assessment` delegates to
+  `learning-stage-assessment-service.activateStageAssessment()` only when the
+  caller provides explicit Owner stage confirmation.
+
+Separate-flow states such as learner card completion, Owner audit/correction,
+target provisioning, graph import/selection, context refresh, and Gateway
+configuration must return bounded blocked/separate-flow DTOs. They must not be
+silently completed by the operating-loop facade.
+
+Routes and smoke:
+
+- Owner-only `POST /api/v1/growth/learning-loop/advance`;
+- no-write default `npm run smoke:operating-loop`;
+- write-gated `npm run smoke:operating-loop -- --operation run-next
+  --allow-write ...`;
+- stage activation additionally requires `--allow-stage-activation` or
+  `--confirm-stage-assessment`.
+
+The service must not call Gateway directly, import repositories, publish plans
+outside the daily-loop service, generate cards directly, evaluate submissions,
+settle rewards, start schedulers, deliver notifications or handoffs, activate
+stage assessments without explicit Owner confirmation, or mutate learner state
+outside the delegated owning service.
 
 ### `learning-plan-audit-service`
 
@@ -1458,6 +1513,19 @@ The next implementation should add focused tests before broad integration:
   - publish returns bounded generation ids and strips authoring draft internals;
   - publish failure keeps bounded publish-attempt state visible;
   - privacy-risk input is rejected before downstream service calls.
+- `tests/learning-operating-loop-service.test.js`
+  - implemented;
+  - recommend returns the service-owned next action without writing;
+  - `runNext` delegates `draft_daily_plan` to daily-loop advance and
+    `publish_selected_plan_item` to daily-loop publish;
+  - formal checkpoint activation is blocked until explicit Owner confirmation;
+  - unsupported, disabled, mismatched, and privacy-risk inputs fail closed.
+- `tests/growth-operating-loop-smoke-script.test.js`
+  - implemented;
+  - default operation is no-write recommendation readback;
+  - `run-next` / `advance` operations require `--allow-write`;
+  - stage coverage selectors and checkpoint confirmation flags are parsed
+    without exposing raw learner or model payloads.
 - `tests/learning-automation-proposal-service.test.js`
   - required for the proposal slice;
   - source-cycle id is required before any planner draft call;
@@ -1577,8 +1645,9 @@ Implementation progress on 2026-06-15:
   from planner draft through Profile V2;
 - item 7 has an initial backend publish bridge through
   `learning-plan-publisher-service`, plus an Owner-only daily-loop backend
-  facade through `learning-daily-loop-service`; embedded Owner UI and
-  production planner readiness smoke remain pending;
+  facade through `learning-daily-loop-service`, plus the Growth-internal
+  `learning-operating-loop-service` execution facade for the current next
+  action; embedded Owner UI and production operating-loop smoke remain pending;
 - target/domain-pack provisioning backend and harness are implemented, so
   non-sample rollout has a service-owned guard instead of relying on
   view-target visibility alone;
@@ -1690,7 +1759,7 @@ Implementation progress on 2026-06-15:
   `domain_pack_fanfan_cambridge_pathway_v1`. A read-only result with
   `activationState=dormant` and `insufficient_recent_practice` is valid backend
   release evidence; it means the low-pressure checkpoint policy is working and
-  must not be converted into a forced assessment activation. Controlled daily-loop draft/publish smoke
+  must not be converted into a forced assessment activation. Controlled daily-loop draft/publish/advance smoke
   can be added only with the explicit non-default `daily_loop_write` task plus
   `--allow-write-evidence`, and the builder then delegates to the existing
   daily-loop smoke write gate instead of importing daily-loop services. The

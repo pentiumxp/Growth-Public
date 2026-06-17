@@ -365,10 +365,20 @@ Required behavior:
 - verify compact state through
   `npm run smoke:learning-loop-state` as a no-write service-graph check before
   product or production review;
+- verify the service-owned next-action execution facade through
+  `npm run smoke:operating-loop` as a no-write recommendation check before
+  product or production review;
 - verify controlled backend draft/publish through
   `npm run smoke:daily-loop -- --operation draft --allow-write ...` and
   `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <id> ...`
   only in an explicitly writable local or approved production smoke context;
+- verify controlled one-step next-action execution through
+  `npm run smoke:operating-loop -- --operation run-next --allow-write ...`
+  only in an explicitly writable local or approved production smoke context.
+  If the current next action is a formal checkpoint, this command must also
+  carry `--allow-stage-activation` or `--confirm-stage-assessment`; otherwise
+  `stage_assessment_owner_confirmation_required` is the correct blocked
+  result.
 - create a plan draft through `POST /api/v1/growth/daily-loop/draft`;
 - preview one validated plan item with target nodes, role, difficulty,
   support level, evidence requirements, minutes, rationale, and basis evidence
@@ -383,8 +393,10 @@ Required harness:
 
 - `tests/learning-daily-loop-service.test.js`;
 - `tests/learning-loop-state-service.test.js`;
+- `tests/learning-operating-loop-service.test.js`;
 - `tests/growth-daily-loop-preview-smoke-script.test.js`;
 - `tests/growth-learning-loop-state-smoke-script.test.js`;
+- `tests/growth-operating-loop-smoke-script.test.js`;
 - `tests/learning-profile-feedback-evidence-service.test.js`;
 - `tests/growth-profile-feedback-smoke-script.test.js`;
 - `tests/growth-daily-loop-smoke-script.test.js`;
@@ -396,11 +408,13 @@ Required harness:
 - `tests/growth-embedded-layout.test.js`;
 - `npm run smoke:daily-loop-preview -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:learning-loop-state -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
+- `npm run smoke:operating-loop -- --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --task-card-id <taskCardId> --evaluation-id <evaluationId> --json`;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --learner-id <learner> --target-node-id <nodeId> --json` for the fail-closed selector-discovery path when no completed-cycle selector exists;
 - `npm run smoke:profile-feedback -- --workspace-id <workspace> --learner-id <learner> --target-node-id <nodeId> --auto-select-latest-completed-cycle --json` only for an explicit release-evidence collection path that should use the most recent real completed cycle from read-only history discovery;
 - `npm run smoke:daily-loop -- --operation draft --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - `npm run smoke:daily-loop -- --operation publish --allow-write --plan-draft-id <planDraftId> --item-id <itemId> --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
+- `npm run smoke:operating-loop -- --operation run-next --allow-write --workspace-id <workspace> --learner-id <learner> --domain <domain> --subject <subject> --json`;
 - central Home AI embedded-plugin visual harness before production release.
 
 ### P2: Owner Audit And Correction UI
@@ -902,7 +916,7 @@ Implemented backend shape:
   and next action without expanding the full evidence item catalog or raw
   dependency ids.
   Use `--task daily_loop_write
-  --allow-write-evidence --daily-loop-write-operation draft|publish` only when
+  --allow-write-evidence --daily-loop-write-operation draft|publish|advance` only when
   intentionally collecting controlled production daily-loop write evidence;
   the task is outside the default bundle, fails closed without that explicit
   flag, requires `--plan-draft-id` for publish, and delegates through
@@ -1196,8 +1210,8 @@ Required behavior:
   `cycle_history` release-bundle task, production Owner audit smoke evidence
   from `npm run smoke:owner-audit` or the default `owner_audit`
   release-bundle task, production controlled daily-loop
-  draft/publish smoke evidence from
-  `npm run smoke:daily-loop -- --operation draft|publish --allow-write ...`
+  draft/publish/advance smoke evidence from
+  `npm run smoke:daily-loop -- --operation draft|publish|advance --allow-write ...`
   or the explicit write-gated `daily_loop_write` release-bundle task,
   production learner-cycle audit smoke evidence from
   `npm run smoke:learner-cycle` or the default `learner_cycle`
@@ -1342,7 +1356,7 @@ Remaining release gaps:
   default `cycle_history` release-bundle task,
   production Owner audit smoke from `npm run smoke:owner-audit` or the default
   `owner_audit` release-bundle task,
-  production controlled daily-loop draft/publish smoke from
+  production controlled daily-loop draft/publish/advance smoke from
   `npm run smoke:daily-loop` or the explicit `daily_loop_write`
   release-bundle task, production learner-cycle audit smoke from
   `npm run smoke:learner-cycle` or the default `learner_cycle`

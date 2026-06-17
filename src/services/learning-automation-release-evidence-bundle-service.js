@@ -12,7 +12,7 @@ const SAFE_PRIVACY_ASSERTION_KEYS = new Set([
   "noFullTranscripts",
   "noRawPrompts"
 ]);
-const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish"]);
+const DAILY_LOOP_WRITE_OPERATIONS = new Set(["draft", "publish", "advance"]);
 const LEARNER_CYCLE_BUNDLE_OPERATIONS = new Set(["audit"]);
 
 const DEFAULT_TASK_IDS = Object.freeze([

@@ -225,6 +225,23 @@ Backend facade status:
 - `POST /api/v1/growth/daily-loop/publish` delegates publication to the plan
   publisher, strips generated authoring draft internals, and refreshes bounded
   cycle audit and completeness DTOs even when publication fails.
+- `learning-operating-loop-service` now provides a Growth-owned execution
+  facade over the current `learning-loop-state` next action. `recommend()` is
+  no-write. `runNext()` can execute only the current service-projected action:
+  `draft_daily_plan` through `learning-daily-loop-service.advance()`,
+  `publish_selected_plan_item` through `learning-daily-loop-service.publish()`,
+  and `review_stage_assessment` through
+  `learning-stage-assessment-service.activateStageAssessment()` only after
+  explicit Owner stage confirmation.
+- Owner-only `POST /api/v1/growth/learning-loop/advance` is HTTP glue for that
+  service. It enforces Owner role, writable workspace authorization, and
+  Growth visible-target scope before delegating to `runNext()`. It must not
+  call Gateway, plan publisher, card generation, evaluation, stage-assessment
+  activation, scheduler, notification, or SQLite repositories directly.
+- `npm run smoke:operating-loop` defaults to no-write recommendation readback.
+  `--operation run-next|advance` requires `--allow-write`, and formal
+  checkpoint activation additionally requires `--allow-stage-activation` or
+  `--confirm-stage-assessment`.
 - The embedded UI still needs to consume this facade, show progress/error
   states, and pass frontend plus central visual harnesses before Stage 2 can
   be considered product-complete.
@@ -333,6 +350,10 @@ Business policy belongs in services:
   privacy validation;
 - `learning-plan-publisher-service` owns draft persistence and selected-item
   publication;
+- `learning-operating-loop-service` owns executing the current bounded
+  next-action facade while preserving the separate daily-loop,
+  stage-assessment, target-provisioning, learner-work, and audit/correction
+  boundaries;
 - `learning-card-generation-service` owns card generation orchestration;
 - `learning-card-authoring-service` owns Gateway authoring;
 - `growth-evaluation-service` owns evaluation queue processing and downstream

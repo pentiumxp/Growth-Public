@@ -97,6 +97,16 @@ items remain suggestions: `learning-plan-publisher-service` must not publish a
 `stage_assessment` item directly, because formal assessment activation belongs
 to `learning-stage-assessment-service`.
 
+The Growth-owned operating-loop execution facade is
+`learning-operating-loop-service`. It does not add a fourth model boundary.
+It reads the current `growth.learningLoopState.v1` next action, delegates
+daily-card creation to `learning-daily-loop-service`, delegates selected plan
+publication to the same daily-loop service, and delegates formal checkpoint
+activation only to `learning-stage-assessment-service` after explicit Owner
+confirmation. Learner work, Owner audit/correction, target provisioning,
+graph import/selection, and Gateway configuration remain separate flows and
+must not be auto-completed by the facade.
+
 Production-complete AI evaluation requires `GROWTH_GATEWAY_EVALUATION_ENDPOINT`
 and its token/protocol settings in the Growth LaunchDaemon environment. The
 deterministic evaluator is retained only for harness/local fallback and visible

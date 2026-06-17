@@ -9,6 +9,78 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T19:51+08:00 - Learning Operating Loop Execution Facade
+
+- Status: implemented locally; focused service/route/architecture Harness and
+  final syntax/docs-locality/diff/CodeGraph gates passed. No production
+  deployment, production write smoke, or browser visual evidence has been
+  performed.
+- Classification: Growth-local H1/H2 workflow facade. It adds one explicit
+  Owner-controlled execution boundary over the current learning-loop next
+  action without changing Gateway/model boundaries, DB schema, background
+  scheduler config, notification delivery, deployment state, or Home AI host
+  logic.
+- Scope:
+  - added `learning-operating-loop-service` with no-write `recommend()` and
+    write-gated `runNext()` over the current `learning-loop-state` next action;
+  - added Owner-only `POST /api/v1/growth/learning-loop/advance`, which keeps
+    route behavior to Owner role enforcement, writable workspace authorization,
+    visible-target scoping, input normalization, and service delegation;
+  - added `npm run smoke:operating-loop`; default `recommend` is no-write,
+    while `run-next` / `advance` require `--allow-write`, and formal checkpoint
+    activation also requires `--allow-stage-activation` or
+    `--confirm-stage-assessment`;
+  - allowed executions are limited to daily draft/publish through
+    `learning-daily-loop-service` and formal checkpoint activation through
+    `learning-stage-assessment-service` after explicit Owner confirmation;
+    learner work, audit/correction, target provisioning, graph import/selection,
+    context refresh, and Gateway configuration remain separate flows with
+    visible blocked DTOs.
+- Focused validation already run:
+  - `node --test tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js` -> 11/11
+  - `node --test tests/growth-routes.test.js --test-name-pattern "growth operating loop advance delegates current next action"` -> route file 52/52
+  - `node --test tests/growth-architecture-boundary.test.js` -> 34/34
+  - `node --test tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` -> 97/97
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-readiness-service.test.js` -> 62/62
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` -> index up to date; existing
+    earlier-engine advisory remains.
+
+## 2026-06-17T19:31+08:00 - Daily-Loop Advance Release Evidence Bundle Gate
+
+- Status: implemented locally; focused Harness passed. No production
+  deployment, production write smoke, or browser visual evidence was performed
+  in this package.
+- Classification: Growth-local H2 release-evidence/Harness alignment with an
+  explicit H1 write-smoke gate preserved. It does not change daily-loop
+  business logic, Gateway/model behavior, route authorization, DB schema,
+  scheduler runtime, notification delivery, stage activation, production
+  config, or deployment state.
+- Scope:
+  - extended the explicit non-default release evidence bundle task
+    `daily_loop_write` so controlled production daily-loop write evidence may
+    collect `draft`, `publish`, or `advance`;
+  - kept `daily_loop_write` outside `DEFAULT_TASK_IDS`, still blocked without
+    `--allow-write-evidence`, still delegated only through
+    `scripts/smoke-growth-daily-loop.js` with that smoke script's own
+    `--allow-write` gate, and still requiring `--plan-draft-id` only for
+    `publish`;
+  - updated release-readiness label text and Growth docs so the product
+    one-click `advance` path is represented in release evidence without
+    allowing release bundle services to call daily-loop services directly or
+    exposing nested daily-loop write artifacts in public bundle summaries.
+- Validation:
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js && node --check src/services/learning-automation-release-readiness-service.js && node --check tests/learning-automation-release-evidence-bundle-service.test.js && node --check tests/growth-release-evidence-bundle-script.test.js`
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/learning-automation-release-readiness-service.test.js` -> 62/62
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+- Follow-up:
+  - real production `daily_loop_write` evidence still requires explicit Owner
+    authorization and an intentional production smoke run; this package only
+    makes the `advance` evidence path available and covered.
+
 ## 2026-06-17T19:23+08:00 - Non-Sample Daily Loop Service Closure Harness
 
 - Status: implemented locally; focused Harness passed. No production

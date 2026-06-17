@@ -1131,6 +1131,43 @@ test("release evidence bundle service runs controlled daily-loop write smoke onl
   assert.equal(evidence.summary.operation, "publish");
 });
 
+test("release evidence bundle service supports controlled daily-loop advance evidence without a draft id", () => {
+  const { calls, service } = createServiceWithRunner((command, args) => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      operation: "advance",
+      stage: "published",
+      source: path.basename(args[0]),
+      planDraft: { planDraftId: "lgpd_advance_1" },
+      generation: { published: { taskCardId: "ltask_advance_1" } }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    dailyLoopWriteOperation: "advance",
+    allowWriteEvidence: true,
+    tasks: ["daily_loop_write"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-daily-loop.js"));
+  assert.ok(calls[0].args.includes("--allow-write"));
+  assert.ok(calls[0].args.includes("--operation"));
+  assert.ok(calls[0].args.includes("advance"));
+  assert.equal(calls[0].args.includes("--plan-draft-id"), false);
+  const evidence = result.bundle.evidence.productionDailyLoopWriteSmokeEvidence;
+  assert.equal(evidence.status, "pass");
+  assert.equal(evidence.smoke, "npm run smoke:daily-loop");
+  assert.equal(evidence.summary.operation, "advance");
+  assert.equal(evidence.summary.stage, undefined);
+  assert.equal(evidence.summary.planDraft, undefined);
+  assert.equal(evidence.summary.generation, undefined);
+});
+
 test("release evidence bundle service allows explicit negative privacy assertions from daily-loop preview", () => {
   const { service } = createServiceWithRunner(() => ({
     status: 0,
@@ -1183,7 +1220,7 @@ test("release evidence bundle service blocks unsafe daily-loop write task scope 
   });
   assert.equal(invalidOperation.ok, false);
   assert.equal(invalidOperation.bundle.evidence.productionDailyLoopWriteSmokeEvidence.error, "release_evidence_bundle_daily_loop_write_operation_invalid");
-  assert.deepEqual(invalidOperation.bundle.evidence.productionDailyLoopWriteSmokeEvidence.allowedOperations, ["draft", "publish"]);
+  assert.deepEqual(invalidOperation.bundle.evidence.productionDailyLoopWriteSmokeEvidence.allowedOperations, ["draft", "publish", "advance"]);
 
   const missingDraftId = service.buildBundle({
     workspaceId: "weixin_fanfan",

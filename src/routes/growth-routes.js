@@ -328,6 +328,27 @@ function normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, ex
   }, extra);
 }
 
+function normalizeOperatingLoopBodyInput(body, workspaceId, target, request, url) {
+  return normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, {
+    operation: body.operation || body.action || body.nextAction || body.next_action,
+    action: body.action || body.nextAction || body.next_action || body.operation,
+    subjectId: body.subjectId || body.subject_id || body.subject,
+    capabilityClusterId: body.capabilityClusterId || body.capability_cluster_id,
+    assessmentCoverageNodeIds: body.assessmentCoverageNodeIds
+      || body.assessment_coverage_node_ids
+      || body.assessmentCoverage
+      || body.assessment_coverage
+      || body.targetNodeIds
+      || body.target_node_ids
+      || body.nodeIds
+      || body.node_ids,
+    allowStageActivation: body.allowStageActivation === true || body.allow_stage_activation === true,
+    confirmStageAssessment: body.confirmStageAssessment === true || body.confirm_stage_assessment === true,
+    activationReason: body.activationReason || body.activation_reason,
+    activationSource: body.activationSource || body.activation_source
+  });
+}
+
 function normalizeProfileDeltaAuditInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -2060,6 +2081,19 @@ async function handleGrowthRoute(request, response, url, services) {
       normalizeDailyLoopBodyInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? (result.duplicate ? 200 : 201) : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/learning-loop/advance") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_operating_loop_owner_required", "Learning operating loop advance requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = await services.learningOperatingLoopService.runNext(
+      normalizeOperatingLoopBodyInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? 201 : 400, result);
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/proposals") {
