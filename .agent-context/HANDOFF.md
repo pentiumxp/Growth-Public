@@ -9,10 +9,32 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T07:54+0800 - Release UI Evidence Builder Production Deploy
+
+- User asked to deploy one current Growth package after the progress update.
+- Deployed committed Growth HEAD:
+  `4db73cf4a49d` (`feat: add release UI evidence artifact builder`).
+- Production deploy command target:
+  `plugin:growth`, surface `full`, reason
+  `growth-release-ui-evidence-builder-4db73cf`.
+- Deploy backup:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260617T235439Z-plugin-growth-growth-release-ui-evidence-builder-4db73cf`.
+- Deploy validation passed:
+  - production file hash readback for `public/index.html`;
+  - `com.hermesmobile.plugin.growth` launchd state readback was running;
+  - public Growth manifest health URL returned HTTP 200 and plugin id
+    `growth`;
+  - Codex auth profile audit had `codexIssueCount=0`. The broader audit still
+    reported non-Codex issues, matching the existing production audit pattern.
+- This deploy synchronized the release UI evidence artifact-builder package
+  and docs/Harness to production. It did not approve release state, grant
+  scheduler permission, mutate runtime config, call Gateway, publish cards,
+  evaluate learner evidence, or write learner state.
+
 ## 2026-06-18T07:49+0800 - Release UI Evidence Artifact Builder v1
 
-- Status: implemented locally after the stable HEAD deploy below. This package
-  has not been deployed yet.
+- Status: implemented, committed, pushed, and deployed in the production
+  deploy section above.
 - Implementation:
   - added `npm run build:release-ui-evidence-artifacts`, backed by
     `scripts/build-growth-release-ui-evidence-artifacts.js`;
