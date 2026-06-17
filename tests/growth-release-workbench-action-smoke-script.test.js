@@ -74,6 +74,7 @@ test("release workbench action smoke script parses bounded action input", () => 
   ]);
 
   assert.equal(input.workspaceId, "fanfan");
+  assert.equal(input.operation, "record");
   assert.equal(input.endpointKey, "release_evidence_collection");
   assert.equal(input.evidenceKey, "owner_daily_ui_evidence");
   assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
@@ -95,6 +96,38 @@ test("release workbench action smoke script parses bounded action input", () => 
   assert.equal(input.buildReleasePackage, true);
   assert.deepEqual(input.evidence, { evidenceId: "ui_1" });
   assert.equal(input.requestedBy, "owner");
+});
+
+test("release workbench action smoke script parses action-audit list input", () => {
+  const input = inputFromArgs([
+    "--operation", "list-audits",
+    "--workspace-id", "fanfan",
+    "--learner-id", "fanfan",
+    "--program-id", "program_science",
+    "--domain-pack-id", "uk_hk_curriculum_foundation",
+    "--domain", "science",
+    "--subject", "science",
+    "--horizon", "daily_plan",
+    "--endpoint-key", "release_evidence",
+    "--action-key", "owner_daily_ui_evidence",
+    "--status", "recorded",
+    "--collection-run-id", "lgacrn_cli_1",
+    "--limit", "7"
+  ]);
+
+  assert.equal(input.operation, "list-audits");
+  assert.equal(input.workspaceId, "fanfan");
+  assert.equal(input.learnerId, "fanfan");
+  assert.equal(input.programId, "program_science");
+  assert.equal(input.domainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(input.domain, "science");
+  assert.equal(input.subject, "science");
+  assert.equal(input.horizon, "daily_plan");
+  assert.equal(input.endpointKey, "release_evidence");
+  assert.equal(input.actionKey, "owner_daily_ui_evidence");
+  assert.equal(input.status, "recorded");
+  assert.equal(input.collectionRunId, "lgacrn_cli_1");
+  assert.equal(input.limit, 7);
 });
 
 test("release workbench action smoke script maps artifact manifest into evidence collection input", () => {
@@ -139,6 +172,15 @@ test("release workbench action smoke script requires explicit write flag", () =>
     requiredFlag: "--allow-write"
   });
   assert.deepEqual(validateInput({ workspaceId: "fanfan", endpointKey: "release_evidence" }, true), { ok: true });
+  assert.deepEqual(validateInput({ operation: "list-audits", workspaceId: "fanfan" }, false), { ok: true });
+  assert.deepEqual(validateInput({ operation: "list-audits" }, false), {
+    ok: false,
+    error: "release_workbench_action_workspace_required"
+  });
+  assert.deepEqual(validateInput({ operation: "delete", workspaceId: "fanfan" }, false), {
+    ok: false,
+    error: "release_workbench_action_operation_invalid"
+  });
 });
 
 test("release workbench action smoke script delegates only to action service", () => {
@@ -165,6 +207,47 @@ test("release workbench action smoke script delegates only to action service", (
   assert.equal(result.endpointKey, "release_package");
   assert.equal(calls[0].workspaceId, "fanfan");
   assert.equal(calls[0].buildReleasePackage, true);
+});
+
+test("release workbench action smoke script delegates audit listing only to action service", () => {
+  const calls = [];
+  const service = {
+    listActionAudits(input) {
+      calls.push(input);
+      return {
+        ok: true,
+        schemaVersion: "growth.learningAutomationReleaseWorkbenchActionAuditList.v1",
+        actionAuditCount: 1,
+        actionAudits: [{
+          actionAuditId: "lgawba_cli_1",
+          endpointKey: input.endpointKey,
+          status: input.status
+        }],
+        writefulSchedulingAllowed: false
+      };
+    },
+    recordAction() {
+      throw new Error("recordAction must not be called for list-audits");
+    }
+  };
+
+  const result = runOperation(service, {
+    operation: "list-audits",
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence",
+    status: "recorded",
+    limit: 3
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.actionAuditCount, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].operation, undefined);
+  assert.equal(calls[0].workspaceId, "fanfan");
+  assert.equal(calls[0].endpointKey, "release_evidence");
+  assert.equal(calls[0].status, "recorded");
+  assert.equal(calls[0].limit, 3);
 });
 
 test("release workbench action smoke script accepts release preflight endpoint", () => {
@@ -249,6 +332,37 @@ test("release workbench action smoke script can run evidence collection through 
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
+
+    const auditStdout = childProcess.execFileSync(process.execPath, [
+      path.join(__dirname, "..", "scripts", "smoke-growth-release-workbench-action.js"),
+      "--operation", "list-audits",
+      "--workspace-id", "fanfan",
+      "--learner-id", "fanfan",
+      "--endpoint-key", "release_evidence_collection",
+      "--action-key", "release_collection_run",
+      "--status", "recorded",
+      "--limit", "5",
+      "--json"
+    ], {
+      cwd: path.join(__dirname, ".."),
+      env: Object.assign({}, process.env, {
+        GROWTH_DATA_DIR: dir,
+        GROWTH_LEARNING_DB_PATH: dbPath
+      }),
+      encoding: "utf8"
+    });
+    const auditOutput = JSON.parse(auditStdout);
+    assert.equal(auditOutput.operation, "list-audits");
+    assert.equal(auditOutput.ok, true);
+    assert.equal(auditOutput.schemaVersion, "growth.learningAutomationReleaseWorkbenchActionAuditList.v1");
+    assert.equal(auditOutput.actionAuditCount, 1);
+    assert.equal(auditOutput.actionAudits[0].privacyClass, "summary_only");
+    assert.equal(auditOutput.actionAudits[0].endpointKey, "release_evidence_collection");
+    assert.equal(auditOutput.actionAudits[0].actionKey, "release_collection_run");
+    assert.equal(auditOutput.actionAudits[0].status, "recorded");
+    assert.match(auditOutput.actionAudits[0].recordId, /^lgacrn_/);
+    assert.equal(JSON.stringify(auditOutput).includes("writeResult"), false);
+    assert.equal(JSON.stringify(auditOutput).includes(dir), false);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {

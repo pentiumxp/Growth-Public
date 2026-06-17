@@ -9,10 +9,70 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:20+08:00 - Release Workbench Action Audit Smoke Readback
+
+- Status: implemented, compressed-Harness validated locally, committed/pushed
+  in this slice. No production deployment in this slice.
+- Change intent:
+  - close the remaining operational smoke gap for the new Owner workbench
+    action-audit table;
+  - let operators prove write-then-readback through the normal service graph
+    instead of inspecting SQLite manually;
+  - keep `record` write-gated and make audit listing no-write.
+- Scope:
+  - `scripts/smoke-growth-release-workbench-action.js` now supports
+    `--operation record` / `--record` and no-write `--operation list-audits`,
+    `--list-audits`, or `--list-action-audits`;
+  - `record` still requires `--allow-write`, `workspaceId`, and `endpointKey`;
+  - `list-audits` requires only `workspaceId` and delegates to
+    `learningAutomationReleaseWorkbenchActionService.listActionAudits`;
+  - `runOperation` strips CLI-only `operation` before service dispatch and does
+    not import repositories or inspect SQLite directly;
+  - `npm run test:release-union` now includes
+    `tests/learning-automation-release-workbench-action-service.test.js` and
+    `tests/growth-release-workbench-action-smoke-script.test.js` beside the
+    repository test.
+- Harness added/updated:
+  - `tests/growth-release-workbench-action-smoke-script.test.js`;
+  - `tests/growth-release-union-script.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/run-growth-release-union-tests.js`.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-release-workbench-action.js`;
+  - `node --check scripts/run-growth-release-union-tests.js`;
+  - `node --test tests/growth-release-workbench-action-smoke-script.test.js`;
+  - `node --test tests/growth-release-union-script.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-repository.test.js`;
+  - `node --test tests/growth-routes.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `npm run --silent test:release-union` passed `233/233`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,263` nodes, and `22,924` edges, plus the existing
+    earlier-engine advisory.
+- Validation intentionally not run:
+  - full `npm test`; run it before production deployment or if this slice is
+    bundled with runtime deployment.
+
 ## 2026-06-17T10:35+08:00 - Release Workbench Action Audit Persistence
 
-- Status: implemented, compressed-Harness validated locally, ready for
-  commit/push. No production deployment in this slice.
+- Status: implemented, compressed-Harness validated locally, committed as
+  `37d5e8c`, and pushed to `origin/main` and `public/main`. No production
+  deployment in this slice.
 - Change intent:
   - close the process-audit gap for Owner release workbench button actions;
   - keep downstream release records owned by their existing services while the

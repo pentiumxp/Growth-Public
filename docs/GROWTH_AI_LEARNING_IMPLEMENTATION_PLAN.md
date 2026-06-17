@@ -1304,6 +1304,7 @@ Remaining release gaps:
   the preflight repository. It also proves the Owner workbench action wrapper
   can persist and read back bounded
   `growth.learningAutomationReleaseWorkbenchActionAudit.v1` rows through
+  `npm run smoke:release-workbench-action -- --operation list-audits` and
   `learning_growth_automation_release_workbench_actions` without storing raw
   request bodies, artifact paths, raw evidence, delegated write results,
   prompts, transcripts, model output, provider config, or secrets. Local

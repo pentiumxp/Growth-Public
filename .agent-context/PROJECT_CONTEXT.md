@@ -407,8 +407,11 @@ readback gate set.
   It requires only the
   selected endpoint's write service instead of requiring every possible
   release-workbench action dependency at construction time. It stores/passes only
-  summary-only bounded action/evidence/approval/decision/package data. It also
-  writes and reads bounded wrapper audits through
+  summary-only bounded action/evidence/approval/decision/package data. The
+  smoke CLI keeps `--operation record` write-gated behind `--allow-write` and
+  also exposes no-write `--operation list-audits` / `--list-action-audits`
+  readback through the same service. It writes and reads bounded wrapper audits
+  through
   `learningAutomationReleaseWorkbenchActionAuditRepository` /
   `learning_growth_automation_release_workbench_actions` and Owner-only
   `GET /api/v1/growth/automation/release-workbench/action-audits`; those audit

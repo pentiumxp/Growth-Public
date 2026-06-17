@@ -2477,6 +2477,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchActionScript, /createServices/);
   assert.match(releaseWorkbenchActionScript, /learningAutomationReleaseWorkbenchActionService/);
   assert.match(releaseWorkbenchActionScript, /recordAction/);
+  assert.match(releaseWorkbenchActionScript, /listActionAudits/);
+  assert.match(releaseWorkbenchActionScript, /list-audits/);
   assert.match(releaseWorkbenchActionScript, /--allow-write/);
   assert.doesNotMatch(releaseWorkbenchActionScript, /spawnSync/);
   assert.doesNotMatch(releaseWorkbenchActionScript, /require\(["']\.\.\/src\/stores/);

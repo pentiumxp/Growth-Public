@@ -29,6 +29,16 @@ function firstArgValue(args, names, fallback = "") {
   return fallback;
 }
 
+function operationFromArgs(args) {
+  if (hasFlag(args, "--record")) return "record";
+  if (hasFlag(args, "--list-audits") || hasFlag(args, "--list-action-audits") || hasFlag(args, "--listActionAudits")) {
+    return "list-audits";
+  }
+  const operation = firstArgValue(args, ["--operation", "--op"], "record") || "record";
+  if (operation === "list" || operation === "list_audits" || operation === "listActionAudits") return "list-audits";
+  return operation;
+}
+
 function splitCsv(value) {
   return String(value || "")
     .split(",")
@@ -105,6 +115,7 @@ function inputFromArgs(args) {
   const activationGates = splitCsv(firstArgValue(args, ["--activation-gates", "--activationGates"], ""))
     .concat(activationGate ? [activationGate] : []);
   const input = Object.assign({
+    operation: operationFromArgs(args),
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
@@ -124,6 +135,7 @@ function inputFromArgs(args) {
     endpointKey: firstArgValue(args, ["--endpoint-key", "--endpointKey"], ""),
     actionKey: firstArgValue(args, ["--action-key", "--actionKey", "--key"], ""),
     status: firstArgValue(args, ["--status", "--decision", "--decision-status", "--decisionStatus"], ""),
+    limit: Number(firstArgValue(args, ["--limit"], "20")) || 20,
     evidenceKey: firstArgValue(args, ["--evidence-key", "--evidenceKey", "--check-key", "--checkKey"], ""),
     approvalKey: firstArgValue(args, ["--approval-key", "--approvalKey", "--config-gate", "--configGate"], ""),
     activationGates: activationGates.length ? activationGates : undefined,
@@ -167,14 +179,24 @@ function inputFromArgs(args) {
 }
 
 function validateInput(input = {}, allowWrite = false) {
-  if (!allowWrite) return { ok: false, error: "release_workbench_action_write_not_allowed", requiredFlag: "--allow-write" };
+  const operation = String(input.operation || "record").trim();
+  if (!["record", "list-audits"].includes(operation)) {
+    return { ok: false, error: "release_workbench_action_operation_invalid" };
+  }
   if (!input.workspaceId) return { ok: false, error: "release_workbench_action_workspace_required" };
-  if (!input.endpointKey) return { ok: false, error: "release_workbench_action_endpoint_required" };
+  if (operation === "record" && !allowWrite) {
+    return { ok: false, error: "release_workbench_action_write_not_allowed", requiredFlag: "--allow-write" };
+  }
+  if (operation === "record" && !input.endpointKey) return { ok: false, error: "release_workbench_action_endpoint_required" };
   return { ok: true };
 }
 
 function runOperation(service, input) {
-  return service.recordAction(input);
+  const operation = String(input.operation || "record").trim();
+  const serviceInput = Object.assign({}, input);
+  delete serviceInput.operation;
+  if (operation === "list-audits") return service.listActionAudits(serviceInput);
+  return service.recordAction(serviceInput);
 }
 
 function formatResult(value, pretty = false) {
@@ -213,7 +235,7 @@ async function main() {
   }
   const services = createServices(readEnv(process.env));
   const result = runOperation(services.learningAutomationReleaseWorkbenchActionService, input);
-  process.stdout.write(formatResult(Object.assign({ operation: "record" }, result), pretty));
+  process.stdout.write(formatResult(Object.assign({ operation: input.operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
 
