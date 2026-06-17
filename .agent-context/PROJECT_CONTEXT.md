@@ -93,6 +93,20 @@ readback gate set.
   timestamps. It does not create evidence, approve release state, run
   collection, inspect release storage directly, mutate runtime config, or grant
   scheduler permission.
+  Growth has now consumed a Home AI central `embedded-plugin-shell` visual
+  harness artifact for `plugin-id=growth`, validated it through
+  `learning-automation-central-visual-evidence-service`, and persisted bounded
+  pass release-evidence records through the existing release evidence
+  collection path. The central visual validator accepts the current Home AI
+  harness artifact shape (`screenshot.path`, `metrics.clientVersion`,
+  `finishedAt` / `startedAt`, and lane port summaries) while storing only
+  summary fields such as screenshot file name, client version, assertion
+  counts, and boundary flags. The bundle and collection services preserve that
+  bounded `visualEvidence` / `centralBoundary` summary into
+  `centralVisualEvidence` release evidence records. This does not mark release
+  readiness complete, approve release state, mutate runtime config, grant
+  scheduler permission, run Gateway, publish cards, evaluate learner evidence,
+  or deploy.
   The embedded Owner panel now also renders a separate `发布记录` subpanel over
   existing preflight-report, activation-record, and runtime-enablement list
   routes plus their Owner-only record routes. That panel writes only

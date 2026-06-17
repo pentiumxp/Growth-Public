@@ -161,6 +161,43 @@ function validReleasePackageReviewUiEvidence(overrides = {}) {
   }, overrides);
 }
 
+function validCentralVisualEvidence(overrides = {}) {
+  return Object.assign({
+    ok: true,
+    source: "growth-release-evidence-bundle-builder",
+    schemaVersion: "growth.learningAutomationCentralVisualEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "centralVisualEvidence",
+    checkKey: "central_visual_evidence",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    visualEvidence: {
+      source: "home-ai-ios-pwa-visual-harness",
+      pluginId: "growth",
+      scenario: "embedded-plugin-shell",
+      status: "pass",
+      checkedAt: "2026-06-17T21:00:31.602Z",
+      clientVersion: "20260617-codex-shell-viewport-stable-v790",
+      debugUrlPresent: true,
+      visualLaneId: "ios-pwa-port-19073",
+      screenshotPresent: true,
+      screenshotArtifactName: "ios-pwa-visual-embedded-plugin-shell-growth.png",
+      evidenceFilePresent: true,
+      evidenceFileName: "central-visual.json",
+      assertionCount: 6,
+      failedAssertionCount: 0
+    },
+    centralBoundary: {
+      summaryOnly: true,
+      homeAiOwnsVisualHarness: true,
+      growthRunsNoAppium: true,
+      growthReadsOnlyCentralHarnessArtifacts: true
+    },
+    missingRequired: []
+  }, overrides);
+}
+
 function releaseEvidenceServiceWithRows(rows = []) {
   return createLearningAutomationReleaseEvidenceService({
     uiEvidenceService: createLearningAutomationUiEvidenceService(),
@@ -407,6 +444,59 @@ test("release evidence collection service preserves UI evidence fields for persi
   assert.deepEqual(uiRow.evidence.uiEvidence.missingCoverage, []);
   assert.equal(uiRow.evidence.uiEvidenceBoundary.homeAiOwnsVisualHarness, true);
   assert.equal(uiRow.evidence.writefulSchedulingAllowed, false);
+});
+
+test("release evidence collection service preserves central visual fields for persisted release evidence records", () => {
+  const rows = [];
+  const releaseEvidenceService = releaseEvidenceServiceWithRows(rows);
+  const result = serviceWith({
+    releaseEvidenceService,
+    bundle: bundle({
+      evidence: {
+        centralVisualEvidence: validCentralVisualEvidence()
+      },
+      tasks: [{
+        taskId: "central_visual",
+        status: "pass",
+        ok: true,
+        evidenceKey: "centralVisualEvidence"
+      }],
+      summary: {
+        taskCount: 1,
+        passedCount: 1,
+        blockedCount: 0,
+        failedTaskIds: []
+      }
+    })
+  }).collect(Object.assign(scope(), {
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.collection.artifacts.releaseEvidenceRecords.status, "pass");
+  assert.deepEqual(result.collection.artifacts.releaseEvidenceRecords.evidenceKeys, [
+    "centralVisualEvidence",
+    "releaseEvidenceBundleAudit"
+  ]);
+  const visualRow = rows.find((row) => row.evidenceKey === "centralVisualEvidence");
+  assert.ok(visualRow);
+  assert.equal(visualRow.checkKey, "central_visual_evidence");
+  assert.equal(visualRow.evidence.schemaVersion, "growth.learningAutomationCentralVisualEvidence.v1");
+  assert.equal(visualRow.evidence.validationSchemaVersion, "growth.learningAutomationCentralVisualEvidence.v1");
+  assert.equal(visualRow.evidence.validatedBy, "learning-automation-central-visual-evidence-service");
+  assert.equal(visualRow.evidence.readyForReleaseEvidence, true);
+  assert.equal(visualRow.evidence.visualEvidence.pluginId, "growth");
+  assert.equal(visualRow.evidence.visualEvidence.scenario, "embedded-plugin-shell");
+  assert.equal(visualRow.evidence.visualEvidence.clientVersion, "20260617-codex-shell-viewport-stable-v790");
+  assert.equal(visualRow.evidence.visualEvidence.screenshotArtifactName, "ios-pwa-visual-embedded-plugin-shell-growth.png");
+  assert.equal(visualRow.evidence.visualEvidence.assertionCount, 6);
+  assert.equal(visualRow.evidence.centralBoundary.homeAiOwnsVisualHarness, true);
+  assert.equal(visualRow.evidence.centralBoundary.growthRunsNoAppium, true);
+  assert.equal(visualRow.evidence.writefulSchedulingAllowed, false);
+  assert.equal(JSON.stringify(visualRow.evidence).includes("/Users/"), false);
 });
 
 test("release evidence collection service strips transient evidence file inputs after bundle collection", () => {

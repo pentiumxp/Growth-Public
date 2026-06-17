@@ -9,6 +9,96 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T05:07+0800 - Central Visual Evidence Persistence Closure
+
+- Status: implemented locally; Home AI central visual harness, Growth
+  central-visual validator, release-evidence collection write path, release
+  evidence ledger readback, focused Growth tests, Home AI visual harness
+  self-tests, and AI Ops evidence ledger append all passed. No production
+  deploy, release approval, runtime config mutation, scheduler permission,
+  Gateway/model call, card publication, evaluation, notification delivery, or
+  learner-state mutation was performed.
+- Classification: H2 Home AI central visual evidence consumption and Growth
+  release-evidence persistence closure. Growth consumed the central Home AI
+  summary artifact only; it did not run Appium or visual tooling from plugin
+  code and did not copy central visual scripts into the plugin.
+- Scope:
+  - `learning-automation-central-visual-evidence-service` now parses the
+    current Home AI visual harness shape, including object-shaped
+    `screenshot.path`, `metrics.clientVersion`, `finishedAt` / `startedAt`,
+    and lane port summaries, while redacting local paths to file names;
+  - `learning-automation-ui-evidence-service` now handles object-shaped
+    screenshot summaries for future UI artifacts;
+  - `learning-automation-release-evidence-bundle-service` now carries bounded
+    central visual `visualEvidence` and `centralBoundary` fields into the
+    central_visual bundle evidence;
+  - `learning-automation-release-evidence-collection-service` now preserves
+    those bounded central visual fields when writing persisted
+    `centralVisualEvidence` release evidence records.
+- Real evidence written locally:
+  - Home AI `embedded-plugin-shell --plugin-id growth` visual harness passed
+    with 6/6 assertions, no horizontal overflow, meaningful iframe size, and a
+    non-empty screenshot artifact;
+  - Growth central visual validator returned `readyForReleaseEvidence=true`
+    for artifact file
+    `growth-central-visual-embedded-plugin-shell-20260617T205904Z.clean.json`
+    and screenshot
+    `ios-pwa-visual-embedded-plugin-shell-growth-20260617T210031Z.png`;
+  - `smoke:release-evidence-collection` wrote advisory collection run
+    `lgacrn_d0491ba3a5f12b0363` plus pass release evidence records
+    `lgarev_8f384a30495548fc76` (`centralVisualEvidence`) and
+    `lgarev_530be3e21fe5856aab` (`releaseEvidenceBundleAudit`);
+  - release evidence readback confirmed the latest `centralVisualEvidence`
+    record includes `visualEvidence.screenshotArtifactName`,
+    `visualEvidence.clientVersion`, `assertionCount=6`,
+    `centralBoundary.homeAiOwnsVisualHarness=true`, and
+    `writefulSchedulingAllowed=false`.
+- Harness/docs updated:
+  - `tests/learning-automation-central-visual-evidence-service.test.js`
+  - `tests/learning-automation-ui-evidence-service.test.js`
+  - `tests/learning-automation-release-evidence-bundle-service.test.js`
+  - `tests/growth-release-evidence-bundle-script.test.js`
+  - `tests/learning-automation-release-evidence-collection-service.test.js`
+  - Growth docs and this handoff.
+- Validation evidence:
+  - Home AI AI Ops intake returned H2 visual work and visual lane
+    `ios-pwa-1`;
+  - Home AI central visual harness:
+    `npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id
+    growth --debug-url http://127.0.0.1:19073/ --timeout-ms 70000 --json`
+    -> `ok=true`, 6 passing assertions;
+  - `npm run --silent smoke:central-visual-evidence -- ...` over the clean
+    central visual artifact -> `ok=true`, `status=pass`;
+  - `npm run --silent smoke:release-evidence-collection -- ... --task
+    central_visual --required-task central_visual --write-collection-run
+    --write-release-evidence-records --allow-write` -> collection status
+    remains `incomplete`, but record write status `pass`, `attemptedCount=2`,
+    `recordedCount=2`, `writefulSchedulingAllowed=false`;
+  - `npm run --silent smoke:release-evidence -- ... --evidence-key
+    centralVisualEvidence --status pass --limit 3` -> latest row has bounded
+    visual summary fields;
+  - `node --check src/services/learning-automation-central-visual-evidence-service.js
+    src/services/learning-automation-ui-evidence-service.js
+    src/services/learning-automation-release-evidence-bundle-service.js
+    src/services/learning-automation-release-evidence-collection-service.js`;
+  - `node --test tests/learning-automation-central-visual-evidence-service.test.js
+    tests/growth-central-visual-evidence-smoke-script.test.js
+    tests/learning-automation-ui-evidence-service.test.js
+    tests/growth-ui-evidence-smoke-script.test.js` -> 22/22;
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js
+    tests/growth-release-evidence-bundle-script.test.js
+    tests/learning-automation-release-evidence-collection-service.test.js
+    tests/growth-release-evidence-collection-smoke-script.test.js` -> 69/69;
+  - Home AI `node tests/ios-pwa-live-debug-server.test.js` and
+    `node tests/ios-pwa-visual-harness.test.js` passed;
+  - AI Ops evidence ledger appended visual/test records.
+- Remaining gate:
+  - production release still needs the remaining non-visual UI evidence,
+    platform Action Inbox/Web Push evidence, production smokes, explicit
+    approvals, release package/review/authorization/closure, preflight,
+    activation/runtime enablement, final Growth broad checks, commit/push, and
+    deployment when the implementation is complete.
+
 ## 2026-06-18T04:52+0800 - Release Evidence Ledger Owner UI
 
 - Status: implemented locally; syntax, focused frontend, architecture/docs,

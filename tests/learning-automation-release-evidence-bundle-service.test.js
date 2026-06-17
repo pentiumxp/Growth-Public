@@ -959,11 +959,23 @@ test("release evidence bundle service collects central visual evidence from read
         source: "home-ai-ios-pwa-visual-harness",
         pluginId: "growth",
         scenario: "embedded-plugin-shell",
+        status: "pass",
+        checkedAt: "2026-06-17T21:00:31.602Z",
+        clientVersion: "20260617-codex-shell-viewport-stable-v790",
+        debugUrlPresent: true,
+        visualLaneId: "ios-pwa-port-19073",
         screenshotPresent: true,
         screenshotArtifactName: "growth-embedded.png",
+        evidenceFilePresent: true,
         evidenceFileName: "central-visual.json",
         assertionCount: 2,
         failedAssertionCount: 0
+      },
+      centralBoundary: {
+        summaryOnly: true,
+        homeAiOwnsVisualHarness: true,
+        growthRunsNoAppium: true,
+        growthReadsOnlyCentralHarnessArtifacts: true
       }
     })
   }));
@@ -984,6 +996,13 @@ test("release evidence bundle service collects central visual evidence from read
   assert.equal(result.bundle.evidence.centralVisualEvidence.smoke, "npm run smoke:central-visual-evidence");
   assert.equal(result.bundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
   assert.equal(result.bundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);
+  assert.equal(result.bundle.evidence.centralVisualEvidence.evidenceKey, "centralVisualEvidence");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.checkKey, "central_visual_evidence");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.visualEvidence.clientVersion, "20260617-codex-shell-viewport-stable-v790");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.visualEvidence.screenshotArtifactName, "growth-embedded.png");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.visualEvidence.evidenceFileName, "central-visual.json");
+  assert.equal(result.bundle.evidence.centralVisualEvidence.centralBoundary.homeAiOwnsVisualHarness, true);
+  assert.equal(result.bundle.evidence.centralVisualEvidence.centralBoundary.growthRunsNoAppium, true);
   assert.equal(result.bundle.scope.centralVisualEvidenceFilePresent, true);
   assert.equal(result.bundle.scope.centralVisualEvidenceFile, undefined);
   assert.equal(JSON.stringify(result.bundle).includes("/Users/xuxin/.homeai-qa"), false);

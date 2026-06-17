@@ -98,19 +98,18 @@ audit record. The payload is limited to visible target scope,
 decision summaries. It does not apply runtime config, grant scheduler
 permission, run release evidence collection, approve a release, deploy, call
 Gateway, or mutate learner state.
-Central `embedded-plugin-shell` visual evidence passed for
-`pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
-deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
-passed for manifest/status/static-version, planner readiness, daily-loop
-preview, learning-loop state, and release-readiness Owner-loop aggregation.
-Older-cycle selection and formal stage-checkpoint controls are browser-wired
-through summary-only service DTOs and focused Harness; their remaining product
-closure is production visual/release evidence rather than basic UI plumbing.
-The broader remaining closure is proposal/digest/action-handoff/
-scheduler-execution/scheduler-run/worker-target production evidence, a real
-`releasePackageReviewUiEvidence` artifact for the release package review UI,
-central visual evidence for that UI, and production release evidence
-collection.
+Central `embedded-plugin-shell` visual evidence passed for `pluginId=growth`
+again on 2026-06-18 through the Home AI visual toolchain and has been persisted
+locally through Growth release evidence as `centralVisualEvidence=pass` plus
+`releaseEvidenceBundleAudit=pass`. The persisted record keeps only bounded
+summary fields such as screenshot file name, client version, assertion counts,
+and Home-AI-owned visual-boundary flags. This proves the embedded shell/iframe
+gate for the current Growth UI, not full release readiness. Remaining closure
+still includes proposal/digest/action-handoff/scheduler-execution/scheduler-run/
+worker-target production evidence, real UI summary artifacts such as
+`releasePackageReviewUiEvidence`, platform Action Inbox/Web Push evidence,
+explicit release approvals, package/review/authorization/closure, preflight,
+activation/runtime enablement, deployment, and broad validation.
 
 ## Objective
 

@@ -205,21 +205,36 @@ function booleanLikePass(value = {}) {
     || status === "ok";
 }
 
-function screenshotName(value = {}) {
-  const raw = cleanString(
-    value.screenshotPath
-      || value.screenshot_path
-      || value.screenshot
-      || value.screenshotFile
-      || value.screenshot_file
-      || value.screenshotArtifactName
-      || value.screenshot_artifact_name
-      || objectOnly(value.artifacts).screenshotPath
-      || objectOnly(value.artifacts).screenshot_path
-      || objectOnly(value.artifact).screenshotPath
-      || objectOnly(value.artifact).screenshot_path,
+function pathLikeString(value) {
+  if (typeof value === "string") return cleanString(value, 500);
+  const object = objectOnly(value);
+  return cleanString(
+    object.path
+      || object.file
+      || object.filePath
+      || object.file_path
+      || object.screenshotPath
+      || object.screenshot_path,
     500
   );
+}
+
+function screenshotName(value = {}) {
+  const artifacts = objectOnly(value.artifacts);
+  const artifact = objectOnly(value.artifact);
+  const raw = pathLikeString(value.screenshotPath)
+    || pathLikeString(value.screenshot_path)
+    || pathLikeString(value.screenshot)
+    || pathLikeString(value.screenshotFile)
+    || pathLikeString(value.screenshot_file)
+    || pathLikeString(value.screenshotArtifactName)
+    || pathLikeString(value.screenshot_artifact_name)
+    || pathLikeString(artifacts.screenshotPath)
+    || pathLikeString(artifacts.screenshot_path)
+    || pathLikeString(artifacts.screenshot)
+    || pathLikeString(artifact.screenshotPath)
+    || pathLikeString(artifact.screenshot_path)
+    || pathLikeString(artifact.screenshot);
   return raw ? path.basename(raw) : "";
 }
 
@@ -283,6 +298,36 @@ function domEvidencePresent(value = {}) {
     || asArray(value.domAssertions || value.dom_assertions).length > 0;
 }
 
+function evidenceCheckedAt(value = {}) {
+  return cleanString(
+    value.checkedAt
+      || value.checked_at
+      || value.createdAt
+      || value.created_at
+      || value.finishedAt
+      || value.finished_at
+      || value.startedAt
+      || value.started_at
+      || value.timestamp,
+    80
+  );
+}
+
+function evidenceClientVersion(value = {}) {
+  const metrics = objectOnly(value.metrics);
+  const embeddedReady = objectOnly(value.embeddedPluginReady || value.embedded_plugin_ready);
+  const embeddedLast = objectOnly(embeddedReady.last);
+  return cleanString(
+    value.clientVersion
+      || value.client_version
+      || metrics.clientVersion
+      || metrics.client_version
+      || embeddedLast.clientVersion
+      || embeddedLast.client_version,
+    120
+  );
+}
+
 function publicUiEvidence(value = {}, spec = {}, evidenceFile = "") {
   const failures = failedAssertions(value);
   const coverage = coverageIds(value);
@@ -294,8 +339,8 @@ function publicUiEvidence(value = {}, spec = {}, evidenceFile = "") {
     checkKey: spec.checkKey,
     uiGate: spec.uiGate,
     status: booleanLikePass(value) && failures.length === 0 ? "pass" : "blocked",
-    checkedAt: cleanString(value.checkedAt || value.checked_at || value.createdAt || value.created_at || value.timestamp, 80),
-    clientVersion: cleanString(value.clientVersion || value.client_version, 120),
+    checkedAt: evidenceCheckedAt(value),
+    clientVersion: evidenceClientVersion(value),
     route: cleanString(value.route || value.path || value.screenRoute || value.screen_route, 180),
     screen: cleanString(value.screen || value.view || value.surface, 120),
     screenshotPresent: hasScreenshot(value),

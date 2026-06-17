@@ -1784,7 +1784,15 @@ Implementation progress on 2026-06-15:
   `centralVisualEvidence` and validates a Home AI central visual harness
   artifact without starting Appium or running visual tooling inside Growth; the
   bundle stores only bounded visual summary fields and raw artifact paths are
-  omitted. The
+  omitted. Current Home AI harness artifacts may report screenshots as
+  object-shaped `screenshot.path` values and client version under
+  `metrics.clientVersion`; Growth validators normalize those into file-name,
+  client-version, assertion-count, checked-at, lane-summary, and
+  `centralBoundary` fields before bundle or release-evidence persistence. A
+  local 2026-06-18 `embedded-plugin-shell --plugin-id growth` run has been
+  recorded as persisted `centralVisualEvidence=pass`; release readiness remains
+  incomplete until the other UI, platform, production-smoke, approval, package,
+  preflight, activation/runtime, deployment, and broad validation gates pass. The
   default `learner_cycle` task is audit-only and maps to
   `productionLearnerCycleSmokeEvidence`; write operations still require direct
   `npm run smoke:learner-cycle` with explicit Owner-requested learner

@@ -232,13 +232,20 @@ full operating loop:
   panel is public-DTO readback only: it shows persisted ids, keys, statuses,
   counts, and timestamps, and it cannot write evidence, create approvals, run
   collection, inspect SQLite directly, call Gateway, mutate runtime config, or
-  grant scheduler permission.
+  grant scheduler permission. The current release evidence record shape can
+  include bounded central visual validator summaries, such as screenshot file
+  name, client version, assertion counts, and Home-AI-owned visual boundary
+  flags, when those records were produced by the release evidence collection
+  path.
   The backend now also exposes Owner-only
   `POST /api/v1/growth/automation/release-evidence-collections/run` for an
   explicit release evidence collection pass through the normal service graph.
   It composes bundle, bundle audit, release-readiness, and collection-run
   readback, may record only the existing collection-run audit row when the
-  Owner route requests it, and does not record packages, decisions, approvals,
+  Owner route requests it, and can also write bounded release evidence records
+  when explicitly authorized. For `centralVisualEvidence`, the collection record
+  preserves only bounded `visualEvidence` / `centralBoundary` fields from the
+  validated Home AI artifact. It does not record packages, decisions, approvals,
   runtime config, or scheduler permission.
   The backend now also exposes backend-only Owner automation evidence through
   `learning-automation-owner-review-evidence-service`,

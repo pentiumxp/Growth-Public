@@ -123,19 +123,34 @@ function booleanLikePass(value = {}) {
     || status === "ok";
 }
 
-function screenshotName(value = {}) {
-  const raw = cleanString(
-    value.screenshotPath
-      || value.screenshot_path
-      || value.screenshot
-      || value.screenshotFile
-      || value.screenshot_file
-      || objectOnly(value.artifacts).screenshotPath
-      || objectOnly(value.artifacts).screenshot_path
-      || objectOnly(value.artifact).screenshotPath
-      || objectOnly(value.artifact).screenshot_path,
+function pathLikeString(value) {
+  if (typeof value === "string") return cleanString(value, 500);
+  const object = objectOnly(value);
+  return cleanString(
+    object.path
+      || object.file
+      || object.filePath
+      || object.file_path
+      || object.screenshotPath
+      || object.screenshot_path,
     500
   );
+}
+
+function screenshotName(value = {}) {
+  const artifacts = objectOnly(value.artifacts);
+  const artifact = objectOnly(value.artifact);
+  const raw = pathLikeString(value.screenshotPath)
+    || pathLikeString(value.screenshot_path)
+    || pathLikeString(value.screenshot)
+    || pathLikeString(value.screenshotFile)
+    || pathLikeString(value.screenshot_file)
+    || pathLikeString(artifacts.screenshotPath)
+    || pathLikeString(artifacts.screenshot_path)
+    || pathLikeString(artifacts.screenshot)
+    || pathLikeString(artifact.screenshotPath)
+    || pathLikeString(artifact.screenshot_path)
+    || pathLikeString(artifact.screenshot);
   return raw ? path.basename(raw) : "";
 }
 
@@ -177,6 +192,54 @@ function evidencePluginId(value = {}) {
   return cleanString(value.pluginId || value.plugin_id || objectOnly(value.request).pluginId || objectOnly(value.request).plugin_id, 80);
 }
 
+function evidenceCheckedAt(value = {}) {
+  return cleanString(
+    value.checkedAt
+      || value.checked_at
+      || value.createdAt
+      || value.created_at
+      || value.finishedAt
+      || value.finished_at
+      || value.startedAt
+      || value.started_at
+      || value.timestamp,
+    80
+  );
+}
+
+function evidenceClientVersion(value = {}) {
+  const metrics = objectOnly(value.metrics);
+  const embeddedReady = objectOnly(value.embeddedPluginReady || value.embedded_plugin_ready);
+  const embeddedLast = objectOnly(embeddedReady.last);
+  return cleanString(
+    value.clientVersion
+      || value.client_version
+      || metrics.clientVersion
+      || metrics.client_version
+      || embeddedLast.clientVersion
+      || embeddedLast.client_version,
+    120
+  );
+}
+
+function evidenceVisualLaneId(value = {}) {
+  const lane = objectOnly(value.lane);
+  const visualLane = objectOnly(value.visualLane || value.visual_lane);
+  const streamLane = objectOnly(objectOnly(value.stream).lane);
+  const leaseLane = objectOnly(objectOnly(value.lease).lane);
+  const port = streamLane.port || leaseLane.port || value.liveDebugPort || value.live_debug_port;
+  return cleanString(
+    value.visualLaneId
+      || value.visual_lane_id
+      || lane.id
+      || visualLane.id
+      || streamLane.id
+      || leaseLane.id
+      || (port ? `ios-pwa-port-${port}` : ""),
+    120
+  );
+}
+
 function publicVisualEvidence(value = {}, scope = {}, evidenceFile = "") {
   const artifactName = screenshotName(value);
   const failures = failedAssertions(value);
@@ -185,10 +248,10 @@ function publicVisualEvidence(value = {}, scope = {}, evidenceFile = "") {
     pluginId: evidencePluginId(value) || scope.pluginId,
     scenario: evidenceScenario(value) || scope.scenario,
     status: booleanLikePass(value) && failures.length === 0 ? "pass" : "blocked",
-    checkedAt: cleanString(value.checkedAt || value.checked_at || value.createdAt || value.created_at || value.timestamp, 80),
-    clientVersion: cleanString(value.clientVersion || value.client_version, 120),
+    checkedAt: evidenceCheckedAt(value),
+    clientVersion: evidenceClientVersion(value),
     debugUrlPresent: Boolean(cleanString(value.debugUrl || value.debug_url || objectOnly(value.request).debugUrl || objectOnly(value.request).debug_url, 240)),
-    visualLaneId: cleanString(value.visualLaneId || value.visual_lane_id || objectOnly(value.lane).id || objectOnly(value.visualLane).id, 120),
+    visualLaneId: evidenceVisualLaneId(value),
     screenshotPresent: hasScreenshot(value),
     screenshotArtifactName: artifactName,
     evidenceFilePresent: Boolean(evidenceFile),

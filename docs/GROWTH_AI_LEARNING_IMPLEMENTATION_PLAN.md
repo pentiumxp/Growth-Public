@@ -826,6 +826,13 @@ Implemented backend shape:
   central visual smoke schema when provided, and otherwise still keeps the
   bundle task-evidence summary-only wrapper so readiness can distinguish a
   passing visual artifact from a blocked one without reading raw screenshots.
+  The validator and bundle projection accept the current Home AI artifact shape,
+  including object-shaped `screenshot.path`, `metrics.clientVersion`,
+  `finishedAt` / `startedAt`, and lane port summary fields. The persisted
+  release evidence record keeps only bounded `visualEvidence` fields such as
+  screenshot artifact file name, client version, assertion counts, and
+  `centralBoundary` flags; it never stores raw local paths or Home AI visual
+  internals.
   The explicit non-default `release_package_review_ui` task maps
   `npm run smoke:ui-evidence` output to `releasePackageReviewUiEvidence`.
   It is selected only when the caller supplies that task and a summary
@@ -910,6 +917,15 @@ Implemented backend shape:
   release evidence, create approvals, run evidence collection, inspect SQLite
   or release storage directly, call Gateway, mutate runtime config, grant
   release permission, or grant scheduler permission.
+  As of the 2026-06-18 central visual closure, a real Home AI
+  `embedded-plugin-shell --plugin-id growth` harness artifact has been validated
+  and persisted locally as `centralVisualEvidence=pass` plus
+  `releaseEvidenceBundleAudit=pass` through the existing release-evidence
+  collection path. That improves release evidence readback but does not make the
+  overall release ready: remaining UI evidence, platform Action Inbox/Web Push
+  evidence, production smokes, explicit approvals, package/review/authorization
+  closure, preflight, activation/runtime enablement, deployment, and final broad
+  gates are still required.
   A separate embedded `发布记录` subpanel now consumes the existing
   preflight-report, activation-record, and runtime-enablement list routes and
   can call their existing Owner-only record routes with summary-only

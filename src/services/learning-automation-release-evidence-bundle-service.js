@@ -811,6 +811,59 @@ function uiEvidenceFieldsFromSmoke(value = {}, fallbackEvidenceKey = "") {
   }));
 }
 
+function centralVisualFieldsFromSmoke(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const visualEvidence = value.visualEvidence && typeof value.visualEvidence === "object" && !Array.isArray(value.visualEvidence)
+    ? value.visualEvidence
+    : {};
+  const centralBoundary = value.centralBoundary && typeof value.centralBoundary === "object" && !Array.isArray(value.centralBoundary)
+    ? value.centralBoundary
+    : {};
+  const projectedVisualEvidence = Object.fromEntries(Object.entries({
+    source: cleanString(visualEvidence.source || "home-ai-ios-pwa-visual-harness", 120),
+    pluginId: cleanString(visualEvidence.pluginId || visualEvidence.plugin_id, 120),
+    scenario: cleanString(visualEvidence.scenario, 160),
+    status: cleanString(visualEvidence.status || (value.ok === true ? "pass" : ""), 80),
+    checkedAt: cleanString(visualEvidence.checkedAt || visualEvidence.checked_at, 120),
+    clientVersion: cleanString(visualEvidence.clientVersion || visualEvidence.client_version, 160),
+    debugUrlPresent: visualEvidence.debugUrlPresent === true || visualEvidence.debug_url_present === true,
+    visualLaneId: cleanString(visualEvidence.visualLaneId || visualEvidence.visual_lane_id, 160),
+    screenshotPresent: visualEvidence.screenshotPresent === true || visualEvidence.screenshot_present === true,
+    screenshotArtifactName: path.basename(cleanString(visualEvidence.screenshotArtifactName || visualEvidence.screenshot_artifact_name, 220)),
+    evidenceFilePresent: visualEvidence.evidenceFilePresent === true || visualEvidence.evidence_file_present === true,
+    evidenceFileName: path.basename(cleanString(visualEvidence.evidenceFileName || visualEvidence.evidence_file_name, 220)),
+    assertionCount: Number(visualEvidence.assertionCount || visualEvidence.assertion_count || 0) || 0,
+    failedAssertionCount: Number(visualEvidence.failedAssertionCount || visualEvidence.failed_assertion_count || 0) || 0
+  }).filter(([, item]) => item !== undefined && item !== ""));
+  const projectedBoundary = Object.fromEntries(Object.entries({
+    summaryOnly: centralBoundary.summaryOnly === true || centralBoundary.summary_only === true,
+    homeAiOwnsVisualHarness: centralBoundary.homeAiOwnsVisualHarness === true || centralBoundary.home_ai_owns_visual_harness === true,
+    growthRunsNoAppium: centralBoundary.growthRunsNoAppium === true || centralBoundary.growth_runs_no_appium === true,
+    growthReadsOnlyCentralHarnessArtifacts: centralBoundary.growthReadsOnlyCentralHarnessArtifacts === true
+      || centralBoundary.growth_reads_only_central_harness_artifacts === true
+  }).filter(([, item]) => item !== undefined));
+  return Object.fromEntries(Object.entries({
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 180),
+    privacyClass: cleanString(value.privacyClass || value.privacy_class || "summary_only", 80),
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    evidenceKey: "centralVisualEvidence",
+    checkKey: "central_visual_evidence",
+    readyForReleaseEvidence: value.readyForReleaseEvidence === true || value.ready_for_release_evidence === true,
+    visualEvidence: projectedVisualEvidence,
+    centralBoundary: projectedBoundary,
+    missingRequired: Array.isArray(value.missingRequired || value.missing_required)
+      ? value.missingRequired || value.missing_required
+      : [],
+    privateValueFindingCount: Array.isArray(value.privateValueFindings || value.private_value_findings)
+      ? (value.privateValueFindings || value.private_value_findings).length
+      : Number(value.privateValueFindingCount || value.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function releaseApprovalTaskResult(task, taskResult, generatedAt) {
   const parsed = parseJsonOutput(taskResult.stdout);
   const parsedValue = parsed.ok ? parsed.value : {};
@@ -877,6 +930,9 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
   };
   if (task.uiEvidenceKey && pass) {
     Object.assign(evidence, uiEvidenceFieldsFromSmoke(parsedValue, task.uiEvidenceKey));
+  }
+  if (task.taskId === "central_visual" && pass) {
+    Object.assign(evidence, centralVisualFieldsFromSmoke(parsedValue));
   }
   if (!pass) {
     evidence.error = blockedError || "release_evidence_bundle_smoke_blocked";

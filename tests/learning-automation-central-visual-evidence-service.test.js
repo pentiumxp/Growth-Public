@@ -64,6 +64,52 @@ test("central visual evidence service validates Home AI embedded-plugin visual s
   assert.equal(JSON.stringify(result).includes("debug-url-secret"), false);
 });
 
+test("central visual evidence service projects current Home AI visual harness shape", () => {
+  const service = createService({
+    "/tmp/home-ai-visual.json": JSON.stringify({
+      ok: true,
+      scenario: "embedded-plugin-shell",
+      pluginId: "growth",
+      finishedAt: "2026-06-17T20:58:46.707Z",
+      debugUrl: "http://127.0.0.1:19073/",
+      stream: {
+        lane: {
+          port: 19073
+        }
+      },
+      metrics: {
+        clientVersion: "20260617-codex-shell-viewport-stable-v790"
+      },
+      screenshot: {
+        path: "/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T205846Z.png",
+        bytes: 204406
+      },
+      assertions: [
+        { name: "plugin_shell_exists", pass: true },
+        { name: "plugin_frame_exists", pass: true },
+        { name: "plugin_frame_has_no_horizontal_overflow", pass: true }
+      ]
+    })
+  });
+
+  const result = service.evaluate({
+    workspaceId: "owner",
+    learnerId: "fanfan",
+    evidenceFile: "/tmp/home-ai-visual.json"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.visualEvidence.checkedAt, "2026-06-17T20:58:46.707Z");
+  assert.equal(result.visualEvidence.clientVersion, "20260617-codex-shell-viewport-stable-v790");
+  assert.equal(result.visualEvidence.visualLaneId, "ios-pwa-port-19073");
+  assert.equal(result.visualEvidence.screenshotPresent, true);
+  assert.equal(result.visualEvidence.screenshotArtifactName, "ios-pwa-visual-embedded-plugin-shell-growth-20260617T205846Z.png");
+  assert.equal(result.visualEvidence.assertionCount, 3);
+  assert.equal(result.visualEvidence.failedAssertionCount, 0);
+  assert.equal(JSON.stringify(result).includes("[object Object]"), false);
+  assert.equal(JSON.stringify(result).includes("/Users/xuxin/.homeai-qa"), false);
+});
+
 test("central visual evidence service fails closed for missing, mismatched, or failed evidence", () => {
   const service = createService();
   const missing = service.evaluate({ workspaceId: "weixin_fanfan" });

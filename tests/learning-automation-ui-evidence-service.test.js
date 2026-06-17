@@ -103,6 +103,43 @@ test("UI evidence service validates release package review UI coverage", () => {
   assert.equal(result.uiEvidence.domEvidencePresent, true);
 });
 
+test("UI evidence service accepts object-shaped screenshot summaries", () => {
+  const service = createService();
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    evidenceKey: "releasePackageReviewUiEvidence",
+    evidence: {
+      ok: true,
+      evidenceKey: "releasePackageReviewUiEvidence",
+      uiGate: "release_package_review",
+      finishedAt: "2026-06-17T21:10:00.000Z",
+      metrics: {
+        clientVersion: "20260617-growth-owner-release"
+      },
+      screenshot: {
+        path: "/Users/xuxin/.homeai-qa/artifacts/growth-release-package-review.png",
+        bytes: 50920
+      },
+      coverage: [
+        "package_candidate_build",
+        "package_candidate_status",
+        "record_package_action"
+      ],
+      assertions: [{ name: "release package review visible", pass: true }]
+    }
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.uiEvidence.checkedAt, "2026-06-17T21:10:00.000Z");
+  assert.equal(result.uiEvidence.clientVersion, "20260617-growth-owner-release");
+  assert.equal(result.uiEvidence.screenshotPresent, true);
+  assert.equal(result.uiEvidence.screenshotArtifactName, "growth-release-package-review.png");
+  assert.equal(result.uiEvidence.assertionCount, 1);
+  assert.equal(JSON.stringify(result).includes("[object Object]"), false);
+  assert.equal(JSON.stringify(result).includes("/Users/xuxin/.homeai-qa"), false);
+});
+
 test("UI evidence service rejects missing gate, coverage gaps, and failed assertions", () => {
   const service = createService();
   const missing = service.evaluate({

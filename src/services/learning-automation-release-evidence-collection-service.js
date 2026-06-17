@@ -303,6 +303,55 @@ function compactUiEvidenceFields(source = {}, evidenceKey = "") {
   }));
 }
 
+function compactCentralVisualPayload(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries({
+    source: cleanString(value.source || "home-ai-ios-pwa-visual-harness", 120),
+    pluginId: cleanString(value.pluginId || value.plugin_id, 120),
+    scenario: cleanString(value.scenario, 160),
+    status: cleanString(value.status, 80),
+    checkedAt: cleanString(value.checkedAt || value.checked_at, 120),
+    clientVersion: cleanString(value.clientVersion || value.client_version, 160),
+    debugUrlPresent: value.debugUrlPresent === true || value.debug_url_present === true,
+    visualLaneId: cleanString(value.visualLaneId || value.visual_lane_id, 160),
+    screenshotPresent: value.screenshotPresent === true || value.screenshot_present === true,
+    screenshotArtifactName: cleanString(value.screenshotArtifactName || value.screenshot_artifact_name, 220),
+    evidenceFilePresent: value.evidenceFilePresent === true || value.evidence_file_present === true,
+    evidenceFileName: cleanString(value.evidenceFileName || value.evidence_file_name, 220),
+    assertionCount: Number(value.assertionCount || value.assertion_count || 0) || 0,
+    failedAssertionCount: Number(value.failedAssertionCount || value.failed_assertion_count || 0) || 0
+  }).filter(([, item]) => item !== undefined && item !== ""));
+}
+
+function compactCentralVisualBoundary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    homeAiOwnsVisualHarness: value.homeAiOwnsVisualHarness === true || value.home_ai_owns_visual_harness === true,
+    growthRunsNoAppium: value.growthRunsNoAppium === true || value.growth_runs_no_appium === true,
+    growthReadsOnlyCentralHarnessArtifacts: value.growthReadsOnlyCentralHarnessArtifacts === true
+      || value.growth_reads_only_central_harness_artifacts === true
+  };
+}
+
+function compactCentralVisualFields(source = {}) {
+  const visualEvidence = objectOnly(source.visualEvidence || source.visual_evidence);
+  const centralBoundary = objectOnly(source.centralBoundary || source.central_boundary);
+  return Object.fromEntries(Object.entries({
+    checkKey: "central_visual_evidence",
+    validationSchemaVersion: cleanString(source.schemaVersion || source.schema_version, 180),
+    validatedBy: "learning-automation-central-visual-evidence-service",
+    visualEvidence: compactCentralVisualPayload(visualEvidence),
+    centralBoundary: compactCentralVisualBoundary(centralBoundary),
+    missingRequired: boundedArray(source.missingRequired || source.missing_required),
+    privateValueFindingCount: Number(source.privateValueFindingCount || source.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
   const source = objectOnly(value);
   const ownerReviewSummary = evidenceKey === "ownerReviewEvidence"
@@ -310,6 +359,9 @@ function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
     : null;
   const uiEvidenceFields = UI_EVIDENCE_KEY_SET.has(evidenceKey)
     ? compactUiEvidenceFields(source, evidenceKey)
+    : {};
+  const centralVisualFields = evidenceKey === "centralVisualEvidence"
+    ? compactCentralVisualFields(source)
     : {};
   return Object.fromEntries(Object.entries(Object.assign({
     schemaVersion: cleanString(source.schemaVersion || source.schema_version || "growth.learningAutomationReleaseEvidenceRecord.collectionEvidence.v1", 180),
@@ -327,7 +379,7 @@ function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
     observedAt: cleanString(source.observedAt || source.observed_at || source.checkedAt || source.checked_at || source.createdAt || source.created_at || extra.observedAt, 120),
     readyForReleaseEvidence: source.readyForReleaseEvidence === true || source.ready_for_release_evidence === true || extra.readyForReleaseEvidence === true,
     ownerReviewStageSummary: ownerReviewSummary || undefined
-  }, uiEvidenceFields, extra)).filter(([, item]) => item !== undefined && item !== ""));
+  }, uiEvidenceFields, centralVisualFields, extra)).filter(([, item]) => item !== undefined && item !== ""));
 }
 
 function releaseEvidenceCandidates(scope, input, bundle, audit, collectionRun, createdAt) {

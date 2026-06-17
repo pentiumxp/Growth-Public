@@ -889,6 +889,7 @@ test("release evidence bundle script writes central visual evidence from central
       pluginId: "growth",
       scenario: "embedded-plugin-shell",
       debugUrl: "http://127.0.0.1:19074/",
+      clientVersion: "20260617-growth",
       screenshotPath: "/Users/xuxin/.homeai-qa/artifacts/growth-embedded.png",
       assertions: [{ name: "visible", status: "pass" }]
     }), "utf8");
@@ -920,6 +921,12 @@ test("release evidence bundle script writes central visual evidence from central
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.source, "growth-learning-automation-central-visual-evidence-service");
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.status, "pass");
     assert.equal(fileBundle.evidence.centralVisualEvidence.summary.readyForReleaseEvidence, true);
+    assert.equal(fileBundle.evidence.centralVisualEvidence.evidenceKey, "centralVisualEvidence");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.checkKey, "central_visual_evidence");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.visualEvidence.clientVersion, "20260617-growth");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.visualEvidence.screenshotArtifactName, "growth-embedded.png");
+    assert.equal(fileBundle.evidence.centralVisualEvidence.visualEvidence.assertionCount, 1);
+    assert.equal(fileBundle.evidence.centralVisualEvidence.centralBoundary.homeAiOwnsVisualHarness, true);
     assert.equal(fileBundle.scope.centralVisualEvidenceFilePresent, true);
     assert.equal(fileBundle.scope.centralVisualEvidenceFile, undefined);
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
