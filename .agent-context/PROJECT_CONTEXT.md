@@ -200,8 +200,11 @@ readback gate set.
   `release_evidence_bundle_audit` as a collection-pass output instead of
   unsupported/manual evidence, and the artifact-template action plan uses
   workbench-advertised fallback collection tasks only when a real
-  evidence/check/collection-run gap exists. Learner work,
-  audit/correction, target
+  evidence/check/collection-run gap exists.
+  `tests/growth-architecture-boundary.test.js` now also derives release
+  readiness evidence/check keys from the readiness service and fails if any key
+  is not classified by the workbench as collection-mapped, write-gated, or
+  collection-owned. Learner work, audit/correction, target
   provisioning, graph import/selection, context refresh, and Gateway
   configuration remain separate flows and return blocked/separate-flow DTOs
   instead of automatic side effects. A service-level

@@ -9,6 +9,37 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T20:57+08:00 - Release Evidence Key Map Architecture Guard
+
+- Status: implemented locally; focused validation passed in this turn. No
+  runtime service behavior, deployment, production write smoke, runtime config,
+  scheduler, Gateway/model call, Home AI host logic, or learner UI change was
+  performed.
+- Classification: Growth-local H2 architecture/Harness guard for the release
+  readiness -> workbench -> artifact-template contract.
+- Scope:
+  - `tests/growth-architecture-boundary.test.js` now extracts
+    `presentCheck` / `uiEvidenceCheck` keys from
+    `learning-automation-release-readiness-service`;
+  - the guard verifies every readiness evidence/check key is classified by
+    `learning-automation-release-workbench-service` as a collection-mapped key,
+    write-gated key, or collection-owned output;
+  - this protects future readiness gates from becoming orphan Owner
+    action-plan keys.
+- Docs updated:
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - `node --test tests/growth-architecture-boundary.test.js` -> 35/35.
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged;
+  - AI Ops evidence id:
+    `evidence-43551708-be65-4ae2-bcb7-8d0bc902118e`.
+
 ## 2026-06-17T20:53+08:00 - Release Bundle Audit Workbench Collection-Owned Mapping
 
 - Status: implemented locally; focused validation passed in this turn. No

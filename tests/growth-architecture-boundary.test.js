@@ -14,6 +14,24 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function objectFreezeBlock(source, constName) {
+  const match = source.match(new RegExp(`const ${constName} = Object\\.freeze\\(\\{([\\s\\S]*?)\\}\\);`));
+  return match ? match[1] : "";
+}
+
+function stringSetBlock(source, constName) {
+  const match = source.match(new RegExp(`const ${constName} = new Set\\(\\[([\\s\\S]*?)\\]\\);`));
+  return match ? match[1] : "";
+}
+
+function objectLiteralKeys(block = "") {
+  return [...String(block).matchAll(/([a-zA-Z0-9_]+):\s*["'][^"']+["']/g)].map((match) => match[1]);
+}
+
+function quotedStrings(block = "") {
+  return [...String(block).matchAll(/["']([^"']+)["']/g)].map((match) => match[1]);
+}
+
 test("Growth check gate covers every runtime JavaScript file", () => {
   const result = checkGrowthSyntaxCoverage();
   assert.equal(result.error, undefined);
@@ -3093,6 +3111,47 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(repositoryHarness, /saves and lists summary-only package records/);
   assert.match(repositoryHarness, /rejects privacy risks/);
   assert.match(repositoryHarness, /readinessEvidenceSourceBundleId/);
+});
+
+test("Growth release-readiness evidence keys stay routable through workbench collection planning", () => {
+  const readinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
+  const releaseWorkbenchService = read(path.join("src", "services", "learning-automation-release-workbench-service.js"));
+  const {
+    UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY
+  } = require("../src/services/learning-automation-ui-evidence-task-registry");
+
+  const readinessKeys = [
+    ...[...readinessService.matchAll(/presentCheck\(inputWithReleaseEvidence,\s*"([^"]+)",\s*"([^"]+)"/g)]
+      .map((match) => match[2]),
+    ...[...readinessService.matchAll(/uiEvidenceCheck\(inputWithReleaseEvidence,\s*"([^"]+)",\s*"([^"]+)"/g)]
+      .map((match) => match[2]),
+    "owner_review_evidence"
+  ];
+  assert.ok(readinessKeys.length >= 34, "release-readiness evidence coverage unexpectedly shrank");
+
+  const collectionMappedKeys = new Set(objectLiteralKeys(
+    objectFreezeBlock(releaseWorkbenchService, "RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY")
+  ));
+  for (const key of Object.keys(UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY)) {
+    collectionMappedKeys.add(key);
+  }
+  const writeGatedKeys = new Set(objectLiteralKeys(
+    objectFreezeBlock(releaseWorkbenchService, "WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY")
+  ));
+  const collectionOwnedKeys = new Set(quotedStrings(
+    stringSetBlock(releaseWorkbenchService, "COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS")
+  ));
+
+  assert.ok(collectionMappedKeys.has("production_operating_loop_history_smoke_evidence"));
+  assert.ok(writeGatedKeys.has("production_daily_loop_write_smoke_evidence"));
+  assert.ok(collectionOwnedKeys.has("release_evidence_bundle_audit"));
+  assert.deepEqual(
+    readinessKeys
+      .filter((key) => !collectionMappedKeys.has(key))
+      .filter((key) => !writeGatedKeys.has(key))
+      .filter((key) => !collectionOwnedKeys.has(key)),
+    []
+  );
 });
 
 test("Growth Owner audit smoke CLI stays service-owned and write-gated", () => {

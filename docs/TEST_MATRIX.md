@@ -71,6 +71,9 @@ evidence or direct pass evidence.
 Collection-owned outputs such as `release_evidence_bundle_audit` must also stay
 out of `unsupportedReleaseEvidenceCollectionKeys`; they are produced by the
 collection pass rather than supplied as manual evidence.
+The architecture guard must also derive release-readiness evidence/check keys
+from the readiness service and prove every key is mapped to a collection task,
+write-gated task, or collection-owned output.
 For readiness state prerequisites such as reviewed digest, active failure
 policy, delivered action handoff, and reviewed enabled worker target, the
 focused assertion must prove they are projected as
