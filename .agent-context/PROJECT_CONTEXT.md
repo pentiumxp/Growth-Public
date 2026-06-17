@@ -1043,7 +1043,11 @@ readback gate set.
   decisions. `npm run smoke:proposal` is implemented as a service-owned
   operational smoke; it defaults to read-only proposal list, gates
   create/review/publish with explicit `--allow-write`, and delegates only to
-  `learning-automation-proposal-service`. Focused proposal
+  `learning-automation-proposal-service`. The smoke CLI mirrors bounded
+  top-level `automationProposal*` operator readback for operation/status, write
+  gate, proposal counts/statuses, source-cycle selectors, plan/item ids,
+  publish-action availability, execution status, and no-write list state while
+  preserving nested proposal DTOs as canonical. Focused proposal
   repository/service/route/script/architecture harnesses pass. The embedded
   Owner `生成` tab now has the first proposal review panel over the existing
   proposal routes: it can create a bounded proposal from the selected

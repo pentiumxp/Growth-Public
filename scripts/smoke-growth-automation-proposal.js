@@ -16,6 +16,28 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return uniqueStrings(asArray(values).map((value) => cleanString(value, 160))).slice(0, maxItems);
+}
+
+function numberValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric;
+}
+
 function firstArgValue(args, names, fallback = "") {
   for (const name of names) {
     const value = argValue(args, name, "");
@@ -64,7 +86,7 @@ function collectCsvValues(args, names) {
 }
 
 function uniqueStrings(values = []) {
-  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
+  return Array.from(new Set(asArray(values).map((value) => String(value || "").trim()).filter(Boolean)));
 }
 
 function collectIds(args, repeatedNames, csvNames) {
@@ -172,6 +194,81 @@ async function runOperation(service, operation, input) {
   return service.listProposals(input);
 }
 
+function summarizeStatuses(proposals = []) {
+  return asArray(proposals).reduce((counts, proposal) => {
+    const status = cleanString(proposal && proposal.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationProposalSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const proposals = asArray(readback.proposals);
+  const proposal = objectOnly(readback.proposal || proposals[0]);
+  const sourceCycle = objectOnly(proposal.sourceCycle);
+  const policy = objectOnly(proposal.policy);
+  const execution = objectOnly(proposal.execution);
+  const publishAction = objectOnly(readback.publishAction);
+  const publishResult = objectOnly(readback.publishResult);
+  const planDraft = objectOnly(readback.planDraft);
+  const selectedItem = objectOnly(readback.selectedItem);
+  const completeness = objectOnly(readback.completeness);
+  const targetProvisioning = objectOnly(readback.targetProvisioning);
+  const statusCounts = summarizeStatuses(proposals.length ? proposals : proposal.proposalId ? [proposal] : []);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const targetNodeIds = uniqueBoundedStrings(proposal.targetNodeIds || selectedItem.targetNodeIds || input.targetNodeIds);
+  return Object.assign({}, readback, {
+    automationProposalStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : proposal.status || (operation === "list" ? "listed" : "pass"),
+      140
+    ),
+    automationProposalOk: readback.ok !== false,
+    automationProposalOperation: cleanString(operation, 80),
+    automationProposalWriteOperation: writeOperation,
+    automationProposalWriteAllowed: writeAllowed === true,
+    automationProposalWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationProposalDuplicate: readback.duplicate === true,
+    automationProposalWorkspaceId: cleanString(readback.workspaceId || proposal.workspaceId || input.workspaceId, 160),
+    automationProposalLearnerId: cleanString(readback.learnerId || proposal.learnerId || input.learnerId, 160),
+    automationProposalProgramId: cleanString(proposal.programId || input.programId, 160),
+    automationProposalHorizon: cleanString(proposal.horizon || input.horizon, 80),
+    automationProposalCount: numberValue(readback.count, proposals.length),
+    automationProposalProposalId: cleanString(proposal.proposalId || input.proposalId, 180),
+    automationProposalProposalIds: uniqueBoundedStrings(proposals.map((item) => item && item.proposalId)),
+    automationProposalStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationProposalProposedCount: numberValue(statusCounts.proposed, 0),
+    automationProposalAcceptedCount: numberValue(statusCounts.accepted, 0),
+    automationProposalSkippedCount: numberValue(statusCounts.skipped, 0),
+    automationProposalExpiredCount: numberValue(statusCounts.expired, 0),
+    automationProposalPublishedCount: numberValue(statusCounts.published, 0),
+    automationProposalSourcePlanDraftId: cleanString(proposal.sourcePlanDraftId || sourceCycle.planDraftId || input.sourcePlanDraftId, 180),
+    automationProposalSourceTaskCardId: cleanString(proposal.sourceTaskCardId || sourceCycle.taskCardId || input.sourceTaskCardId, 180),
+    automationProposalSourceEvaluationId: cleanString(proposal.sourceEvaluationId || sourceCycle.evaluationId || input.sourceEvaluationId, 180),
+    automationProposalPlanDraftId: cleanString(proposal.planDraftId || planDraft.planDraftId || input.planDraftId, 180),
+    automationProposalSelectedItemId: cleanString(proposal.selectedItemId || selectedItem.itemId || selectedItem.item_id || input.selectedItemId, 180),
+    automationProposalTargetNodeIds: targetNodeIds,
+    automationProposalTargetNodeCount: targetNodeIds.length,
+    automationProposalPrivacyClass: cleanString(proposal.privacyClass, 80),
+    automationProposalOwnerReviewRequired: policy.ownerReviewRequired === true,
+    automationProposalAutoPublish: policy.autoPublish === true,
+    automationProposalPublishRequiresOwnerAction: policy.publishRequiresOwnerAction === true,
+    automationProposalPublishActionPresent: Boolean(publishAction.endpoint),
+    automationProposalPublishActionEndpoint: cleanString(publishAction.endpoint, 220),
+    automationProposalPublishActionItemId: cleanString(publishAction.itemId, 160),
+    automationProposalExecutionStatus: cleanString(execution.status || publishResult.status, 100),
+    automationProposalExecutionGeneratedTaskCardId: cleanString(execution.generatedTaskCardId || publishResult.generatedTaskCardId, 180),
+    automationProposalPublishResultOk: publishResult.ok === true,
+    automationProposalPublishResultError: cleanString(publishResult.error, 160),
+    automationProposalStage: cleanString(readback.stage || publishResult.stage, 120),
+    automationProposalCompletenessReady: completeness.readyForAutomation === true,
+    automationProposalCompletenessComplete: completeness.complete === true,
+    automationProposalTargetProvisioningMode: cleanString(targetProvisioning.mode, 120),
+    automationProposalTargetProvisioningEnabled: targetProvisioning.targetEnabled === true
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -206,7 +303,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services.learningAutomationProposalService, operation, input);
+  const result = projectAutomationProposalSmokeReadback(
+    Object.assign({ operation }, await runOperation(services.learningAutomationProposalService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -225,6 +327,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationProposalSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

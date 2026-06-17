@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-propo
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationProposalSmokeReadback,
   shouldAllowWrite,
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-proposal");
@@ -119,6 +120,67 @@ test("automation proposal smoke script parses operation, source cycle, graph sel
   });
 });
 
+test("automation proposal smoke script projects operator readback", () => {
+  const projected = projectAutomationProposalSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-proposal-service",
+    count: 2,
+    proposals: [{
+      proposalId: "lgauto_proposed",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      horizon: "daily_plan",
+      status: "proposed",
+      sourceTaskCardId: "ltask_source",
+      sourceEvaluationId: "leval_source",
+      planDraftId: "lgplan_next",
+      selectedItemId: "item_1",
+      targetNodeIds: ["kg_science_fair_test"],
+      policy: {
+        ownerReviewRequired: true,
+        autoPublish: false,
+        publishRequiresOwnerAction: true
+      },
+      privacyClass: "summary_only"
+    }, {
+      proposalId: "lgauto_accepted",
+      status: "accepted",
+      targetNodeIds: ["kg_science_observation_language"]
+    }]
+  }, "list", {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan"
+  }, false);
+
+  assert.equal(projected.automationProposalStatus, "proposed");
+  assert.equal(projected.automationProposalOk, true);
+  assert.equal(projected.automationProposalOperation, "list");
+  assert.equal(projected.automationProposalWriteOperation, false);
+  assert.equal(projected.automationProposalWriteAllowed, false);
+  assert.equal(projected.automationProposalWritesPerformed, false);
+  assert.equal(projected.automationProposalWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationProposalLearnerId, "fanfan");
+  assert.equal(projected.automationProposalProgramId, "program_science");
+  assert.equal(projected.automationProposalHorizon, "daily_plan");
+  assert.equal(projected.automationProposalCount, 2);
+  assert.equal(projected.automationProposalProposalId, "lgauto_proposed");
+  assert.deepEqual(projected.automationProposalProposalIds, ["lgauto_proposed", "lgauto_accepted"]);
+  assert.deepEqual(projected.automationProposalStatuses, ["proposed", "accepted"]);
+  assert.equal(projected.automationProposalProposedCount, 1);
+  assert.equal(projected.automationProposalAcceptedCount, 1);
+  assert.equal(projected.automationProposalSourceTaskCardId, "ltask_source");
+  assert.equal(projected.automationProposalSourceEvaluationId, "leval_source");
+  assert.equal(projected.automationProposalPlanDraftId, "lgplan_next");
+  assert.equal(projected.automationProposalSelectedItemId, "item_1");
+  assert.deepEqual(projected.automationProposalTargetNodeIds, ["kg_science_fair_test"]);
+  assert.equal(projected.automationProposalTargetNodeCount, 1);
+  assert.equal(projected.automationProposalPrivacyClass, "summary_only");
+  assert.equal(projected.automationProposalOwnerReviewRequired, true);
+  assert.equal(projected.automationProposalAutoPublish, false);
+  assert.equal(projected.automationProposalPublishRequiresOwnerAction, true);
+});
+
 test("automation proposal smoke script lists without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -137,6 +199,16 @@ test("automation proposal smoke script lists without writing by default", () => 
     assert.equal(output.source, "growth-learning-automation-proposal-service");
     assert.equal(output.count, 0);
     assert.deepEqual(output.proposals, []);
+    assert.equal(output.automationProposalStatus, "listed");
+    assert.equal(output.automationProposalOk, true);
+    assert.equal(output.automationProposalOperation, "list");
+    assert.equal(output.automationProposalWriteOperation, false);
+    assert.equal(output.automationProposalWriteAllowed, false);
+    assert.equal(output.automationProposalWritesPerformed, false);
+    assert.equal(output.automationProposalWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationProposalLearnerId, "fanfan");
+    assert.equal(output.automationProposalCount, 0);
+    assert.deepEqual(output.automationProposalProposalIds, []);
     assert.equal(tableExists(dbPath, "learning_growth_automation_proposals"), undefined);
   });
 });
@@ -178,6 +250,16 @@ test("automation proposal smoke script gates writes and delegates failed create 
     assert.equal(output.source || "", "");
     assert.equal(output.error, "learning_automation_cycle_not_ready");
     assert.equal(output.stage, "audit_completeness");
+    assert.equal(output.automationProposalStatus, "learning_automation_cycle_not_ready");
+    assert.equal(output.automationProposalOk, false);
+    assert.equal(output.automationProposalOperation, "create");
+    assert.equal(output.automationProposalWriteOperation, true);
+    assert.equal(output.automationProposalWriteAllowed, true);
+    assert.equal(output.automationProposalWritesPerformed, false);
+    assert.equal(output.automationProposalWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationProposalProgramId, "program_science");
+    assert.equal(output.automationProposalSourceTaskCardId, "ltask_previous");
+    assert.equal(output.automationProposalStage, "audit_completeness");
   });
 });
 
