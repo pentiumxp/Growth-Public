@@ -9,6 +9,41 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:09+08:00 - Stage Assessment Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan draft/publish behavior, card generation,
+  evaluation, reward settlement, runtime config, scheduler permission, UI
+  behavior, production deployment, or learner state.
+- Problem found:
+  - `npm run smoke:stage-assessment` correctly delegated readiness,
+    eligibility, activation, and completion to
+    `learning-stage-assessment-service`, but operator-critical status, write
+    gate, target/scope, readiness evidence, cycle state, generated/published
+    card ids, and no-write status were not mirrored at the CLI top level.
+- Scope:
+  - added `projectStageAssessmentSmokeReadback()` in
+    `scripts/smoke-growth-stage-assessment.js`;
+  - projected bounded top-level `stageAssessment*` fields while preserving the
+    nested readiness/activation/completion DTO as canonical;
+  - kept mutating operations (`eligibility`, `activate`, `complete`) behind the
+    existing explicit `--allow-write` gate;
+  - expanded `tests/growth-stage-assessment-smoke-script.test.js` to assert
+    the projection and default no-write readiness smoke readback;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-stage-assessment.js`
+  - `node --test tests/growth-stage-assessment-smoke-script.test.js`
+  - `npm run --silent smoke:stage-assessment -- --workspace-id smoke_workspace --learner-id smoke_learner --program-id smoke_program --subject science --target-node-id kg_science_fair_test --json`
+- Follow-up:
+  - continue with the next missing backend/CLI readback slice in the AI
+    learning-loop closure; avoid full-suite expansion unless a service boundary
+    or schema changes.
+
 ## 2026-06-17T14:57+08:00 - Stage Checkpoint Controls Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

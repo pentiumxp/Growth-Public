@@ -13,6 +13,7 @@ const {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectStageAssessmentSmokeReadback,
   runOperation,
   sourceCardIds,
   targetNodeIds,
@@ -189,6 +190,73 @@ test("stage-assessment smoke script delegates operations to stage assessment ser
   assert.deepEqual(calls.map((call) => call[0]), ["readiness", "eligibility", "activate", "complete"]);
 });
 
+test("stage-assessment smoke script projects operator readback", () => {
+  const projected = projectStageAssessmentSmokeReadback({
+    ok: true,
+    eligible: true,
+    activationState: "eligible",
+    reason: "enough_recent_practice",
+    cycle: {
+      cycleId: "lgsa_cycle_1",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      subjectId: "science",
+      capabilityClusterId: "science_observation",
+      targetNodeIds: ["kg_science_fair_test", "kg_science_observation_language"],
+      status: "eligible",
+      activationReason: "enough_recent_practice",
+      activationSource: "system",
+      sourceCardIds: ["ltask_daily_1", "ltask_daily_2"]
+    },
+    evidence: {
+      minimumRecentOrdinaryCards: 4,
+      recentTrajectoryCount: 5,
+      recentExperienceSignalCount: 2,
+      highPressureSignalCount: 0,
+      challengeSignalCount: 1,
+      sourceCardIds: ["ltask_daily_1", "ltask_daily_2"]
+    },
+    profileSummary: {
+      masteryStateCount: 7,
+      weaknessCount: 2,
+      strengthCount: 3
+    }
+  }, "readiness", {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    subjectId: "science",
+    capabilityClusterId: "science_observation",
+    targetNodeId: "kg_science_fair_test",
+    assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_observation_language"]
+  }, false);
+
+  assert.equal(projected.stageAssessmentStatus, "eligible");
+  assert.equal(projected.stageAssessmentOk, true);
+  assert.equal(projected.stageAssessmentOperation, "readiness");
+  assert.equal(projected.stageAssessmentWriteOperation, false);
+  assert.equal(projected.stageAssessmentWriteAllowed, false);
+  assert.equal(projected.stageAssessmentWritesPerformed, false);
+  assert.equal(projected.stageAssessmentWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.stageAssessmentLearnerId, "fanfan");
+  assert.equal(projected.stageAssessmentProgramId, "program_science");
+  assert.equal(projected.stageAssessmentSubjectId, "science");
+  assert.equal(projected.stageAssessmentTargetNodeId, "kg_science_fair_test");
+  assert.deepEqual(projected.stageAssessmentAssessmentCoverageNodeIds, ["kg_science_fair_test", "kg_science_observation_language"]);
+  assert.equal(projected.stageAssessmentEligible, true);
+  assert.equal(projected.stageAssessmentActivationState, "eligible");
+  assert.equal(projected.stageAssessmentReason, "enough_recent_practice");
+  assert.equal(projected.stageAssessmentCycleId, "lgsa_cycle_1");
+  assert.equal(projected.stageAssessmentCycleStatus, "eligible");
+  assert.equal(projected.stageAssessmentActivationSource, "system");
+  assert.equal(projected.stageAssessmentRecentTrajectoryCount, 5);
+  assert.equal(projected.stageAssessmentChallengeSignalCount, 1);
+  assert.equal(projected.stageAssessmentSourceCardCount, 2);
+  assert.deepEqual(projected.stageAssessmentSourceCardIds, ["ltask_daily_1", "ltask_daily_2"]);
+  assert.equal(projected.stageAssessmentProfileWeaknessCount, 2);
+});
+
 test("stage-assessment smoke script runs readiness on a temporary SQLite db without creating stage cycles", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -210,6 +278,25 @@ test("stage-assessment smoke script runs readiness on a temporary SQLite db with
     assert.equal(output.activationState, "dormant");
     assert.equal(output.reason, "insufficient_recent_practice");
     assert.equal(output.evidence.recentTrajectoryCount, 0);
+    assert.equal(output.stageAssessmentStatus, "dormant");
+    assert.equal(output.stageAssessmentOk, true);
+    assert.equal(output.stageAssessmentOperation, "readiness");
+    assert.equal(output.stageAssessmentWriteOperation, false);
+    assert.equal(output.stageAssessmentWriteAllowed, false);
+    assert.equal(output.stageAssessmentWritesPerformed, false);
+    assert.equal(output.stageAssessmentWorkspaceId, "weixin_fanfan");
+    assert.equal(output.stageAssessmentLearnerId, "fanfan");
+    assert.equal(output.stageAssessmentProgramId, "program_science");
+    assert.equal(output.stageAssessmentSubjectId, "science");
+    assert.equal(output.stageAssessmentTargetNodeId, "kg_science_fair_test");
+    assert.deepEqual(output.stageAssessmentAssessmentCoverageNodeIds, ["kg_science_fair_test"]);
+    assert.equal(output.stageAssessmentEligible, false);
+    assert.equal(output.stageAssessmentActivationState, "dormant");
+    assert.equal(output.stageAssessmentReason, "insufficient_recent_practice");
+    assert.equal(output.stageAssessmentMinimumRecentOrdinaryCards, 4);
+    assert.equal(output.stageAssessmentRecentTrajectoryCount, 0);
+    assert.equal(output.stageAssessmentSourceCardCount, 0);
+    assert.equal(output.stageAssessmentProfileMasteryStateCount, 0);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {

@@ -933,7 +933,11 @@ readback gate set.
   defaults to read-only `learning-stage-assessment-service.stageReadiness`,
   while `eligibility`, `activate`, and `complete` require explicit
   `--allow-write` and delegate only to `learning-stage-assessment-service`
-  through the normal service graph. It does not import repositories, call
+  through the normal service graph. The smoke CLI mirrors bounded top-level
+  `stageAssessment*` operator readback for operation/status, write gate,
+  target/scope, readiness evidence, cycle state, generation/publication ids,
+  and no-write status while keeping the nested service DTO canonical. It does
+  not import repositories, call
   Gateway directly, publish through plan services, evaluate submissions, run
   automation, or mutate learner state outside the stage-assessment service.
   The broad local `npm run check`

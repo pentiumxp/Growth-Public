@@ -17,6 +17,28 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return uniqueStrings(asArray(values).map((value) => cleanString(value, 160))).slice(0, maxItems);
+}
+
+function numberValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric;
+}
+
 function firstArgValue(args, names, fallback = "") {
   for (const name of names) {
     const value = argValue(args, name, "");
@@ -256,6 +278,69 @@ async function runOperation(service, operation, input) {
   return { ok: false, error: "stage_assessment_smoke_operation_invalid", operation };
 }
 
+function projectStageAssessmentSmokeReadback(result = {}, operation = "readiness", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const cycle = objectOnly(readback.cycle);
+  const evidence = objectOnly(readback.evidence);
+  const profileSummary = objectOnly(readback.profileSummary);
+  const generation = objectOnly(readback.generation);
+  const published = objectOnly(readback.published || generation.published);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const targetNodeIds = uniqueBoundedStrings(
+    cycle.targetNodeIds
+    || input.assessmentCoverageNodeIds
+    || input.targetNodeIds
+    || [input.targetNodeId]
+  );
+  return Object.assign({}, readback, {
+    stageAssessmentStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : readback.skipped ? "skipped" : readback.activationState || cycle.status || "pass",
+      140
+    ),
+    stageAssessmentOk: readback.ok !== false,
+    stageAssessmentOperation: cleanString(operation, 80),
+    stageAssessmentWriteOperation: writeOperation,
+    stageAssessmentWriteAllowed: writeAllowed === true,
+    stageAssessmentWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.skipped !== true,
+    stageAssessmentWorkspaceId: cleanString(cycle.workspaceId || input.workspaceId, 160),
+    stageAssessmentLearnerId: cleanString(cycle.learnerId || input.learnerId, 160),
+    stageAssessmentProgramId: cleanString(cycle.programId || input.programId, 160),
+    stageAssessmentSubjectId: cleanString(cycle.subjectId || input.subjectId, 160),
+    stageAssessmentCapabilityClusterId: cleanString(cycle.capabilityClusterId || input.capabilityClusterId, 160),
+    stageAssessmentTargetNodeId: cleanString(input.targetNodeId || targetNodeIds[0], 180),
+    stageAssessmentTargetNodeIds: targetNodeIds,
+    stageAssessmentAssessmentCoverageNodeIds: uniqueBoundedStrings(input.assessmentCoverageNodeIds || targetNodeIds),
+    stageAssessmentEligible: readback.eligible === true,
+    stageAssessmentActivationState: cleanString(readback.activationState || cycle.status, 80),
+    stageAssessmentReason: cleanString(readback.reason, 180),
+    stageAssessmentCooldownUntil: cleanString(readback.cooldownUntil || cycle.cooldownUntil, 80),
+    stageAssessmentCycleId: cleanString(cycle.cycleId || input.stageAssessmentCycleId || input.cycleId, 180),
+    stageAssessmentCycleStatus: cleanString(cycle.status, 80),
+    stageAssessmentActivationSource: cleanString(readback.activationSource || cycle.activationSource || input.activationSource, 80),
+    stageAssessmentActivationReason: cleanString(readback.activationReason || cycle.activationReason || input.activationReason, 160),
+    stageAssessmentCooldownOverridden: readback.cooldownOverridden === true,
+    stageAssessmentCompletedAt: cleanString(readback.completedAt || cycle.completedAt, 80),
+    stageAssessmentGeneratedTaskCardId: cleanString(cycle.generatedTaskCardId || published.taskCardId, 180),
+    stageAssessmentPublishedTaskCardId: cleanString(published.taskCardId, 180),
+    stageAssessmentGenerationOk: generation.ok === true,
+    stageAssessmentGenerationStage: cleanString(generation.stage, 120),
+    stageAssessmentGenerationError: cleanString(generation.error, 160),
+    stageAssessmentMinimumRecentOrdinaryCards: numberValue(evidence.minimumRecentOrdinaryCards, 0),
+    stageAssessmentRecentTrajectoryCount: numberValue(evidence.recentTrajectoryCount, 0),
+    stageAssessmentRecentExperienceSignalCount: numberValue(evidence.recentExperienceSignalCount, 0),
+    stageAssessmentHighPressureSignalCount: numberValue(evidence.highPressureSignalCount, 0),
+    stageAssessmentChallengeSignalCount: numberValue(evidence.challengeSignalCount, 0),
+    stageAssessmentSourceCardIds: uniqueBoundedStrings(evidence.sourceCardIds || cycle.sourceCardIds, 12),
+    stageAssessmentSourceCardCount: uniqueBoundedStrings(evidence.sourceCardIds || cycle.sourceCardIds, 12).length,
+    stageAssessmentProfileMasteryStateCount: numberValue(profileSummary.masteryStateCount, 0),
+    stageAssessmentProfileWeaknessCount: numberValue(profileSummary.weaknessCount, 0),
+    stageAssessmentProfileStrengthCount: numberValue(profileSummary.strengthCount, 0),
+    stageAssessmentSkipped: readback.skipped === true,
+    stageAssessmentSkipReason: cleanString(readback.skipped ? readback.reason : "", 160)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -284,7 +369,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services.learningStageAssessmentService, operation, input);
+  const result = projectStageAssessmentSmokeReadback(
+    Object.assign({ operation }, await runOperation(services.learningStageAssessmentService, operation, input)),
+    operation,
+    input,
+    allowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -304,6 +394,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectStageAssessmentSmokeReadback,
   runOperation,
   sourceCardIds,
   targetNodeIds,
