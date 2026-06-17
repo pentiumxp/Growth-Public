@@ -14834,6 +14834,8 @@ body.task-markdown-preview-open {
 }
 
 .learning-card-generation-actions button.disabled,
+.learning-card-generation-proposal-head button.disabled,
+.learning-card-generation-proposal-actions button.disabled,
 .learning-card-generation-actions button:disabled,
 .learning-card-generation-stage-actions button:disabled,
 .learning-card-generation-correction-controls button:disabled,

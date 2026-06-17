@@ -1901,6 +1901,9 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-automation-proposal-status="expired"/);
   assert.match(html, /data-automation-proposal-status="superseded"/);
   assert.match(html, /data-automation-proposal-publish/);
+  assert.match(html, /class="primary disabled" data-automation-proposal-publish/);
+  assert.match(html, /data-automation-proposal-blocked-reason="只有待复核建议可以记录决策。"/);
+  assert.match(html, /data-automation-proposal-blocked-reason="只有已接受且未发布的建议可以发布。"/);
   assert.match(html, /建议已记录为 已接受/);
   assert.match(html, /Accepted evidence repair card/);
   assert.match(html, /data-automation-digest-panel/);
@@ -3807,7 +3810,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-owner-audit-review-ui-v1";
+  const staticVersion = "20260618-proposal-review-stack-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -3884,6 +3887,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
   assert.match(source, /data-automation-proposal-publish/);
+  assert.match(source, /automationProposalBlockedReason/);
   assert.match(source, /data-automation-digest-create/);
   assert.match(source, /data-automation-digest-refresh/);
   assert.match(source, /data-automation-digest-review/);
@@ -3907,6 +3911,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function reviewAutomationProposalFromUi/);
   assert.match(source, /function createAutomationProposalPublishPayload/);
   assert.match(source, /function publishAutomationProposalFromUi/);
+  assert.match(source, /function refreshAutomationProposalReviewStack/);
   assert.match(source, /function refreshAutomationDigests/);
   assert.match(source, /function createAutomationDigestCreatePayload/);
   assert.match(source, /function createAutomationDigestFromUi/);
@@ -3941,7 +3946,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.recordGrowthReleaseWorkbenchAction\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.buildGrowthReleasePackage\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
+  assert.match(source, /api\.reviewGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
+  assert.match(source, /await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
   assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.publishGrowthAutomationProposal\(proposalId, payload, targetWorkspaceId\)[\s\S]*await refreshAutomationProposalReviewStack\(targetWorkspaceId, pageState\.cardGeneration\.context, \{ silent: true \}\)/);
   assert.match(source, /api\.fetchGrowthAutomationDigests\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationDigest\(digestId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthAutomationActionHandoffs\(payload, requestedTargetWorkspaceId\)/);

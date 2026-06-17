@@ -526,8 +526,8 @@ Required harness:
 - `tests/growth-routes.test.js`;
 - `tests/growth-architecture-boundary.test.js`;
 - UI proposal review tests for selected-cycle create/list/decision/
-  accepted-publish before product rollout; `expired`/`superseded` decision UI
-  requires a separate harness.
+  accepted-publish, terminal `expired`/`superseded` decisions, blocked-action
+  feedback, and downstream automation readback refresh before product rollout.
 
 ### P6: Automation Digest, Rollback, And Failure Policy
 
@@ -1393,10 +1393,9 @@ The next implementation slice should be chosen by product goal:
   automatic publication. Proposal operational smoke is also available through
   `npm run smoke:proposal`, which defaults to read-only list and gates
   create/review/publish with explicit `--allow-write`. Implement the remaining
-  UI/evidence around P5-P10 next: `expired`/`superseded` proposal decision UI,
-  digest/action/failure-policy UI, execution UI, scheduler run audit UI,
-  real `releasePackageReviewUiEvidence`, platform Action Inbox/Web Push
-  evidence, production dry-run evidence through
+  UI/evidence around P5-P10 next: failure-policy UI, real
+  `releasePackageReviewUiEvidence`, platform Action Inbox/Web Push evidence,
+  production dry-run evidence through
   `npm run smoke:scheduler-dry-run`, central visual evidence, and a
   release-readiness evidence snapshot. The P8 and P9 backend boundaries are
   implemented locally and remain default-disabled; the P10 backend boundary is

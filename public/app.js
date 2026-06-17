@@ -983,6 +983,15 @@
     root.querySelectorAll("[data-automation-proposal-create]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
+        const blockedReason = clean(button.dataset.automationProposalBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "blocked",
+            actionError: blockedReason
+          });
+          renderShell();
+          return;
+        }
         if (button.disabled) return;
         createAutomationProposalFromUi().catch((error) => {
           pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
@@ -996,6 +1005,15 @@
     root.querySelectorAll("[data-automation-proposal-review]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
+        const blockedReason = clean(button.dataset.automationProposalBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "blocked",
+            actionError: blockedReason
+          });
+          renderShell();
+          return;
+        }
         if (button.disabled) return;
         reviewAutomationProposalFromUi(button).catch((error) => {
           pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
@@ -1009,6 +1027,15 @@
     root.querySelectorAll("[data-automation-proposal-publish]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
+        const blockedReason = clean(button.dataset.automationProposalBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
+            actionStatus: "blocked",
+            actionError: blockedReason
+          });
+          renderShell();
+          return;
+        }
         if (button.disabled) return;
         publishAutomationProposalFromUi(button).catch((error) => {
           pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
@@ -1949,6 +1976,21 @@
     }
   }
 
+  async function refreshAutomationProposalReviewStack(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    await refreshAutomationProposals(requestedTargetWorkspaceId, context, { silent: true });
+    const refreshedContext = pageState.cardGeneration.context || context;
+    await refreshAutomationDigests(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshAutomationActionHandoffs(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshAutomationSchedulerExecutions(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshAutomationSchedulerRuns(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshAutomationSchedulerWorkerTargets(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshReleaseWorkbench(requestedTargetWorkspaceId, refreshedContext);
+    if (!options.silent) renderShell();
+    return pageState.cardGeneration.automationProposals;
+  }
+
   function automationProposalItems() {
     const holder = pageState.cardGeneration.automationProposals || {};
     const data = holder.data || {};
@@ -2190,8 +2232,7 @@
         actionResult: result,
         actionError: result.ok ? "" : clean(result.error || "automation_proposal_create_failed")
       });
-      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
-      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshAutomationProposalReviewStack(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
@@ -2221,8 +2262,7 @@
         actionResult: result,
         actionError: ""
       });
-      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
-      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshAutomationProposalReviewStack(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationProposals = Object.assign({}, pageState.cardGeneration.automationProposals, {
@@ -2507,7 +2547,7 @@
         pageState.cardGeneration.automationProposals.actionError = `建议已处理，但刷新列表失败：${refreshError.message || String(refreshError)}`;
       }
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "建议已处理，但" });
-      await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationProposalReviewStack(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshOwnerCycleDrilldownFromUi({ silent: true });
       renderShell();
     } catch (error) {

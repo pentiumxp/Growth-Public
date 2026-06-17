@@ -1270,15 +1270,19 @@ readback gate set.
   Owner `生成` tab now has the first proposal review panel over the existing
   proposal routes: it can create a bounded proposal from the selected
   historical cycle, lists bounded proposals for the selected visible target and
-  scoped learner/domain-pack/subject, records `accepted` or `skipped`
-  decisions, and can explicitly publish an already accepted proposal through
+  scoped learner/domain-pack/subject, records `accepted`, `skipped`, `expired`,
+  or `superseded` decisions, shows visible blocked-action feedback for
+  non-proposed/non-publishable rows, and can explicitly publish an already
+  accepted proposal through
   `POST /api/v1/growth/automation/proposals/:proposalId/publish`. This panel
   uses the selected cycle's service-provided selectors, does not call Gateway
   directly, does not call card generation directly, does not run schedulers,
   does not activate stage assessments, and does not mutate learner state
   outside the existing proposal create/decision/publish service boundaries.
-  `expired`/`superseded` decision UI, digest/action/execution UI, and
-  production visual/release evidence remain later slices.
+  Proposal create/review/publish actions refresh proposal, digest,
+  action-handoff, scheduler execution/run, worker-target, and release-workbench
+  readbacks after the service write. Production visual/UI and release evidence
+  remain later slices.
   The supervised scheduler dry-run boundary is now locally implemented through
   `learning-automation-scheduler-service` and Owner-only
   `POST /api/v1/growth/automation/scheduler/dry-run`. It lists accepted
@@ -1363,8 +1367,7 @@ readback gate set.
   scope, gate counts/keys, next Owner action, proposal/digest/action/scheduler/
   worker/failure-policy counters, release-readiness status, and scheduling/
   runtime false flags while keeping nested DTOs canonical. This is backend
-  evidence only and does not replace proposal/digest/action/execution UI or
-  central visual evidence.
+  evidence only and does not replace production visual/UI release evidence.
   The automation scheduler execution backend is now implemented through
   `learning-automation-scheduler-execution-service`,
   `automation-scheduler-executions.js`,
@@ -1612,11 +1615,10 @@ readback gate set.
   `domain_pack_fanfan_cambridge_pathway_v1` / `science` and published one
   Owner-supervised daily card; production learner-cycle writes remain gated
   behind explicit Owner-provided learner evidence.
-  Older-cycle selection over the implemented current-cycle drilldown, browser
-  formal stage-checkpoint UI over the implemented controls read model,
-  proposal/digest/action/execution UI, real production
-  platform Action Inbox + Web Push dual receipt evidence, and full automation
-  release review remain future slices. The platform action evidence gate now
+  Production visual/UI evidence over the older-cycle drilldown, formal
+  stage-checkpoint controls, proposal/digest/action/scheduler panels, real
+  production platform Action Inbox + Web Push dual receipt evidence, and full
+  automation release review remain future slices. The platform action evidence gate now
   requires a delivered Growth event-outbox notification receipt containing both
   an Action Inbox item id and a bounded Web Push `sent > 0` summary. Growth
   stores only summary counts/reason from the Home AI notification response and

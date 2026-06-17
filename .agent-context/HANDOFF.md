@@ -9,6 +9,74 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T03:38+0800 - Proposal Review Feedback And Refresh Stack
+
+- Status: implemented locally; focused frontend/architecture/docs Harness,
+  docs-locality, syntax coverage, global check, diff check, and local static
+  readback passed. No production deploy, Home AI central visual harness run,
+  Gateway/model call, learner evidence write, card generation, evaluation,
+  scheduler execution, runtime config change, release approval, or Home AI
+  host logic change was performed.
+- Classification: H2 Growth embedded UI consumption and readback refresh over
+  existing service-owned automation proposal/digest/action/scheduler/release
+  boundaries. It adds no route, table, model boundary, scheduler permission,
+  release permission, or browser-side automation policy.
+- Scope:
+  - `public/growth-card-generation-ui.js` now keeps terminal proposal decisions
+    on one decision list (`accepted`, `skipped`, `expired`, `superseded`),
+    renders non-proposed/non-publishable proposal controls as `aria-disabled`
+    with `data-automation-proposal-blocked-reason`, shows `blocked` as a
+    visible proposal action status, and keeps those blocked controls
+    click-observable instead of silently native-disabled;
+  - `public/app.js` shows visible blocked-action feedback for proposal
+    create/review/publish controls and routes successful proposal
+    create/review/publish actions through `refreshAutomationProposalReviewStack`;
+  - the refresh stack reloads proposals, digests, action handoffs, scheduler
+    executions, scheduler runs, worker targets, and the release workbench after
+    proposal actions so downstream automation readbacks do not stay stale;
+  - `public/growth-homeai-legacy.css` styles proposal `aria-disabled` buttons
+    like disabled controls without blocking click handlers;
+  - `public/index.html` cache-busting moved to
+    `20260618-proposal-review-stack-ui-v1`;
+  - Growth-local docs now state that terminal proposal decision UI and
+    downstream automation readback refresh are locally implemented, while
+    production visual/UI evidence, platform receipt evidence, production
+    dry-run evidence, release evidence, reviewed worker-target evidence, and
+    explicit release activation remain production gates.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    -> 76/76;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`, `checkedCount=225`;
+  - `node --check public/app.js && node --check public/growth-card-generation-ui.js`;
+  - `git diff --check`;
+  - local current-worktree service check on `GROWTH_PORT=4882`: index used
+    `20260618-proposal-review-stack-ui-v1`, `growth-card-generation-ui.js`
+    contained `data-automation-proposal-blocked-reason` plus terminal decision
+    list, and `app.js` contained `refreshAutomationProposalReviewStack` plus
+    blocked-reason handlers.
+- Remaining gate:
+  - this does not replace Home AI central visual/UI evidence or production
+    release evidence. Before production UI release, run the central
+    embedded-plugin visual harness for the Owner generation surface and persist
+    bounded UI/release evidence through the existing Growth release-evidence
+    path.
+
 ## 2026-06-18T03:38+0800 - Owner Audit-Review UI Closure
 
 - Status: implemented locally; focused frontend/layout/architecture/docs

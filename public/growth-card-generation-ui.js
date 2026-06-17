@@ -1438,6 +1438,7 @@
     if (value === "publishing") return "发布中";
     if (value === "published") return "已发布";
     if (value === "created") return "已生成";
+    if (value === "blocked") return "已阻塞";
     if (value === "failed") return "失败";
     return value || "待建议";
   }
@@ -1491,11 +1492,16 @@
         </span>
         <em>${escapeHtml(meta)}</em>
         <div class="learning-card-generation-proposal-actions">
-          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="accepted" ${busy || !isProposed ? "disabled" : ""}>接受</button>
-          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="skipped" ${busy || !isProposed ? "disabled" : ""}>跳过</button>
-          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="expired" ${busy || !isProposed ? "disabled" : ""}>过期</button>
-          <button type="button" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="superseded" ${busy || !isProposed ? "disabled" : ""}>替代</button>
-          <button type="button" class="primary" data-automation-proposal-publish data-automation-proposal-id="${escapeHtml(proposalId)}" ${busy || !canPublish ? "disabled" : ""}>${busy && canPublish ? "发布中" : executionStatus === "published" ? "已发布" : "发布"}</button>
+          ${["accepted", "skipped", "expired", "superseded"].map((decision) => {
+            const blockedReason = busy
+              ? "建议操作正在写入。"
+              : !isProposed
+                ? "只有待复核建议可以记录决策。"
+                : "";
+            const label = decision === "accepted" ? "接受" : decision === "skipped" ? "跳过" : decision === "expired" ? "过期" : "替代";
+            return `<button type="button" class="${blockedReason ? "disabled" : ""}" data-automation-proposal-review data-automation-proposal-id="${escapeHtml(proposalId)}" data-automation-proposal-status="${escapeHtml(decision)}" ${blockedReason ? `aria-disabled="true" data-automation-proposal-blocked-reason="${escapeHtml(blockedReason)}"` : ""}>${escapeHtml(label)}</button>`;
+          }).join("")}
+          <button type="button" class="primary${busy || !canPublish ? " disabled" : ""}" data-automation-proposal-publish data-automation-proposal-id="${escapeHtml(proposalId)}" ${busy || !canPublish ? `aria-disabled="true" data-automation-proposal-blocked-reason="${escapeHtml(busy ? "建议操作正在写入。" : executionStatus === "published" ? "建议已经发布。" : "只有已接受且未发布的建议可以发布。")}"` : ""}>${busy && canPublish ? "发布中" : executionStatus === "published" ? "已发布" : "发布"}</button>
         </div>
       </div>`;
     }).join("");
@@ -1541,7 +1547,7 @@
           <small>${escapeHtml(reason)}</small>
         </span>
         <div class="learning-card-generation-proposal-head-actions">
-          <button type="button" data-automation-proposal-create ${busy || !hasSelectedSource ? `disabled aria-disabled="true" data-automation-proposal-blocked-reason="${escapeHtml(hasSelectedSource ? "建议操作正在写入。" : "请先在历史周期里选择一个完整周期。")}"` : ""}>${busy && hasSelectedSource ? "生成中" : "生成建议"}</button>
+          <button type="button" class="${busy || !hasSelectedSource ? "disabled" : ""}" data-automation-proposal-create ${busy || !hasSelectedSource ? `aria-disabled="true" data-automation-proposal-blocked-reason="${escapeHtml(hasSelectedSource ? "建议操作正在写入。" : "请先在历史周期里选择一个完整周期。")}"` : ""}>${busy && hasSelectedSource ? "生成中" : "生成建议"}</button>
           <button type="button" data-automation-proposal-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新建议"}</button>
         </div>
       </div>

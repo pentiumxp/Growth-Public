@@ -94,9 +94,8 @@ content.
 
 Release-readiness treats `ownerReviewEvidence` as a required backend evidence
 check. This proves the Owner automation evidence read model can be collected
-and read back; it does not prove proposal/digest/action/execution UI evidence
-or mobile visual evidence. Those evidence keys remain separate readiness
-requirements.
+and read back; it does not prove production proposal/digest/action/execution
+visual/UI evidence. Those evidence keys remain separate readiness requirements.
 
 When `ownerReviewEvidence` includes the bundle `summary`, release-readiness
 projects the same stage counters into
