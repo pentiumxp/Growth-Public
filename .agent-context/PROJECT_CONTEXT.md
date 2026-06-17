@@ -199,7 +199,12 @@ readback gate set.
   SQLite repository privacy scanning reject privacy-risk keys plus private
   path/token-looking string values before approval records persist. Approval
   records and remediation remain advisory evidence and never flip runtime
-  config. Release-readiness also projects summary-only `evidenceReadback`
+  config. `npm run smoke:release-approval` now mirrors bounded top-level
+  `automationReleaseApproval*` operator readback for list/bag/record,
+  operation/write gate, scope, approval ids/keys/status counts, approved bag
+  keys, approval/evidence schema versions, and `writefulSchedulingAllowed=false`
+  while preserving nested DTOs as canonical. Release-readiness also projects
+  summary-only `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
   bundle readback, present/missing counts, missing check keys, and bounded
   per-check evidence references. `npm run smoke:release-readiness` mirrors

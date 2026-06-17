@@ -11,6 +11,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-relea
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationReleaseApprovalSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput
@@ -87,6 +88,82 @@ test("automation release approval smoke script delegates operations to service o
   assert.deepEqual(calls.map((call) => call.type), ["listApprovals", "approvalBag", "recordApproval"]);
 });
 
+test("automation release approval smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationReleaseApprovalSmokeReadback({
+    ok: true,
+    count: 2,
+    approvalKeys: ["backgroundSchedulerApproval", "writefulExecutionApproval"],
+    releaseApproval: {
+      writefulExecutionApproval: {
+        approved: true,
+        status: "approved",
+        approvalId: "lgarap_writeful",
+        approvedBy: "weixin_owner",
+        approvedAt: "2026-06-17T08:00:00.000Z"
+      }
+    },
+    approvals: [{
+      approvalId: "lgarap_writeful",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      approvalKey: "writefulExecutionApproval",
+      status: "approved",
+      approvalVersion: "growth.learningAutomationReleaseApproval.v1",
+      approval: {
+        schemaVersion: "growth.learningAutomationReleaseApproval.v1",
+        approved: true,
+        writefulSchedulingAllowed: false
+      },
+      evidence: {
+        schemaVersion: "growth.learningAutomationReleaseApproval.evidence.v1"
+      },
+      approvedBy: "weixin_owner",
+      approvedAt: "2026-06-17T08:00:00.000Z",
+      privacyClass: "summary_only"
+    }, {
+      approvalId: "lgarap_revoked",
+      approvalKey: "backgroundSchedulerApproval",
+      status: "revoked"
+    }]
+  }, "bag", { workspaceId: "weixin_fanfan", learnerId: "fanfan" }, false);
+
+  assert.equal(projected.automationReleaseApprovalStatus, "approved");
+  assert.equal(projected.automationReleaseApprovalOk, true);
+  assert.equal(projected.automationReleaseApprovalOperation, "bag");
+  assert.equal(projected.automationReleaseApprovalWriteOperation, false);
+  assert.equal(projected.automationReleaseApprovalWriteAllowed, false);
+  assert.equal(projected.automationReleaseApprovalWritesPerformed, false);
+  assert.equal(projected.automationReleaseApprovalWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationReleaseApprovalLearnerId, "fanfan");
+  assert.equal(projected.automationReleaseApprovalProgramId, "program_science");
+  assert.equal(projected.automationReleaseApprovalDomainPackId, "domain_pack_fanfan_cambridge_pathway_v1");
+  assert.equal(projected.automationReleaseApprovalDomain, "science");
+  assert.equal(projected.automationReleaseApprovalSubject, "science");
+  assert.equal(projected.automationReleaseApprovalHorizon, "daily_plan");
+  assert.equal(projected.automationReleaseApprovalCount, 2);
+  assert.equal(projected.automationReleaseApprovalApprovalId, "lgarap_writeful");
+  assert.deepEqual(projected.automationReleaseApprovalApprovalIds, ["lgarap_writeful", "lgarap_revoked"]);
+  assert.equal(projected.automationReleaseApprovalApprovalKey, "writefulExecutionApproval");
+  assert.deepEqual(projected.automationReleaseApprovalApprovalKeys, ["backgroundSchedulerApproval", "writefulExecutionApproval"]);
+  assert.deepEqual(projected.automationReleaseApprovalApprovedKeys, ["writefulExecutionApproval"]);
+  assert.equal(projected.automationReleaseApprovalApprovedKeyCount, 1);
+  assert.deepEqual(projected.automationReleaseApprovalStatuses, ["approved", "revoked"]);
+  assert.equal(projected.automationReleaseApprovalApprovedCount, 1);
+  assert.equal(projected.automationReleaseApprovalRevokedCount, 1);
+  assert.equal(projected.automationReleaseApprovalPrivacyClass, "summary_only");
+  assert.equal(projected.automationReleaseApprovalVersion, "growth.learningAutomationReleaseApproval.v1");
+  assert.equal(projected.automationReleaseApprovalEvidenceVersion, "growth.learningAutomationReleaseApproval.evidence.v1");
+  assert.equal(projected.automationReleaseApprovalApproved, true);
+  assert.equal(projected.automationReleaseApprovalApprovedBy, "weixin_owner");
+  assert.equal(projected.automationReleaseApprovalApprovedAt, "2026-06-17T08:00:00.000Z");
+  assert.equal(projected.automationReleaseApprovalWritefulSchedulingAllowed, false);
+});
+
 test("automation release approval smoke script rejects invalid JSON before service construction", () => {
   const result = spawnSync(process.execPath, [scriptPath, "--workspace-id", "weixin_fanfan", "--approval-json", "{"], {
     cwd: repoRoot,
@@ -155,6 +232,13 @@ test("automation release approval smoke script can record against a temporary SQ
     assert.equal(recordOutput.ok, true);
     assert.equal(recordOutput.operation, "record");
     assert.equal(recordOutput.approval.approvalKey, "writefulExecutionApproval");
+    assert.equal(recordOutput.automationReleaseApprovalOperation, "record");
+    assert.equal(recordOutput.automationReleaseApprovalWriteOperation, true);
+    assert.equal(recordOutput.automationReleaseApprovalWriteAllowed, true);
+    assert.equal(recordOutput.automationReleaseApprovalWritesPerformed, true);
+    assert.equal(recordOutput.automationReleaseApprovalApprovalKey, "writefulExecutionApproval");
+    assert.equal(recordOutput.automationReleaseApprovalApproved, true);
+    assert.equal(recordOutput.automationReleaseApprovalWritefulSchedulingAllowed, false);
 
     const bag = spawnSync(process.execPath, [
       scriptPath,
@@ -173,6 +257,12 @@ test("automation release approval smoke script can record against a temporary SQ
     const bagOutput = JSON.parse(bag.stdout);
     assert.equal(bagOutput.ok, true);
     assert.equal(bagOutput.releaseApproval.writefulExecutionApproval.approved, true);
+    assert.equal(bagOutput.automationReleaseApprovalOperation, "bag");
+    assert.equal(bagOutput.automationReleaseApprovalWriteOperation, false);
+    assert.equal(bagOutput.automationReleaseApprovalApprovedKeys.includes("writefulExecutionApproval"), true);
+    assert.equal(bagOutput.automationReleaseApprovalApprovedKeyCount, 1);
+    assert.equal(bagOutput.automationReleaseApprovalApprovedCount, 1);
+    assert.equal(bagOutput.automationReleaseApprovalWritefulSchedulingAllowed, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

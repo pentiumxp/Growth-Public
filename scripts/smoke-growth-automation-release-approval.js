@@ -55,6 +55,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 24) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function operationFromArgs(args) {
   const explicit = firstArgValue(args, ["--operation"], "");
   const operation = explicit || (hasFlag(args, "--record") ? "record" : hasFlag(args, "--bag") ? "bag" : "list");
@@ -112,6 +134,67 @@ function runOperation(service, operation, input) {
   return service.listApprovals(input);
 }
 
+function summarizeStatuses(approvals = []) {
+  return asArray(approvals).reduce((counts, approval) => {
+    const status = cleanString(approval && approval.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationReleaseApprovalSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const approvals = asArray(readback.approvals);
+  const approval = objectOnly(readback.approval || approvals[0]);
+  const approvalSummary = objectOnly(approval.approval);
+  const evidence = objectOnly(approval.evidence);
+  const releaseApproval = objectOnly(readback.releaseApproval);
+  const statusRows = approvals.length ? approvals : approval.approvalId ? [approval] : [];
+  const statusCounts = summarizeStatuses(statusRows);
+  const approvedKeys = uniqueBoundedStrings(Object.keys(releaseApproval), 8);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const approvalStatus = cleanString(approval.status || readback.status || (operation === "bag" ? "approval_bag_ready" : operation === "list" ? "listed" : ""), 120);
+  return Object.assign({}, readback, {
+    automationReleaseApprovalStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : approvalStatus || "ready",
+      140
+    ),
+    automationReleaseApprovalOk: readback.ok !== false,
+    automationReleaseApprovalOperation: cleanString(operation, 80),
+    automationReleaseApprovalWriteOperation: writeOperation,
+    automationReleaseApprovalWriteAllowed: writeAllowed === true,
+    automationReleaseApprovalWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationReleaseApprovalDuplicate: readback.duplicate === true,
+    automationReleaseApprovalWorkspaceId: cleanString(readback.workspaceId || approval.workspaceId || input.workspaceId, 160),
+    automationReleaseApprovalLearnerId: cleanString(readback.learnerId || approval.learnerId || input.learnerId, 160),
+    automationReleaseApprovalProgramId: cleanString(approval.programId || input.programId, 160),
+    automationReleaseApprovalDomainPackId: cleanString(approval.domainPackId || input.domainPackId, 180),
+    automationReleaseApprovalDomain: cleanString(approval.domain || input.domain, 120),
+    automationReleaseApprovalSubject: cleanString(approval.subject || input.subject, 120),
+    automationReleaseApprovalHorizon: cleanString(approval.horizon || input.horizon, 80),
+    automationReleaseApprovalCount: numberValue(readback.count, approvals.length),
+    automationReleaseApprovalApprovalId: cleanString(approval.approvalId, 180),
+    automationReleaseApprovalApprovalIds: uniqueBoundedStrings(approvals.map((item) => item && item.approvalId), 24),
+    automationReleaseApprovalApprovalKey: cleanString(approval.approvalKey || approvalSummary.approvalKey || input.approvalKey, 160),
+    automationReleaseApprovalApprovalKeys: uniqueBoundedStrings(readback.approvalKeys || approvals.map((item) => item && item.approvalKey), 8),
+    automationReleaseApprovalApprovedKeys: approvedKeys,
+    automationReleaseApprovalApprovedKeyCount: approvedKeys.length,
+    automationReleaseApprovalStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationReleaseApprovalApprovedCount: numberValue(statusCounts.approved, 0),
+    automationReleaseApprovalRevokedCount: numberValue(statusCounts.revoked, 0),
+    automationReleaseApprovalExpiredCount: numberValue(statusCounts.expired, 0),
+    automationReleaseApprovalSupersededCount: numberValue(statusCounts.superseded, 0),
+    automationReleaseApprovalPrivacyClass: cleanString(approval.privacyClass, 80),
+    automationReleaseApprovalVersion: cleanString(approval.approvalVersion || approvalSummary.schemaVersion, 140),
+    automationReleaseApprovalEvidenceVersion: cleanString(evidence.schemaVersion, 140),
+    automationReleaseApprovalApproved: approval.status === "approved" || approvalSummary.approved === true || approvedKeys.length > 0,
+    automationReleaseApprovalApprovedBy: cleanString(approval.approvedBy || releaseApproval[approval.approvalKey]?.approvedBy, 160),
+    automationReleaseApprovalApprovedAt: cleanString(approval.approvedAt || releaseApproval[approval.approvalKey]?.approvedAt, 120),
+    automationReleaseApprovalWritefulSchedulingAllowed: readback.writefulSchedulingAllowed === true || approvalSummary.writefulSchedulingAllowed === true
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -146,7 +229,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services.learningAutomationReleaseApprovalService, operation, input);
+  const result = projectAutomationReleaseApprovalSmokeReadback(
+    Object.assign({ operation }, runOperation(services.learningAutomationReleaseApprovalService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -165,6 +253,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationReleaseApprovalSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

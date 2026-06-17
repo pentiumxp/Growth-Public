@@ -9,6 +9,36 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T16:17+08:00 - Release Approval Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change release-approval service behavior, route authorization, repositories,
+  DB schema, Gateway/model calls, card publication, scheduler run/execution
+  behavior, action-handoff delivery, runtime config, UI behavior, production
+  deployment, or learner state.
+- Scope:
+  - added `projectAutomationReleaseApprovalSmokeReadback()` in
+    `scripts/smoke-growth-automation-release-approval.js`;
+  - projected bounded top-level `automationReleaseApproval*` fields for
+    list/bag/record, operation/write gate, scope, approval ids/keys/status
+    counts, approved bag keys, approval/evidence schema versions, approved
+    actor/time metadata, and `writefulSchedulingAllowed=false` while preserving
+    nested DTOs as canonical;
+  - kept record behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-release-approval-smoke-script.test.js`
+    to assert pure projection plus explicit record and bag readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-release-approval.js`
+  - `node --test tests/growth-automation-release-approval-smoke-script.test.js`
+  - `npm run --silent smoke:release-approval -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with release-evidence or platform/UI evidence smoke readback gaps.
+
 ## 2026-06-17T16:10+08:00 - Owner Review Evidence Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production
