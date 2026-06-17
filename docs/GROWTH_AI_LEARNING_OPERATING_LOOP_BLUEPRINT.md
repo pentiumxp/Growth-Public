@@ -323,9 +323,13 @@ Backend facade status:
 - `learning-operating-loop-service` is the service-owned execution facade for
   the current loop state's next action. It can recommend without writes, or
   run the current next action through the daily-loop or stage-assessment
-  services with explicit write gates. It must not auto-complete learner work,
-  audit/correction, target provisioning, graph import/selection, Gateway
-  configuration, scheduling, or notification steps.
+  services with explicit write gates. It also persists non-privacy execution
+  attempts to summary-only `learning_growth_operating_loop_runs` rows through
+  the injected run repository and exposes Owner-only run history readback
+  through `GET /api/v1/growth/learning-loop/runs` plus the no-write
+  `smoke:operating-loop -- --operation list-runs` path. It must not
+  auto-complete learner work, audit/correction, target provisioning, graph
+  import/selection, Gateway configuration, scheduling, or notification steps.
 - UI work should consume this facade first, then use lower-level audit routes
   only for explicit single-card drilldown.
 
@@ -1127,7 +1131,7 @@ gate.
 | Owner profile correction backend | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-owner-correction-service.test.js tests/learning-profile-v2-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner audit readback context | `node --test tests/growth-owner-audit-smoke-script.test.js tests/learning-card-generation-context-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Owner daily-loop backend facade | `node --test tests/learning-daily-loop-service.test.js tests/learning-card-generation-context-service.test.js tests/learning-plan-publisher-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-audit-completeness-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
-| Learning operating loop facade | `node --test tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` plus `npm run smoke:operating-loop`; the smoke defaults to no-write recommendation and gates `run-next` / `advance` with `--allow-write`, with a separate Owner checkpoint confirmation gate for formal assessment activation. |
+| Learning operating loop facade | `node --test tests/learning-operating-loop-run-repository.test.js tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` plus `npm run smoke:operating-loop`; the smoke defaults to no-write recommendation, supports no-write `runs` / `list-runs` history readback, and gates `run-next` / `advance` with `--allow-write`, with a separate Owner checkpoint confirmation gate for formal assessment activation. |
 | Learning-cycle audit aggregate | `node --test tests/learning-cycle-audit-service.test.js tests/learning-evidence-audit-service.test.js tests/learning-plan-audit-service.test.js tests/learning-profile-delta-audit-service.test.js tests/learning-owner-correction-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |
 | Learning-cycle history readback | `node --test tests/learning-cycle-history-service.test.js tests/growth-cycle-history-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` and `npm run smoke:cycle-history`; the CLI defaults to no-write summary-only history over the normal service graph. |
 | Audit completeness readback | `node --test tests/learning-audit-completeness-service.test.js tests/learning-cycle-audit-service.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` |

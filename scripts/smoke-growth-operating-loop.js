@@ -68,6 +68,9 @@ function inputFromArgs(args) {
   return Object.assign({}, base, {
     operation: firstArgValue(args, ["--operation"], "recommend") || "recommend",
     action: firstArgValue(args, ["--action", "--next-action", "--nextAction"], ""),
+    status: firstArgValue(args, ["--status"], ""),
+    runId: firstArgValue(args, ["--run-id", "--runId", "--operating-loop-run-id", "--operatingLoopRunId"], ""),
+    stageAssessmentCycleId: firstArgValue(args, ["--stage-assessment-cycle-id", "--stageAssessmentCycleId"], ""),
     allowWrite: hasFlag(args, "--allow-write") || hasFlag(args, "--allowWrite"),
     allowStageActivation: hasFlag(args, "--allow-stage-activation") || hasFlag(args, "--allowStageActivation"),
     confirmStageAssessment: hasFlag(args, "--confirm-stage-assessment") || hasFlag(args, "--confirmStageAssessment"),
@@ -88,6 +91,10 @@ function projectLearningOperatingLoopSmokeReadback(result = {}) {
   const nextAction = objectOnly(output.nextAction || state.nextAction || before.nextAction);
   const nextActionAfter = objectOnly(output.nextActionAfter || after.nextAction);
   const actionResult = objectOnly(output.actionResult);
+  const runAudit = objectOnly(output.runAudit);
+  const operatingLoopRun = objectOnly(output.operatingLoopRun);
+  const latestRun = objectOnly(output.latestRun);
+  const runReadback = Object.keys(operatingLoopRun).length ? operatingLoopRun : latestRun;
   const fields = {
     operatingLoopStatus: cleanString(output.status || summary.status, 120),
     operatingLoopOperation: cleanString(output.operation, 80),
@@ -111,7 +118,21 @@ function projectLearningOperatingLoopSmokeReadback(result = {}) {
     operatingLoopHorizon: cleanString(scope.horizon, 80),
     operatingLoopTaskCardId: cleanString(actionResult.taskCardId || summary.taskCardId, 160),
     operatingLoopPlanDraftId: cleanString(actionResult.planDraftId || summary.planDraftId, 160),
-    operatingLoopStageAssessmentCycleId: cleanString(actionResult.cycleId || summary.stageAssessmentCycleId, 160)
+    operatingLoopStageAssessmentCycleId: cleanString(actionResult.cycleId || summary.stageAssessmentCycleId, 160),
+    operatingLoopRunAuditStatus: cleanString(runAudit.status || summary.runAuditStatus, 120),
+    operatingLoopRunAuditOk: runAudit.ok === true || summary.runAuditOk === true,
+    operatingLoopRunId: cleanString(runAudit.runId || operatingLoopRun.runId || summary.operatingLoopRunId, 160),
+    operatingLoopRunCount: Number(output.count || summary.runCount || 0) || 0,
+    operatingLoopLatestRunId: cleanString(latestRun.runId || summary.latestRunId, 160),
+    operatingLoopLatestRunAction: cleanString(latestRun.action || summary.latestAction, 140),
+    operatingLoopLatestRunStatus: cleanString(latestRun.status || summary.latestStatus, 120),
+    operatingLoopLatestRunError: cleanString(latestRun.error || summary.latestError, 180),
+    operatingLoopLatestRunWritePerformed: latestRun.writePerformed === true || summary.latestWritePerformed === true,
+    operatingLoopReadbackAction: cleanString(runReadback.action, 140),
+    operatingLoopReadbackStatus: cleanString(runReadback.status, 120),
+    operatingLoopReadbackTaskCardId: cleanString(runReadback.taskCardId, 160),
+    operatingLoopReadbackPlanDraftId: cleanString(runReadback.planDraftId, 160),
+    operatingLoopReadbackStageAssessmentCycleId: cleanString(runReadback.stageAssessmentCycleId, 160)
   };
   return Object.assign({}, output, fields);
 }
@@ -149,6 +170,8 @@ async function main() {
   let result;
   if (["recommend", "state", "preview"].includes(operation)) {
     result = services.learningOperatingLoopService.recommend(input);
+  } else if (["runs", "list-runs", "list_runs", "history"].includes(operation)) {
+    result = services.learningOperatingLoopService.listRuns(input);
   } else if (["run-next", "run_next", "advance"].includes(operation)) {
     if (!input.allowWrite) {
       result = {
@@ -176,7 +199,7 @@ async function main() {
       status: "blocked",
       error: "operating_loop_operation_invalid",
       operation,
-      allowedOperations: ["recommend", "state", "preview", "run-next", "run_next", "advance"],
+      allowedOperations: ["recommend", "state", "preview", "runs", "list-runs", "list_runs", "history", "run-next", "run_next", "advance"],
       writePerformed: false
     };
     process.stdout.write(formatResult(projectLearningOperatingLoopSmokeReadback(result), pretty));

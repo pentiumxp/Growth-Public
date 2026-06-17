@@ -3738,6 +3738,7 @@ test("Growth operating-loop smoke CLI stays service-owned and gates writes", () 
   const script = read(path.join("scripts", "smoke-growth-operating-loop.js"));
   assert.match(script, /learningOperatingLoopService\.recommend/);
   assert.match(script, /learningOperatingLoopService\.runNext/);
+  assert.match(script, /learningOperatingLoopService\.listRuns/);
   assert.match(script, /operating_loop_write_requires_allow_write/);
   assert.match(script, /--allow-write/);
   assert.match(script, /--allow-stage-activation/);
@@ -3751,10 +3752,13 @@ test("Growth operating-loop smoke CLI stays service-owned and gates writes", () 
 
   const service = read(path.join("src", "services", "learning-operating-loop-service.js"));
   assert.match(service, /growth\.learningOperatingLoop\.v1/);
+  assert.match(service, /growth\.learningOperatingLoopRuns\.v1/);
   assert.match(service, /loopStateService\.state/);
   assert.match(service, /dailyLoopService\.advance/);
   assert.match(service, /dailyLoopService\.publish/);
   assert.match(service, /stageAssessmentService\.activateStageAssessment/);
+  assert.match(service, /runRepository\.recordRun/);
+  assert.match(service, /runRepository\.listRuns/);
   assert.match(service, /stage_assessment_owner_confirmation_required/);
   assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(service, /learning_growth_/);
@@ -3762,16 +3766,30 @@ test("Growth operating-loop smoke CLI stays service-owned and gates writes", () 
 
   const route = read(path.join("src", "routes", "growth-routes.js"));
   assert.match(route, /learning-loop\/advance/);
+  assert.match(route, /learning-loop\/runs/);
   assert.match(route, /learningOperatingLoopService\.runNext/);
+  assert.match(route, /learningOperatingLoopService\.listRuns/);
+
+  const repository = read(path.join("src", "stores", "growth-learning-sqlite", "operating-loop-runs.js"));
+  assert.match(repository, /learning_growth_operating_loop_runs/);
+  assert.match(repository, /createLearningOperatingLoopRunRepository/);
+  assert.match(repository, /learning_operating_loop_run_privacy_failed/);
+  assert.doesNotMatch(repository, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
   const serviceHarness = read(path.join("tests", "learning-operating-loop-service.test.js"));
   assert.match(serviceHarness, /requires explicit owner confirmation before stage activation/);
   assert.match(serviceHarness, /executes ready-to-draft through daily-loop advance/);
   assert.match(serviceHarness, /publishes a selected plan item/);
+  assert.match(serviceHarness, /lists persisted run audits/);
 
   const scriptHarness = read(path.join("tests", "growth-operating-loop-smoke-script.test.js"));
   assert.match(scriptHarness, /defaults to no-write recommend readback/);
+  assert.match(scriptHarness, /lists persisted run audits without allow-write/);
   assert.match(scriptHarness, /blocks run-next writes without allow-write/);
+
+  const repositoryHarness = read(path.join("tests", "learning-operating-loop-run-repository.test.js"));
+  assert.match(repositoryHarness, /records and lists summary-only run audits/);
+  assert.match(repositoryHarness, /rejects private payloads and non-summary writes/);
 });
 
 test("Growth learner-cycle smoke CLI stays service-owned and gates learner writes", () => {

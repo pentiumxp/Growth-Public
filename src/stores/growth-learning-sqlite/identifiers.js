@@ -384,6 +384,29 @@ function stableLearningAutomationReleaseActivationId(input = {}) {
   return `lgaract_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
 }
 
+function stableLearningOperatingLoopRunId(input = {}) {
+  const explicit = cleanString(input.runId || input.run_id || input.operatingLoopRunId || input.operating_loop_run_id || input.id);
+  if (explicit) return explicit;
+  const seed = [
+    cleanString(input.workspaceId || input.workspace_id),
+    cleanString(input.learnerId || input.learner_id),
+    cleanString(input.programId || input.program_id),
+    cleanString(input.domainPackId || input.domain_pack_id),
+    cleanString(input.domain),
+    cleanString(input.subject),
+    cleanString(input.horizon),
+    cleanString(input.operation || input.operation_name),
+    cleanString(input.action || input.executedAction || input.executed_action),
+    cleanString(input.status),
+    cleanString(input.createdAt || input.created_at || input.startedAt || input.started_at || input.requestedAt || input.requested_at),
+    cleanString(input.taskCardId || input.task_card_id),
+    cleanString(input.planDraftId || input.plan_draft_id),
+    cleanString(input.stageAssessmentCycleId || input.stage_assessment_cycle_id),
+    cleanString(input.error)
+  ].join(":");
+  return `lgloop_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
+}
+
 function stableLearningAutomationRuntimeEnablementId(input = {}) {
   const explicit = cleanString(input.enablementId || input.enablement_id || input.runtimeEnablementId || input.runtime_enablement_id || input.id);
   if (explicit) return explicit;
@@ -454,6 +477,7 @@ module.exports = {
   stableLearningAutomationReleaseWorkbenchActionAuditId,
   stableLearningAutomationReleaseReadinessId,
   stableLearningAutomationRuntimeEnablementId,
+  stableLearningOperatingLoopRunId,
   stableLearningEvidenceId,
   stableLearningCoinLedgerEntryId,
   stableLearningPlanDraftId,

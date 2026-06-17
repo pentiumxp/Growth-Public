@@ -509,7 +509,8 @@ function createServices(config) {
   const learningOperatingLoopService = createLearningOperatingLoopService({
     loopStateService: learningLoopStateService,
     dailyLoopService: learningDailyLoopService,
-    stageAssessmentService: learningStageAssessmentService
+    stageAssessmentService: learningStageAssessmentService,
+    runRepository: growthLearningStore.learningOperatingLoopRunRepository
   });
   const learningProfileFeedbackEvidenceService = createLearningProfileFeedbackEvidenceService({
     auditCompletenessService: learningAuditCompletenessService,

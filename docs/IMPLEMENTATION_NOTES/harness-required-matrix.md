@@ -55,12 +55,13 @@ until real artifacts are collected:
   through release-evidence collection records; they must remain external
   automation-state actions until the owning service proves them.
 - Do not treat release approvals as runtime config switches.
-- Do not treat learning-loop readback as permission to auto-complete every next
-  action. `learning-operating-loop-service` may execute only the current
-  service-projected daily publish/draft action or an explicitly confirmed
-  formal checkpoint activation; learner work, audit/correction, target
-  provisioning, graph import/selection, context refresh, and Gateway
-  configuration remain separate flows.
+- Do not treat learning-loop readback or operating-loop run history as
+  permission to auto-complete every next action. `learning-operating-loop-service`
+  may execute only the current service-projected daily publish/draft action or
+  an explicitly confirmed formal checkpoint activation; learner work,
+  audit/correction, target provisioning, graph import/selection, context
+  refresh, and Gateway configuration remain separate flows. Run history is
+  summary-only audit evidence, not a scheduler or release switch.
 - Do not run Gateway, card generation, evaluation, scheduler execution,
   notification delivery, stage activation, visual tooling, or deployment from
   release-readiness, release bundle, release package, review, authorization,

@@ -232,13 +232,20 @@ Backend facade status:
   `publish_selected_plan_item` through `learning-daily-loop-service.publish()`,
   and `review_stage_assessment` through
   `learning-stage-assessment-service.activateStageAssessment()` only after
-  explicit Owner stage confirmation.
+  explicit Owner stage confirmation. It persists non-privacy attempts to the
+  summary-only `learning_growth_operating_loop_runs` audit table through the
+  injected run repository, and `listRuns()` returns Owner history readback as
+  `growth.learningOperatingLoopRuns.v1`.
 - Owner-only `POST /api/v1/growth/learning-loop/advance` is HTTP glue for that
   service. It enforces Owner role, writable workspace authorization, and
   Growth visible-target scope before delegating to `runNext()`. It must not
   call Gateway, plan publisher, card generation, evaluation, stage-assessment
   activation, scheduler, notification, or SQLite repositories directly.
+- Owner-only `GET /api/v1/growth/learning-loop/runs` is readback glue for the
+  same service. It enforces Owner role plus Growth visible-target scope and
+  does not inspect SQLite directly.
 - `npm run smoke:operating-loop` defaults to no-write recommendation readback.
+  `--operation runs|list-runs|history` is no-write history readback.
   `--operation run-next|advance` requires `--allow-write`, and formal
   checkpoint activation additionally requires `--allow-stage-activation` or
   `--confirm-stage-assessment`.
@@ -353,7 +360,8 @@ Business policy belongs in services:
 - `learning-operating-loop-service` owns executing the current bounded
   next-action facade while preserving the separate daily-loop,
   stage-assessment, target-provisioning, learner-work, and audit/correction
-  boundaries;
+  boundaries, and owns summary-only run-audit persistence through its injected
+  run repository;
 - `learning-card-generation-service` owns card generation orchestration;
 - `learning-card-authoring-service` owns Gateway authoring;
 - `growth-evaluation-service` owns evaluation queue processing and downstream

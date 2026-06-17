@@ -177,16 +177,19 @@ readback gate set.
   refuses direct formal stage-assessment publication. Growth now also wires a
   service-owned learning operating-loop execution facade through
   `learning-operating-loop-service`, Owner-only
-  `POST /api/v1/growth/learning-loop/advance`, and
-  `npm run smoke:operating-loop`. The facade recommends the current
-  `learning-loop-state` next action without writing by default. Writeful
-  `runNext` can execute only the current next action: daily draft/publish via
-  `learning-daily-loop-service` and formal checkpoint activation via
-  `learning-stage-assessment-service` only after explicit Owner stage
-  confirmation. Learner work, audit/correction, target provisioning, graph
-  import/selection, context refresh, and Gateway configuration remain separate
-  flows and return blocked/separate-flow DTOs instead of automatic side
-  effects. A service-level
+  `POST /api/v1/growth/learning-loop/advance`, Owner-only
+  `GET /api/v1/growth/learning-loop/runs`, and `npm run smoke:operating-loop`.
+  The facade recommends the current `learning-loop-state` next action without
+  writing by default. Writeful `runNext` can execute only the current next
+  action: daily draft/publish via `learning-daily-loop-service` and formal
+  checkpoint activation via `learning-stage-assessment-service` only after
+  explicit Owner stage confirmation. Every non-privacy attempt is persisted as
+  summary-only `learning_growth_operating_loop_runs` audit readback through the
+  injected run repository; `runs` / `list-runs` / `history` smoke operations
+  are no-write history reads. Learner work, audit/correction, target
+  provisioning, graph import/selection, context refresh, and Gateway
+  configuration remain separate flows and return blocked/separate-flow DTOs
+  instead of automatic side effects. A service-level
   Fanfan science vertical harness now proves planner draft, publish, daily-loop
   advance, generated-card board/detail visibility, science card generation,
   learner evidence, one-submit/one-evaluate/one-reflect completion through

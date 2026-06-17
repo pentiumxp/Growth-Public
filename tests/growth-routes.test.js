@@ -7855,6 +7855,117 @@ test("growth operating loop advance delegates current next action through Owner 
   }
 });
 
+test("growth operating loop runs readback delegates through Owner visible target", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningOperatingLoopService: {
+      listRuns(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-operating-loop-service",
+          schemaVersion: "growth.learningOperatingLoopRuns.v1",
+          operation: "list_runs",
+          status: "listed",
+          writePerformed: false,
+          count: 1,
+          latestRun: {
+            runId: "lgloop_route_1",
+            action: input.action,
+            status: input.status,
+            taskCardId: input.taskCardId
+          },
+          runs: []
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/learning-loop/runs?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&action=draft_daily_plan&status=executed&runId=lgloop_route_1&taskCardId=ltask_route_1&planDraftId=lgplan_route_1&stageAssessmentCycleId=stage_cycle_route_1&limit=7`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningOperatingLoopRuns.v1");
+    assert.equal(body.latestRun.runId, "lgloop_route_1");
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      growthWorkspaceId: undefined,
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      subjectId: "science",
+      capabilityClusterId: "",
+      horizon: "daily_plan",
+      availableMinutes: "",
+      targetNodeIds: [],
+      assessmentCoverageNodeIds: [],
+      planDraftId: "lgplan_route_1",
+      itemId: "",
+      taskCardId: "ltask_route_1",
+      evaluationId: "",
+      profileDeltaId: "",
+      evidenceId: "",
+      correctionId: "",
+      sourceId: "",
+      limit: "7",
+      requestedBy: "weixin_stephen",
+      operation: "",
+      action: "draft_daily_plan",
+      status: "executed",
+      runId: "lgloop_route_1",
+      selectedItemId: "",
+      stageAssessmentCycleId: "stage_cycle_route_1"
+    });
+
+    const memberDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/runs?workspaceId=weixin_stephen`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(memberDenied.status, 403);
+    assert.equal((await memberDenied.json()).error.code, "growth_operating_loop_runs_owner_required");
+
+    const invisibleDenied = await fetch(`${baseUrl}/api/v1/growth/learning-loop/runs?workspaceId=weixin_missing`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(invisibleDenied.status, 403);
+    assert.equal((await invisibleDenied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth daily loop draft and publish delegate through service with Owner write authorization", async () => {
   const calls = [];
   const server = createServer({

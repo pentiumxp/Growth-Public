@@ -853,17 +853,32 @@ silently completed by the operating-loop facade.
 Routes and smoke:
 
 - Owner-only `POST /api/v1/growth/learning-loop/advance`;
+- Owner-only `GET /api/v1/growth/learning-loop/runs`;
 - no-write default `npm run smoke:operating-loop`;
+- no-write `npm run smoke:operating-loop -- --operation list-runs ...`;
 - write-gated `npm run smoke:operating-loop -- --operation run-next
   --allow-write ...`;
 - stage activation additionally requires `--allow-stage-activation` or
   `--confirm-stage-assessment`.
 
-The service must not call Gateway directly, import repositories, publish plans
-outside the daily-loop service, generate cards directly, evaluate submissions,
-settle rewards, start schedulers, deliver notifications or handoffs, activate
-stage assessments without explicit Owner confirmation, or mutate learner state
-outside the delegated owning service.
+Run audit persistence:
+
+- every non-privacy `runNext` attempt records one summary-only
+  `learning_growth_operating_loop_runs` row through the injected
+  `learningOperatingLoopRunRepository`;
+- records contain target/scope, current next action, before/after state
+  summaries, bounded action result ids, status, error, execution mode,
+  write flags, and public selectors;
+- privacy-risk inputs fail before persistence, so raw learner/model/private
+  payloads do not enter the run ledger;
+- `listRuns` returns `growth.learningOperatingLoopRuns.v1` history readback
+  through the service boundary for Owner audit and smoke evidence.
+
+The service must not call Gateway directly, import repository modules, publish
+plans outside the daily-loop service, generate cards directly, evaluate
+submissions, settle rewards, start schedulers, deliver notifications or
+handoffs, activate stage assessments without explicit Owner confirmation, or
+mutate learner state outside the delegated owning service.
 
 ### `learning-plan-audit-service`
 
@@ -1519,13 +1534,26 @@ The next implementation should add focused tests before broad integration:
   - `runNext` delegates `draft_daily_plan` to daily-loop advance and
     `publish_selected_plan_item` to daily-loop publish;
   - formal checkpoint activation is blocked until explicit Owner confirmation;
-  - unsupported, disabled, mismatched, and privacy-risk inputs fail closed.
+  - unsupported, disabled, mismatched, and privacy-risk inputs fail closed;
+  - non-privacy attempts record summary-only run-audit metadata through the
+    injected run repository;
+  - `listRuns` returns persisted run history through the service boundary.
+- `tests/learning-operating-loop-run-repository.test.js`
+  - implemented;
+  - records and lists summary-only `learning_growth_operating_loop_runs` rows;
+  - preserves blocked and executed attempt readback separately;
+  - rejects raw/private payload keys, private value/path-like strings, and
+    non-summary writes;
+  - migrates bounded columns on existing tables.
 - `tests/growth-operating-loop-smoke-script.test.js`
   - implemented;
   - default operation is no-write recommendation readback;
+  - `runs` / `list-runs` / `history` are no-write run-history readbacks;
   - `run-next` / `advance` operations require `--allow-write`;
   - stage coverage selectors and checkpoint confirmation flags are parsed
-    without exposing raw learner or model payloads.
+    without exposing raw learner or model payloads;
+  - top-level `operatingLoop*` fields mirror both execution DTOs and run-history
+    DTOs for operator/release evidence.
 - `tests/learning-automation-proposal-service.test.js`
   - required for the proposal slice;
   - source-cycle id is required before any planner draft call;

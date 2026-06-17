@@ -154,6 +154,38 @@ function publicStageActivationResult(result = {}) {
   };
 }
 
+function publicNextAction(nextAction = {}) {
+  return {
+    action: cleanString(nextAction.action),
+    enabled: nextAction.enabled !== false,
+    endpoint: cleanString(nextAction.endpoint),
+    reason: cleanString(nextAction.reason),
+    requiredActor: cleanString(nextAction.requiredActor),
+    planDraftId: cleanString(nextAction.planDraftId),
+    itemId: cleanString(nextAction.itemId),
+    taskCardId: cleanString(nextAction.taskCardId)
+  };
+}
+
+function publicStateSummary(state = {}) {
+  if (!state || typeof state !== "object") return null;
+  const summary = state.summary || {};
+  return {
+    ok: state.ok === true,
+    status: cleanString(state.status),
+    error: cleanString(state.error),
+    target: targetFrom(state, {}),
+    scope: scopeFrom(state, {}),
+    nextAction: publicNextAction(state.nextAction || {}),
+    readyForDraft: summary.readyForDraft === true,
+    readyForPublish: summary.readyForPublish === true,
+    stageCheckpointReady: summary.stageCheckpointReady === true,
+    stageCheckpointActive: summary.stageCheckpointActive === true,
+    auditComplete: summary.auditComplete === true,
+    recommendationEvidenceReady: summary.recommendationEvidenceReady === true
+  };
+}
+
 function resultSelectors(actionResult = {}) {
   return {
     planDraftId: cleanString(actionResult.planDraftId),
@@ -178,10 +210,37 @@ function supportedAction(action = "") {
   ].includes(action);
 }
 
+function executionModeFor(actionName) {
+  if (actionName === "draft_daily_plan") return "daily_loop_advance";
+  if (actionName === "publish_selected_plan_item") return "daily_loop_publish";
+  if (actionName === "review_stage_assessment") return "stage_assessment_activate";
+  return "separate_flow";
+}
+
+function publicRunAudit(recorded = {}) {
+  if (!recorded) return null;
+  if (recorded.ok !== true) {
+    return {
+      ok: false,
+      status: "failed",
+      error: cleanString(recorded.error || "learning_operating_loop_run_audit_failed"),
+      privacyFindings: asArray(recorded.privacyFindings).slice(0, 12),
+      privateValueFindings: asArray(recorded.privateValueFindings).slice(0, 12)
+    };
+  }
+  return {
+    ok: true,
+    status: "recorded",
+    duplicate: recorded.duplicate === true,
+    runId: cleanString(recorded.run?.runId || recorded.runId)
+  };
+}
+
 function createLearningOperatingLoopService(options = {}) {
   const loopStateService = options.loopStateService || null;
   const dailyLoopService = options.dailyLoopService || null;
   const stageAssessmentService = options.stageAssessmentService || null;
+  const runRepository = options.runRepository || options.operatingLoopRunRepository || null;
 
   function stateFor(input = {}) {
     if (!loopStateService || typeof loopStateService.state !== "function") {
@@ -233,6 +292,105 @@ function createLearningOperatingLoopService(options = {}) {
     };
   }
 
+  function recordRunAttempt(result = {}, context = {}) {
+    if (!runRepository || typeof runRepository.recordRun !== "function") return result;
+    const actionResult = context.actionResult || result.actionResult || {};
+    const selectors = Object.assign({}, resultSelectors(actionResult), context.selectors || {});
+    const beforeSummary = publicStateSummary(context.before || result.before || {});
+    const afterSummary = publicStateSummary(context.after || result.after || {});
+    const target = targetFrom(context.before || result.before || {}, context.input || {});
+    const scope = scopeFrom(context.before || result.before || {}, context.input || {});
+    const action = cleanString(context.actionName || result.executedAction || result.nextAction?.action || context.nextAction?.action);
+    let recorded;
+    try {
+      recorded = runRepository.recordRun({
+        workspaceId: target.workspaceId,
+        learnerId: target.learnerId,
+        programId: scope.programId,
+        domainPackId: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
+        operation: cleanString(result.operation || "run_next") || "run_next",
+        action,
+        executionMode: cleanString(result.executionMode || context.executionMode || executionModeFor(action)),
+        status: cleanString(result.status || (result.ok ? "executed" : "blocked")),
+        error: cleanString(result.error),
+        writePerformed: result.writePerformed === true,
+        actionExecuted: result.actionExecuted === true,
+        taskCardId: cleanString(selectors.taskCardId || actionResult.taskCardId || context.nextAction?.taskCardId),
+        planDraftId: cleanString(selectors.planDraftId || actionResult.planDraftId || context.nextAction?.planDraftId),
+        selectedItemId: cleanString(selectors.itemId || actionResult.selectedItemId || context.nextAction?.itemId),
+        stageAssessmentCycleId: cleanString(selectors.stageAssessmentCycleId || actionResult.cycleId),
+        target,
+        scope,
+        nextAction: publicNextAction(context.nextAction || result.nextAction || {}),
+        beforeSummary: beforeSummary || {},
+        actionResult,
+        afterSummary: afterSummary || {},
+        resultSelectors: selectors,
+        requestedBy: cleanString(context.input?.requestedBy || context.input?.requested_by)
+      });
+    } catch (error) {
+      recorded = {
+        ok: false,
+        error: cleanString(error && error.message ? error.message : error) || "learning_operating_loop_run_audit_failed"
+      };
+    }
+    const runAudit = publicRunAudit(recorded);
+    const summary = Object.assign({}, result.summary || {}, {
+      operatingLoopRunId: cleanString(runAudit?.runId),
+      runAuditStatus: cleanString(runAudit?.status || "not_recorded"),
+      runAuditOk: runAudit?.ok === true
+    });
+    return Object.assign({}, result, {
+      runAudit,
+      operatingLoopRun: recorded?.run || null,
+      summary
+    });
+  }
+
+  function listRuns(input = {}) {
+    const privacyFindings = scanPrivacy(input);
+    if (privacyFindings.length) {
+      return Object.assign(unavailable("learning_operating_loop_privacy_failed", { privacyFindings }), {
+        schemaVersion: "growth.learningOperatingLoopRuns.v1",
+        operation: "list_runs"
+      });
+    }
+    if (!runRepository || typeof runRepository.listRuns !== "function") {
+      return Object.assign(unavailable("learning_operating_loop_run_repository_unavailable"), {
+        schemaVersion: "growth.learningOperatingLoopRuns.v1",
+        operation: "list_runs"
+      });
+    }
+    const runs = runRepository.listRuns(input);
+    const latestRun = runs[0] || null;
+    return {
+      ok: true,
+      source: "growth-learning-operating-loop-service",
+      schemaVersion: "growth.learningOperatingLoopRuns.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      operation: "list_runs",
+      status: "listed",
+      writePerformed: false,
+      target: targetFrom({}, input),
+      scope: scopeFrom({}, input),
+      count: runs.length,
+      runs,
+      latestRun,
+      summary: {
+        runCount: runs.length,
+        latestRunId: cleanString(latestRun?.runId),
+        latestStatus: cleanString(latestRun?.status),
+        latestAction: cleanString(latestRun?.action),
+        latestError: cleanString(latestRun?.error),
+        latestWritePerformed: latestRun?.writePerformed === true
+      }
+    };
+  }
+
   async function runNext(input = {}) {
     const privacyFindings = scanPrivacy(input);
     if (privacyFindings.length) {
@@ -240,29 +398,39 @@ function createLearningOperatingLoopService(options = {}) {
     }
     const before = stateFor(input);
     if (!before?.ok) {
-      return unavailable(before?.error || "learning_operating_loop_state_failed", {
+      return recordRunAttempt(unavailable(before?.error || "learning_operating_loop_state_failed", {
         before: before ? {
           ok: before.ok === true,
           error: cleanString(before.error)
         } : null
-      });
+      }), { input, before });
     }
     const nextAction = before.nextAction || {};
     const actionName = cleanString(nextAction.action);
     const requestedAction = cleanString(input.action || input.nextAction || input.next_action || input.operation);
     const canonicalRequestedAction = requestedAction === "run-next" ? "run_next" : requestedAction;
     if (!actionName || !supportedAction(actionName)) {
-      return unavailable("learning_operating_loop_next_action_unsupported", { before, nextAction });
+      return recordRunAttempt(unavailable("learning_operating_loop_next_action_unsupported", { before, nextAction }), {
+        input,
+        before,
+        nextAction,
+        actionName
+      });
     }
     if (canonicalRequestedAction && !["run_next", "next", "advance", actionName].includes(canonicalRequestedAction)) {
-      return unavailable("learning_operating_loop_action_mismatch", {
+      return recordRunAttempt(unavailable("learning_operating_loop_action_mismatch", {
         before,
         expectedAction: actionName,
         requestedAction: canonicalRequestedAction
-      });
+      }), { input, before, nextAction, actionName });
     }
     if (nextAction.enabled === false) {
-      return unavailable("learning_operating_loop_next_action_disabled", { before, nextAction });
+      return recordRunAttempt(unavailable("learning_operating_loop_next_action_disabled", { before, nextAction }), {
+        input,
+        before,
+        nextAction,
+        actionName
+      });
     }
 
     const scopedInput = executionInput(input, before);
@@ -271,13 +439,23 @@ function createLearningOperatingLoopService(options = {}) {
 
     if (actionName === "draft_daily_plan") {
       if (!dailyLoopService || typeof dailyLoopService.advance !== "function") {
-        return unavailable("learning_operating_loop_daily_loop_service_unavailable", { before, nextAction });
+        return recordRunAttempt(unavailable("learning_operating_loop_daily_loop_service_unavailable", { before, nextAction }), {
+          input: scopedInput,
+          before,
+          nextAction,
+          actionName
+        });
       }
       actionResult = publicDailyLoopResult(await dailyLoopService.advance(scopedInput));
       writePerformed = actionResult.ok === true;
     } else if (actionName === "publish_selected_plan_item") {
       if (!dailyLoopService || typeof dailyLoopService.publish !== "function") {
-        return unavailable("learning_operating_loop_daily_loop_service_unavailable", { before, nextAction });
+        return recordRunAttempt(unavailable("learning_operating_loop_daily_loop_service_unavailable", { before, nextAction }), {
+          input: scopedInput,
+          before,
+          nextAction,
+          actionName
+        });
       }
       actionResult = publicDailyLoopResult(await dailyLoopService.publish(Object.assign({}, scopedInput, {
         planDraftId: cleanString(scopedInput.planDraftId || scopedInput.plan_draft_id || nextAction.planDraftId),
@@ -286,16 +464,21 @@ function createLearningOperatingLoopService(options = {}) {
       writePerformed = actionResult.ok === true;
     } else if (actionName === "review_stage_assessment") {
       if (!bool(input.allowStageActivation || input.allow_stage_activation || input.confirmStageAssessment || input.confirm_stage_assessment)) {
-        return unavailable("stage_assessment_owner_confirmation_required", {
+        return recordRunAttempt(unavailable("stage_assessment_owner_confirmation_required", {
           before,
           nextAction,
           status: "blocked",
           confirmationRequired: true,
           writePerformed: false
-        });
+        }), { input: scopedInput, before, nextAction, actionName });
       }
       if (!stageAssessmentService || typeof stageAssessmentService.activateStageAssessment !== "function") {
-        return unavailable("learning_operating_loop_stage_assessment_service_unavailable", { before, nextAction });
+        return recordRunAttempt(unavailable("learning_operating_loop_stage_assessment_service_unavailable", { before, nextAction }), {
+          input: scopedInput,
+          before,
+          nextAction,
+          actionName
+        });
       }
       const coverage = uniqueStrings(scopedInput.assessmentCoverageNodeIds || scopedInput.targetNodeIds);
       actionResult = publicStageActivationResult(await stageAssessmentService.activateStageAssessment(Object.assign({}, scopedInput, {
@@ -307,18 +490,19 @@ function createLearningOperatingLoopService(options = {}) {
       })));
       writePerformed = actionResult.ok === true;
     } else {
-      return unavailable("learning_operating_loop_action_requires_separate_flow", {
+      return recordRunAttempt(unavailable("learning_operating_loop_action_requires_separate_flow", {
         before,
         nextAction,
         requiredActor: cleanString(nextAction.requiredActor || "owner"),
         endpoint: cleanString(nextAction.endpoint),
         taskCardId: cleanString(nextAction.taskCardId)
-      });
+      }), { input: scopedInput, before, nextAction, actionName });
     }
 
     const selectors = resultSelectors(actionResult);
     const after = stateFor(Object.assign({}, scopedInput, selectors));
-    return {
+    const executionMode = executionModeFor(actionName);
+    return recordRunAttempt({
       ok: actionResult.ok === true,
       source: "growth-learning-operating-loop-service",
       schemaVersion: "growth.learningOperatingLoop.v1",
@@ -329,11 +513,7 @@ function createLearningOperatingLoopService(options = {}) {
       writePerformed,
       actionExecuted: actionResult.ok === true,
       executedAction: actionName,
-      executionMode: actionName === "draft_daily_plan"
-        ? "daily_loop_advance"
-        : actionName === "publish_selected_plan_item"
-          ? "daily_loop_publish"
-          : "stage_assessment_activate",
+      executionMode,
       target: before.target,
       scope: before.scope,
       before,
@@ -346,11 +526,7 @@ function createLearningOperatingLoopService(options = {}) {
       error: actionResult.ok ? "" : cleanString(actionResult.error || "learning_operating_loop_action_failed"),
       summary: {
         executedAction: actionName,
-        executionMode: actionName === "draft_daily_plan"
-          ? "daily_loop_advance"
-          : actionName === "publish_selected_plan_item"
-            ? "daily_loop_publish"
-            : "stage_assessment_activate",
+        executionMode,
         beforeStatus: cleanString(before.status),
         afterStatus: cleanString(after?.status),
         taskCardId: cleanString(actionResult.taskCardId),
@@ -358,10 +534,20 @@ function createLearningOperatingLoopService(options = {}) {
         stageAssessmentCycleId: cleanString(actionResult.cycleId),
         writePerformed
       }
-    };
+    }, {
+      input: scopedInput,
+      before,
+      nextAction,
+      actionName,
+      actionResult,
+      after,
+      selectors,
+      executionMode
+    });
   }
 
   return {
+    listRuns,
     recommend,
     runNext
   };

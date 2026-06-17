@@ -47,7 +47,26 @@ function loopState(overrides = {}) {
 
 function createService(options = {}) {
   const calls = [];
+  const runRows = [];
   const states = options.states || [loopState()];
+  const runRepository = options.runRepository === false
+    ? null
+    : options.runRepository || {
+      recordRun(input) {
+        const run = Object.assign({
+          runId: `lgloop_test_${runRows.length + 1}`,
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          createdAt: "2026-06-17T12:00:00.000Z",
+          updatedAt: "2026-06-17T12:00:00.000Z"
+        }, input);
+        runRows.push(run);
+        return { ok: true, duplicate: false, run };
+      },
+      listRuns(input) {
+        return runRows.filter((row) => !input.status || row.status === input.status);
+      }
+    };
   const service = createLearningOperatingLoopService({
     loopStateService: {
       state(input) {
@@ -121,9 +140,10 @@ function createService(options = {}) {
           published: { taskCardId: "ltask_stage_1" }
         };
       }
-    }
+    },
+    runRepository
   });
-  return { calls, service };
+  return { calls, runRows, service };
 }
 
 test("learning operating loop recommends the service-owned next action without writing", () => {
@@ -151,7 +171,7 @@ test("learning operating loop executes ready-to-draft through daily-loop advance
     nextAction: { action: "draft_daily_plan", enabled: true },
     summary: { readyForDraft: true }
   });
-  const { calls, service } = createService({ states: [loopState(), afterState] });
+  const { calls, runRows, service } = createService({ states: [loopState(), afterState] });
 
   const result = await service.runNext({
     workspaceId: "weixin_fanfan",
@@ -167,6 +187,17 @@ test("learning operating loop executes ready-to-draft through daily-loop advance
   assert.equal(result.actionResult.taskCardId, "ltask_operating_1");
   assert.equal(result.summary.planDraftId, "lgplan_operating_1");
   assert.equal(result.summary.taskCardId, "ltask_operating_1");
+  assert.equal(result.runAudit.ok, true);
+  assert.equal(result.runAudit.runId, "lgloop_test_1");
+  assert.equal(result.operatingLoopRun.status, "executed");
+  assert.equal(result.summary.operatingLoopRunId, "lgloop_test_1");
+  assert.equal(runRows.length, 1);
+  assert.equal(runRows[0].action, "draft_daily_plan");
+  assert.equal(runRows[0].status, "executed");
+  assert.equal(runRows[0].writePerformed, true);
+  assert.equal(runRows[0].taskCardId, "ltask_operating_1");
+  assert.equal(runRows[0].beforeSummary.status, "ready_to_draft");
+  assert.equal(JSON.stringify(runRows[0]).includes("rawPrompt"), false);
   assert.deepEqual(calls.map((call) => call.type), ["state", "advance", "state"]);
   assert.equal(calls[1].input.workspaceId, "weixin_fanfan");
   assert.equal(calls[1].input.programId, "program_science");
@@ -234,7 +265,7 @@ test("learning operating loop requires explicit owner confirmation before stage 
       stageCheckpointReady: true
     }
   });
-  const { calls: blockedCalls, service: blockedService } = createService({ states: [readyStage] });
+  const { calls: blockedCalls, runRows: blockedRunRows, service: blockedService } = createService({ states: [readyStage] });
 
   const blocked = await blockedService.runNext({
     workspaceId: "weixin_fanfan",
@@ -245,6 +276,11 @@ test("learning operating loop requires explicit owner confirmation before stage 
   assert.equal(blocked.error, "stage_assessment_owner_confirmation_required");
   assert.equal(blocked.confirmationRequired, true);
   assert.equal(blocked.writePerformed, false);
+  assert.equal(blocked.runAudit.ok, true);
+  assert.equal(blockedRunRows.length, 1);
+  assert.equal(blockedRunRows[0].status, "blocked");
+  assert.equal(blockedRunRows[0].action, "review_stage_assessment");
+  assert.equal(blockedRunRows[0].error, "stage_assessment_owner_confirmation_required");
   assert.deepEqual(blockedCalls.map((call) => call.type), ["state"]);
 
   const activeState = loopState({
@@ -282,26 +318,66 @@ test("learning operating loop requires explicit owner confirmation before stage 
 test("learning operating loop fails closed for privacy input, disabled actions, and mismatched requests", async () => {
   assert.deepEqual(scanPrivacy({ nested: { rawPrompt: "bad" } }), ["$.nested.rawPrompt"]);
 
-  const privacy = await createService().service.runNext({
+  const privacyFixture = createService();
+  const privacy = await privacyFixture.service.runNext({
     workspaceId: "weixin_fanfan",
     rawAnswer: "do not store"
   });
   assert.equal(privacy.ok, false);
   assert.equal(privacy.error, "learning_operating_loop_privacy_failed");
+  assert.equal(privacyFixture.runRows.length, 0);
 
-  const disabled = await createService({
+  const disabledFixture = createService({
     states: [loopState({
       nextAction: { action: "draft_daily_plan", enabled: false }
     })]
-  }).service.runNext({ workspaceId: "weixin_fanfan" });
+  });
+  const disabled = await disabledFixture.service.runNext({ workspaceId: "weixin_fanfan" });
   assert.equal(disabled.ok, false);
   assert.equal(disabled.error, "learning_operating_loop_next_action_disabled");
+  assert.equal(disabled.runAudit.ok, true);
+  assert.equal(disabledFixture.runRows[0].status, "blocked");
 
-  const mismatch = await createService().service.runNext({
+  const mismatchFixture = createService();
+  const mismatch = await mismatchFixture.service.runNext({
     workspaceId: "weixin_fanfan",
     action: "publish_selected_plan_item"
   });
   assert.equal(mismatch.ok, false);
   assert.equal(mismatch.error, "learning_operating_loop_action_mismatch");
   assert.equal(mismatch.expectedAction, "draft_daily_plan");
+  assert.equal(mismatchFixture.runRows[0].action, "draft_daily_plan");
+  assert.equal(mismatchFixture.runRows[0].status, "blocked");
+});
+
+test("learning operating loop lists persisted run audits through the service boundary", () => {
+  const { runRows, service } = createService();
+  runRows.push({
+    runId: "lgloop_test_list_1",
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    action: "draft_daily_plan",
+    status: "executed",
+    writePerformed: true,
+    taskCardId: "ltask_operating_1",
+    privacyClass: "summary_only",
+    summaryOnly: true
+  });
+
+  const result = service.listRuns({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domain: "science",
+    subject: "science",
+    status: "executed"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.schemaVersion, "growth.learningOperatingLoopRuns.v1");
+  assert.equal(result.operation, "list_runs");
+  assert.equal(result.writePerformed, false);
+  assert.equal(result.count, 1);
+  assert.equal(result.latestRun.runId, "lgloop_test_list_1");
+  assert.equal(result.summary.latestAction, "draft_daily_plan");
 });

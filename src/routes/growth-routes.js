@@ -349,6 +349,17 @@ function normalizeOperatingLoopBodyInput(body, workspaceId, target, request, url
   });
 }
 
+function normalizeOperatingLoopRunsQueryInput(url, target, request) {
+  return Object.assign(normalizeDailyLoopQueryInput(url, target, request), {
+    operation: url.searchParams.get("operation") || "",
+    action: url.searchParams.get("action") || url.searchParams.get("nextAction") || url.searchParams.get("next_action") || "",
+    status: url.searchParams.get("status") || "",
+    runId: url.searchParams.get("runId") || url.searchParams.get("run_id") || url.searchParams.get("operatingLoopRunId") || url.searchParams.get("operating_loop_run_id") || "",
+    selectedItemId: url.searchParams.get("selectedItemId") || url.searchParams.get("selected_item_id") || "",
+    stageAssessmentCycleId: url.searchParams.get("stageAssessmentCycleId") || url.searchParams.get("stage_assessment_cycle_id") || ""
+  });
+}
+
 function normalizeProfileDeltaAuditInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1662,6 +1673,17 @@ async function handleGrowthRoute(request, response, url, services) {
     }
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningLoopStateService.state(normalizeDailyLoopQueryInput(url, target, request));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/learning-loop/runs") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_operating_loop_runs_owner_required", "Learning operating loop runs require Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningOperatingLoopService.listRuns(
+      normalizeOperatingLoopRunsQueryInput(url, target, request)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

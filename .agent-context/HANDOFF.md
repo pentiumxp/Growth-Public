@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T20:28+08:00 - Learning Operating Loop Run Audit Persistence
+
+- Status: implemented locally; focused H1 Harness, full local test suite,
+  docs-locality, syntax coverage, diff hygiene, and CodeGraph freshness passed.
+  No production deployment, production write smoke, browser visual evidence, or
+  runtime config change was performed.
+- Classification: Growth-local H1 write-boundary audit persistence plus H2
+  Owner history readback. It extends the existing learning operating-loop
+  execution facade without changing Gateway/model boundaries, Home AI host
+  logic, scheduler config, notification delivery, deployment state, or learner
+  UI behavior.
+- Scope:
+  - added `src/stores/growth-learning-sqlite/operating-loop-runs.js` and
+    `learning_growth_operating_loop_runs` for summary-only run audit records;
+  - added stable `lgloop_*` run ids and wired
+    `learningOperatingLoopRunRepository` through the Growth SQLite store and
+    normal service graph;
+  - updated `learning-operating-loop-service` so every non-privacy `runNext`
+    attempt records target/scope, next action, before/after summaries, bounded
+    action result ids, status/error, execution mode, and write flags through
+    the injected repository;
+  - privacy-risk input still fails before persistence, and the run repository
+    rejects raw/private keys, private local path/token-looking values, and
+    non-`summary_only` writes;
+  - added Owner-only `GET /api/v1/growth/learning-loop/runs`, which enforces
+    Owner role plus visible target scope and delegates only to
+    `learningOperatingLoopService.listRuns`;
+  - extended `npm run smoke:operating-loop` with no-write
+    `runs` / `list-runs` / `history` operations and bounded top-level
+    `operatingLoop*` readback for run audit status, latest run, counts, and
+    artifact ids.
+- Focused validation already run:
+  - `node --test tests/learning-operating-loop-run-repository.test.js tests/learning-operating-loop-service.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js` -> 105/105
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `npm test -- --test-reporter=dot` -> 1014/1014
+  - `codegraph sync` -> already up to date
+  - `codegraph status` -> index up to date; existing earlier-engine advisory
+    remains.
+
 ## 2026-06-17T19:51+08:00 - Learning Operating Loop Execution Facade
 
 - Status: implemented locally; focused service/route/architecture Harness and
