@@ -9,6 +9,44 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T21:00+08:00 - Operating Loop History Release-Readiness Gate
+
+- Status: implemented locally; focused validation passed in this turn.
+- Classification: Growth-local H2 release-readiness consumption of the existing
+  `productionOperatingLoopHistorySmokeEvidence` artifact. No DB schema,
+  Gateway/model boundary, production write, scheduler, notification, Home AI
+  host logic, learner UI, or runtime config change.
+- Scope:
+  - `learning-automation-release-readiness-service` now requires
+    `production_operating_loop_history_smoke_evidence`;
+  - `learning-automation-release-evidence-service` now canonicalizes
+    `productionOperatingLoopHistorySmokeEvidence` /
+    `production_operating_loop_history_smoke_evidence` for persisted evidence
+    records and readiness evidence bags;
+  - `scripts/smoke-growth-release-readiness.js` accepts the legacy
+    `--production-operating-loop-history-smoke-evidence` flag only as blocked
+    remediation metadata, matching other deprecated smoke flags;
+  - release-readiness evidence readback now has 34 evidence slots. The
+    operating-loop history slot must be supplied by summary evidence JSON,
+    a release evidence bundle, or a persisted pass release-evidence record.
+- Harness/docs updated:
+  - `tests/learning-automation-release-readiness-service.test.js`
+  - `tests/learning-automation-release-evidence-service.test.js`
+  - `tests/growth-release-controls-smoke-script.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+- Validation evidence:
+  - focused Node test run over readiness/evidence/release bundle/controls/
+    architecture suites -> 120/120;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm run --silent check`;
+  - `codegraph sync && codegraph status`;
+  - AI Ops evidence id:
+    `evidence-d650eb6c-ef78-47ae-b0c8-89b01470f5df`.
+
 ## 2026-06-17T20:38+08:00 - Operating Loop History Release Evidence
 
 - Status: implemented locally; focused release-bundle Harness, syntax,

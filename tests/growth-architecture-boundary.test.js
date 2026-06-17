@@ -1771,6 +1771,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
     "productionTargetProvisioningSmokeEvidence",
     "productionDailyLoopPreviewSmokeEvidence",
     "productionLearningLoopStateSmokeEvidence",
+    "productionOperatingLoopHistorySmokeEvidence",
     "productionCycleHistorySmokeEvidence",
     "productionOwnerAuditSmokeEvidence",
     "productionProfileFeedbackSmokeEvidence",
@@ -1837,6 +1838,7 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(scriptHarness, /productionTargetProvisioningSmokeEvidence/);
   assert.match(scriptHarness, /productionDailyLoopPreviewSmokeEvidence/);
   assert.match(scriptHarness, /productionLearningLoopStateSmokeEvidence/);
+  assert.match(scriptHarness, /productionOperatingLoopHistorySmokeEvidence/);
   assert.match(scriptHarness, /productionCycleHistorySmokeEvidence/);
   assert.match(scriptHarness, /productionOwnerAuditSmokeEvidence/);
   assert.match(scriptHarness, /productionRecommendationLifecycleSmokeEvidence/);
@@ -1919,6 +1921,9 @@ test("Growth release-readiness smoke CLI stays service-owned and non-writeful by
   assert.match(releaseReadinessService, /productionLearningLoopStateSmokeEvidence/);
   assert.match(releaseReadinessService, /production_learning_loop_state_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_learning_loop_state_smoke/);
+  assert.match(releaseReadinessService, /productionOperatingLoopHistorySmokeEvidence/);
+  assert.match(releaseReadinessService, /production_operating_loop_history_smoke_evidence/);
+  assert.match(releaseReadinessService, /run_production_operating_loop_history_smoke/);
   assert.match(releaseReadinessService, /productionCycleHistorySmokeEvidence/);
   assert.match(releaseReadinessService, /production_cycle_history_smoke_evidence/);
   assert.match(releaseReadinessService, /run_production_cycle_history_smoke/);

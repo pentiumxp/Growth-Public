@@ -189,7 +189,10 @@ readback gate set.
   are no-write history reads. Release evidence bundles now include default
   no-write `operating_loop_history` evidence mapped to
   `productionOperatingLoopHistorySmokeEvidence`, proving the Owner operating
-  loop has auditable run history without executing `runNext`. Learner work,
+  loop has auditable run history without executing `runNext`. Release-readiness
+  consumes the same artifact as
+  `production_operating_loop_history_smoke_evidence`, and the release evidence
+  service canonicalizes the key for persisted pass evidence records. Learner work,
   audit/correction, target
   provisioning, graph import/selection, context refresh, and Gateway
   configuration remain separate flows and return blocked/separate-flow DTOs

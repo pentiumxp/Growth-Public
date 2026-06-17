@@ -132,6 +132,7 @@ const DEPRECATED_RELEASE_EVIDENCE_FLAGS = [
   ["--production-target-provisioning-smoke-evidence", "productionTargetProvisioningSmokeEvidence", "production_target_provisioning_smoke_evidence"],
   ["--production-daily-loop-preview-smoke-evidence", "productionDailyLoopPreviewSmokeEvidence", "production_daily_loop_preview_smoke_evidence"],
   ["--production-learning-loop-state-smoke-evidence", "productionLearningLoopStateSmokeEvidence", "production_learning_loop_state_smoke_evidence"],
+  ["--production-operating-loop-history-smoke-evidence", "productionOperatingLoopHistorySmokeEvidence", "production_operating_loop_history_smoke_evidence"],
   ["--production-cycle-history-smoke-evidence", "productionCycleHistorySmokeEvidence", "production_cycle_history_smoke_evidence"],
   ["--production-owner-audit-smoke-evidence", "productionOwnerAuditSmokeEvidence", "production_owner_audit_smoke_evidence"],
   ["--production-profile-feedback-smoke-evidence", "productionProfileFeedbackSmokeEvidence", "production_profile_feedback_smoke_evidence"],

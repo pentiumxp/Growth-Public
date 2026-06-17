@@ -1560,7 +1560,9 @@ The next implementation should add focused tests before broad integration:
   - the default bundle task `operating_loop_history` calls only
     `npm run smoke:operating-loop -- --operation list-runs`;
   - it maps bounded run count/latest-run evidence into
-    `productionOperatingLoopHistorySmokeEvidence` without executing `runNext`.
+    `productionOperatingLoopHistorySmokeEvidence` without executing `runNext`;
+  - release-readiness consumes the same artifact as the
+    `production_operating_loop_history_smoke_evidence` advisory gate.
 - `tests/learning-automation-proposal-service.test.js`
   - required for the proposal slice;
   - source-cycle id is required before any planner draft call;
