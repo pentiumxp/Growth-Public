@@ -285,6 +285,24 @@ function createService(options = {}) {
     stageAssessmentService: {
       stageReadiness(input) {
         calls.push({ type: "stageReadiness", input });
+        if (options.stageActive) {
+          return {
+            ok: true,
+            eligible: true,
+            activationState: "active",
+            reason: "stage_assessment_already_active",
+            cycle: {
+              cycleId: "stage_cycle_active_1",
+              status: "active",
+              generatedTaskCardId: "ltask_stage_assessment_1"
+            },
+            evidence: {
+              minimumRecentOrdinaryCards: 4,
+              recentTrajectoryCount: 4,
+              recentExperienceSignalCount: 0
+            }
+          };
+        }
         if (options.stageEligible) {
           return {
             ok: true,
@@ -446,6 +464,27 @@ test("learning loop state surfaces stage checkpoint readiness", () => {
   assert.equal(result.stageAssessment.eligible, true);
   assert.equal(result.nextAction.action, "review_stage_assessment");
   assert.equal(result.nextAction.endpoint, "/api/v1/growth/stage-assessments/activate");
+});
+
+test("learning loop state prioritizes active stage checkpoint before daily drafting", () => {
+  const { service } = createService({ stageActive: true });
+
+  const result = service.state({
+    workspaceId: "weixin_fanfan",
+    targetNodeIds: ["kg_science_fair_test"]
+  });
+
+  assert.equal(result.status, "stage_checkpoint_active");
+  assert.equal(result.summary.readyForDraft, false);
+  assert.equal(result.summary.stageCheckpointActive, true);
+  assert.equal(result.stageAssessment.status, "active");
+  assert.equal(result.stageAssessment.cycleId, "stage_cycle_active_1");
+  assert.equal(result.stageAssessment.generatedTaskCardId, "ltask_stage_assessment_1");
+  assert.equal(result.nextAction.action, "complete_active_stage_assessment");
+  assert.equal(result.nextAction.reason, "stage_checkpoint_active");
+  assert.equal(result.nextAction.requiredActor, "learner");
+  assert.equal(result.nextAction.endpoint, "/api/v1/growth/cards/{taskCardId}/evidence");
+  assert.equal(result.nextAction.taskCardId, "ltask_stage_assessment_1");
 });
 
 test("learning loop state fails closed for privacy-risk input and missing dependencies", () => {

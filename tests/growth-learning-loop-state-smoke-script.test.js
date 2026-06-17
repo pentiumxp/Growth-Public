@@ -184,7 +184,9 @@ test("learning-loop state smoke script projects top-level operator readback", ()
     },
     stageAssessment: {
       status: "dormant",
-      eligible: false
+      eligible: false,
+      cycleId: "",
+      generatedTaskCardId: ""
     },
     nextAction: {
       action: "draft_daily_plan",
@@ -197,6 +199,7 @@ test("learning-loop state smoke script projects top-level operator readback", ()
       readyForDraft: true,
       readyForPublish: false,
       stageCheckpointReady: false,
+      stageCheckpointActive: false,
       auditComplete: true,
       recommendationEvidenceReady: true,
       weaknessCount: 2,
@@ -250,6 +253,52 @@ test("learning-loop state smoke script projects top-level operator readback", ()
   assert.equal(output.learningLoopStateTotalRewardCoins, 8);
   assert.equal(output.learningLoopStateStageAssessmentStatus, "dormant");
   assert.equal(output.learningLoopStateStageAssessmentEligible, false);
+  assert.equal(output.learningLoopStateStageCheckpointActive, false);
+  assert.equal(output.learningLoopStateStageAssessmentCycleId, "");
+  assert.equal(output.learningLoopStateStageAssessmentGeneratedTaskCardId, "");
+});
+
+test("learning-loop state smoke script projects active stage checkpoint readback", () => {
+  const output = projectLearningLoopStateSmokeReadback({
+    ok: true,
+    schemaVersion: "growth.learningLoopState.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: "stage_checkpoint_active",
+    stageAssessment: {
+      status: "active",
+      eligible: true,
+      cycleId: "stage_cycle_active_1",
+      generatedTaskCardId: "ltask_stage_assessment_1"
+    },
+    nextAction: {
+      action: "complete_active_stage_assessment",
+      enabled: true,
+      reason: "stage_checkpoint_active",
+      endpoint: "/api/v1/growth/cards/{taskCardId}/evidence"
+    },
+    summary: {
+      status: "stage_checkpoint_active",
+      readyForDraft: false,
+      readyForPublish: false,
+      stageCheckpointReady: false,
+      stageCheckpointActive: true,
+      auditComplete: true,
+      recommendationEvidenceReady: true,
+      missingRequired: []
+    }
+  });
+
+  assert.equal(output.learningLoopStateStatus, "stage_checkpoint_active");
+  assert.equal(output.learningLoopStateReadyForDraft, false);
+  assert.equal(output.learningLoopStateStageCheckpointReady, false);
+  assert.equal(output.learningLoopStateStageCheckpointActive, true);
+  assert.equal(output.learningLoopStateStageAssessmentStatus, "active");
+  assert.equal(output.learningLoopStateStageAssessmentEligible, true);
+  assert.equal(output.learningLoopStateStageAssessmentCycleId, "stage_cycle_active_1");
+  assert.equal(output.learningLoopStateStageAssessmentGeneratedTaskCardId, "ltask_stage_assessment_1");
+  assert.equal(output.learningLoopStateNextAction, "complete_active_stage_assessment");
+  assert.equal(output.learningLoopStateNextActionEndpoint, "/api/v1/growth/cards/{taskCardId}/evidence");
 });
 
 test("learning-loop state smoke script delegates to service without writing", () => {

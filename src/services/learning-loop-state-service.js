@@ -513,6 +513,8 @@ function publicStageAssessment(readiness = null) {
     reason: cleanString(readiness.reason, 180),
     cooldownUntil: cleanString(readiness.cooldownUntil, 64),
     cycleId: cleanString(readiness.cycle?.cycleId || readiness.cycle?.cycle_id),
+    generatedTaskCardId: cleanString(readiness.cycle?.generatedTaskCardId || readiness.cycle?.generated_task_card_id),
+    completedAt: cleanString(readiness.cycle?.completedAt || readiness.cycle?.completed_at, 64),
     evidence: {
       minimumRecentOrdinaryCards: number(readiness.evidence?.minimumRecentOrdinaryCards),
       recentTrajectoryCount: number(readiness.evidence?.recentTrajectoryCount),
@@ -549,6 +551,18 @@ function deriveNextAction({ readiness = {}, audit = {}, stageAssessment = {}, pr
   if (!readiness.plannerReady) {
     return action("configure_planner_gateway", "planner_gateway_not_ready", { enabled: false });
   }
+  if (stageAssessment.status === "active") {
+    const taskCardId = cleanString(stageAssessment.generatedTaskCardId);
+    return action("complete_active_stage_assessment", "stage_checkpoint_active", {
+      requiredActor: "learner",
+      method: "POST",
+      endpoint: "/api/v1/growth/cards/{taskCardId}/evidence",
+      taskCardId,
+      stageAssessmentCycleId: cleanString(stageAssessment.cycleId),
+      enabled: Boolean(taskCardId),
+      disabledReason: taskCardId ? "" : "stage_assessment_task_card_missing"
+    });
+  }
   if (stageAssessment.eligible && stageAssessment.status !== "active") {
     return action("review_stage_assessment", "stage_checkpoint_ready", {
       endpoint: "/api/v1/growth/stage-assessments/activate",
@@ -580,6 +594,7 @@ function deriveNextAction({ readiness = {}, audit = {}, stageAssessment = {}, pr
 }
 
 function statusFrom(nextAction = {}, audit = {}, stageAssessment = {}) {
+  if (stageAssessment.status === "active") return "stage_checkpoint_active";
   if (stageAssessment.eligible && stageAssessment.status !== "active") return "stage_checkpoint_ready";
   if (audit.completenessAvailable && !audit.complete) return "audit_incomplete";
   if (nextAction.action === "publish_selected_plan_item") return "ready_to_publish";
@@ -684,6 +699,7 @@ function createLearningLoopStateService(options = {}) {
         readyForDraft: nextAction.action === "draft_daily_plan" && nextAction.enabled !== false,
         readyForPublish: nextAction.action === "publish_selected_plan_item" && nextAction.enabled !== false,
         stageCheckpointReady: stageAssessment.eligible && stageAssessment.status !== "active",
+        stageCheckpointActive: stageAssessment.status === "active",
         auditComplete: audit.completenessAvailable ? audit.complete : false,
         recommendationEvidenceReady: recommendationEvidence.summary.explanationReady,
         weaknessCount: profile.weaknessCount,

@@ -865,8 +865,9 @@ readback gate set.
   corrections, Profile V2 summaries, and trajectory recommendation lifecycle
   rows that explain the next
   recommendation. The smoke CLI also mirrors top-level `learningLoopState*`
-  operator readback for status, draft/publish/checkpoint readiness, next
-  action, target/scope, readiness gates, audit/profile/recommendation counts,
+  operator readback for status, draft/publish/checkpoint readiness, active
+  checkpoint state, next action, target/scope, readiness gates,
+  audit/profile/recommendation counts,
   reward counts/coins, and stage-assessment status while preserving the nested
   state DTO as canonical,
   without Gateway calls, plan publication, card generation, evaluation,
@@ -1335,6 +1336,8 @@ readback gate set.
   summary links, including reward settlement ids/coin totals, without rejoining
   raw tables or model output. Reward-audit selectors such as `taskCardId` and
   `evaluationId` are normalized from scalar or array inputs before readback.
+  Active formal checkpoints take precedence over daily drafting and return
+  `stage_checkpoint_active` with a bounded learner evidence next action.
   `learning-profile-feedback-evidence-service` now projects bounded reward
   settlement count and total learning-coin amount from the next loop-state
   readback, and the release evidence bundle keeps those summary fields in

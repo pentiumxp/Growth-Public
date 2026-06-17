@@ -9,6 +9,39 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:41+08:00 - Active Stage Checkpoint Loop-State Priority
+
+- Status: implemented locally; focused Harness passed. No production
+  deployment, visual harness, route authorization change, DB schema change,
+  Gateway/model call, publication, generation, evaluation, scheduler action,
+  notification, stage activation write, runtime config change, UI behavior
+  change, or learner-state mutation was introduced in this slice.
+- Classification: Growth-local H2 projection/readback change.
+- Scope:
+  - updated `src/services/learning-loop-state-service.js` so an active formal
+    stage checkpoint takes precedence over daily drafting;
+  - active checkpoint state now returns `status=stage_checkpoint_active` and
+    `nextAction.action=complete_active_stage_assessment` with bounded
+    `stageAssessmentCycleId` / `taskCardId` metadata pointing to the existing
+    learner evidence submission flow;
+  - added summary-only `stageCheckpointActive`, `generatedTaskCardId`, and
+    `completedAt` readback fields without changing stage activation or
+    completion ownership;
+  - updated `scripts/smoke-growth-learning-loop-state.js` to mirror bounded
+    top-level `learningLoopStateStageCheckpointActive`,
+    `learningLoopStateStageAssessmentCycleId`, and
+    `learningLoopStateStageAssessmentGeneratedTaskCardId` fields;
+  - expanded focused service and smoke Harness coverage and updated Growth
+    architecture, next-stage, test-matrix, and Harness-required docs.
+- Validation:
+  - `node --check src/services/learning-loop-state-service.js`
+  - `node --check scripts/smoke-growth-learning-loop-state.js`
+  - `node --test tests/learning-loop-state-service.test.js`
+  - `node --test tests/growth-learning-loop-state-smoke-script.test.js`
+- Follow-up:
+  - run docs-locality, diff whitespace checks, CodeGraph sync/status, then
+    commit/push if clean.
+
 ## 2026-06-17T17:30+08:00 - Operator Readback Doc Contract Tightening
 
 - Status: docs-only consistency update. No runtime code, service behavior,

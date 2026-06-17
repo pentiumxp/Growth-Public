@@ -130,6 +130,7 @@ function projectLearningLoopStateSmokeReadback(result = {}) {
     learningLoopStateReadyForDraft: summary.readyForDraft === true,
     learningLoopStateReadyForPublish: summary.readyForPublish === true,
     learningLoopStateStageCheckpointReady: summary.stageCheckpointReady === true,
+    learningLoopStateStageCheckpointActive: summary.stageCheckpointActive === true,
     learningLoopStateAuditComplete: summary.auditComplete === true,
     learningLoopStateRecommendationEvidenceReady: summary.recommendationEvidenceReady === true,
     learningLoopStateWeaknessCount: Number(summary.weaknessCount || profile.weaknessCount || 0) || 0,
@@ -177,7 +178,9 @@ function projectLearningLoopStateSmokeReadback(result = {}) {
     learningLoopStateRewardSettlementCount: Number(recommendationEvidenceSummary.rewardSettlementCount || rewardSummary.rewardSettlementCount || 0) || 0,
     learningLoopStateTotalRewardCoins: Number(recommendationEvidenceSummary.totalRewardCoins || rewardSummary.totalCoinAmount || 0) || 0,
     learningLoopStateStageAssessmentStatus: cleanString(stageAssessment.status, 120),
-    learningLoopStateStageAssessmentEligible: stageAssessment.eligible === true
+    learningLoopStateStageAssessmentEligible: stageAssessment.eligible === true,
+    learningLoopStateStageAssessmentCycleId: cleanString(stageAssessment.cycleId, 160),
+    learningLoopStateStageAssessmentGeneratedTaskCardId: cleanString(stageAssessment.generatedTaskCardId, 160)
   };
   return Object.assign({}, state, fields);
 }
