@@ -95,13 +95,16 @@ test("release workbench smoke script runs no-write read model against a temporar
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseWorkbench.v1");
     assert.equal(output.status, "release_evidence_required");
     assert.equal(output.releaseWorkbench.summaryOnly, true);
-    assert.equal(output.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence"), true);
-    const evidenceAction = output.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_evidence");
-    assert.notEqual(evidenceAction.route.body.evidence_key, "");
-    assert.notEqual(evidenceAction.route.body.check_key, "");
-    assert.equal(evidenceAction.route.body.evidence_summary.summaryOnly, true);
-    assert.notEqual(evidenceAction.route.body.evidence_summary.evidenceKey, "");
-    assert.notEqual(evidenceAction.route.body.evidence_summary.checkKey, "");
+    assert.equal(output.releaseWorkbench.ownerActions.some((action) => (
+      action.endpointKey === "release_evidence"
+      && action.key !== "release_evidence"
+    )), false);
+    const collectionAction = output.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_evidence_collection");
+    assert.equal(collectionAction.action, "run_release_evidence_collection");
+    assert.equal(collectionAction.requiresPreparation, true);
+    assert.equal(collectionAction.preparationRoute.path, "/api/v1/growth/automation/release-artifact-template");
+    assert.equal(collectionAction.externalAction.kind, "home_ai_central_visual_artifact_manifest");
+    assert.equal(collectionAction.artifactTaskIds.includes("owner_daily_ui"), true);
     assert.equal(output.releaseWorkbench.readRoutes.some((route) => route.key === "release_dashboard"), true);
     assert.equal(output.releaseWorkbench.recordRoutes.some((route) => route.key === "release_evidence"), true);
     assert.equal(output.releaseWorkbench.recordRoutes.some((route) => route.key === "runtime_enablement"), true);

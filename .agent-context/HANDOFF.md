@@ -9,6 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:13+08:00 - Release Workbench Collection-Owned Evidence Projection
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - the release workbench could still project collection-owned evidence gaps as
+    concrete direct `release_evidence` pass Owner actions;
+  - this was unsafe for UI/workbench integration because service-smoke,
+    central visual, and UI validator evidence must be collected through the
+    release-evidence collection service, not hand-filled as individual pass
+    evidence shortcuts.
+- Scope:
+  - filtered collection-owned release-evidence summaries out of direct
+    `release_evidence` Owner action projection;
+  - kept the generic `release_evidence` record-route catalog template for
+    explicit operator-filled compatibility, while preventing specific
+    collection-owned gaps from becoming direct pass buttons;
+  - marked artifact-backed collection actions with `requiresPreparation=true`,
+    `artifactTaskIds`, and a `GET
+    /api/v1/growth/automation/release-artifact-template` preparation route;
+  - added the same expectations to service and smoke Harness coverage;
+  - updated Growth architecture docs, the Home AI platform-contract pointer,
+    the next-stage plan, and the test matrix with the collection-owned evidence
+    boundary.
+- Operational readback:
+  - `node scripts/smoke-growth-release-workbench.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` reports
+    `status=release_evidence_required`, `ownerActionCount=7`, and
+    `directSpecificEvidenceActions=[]`;
+  - the next action is `collect_missing_release_evidence` through
+    `release_evidence_collection`, with `requiresPreparation=true` and
+    artifact task ids for Owner/UI release artifacts such as `owner_daily_ui`,
+    `owner_audit_ui`, `proposal_review_ui`, automation UI checks, scheduler UI
+    checks, and worker target UI checks.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/growth-release-workbench-smoke-script.test.js`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/growth-release-workbench-smoke-script.test.js
+    tests/learning-automation-release-evidence-artifact-template-service.test.js
+    tests/growth-release-artifact-template-smoke-script.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js
+    tests/growth-release-workbench-action-smoke-script.test.js`;
+  - `node --test tests/growth-routes.test.js
+    tests/growth-frontend-adapter.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `235/235`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `922/922`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,272` nodes, and `22,976` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `94%`
+    complete;
+  - current product UI is not fully finished: generation/daily-card UI paths
+    have local Harness coverage, but release workbench UI still needs real
+    Home AI central visual/UI artifact evidence, final Owner approvals, release
+    closure, and production deployment evidence.
+
 ## 2026-06-17T11:00+08:00 - Release Workbench Blocked Collection Action Semantics
 
 - Status: implemented and locally validated. No production deployment was

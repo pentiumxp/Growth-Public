@@ -56,9 +56,11 @@ When changing release-workbench Owner action route bodies, run
 `tests/learning-automation-release-workbench-service.test.js`,
 `tests/growth-release-workbench-smoke-script.test.js`, and
 `tests/learning-automation-release-workbench-action-service.test.js`. The
-focused assertion must prove concrete `release_evidence` action templates carry
-canonical `evidence_key`, matching `check_key`, summary-only evidence metadata,
-and the current learner/domain/subject/horizon scope.
+focused assertion must prove collection-owned evidence keys are routed through
+`release_evidence_collection` instead of concrete direct pass
+`release_evidence` actions, artifact-backed collection tasks advertise
+`requiresPreparation` plus the artifact-template read route, and generic
+record-route templates do not become browser-filled pass evidence shortcuts.
 
 When changing `release_evidence_collection` workbench action success/failure
 semantics, run `tests/learning-automation-release-workbench-action-service.test.js`

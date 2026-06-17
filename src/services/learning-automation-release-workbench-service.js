@@ -67,6 +67,10 @@ const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
 const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
   production_daily_loop_write_smoke_evidence: "daily_loop_write"
 });
+const ARTIFACT_BACKED_COLLECTION_TASK_IDS = new Set([
+  "central_visual",
+  ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => task.taskId)
+]);
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
@@ -222,6 +226,62 @@ function actionReleaseEvidenceKeys(summary = {}) {
   const evidenceKey = canonicalReleaseEvidenceKey(summary.key);
   const checkKey = CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "";
   return { evidenceKey, checkKey };
+}
+
+function collectionTaskIdForReleaseEvidenceKey(value = "") {
+  const key = cleanString(value, 160);
+  if (RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key]) return RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+  if (WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key]) return WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+  const evidenceKey = canonicalReleaseEvidenceKey(key);
+  const checkKey = CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "";
+  return RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[checkKey]
+    || WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[checkKey]
+    || "";
+}
+
+function isCollectionOwnedReleaseEvidenceAction(summary = {}) {
+  return Boolean(collectionTaskIdForReleaseEvidenceKey(summary.key));
+}
+
+function collectionPreparation(scope = {}, collectionTasks = {}, route = null) {
+  const artifactTaskIds = asArray(collectionTasks.taskIds)
+    .filter((taskId) => ARTIFACT_BACKED_COLLECTION_TASK_IDS.has(taskId));
+  if (!artifactTaskIds.length) {
+    return {
+      requiresPreparation: false,
+      preparationRoute: null,
+      externalActionRequired: false,
+      externalAction: null,
+      artifactTaskIds: []
+    };
+  }
+  const preparationRoute = {
+    method: "GET",
+    path: "/api/v1/growth/automation/release-artifact-template",
+    ownerOnly: false,
+    workspaceBearerRequired: true,
+    query: {
+      workspace_id: scope.workspaceId,
+      learner_id: scope.learnerId,
+      program_id: scope.programId,
+      domain_pack_id: scope.domainPackId,
+      domain: scope.domain,
+      subject: scope.subject,
+      horizon: scope.horizon
+    }
+  };
+  return {
+    requiresPreparation: true,
+    preparationRoute,
+    externalActionRequired: true,
+    externalAction: {
+      kind: "home_ai_central_visual_artifact_manifest",
+      action: "fill_release_evidence_artifact_manifest",
+      artifactTaskIds,
+      followupRoute: route
+    },
+    artifactTaskIds
+  };
 }
 
 function scopedReleaseEvidenceRoute(route = null, scope = {}, summary = {}) {
@@ -487,6 +547,7 @@ function ownerAction(action = {}, scope = {}, source = "", collectionTasks = {})
   const summary = actionSummary(action);
   if (!summary) return null;
   const endpointKey = endpointForAction(summary);
+  if (endpointKey === "release_evidence" && isCollectionOwnedReleaseEvidenceAction(summary)) return null;
   const route = routeForOwnerAction(endpointKey, scope, collectionTasks, summary);
   const externalActionRequired = endpointKey === "runtime_enablement"
     && /manual_config|enable_runtime_config/.test(summary.action || summary.key);
@@ -537,6 +598,7 @@ function collectionActionFromSupportedEvidence(scope = {}, collectionTasks = {},
     return null;
   }
   const route = recordRoutes(scope, collectionTasks).find((item) => item.key === "release_evidence_collection")?.route || null;
+  const preparation = collectionPreparation(scope, collectionTasks, route);
   return {
     schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
     summaryOnly: true,
@@ -547,13 +609,14 @@ function collectionActionFromSupportedEvidence(scope = {}, collectionTasks = {},
     source: "missing_evidence_collection",
     endpointKey: "release_evidence_collection",
     route,
-    requiresPreparation: false,
-    preparationRoute: null,
+    requiresPreparation: preparation.requiresPreparation,
+    preparationRoute: preparation.preparationRoute,
+    artifactTaskIds: preparation.artifactTaskIds,
     collectionTaskIds: asArray(collectionTasks.taskIds),
     writeGatedCollectionTaskIds: asArray(collectionTasks.writeGatedTaskIds),
     unsupportedCollectionKeys: asArray(collectionTasks.unsupportedKeys),
-    externalActionRequired: false,
-    externalAction: null,
+    externalActionRequired: preparation.externalActionRequired,
+    externalAction: preparation.externalAction,
     configChangeApplied: false,
     runtimeConfigChange: false,
     writefulSchedulingAllowed: false
@@ -579,6 +642,16 @@ function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {})
         activation_gates: ["writeful_execution"]
       })
       : null;
+    const route = recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null;
+    const preparation = endpointKey === "release_evidence_collection"
+      ? collectionPreparation(scope, collectionTasks, route)
+      : {
+        requiresPreparation: Boolean(preparationRoute),
+        preparationRoute,
+        externalActionRequired: endpointKey === "runtime_enablement",
+        externalAction: null,
+        artifactTaskIds: []
+      };
     return {
       schemaVersion: "growth.learningAutomationReleaseWorkbench.ownerAction.v1",
       summaryOnly: true,
@@ -588,18 +661,19 @@ function actionsFromMissingRecords(kinds = [], scope = {}, collectionTasks = {})
       label: endpointKey === "release_evidence_collection" ? "Run release evidence collection" : `Record ${kind}`,
       source: "missing_record",
       endpointKey,
-      route: recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null,
-      requiresPreparation: Boolean(preparationRoute),
-      preparationRoute,
+      route,
+      requiresPreparation: preparation.requiresPreparation,
+      preparationRoute: preparation.preparationRoute,
+      artifactTaskIds: preparation.artifactTaskIds,
       collectionTaskIds: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.taskIds) : [],
       writeGatedCollectionTaskIds: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.writeGatedTaskIds) : [],
       unsupportedCollectionKeys: endpointKey === "release_evidence_collection" ? asArray(collectionTasks.unsupportedKeys) : [],
-      externalActionRequired: endpointKey === "runtime_enablement",
-      externalAction: endpointKey === "runtime_enablement" ? {
+      externalActionRequired: preparation.externalActionRequired,
+      externalAction: preparation.externalAction || (endpointKey === "runtime_enablement" ? {
         kind: "external",
         action: "verify_runtime_config_outside_growth",
         followupRoute: recordRoutes(scope).find((item) => item.key === endpointKey)?.route || null
-      } : null,
+      } : null),
       configChangeApplied: false,
       runtimeConfigChange: false,
       writefulSchedulingAllowed: false

@@ -560,9 +560,12 @@ Use the Growth-owned release-readiness boundary:
   example profile feedback, platform action, central visual, release package
   review UI, proposal, scheduler, and Owner-review evidence. The workbench
   also exposes `releaseEvidenceCollectionSupportedTaskIds` and, after a
-  collection-run record already exists, can surface a direct
+  collection-run record already exists, can surface a
   `collect_missing_release_evidence` Owner action when supported missing
-  evidence still remains. That action still delegates through the existing
+  evidence still remains. Collection-owned evidence is not exposed as a
+  concrete direct pass `release_evidence` Owner action; specific service-smoke,
+  central visual, and UI validator evidence gaps still delegate through the
+  collection path. That action still delegates through the existing
   workbench action facade and release-evidence collection service; it is not a
   write boundary expansion, release approval, or scheduler/runtime/deploy
   permission. The
@@ -808,12 +811,14 @@ Use the Growth-owned release-readiness boundary:
   It exists so Owner UI can show bounded read routes, Owner-only record-route
   templates, missing evidence/check/approval/record summaries, and manual
   runtime-config follow-up hints without Codex joining DTOs or applying config.
-  For `release_evidence` Owner actions, the projected action route body must be
-  executable without manual key splicing: it carries the canonical
-  `evidence_key`, matching `check_key`, summary-only evidence metadata, and the
-  current learner/domain/subject/horizon scope. The generic record-route catalog
-  may still expose blank placeholders, but `ownerActions[*].route.body` for a
-  specific missing evidence key must be concrete.
+  Concrete collection-owned evidence gaps are not projected as direct pass
+  `release_evidence` Owner actions. Service-smoke evidence, central visual
+  evidence, and UI validator evidence must route through
+  `release_evidence_collection`; central visual/UI artifact tasks are marked
+  with `requiresPreparation` and the release artifact-template read route. The
+  generic record-route catalog may still expose blank `release_evidence`
+  placeholders for explicit operator-filled records, but those placeholders are
+  not concrete pass actions for a specific missing evidence key.
   Its bounded output can be passed to release-readiness through explicit
   `--evidence-json`, collected by the non-default `release_workbench` release
   evidence bundle task as `releaseWorkbenchSmokeEvidence`, or persisted through
@@ -869,10 +874,10 @@ Use the Growth-owned release-readiness boundary:
   supported `release_evidence`, `release_approval`,
   `release_evidence_collection`, `release_decision`, `release_package`,
   `release_activation`, and `runtime_enablement` endpoints. It is UI glue over
-  existing services. For `release_evidence`, the UI should submit the advertised
-  concrete action template from `ownerActions[*].route.body`; it should not
-  reconstruct evidence/check keys in the browser or fall back to blank generic
-  route templates. For `release_evidence_collection`, the UI sends bounded
+  existing services. For `release_evidence`, the UI may submit only a generic
+  operator-filled record template and must not reinterpret collection-owned
+  evidence as a direct pass action. For `release_evidence_collection`, the UI
+  sends bounded
   collection tasks, `write_collection_run=true`, and
   `write_release_evidence_records=true` from the backend action template. Those
   task ids come from the workbench's missing-evidence-derived no-write plan,
@@ -881,8 +886,11 @@ Use the Growth-owned release-readiness boundary:
   collection-run exists, the backend may make
   `collect_missing_release_evidence` the next action for the supported subset;
   the UI still submits only the advertised template through the workbench action
-  facade. UI/manual evidence and write-gated evidence are surfaced for Owner
-  review but are not auto-collected by the normal button. For
+  facade. When the action has `requiresPreparation=true`, the UI must first show
+  the artifact-template preparation step and wait for Home AI central visual/UI
+  summary artifacts before enabling the collection submit. Manual evidence and
+  write-gated evidence are surfaced for Owner review but are not auto-collected
+  by the normal button. For
   `release_decision`, the UI
   sends only the advertised status, summary-only decision metadata, and the
   explicit latest-ready collection-run auto-selection flag; collection-run

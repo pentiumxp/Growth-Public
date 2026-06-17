@@ -131,25 +131,31 @@ test("release workbench composes release services into Owner action templates wi
     assert.equal(input.collectionRunId, "lgacrn_1");
   }
   assert.equal(result.releaseWorkbench.summaryOnly, true);
-  assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence"), true);
-  const evidenceAction = result.releaseWorkbench.ownerActions
-    .find((action) => action.endpointKey === "release_evidence" && action.key === "owner_daily_ui_evidence");
-  assert.equal(evidenceAction.route.path, "/api/v1/growth/automation/release-evidence");
-  assert.equal(evidenceAction.route.body.evidence_key, "ownerDailyUiEvidence");
-  assert.equal(evidenceAction.route.body.check_key, "owner_daily_ui_evidence");
-  assert.equal(evidenceAction.route.body.domain_pack_id, "science_foundation");
-  assert.equal(evidenceAction.route.body.domain, "science");
-  assert.equal(evidenceAction.route.body.subject, "biology");
-  assert.equal(evidenceAction.route.body.horizon, "daily_plan");
-  assert.equal(evidenceAction.route.body.evidence_summary.summaryOnly, true);
-  assert.equal(evidenceAction.route.body.evidence_summary.evidenceKey, "ownerDailyUiEvidence");
-  assert.equal(evidenceAction.route.body.evidence_summary.checkKey, "owner_daily_ui_evidence");
+  const directEvidenceActions = result.releaseWorkbench.ownerActions
+    .filter((action) => action.endpointKey === "release_evidence");
+  assert.equal(directEvidenceActions.some((action) => [
+    "owner_daily_ui_evidence",
+    "release_package_review_ui_evidence",
+    "central_visual_evidence",
+    "platform_action_evidence",
+    "production_profile_feedback_smoke_evidence"
+  ].includes(action.key)), false);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_approval"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence_collection"), true);
   const collectionAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_evidence_collection");
   assert.equal(collectionAction.key, "release_collection_run");
   assert.equal(collectionAction.action, "run_release_evidence_collection");
-  assert.equal(collectionAction.requiresPreparation, false);
+  assert.equal(collectionAction.requiresPreparation, true);
+  assert.equal(collectionAction.preparationRoute.method, "GET");
+  assert.equal(collectionAction.preparationRoute.path, "/api/v1/growth/automation/release-artifact-template");
+  assert.equal(collectionAction.preparationRoute.query.workspace_id, "fanfan");
+  assert.equal(collectionAction.preparationRoute.query.domain_pack_id, "science_foundation");
+  assert.equal(collectionAction.preparationRoute.query.domain, "science");
+  assert.equal(collectionAction.preparationRoute.query.subject, "biology");
+  assert.equal(collectionAction.externalActionRequired, true);
+  assert.equal(collectionAction.externalAction.kind, "home_ai_central_visual_artifact_manifest");
+  assert.deepEqual(collectionAction.artifactTaskIds, ["central_visual", "owner_daily_ui", "release_package_review_ui"]);
+  assert.deepEqual(collectionAction.externalAction.artifactTaskIds, ["central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.equal(collectionAction.route.path, "/api/v1/growth/automation/release-evidence-collections/run");
   assert.deepEqual(collectionAction.route.body.tasks, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
   assert.deepEqual(collectionAction.route.body.required_task_ids, ["profile_feedback", "platform_action", "central_visual", "owner_daily_ui", "release_package_review_ui"]);
@@ -301,6 +307,9 @@ test("release workbench offers evidence collection for supported missing evidenc
   assert.deepEqual(collectionActions[0].route.body.required_task_ids, ["profile_feedback", "central_visual"]);
   assert.equal(collectionActions[0].route.body.auto_select_latest_completed_cycle, true);
   assert.equal(collectionActions[0].route.body.central_visual_evidence_file, "");
+  assert.equal(collectionActions[0].requiresPreparation, true);
+  assert.equal(collectionActions[0].preparationRoute.path, "/api/v1/growth/automation/release-artifact-template");
+  assert.deepEqual(collectionActions[0].artifactTaskIds, ["central_visual"]);
   assert.deepEqual(collectionActions[0].collectionTaskIds, ["profile_feedback", "central_visual"]);
   assert.deepEqual(result.releaseWorkbench.releaseEvidenceCollectionSupportedTaskIds, ["profile_feedback", "central_visual"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.key === "release_collection_run"), false);
