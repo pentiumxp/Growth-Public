@@ -187,10 +187,18 @@ function activation(overrides = {}) {
     readyForOwnerRuntimeConfigDecision: true,
     requestedActivationGates: ["writeful_execution"],
     missingApprovalKeys: [],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
     activationPreflight: {
       schemaVersion: "growth.learningAutomationReleaseActivation.summary.v1",
       summaryOnly: true,
       status: "ready_for_owner_config_enablement",
+      latestPreflightReportId: "lgarpf_ready_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       requiredActionCount: 1,
       requiredActions: [{
         key: "enable_automation_runtime_config",
@@ -220,10 +228,18 @@ function runtime(overrides = {}) {
     status: "ready_for_manual_runtime_config_enablement",
     runtimeConfigVerified: false,
     requestedActivationGates: ["writeful_execution"],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
     runtimeEnablement: {
       schemaVersion: "growth.learningAutomationRuntimeEnablement.summary.v1",
       summaryOnly: true,
       status: "ready_for_manual_runtime_config_enablement",
+      latestPreflightReportId: "lgarpf_ready_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
       requiredActionCount: 1,
       requiredActions: [{
         key: "enable_runtime_config_manually",
@@ -251,6 +267,10 @@ function activationRecord(overrides = {}) {
     privacyClass: "summary_only",
     collectionRunId: "lgacrn_ready_1",
     requestedActivationGates: ["writeful_execution"],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
     recordedAt: "2026-06-15T17:00:00.000Z",
     updatedAt: "2026-06-15T17:00:01.000Z"
   }, overrides);
@@ -265,6 +285,10 @@ function enablementRecord(overrides = {}) {
     collectionRunId: "lgacrn_ready_1",
     requestedActivationGates: ["writeful_execution"],
     requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+    latestPreflightReportId: "lgarpf_ready_1",
+    latestPreflightStatus: "ready_for_owner_release_activation",
+    latestPreflightReadyForProductionDeployReview: true,
+    latestPreflightReadyForOwnerReleaseActivation: true,
     recordedAt: "2026-06-15T17:05:00.000Z",
     updatedAt: "2026-06-15T17:05:01.000Z"
   }, overrides);
@@ -368,10 +392,22 @@ test("release controls summarizes manual runtime config requirement without enab
   assert.equal(result.steps[1].latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(result.steps[1].latestPackageDashboardNextActionKey, "enable_runtime_config_manually");
   assert.equal(result.steps[1].latestPackageDashboardRequiredActionCount, 1);
+  assert.equal(result.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.latestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.releaseControls.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releaseControls.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.auditReadback.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.auditReadback.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.steps.find((item) => item.key === "release_activation").latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.steps.find((item) => item.key === "runtime_enablement").latestPreflightReportId, "lgarpf_ready_1");
   assert.equal(result.auditReadback.activationRecords.count, 1);
   assert.equal(result.auditReadback.activationRecords.latestRecordId, "lgaact_ready_1");
+  assert.equal(result.auditReadback.activationRecords.latestPreflightReportId, "lgarpf_ready_1");
   assert.equal(result.auditReadback.runtimeEnablementRecords.count, 1);
   assert.equal(result.auditReadback.runtimeEnablementRecords.latestRecordId, "lgarten_ready_1");
+  assert.equal(result.auditReadback.runtimeEnablementRecords.latestPreflightReportId, "lgarpf_ready_1");
   assert.equal(result.releaseControls.auditReadback.summaryOnly, true);
   assert.equal(result.steps.find((item) => item.key === "activation_records").summaryOnly, true);
   assert.equal(result.steps.find((item) => item.key === "runtime_enablement_records").summaryOnly, true);

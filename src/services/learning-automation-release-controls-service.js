@@ -316,6 +316,66 @@ function evidenceReadbackSummary(readback = {}) {
   };
 }
 
+function preflightFieldsFrom(value = {}) {
+  const source = objectOnly(value);
+  const summary = objectOnly(source.releaseControls || source.runtimeEnablement || source.activationPreflight || source.summary);
+  const readback = objectOnly(source.preflightReportReadback || summary.preflightReportReadback || source.activation_preflight);
+  const latestReport = objectOnly(readback.latestReport || readback.latest_report);
+  const preflightReportId = cleanString(
+    source.latestPreflightReportId
+      || summary.latestPreflightReportId
+      || readback.latestPreflightReportId
+      || latestReport.preflightReportId
+      || source.latest_preflight_report_id
+      || summary.latest_preflight_report_id
+      || readback.latest_preflight_report_id
+      || latestReport.preflight_report_id,
+    180
+  );
+  const status = cleanString(
+    source.latestPreflightStatus
+      || summary.latestPreflightStatus
+      || readback.latestPreflightStatus
+      || latestReport.status
+      || source.latest_preflight_status
+      || summary.latest_preflight_status
+      || readback.latest_preflight_status,
+    120
+  );
+  return {
+    latestPreflightReportId: preflightReportId,
+    latestPreflightStatus: status,
+    latestPreflightReadyForProductionDeployReview:
+      source.latestPreflightReadyForProductionDeployReview === true
+      || summary.latestPreflightReadyForProductionDeployReview === true
+      || readback.latestPreflightReadyForProductionDeployReview === true
+      || latestReport.readyForProductionDeployReview === true
+      || source.latest_preflight_ready_for_production_deploy_review === true
+      || summary.latest_preflight_ready_for_production_deploy_review === true
+      || readback.latest_preflight_ready_for_production_deploy_review === true,
+    latestPreflightReadyForOwnerReleaseActivation:
+      source.latestPreflightReadyForOwnerReleaseActivation === true
+      || summary.latestPreflightReadyForOwnerReleaseActivation === true
+      || readback.latestPreflightReadyForOwnerReleaseActivation === true
+      || latestReport.readyForOwnerReleaseActivation === true
+      || source.latest_preflight_ready_for_owner_release_activation === true
+      || summary.latest_preflight_ready_for_owner_release_activation === true
+      || readback.latest_preflight_ready_for_owner_release_activation === true
+  };
+}
+
+function firstPreflightFields(...values) {
+  const summaries = values.map(preflightFieldsFrom);
+  const withId = summaries.find((summary) => summary.latestPreflightReportId);
+  if (withId) return withId;
+  return summaries.find((summary) => summary.latestPreflightStatus) || {
+    latestPreflightReportId: "",
+    latestPreflightStatus: "",
+    latestPreflightReadyForProductionDeployReview: false,
+    latestPreflightReadyForOwnerReleaseActivation: false
+  };
+}
+
 function boundedLimit(value, fallback = 20) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return fallback;
@@ -324,6 +384,7 @@ function boundedLimit(value, fallback = 20) {
 
 function publicRecordSummary(record = {}, kind) {
   const activation = kind === "activation";
+  const preflight = preflightFieldsFrom(record);
   return {
     recordId: cleanString(activation ? record.activationId || record.activation_id : record.enablementId || record.enablement_id, 160),
     status: cleanString(record.status, 120),
@@ -332,6 +393,10 @@ function publicRecordSummary(record = {}, kind) {
     collectionRunId: cleanString(record.collectionRunId || record.collection_run_id || record.runId || record.run_id, 160),
     requestedActivationGates: asArray(record.requestedActivationGates || record.requested_activation_gates).map((gate) => cleanString(gate, 120)).filter(Boolean),
     requiredConfigKeys: activation ? [] : asArray(record.requiredConfigKeys || record.required_config_keys).map((key) => cleanString(key, 120)).filter(Boolean),
+    latestPreflightReportId: preflight.latestPreflightReportId,
+    latestPreflightStatus: preflight.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: preflight.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: preflight.latestPreflightReadyForOwnerReleaseActivation,
     recordedAt: cleanString(record.recordedAt || record.recorded_at, 80),
     updatedAt: cleanString(record.updatedAt || record.updated_at, 80),
     summaryOnly: true,
@@ -367,6 +432,7 @@ function auditRecordReadback(kind, result = {}, recordsKey) {
   }
   const records = asArray(value[recordsKey]);
   const summaries = records.map((record) => publicRecordSummary(record, kind)).filter((record) => record.recordId || record.status);
+  const preflight = firstPreflightFields(...summaries);
   return {
     schemaVersion: "growth.learningAutomationReleaseControls.auditRecords.v1",
     summaryOnly: true,
@@ -377,6 +443,10 @@ function auditRecordReadback(kind, result = {}, recordsKey) {
     statuses: unique(summaries.map((record) => record.status)),
     latest: summaries[0] || null,
     latestRecordId: summaries[0]?.recordId || "",
+    latestPreflightReportId: preflight.latestPreflightReportId,
+    latestPreflightStatus: preflight.latestPreflightStatus,
+    latestPreflightReadyForProductionDeployReview: preflight.latestPreflightReadyForProductionDeployReview,
+    latestPreflightReadyForOwnerReleaseActivation: preflight.latestPreflightReadyForOwnerReleaseActivation,
     requestedActivationGates: unique(summaries.flatMap((record) => record.requestedActivationGates)),
     configChangeApplied: false,
     runtimeConfigChange: false,
@@ -468,10 +538,22 @@ function createLearningAutomationReleaseControlsService(options = {}) {
     const requiredActions = collectActions(parts, status);
     const activationAuditReadback = auditRecordReadback("activation", activationRecords, "activations");
     const runtimeEnablementAuditReadback = auditRecordReadback("runtime_enablement", runtimeEnablementRecords, "enablements");
+    const activationPreflight = preflightFieldsFrom(parts.activation);
+    const runtimePreflight = preflightFieldsFrom(parts.runtime);
+    const preflight = firstPreflightFields(
+      parts.runtime,
+      parts.activation,
+      runtimeEnablementAuditReadback,
+      activationAuditReadback
+    );
     const auditReadback = {
       schemaVersion: "growth.learningAutomationReleaseControls.auditReadback.v1",
       summaryOnly: true,
       status: activationAuditReadback.ok === false || runtimeEnablementAuditReadback.ok === false ? "blocked" : "ready",
+      latestPreflightReportId: preflight.latestPreflightReportId,
+      latestPreflightStatus: preflight.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: preflight.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: preflight.latestPreflightReadyForOwnerReleaseActivation,
       activationRecords: activationAuditReadback,
       runtimeEnablementRecords: runtimeEnablementAuditReadback,
       configChangeApplied: false,
@@ -515,12 +597,20 @@ function createLearningAutomationReleaseControlsService(options = {}) {
       step("release_activation", activation, {
         ready: parts.activation.preflightPassed === true,
         requestedActivationGates: asArray(parts.activation.requestedActivationGates),
+        latestPreflightReportId: activationPreflight.latestPreflightReportId,
+        latestPreflightStatus: activationPreflight.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: activationPreflight.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: activationPreflight.latestPreflightReadyForOwnerReleaseActivation,
         requiredActions: actionCandidates(parts.activation),
         nextAction: objectOnly(parts.activation.activationPreflight).nextAction || null
       }),
       step("runtime_enablement", runtime, {
         ready: parts.runtime.runtimeConfigVerified === true,
         requestedActivationGates: asArray(parts.runtime.requestedActivationGates),
+        latestPreflightReportId: runtimePreflight.latestPreflightReportId,
+        latestPreflightStatus: runtimePreflight.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: runtimePreflight.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: runtimePreflight.latestPreflightReadyForOwnerReleaseActivation,
         requiredActions: actionCandidates(parts.runtime),
         nextAction: objectOnly(parts.runtime.runtimeEnablement).nextAction || null
       }),
@@ -559,6 +649,10 @@ function createLearningAutomationReleaseControlsService(options = {}) {
       status,
       advisoryOnly: true,
       recordOnly: true,
+      latestPreflightReportId: preflight.latestPreflightReportId,
+      latestPreflightStatus: preflight.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: preflight.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: preflight.latestPreflightReadyForOwnerReleaseActivation,
       configChangeApplied: false,
       runtimeConfigChange: false,
       runtimeConfigMutationPerformed: false,
@@ -576,6 +670,10 @@ function createLearningAutomationReleaseControlsService(options = {}) {
         blockedCheckKeys: missing.blockedCheckKeys,
         missingEvidenceKeys: missing.missingEvidenceKeys,
         missingApprovalKeys: missing.missingApprovalKeys,
+        latestPreflightReportId: preflight.latestPreflightReportId,
+        latestPreflightStatus: preflight.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: preflight.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: preflight.latestPreflightReadyForOwnerReleaseActivation,
         auditReadback,
         configChangeApplied: false,
         runtimeConfigChange: false,

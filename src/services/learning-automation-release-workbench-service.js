@@ -567,6 +567,14 @@ function dependencySummary(result = {}, summaryKey = "") {
     status: cleanString(summary.status || result.status, 120),
     nextAction: actionSummary(summary.nextAction || result.nextAction),
     requiredActionCount: Number(summary.requiredActionCount || 0) || 0,
+    latestPreflightReportId: cleanString(summary.latestPreflightReportId || result.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(summary.latestPreflightStatus || result.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview:
+      summary.latestPreflightReadyForProductionDeployReview === true
+      || result.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation:
+      summary.latestPreflightReadyForOwnerReleaseActivation === true
+      || result.latestPreflightReadyForOwnerReleaseActivation === true,
     missingCheckKeys: uniqueStrings(summary.missingCheckKeys || result.missingCheckKeys || []),
     blockedCheckKeys: uniqueStrings(summary.blockedCheckKeys || result.blockedCheckKeys || []),
     missingEvidenceKeys: uniqueStrings(summary.missingEvidenceKeys || result.missingEvidenceKeys || []),
@@ -587,7 +595,33 @@ function inventoryRecordSummary(inventory = {}) {
     latestActivationId: cleanString(summary.latestActivationId, 180),
     latestRuntimeEnablementId: cleanString(summary.latestRuntimeEnablementId, 180),
     latestReleaseEvidenceRecordId: cleanString(summary.latestReleaseEvidenceRecordId, 180),
+    latestPreflightReportId: cleanString(summary.latestPreflightReportId || inventory.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(summary.latestPreflightStatus || inventory.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview:
+      summary.latestPreflightReadyForProductionDeployReview === true
+      || inventory.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation:
+      summary.latestPreflightReadyForOwnerReleaseActivation === true
+      || inventory.latestPreflightReadyForOwnerReleaseActivation === true,
     releaseEvidenceRecordCount: Number(summary.releaseEvidenceRecordCount || 0) || 0
+  };
+}
+
+function firstPreflightSummary(...summaries) {
+  const candidates = summaries.map(objectOnly);
+  const withId = candidates.find((summary) => cleanString(summary.latestPreflightReportId, 180));
+  if (withId) return {
+    latestPreflightReportId: cleanString(withId.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(withId.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview: withId.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: withId.latestPreflightReadyForOwnerReleaseActivation === true
+  };
+  const withStatus = candidates.find((summary) => cleanString(summary.latestPreflightStatus, 120));
+  return {
+    latestPreflightReportId: cleanString(withStatus?.latestPreflightReportId, 180),
+    latestPreflightStatus: cleanString(withStatus?.latestPreflightStatus, 120),
+    latestPreflightReadyForProductionDeployReview: withStatus?.latestPreflightReadyForProductionDeployReview === true,
+    latestPreflightReadyForOwnerReleaseActivation: withStatus?.latestPreflightReadyForOwnerReleaseActivation === true
   };
 }
 
@@ -634,6 +668,7 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
     const controlsSummary = dependencySummary(controls, "releaseControls");
     const dashboardSummary = dependencySummary(dashboard, "releaseDashboard");
     const inventorySummary = inventoryRecordSummary(inventory);
+    const preflightSummary = firstPreflightSummary(controlsSummary, dashboardSummary, inventorySummary);
     const missingEvidenceKeys = uniqueStrings([
       ...readinessSummary.missingEvidenceKeys,
       ...controlsSummary.missingEvidenceKeys,
@@ -686,6 +721,10 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
         controls: controlsSummary,
         dashboard: dashboardSummary,
         inventory: inventorySummary,
+        latestPreflightReportId: preflightSummary.latestPreflightReportId,
+        latestPreflightStatus: preflightSummary.latestPreflightStatus,
+        latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+        latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
         missingCheckKeys,
         missingEvidenceKeys,
         missingApprovalKeys,
@@ -702,6 +741,10 @@ function createLearningAutomationReleaseWorkbenchService(options = {}) {
       releaseControls: controlsSummary,
       releaseDashboard: dashboardSummary,
       releaseInventory: inventorySummary,
+      latestPreflightReportId: preflightSummary.latestPreflightReportId,
+      latestPreflightStatus: preflightSummary.latestPreflightStatus,
+      latestPreflightReadyForProductionDeployReview: preflightSummary.latestPreflightReadyForProductionDeployReview,
+      latestPreflightReadyForOwnerReleaseActivation: preflightSummary.latestPreflightReadyForOwnerReleaseActivation,
       configChangeApplied: false,
       runtimeConfigChange: false,
       runtimeConfigMutationPerformed: false,

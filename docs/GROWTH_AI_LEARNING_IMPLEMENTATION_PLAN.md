@@ -1042,11 +1042,15 @@ Implemented backend shape:
   Home AI central visual, deployment, or runtime-config gates. Persisted
   preflight reports are read by release inventory through the injected
   preflight report repository and projected by release dashboard through
-  inventory as bounded latest report id/status/advisory readiness flags; that
-  downstream readback is not a new preflight writer and not a deploy switch. It
-  does not run smoke tasks internally, call Gateway, publish, generate,
-  evaluate, schedule, notify, activate stage assessments, mutate learner state,
-  flip runtime config, grant scheduler permission, or deploy.
+  inventory as bounded latest report id/status/advisory readiness flags.
+  Release activation can persist bounded preflight report readback in activation
+  records; runtime enablement projects it only from those activation records;
+  release controls and release workbench then carry only the resulting bounded
+  summary fields from activation/runtime, inventory, dashboard, and controls
+  DTOs. That downstream readback is not a new preflight writer and not a deploy
+  switch. It does not run smoke tasks internally, call Gateway, publish,
+  generate, evaluate, schedule, notify, activate stage assessments, mutate
+  learner state, flip runtime config, grant scheduler permission, or deploy.
 - `npm run smoke:release-activation` delegates to
   `learning-automation-release-activation-service.preflight` by default and
   returns a no-write `growth.learningAutomationReleaseActivation.v1` preflight
@@ -1104,9 +1108,13 @@ Implemented backend shape:
   `runtimeEnablementService.listEnablements`, exposes `auditReadback` plus
   `activation_records` / `runtime_enablement_records` steps, and reports the
   first blocking ladder status, required actions, missing evidence/check /
-  approval keys, and one next action. It owns no repository or table, writes no
-  records, runs no smoke tasks, calls no Gateway, publishes nothing, schedules
-  nothing, and keeps all runtime mutation and scheduling permission flags false.
+  approval keys, one next action, and latest preflight report
+  id/status/advisory readiness flags. Those preflight fields are projected only
+  from activation/runtime DTOs and persisted activation/runtime audit records;
+  release controls does not read the preflight repository directly. It owns no
+  repository or table, writes no records, runs no smoke tasks, calls no Gateway,
+  publishes nothing, schedules nothing, and keeps all runtime mutation and
+  scheduling permission flags false.
 - `npm run smoke:release-approval` delegates to the approval service. It
   defaults to read-only list, supports read-only approval bag projection, and
   requires explicit `--allow-write` for `record`.

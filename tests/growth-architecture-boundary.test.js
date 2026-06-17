@@ -1098,6 +1098,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleaseControlsService, /blockedActionHandoffCount/);
   assert.match(automationReleaseControlsService, /publishedSchedulerExecutionCount/);
   assert.match(automationReleaseControlsService, /pendingWorkerTargetReviewCount/);
+  assert.match(automationReleaseControlsService, /firstPreflightFields/);
+  assert.match(automationReleaseControlsService, /latestPreflightReportId/);
   assert.match(automationReleaseControlsService, /configChangeApplied: false/);
   assert.match(automationReleaseControlsService, /writefulSchedulingAllowed: false/);
   assert.match(automationReleaseControlsService, /runtimeConfigChange: false/);
@@ -2546,6 +2548,8 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(releaseWorkbenchService, /recordRoutes/);
   assert.match(releaseWorkbenchService, /release_preflight/);
   assert.match(releaseWorkbenchService, /record_release_preflight/);
+  assert.match(releaseWorkbenchService, /firstPreflightSummary/);
+  assert.match(releaseWorkbenchService, /latestPreflightReportId/);
   assert.match(releaseWorkbenchService, /externalActionRequired/);
   assert.doesNotMatch(releaseWorkbenchService, /require\(["']\.\.\/stores/);
   assert.doesNotMatch(releaseWorkbenchService, /learning_growth_/);

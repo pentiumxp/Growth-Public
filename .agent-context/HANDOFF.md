@@ -9,10 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
-## 2026-06-17T07:57+08:00 - Release Preflight Readback In Activation Runtime Review
+## 2026-06-17T08:10+08:00 - Release Controls Workbench Preflight Projection
 
 - Status: implemented and full-Harness validated locally; commit and push still
   pending. No production deployment in this slice.
+- Change intent:
+  - carry latest preflight report id/status/advisory readiness flags into the
+    final Owner release controls and release workbench readbacks;
+  - keep those summaries read-only and advisory so they cannot be mistaken for
+    production deployment permission, runtime-config mutation, or scheduler
+    enablement;
+  - avoid adding a service dependency cycle by having controls read only
+    activation/runtime DTOs and activation/runtime audit records, while
+    workbench reads only controls/dashboard/inventory summaries.
+- Scope:
+  - `learning-automation-release-controls-service` now projects bounded latest
+    preflight report fields from release activation, runtime enablement, and
+    persisted activation/runtime enablement audit-record summaries into
+    `releaseControls`, `auditReadback`, and relevant step summaries;
+  - `learning-automation-release-workbench-service` now carries the same bounded
+    latest preflight fields from controls/dashboard/inventory summaries into
+    `releaseWorkbench` and top-level readback fields;
+  - no new repository/table, write route, Gateway call, scheduler permission,
+    runtime config switch, release record write, or deployment path was added.
+- Boundary notes:
+  - release controls does not read the preflight repository directly;
+  - release workbench does not read the preflight repository directly and does
+    not compute preflight;
+  - downstream projections keep all runtime mutation and scheduling permission
+    flags false.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`.
+- Validation passed:
+  - syntax checks for changed service/test files;
+  - focused Harness:
+    `node --test tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-workbench-service.test.js tests/growth-architecture-boundary.test.js`
+    passed `44/44`.
+  - release union Harness:
+    `node --test tests/learning-automation-release-controls-service.test.js tests/learning-automation-release-dashboard-service.test.js tests/learning-automation-release-inventory-service.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-activation-service.test.js tests/learning-automation-runtime-enablement-service.test.js tests/growth-release-controls-smoke-script.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `123/123`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=35`;
+  - `npm run --silent check` passed with `runtimeCount=208` and
+    `checkedCount=208`;
+  - `git diff --check`;
+  - `npm test` passed `908/908`;
+  - `codegraph sync && codegraph status` reported index up to date with `370`
+    files, `5,183` nodes, and `22,450` edges, plus the existing earlier-engine
+    advisory.
+- Remaining before commit/push:
+  - commit and push to `origin/main` and `public/main`;
+  - do not deploy unless explicitly requested.
+
+## 2026-06-17T07:57+08:00 - Release Preflight Readback In Activation Runtime Review
+
+- Status: implemented, full-Harness validated locally, committed as `49be91c`,
+  and pushed to `origin/main` and `public/main`. No production deployment in
+  this slice.
 - Change intent:
   - carry persisted preflight report visibility into Owner activation and
     runtime enablement review surfaces;
@@ -68,8 +126,14 @@
   - `codegraph sync && codegraph status` reported index up to date with `370`
     files, `5,180` nodes, and `22,420` edges, plus the existing earlier-engine
     advisory.
-- Remaining before commit/push:
-  - commit and push to `origin/main` and `public/main`;
+- Remaining next-step candidates:
+  - carry bounded preflight report visibility into any final Owner release
+    controls/workbench summaries that need it, still without granting
+    deployment permission;
+  - collect real Home AI central visual/UI summary artifacts and platform
+    Action Inbox/Web Push evidence for production release gates;
+  - collect real production controlled daily-loop/profile-feedback/learner-cycle
+    evidence and explicit release approvals over production inputs;
   - do not deploy unless explicitly requested.
 
 ## 2026-06-17T07:49+08:00 - Release Preflight Report Inventory Readback

@@ -46,6 +46,10 @@ test("release workbench composes release services into Owner action templates wi
           releaseControls: {
             status: "manual_runtime_config_required",
             requiredActionCount: 2,
+            latestPreflightReportId: "lgarpf_ready_1",
+            latestPreflightStatus: "ready_for_owner_release_activation",
+            latestPreflightReadyForProductionDeployReview: true,
+            latestPreflightReadyForOwnerReleaseActivation: true,
             missingApprovalKeys: ["writefulExecutionApproval"],
             nextAction: {
               key: "manual_config_change",
@@ -67,6 +71,10 @@ test("release workbench composes release services into Owner action templates wi
             status: "manual_runtime_config_required",
             missingRecordKinds: ["release_collection_run", "release_package", "runtime_enablement"],
             latestCollectionRunId: input.collectionRunId,
+            latestPreflightReportId: "lgarpf_ready_1",
+            latestPreflightStatus: "ready_for_owner_release_activation",
+            latestPreflightReadyForProductionDeployReview: true,
+            latestPreflightReadyForOwnerReleaseActivation: true,
             latestReleaseEvidenceRecordId: ""
           },
           writefulSchedulingAllowed: false
@@ -82,6 +90,10 @@ test("release workbench composes release services into Owner action templates wi
           releaseDashboard: {
             status: "manual_runtime_config_required",
             requiredActionCount: 3,
+            latestPreflightReportId: "lgarpf_ready_1",
+            latestPreflightStatus: "ready_for_owner_release_activation",
+            latestPreflightReadyForProductionDeployReview: true,
+            latestPreflightReadyForOwnerReleaseActivation: true,
             missingEvidenceKeys: ["central_visual_evidence", "platform_action_evidence", "release_package_review_ui_evidence"],
             nextAction: {
               key: "manual_config_change",
@@ -150,6 +162,15 @@ test("release workbench composes release services into Owner action templates wi
   assert.deepEqual(packageAction.preparationRoute.body.activation_gates, ["writeful_execution"]);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "runtime_enablement"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.externalActionRequired === true), true);
+  assert.equal(result.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.latestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.latestPreflightReadyForOwnerReleaseActivation, true);
+  assert.equal(result.releaseWorkbench.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releaseWorkbench.latestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.releaseWorkbench.controls.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releaseWorkbench.dashboard.latestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releaseWorkbench.inventory.latestPreflightReportId, "lgarpf_ready_1");
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_authorization"), true);
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_preflight"), true);
   assert.equal(result.releaseWorkbench.readRoutes.some((route) => route.key === "release_preflight_reports"), true);
