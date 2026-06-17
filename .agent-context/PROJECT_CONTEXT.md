@@ -85,6 +85,13 @@ readback gate set.
   write release decisions, package records, preflight reports, activation or
   runtime enablement rows, mutate runtime config, approve release state, or
   grant scheduler permission.
+  The embedded Owner panel now also renders a separate `发布记录` subpanel over
+  existing preflight-report, activation-record, and runtime-enablement list
+  routes plus their Owner-only record routes. That panel writes only
+  summary-only audit records with visible target scope and Owner intent; it
+  does not mutate runtime config, approve release state, grant scheduler
+  permission, run release evidence collection, deploy, call Gateway, or mutate
+  learner state.
   The
   route performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or

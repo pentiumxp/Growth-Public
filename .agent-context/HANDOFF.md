@@ -9,6 +9,90 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T04:37+0800 - Release Lifecycle Records Owner UI
+
+- Status: implemented locally; syntax, focused frontend, architecture/docs,
+  docs-locality, global syntax coverage, combined embedded UI Harness, diff
+  check, and local static readback passed. No production deploy, Gateway/model
+  call, learner evidence write, release evidence persistence, release
+  decision/package write, runtime config change, scheduler execution, release
+  approval, Home AI host logic change, or Home AI central visual harness run
+  was performed. Browser plugin live verification was attempted, but the
+  required Node REPL browser-control tool was not exposed in this session, so
+  validation used local service static readback plus existing UI Harness.
+- Classification: H2 Growth embedded Owner UI consumption over existing
+  preflight-report, activation-record, and runtime-enablement list/write
+  boundaries. It adds no route, table, service, scheduler permission, runtime
+  config mutation, Gateway boundary, release approval, deployment behavior, or
+  browser-side release policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchGrowthReleaseLifecycleRecords()`,
+    `recordGrowthReleasePreflightReport()`,
+    `recordGrowthReleaseActivation()`, and
+    `recordGrowthRuntimeEnablement()` over the existing Growth automation
+    routes;
+  - `public/growth-card-generation-ui.js` now renders a summary-only
+    `发布记录` subpanel inside the release workbench, listing recent preflight
+    reports, activation audit records, and runtime enablement audit records,
+    plus three explicit Owner record buttons;
+  - `public/app.js` keeps `releaseLifecycleRecords` UI state, refreshes the
+    record readback after release workbench refresh, and records the selected
+    lifecycle row through the owning Growth route while showing recording,
+    recorded, and failed states;
+  - `public/index.html` cache-busting moved to
+    `20260618-release-lifecycle-records-ui-v1`;
+  - Growth-local docs now separate the read-only `发布总览` panel from the
+    write-capable but record-only `发布记录` panel.
+- Boundary:
+  - `发布记录` payloads carry only visible target scope, Owner actor metadata,
+    bounded activation gates, `allow_write_preflight=true` for preflight, and
+    record-only/advisory summary decision objects for activation/runtime;
+  - the browser does not apply runtime config, grant scheduler permission,
+    approve release state, run release evidence collection, upload artifacts,
+    validate UI/visual evidence, deploy, call Gateway, publish cards, evaluate
+    submissions, or mutate learner state.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check public/app.js public/growth-card-generation-ui.js
+    public/growth-api-client.js`;
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 39/39;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`,
+    `checkedCount=225`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/growth-docs-locality.test.js` -> 76/76;
+  - `git diff --check`;
+  - local current-worktree service readback on `GROWTH_PORT=4886`: index used
+    `20260618-release-lifecycle-records-ui-v1`;
+    `growth-card-generation-ui.js` contained
+    `data-release-lifecycle-records-panel`,
+    `createReleaseLifecycleRecordPayload`, `recordOnly`, and `发布记录`;
+    `app.js` contained `refreshReleaseLifecycleRecords`,
+    `recordReleaseLifecycleRecordFromUi`, and all three record API calls; and
+    `growth-api-client.js` contained
+    `fetchGrowthReleaseLifecycleRecords`, `release-preflight-reports`,
+    `release-activations`, `runtime-enablements`, and
+    `recordGrowthRuntimeEnablement`.
+- Remaining gate:
+  - before production UI release, still run the Home AI central embedded-plugin
+    visual harness and persist bounded UI/release evidence through the existing
+    Growth release-evidence path.
+
 ## 2026-06-18T04:20+0800 - Release Status Readback Owner UI
 
 - Status: implemented locally; syntax, focused frontend, architecture/docs,

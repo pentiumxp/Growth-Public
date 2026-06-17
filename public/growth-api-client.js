@@ -203,6 +203,26 @@
       return query ? `?${query}` : "";
     }
 
+    function releaseLifecycleRecordQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "collectionRunId", payload.collectionRunId || payload.collection_run_id);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "enablementStatus", payload.enablementStatus || payload.enablement_status);
+      appendQueryArrayParam(params, "activationGates", payload.activationGates || payload.activation_gates);
+      appendQueryParam(params, "limit", payload.limit || 5);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function automationProposalQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
       const params = new URLSearchParams();
@@ -518,6 +538,28 @@
       };
     }
 
+    async function fetchGrowthReleaseLifecycleRecords(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      const query = releaseLifecycleRecordQuery(targetWorkspaceId, payload);
+      const [
+        preflightReports,
+        activations,
+        runtimeEnablements
+      ] = await Promise.all([
+        fetchJson(`${growthApiPath("automation", "release-preflight-reports")}${query}`),
+        fetchJson(`${growthApiPath("automation", "release-activations")}${query}`),
+        fetchJson(`${growthApiPath("automation", "runtime-enablements")}${query}`)
+      ]);
+      return {
+        ok: true,
+        schemaVersion: "growth.releaseLifecycleRecords.ui.v1",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        preflightReports,
+        activations,
+        runtimeEnablements
+      };
+    }
+
     function buildGrowthReleasePackage(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "release-packages", "build"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -704,6 +746,24 @@
       }, payload));
     }
 
+    function recordGrowthReleasePreflightReport(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "release-preflight-reports"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function recordGrowthReleaseActivation(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "release-activations"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
+    function recordGrowthRuntimeEnablement(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "runtime-enablements"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function recordGrowthOwnerAuditReview(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("owner-audit", "reviews"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -819,6 +879,7 @@
       fetchGrowthReferenceObjectTypes,
       fetchGrowthReferenceSummary,
       fetchGrowthReleaseArtifactTemplate,
+      fetchGrowthReleaseLifecycleRecords,
       fetchGrowthReleaseWorkbenchActionAudits,
       fetchGrowthReleaseStatusReadbacks,
       fetchGrowthReleaseWorkbench,
@@ -830,7 +891,10 @@
       postJson,
       processGrowthEvaluations,
       recordGrowthOwnerAuditReview,
+      recordGrowthReleaseActivation,
+      recordGrowthReleasePreflightReport,
       recordGrowthReleaseWorkbenchAction,
+      recordGrowthRuntimeEnablement,
       runGrowthAutomationSchedulerOnce,
       provisionGrowthDomainPack,
       publishGrowthDailyLoop,

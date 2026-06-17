@@ -50,6 +50,14 @@
         data: null,
         error: ""
       },
+      releaseLifecycleRecords: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       automationProposals: {
         status: "idle",
         data: null,
@@ -1029,6 +1037,32 @@
         });
       });
     });
+    root.querySelectorAll("[data-release-lifecycle-records-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshReleaseLifecycleRecords().catch((error) => {
+          pageState.cardGeneration.releaseLifecycleRecords = Object.assign({}, pageState.cardGeneration.releaseLifecycleRecords, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-release-lifecycle-record]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        recordReleaseLifecycleRecordFromUi(button).catch((error) => {
+          pageState.cardGeneration.releaseLifecycleRecords = Object.assign({}, pageState.cardGeneration.releaseLifecycleRecords, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1491,6 +1525,14 @@
       data: pageState.cardGeneration.releaseStatusReadbacks?.data || null,
       error: ""
     };
+    pageState.cardGeneration.releaseLifecycleRecords = {
+      status: "loading",
+      data: pageState.cardGeneration.releaseLifecycleRecords?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.automationProposals = {
       status: "loading",
       data: pageState.cardGeneration.automationProposals?.data || null,
@@ -1833,6 +1875,9 @@
       if (!options.skipStatusReadbacks) {
         await refreshReleaseStatusReadbacks(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
       }
+      if (!options.skipLifecycleRecords) {
+        await refreshReleaseLifecycleRecords(requestedTargetWorkspaceId, pageState.cardGeneration.context || context, { silent: true });
+      }
       return result;
     } catch (error) {
       pageState.cardGeneration.releaseWorkbench = {
@@ -1948,6 +1993,50 @@
         status: "failed",
         data: previous.data || null,
         error: error.message || String(error)
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  async function refreshReleaseLifecycleRecords(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.releaseLifecycleRecords || {};
+    pageState.cardGeneration.releaseLifecycleRecords = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createReleaseLifecycleRecordsQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchGrowthReleaseLifecycleRecords(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.releaseLifecycleRecords = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        releaseLifecycleRecords: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.releaseLifecycleRecords = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
       };
       if (!options.silent) renderShell();
       return null;
@@ -3885,6 +3974,56 @@
       payload: ui.createReleasePackageBuildPayload({ context, workspaceId: targetWorkspaceId, action }),
       targetWorkspaceId
     };
+  }
+
+  function createReleaseLifecycleRecordPayloadFromButton(button) {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createReleaseLifecycleRecordPayload !== "function") {
+      throw new Error("release_lifecycle_record_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    const recordKind = clean(button.dataset.releaseLifecycleRecord);
+    return {
+      payload: ui.createReleaseLifecycleRecordPayload({ context, workspaceId: targetWorkspaceId, recordKind }),
+      targetWorkspaceId,
+      recordKind
+    };
+  }
+
+  async function recordReleaseLifecycleRecordFromUi(button) {
+    const { payload, targetWorkspaceId, recordKind } = createReleaseLifecycleRecordPayloadFromButton(button);
+    pageState.cardGeneration.releaseLifecycleRecords = Object.assign({}, pageState.cardGeneration.releaseLifecycleRecords, {
+      actionStatus: "recording",
+      actionResult: pageState.cardGeneration.releaseLifecycleRecords?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      let result;
+      if (recordKind === "preflight") {
+        result = await api.recordGrowthReleasePreflightReport(payload, targetWorkspaceId);
+      } else if (recordKind === "activation") {
+        result = await api.recordGrowthReleaseActivation(payload, targetWorkspaceId);
+      } else if (recordKind === "runtime") {
+        result = await api.recordGrowthRuntimeEnablement(payload, targetWorkspaceId);
+      } else {
+        throw new Error("release_lifecycle_record_kind_unsupported");
+      }
+      pageState.cardGeneration.releaseLifecycleRecords = Object.assign({}, pageState.cardGeneration.releaseLifecycleRecords, {
+        actionStatus: "recorded",
+        actionResult: result,
+        actionError: ""
+      });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.releaseLifecycleRecords = Object.assign({}, pageState.cardGeneration.releaseLifecycleRecords, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
   }
 
   async function buildReleasePackageFromUi(button) {

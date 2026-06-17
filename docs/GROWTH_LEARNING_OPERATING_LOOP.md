@@ -1857,6 +1857,14 @@ Implementation progress on 2026-06-15:
   writing release decisions, package records, preflight reports, activation or
   runtime enablement rows, applying runtime config, approving release state, or
   granting scheduler permission.
+- The embedded Owner generation tab also renders a `发布记录` panel over the
+  existing preflight-report, activation-record, and runtime-enablement record
+  boundaries. Owner can explicitly record one summary-only preflight report,
+  release activation audit row, or runtime enablement audit row from the plugin
+  UI, and then the UI refreshes release workbench/readback state. These are
+  record-only audit writes; they do not apply runtime config, grant scheduler
+  permission, run release evidence collection, approve a release, deploy, call
+  Gateway, or mutate learner state.
 - after bundle, bundle audit, and release-readiness artifacts exist,
   `npm run smoke:release-collection-run` can evaluate or persist one
   sanitized `growth.learningAutomationReleaseCollectionRun.v1` collection

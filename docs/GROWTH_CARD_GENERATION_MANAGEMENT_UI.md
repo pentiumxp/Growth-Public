@@ -75,9 +75,20 @@ subpanel backed by existing release readbacks:
 `release-review`, `release-authorization`, `release-closure`,
 `release-preflight`, `release-activation`, and `runtime-enablement`. The
 browser batches those reads only to show bounded status/next-action summaries;
-it does not record preflight reports, activation/runtime enablement rows,
-release decisions, package records, runtime config changes, release permission,
-or scheduler permission.
+that read-only subpanel does not record preflight reports,
+activation/runtime enablement rows, release decisions, package records, runtime
+config changes, release permission, or scheduler permission.
+The same release workbench panel now also renders a `发布记录` subpanel backed
+by `GET /api/v1/growth/automation/release-preflight-reports`,
+`GET /api/v1/growth/automation/release-activations`, and
+`GET /api/v1/growth/automation/runtime-enablements`. From that subpanel Owner
+can explicitly call the existing Owner-only record routes for one
+summary-only preflight report, activation audit record, or runtime enablement
+audit record. The payload is limited to visible target scope,
+`requested_by=owner`, bounded activation gates, and record-only/advisory
+decision summaries. It does not apply runtime config, grant scheduler
+permission, run release evidence collection, approve a release, deploy, call
+Gateway, or mutate learner state.
 Central `embedded-plugin-shell` visual evidence passed for
 `pluginId=growth` on 2026-06-15, and the Owner target-provision controls were
 deployed to Mac production at commit `ffabbbf4ef55`. Production no-write smoke
@@ -513,6 +524,14 @@ manifest into a pass record. Runtime enablement
 action records are audit/readback records only; external configuration
 verification still happens outside Growth and must be represented as bounded
 summary evidence before scheduler execution can proceed.
+
+The `发布总览` and `发布记录` subpanels are intentionally separate. `发布总览`
+is read-only ladder visibility over controls/dashboard/inventory/review/
+authorization/closure/preflight/activation/runtime. `发布记录` is an explicit
+Owner audit writer over only the existing preflight-report, activation-record,
+and runtime-enablement-record routes. Neither panel can flip runtime config,
+approve scheduler execution, run a worker, publish learning cards, or convert
+missing UI/visual evidence into a pass record.
 
 ### Owner Daily Loop Screen Contract
 
@@ -1232,7 +1251,7 @@ Add focused tests before broad regression runs:
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state with subject/capability/coverage selectors, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, formal stage-checkpoint rubric readback from the controls DTO, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
-| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. It also renders `data-release-artifact-template-panel` from the no-write release artifact-template readback, including artifact slots, checklist rows, action-plan rows, manifest schema status, refresh state, and direct/proxy API client coverage for `GET /api/v1/growth/automation/release-artifact-template`. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, release artifact-template query payloads, and absence of `writefulSchedulingAllowed`, raw prompts, raw artifact paths, or transcripts. |
+| UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. It also renders `data-release-artifact-template-panel` from the no-write release artifact-template readback, including artifact slots, checklist rows, action-plan rows, manifest schema status, refresh state, and direct/proxy API client coverage for `GET /api/v1/growth/automation/release-artifact-template`. It renders `data-release-status-readbacks-panel` as read-only release ladder visibility, and renders `data-release-lifecycle-records-panel` for explicit Owner record/list coverage over preflight reports, activation records, and runtime enablement records. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, release artifact-template query payloads, release lifecycle record query/record payloads, and absence of `writefulSchedulingAllowed`, raw prompts, raw artifact paths, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |
 | UI provisioning | renders `targetProvisioning`, prevents silent no-op generation when blocked, applies selected graph scope through context refresh, and calls the provision route only after explicit Owner action |

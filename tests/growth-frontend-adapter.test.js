@@ -429,6 +429,32 @@ test("Growth API client exposes card generation context and write helpers", asyn
     activation_record_limit: 3,
     runtime_enablement_record_limit: 4
   }, "weixin_fanfan");
+  await client.fetchGrowthReleaseLifecycleRecords({
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    collection_run_id: "release_run_1",
+    limit: 5
+  }, "weixin_fanfan");
+  await client.recordGrowthReleasePreflightReport({
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    allow_write_preflight: true,
+    requested_by: "owner"
+  }, "weixin_fanfan");
+  await client.recordGrowthReleaseActivation({
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    activation_gates: ["writeful_execution"],
+    activation_decision: { summaryOnly: true }
+  }, "weixin_fanfan");
+  await client.recordGrowthRuntimeEnablement({
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    activation_gates: ["writeful_execution"],
+    enablement_decision: { summaryOnly: true }
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -660,6 +686,33 @@ test("Growth API client exposes card generation context and write helpers", asyn
   assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-preflight?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
   assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-activation?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
   assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/runtime-enablement?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=2&activationRecordLimit=3&runtimeEnablementRecordLimit=4"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-preflight-reports?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=5"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/release-activations?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=5"));
+  assert.ok(calls.find((call) => call.path === "/api/v1/growth/automation/runtime-enablements?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&collectionRunId=release_run_1&limit=5"));
+  const preflightRecordCall = calls.find((call) => call.path === "/api/v1/growth/automation/release-preflight-reports" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(preflightRecordCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    allow_write_preflight: true,
+    requested_by: "owner"
+  });
+  const activationRecordCall = calls.find((call) => call.path === "/api/v1/growth/automation/release-activations" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(activationRecordCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    activation_gates: ["writeful_execution"],
+    activation_decision: { summaryOnly: true }
+  });
+  const runtimeRecordCall = calls.find((call) => call.path === "/api/v1/growth/automation/runtime-enablements" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(runtimeRecordCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    collection_run_id: "release_run_1",
+    activation_gates: ["writeful_execution"],
+    enablement_decision: { summaryOnly: true }
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -723,6 +776,10 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.fetchGrowthReleaseArtifactTemplate("weixin_stephen", { target: { learnerId: "fanfan" } });
   await client.fetchGrowthReleaseWorkbenchActionAudits({ learner_id: "fanfan", status: "blocked" }, "weixin_stephen");
   await client.fetchGrowthReleaseStatusReadbacks({ learner_id: "fanfan", horizon: "daily_plan", limit: 2 }, "weixin_stephen");
+  await client.fetchGrowthReleaseLifecycleRecords({ learner_id: "fanfan", horizon: "daily_plan", limit: 2 }, "weixin_stephen");
+  await client.recordGrowthReleasePreflightReport({ learner_id: "fanfan", allow_write_preflight: true }, "weixin_stephen");
+  await client.recordGrowthReleaseActivation({ learner_id: "fanfan", activation_gates: ["writeful_execution"] }, "weixin_stephen");
+  await client.recordGrowthRuntimeEnablement({ learner_id: "fanfan", activation_gates: ["writeful_execution"] }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -847,6 +904,27 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   assert.equal(proxyReleaseWorkbenchActionAuditsCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-workbench/action-audits?targetWorkspaceId=weixin_stephen&learnerId=fanfan&status=blocked&limit=5");
   assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-controls?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
   assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/runtime-enablement?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
+  assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-preflight-reports?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
+  assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-activations?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
+  assert.ok(calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/runtime-enablements?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&limit=2"));
+  const proxyPreflightRecordCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-preflight-reports" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(proxyPreflightRecordCall.options.body), {
+    workspace_id: "weixin_stephen",
+    learner_id: "fanfan",
+    allow_write_preflight: true
+  });
+  const proxyActivationRecordCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-activations" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(proxyActivationRecordCall.options.body), {
+    workspace_id: "weixin_stephen",
+    learner_id: "fanfan",
+    activation_gates: ["writeful_execution"]
+  });
+  const proxyRuntimeRecordCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/runtime-enablements" && call.options.method === "POST");
+  assert.deepEqual(JSON.parse(proxyRuntimeRecordCall.options.body), {
+    workspace_id: "weixin_stephen",
+    learner_id: "fanfan",
+    activation_gates: ["writeful_execution"]
+  });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1570,6 +1648,61 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
         }
       }
     },
+    releaseLifecycleRecords: {
+      ok: true,
+      schemaVersion: "growth.releaseLifecycleRecords.ui.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      preflightReports: {
+        ok: true,
+        count: 1,
+        reports: [{
+          preflightReportId: "lgarpf_ui_1",
+          status: "ready_for_owner_release_activation",
+          collectionRunId: "lgacrn_1",
+          releasePreflight: {
+            summaryOnly: true,
+            status: "ready_for_owner_release_activation",
+            readyForOwnerReleaseActivation: true
+          },
+          privacyClass: "summary_only",
+          createdAt: "2026-06-18T04:30:00.000Z",
+          updatedAt: "2026-06-18T04:30:00.000Z"
+        }]
+      },
+      activations: {
+        ok: true,
+        count: 1,
+        activations: [{
+          activationId: "lgaract_ui_1",
+          status: "ready_for_owner_config_enablement",
+          requestedActivationGates: ["writeful_execution"],
+          activationDecision: {
+            summaryOnly: true,
+            recordOnly: true,
+            advisoryOnly: true
+          },
+          privacyClass: "summary_only",
+          recordedAt: "2026-06-18T04:31:00.000Z"
+        }]
+      },
+      runtimeEnablements: {
+        ok: true,
+        count: 1,
+        enablements: [{
+          enablementId: "lgrten_ui_1",
+          status: "ready_for_manual_runtime_config_enablement",
+          requiredConfigKeys: ["automationWritefulExecutionEnabled"],
+          enablementDecision: {
+            summaryOnly: true,
+            recordOnly: true,
+            advisoryOnly: true
+          },
+          privacyClass: "summary_only",
+          recordedAt: "2026-06-18T04:32:00.000Z"
+        }]
+      }
+    },
     automationProposals: {
       ok: true,
       count: 2,
@@ -2124,6 +2257,18 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
           data: context.releaseStatusReadbacks,
           error: ""
         },
+        releaseLifecycleRecords: {
+          status: "ready",
+          data: context.releaseLifecycleRecords,
+          error: "",
+          actionStatus: "recorded",
+          actionResult: {
+            activation: {
+              activationId: "lgaract_ui_1"
+            }
+          },
+          actionError: ""
+        },
         automationProposals: {
           status: "ready",
           data: context.automationProposals,
@@ -2497,6 +2642,21 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-release-status-readback-key="preflight"/);
   assert.match(html, /data-release-status-readback-key="runtimeEnablement"/);
   assert.match(html, /Collect release evidence/);
+  assert.match(html, /data-release-lifecycle-records-panel/);
+  assert.match(html, /data-release-lifecycle-records-status="ready"/);
+  assert.match(html, /发布记录/);
+  assert.match(html, /data-release-lifecycle-records-refresh/);
+  assert.match(html, /data-release-lifecycle-record="preflight"/);
+  assert.match(html, /data-release-lifecycle-record="activation"/);
+  assert.match(html, /data-release-lifecycle-record="runtime"/);
+  assert.match(html, /data-release-lifecycle-record-kind="preflight"/);
+  assert.match(html, /data-release-lifecycle-record-id="lgarpf_ui_1"/);
+  assert.match(html, /data-release-lifecycle-record-kind="activation"/);
+  assert.match(html, /data-release-lifecycle-record-id="lgaract_ui_1"/);
+  assert.match(html, /data-release-lifecycle-record-kind="runtime"/);
+  assert.match(html, /data-release-lifecycle-record-id="lgrten_ui_1"/);
+  assert.match(html, /data-release-lifecycle-record-action-status="recorded"/);
+  assert.match(html, /发布记录已写入：lgaract_ui_1/);
   assert.match(html, /data-release-package-build/);
   assert.match(html, /构建包候选/);
   assert.match(html, /记录包/);
@@ -2774,6 +2934,106 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(releaseStatusReadbackQueryPayload, "transcript"), false);
+
+  const releaseLifecycleRecordsQueryPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseLifecycleRecordsQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseLifecycleRecordsQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    limit: 5
+  });
+  assert.equal(Object.hasOwn(releaseLifecycleRecordsQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseLifecycleRecordsQueryPayload, "transcript"), false);
+
+  const releasePreflightRecordPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseLifecycleRecordPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    recordKind: "preflight"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releasePreflightRecordPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    requested_by: "owner",
+    allow_write_preflight: true,
+    created_by: "owner"
+  });
+  assert.equal(Object.hasOwn(releasePreflightRecordPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releasePreflightRecordPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releasePreflightRecordPayload, "writefulSchedulingAllowed"), false);
+
+  const releaseActivationRecordPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseLifecycleRecordPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    recordKind: "activation"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseActivationRecordPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    requested_by: "owner",
+    recorded_by: "owner",
+    activation_gates: ["writeful_execution"],
+    note: "Owner recorded summary-only release lifecycle readback from Growth UI.",
+    evidence: {
+      schemaVersion: "growth.releaseLifecycleRecord.ownerUiEvidence.v1",
+      summaryOnly: true,
+      recordKind: "activation",
+      source: "growth_owner_generation_ui"
+    },
+    activation_decision: {
+      schemaVersion: "growth.learningAutomationReleaseActivation.decision.v1",
+      summaryOnly: true,
+      decision: "approved_for_config_enablement",
+      recordOnly: true,
+      advisoryOnly: true
+    }
+  });
+  assert.equal(Object.hasOwn(releaseActivationRecordPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseActivationRecordPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releaseActivationRecordPayload, "writefulSchedulingAllowed"), false);
+
+  const releaseRuntimeRecordPayload = windowRef.HermesGrowthCardGenerationUi.createReleaseLifecycleRecordPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    recordKind: "runtime"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(releaseRuntimeRecordPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain: "english",
+    subject: "english",
+    horizon: "daily_plan",
+    requested_by: "owner",
+    recorded_by: "owner",
+    activation_gates: ["writeful_execution"],
+    note: "Owner recorded summary-only release lifecycle readback from Growth UI.",
+    evidence: {
+      schemaVersion: "growth.releaseLifecycleRecord.ownerUiEvidence.v1",
+      summaryOnly: true,
+      recordKind: "runtime",
+      source: "growth_owner_generation_ui"
+    },
+    enablement_decision: {
+      schemaVersion: "growth.learningAutomationRuntimeEnablement.decision.v1",
+      summaryOnly: true,
+      decision: "ready_for_manual_runtime_config_enablement",
+      recordOnly: true,
+      advisoryOnly: true
+    }
+  });
+  assert.equal(Object.hasOwn(releaseRuntimeRecordPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(releaseRuntimeRecordPayload, "transcript"), false);
+  assert.equal(Object.hasOwn(releaseRuntimeRecordPayload, "writefulSchedulingAllowed"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -4469,7 +4729,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-release-status-readback-ui-v1";
+  const staticVersion = "20260618-release-lifecycle-records-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -4531,6 +4791,15 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-release-status-readbacks-refresh/);
   assert.match(source, /releaseStatusReadbacks/);
   assert.match(source, /await refreshReleaseStatusReadbacks\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
+  assert.match(source, /function refreshReleaseLifecycleRecords/);
+  assert.match(source, /api\.fetchGrowthReleaseLifecycleRecords\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-release-lifecycle-records-refresh/);
+  assert.match(source, /data-release-lifecycle-record/);
+  assert.match(source, /recordReleaseLifecycleRecordFromUi/);
+  assert.match(source, /api\.recordGrowthReleasePreflightReport\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.recordGrowthReleaseActivation\(payload, targetWorkspaceId\)/);
+  assert.match(source, /api\.recordGrowthRuntimeEnablement\(payload, targetWorkspaceId\)/);
+  assert.match(source, /await refreshReleaseLifecycleRecords\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshAutomationProposals/);
   assert.match(source, /api\.fetchGrowthAutomationProposals\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)/);

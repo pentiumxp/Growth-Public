@@ -902,6 +902,14 @@ Implemented backend shape:
   not record release decisions, package rows, preflight reports, activation or
   runtime enablement rows, mutate runtime config, grant release permission, or
   grant scheduler permission.
+  A separate embedded `发布记录` subpanel now consumes the existing
+  preflight-report, activation-record, and runtime-enablement list routes and
+  can call their existing Owner-only record routes with summary-only
+  service-owned payloads. That panel is an explicit audit writer only: it
+  records bounded Owner intent/readback for preflight, activation, and runtime
+  enablement, but it does not run evidence collection, approve releases, apply
+  runtime config, grant scheduler permission, deploy, call Gateway, or mutate
+  learner state.
   The browser still does not read server-local artifact files, run Home AI
   visual tooling, validate UI artifacts, persist release evidence, grant
   approval, or enable scheduling.
