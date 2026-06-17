@@ -9,6 +9,77 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:07+08:00 - Release Readiness Smoke Operator Readback
+
+- Status: implemented locally; focused validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 projection/readback change. Home AI AI Ops
+  intake over-selected H1 because the task text explicitly mentioned no visual,
+  no deployment, no runtime config, and no Gateway; the actual touched files
+  are limited to the Growth release-readiness smoke script, its Harness, local
+  docs, and this handoff.
+- Problem found:
+  - `smoke-growth-release-readiness` returned the canonical service DTOs
+    correctly, but quick operator fields such as missing checks, missing
+    evidence, required action count, next action, and evidence-readback counts
+    were only nested under `summary`, `releaseReview`, and
+    `evidenceReadback`;
+  - this made release-readiness CLI output less consistent with the newer
+    release workbench and artifact-template smoke readbacks.
+- Scope:
+  - added `projectReleaseReadinessSmokeReadback` and `runOperation` in
+    `scripts/smoke-growth-release-readiness.js`;
+  - the CLI now mirrors top-level summary-only fields:
+    `releaseReadinessStatus`, `readyForOwnerLoop`,
+    `readyForReleaseReview`, `releaseReviewAdvisoryOnly`,
+    `writefulSchedulingAllowed`, pass/missing/blocked check counts,
+    persisted evidence/approval counts, `requiredActionCount`,
+    `nextRequiredAction`, and bounded `evidenceReadback...` counts/source
+    bundle ids;
+  - preserved the nested service DTOs as canonical output and did not change
+    service behavior, SQLite schema, write paths, Gateway boundaries, runtime
+    config, scheduler permissions, visual tooling, or release permissions;
+  - updated Growth next-stage plan, plugin architecture, local platform pointer,
+    and test matrix.
+- Operational readback:
+  - `node scripts/smoke-growth-release-readiness.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `ok=true`, `status=incomplete`,
+    `releaseReadinessStatus=incomplete`, `readyForOwnerLoop=false`,
+    `readyForReleaseReview=false`, `releaseReviewAdvisoryOnly=true`,
+    `writefulSchedulingAllowed=false`, `passCheckCount=6`,
+    `missingRequiredCount=38`, `missingCheckCount=38`,
+    `blockedCheckCount=0`, `missingEvidenceCount=31`,
+    `persistedEvidenceKeyCount=2`, `persistedApprovalKeyCount=0`,
+    `requiredActionCount=38`, `nextRequiredAction.key=owner_daily_ui_evidence`,
+    `evidenceReadbackEvidenceCount=33`,
+    `evidenceReadbackPresentCount=2`, and
+    `evidenceReadbackMissingCount=31`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-release-readiness.js`;
+  - `node --test tests/growth-release-readiness-smoke-script.test.js` passed
+    `12/12`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `node --test tests/growth-release-readiness-smoke-script.test.js
+    tests/learning-automation-release-readiness-service.test.js` passed
+    `27/27`;
+  - `npm run --silent test:release-union` passed `236/236`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `928/928`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,307` nodes, and `23,186` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work remains about `95%`
+    complete;
+  - this closes a local release-readiness operator-readback gap, but production
+    completion still requires real Home AI central visual/UI evidence, release
+    evidence records, explicit Owner approvals/reviews, final release closure,
+    and deployment evidence.
+
 ## 2026-06-17T11:58+08:00 - Release Workbench Smoke Operator Readback
 
 - Status: implemented and locally validated. No production deployment was

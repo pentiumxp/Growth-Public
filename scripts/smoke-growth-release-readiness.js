@@ -290,6 +290,63 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key || action.evidenceKey || action.evidence_key, 140),
+    status: cleanString(action.status, 80),
+    label: cleanString(action.label, 160),
+    action: cleanString(action.action || action.type || action.reason, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80),
+    evidencePresent: action.evidencePresent === true
+  };
+}
+
+function countFromArrayOrValue(value, fallback = 0) {
+  if (Array.isArray(value)) return value.length;
+  return boundedCountValue(value, fallback);
+}
+
+function projectReleaseReadinessSmokeReadback(result = {}) {
+  const summary = objectOnly(result.summary);
+  const summaryCounts = objectOnly(summary.counts);
+  const releaseReview = objectOnly(result.releaseReview);
+  const evidenceReadback = objectOnly(result.evidenceReadback);
+  const sourceBundle = objectOnly(evidenceReadback.sourceBundle);
+  return Object.assign({}, result, {
+    releaseReadinessStatus: cleanString(summary.status || result.status, 120),
+    readyForOwnerLoop: summary.readyForOwnerLoop === true,
+    readyForReleaseReview: releaseReview.readyForReleaseReview === true || summary.readyForReleaseReview === true,
+    releaseReviewAdvisoryOnly: releaseReview.advisoryOnly === true,
+    writefulSchedulingAllowed: releaseReview.writefulSchedulingAllowed === true
+      || summary.writefulSchedulingAllowed === true
+      || objectOnly(result.config).writefulSchedulingAllowed === true,
+    passCheckCount: boundedCountValue(summaryCounts.pass, 0),
+    missingRequiredCount: asArray(summary.missingRequired).length,
+    missingCheckCount: countFromArrayOrValue(releaseReview.missingCheckKeys, summaryCounts.missing),
+    blockedCheckCount: countFromArrayOrValue(releaseReview.blockedCheckKeys, summaryCounts.blocked),
+    missingEvidenceCount: countFromArrayOrValue(releaseReview.missingEvidenceKeys, 0),
+    persistedEvidenceKeyCount: asArray(releaseReview.persistedEvidenceKeys).length,
+    persistedApprovalKeyCount: asArray(releaseReview.persistedApprovalKeys).length,
+    requiredActionCount: boundedCountValue(releaseReview.requiredActionCount, asArray(releaseReview.requiredActions).length),
+    nextRequiredAction: compactAction(releaseReview.nextAction),
+    evidenceReadbackEvidenceCount: boundedCountValue(evidenceReadback.evidenceCount, asArray(evidenceReadback.items).length),
+    evidenceReadbackPresentCount: boundedCountValue(evidenceReadback.presentCount, 0),
+    evidenceReadbackMissingCount: boundedCountValue(evidenceReadback.missingCount, 0),
+    evidenceReadbackSourceBundleStatus: cleanString(sourceBundle.status, 120),
+    evidenceReadbackSourceBundleId: cleanString(sourceBundle.bundleId || sourceBundle.evidenceBundleId || sourceBundle.id, 180)
+  });
+}
+
 function inputFromArgs(args) {
   const bundle = evidenceBundleFromArgs(args);
   const scope = objectOnly(bundle.scope);
@@ -333,6 +390,13 @@ function shouldWriteSnapshot(args) {
   return hasFlag(args, "--write-snapshot") || hasFlag(args, "--writeSnapshot");
 }
 
+function runOperation(service, input, writeSnapshot = false) {
+  const result = writeSnapshot
+    ? service.createSnapshot(input)
+    : service.evaluateReadiness(input);
+  return projectReleaseReadinessSmokeReadback(result);
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -364,9 +428,7 @@ async function main() {
   const config = readEnv(process.env);
   const services = createServices(config);
   const service = services.learningAutomationReleaseReadinessService;
-  const result = shouldWriteSnapshot(args)
-    ? service.createSnapshot(input)
-    : service.evaluateReadiness(input);
+  const result = runOperation(service, input, shouldWriteSnapshot(args));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -386,6 +448,8 @@ module.exports = {
   evidenceBundleFromArgs,
   evidenceFromArgs,
   inputFromArgs,
+  projectReleaseReadinessSmokeReadback,
   releaseApprovalFromArgs,
+  runOperation,
   shouldWriteSnapshot
 };

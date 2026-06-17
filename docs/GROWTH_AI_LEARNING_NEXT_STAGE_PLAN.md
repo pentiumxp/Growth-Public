@@ -313,6 +313,12 @@ record projection that readiness may consume, and it must preserve
 `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
 `evidenceKey`, and `checkKey`; otherwise the record may appear in
 `persistedEvidenceKeys` but still fail the summary-only evidence contract.
+The release-readiness smoke CLI should keep top-level operator readback aligned
+with its nested service DTOs. `releaseReadinessStatus`, readiness booleans,
+check/evidence/approval/action counts, `nextRequiredAction`, and
+`evidenceReadback...` counters are convenience projections over `summary`,
+`releaseReview`, and `evidenceReadback`; they are not new release decisions,
+runtime config switches, Gateway calls, writes, or permission grants.
 
 ## Non-Negotiable Boundaries
 

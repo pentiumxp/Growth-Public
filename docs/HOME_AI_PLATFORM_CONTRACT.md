@@ -212,6 +212,13 @@ Release controls, release inventory, release dashboard, and release workbench DT
 only bounded summary fields from that catalog, such as present/missing counts,
 source bundle ids/status/counts, and the Owner review stage-summary counters
 described below; they must not expose full evidence items.
+`npm run smoke:release-readiness` also mirrors operator-critical readback at
+top level for CLI consumers: `releaseReadinessStatus`, readiness booleans,
+check/evidence/approval/action counts, `nextRequiredAction`, and bounded
+`evidenceReadback...` counts/source-bundle ids. Those fields mirror the nested
+`summary`, `releaseReview`, and `evidenceReadback` DTOs only; they do not
+create writes, approval, runtime config, scheduler permission, Gateway calls,
+or raw evidence exposure.
 For `ownerReviewEvidence`, release-readiness may also project bounded
 `ownerReviewStageSummary` counters, passed/missing gate keys, gate counts,
 required action count, and next Owner action in the evidenceReadback item so

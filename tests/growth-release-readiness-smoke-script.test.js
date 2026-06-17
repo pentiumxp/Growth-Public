@@ -14,7 +14,9 @@ const {
   evidenceBundleFromArgs,
   evidenceFromArgs,
   inputFromArgs,
+  projectReleaseReadinessSmokeReadback,
   releaseApprovalFromArgs,
+  runOperation,
   shouldWriteSnapshot
 } = require("../scripts/smoke-growth-release-readiness");
 
@@ -415,6 +417,120 @@ test("release readiness smoke script accepts versioned evidence bundle files wit
   }
 });
 
+test("release readiness smoke script projects top-level operator readback", () => {
+  const result = projectReleaseReadinessSmokeReadback({
+    ok: true,
+    status: "incomplete",
+    config: {
+      writefulSchedulingAllowed: false
+    },
+    summary: {
+      status: "incomplete",
+      counts: {
+        pass: 6,
+        missing: 2,
+        blocked: 1
+      },
+      missingRequired: ["owner_daily_ui_evidence", "central_visual_evidence", "release_workbench_smoke_evidence"],
+      readyForOwnerLoop: false,
+      readyForReleaseReview: false,
+      writefulSchedulingAllowed: false
+    },
+    releaseReview: {
+      readyForReleaseReview: false,
+      advisoryOnly: true,
+      persistedEvidenceKeys: ["centralVisualEvidence"],
+      persistedApprovalKeys: ["writefulExecutionApproval"],
+      missingCheckKeys: ["owner_daily_ui_evidence", "central_visual_evidence"],
+      blockedCheckKeys: ["release_workbench_smoke_evidence"],
+      missingEvidenceKeys: ["owner_daily_ui_evidence"],
+      requiredActionCount: 3,
+      nextAction: {
+        key: "owner_daily_ui_evidence",
+        status: "missing",
+        label: "Owner daily UI product/visual evidence",
+        action: "complete_owner_daily_ui_visual_validation",
+        requiredActor: "owner",
+        evidencePresent: false
+      },
+      writefulSchedulingAllowed: false
+    },
+    evidenceReadback: {
+      evidenceCount: 10,
+      presentCount: 1,
+      missingCount: 9,
+      sourceBundle: {
+        bundleId: "bundle_release_1",
+        status: "collected"
+      }
+    }
+  });
+
+  assert.equal(result.releaseReadinessStatus, "incomplete");
+  assert.equal(result.readyForOwnerLoop, false);
+  assert.equal(result.readyForReleaseReview, false);
+  assert.equal(result.releaseReviewAdvisoryOnly, true);
+  assert.equal(result.writefulSchedulingAllowed, false);
+  assert.equal(result.passCheckCount, 6);
+  assert.equal(result.missingRequiredCount, 3);
+  assert.equal(result.missingCheckCount, 2);
+  assert.equal(result.blockedCheckCount, 1);
+  assert.equal(result.missingEvidenceCount, 1);
+  assert.equal(result.persistedEvidenceKeyCount, 1);
+  assert.equal(result.persistedApprovalKeyCount, 1);
+  assert.equal(result.requiredActionCount, 3);
+  assert.equal(result.nextRequiredAction.key, "owner_daily_ui_evidence");
+  assert.equal(result.nextRequiredAction.action, "complete_owner_daily_ui_visual_validation");
+  assert.equal(result.nextRequiredAction.requiredActor, "owner");
+  assert.equal(result.nextRequiredAction.evidencePresent, false);
+  assert.equal(result.evidenceReadbackEvidenceCount, 10);
+  assert.equal(result.evidenceReadbackPresentCount, 1);
+  assert.equal(result.evidenceReadbackMissingCount, 9);
+  assert.equal(result.evidenceReadbackSourceBundleStatus, "collected");
+  assert.equal(result.evidenceReadbackSourceBundleId, "bundle_release_1");
+});
+
+test("release readiness smoke script delegates through projected operation helper", () => {
+  const calls = [];
+  const result = runOperation({
+    evaluateReadiness(input) {
+      calls.push(input);
+      return {
+        ok: true,
+        status: "ready_for_release_review",
+        summary: {
+          status: "ready_for_release_review",
+          counts: { pass: 44 },
+          missingRequired: [],
+          readyForOwnerLoop: true,
+          readyForReleaseReview: true,
+          writefulSchedulingAllowed: false
+        },
+        releaseReview: {
+          readyForReleaseReview: true,
+          advisoryOnly: true,
+          requiredActionCount: 0,
+          writefulSchedulingAllowed: false
+        },
+        evidenceReadback: {
+          evidenceCount: 44,
+          presentCount: 44,
+          missingCount: 0
+        }
+      };
+    }
+  }, { workspaceId: "weixin_fanfan" });
+
+  assert.deepEqual(calls, [{ workspaceId: "weixin_fanfan" }]);
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "ready_for_release_review");
+  assert.equal(result.releaseReadinessStatus, "ready_for_release_review");
+  assert.equal(result.readyForReleaseReview, true);
+  assert.equal(result.passCheckCount, 44);
+  assert.equal(result.requiredActionCount, 0);
+  assert.equal(result.evidenceReadbackMissingCount, 0);
+});
+
 test("release readiness smoke script evaluates readiness without writing a snapshot by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -432,6 +548,24 @@ test("release readiness smoke script evaluates readiness without writing a snaps
     const output = parseStdout(result);
     assert.equal(output.ok, true);
     assert.equal(output.status, "incomplete");
+    assert.equal(output.releaseReadinessStatus, output.summary.status);
+    assert.equal(output.readyForOwnerLoop, output.summary.readyForOwnerLoop);
+    assert.equal(output.readyForReleaseReview, output.releaseReview.readyForReleaseReview);
+    assert.equal(output.releaseReviewAdvisoryOnly, output.releaseReview.advisoryOnly);
+    assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.passCheckCount, output.summary.counts.pass);
+    assert.equal(output.missingRequiredCount, output.summary.missingRequired.length);
+    assert.equal(output.missingCheckCount, output.releaseReview.missingCheckKeys.length);
+    assert.equal(output.blockedCheckCount, output.releaseReview.blockedCheckKeys.length);
+    assert.equal(output.missingEvidenceCount, output.releaseReview.missingEvidenceKeys.length);
+    assert.equal(output.persistedEvidenceKeyCount, output.releaseReview.persistedEvidenceKeys.length);
+    assert.equal(output.persistedApprovalKeyCount, output.releaseReview.persistedApprovalKeys.length);
+    assert.equal(output.requiredActionCount, output.releaseReview.requiredActionCount);
+    assert.equal(output.nextRequiredAction.key, output.releaseReview.nextAction.key);
+    assert.equal(output.nextRequiredAction.action, output.releaseReview.nextAction.action);
+    assert.equal(output.evidenceReadbackEvidenceCount, output.evidenceReadback.evidenceCount);
+    assert.equal(output.evidenceReadbackPresentCount, output.evidenceReadback.presentCount);
+    assert.equal(output.evidenceReadbackMissingCount, output.evidenceReadback.missingCount);
     assert.equal(output.config.writefulSchedulingAllowed, false);
     assert.equal(output.releaseReview.advisoryOnly, true);
     assert.equal(output.evidenceReadback.summaryOnly, true);

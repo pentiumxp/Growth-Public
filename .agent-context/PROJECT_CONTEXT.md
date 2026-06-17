@@ -190,7 +190,11 @@ readback gate set.
   config. Release-readiness also projects summary-only `evidenceReadback`
   (`growth.learningAutomationReleaseReadiness.evidenceReadback.v1`) with source
   bundle readback, present/missing counts, missing check keys, and bounded
-  per-check evidence references. For `ownerReviewEvidence`, the readback item
+  per-check evidence references. `npm run smoke:release-readiness` mirrors
+  top-level operator fields for readiness status, Owner/release booleans,
+  check/evidence/approval/action counts, next required action, and bounded
+  evidence-readback counts while preserving the nested service DTO as
+  canonical. For `ownerReviewEvidence`, the readback item
   now also carries bounded `ownerReviewStageSummary` counters from the release
   evidence bundle summary, plus bounded passed/missing gate keys, gate counts,
   required action count, and next Owner action without raw dependency ids; this

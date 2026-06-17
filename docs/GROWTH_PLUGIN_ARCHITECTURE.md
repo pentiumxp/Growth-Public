@@ -268,7 +268,12 @@ full operating loop:
   `npm run smoke:release-readiness`; it accepts bounded source bundle metadata
   as `evidenceBundleReadback`, service output includes summary-only
   `evidenceReadback` over present/missing checks, and `--write-snapshot`
-  persists that catalog in `evidence_readback_json`. Production evidence
+  persists that catalog in `evidence_readback_json`. The smoke CLI also
+  projects top-level operator fields such as `releaseReadinessStatus`,
+  `readyForOwnerLoop`, `readyForReleaseReview`, check/evidence/approval/action
+  counts, `nextRequiredAction`, and bounded `evidenceReadback...` counters by
+  mirroring the nested service DTO; these fields are readback only and do not
+  change readiness, runtime config, or scheduler permission. Production evidence
   collection still requires explicit Owner/platform/visual evidence and
   `--write-snapshot` only records a summary-only advisory snapshot;
 - read-only scheduler dry-run smoke CLI is implemented locally through
