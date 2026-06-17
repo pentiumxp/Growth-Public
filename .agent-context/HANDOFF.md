@@ -9,6 +9,27 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:57+08:00 - Learner-Cycle Service Stage Readback Harness
+
+- Status: implemented locally; focused Harness passed. No production service
+  logic, DB schema, route authorization, Gateway/model call, publication,
+  generation, evaluation semantics, reward settlement, scheduler action,
+  notification, stage activation write, runtime config, UI behavior,
+  production deployment, or learner-state mutation changed.
+- Classification: Growth-local H2 service-level Harness/readback coverage.
+- Scope:
+  - added `tests/learning-learner-cycle-service.test.js` to cover
+    `learning-learner-cycle-service.evaluate()` directly;
+  - asserted formal stage-assessment completion/cooldown readback from
+    `evaluationQueue.results[].stageAssessmentCycle` at the service boundary;
+  - asserted the service fails closed for privacy-risk raw input fields before
+    evaluation processing runs.
+- Validation:
+  - `node --check src/services/learning-learner-cycle-service.js`
+  - `node --test tests/learning-learner-cycle-service.test.js`
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js`
+  - `node scripts/check-growth-docs-locality.js`
+
 ## 2026-06-17T17:51+08:00 - Loop-State Checkpoint Cooldown Operator Readback
 
 - Status: implemented locally; focused Harness passed. No service behavior,
