@@ -15,6 +15,14 @@
         data: null,
         error: ""
       },
+      operatingLoop: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       releaseWorkbench: {
         status: "idle",
         data: null,
@@ -823,6 +831,46 @@
         });
       });
     });
+    root.querySelectorAll("[data-operating-loop-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshOperatingLoopRuns().catch((error) => {
+          pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-operating-loop-run-next]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const blockedReason = clean(button.dataset.operatingLoopBlockedReason);
+        if (blockedReason) {
+          pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+            actionStatus: "blocked",
+            actionError: blockedReason
+          });
+          renderShell();
+          return;
+        }
+        if (button.disabled) return;
+        advanceOperatingLoopFromUi().catch((error) => {
+          clearCardGenerationProgressTimers();
+          pageState.cardGeneration.status = "failed";
+          pageState.cardGeneration.error = error.message || String(error);
+          pageState.cardGeneration.progressStep = "failed";
+          pageState.cardGeneration.progressMessage = "闭环执行失败。";
+          pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-card-generation-correction-action]").forEach((select) => {
       select.addEventListener("change", () => {
         pageState.cardGeneration.ownerCorrectionAction = clean(select.value) || "confirm_profile_delta";
@@ -1212,6 +1260,14 @@
       data: null,
       error: ""
     };
+    pageState.cardGeneration.operatingLoop = {
+      status: "loading",
+      data: pageState.cardGeneration.operatingLoop?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.referenceChain = {
       status: "loading",
       objectTypes: pageState.cardGeneration.referenceChain?.objectTypes || null,
@@ -1309,6 +1365,7 @@
     renderShell();
     await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+    await refreshOperatingLoopRuns(requestedTargetWorkspaceId, context);
     await refreshCycleHistoryFromUi({ silent: true });
     await refreshReferenceChain(requestedTargetWorkspaceId, context);
     await refreshAutomationProposals(requestedTargetWorkspaceId, context);
@@ -1343,6 +1400,77 @@
         data: null,
         error: error.message || String(error)
       };
+      return null;
+    }
+  }
+
+  function createOperatingLoopRunQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createOperatingLoopRunQueryPayload !== "function") {
+      throw new Error("operating_loop_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createOperatingLoopRunQueryPayload({ context, workspaceId: targetWorkspaceId }),
+      targetWorkspaceId
+    };
+  }
+
+  function createOperatingLoopAdvancePayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createOperatingLoopAdvancePayload !== "function") {
+      throw new Error("operating_loop_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createOperatingLoopAdvancePayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        state: pageState.cardGeneration
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  async function refreshOperatingLoopRuns(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.operatingLoop || {};
+    pageState.cardGeneration.operatingLoop = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createOperatingLoopRunQueryPayload({ context, workspaceId: requestedTargetWorkspaceId });
+      const result = await api.fetchLearningOperatingLoopRuns(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.operatingLoop = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.operatingLoop = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
       return null;
     }
   }
@@ -2325,6 +2453,7 @@
       }));
       await refreshStageCheckpointControls(requestedTargetWorkspaceId, context);
       await refreshLearningLoopState(requestedTargetWorkspaceId, context);
+      await refreshOperatingLoopRuns(requestedTargetWorkspaceId, context, { silent: true });
       await refreshCycleHistoryFromUi({ silent: true });
       await refreshReferenceChain(requestedTargetWorkspaceId, context);
       await refreshAutomationProposals(requestedTargetWorkspaceId, context, { silent: true });
@@ -2709,6 +2838,14 @@
         summaries: [],
         error: ""
       };
+      pageState.cardGeneration.operatingLoop = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       pageState.cardGeneration.automationProposals = {
         status: "idle",
         data: null,
@@ -2758,6 +2895,7 @@
         actionError: ""
       };
       await refreshLearningLoopState(targetWorkspaceId, context);
+      await refreshOperatingLoopRuns(targetWorkspaceId, context, { silent: true });
       await refreshCycleHistoryFromUi({ silent: true });
       await refreshReferenceChain(targetWorkspaceId, context);
       await refreshAutomationProposals(targetWorkspaceId, context, { silent: true });
@@ -2882,6 +3020,7 @@
       pageState.cardGeneration.progressStep = "validation";
       pageState.cardGeneration.progressMessage = "计划草稿已生成，请检查后发布。";
       await refreshLearningLoopState(targetWorkspaceId, pageState.cardGeneration.context);
+      await refreshOperatingLoopRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReferenceChain(targetWorkspaceId, pageState.cardGeneration.context);
       await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
@@ -2952,6 +3091,76 @@
       pageState.cardGeneration.error = error.message || String(error);
       pageState.cardGeneration.progressStep = "failed";
       pageState.cardGeneration.progressMessage = "发布失败。";
+      renderShell();
+    }
+  }
+
+  async function advanceOperatingLoopFromUi() {
+    const { payload, targetWorkspaceId } = createOperatingLoopAdvancePayload();
+    pageState.cardGeneration.status = "advancing";
+    pageState.cardGeneration.error = "";
+    pageState.cardGeneration.progressStep = "context";
+    pageState.cardGeneration.progressMessage = "正在通过服务端闭环 Facade 执行当前 next action。";
+    pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+      actionStatus: "running",
+      actionResult: pageState.cardGeneration.operatingLoop?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    scheduleCardGenerationProgress("advance");
+    try {
+      const result = await api.advanceLearningOperatingLoop(payload, targetWorkspaceId);
+      clearCardGenerationProgressTimers();
+      const actionResult = result.actionResult || {};
+      const summary = result.summary || {};
+      const taskCardId = clean(summary.taskCardId || actionResult.taskCardId);
+      const planDraftId = clean(summary.planDraftId || actionResult.planDraftId);
+      const selectedItemId = clean(actionResult.selectedItemId || actionResult.selected_item_id);
+      pageState.cardGeneration.status = result.ok ? "published" : "failed";
+      pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+        actionStatus: result.ok ? "executed" : clean(result.status || "failed"),
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "operating_loop_advance_failed")
+      });
+      if (planDraftId || taskCardId) {
+        pageState.cardGeneration.dailyLoopPublishResult = {
+          ok: result.ok === true,
+          operation: "operating_loop_advance",
+          planDraft: {
+            planDraftId,
+            selectedItemId,
+            generatedTaskCardId: taskCardId
+          },
+          generation: taskCardId ? { published: { taskCardId } } : null,
+          publishAttempt: {
+            status: result.status || (result.ok ? "executed" : "failed"),
+            error: result.error || ""
+          }
+        };
+        pageState.cardGeneration.generatedResult = taskCardId ? { published: { taskCardId } } : pageState.cardGeneration.generatedResult;
+      }
+      pageState.cardGeneration.progressStep = "done";
+      pageState.cardGeneration.progressMessage = result.ok ? "闭环执行完成，正在刷新状态。" : "闭环执行未完成，请查看错误。";
+      model.detailCache.clear();
+      try {
+        await loadCurrentWorkspace();
+      } catch (refreshError) {
+        pageState.cardGeneration.error = `闭环已执行，但刷新列表失败：${refreshError.message || String(refreshError)}`;
+      }
+      await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "闭环已执行，但" });
+      await refreshOperatingLoopRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      renderShell();
+    } catch (error) {
+      clearCardGenerationProgressTimers();
+      pageState.cardGeneration.status = "failed";
+      pageState.cardGeneration.error = error.message || String(error);
+      pageState.cardGeneration.progressStep = "failed";
+      pageState.cardGeneration.progressMessage = "闭环执行失败。";
+      pageState.cardGeneration.operatingLoop = Object.assign({}, pageState.cardGeneration.operatingLoop || {}, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
       renderShell();
     }
   }

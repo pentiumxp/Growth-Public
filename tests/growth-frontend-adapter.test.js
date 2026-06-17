@@ -345,6 +345,20 @@ test("Growth API client exposes card generation context and write helpers", asyn
   }, "weixin_fanfan");
   await client.fetchGrowthReferenceObjectTypes("weixin_fanfan");
   await client.fetchGrowthReferenceSummary("task_card", "ltask_daily_1", "weixin_fanfan", { purpose: "owner_loop" });
+  await client.fetchLearningOperatingLoopRuns({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    action: "draft_daily_plan",
+    status: "executed",
+    task_card_id: "ltask_daily_1",
+    limit: 3
+  }, "weixin_fanfan");
+  await client.advanceLearningOperatingLoop({
+    learner_id: "fanfan",
+    action: "run_next",
+    target_node_ids: ["kg_main_idea"],
+    requested_by: "owner"
+  }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
   const advanceCall = calls.find((call) => call.path === "/api/v1/growth/daily-loop/advance");
@@ -518,6 +532,17 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
   assert.equal(calls[40].path, "/api/v1/growth/references/object-types?workspaceId=weixin_fanfan");
   assert.equal(calls[41].path, "/api/v1/growth/references/task_card/ltask_daily_1/summary?workspaceId=weixin_fanfan&purpose=owner_loop");
+  const operatingRunsCall = calls.find((call) => call.path.startsWith("/api/v1/growth/learning-loop/runs?"));
+  assert.equal(operatingRunsCall.path, "/api/v1/growth/learning-loop/runs?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&horizon=daily_plan&action=draft_daily_plan&status=executed&taskCardId=ltask_daily_1&limit=3");
+  const operatingAdvanceCall = calls.find((call) => call.path === "/api/v1/growth/learning-loop/advance");
+  assert.ok(operatingAdvanceCall);
+  assert.deepEqual(JSON.parse(operatingAdvanceCall.options.body), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    action: "run_next",
+    target_node_ids: ["kg_main_idea"],
+    requested_by: "owner"
+  });
 });
 
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
@@ -570,6 +595,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   await client.advanceGrowthDailyLoop({ target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   await client.fetchGrowthReferenceObjectTypes("weixin_stephen");
   await client.fetchGrowthReferenceSummary("plan_draft", "lgplan_proxy_1", "weixin_stephen", { purpose: "owner_loop" });
+  await client.fetchLearningOperatingLoopRuns({ learner_id: "fanfan", action: "draft_daily_plan" }, "weixin_stephen");
+  await client.advanceLearningOperatingLoop({ action: "run_next", target_node_ids: ["kg_english_main_idea"] }, "weixin_stephen");
   const audioUrl = client.resolveGrowthApiPath("/api/v1/growth/audio/submissions/submission_1", "weixin_stephen");
 
   assert.equal(calls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/card-generation/context?targetWorkspaceId=weixin_stephen&recipeId=daily_science_v1");
@@ -653,6 +680,15 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
   });
   assert.equal(calls[31].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/references/object-types?targetWorkspaceId=weixin_stephen");
   assert.equal(calls[32].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/references/plan_draft/lgplan_proxy_1/summary?targetWorkspaceId=weixin_stephen&purpose=owner_loop");
+  const proxyOperatingRunsCall = calls.find((call) => call.path.startsWith("/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/runs?"));
+  assert.equal(proxyOperatingRunsCall.path, "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/runs?targetWorkspaceId=weixin_stephen&learnerId=fanfan&horizon=daily_plan&action=draft_daily_plan&limit=5");
+  const proxyOperatingAdvanceCall = calls.find((call) => call.path === "/api/hermes-plugins/growth/proxy/api/v1/growth/learning-loop/advance");
+  assert.ok(proxyOperatingAdvanceCall);
+  assert.deepEqual(JSON.parse(proxyOperatingAdvanceCall.options.body), {
+    workspace_id: "weixin_stephen",
+    action: "run_next",
+    target_node_ids: ["kg_english_main_idea"]
+  });
   assert.equal(audioUrl, "/api/hermes-plugins/growth/proxy/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_stephen");
 });
 
@@ -1454,6 +1490,44 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        operatingLoop: {
+          status: "ready",
+          data: {
+            ok: true,
+            schemaVersion: "growth.learningOperatingLoopRuns.v1",
+            status: "listed",
+            count: 1,
+            latestRun: {
+              runId: "lgloop_run_1",
+              status: "executed",
+              action: "draft_daily_plan",
+              executionMode: "daily_loop_advance",
+              taskCardId: "ltask_generated_1"
+            },
+            runs: [{
+              runId: "lgloop_run_1",
+              status: "executed",
+              action: "draft_daily_plan",
+              executionMode: "daily_loop_advance",
+              taskCardId: "ltask_generated_1",
+              planDraftId: "lgplan_loop_1"
+            }]
+          },
+          actionStatus: "executed",
+          actionResult: {
+            ok: true,
+            status: "executed",
+            summary: {
+              operatingLoopRunId: "lgloop_run_1",
+              taskCardId: "ltask_generated_1",
+              planDraftId: "lgplan_loop_1"
+            },
+            actionResult: {
+              taskCardId: "ltask_generated_1",
+              planDraftId: "lgplan_loop_1"
+            }
+          }
+        },
         referenceChain: {
           status: "partial",
           objectTypes: {
@@ -1712,6 +1786,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /学习闭环/);
   assert.match(html, /起草日常计划/);
   assert.match(html, /下一张策略：repair/);
+  assert.match(html, /data-operating-loop-panel/);
+  assert.match(html, /闭环执行/);
+  assert.match(html, /data-operating-loop-refresh/);
+  assert.match(html, /data-operating-loop-run-next/);
+  assert.match(html, /data-operating-loop-action="draft_daily_plan"/);
+  assert.match(html, /data-operating-loop-run-id="lgloop_run_1"/);
+  assert.match(html, /闭环动作已执行，生成卡片 ltask_generated_1，记录 lgloop_run_1/);
   assert.match(html, /data-reference-chain-panel/);
   assert.match(html, /data-reference-chain-status="partial"/);
   assert.match(html, /闭环引用/);
@@ -1893,6 +1974,56 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   ]);
   assert.equal(JSON.stringify(referenceRequests).includes("raw_prompt"), false);
   assert.equal(JSON.stringify(referenceRequests).includes("transcript"), false);
+
+  const operatingRunQueryPayload = windowRef.HermesGrowthCardGenerationUi.createOperatingLoopRunQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(operatingRunQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    recipe_id: "daily_english_v1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    target_node_ids: ["kg_english_evidence_answering"],
+    card_schema_version: "growth.card.authoring.v1",
+    limit: 5
+  });
+
+  const operatingAdvancePayload = windowRef.HermesGrowthCardGenerationUi.createOperatingLoopAdvancePayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    state: {
+      targetProvisionDraft: { recipeId: "daily_english_v1" },
+      learningLoopState: {
+        data: {
+          nextAction: {
+            action: "draft_daily_plan"
+          }
+        }
+      }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(operatingAdvancePayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    recipe_id: "daily_english_v1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    target_node_ids: ["kg_english_evidence_answering"],
+    card_schema_version: "growth.card.authoring.v1",
+    action: "run_next",
+    requested_by: "owner",
+    assessment_coverage_node_ids: ["kg_english_main_idea"]
+  });
+  assert.equal(Object.hasOwn(operatingAdvancePayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(operatingAdvancePayload, "transcript"), false);
 
   const releasePayload = windowRef.HermesGrowthCardGenerationUi.createReleaseWorkbenchActionPayload({
     context,
@@ -3503,7 +3634,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-stage-rubric-readback-v1";
+  const staticVersion = "20260618-operating-loop-ui-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",

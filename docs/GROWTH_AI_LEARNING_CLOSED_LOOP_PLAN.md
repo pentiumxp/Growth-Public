@@ -1,6 +1,6 @@
 # Growth AI Learning Closed-Loop Plan
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-18.
 
 ## Purpose
 
@@ -124,18 +124,19 @@ confused:
 
 | Capability | Current state | Product-complete requirement |
 | --- | --- | --- |
-| Direct daily card generation | The Owner `生成` tab can generate supported daily cards through the card-generation service and Gateway authoring boundary. | Keep this path as a compact recipe path, especially for `daily_english_v1`, while preserving `daily_score_once` and visible progress/failure states. |
-| Planner-backed science path | Backend services and harnesses can run the Fanfan science vertical from plan draft through publication, learner evidence, evaluation, ledger, Profile V2, and profile-delta audit. | The embedded Owner UI must expose domain-pack/subject selection, plan preview, explicit publish, publish-attempt failure state, and audit refresh without Codex. |
+| Direct daily card generation | The Owner `生成` tab can generate supported daily cards through the card-generation service and Gateway authoring boundary. It can also use the service-projected `闭环执行` panel to run the current next action through `learning-operating-loop-service` without Codex. | Keep this path as a compact recipe path, especially for `daily_english_v1`, while preserving `daily_score_once`, visible progress/failure states, and service-owned action selection. |
+| Planner-backed science path | Backend services and harnesses can run the Fanfan science vertical from plan draft through publication, learner evidence, evaluation, ledger, Profile V2, and profile-delta audit. The embedded Owner UI exposes domain-pack/subject selection, plan preview, explicit publish, publish-attempt failure state, audit refresh, learning-loop state, operating-loop run history, and current next-action execution without Codex. | Production-complete release still needs central Home AI visual/release evidence for the product surface, plus broader multi-workspace rollout evidence. |
 | Learner card interaction | Generated daily cards support one submission, one evaluation, one optional reflection, audio evidence, and score-proportional completion. | The UI must keep at most one active text box per stage and must never require a pass-line retry for ordinary daily cards. |
 | Audit readback | Backend read routes expose plan, evidence, profile-delta, correction, cycle audit, selectable cycle history, and completeness DTOs; the Owner `生成` tab now renders current-cycle and selected historical-cycle audit/completeness using service-provided selectors. | Production-complete release still requires central visual/release evidence for the audit surface, and later digest/action review UI. |
 | Supervised automation | Proposal creation, Owner decision, and accepted-proposal explicit publication are implemented as a non-scheduling backend layer. The Owner `生成` tab now has a minimal selected-cycle proposal panel that creates bounded proposals from service-provided historical-cycle selectors, lists existing proposals, records `accepted`/`skipped`, and explicitly publishes accepted proposals. | `expired`/`superseded` decision UI, digest/action/execution UI, production dry-run evidence, and central visual/release evidence are still required before any scheduler. |
 | Release-review evidence | Release-readiness can require bounded release workbench smoke evidence and evidence-bundle readback for Owner release tooling. | This remains L7/release-review evidence only; it does not advance the daily browser loop until Owner/learner learning flows and audit/correction UI are browser-operable and visually validated. |
 
-This distinction is important for planning. Growth can already create certain
-cards from the plugin UI, but the full AI-driven operating loop is not
-product-complete until planner-backed generation, audit, correction, proposal
-review, digest/action review, and release evidence are browser-operable
-and visually validated.
+This distinction is important for planning. Growth can already create cards
+from the plugin UI and can execute the current service-projected next action
+from the browser. The full AI-driven operating loop is not product-complete
+until planner-backed generation, audit, correction, proposal review,
+digest/action review, and release evidence are browser-operable, visually
+validated, and proven in production scope.
 
 ## Implementation Priorities
 
@@ -175,22 +176,30 @@ Required scope:
    `targetProvisioning`, filtered `graphOptions`, Profile V2, evidence audit,
    plan audit, publish-attempt status, planner readiness, authoring readiness,
    and evaluation readiness.
-3. Owner can create a draft through
+3. Owner can execute the current service-projected next action from the
+   `闭环执行` panel. The browser refreshes
+   `GET /api/v1/growth/learning-loop/runs`, sends
+   `action=run_next` to Owner-only
+   `POST /api/v1/growth/learning-loop/advance`, and renders progress,
+   success, blocked, and failed states without selecting learning policy
+   locally.
+4. Owner can create a draft through
    `POST /api/v1/growth/daily-loop/draft`, which delegates to the existing
    `learning-plan-publisher-service.draftPlan` boundary.
-4. Owner can inspect one validated plan item with target nodes, role,
+5. Owner can inspect one validated plan item with target nodes, role,
    difficulty, support level, evidence requirements, estimated minutes,
    rationale, and basis evidence ids.
-5. Owner can explicitly publish one selected daily item through
+6. Owner can explicitly publish one selected daily item through
    `POST /api/v1/growth/daily-loop/publish`, which delegates to the existing
    `learning-plan-publisher-service.publishPlanItem` boundary.
-6. The UI shows visible progress for context loading, drafting, publishing,
+7. The UI shows visible progress for context loading, operating-loop advance,
+   drafting, publishing,
    card opening, audit refresh, and failed/blocked publish attempts. No
    action may fail as a silent no-op.
-7. The learner completes the generated card through the existing daily
+8. The learner completes the generated card through the existing daily
    interaction flow: one submission, one evaluation, and one optional
    reflection.
-8. After completion, Owner can refresh audit from the service-owned plan,
+9. After completion, Owner can refresh audit from the service-owned plan,
    evidence, profile-delta, correction, cycle-audit, and completeness DTOs.
 
 Explicit non-goals for this package:
@@ -249,9 +258,17 @@ Backend facade status:
   `--operation run-next|advance` requires `--allow-write`, and formal
   checkpoint activation additionally requires `--allow-stage-activation` or
   `--confirm-stage-assessment`.
-- The embedded UI still needs to consume this facade, show progress/error
-  states, and pass frontend plus central visual harnesses before Stage 2 can
-  be considered product-complete.
+- The embedded Owner `生成` tab now consumes this facade through a
+  summary-only `闭环执行` panel. It refreshes
+  `GET /api/v1/growth/learning-loop/runs`, displays the latest run history,
+  executes only the current service-projected next action through
+  `POST /api/v1/growth/learning-loop/advance`, and maps generated card ids
+  back into the existing card preview/open flow. The browser does not call
+  Gateway, inspect SQLite, compute the next action, activate stages directly,
+  or mutate learner state outside the advertised service route. Frontend
+  adapter Harness covers the API client, proxy path, panel rendering, and
+  payload privacy. Central Home AI visual harness evidence is still required
+  before production UI release.
 
 ## Learning State Model
 

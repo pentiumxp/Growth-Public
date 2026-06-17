@@ -9,6 +9,62 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T03:04+0800 - Owner Operating-Loop UI Consumption
+
+- Status: implemented locally; frontend adapter Harness, docs-locality, syntax
+  coverage, and diff check passed. No production deploy, Home AI central
+  visual harness run, Gateway/model call, learner evidence write, scheduler
+  execution, runtime config change, release approval, or Home AI host logic
+  change was performed.
+- Classification: H2 Growth embedded UI consumption of an existing
+  service-owned operating-loop facade. It does not add a new model boundary,
+  route, table, scheduler, release permission, or browser-side learning policy.
+- Scope:
+  - `public/growth-api-client.js` now exposes direct/proxy-safe
+    `fetchLearningOperatingLoopRuns()` and `advanceLearningOperatingLoop()`
+    helpers for `GET /api/v1/growth/learning-loop/runs` and
+    `POST /api/v1/growth/learning-loop/advance`;
+  - `public/growth-card-generation-ui.js` now renders a summary-only
+    `闭环执行` panel with run-history readback, current service-projected
+    next-action status, refresh, and run-next controls;
+  - `public/app.js` loads operating-loop run history with generation context,
+    refreshes it after daily-loop/provision/draft/publish state changes, sends
+    only `action=run_next` to the Owner-only advance route, shows visible
+    progress/error/block states, and maps generated task-card ids back into
+    the existing preview/open-card flow;
+  - `public/index.html` cache-busting moved to
+    `20260618-operating-loop-ui-v1`;
+  - Growth-local docs and context now state that the browser consumes the
+    service facade only and must not choose next actions, inspect run storage,
+    call Gateway, or bypass daily-loop / stage-assessment owning services.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32;
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    -> 76/76;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `runtimeCount=225`, `checkedCount=225`;
+  - `git diff --check`;
+  - local current-worktree service check on `GROWTH_PORT=4882`: manifest and
+    index returned 200, index used `20260618-operating-loop-ui-v1`, and
+    `growth-card-generation-ui.js`, `app.js`, and `growth-api-client.js`
+    contained the new operating-loop UI/API symbols. Existing 4881 service was
+    a stale older instance and was not used as evidence.
+- Remaining gate:
+  - this does not replace Home AI central visual evidence. Before production
+    UI release, run the central embedded-plugin visual harness for the Owner
+    generation surface and persist the bounded UI/release evidence through the
+    existing Growth release-evidence path.
+
 ## 2026-06-18T02:36+08:00 - Production Deployment Health Evidence Boundary
 
 - Status: implemented locally; focused release/readiness/preflight Harness,

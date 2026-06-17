@@ -118,6 +118,31 @@
       return query ? `?${query}` : "";
     }
 
+    function learningOperatingLoopRunsQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const target = payload.target || {};
+      const plan = payload.suggestedPlan || {};
+      const defaults = payload.generationDefaults || {};
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id || target.learnerId || workspaceId);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id || plan.programId || defaults.programId);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id || plan.domainPackId || defaults.domainPackId);
+      appendQueryParam(params, "domain", payload.domain || plan.domain || defaults.domain);
+      appendQueryParam(params, "subject", payload.subject || plan.subject || defaults.subject || plan.domain || payload.domain);
+      appendQueryParam(params, "horizon", payload.horizon || defaults.horizon || "daily_plan");
+      appendQueryParam(params, "action", payload.action);
+      appendQueryParam(params, "status", payload.status);
+      appendQueryParam(params, "runId", payload.runId || payload.run_id);
+      appendQueryParam(params, "taskCardId", payload.taskCardId || payload.task_card_id);
+      appendQueryParam(params, "planDraftId", payload.planDraftId || payload.plan_draft_id);
+      appendQueryParam(params, "stageAssessmentCycleId", payload.stageAssessmentCycleId || payload.stage_assessment_cycle_id);
+      appendQueryParam(params, "limit", payload.limit || 5);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function releaseWorkbenchQuery(targetWorkspaceId = getWorkspaceId(), context = {}) {
       const workspaceId = clean(targetWorkspaceId);
       const params = new URLSearchParams();
@@ -346,6 +371,16 @@
 
     function fetchLearningLoopState(targetWorkspaceId = getWorkspaceId(), context = {}) {
       return fetchJson(`${growthApiPath("learning-loop", "state")}${learningLoopStateQuery(targetWorkspaceId, context)}`);
+    }
+
+    function fetchLearningOperatingLoopRuns(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("learning-loop", "runs")}${learningOperatingLoopRunsQuery(targetWorkspaceId, payload)}`);
+    }
+
+    function advanceLearningOperatingLoop(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("learning-loop", "advance"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
     }
 
     function fetchGrowthReleaseWorkbench(targetWorkspaceId = getWorkspaceId(), context = {}) {
@@ -592,6 +627,7 @@
 
     return {
       advanceGrowthDailyLoop,
+      advanceLearningOperatingLoop,
       appendWorkspaceQuery,
       activateGrowthStageAssessment,
       draftGrowthDailyLoop,
@@ -619,6 +655,7 @@
       fetchGrowthStageCheckpointControls,
       fetchJson,
       fetchLearningLoopState,
+      fetchLearningOperatingLoopRuns,
       generateGrowthCard,
       postJson,
       processGrowthEvaluations,

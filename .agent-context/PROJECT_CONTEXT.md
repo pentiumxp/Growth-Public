@@ -258,7 +258,15 @@ readback gate set.
   explicit Owner stage confirmation. Every non-privacy attempt is persisted as
   summary-only `learning_growth_operating_loop_runs` audit readback through the
   injected run repository; `runs` / `list-runs` / `history` smoke operations
-  are no-write history reads. Release evidence bundles now include default
+  are no-write history reads. The embedded Owner `生成` tab now consumes this
+  same facade through a `闭环执行` panel: it reads
+  `GET /api/v1/growth/learning-loop/runs`, displays the latest summary-only
+  run history, sends only `action=run_next` to Owner-only
+  `POST /api/v1/growth/learning-loop/advance`, and maps generated task-card
+  ids back into the existing preview/open-card flow. Browser code does not
+  choose next actions, inspect the run repository, call Gateway, or bypass
+  daily-loop / stage-assessment owning services. Release evidence bundles now
+  include default
   no-write `operating_loop_history` evidence mapped to
   `productionOperatingLoopHistorySmokeEvidence`, proving the Owner operating
   loop has auditable run history without executing `runNext`. Release-readiness
@@ -1072,8 +1080,14 @@ readback gate set.
   persisted profile-delta summaries, correction history, and a bounded Owner
   correction form that calls
   `POST /api/v1/growth/profile-corrections` before refreshing context and
-  learning-loop state. The browser still does not call Gateway directly,
-  compute learning policy, mutate Profile V2 locally, or publish automatically.
+  learning-loop state. The same tab now also reads
+  `GET /api/v1/growth/learning-loop/runs` and executes the current
+  service-projected next action through
+  `POST /api/v1/growth/learning-loop/advance` from the `闭环执行` panel, with
+  visible progress/error state and summary-only run-history readback. The
+  browser still does not call Gateway directly, compute learning policy, mutate
+  Profile V2 locally, inspect operating-loop run storage, or publish
+  automatically.
   Controlled daily-loop
   draft/publish smoke evidence is
   now available through `npm run smoke:daily-loop`; it defaults to preview, and

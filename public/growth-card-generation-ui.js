@@ -624,6 +624,130 @@
     </section>`;
   }
 
+  function operatingLoopActionStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "running") return "执行中";
+    if (value === "executed") return "已执行";
+    if (value === "blocked") return "已拦截";
+    if (value === "failed") return "失败";
+    if (value === "listed") return "已读取";
+    return value || "待执行";
+  }
+
+  function operatingLoopRunStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "executed") return "已执行";
+    if (value === "blocked") return "已拦截";
+    if (value === "failed") return "失败";
+    if (value === "listed") return "已读取";
+    return value || "记录";
+  }
+
+  function operatingLoopRunRows(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const data = holder.data || {};
+    const runs = asArray(data.runs).slice(0, 5);
+    const status = clean(holder.status || (data.ok ? "ready" : "idle"));
+    if (status === "loading") return `<div class="learning-card-generation-proposal-empty">正在读取闭环执行记录。</div>`;
+    if (status === "failed") return `<div class="learning-card-generation-proposal-empty">闭环执行记录读取失败：${escapeHtml(clean(holder.error) || "operating_loop_runs_failed")}</div>`;
+    if (!runs.length) return `<div class="learning-card-generation-proposal-empty">暂无闭环执行记录。Owner 执行一次后会写入 summary-only run history。</div>`;
+    return runs.map((run) => {
+      const runId = clean(run.runId || run.run_id);
+      const action = clean(run.action || run.nextAction?.action);
+      const taskCardId = clean(run.taskCardId || run.task_card_id || run.resultSelectors?.taskCardId);
+      const planDraftId = clean(run.planDraftId || run.plan_draft_id || run.resultSelectors?.planDraftId);
+      const error = clean(run.error);
+      return `<div class="learning-card-generation-proposal-row" data-operating-loop-run-row data-operating-loop-run-id="${escapeHtml(runId)}">
+        <span>
+          <strong>${escapeHtml(runId || "闭环执行记录")}</strong>
+          <small>${escapeHtml(`${learningLoopActionText(action)} · ${clean(run.executionMode || run.execution_mode || "service_facade")}`)}</small>
+          <small>${escapeHtml(taskCardId ? `card ${taskCardId}` : planDraftId ? `plan ${planDraftId}` : error || "summary-only run audit")}</small>
+        </span>
+        <em>${escapeHtml(operatingLoopRunStatusText(run.status))}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function operatingLoopActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const summary = result.summary || {};
+    const actionResult = result.actionResult || {};
+    if (!status || status === "idle") return "";
+    const taskCardId = clean(summary.taskCardId || actionResult.taskCardId);
+    const runId = clean(summary.operatingLoopRunId || result.operatingLoopRun?.runId || result.runAudit?.runId);
+    const detail = status === "running"
+      ? "正在通过 learning-operating-loop-service 执行当前 next action。"
+      : status === "executed"
+        ? `闭环动作已执行${taskCardId ? `，生成卡片 ${taskCardId}` : ""}${runId ? `，记录 ${runId}` : "。"}`
+        : status === "blocked"
+          ? clean(result.error || error || "当前 next action 需要单独流程处理。")
+          : error || clean(result.error) || "闭环执行失败。";
+    return `<div class="learning-card-generation-proposal-status" data-operating-loop-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(operatingLoopActionStatusText(status))}</em>
+    </div>`;
+  }
+
+  function operatingLoopRunBlockedReason({ state = {}, context = {} } = {}) {
+    if (state.status === "loading_context") return "正在加载生成上下文，请稍候。";
+    if (!context || !Object.keys(context).length) return "生成上下文还没加载完成，请先刷新状态。";
+    const data = state.learningLoopState?.data || context.learningLoopState || {};
+    const nextAction = data.nextAction || {};
+    const action = clean(nextAction.action);
+    if (!action) return "还没有可执行的服务端 next action。";
+    if (nextAction.enabled === false) return learningLoopReasonText(nextAction.reason);
+    if (!["draft_daily_plan", "publish_selected_plan_item", "review_stage_assessment"].includes(action)) {
+      return "当前 next action 需要在对应面板单独处理。";
+    }
+    return "";
+  }
+
+  function operatingLoopPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.operatingLoop || {};
+    const data = holder.data || {};
+    const runs = asArray(data.runs);
+    const latestRun = data.latestRun || runs[0] || {};
+    const loopData = state.learningLoopState?.data || context.learningLoopState || {};
+    const nextAction = loopData.nextAction || {};
+    const action = clean(nextAction.action);
+    const busy = holder.actionStatus === "running" || ["drafting", "publishing", "advancing", "generating"].includes(clean(state.status));
+    const blockedReason = busy ? "" : operatingLoopRunBlockedReason({ state, context });
+    const canRun = Boolean(!busy && !blockedReason);
+    const reason = holder.status === "loading"
+      ? "正在读取 summary-only run history。"
+      : holder.status === "failed"
+        ? clean(holder.error) || "operating_loop_runs_failed"
+        : blockedReason || "Owner 可以执行服务端判定的当前 next action，并记录 run history。";
+    const buttonLabel = action === "review_stage_assessment"
+      ? "确认测评"
+      : action === "publish_selected_plan_item"
+        ? "发布当前计划"
+        : "执行下一步";
+    return `<section class="learning-card-generation-proposals learning-card-generation-operating-loop" data-operating-loop-panel data-operating-loop-status="${escapeHtml(clean(holder.status || data.status || "idle"))}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>闭环执行</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-operating-loop-refresh ${holder.status === "loading" ? "disabled" : ""}>${holder.status === "loading" ? "读取中" : "刷新记录"}</button>
+          <button type="button" data-operating-loop-run-next data-operating-loop-action="${escapeHtml(action)}" ${canRun ? "" : `disabled aria-disabled="true" data-operating-loop-blocked-reason="${escapeHtml(blockedReason)}"`}>${busy ? "执行中" : escapeHtml(buttonLabel)}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>当前动作</small><strong>${escapeHtml(learningLoopActionText(action))}</strong></span>
+        <span><small>执行记录</small><strong>${escapeHtml(String(Number(data.count ?? runs.length ?? 0) || 0))}</strong></span>
+        <span><small>最近状态</small><strong>${escapeHtml(operatingLoopRunStatusText(latestRun.status || holder.actionStatus))}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${operatingLoopRunRows(holder, escapeHtml)}
+      </div>
+      ${operatingLoopActionStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
   function referenceObjectTypeText(objectType = "") {
     const value = clean(objectType);
     const map = {
@@ -2821,6 +2945,53 @@
     }));
   }
 
+  function createOperatingLoopRunQueryPayload({ context = {}, workspaceId = "" } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId, {});
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      limit: 5
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
+  function createOperatingLoopAdvancePayload({ context = {}, workspaceId = "", state = {} } = {}) {
+    const scope = dailyLoopScopeFromContext(context, workspaceId, state.targetProvisionDraft || {});
+    const loopData = state.learningLoopState?.data || context.learningLoopState || {};
+    const nextAction = loopData.nextAction || {};
+    const action = clean(nextAction.action);
+    const plan = context.suggestedPlan || {};
+    const draftResult = state.dailyLoopDraftResult || {};
+    const planDraft = draftResult.planDraft || {};
+    const item = selectedPlanItem(planDraft);
+    const coverage = firstCleanArray(
+      plan.assessmentCoverageNodeIds,
+      plan.assessmentCoverage,
+      plan.targetNodeIds,
+      scope.target_node_ids,
+      [plan.targetNodeId]
+    );
+    const payload = Object.assign({}, scope, {
+      action: "run_next",
+      requested_by: "owner",
+      plan_draft_id: clean(nextAction.planDraftId || planDraft.planDraftId),
+      selected_item_id: clean(nextAction.itemId || planDraft.selectedItemId || item.itemId),
+      task_card_id: clean(nextAction.taskCardId),
+      target_node_ids: firstCleanArray(scope.target_node_ids, plan.targetNodeIds, [plan.targetNodeId]),
+      assessment_coverage_node_ids: coverage
+    });
+    if (action === "review_stage_assessment") {
+      payload.confirm_stage_assessment = true;
+      payload.allow_stage_activation = true;
+      payload.activation_reason = "owner_confirmed_checkpoint";
+    }
+    return Object.fromEntries(Object.entries(payload).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "boolean") return value === true;
+      return clean(value);
+    }));
+  }
+
   function createOwnerCorrectionPayload({ context = {}, workspaceId = "", draft = {} } = {}) {
     const ownerAudit = context.ownerAudit || {};
     const firstDelta = ownerAuditItems(ownerAudit, "profileDeltaAudit")[0] || {};
@@ -2960,6 +3131,7 @@
           </div>
           ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
+          ${operatingLoopPanel(context, state, escapeHtml)}
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
@@ -3027,6 +3199,8 @@
     createDailyLoopAdvancePayload,
     createDailyLoopDraftPayload,
     createDailyLoopPublishPayload,
+    createOperatingLoopAdvancePayload,
+    createOperatingLoopRunQueryPayload,
     createCycleAuditQueryPayload,
     createCycleHistoryQueryPayload,
     createOwnerCorrectionPayload,
