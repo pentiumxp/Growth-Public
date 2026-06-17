@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseControlsSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-controls");
@@ -67,7 +68,50 @@ test("release controls smoke script delegates only to service summary", () => {
 
   assert.equal(result.ok, true);
   assert.equal(result.status, "activation_record_required");
+  assert.equal(result.releaseControlsStatus, "activation_record_required");
   assert.deepEqual(calls[0].activationGates, ["writeful_execution"]);
+});
+
+test("release controls smoke script projects top-level operator readback", () => {
+  const result = projectReleaseControlsSmokeReadback({
+    ok: true,
+    status: "release_evidence_required",
+    writefulSchedulingAllowed: false,
+    runtimeConfigMutationPerformed: false,
+    auditReadback: {
+      activationRecords: { status: "records_missing" },
+      runtimeEnablementRecords: { status: "records_missing" }
+    },
+    releaseControls: {
+      status: "release_evidence_required",
+      requiredActionCount: 4,
+      nextAction: {
+        key: "owner_daily_ui_evidence",
+        action: "complete_owner_daily_ui_visual_validation",
+        requiredActor: "owner",
+        approvalKey: ""
+      },
+      missingCheckKeys: ["owner_daily_ui_evidence", "central_visual_evidence"],
+      blockedCheckKeys: ["release_workbench_smoke_evidence"],
+      missingEvidenceKeys: ["ownerDailyUiEvidence"],
+      missingApprovalKeys: ["writefulExecutionApproval"],
+      writefulSchedulingAllowed: false,
+      runtimeConfigMutationPerformed: false
+    }
+  });
+
+  assert.equal(result.releaseControlsStatus, "release_evidence_required");
+  assert.equal(result.releaseControlsRequiredActionCount, 4);
+  assert.equal(result.releaseControlsNextAction.key, "owner_daily_ui_evidence");
+  assert.equal(result.releaseControlsNextAction.action, "complete_owner_daily_ui_visual_validation");
+  assert.equal(result.releaseControlsMissingCheckCount, 2);
+  assert.equal(result.releaseControlsBlockedCheckCount, 1);
+  assert.equal(result.releaseControlsMissingEvidenceCount, 1);
+  assert.equal(result.releaseControlsMissingApprovalCount, 1);
+  assert.equal(result.releaseControlsActivationRecordsStatus, "records_missing");
+  assert.equal(result.releaseControlsRuntimeEnablementRecordsStatus, "records_missing");
+  assert.equal(result.releaseControlsWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseControlsRuntimeConfigMutationPerformed, false);
 });
 
 test("release controls smoke script runs no-write summary against a temporary SQLite db", () => {
@@ -94,10 +138,19 @@ test("release controls smoke script runs no-write summary against a temporary SQ
     assert.equal(output.ok, true);
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseControls.v1");
     assert.equal(output.status, "release_evidence_required");
+    assert.equal(output.releaseControlsStatus, output.releaseControls.status);
+    assert.equal(output.releaseControlsRequiredActionCount, output.releaseControls.requiredActionCount);
+    assert.equal(output.releaseControlsNextAction.key, output.releaseControls.nextAction.key);
+    assert.equal(output.releaseControlsMissingCheckCount, output.releaseControls.missingCheckKeys.length);
+    assert.equal(output.releaseControlsBlockedCheckCount, output.releaseControls.blockedCheckKeys.length);
+    assert.equal(output.releaseControlsMissingEvidenceCount, output.releaseControls.missingEvidenceKeys.length);
+    assert.equal(output.releaseControlsMissingApprovalCount, output.releaseControls.missingApprovalKeys.length);
     assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.releaseControlsWritefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
     assert.equal(output.runtimeConfigMutationPerformed, false);
+    assert.equal(output.releaseControlsRuntimeConfigMutationPerformed, false);
     assert.equal(output.releaseControls.summaryOnly, true);
     assert.equal(output.steps[0].evidenceReadback.summaryOnly, true);
     assert.equal(output.steps[0].evidenceReadback.presentCount, 0);
@@ -107,6 +160,8 @@ test("release controls smoke script runs no-write summary against a temporary SQ
     assert.equal(output.auditReadback.summaryOnly, true);
     assert.equal(output.auditReadback.activationRecords.status, "records_missing");
     assert.equal(output.auditReadback.runtimeEnablementRecords.status, "records_missing");
+    assert.equal(output.releaseControlsActivationRecordsStatus, "records_missing");
+    assert.equal(output.releaseControlsRuntimeEnablementRecordsStatus, "records_missing");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

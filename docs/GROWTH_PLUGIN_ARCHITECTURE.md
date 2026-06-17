@@ -143,6 +143,11 @@ backend boundaries:
   `latestReadinessSnapshotId` even when legacy callers still provide
   `snapshotId`. They do not expose full evidence item payloads and they cannot
   change readiness, release, scheduler, or runtime-config state.
+  Release-readiness, release-controls, and release-closure smoke CLIs may mirror
+  selected nested DTO fields into top-level operator readback fields so local
+  Harness output shows status, missing counts, required action count, one next
+  action, and runtime/write flags without expanding raw package or evidence
+  payloads. Those projections are convenience readbacks only.
 
 Known gaps before the architecture can be called production-complete for the
 full operating loop:

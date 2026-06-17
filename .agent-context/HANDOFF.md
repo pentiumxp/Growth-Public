@@ -9,6 +9,82 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:16+08:00 - Release Controls/Closure Smoke Operator Readback
+
+- Status: implemented, validated, and ready to commit locally. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 projection/readback change. Home AI AI Ops
+  intake under-selected H3 because the task text looked docs-only and did not
+  include concrete changed files; the actual touched code changes public smoke
+  CLI readback fields, so H2 is the safer classification.
+- Problem found:
+  - `smoke-growth-release-controls` and `smoke-growth-release-closure` returned
+    the canonical service DTOs correctly, but quick operator fields such as
+    status, required action count, next action, missing counts, package/record
+    status, and runtime/write flags were nested under `releaseControls` or
+    `releaseClosure`;
+  - this made quick CLI readback less consistent with the already-hardened
+    release-readiness, workbench, and artifact-template smoke outputs.
+- Scope:
+  - added top-level, summary-only projection helpers in
+    `scripts/smoke-growth-release-controls.js` and
+    `scripts/smoke-growth-release-closure.js`;
+  - expanded `tests/growth-release-controls-smoke-script.test.js` and
+    `tests/growth-release-closure-smoke-script.test.js` so focused Harness
+    assertions prove those top-level fields mirror the nested DTOs;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff;
+  - preserved nested service DTOs as canonical output and did not change service
+    behavior, SQLite schema, write paths, Gateway boundaries, runtime config,
+    scheduler permissions, visual tooling, or release permissions.
+- Operational readback:
+  - `node scripts/smoke-growth-release-controls.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `status=release_evidence_required`,
+    `releaseControlsStatus=release_evidence_required`,
+    `releaseControlsRequiredActionCount=39`,
+    `releaseControlsNextAction.key=owner_daily_ui_evidence`,
+    `releaseControlsMissingCheckCount=38`,
+    `releaseControlsMissingEvidenceCount=31`,
+    `releaseControlsActivationRecordsStatus=records_missing`,
+    `releaseControlsRuntimeEnablementRecordsStatus=records_missing`, and
+    `releaseControlsWritefulSchedulingAllowed=false`;
+  - `node scripts/smoke-growth-release-closure.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` returned
+    `status=owner_decision_required`,
+    `releaseClosureStatus=owner_decision_required`,
+    `releaseClosureRequiredActionCount=1`,
+    `releaseClosureNextAction.key=resolve_release_blocker`,
+    `releaseClosureMissingCheckCount=38`,
+    `releaseClosureMissingEvidenceCount=31`,
+    `releaseClosurePackageRecordPresent=false`,
+    `releaseClosurePackageRecordStatus=missing`, and
+    `releaseClosureWritefulSchedulingAllowed=false`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-release-controls.js`;
+  - `node --check scripts/smoke-growth-release-closure.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `node --test tests/growth-release-controls-smoke-script.test.js
+    tests/growth-release-closure-smoke-script.test.js` passed `11/11`.
+  - `node --test tests/learning-automation-release-controls-service.test.js
+    tests/learning-automation-release-closure-service.test.js
+    tests/growth-release-controls-smoke-script.test.js
+    tests/growth-release-closure-smoke-script.test.js` passed `23/23`;
+  - `npm run --silent test:release-union` passed `238/238`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `930/930`;
+  - `codegraph sync` reported already up to date;
+  - `codegraph status` reported the index up to date with `374` files,
+    `5,317` nodes, and `23,247` edges, plus the existing earlier-engine
+    advisory.
+- Interface status:
+  - this slice does not complete the Growth UI. The existing embedded Owner and
+    learner flows remain partially implemented, but final mobile/Dark-mode/visual
+    toolchain evidence is still outstanding.
+
 ## 2026-06-17T12:07+08:00 - Release Readiness Smoke Operator Readback
 
 - Status: implemented locally; focused validation has passed. No production

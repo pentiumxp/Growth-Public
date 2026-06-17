@@ -313,11 +313,13 @@ record projection that readiness may consume, and it must preserve
 `schemaVersion`, `privacyClass=summary_only`, `summaryOnly=true`,
 `evidenceKey`, and `checkKey`; otherwise the record may appear in
 `persistedEvidenceKeys` but still fail the summary-only evidence contract.
-The release-readiness smoke CLI should keep top-level operator readback aligned
-with its nested service DTOs. `releaseReadinessStatus`, readiness booleans,
-check/evidence/approval/action counts, `nextRequiredAction`, and
-`evidenceReadback...` counters are convenience projections over `summary`,
-`releaseReview`, and `evidenceReadback`; they are not new release decisions,
+The release-readiness, release-controls, and release-closure smoke CLIs should
+keep top-level operator readback aligned with their nested service DTOs.
+`releaseReadinessStatus`, readiness booleans, check/evidence/approval/action
+counts, `nextRequiredAction`, `releaseControlsStatus`,
+`releaseControlsNextAction`, `releaseClosureStatus`,
+`releaseClosureNextAction`, and `evidenceReadback...` counters are convenience
+projections over the nested summary DTOs; they are not new release decisions,
 runtime config switches, Gateway calls, writes, or permission grants.
 
 ## Non-Negotiable Boundaries
@@ -730,6 +732,10 @@ Use the Growth-owned release-readiness boundary:
   `backendEvidenceComplete`, `readyForOwnerReleaseActivation`, missing
   check/evidence/approval keys, required actions, and next action. It is not a
   runtime config switch and keeps `writefulSchedulingAllowed=false`.
+  Its top-level operator fields mirror the nested closure DTO for status,
+  required-action count, next action, missing check/evidence/approval counts,
+  package-record presence/status, latest package dashboard status, and
+  runtime/write flags only.
 - release activation preflight smoke CLI:
   `npm run smoke:release-activation -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --activation-gates writeful_execution --json`.
   The default CLI operation is no-write `preflight` and reads through the
@@ -777,7 +783,11 @@ Use the Growth-owned release-readiness boundary:
   `ownerReviewStageSummary` from release-readiness evidence readback. It owns
   no repository/table, does not run smoke tasks internally, and
   does not write, publish, schedule, notify, call Gateway, flip runtime config,
-  or grant scheduler permission. For final
+  or grant scheduler permission.
+  The smoke CLI also mirrors top-level operator fields for status,
+  required-action count, next action, missing check/evidence/approval counts,
+  activation/runtime-enablement record status, and runtime/write flags only.
+  For final
   release evidence packaging, the same readback can be collected with
   `npm run smoke:release-evidence-bundle -- --task release_controls ...`; keep
   that task non-default and read the nested controls status for the actual

@@ -66,8 +66,50 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80)
+  };
+}
+
+function projectReleaseClosureSmokeReadback(result = {}) {
+  const closure = objectOnly(result.releaseClosure);
+  return Object.assign({}, result, {
+    releaseClosureStatus: cleanString(closure.status || result.status, 120),
+    releaseClosureRequiredActionCount: Number(closure.requiredActionCount || asArray(closure.requiredActions).length || 0) || 0,
+    releaseClosureNextAction: compactAction(closure.nextAction),
+    releaseClosureMissingCheckCount: asArray(closure.missingCheckKeys).length,
+    releaseClosureBlockedCheckCount: asArray(closure.blockedCheckKeys).length,
+    releaseClosureMissingEvidenceCount: asArray(closure.missingEvidenceKeys).length,
+    releaseClosureMissingApprovalCount: asArray(closure.missingApprovalKeys).length,
+    releaseClosurePackageRecordPresent: closure.packageRecordPresent === true,
+    releaseClosurePackageRecordRequired: closure.packageRecordRequired === true,
+    releaseClosurePackageRecordStatus: cleanString(closure.packageRecordStatus, 120),
+    releaseClosureLatestPackageDashboardStatus: cleanString(closure.latestPackageDashboardStatus, 120),
+    releaseClosureLatestPackageDashboardNextActionKey: cleanString(closure.latestPackageDashboardNextActionKey, 140),
+    releaseClosureWritefulSchedulingAllowed: closure.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
+    releaseClosureRuntimeConfigChange: closure.runtimeConfigChange === true || result.runtimeConfigChange === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.summarize(input);
+  return projectReleaseClosureSmokeReadback(service.summarize(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -103,6 +145,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseClosureSmokeReadback,
   runOperation,
   validateInput
 };

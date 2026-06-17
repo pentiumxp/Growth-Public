@@ -73,8 +73,51 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80),
+    approvalKey: cleanString(action.approvalKey || action.approval_key, 120)
+  };
+}
+
+function projectReleaseControlsSmokeReadback(result = {}) {
+  const controls = objectOnly(result.releaseControls);
+  const audit = objectOnly(result.auditReadback || controls.auditReadback);
+  const activation = objectOnly(audit.activationRecords);
+  const runtime = objectOnly(audit.runtimeEnablementRecords);
+  return Object.assign({}, result, {
+    releaseControlsStatus: cleanString(controls.status || result.status, 120),
+    releaseControlsRequiredActionCount: Number(controls.requiredActionCount || asArray(controls.requiredActions).length || 0) || 0,
+    releaseControlsNextAction: compactAction(controls.nextAction),
+    releaseControlsMissingCheckCount: asArray(controls.missingCheckKeys).length,
+    releaseControlsBlockedCheckCount: asArray(controls.blockedCheckKeys).length,
+    releaseControlsMissingEvidenceCount: asArray(controls.missingEvidenceKeys).length,
+    releaseControlsMissingApprovalCount: asArray(controls.missingApprovalKeys).length,
+    releaseControlsActivationRecordsStatus: cleanString(activation.status, 120),
+    releaseControlsRuntimeEnablementRecordsStatus: cleanString(runtime.status, 120),
+    releaseControlsWritefulSchedulingAllowed: controls.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
+    releaseControlsRuntimeConfigMutationPerformed: controls.runtimeConfigMutationPerformed === true || result.runtimeConfigMutationPerformed === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.summarize(input);
+  return projectReleaseControlsSmokeReadback(service.summarize(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -110,6 +153,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseControlsSmokeReadback,
   runOperation,
   validateInput
 };

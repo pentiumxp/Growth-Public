@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseClosureSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-closure");
@@ -60,9 +61,55 @@ test("release closure smoke script delegates to service only", () => {
 
   assert.equal(result.ok, true);
   assert.equal(result.status, "approval_required");
+  assert.equal(result.releaseClosureStatus, "approval_required");
   assert.equal(result.packageReadback.latestPackageDashboardStatus, "manual_runtime_config_required");
   assert.equal(calls.length, 1);
   assert.equal(calls[0].workspaceId, "fanfan");
+});
+
+test("release closure smoke script projects top-level operator readback", () => {
+  const result = projectReleaseClosureSmokeReadback({
+    ok: true,
+    status: "owner_decision_required",
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false,
+    releaseClosure: {
+      status: "owner_decision_required",
+      requiredActionCount: 3,
+      nextAction: {
+        key: "resolve_release_blocker",
+        action: "resolve_or_record_blocked_release_decision",
+        requiredActor: "owner"
+      },
+      missingCheckKeys: ["owner_daily_ui_evidence"],
+      blockedCheckKeys: ["release_decision"],
+      missingEvidenceKeys: ["ownerDailyUiEvidence"],
+      missingApprovalKeys: ["writefulExecutionApproval"],
+      packageRecordPresent: false,
+      packageRecordRequired: true,
+      packageRecordStatus: "missing",
+      latestPackageDashboardStatus: "manual_runtime_config_required",
+      latestPackageDashboardNextActionKey: "record_release_preflight",
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false
+    }
+  });
+
+  assert.equal(result.releaseClosureStatus, "owner_decision_required");
+  assert.equal(result.releaseClosureRequiredActionCount, 3);
+  assert.equal(result.releaseClosureNextAction.key, "resolve_release_blocker");
+  assert.equal(result.releaseClosureNextAction.action, "resolve_or_record_blocked_release_decision");
+  assert.equal(result.releaseClosureMissingCheckCount, 1);
+  assert.equal(result.releaseClosureBlockedCheckCount, 1);
+  assert.equal(result.releaseClosureMissingEvidenceCount, 1);
+  assert.equal(result.releaseClosureMissingApprovalCount, 1);
+  assert.equal(result.releaseClosurePackageRecordPresent, false);
+  assert.equal(result.releaseClosurePackageRecordRequired, true);
+  assert.equal(result.releaseClosurePackageRecordStatus, "missing");
+  assert.equal(result.releaseClosureLatestPackageDashboardStatus, "manual_runtime_config_required");
+  assert.equal(result.releaseClosureLatestPackageDashboardNextActionKey, "record_release_preflight");
+  assert.equal(result.releaseClosureWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseClosureRuntimeConfigChange, false);
 });
 
 test("release closure smoke script runs no-write closure against a temporary SQLite db", () => {
@@ -87,9 +134,21 @@ test("release closure smoke script runs no-write closure against a temporary SQL
     assert.equal(output.operation, "summarize");
     assert.equal(output.ok, true);
     assert.equal(output.schemaVersion, "growth.learningAutomationReleaseClosure.v1");
+    assert.equal(output.releaseClosureStatus, output.releaseClosure.status);
+    assert.equal(output.releaseClosureRequiredActionCount, output.releaseClosure.requiredActionCount);
+    assert.equal(output.releaseClosureNextAction.key, output.releaseClosure.nextAction.key);
+    assert.equal(output.releaseClosureMissingCheckCount, output.releaseClosure.missingCheckKeys.length);
+    assert.equal(output.releaseClosureBlockedCheckCount, output.releaseClosure.blockedCheckKeys.length);
+    assert.equal(output.releaseClosureMissingEvidenceCount, output.releaseClosure.missingEvidenceKeys.length);
+    assert.equal(output.releaseClosureMissingApprovalCount, output.releaseClosure.missingApprovalKeys.length);
+    assert.equal(output.releaseClosurePackageRecordPresent, output.releaseClosure.packageRecordPresent);
+    assert.equal(output.releaseClosurePackageRecordRequired, output.releaseClosure.packageRecordRequired);
+    assert.equal(output.releaseClosurePackageRecordStatus, output.releaseClosure.packageRecordStatus);
     assert.equal(output.backendEvidenceComplete, false);
     assert.equal(output.writefulSchedulingAllowed, false);
+    assert.equal(output.releaseClosureWritefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
+    assert.equal(output.releaseClosureRuntimeConfigChange, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
