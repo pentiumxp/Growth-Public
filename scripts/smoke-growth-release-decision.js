@@ -137,10 +137,88 @@ function validateOperationInput(operation, input = {}, allowWrite = false) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactAction(value = {}) {
+  const action = objectOnly(value);
+  if (!Object.keys(action).length) return null;
+  return {
+    key: cleanString(action.key || action.checkKey || action.check_key, 140),
+    action: cleanString(action.action || action.type || action.reason || action.label, 160),
+    requiredActor: cleanString(action.requiredActor || action.required_actor || action.actor || "owner", 80)
+  };
+}
+
+function latestDecisionFrom(result = {}) {
+  if (result.decision && typeof result.decision === "object" && !Array.isArray(result.decision)) return result.decision;
+  return asArray(result.decisions)[0] || {};
+}
+
+function collectionRunSummaryFrom(result = {}, latestDecision = {}) {
+  return objectOnly(result.collectionRunSummary || latestDecision.collectionRunSummary || latestDecision.collection_run_summary);
+}
+
+function releaseReviewFrom(result = {}, latestDecision = {}) {
+  return objectOnly(result.releaseReview || latestDecision.releaseReview || latestDecision.release_review);
+}
+
+function projectReleaseDecisionSmokeReadback(result = {}) {
+  const latestDecision = latestDecisionFrom(result);
+  const collectionRunSummary = collectionRunSummaryFrom(result, latestDecision);
+  const releaseReview = releaseReviewFrom(result, latestDecision);
+  const autoSelection = objectOnly(result.autoSelection);
+  const decisionStatus = cleanString(
+    result.releaseDecisionStatus
+    || result.status
+    || latestDecision.status
+    || objectOnly(result.decision).status,
+    120
+  );
+  return Object.assign({}, result, {
+    releaseDecisionStatus: decisionStatus,
+    releaseDecisionCount: Number(result.count || asArray(result.decisions).length || (latestDecision.decisionId ? 1 : 0)) || 0,
+    releaseDecisionLatestDecisionId: cleanString(latestDecision.decisionId || latestDecision.decision_id, 140),
+    releaseDecisionLatestDecisionStatus: cleanString(latestDecision.status || decisionStatus, 120),
+    releaseDecisionCollectionRunId: cleanString(
+      result.collectionRunId
+      || latestDecision.collectionRunId
+      || latestDecision.collection_run_id
+      || collectionRunSummary.collectionRunId
+      || collectionRunSummary.collection_run_id,
+      140
+    ),
+    releaseDecisionCollectionRunStatus: cleanString(collectionRunSummary.status, 120),
+    releaseDecisionCollectionRunReadyForReleaseReview: collectionRunSummary.readyForReleaseReview === true,
+    releaseDecisionApprovedForReleaseReview: result.approvedForReleaseReview === true || objectOnly(result.decision).approvedForReleaseReview === true || latestDecision.status === "approved",
+    releaseDecisionCollectionRunAutoSelected: result.collectionRunAutoSelected === true,
+    releaseDecisionAutoSelectionStatus: cleanString(autoSelection.status, 120),
+    releaseDecisionAutoSelectionCollectionRunId: cleanString(autoSelection.collectionRunId || autoSelection.collection_run_id, 140),
+    releaseDecisionMissingRequiredCount: asArray(result.missingRequired).length,
+    releaseDecisionMissingCheckCount: asArray(releaseReview.missingCheckKeys).length || Number(collectionRunSummary.missingCheckCount || 0) || 0,
+    releaseDecisionBlockedCheckCount: asArray(releaseReview.blockedCheckKeys).length || Number(collectionRunSummary.blockedCheckCount || 0) || 0,
+    releaseDecisionMissingEvidenceCount: asArray(releaseReview.missingEvidenceKeys).length,
+    releaseDecisionRequiredActionCount: Number(releaseReview.requiredActionCount || collectionRunSummary.requiredActionCount || 0) || 0,
+    releaseDecisionPersistedApprovalCount: asArray(releaseReview.persistedApprovalKeys || collectionRunSummary.persistedApprovalKeys).length,
+    releaseDecisionNextAction: compactAction(releaseReview.nextAction),
+    releaseDecisionWritefulSchedulingAllowed: result.writefulSchedulingAllowed === true || latestDecision.writefulSchedulingAllowed === true,
+    releaseDecisionRuntimeConfigChange: result.runtimeConfigChange === true || latestDecision.runtimeConfigChange === true
+  });
+}
+
 function runOperation(service, operation, input) {
-  if (operation === "record") return service.recordDecision(input);
-  if (operation === "list") return service.listDecisions(input);
-  return service.evaluateDecision(input);
+  if (operation === "record") return projectReleaseDecisionSmokeReadback(service.recordDecision(input));
+  if (operation === "list") return projectReleaseDecisionSmokeReadback(service.listDecisions(input));
+  return projectReleaseDecisionSmokeReadback(service.evaluateDecision(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -189,6 +267,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectReleaseDecisionSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

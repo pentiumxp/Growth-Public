@@ -695,7 +695,7 @@ readback gate set.
   `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
   required actions, and one next action while still keeping
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
-  Release-controls, release-closure, release-inventory, release-dashboard,
+  Release-decision, release-controls, release-closure, release-inventory, release-dashboard,
   release-workbench, and release-preflight smoke CLIs now mirror selected nested
   DTO
   fields into top-level operator readbacks for status, missing counts, required

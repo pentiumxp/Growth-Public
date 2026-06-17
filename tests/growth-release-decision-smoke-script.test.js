@@ -11,6 +11,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-release-decision
 const {
   inputFromArgs,
   operationFromArgs,
+  projectReleaseDecisionSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput
@@ -110,7 +111,28 @@ test("release decision smoke script delegates operations to service only", () =>
   const service = {
     evaluateDecision(input) {
       calls.push({ type: "evaluateDecision", input });
-      return { ok: true, status: "approved" };
+      return {
+        ok: true,
+        status: "approved",
+        releaseDecisionStatus: "approved",
+        collectionRunId: "lgacrn_1",
+        approvedForReleaseReview: true,
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        collectionRunSummary: {
+          status: "ready_for_release_review",
+          readyForReleaseReview: true
+        },
+        releaseReview: {
+          requiredActionCount: 1,
+          missingEvidenceKeys: ["owner_daily_ui_evidence"],
+          nextAction: {
+            key: "owner_daily_ui_evidence",
+            action: "collect_owner_daily_ui_evidence",
+            requiredActor: "owner"
+          }
+        }
+      };
     },
     recordDecision(input) {
       calls.push({ type: "recordDecision", input });
@@ -122,11 +144,80 @@ test("release decision smoke script delegates operations to service only", () =>
     }
   };
 
-  runOperation(service, "evaluate", { workspaceId: "weixin_fanfan", collectionRunId: "lgacrn_1" });
+  const evaluated = runOperation(service, "evaluate", { workspaceId: "weixin_fanfan", collectionRunId: "lgacrn_1" });
   runOperation(service, "record", { workspaceId: "weixin_fanfan", collectionRunId: "lgacrn_1" });
   runOperation(service, "list", { workspaceId: "weixin_fanfan" });
 
   assert.deepEqual(calls.map((call) => call.type), ["evaluateDecision", "recordDecision", "listDecisions"]);
+  assert.equal(evaluated.releaseDecisionStatus, "approved");
+  assert.equal(evaluated.releaseDecisionCollectionRunId, "lgacrn_1");
+  assert.equal(evaluated.releaseDecisionCollectionRunReadyForReleaseReview, true);
+  assert.equal(evaluated.releaseDecisionApprovedForReleaseReview, true);
+  assert.equal(evaluated.releaseDecisionMissingEvidenceCount, 1);
+  assert.equal(evaluated.releaseDecisionRequiredActionCount, 1);
+  assert.deepEqual(evaluated.releaseDecisionNextAction, {
+    key: "owner_daily_ui_evidence",
+    action: "collect_owner_daily_ui_evidence",
+    requiredActor: "owner"
+  });
+});
+
+test("release decision smoke script projects top-level operator readback", () => {
+  const result = projectReleaseDecisionSmokeReadback({
+    ok: true,
+    status: "approved",
+    releaseDecisionStatus: "approved",
+    collectionRunId: "lgacrn_ready_1",
+    approvedForReleaseReview: true,
+    collectionRunAutoSelected: true,
+    autoSelection: {
+      status: "selected",
+      collectionRunId: "lgacrn_ready_1"
+    },
+    collectionRunSummary: {
+      collectionRunId: "lgacrn_ready_1",
+      status: "ready_for_release_review",
+      readyForReleaseReview: true,
+      missingCheckCount: 2,
+      blockedCheckCount: 1,
+      requiredActionCount: 3
+    },
+    releaseReview: {
+      missingCheckKeys: ["central_visual_evidence"],
+      blockedCheckKeys: ["scheduler_worker_target"],
+      missingEvidenceKeys: ["release_package_review_ui_evidence"],
+      persistedApprovalKeys: ["writefulExecutionApproval"],
+      requiredActionCount: 3,
+      nextAction: {
+        key: "release_package_review_ui_evidence",
+        action: "collect_release_package_review_ui_evidence",
+        requiredActor: "owner"
+      }
+    },
+    writefulSchedulingAllowed: false,
+    runtimeConfigChange: false
+  });
+
+  assert.equal(result.releaseDecisionStatus, "approved");
+  assert.equal(result.releaseDecisionCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.releaseDecisionCollectionRunStatus, "ready_for_release_review");
+  assert.equal(result.releaseDecisionCollectionRunReadyForReleaseReview, true);
+  assert.equal(result.releaseDecisionApprovedForReleaseReview, true);
+  assert.equal(result.releaseDecisionCollectionRunAutoSelected, true);
+  assert.equal(result.releaseDecisionAutoSelectionStatus, "selected");
+  assert.equal(result.releaseDecisionAutoSelectionCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.releaseDecisionMissingCheckCount, 1);
+  assert.equal(result.releaseDecisionBlockedCheckCount, 1);
+  assert.equal(result.releaseDecisionMissingEvidenceCount, 1);
+  assert.equal(result.releaseDecisionRequiredActionCount, 3);
+  assert.equal(result.releaseDecisionPersistedApprovalCount, 1);
+  assert.equal(result.releaseDecisionWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseDecisionRuntimeConfigChange, false);
+  assert.deepEqual(result.releaseDecisionNextAction, {
+    key: "release_package_review_ui_evidence",
+    action: "collect_release_package_review_ui_evidence",
+    requiredActor: "owner"
+  });
 });
 
 test("release decision smoke script records against a temporary SQLite db only when allowed", () => {
@@ -148,6 +239,13 @@ test("release decision smoke script records against a temporary SQLite db only w
     assert.equal(evaluateOutput.ok, true);
     assert.equal(evaluateOutput.operation, "evaluate");
     assert.equal(evaluateOutput.status, "approved");
+    assert.equal(evaluateOutput.releaseDecisionStatus, "approved");
+    assert.equal(evaluateOutput.releaseDecisionCollectionRunId, "lgacrn_ready_1");
+    assert.equal(evaluateOutput.releaseDecisionCollectionRunStatus, "ready_for_release_review");
+    assert.equal(evaluateOutput.releaseDecisionCollectionRunReadyForReleaseReview, true);
+    assert.equal(evaluateOutput.releaseDecisionApprovedForReleaseReview, true);
+    assert.equal(evaluateOutput.releaseDecisionWritefulSchedulingAllowed, false);
+    assert.equal(evaluateOutput.releaseDecisionRuntimeConfigChange, false);
     assert.equal(JSON.stringify(evaluateOutput).includes(path.dirname(runPath)), false);
 
     const record = spawnSync(process.execPath, [
@@ -171,6 +269,12 @@ test("release decision smoke script records against a temporary SQLite db only w
     assert.equal(recordOutput.operation, "record");
     assert.equal(recordOutput.decision.status, "approved");
     assert.equal(recordOutput.decision.collectionRunId, "lgacrn_ready_1");
+    assert.equal(recordOutput.releaseDecisionStatus, "approved");
+    assert.equal(recordOutput.releaseDecisionLatestDecisionStatus, "approved");
+    assert.equal(recordOutput.releaseDecisionCollectionRunId, "lgacrn_ready_1");
+    assert.equal(recordOutput.releaseDecisionCollectionRunStatus, "ready_for_release_review");
+    assert.equal(recordOutput.releaseDecisionApprovedForReleaseReview, true);
+    assert.equal(recordOutput.releaseDecisionWritefulSchedulingAllowed, false);
 
     const list = spawnSync(process.execPath, [
       scriptPath,
@@ -187,6 +291,10 @@ test("release decision smoke script records against a temporary SQLite db only w
     const listOutput = JSON.parse(list.stdout);
     assert.equal(listOutput.ok, true);
     assert.equal(listOutput.decisions.length, 1);
+    assert.equal(listOutput.releaseDecisionCount, 1);
+    assert.equal(listOutput.releaseDecisionLatestDecisionStatus, "approved");
+    assert.equal(listOutput.releaseDecisionCollectionRunId, "lgacrn_ready_1");
+    assert.equal(listOutput.releaseDecisionCollectionRunStatus, "ready_for_release_review");
   });
 });
 
