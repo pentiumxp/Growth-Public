@@ -2768,6 +2768,37 @@ test("Growth card generation UI gates formal checkpoint activation through contr
       reason: "enough_recent_practice",
       evidence: { recentTrajectoryCount: 4, highPressureSignalCount: 0 }
     },
+    rubricPolicy: {
+      schemaVersion: "growth.card.rubricPolicy.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      policyId: "rubric:stage_assessment_v1:science",
+      recipeId: "stage_assessment_v1",
+      domain: "science",
+      subject: "science",
+      cardRole: "stage_assessment",
+      rubricDimensions: [{
+        dimensionId: "stage_independent_understanding",
+        label: "Independent understanding"
+      }, {
+        dimensionId: "stage_transfer_application",
+        label: "Transfer and application"
+      }, {
+        dimensionId: "stage_evidence_reasoning",
+        label: "Evidence and reasoning"
+      }, {
+        dimensionId: "stage_reflection_calibration",
+        label: "Reflection calibration"
+      }],
+      evidenceKeys: ["formal_answer", "coverage_reasoning", "formal_reflection_once"],
+      assessmentPolicy: {
+        completionPolicy: "formal_assessment",
+        evidenceWeight: "high",
+        expectedDurationMinutes: { min: 25, max: 30 },
+        evaluationAttempts: 1,
+        reflectionAttempts: 1
+      }
+    },
     actions: [{
       key: "activate_stage_assessment",
       enabled: true,
@@ -2795,6 +2826,14 @@ test("Growth card generation UI gates formal checkpoint activation through contr
   const readyButton = readyHtml.match(/<button[^>]+data-stage-assessment-activate[^>]*>/)?.[0] || "";
   assert.match(readyHtml, /data-stage-checkpoint-controls-status="ready"/);
   assert.match(readyHtml, /data-stage-checkpoint-activate-enabled="true"/);
+  assert.match(readyHtml, /data-stage-assessment-rubric/);
+  assert.match(readyHtml, /data-stage-assessment-rubric-policy-id="rubric:stage_assessment_v1:science"/);
+  assert.match(readyHtml, /测评规则/);
+  assert.match(readyHtml, /formal_assessment/);
+  assert.match(readyHtml, /25-30 分钟/);
+  assert.match(readyHtml, /Independent understanding/);
+  assert.match(readyHtml, /stage_evidence_reasoning/);
+  assert.match(readyHtml, /formal_answer · coverage_reasoning · formal_reflection_once/);
   assert.match(readyHtml, /Owner 可以显式生成一次正式阶段测评/);
   assert.doesNotMatch(readyButton, /\sdisabled(?:\s|>|=)/);
 
@@ -3464,7 +3503,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260616-digest-create-ui-v1";
+  const staticVersion = "20260618-stage-rubric-readback-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -3478,6 +3517,7 @@ test("Growth index loads frontend adapters before app boot", () => {
   assert.ok(order.every((index) => index >= 0));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.equal((html.match(new RegExp(staticVersion, "g")) || []).length, 13);
+  assert.doesNotMatch(html, /20260616-digest-create-ui-v1/);
   assert.doesNotMatch(html, /20260614-post-publish-context-v1/);
   assert.doesNotMatch(html, /20260614-growth-navigation-v1/);
   assert.doesNotMatch(html, /20260614-stage-assessment-ui-v1/);

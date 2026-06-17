@@ -230,10 +230,12 @@ Implemented V1 Owner stage-assessment controls:
   `POST /api/v1/growth/stage-assessments/activate` with
   `activation_source=owner_manual`;
 - the section shows coverage-node count, formal completion marker, default
-  `300` coin reward metadata, cooldown date when present, and the published
-  card open action;
+  `300` coin reward metadata, cooldown date when present, the formal
+  `rubric:stage_assessment_v1:<subject>` policy id, one-evaluation /
+  one-reflection / 25-30 minute assessment policy, bounded rubric dimension
+  ids, evidence keys, and the published card open action;
 - frontend state is only progress/error/result state. Eligibility, cooldown,
-  Owner override, and generation policy remain backend-owned.
+  Owner override, generation policy, and rubric policy remain backend-owned.
 
 ## Planner-Backed Owner Flow
 
@@ -1177,7 +1179,7 @@ Add focused tests before broad regression runs:
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state with subject/capability/coverage selectors, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, formal stage-checkpoint rubric readback from the controls DTO, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, and absence of `writefulSchedulingAllowed`, raw prompts, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |

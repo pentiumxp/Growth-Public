@@ -98,6 +98,8 @@ test("card generation context returns Fanfan daily English readiness without raw
   assert.equal(result.selectedRecipeId, "daily_english_v1");
   assert.equal(result.generationDefaults.domain, "english");
   assert.equal(result.generationDefaults.cardSchemaVersion, "growth.card.authoring.v1");
+  assert.equal(result.generationDefaults.rubricPolicyId, "rubric:daily_english_v1");
+  assert.equal(result.rubricCatalog.some((policy) => policy.policyId === "rubric:stage_assessment_v1" && policy.cardRole === "stage_assessment"), true);
   assert.equal(result.historySummary.learnerSummary.evaluationCount, 4);
   assert.equal(result.historySummary.recentTrajectoryCount, 1);
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);

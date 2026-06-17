@@ -1150,6 +1150,15 @@ function createLearningCardGenerationContextService(options = {}) {
       target,
       recipes: recipeContext.recipes || [],
       selectedRecipeId: recipeContext.selectedRecipeId || "daily_english_v1",
+      rubricCatalog: asArray(recipeContext.rubricCatalog).map((policy) => ({
+        policyId: cleanString(policy.policyId),
+        recipeId: cleanString(policy.recipeId),
+        domain: cleanString(policy.domain),
+        subject: cleanString(policy.subject),
+        cardRole: cleanString(policy.cardRole),
+        dimensionIds: asArray(policy.dimensionIds).map(cleanString).filter(Boolean).slice(0, 12),
+        evidenceKeys: asArray(policy.evidenceKeys).map(cleanString).filter(Boolean).slice(0, 12)
+      })).filter((policy) => policy.policyId).slice(0, 24),
       generationDefaults,
       readiness: Object.assign({ ready: readinessReady(readiness) }, readiness),
       graph: {

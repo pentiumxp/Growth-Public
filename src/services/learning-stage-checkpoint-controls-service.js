@@ -117,6 +117,59 @@ function publicReadiness(readiness = {}) {
   };
 }
 
+function publicRubricPolicy(policy = null) {
+  if (!policy || typeof policy !== "object") return null;
+  const rubricDimensions = asArray(policy.rubricDimensions).map((dimension) => ({
+    dimensionId: cleanString(dimension.dimensionId, 120),
+    label: cleanString(dimension.label, 120),
+    scoreWeight: number(dimension.scoreWeight),
+    evidenceTags: uniqueStrings(dimension.evidenceTags).slice(0, 8),
+    profileTargets: uniqueStrings(dimension.profileTargets).slice(0, 8)
+  })).filter((dimension) => dimension.dimensionId).slice(0, 8);
+  const evidenceMapping = asArray(policy.evidenceMapping).map((item) => ({
+    evidenceKey: cleanString(item.evidenceKey, 120),
+    dimensionIds: uniqueStrings(item.dimensionIds).slice(0, 8),
+    source: cleanString(item.source, 80)
+  })).filter((item) => item.evidenceKey).slice(0, 12);
+  return {
+    schemaVersion: cleanString(policy.schemaVersion, 80),
+    privacyClass: cleanString(policy.privacyClass || "summary_only", 40),
+    summaryOnly: policy.summaryOnly !== false,
+    policyId: cleanString(policy.policyId, 160),
+    recipeId: cleanString(policy.recipeId, 120),
+    domain: cleanString(policy.domain, 80),
+    subject: cleanString(policy.subject, 80),
+    cardRole: cleanString(policy.cardRole, 80),
+    rubricDimensions,
+    dimensionIds: rubricDimensions.map((dimension) => dimension.dimensionId),
+    evidenceMapping,
+    evidenceKeys: evidenceMapping.map((item) => item.evidenceKey),
+    assessmentPolicy: policy.assessmentPolicy && typeof policy.assessmentPolicy === "object" ? {
+      completionPolicy: cleanString(policy.assessmentPolicy.completionPolicy, 80),
+      evidenceWeight: cleanString(policy.assessmentPolicy.evidenceWeight, 80),
+      expectedDurationMinutes: policy.assessmentPolicy.expectedDurationMinutes && typeof policy.assessmentPolicy.expectedDurationMinutes === "object" ? {
+        min: number(policy.assessmentPolicy.expectedDurationMinutes.min),
+        max: number(policy.assessmentPolicy.expectedDurationMinutes.max)
+      } : {},
+      evaluationAttempts: number(policy.assessmentPolicy.evaluationAttempts),
+      reflectionAttempts: number(policy.assessmentPolicy.reflectionAttempts)
+    } : {}
+  };
+}
+
+function resolveFormalRubricPolicy(rubricPolicyService = null, scope = {}) {
+  if (!rubricPolicyService || typeof rubricPolicyService.resolveRubricPolicy !== "function") return null;
+  const resolved = rubricPolicyService.resolveRubricPolicy({
+    cardRole: "stage_assessment",
+    completionPolicy: { mode: "formal_assessment" },
+    domain: scope.domain,
+    subject: scope.subject || scope.subjectId,
+    subjectId: scope.subjectId
+  });
+  if (!resolved?.ok || !resolved.policy) return null;
+  return publicRubricPolicy(resolved.policy);
+}
+
 function routeTemplate(path, body = {}, method = "POST") {
   return {
     method,
@@ -140,6 +193,7 @@ function activationBody(scope = {}) {
 
 function createLearningStageCheckpointControlsService(options = {}) {
   const stageAssessmentService = options.stageAssessmentService || null;
+  const rubricPolicyService = options.rubricPolicyService || null;
 
   function controls(input = {}) {
     const privacyFindings = scanPrivacy(input);
@@ -165,6 +219,7 @@ function createLearningStageCheckpointControlsService(options = {}) {
     const inCooldown = readiness.activationState === "cooldown" || Boolean(readiness.cooldownUntil);
     const active = readiness.activationState === "active";
     const activationReady = readiness.eligible && !active && !inCooldown;
+    const rubricPolicy = resolveFormalRubricPolicy(rubricPolicyService, scope);
     return {
       ok: true,
       source: "growth-learning-stage-checkpoint-controls-service",
@@ -194,8 +249,11 @@ function createLearningStageCheckpointControlsService(options = {}) {
         dailyPlanDirectPublicationAllowed: false,
         ownerManualActivationAllowed: true,
         learnerChallengeAllowed: !inCooldown,
-        lowPressureDailyPracticeSeparate: true
+        lowPressureDailyPracticeSeparate: true,
+        rubricPolicyId: rubricPolicy?.policyId || "",
+        completionPolicy: rubricPolicy?.assessmentPolicy?.completionPolicy || "formal_assessment"
       },
+      rubricPolicy,
       actions: [{
         key: "refresh_stage_checkpoint_controls",
         label: "refresh",

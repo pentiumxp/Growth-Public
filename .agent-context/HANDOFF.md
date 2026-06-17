@@ -22210,3 +22210,63 @@
     config before treating the product surface as complete;
   - add richer subject-specific rubric catalogs as actual domain packs require
     them.
+
+## 2026-06-18T01:20+0800 - Owner generation rubric readback UI closure
+
+- Status:
+  - Implemented bounded formal stage-assessment rubric readback in the Owner
+    generation panel.
+  - Bumped the static asset query version to
+    `20260618-stage-rubric-readback-v1` so mobile clients do not reuse the
+    older cached generation UI.
+  - No SQLite schema migration, Gateway provider change, host route import, raw
+    prompt exposure, production deploy, or release activation was performed in
+    this slice.
+- Implemented behavior:
+  - `learning-stage-checkpoint-controls-service` resolves the formal
+    `stage_assessment` rubric through `learning-card-rubric-policy-service`
+    and exposes only a bounded public summary: policy id, card role,
+    completion policy, duration policy, dimension ids, and evidence keys.
+  - `src/app/services.js` injects the rubric policy service into the stage
+    checkpoint controls service without adding host Growth dependencies.
+  - `learning-card-generation-context-service` now includes a bounded
+    `rubricCatalog` projection so Owner UI and authoring context can reference
+    available rubric ids without raw rubric payloads.
+  - `growth-card-generation-ui.js` renders the stage checkpoint rubric readback
+    from the controls DTO: policy id, `formal_assessment`, one evaluation, one
+    reflection, 25-30 minutes, rubric dimensions, and evidence keys.
+  - `growth-homeai-legacy.css` adds light/dark/mobile styling for the rubric
+    readback panel while preserving the existing embedded layout guard shape.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-stage-checkpoint-controls-service.js src/services/learning-card-generation-context-service.js src/app/services.js public/growth-card-generation-ui.js`
+  - `node --test tests/learning-stage-checkpoint-controls-service.test.js tests/learning-card-generation-context-service.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`
+    passed `52/52`.
+  - `node --test tests/learning-stage-checkpoint-controls-service.test.js tests/growth-stage-checkpoint-controls-smoke-script.test.js tests/learning-stage-assessment-service.test.js tests/growth-stage-assessment-smoke-script.test.js tests/growth-routes.test.js tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/growth-architecture-boundary.test.js`
+    passed `150/150` after fixing the CSS mobile selector shape.
+  - `node --test tests/learning-card-generation-context-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-rubric-policy-service.test.js tests/learning-card-generation-service.test.js tests/learning-card-ai-loop-harness.test.js`
+    passed `36/36`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `npm run --silent check` passed with `runtimeCount=223`.
+  - `git diff --check` passed.
+  - Local static service on fallback port `4991` served the new JS/CSS and the
+    updated asset query version; no old `20260616-digest-create-ui-v1` query
+    string was present in the served root page.
+  - In-app Browser was unavailable in this Codex session, and Playwright was
+    not installed locally; do not treat this as central visual evidence.
+- Remaining next-step candidates:
+  - collect central visual/release evidence from the Home AI visual toolchain
+    before production release closure;
+  - run production planner/daily-loop/profile-feedback smoke with real target
+    config;
+  - add richer subject-specific rubric catalogs as actual domain packs require
+    them.

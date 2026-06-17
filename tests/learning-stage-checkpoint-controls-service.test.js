@@ -5,6 +5,9 @@ const {
   createLearningStageCheckpointControlsService,
   scanPrivacy
 } = require("../src/services/learning-stage-checkpoint-controls-service");
+const {
+  createLearningCardRubricPolicyService
+} = require("../src/services/learning-card-rubric-policy-service");
 
 function createService(readiness = {}) {
   const calls = [];
@@ -34,7 +37,8 @@ function createService(readiness = {}) {
           }
         }, readiness);
       }
-    }
+    },
+    rubricPolicyService: createLearningCardRubricPolicyService()
   });
   return { calls, service };
 }
@@ -61,6 +65,25 @@ test("stage checkpoint controls returns summary-only Owner activation controls",
   assert.equal(result.summary.readyForOwnerActivation, true);
   assert.equal(result.policy.dailyPlanDirectPublicationAllowed, false);
   assert.equal(result.policy.formalAssessmentActivationService, "learning-stage-assessment-service");
+  assert.equal(result.policy.rubricPolicyId, "rubric:stage_assessment_v1:science");
+  assert.equal(result.policy.completionPolicy, "formal_assessment");
+  assert.equal(result.rubricPolicy.policyId, "rubric:stage_assessment_v1:science");
+  assert.equal(result.rubricPolicy.cardRole, "stage_assessment");
+  assert.deepEqual(result.rubricPolicy.dimensionIds, [
+    "stage_independent_understanding",
+    "stage_transfer_application",
+    "stage_evidence_reasoning",
+    "stage_reflection_calibration"
+  ]);
+  assert.deepEqual(result.rubricPolicy.evidenceKeys, [
+    "formal_answer",
+    "independent_application",
+    "coverage_reasoning",
+    "formal_reflection_once"
+  ]);
+  assert.equal(result.rubricPolicy.assessmentPolicy.completionPolicy, "formal_assessment");
+  assert.equal(result.rubricPolicy.assessmentPolicy.expectedDurationMinutes.min, 25);
+  assert.equal(result.rubricPolicy.assessmentPolicy.expectedDurationMinutes.max, 30);
   assert.equal(result.readiness.evidence.recentTrajectoryCount, 4);
   const activateAction = result.actions.find((action) => action.key === "activate_stage_assessment");
   assert.equal(activateAction.enabled, true);

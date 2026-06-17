@@ -14657,6 +14657,89 @@ body.task-markdown-preview-open {
   font-weight: 820;
 }
 
+.learning-card-generation-stage-rubric {
+  display: grid;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.50);
+}
+
+.learning-card-generation-stage-rubric-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.learning-card-generation-stage-rubric-head span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.learning-card-generation-stage-rubric-head strong,
+.learning-card-generation-stage-rubric-dimensions strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 860;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-stage-rubric-head em {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(79, 135, 144, 0.12);
+  color: var(--ui-info-ink);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 860;
+  white-space: nowrap;
+}
+
+.learning-card-generation-stage-rubric-grid,
+.learning-card-generation-stage-rubric-dimensions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.learning-card-generation-stage-rubric-dimensions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.learning-card-generation-stage-rubric-grid span,
+.learning-card-generation-stage-rubric-dimensions span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-card-surface);
+}
+
+.learning-card-generation-stage-rubric-grid strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 860;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-stage-rubric-evidence {
+  overflow-wrap: anywhere;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
 .learning-card-generation-stage-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -15046,6 +15129,21 @@ body.task-markdown-preview-open {
   color: #d8e6e8;
 }
 
+:root[data-theme="dark"] .learning-card-generation-stage-rubric {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"] .learning-card-generation-stage-rubric-head em {
+  border: 1px solid rgba(184, 211, 216, 0.22);
+  background: rgba(184, 211, 216, 0.16);
+  color: #f8ffff;
+}
+
+:root[data-theme="dark"] .learning-card-generation-stage-rubric-evidence {
+  color: #d8e6e8;
+}
+
 :root[data-theme="dark"] .learning-card-generation-stage-controls em {
   border: 1px solid rgba(184, 211, 216, 0.22);
   background: rgba(184, 211, 216, 0.16);
@@ -15158,6 +15256,21 @@ body.task-markdown-preview-open {
     color: #f0d391;
   }
 
+  :root[data-theme="system"] .learning-card-generation-stage-rubric {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  :root[data-theme="system"] .learning-card-generation-stage-rubric-head em {
+    border: 1px solid rgba(184, 211, 216, 0.22);
+    background: rgba(184, 211, 216, 0.16);
+    color: #f8ffff;
+  }
+
+  :root[data-theme="system"] .learning-card-generation-stage-rubric-evidence {
+    color: #d8e6e8;
+  }
+
   :root[data-theme="system"] .learning-card-generation-cycle-finding[data-cycle-finding-ok="false"] em {
     border-color: rgba(240, 211, 145, 0.30);
     background: rgba(198, 160, 95, 0.20);
@@ -15226,9 +15339,15 @@ body.task-markdown-preview-open {
     grid-template-columns: 1fr;
   }
 
+  .learning-card-generation-stage-rubric-grid,
+  .learning-card-generation-stage-rubric-dimensions {
+    grid-template-columns: 1fr;
+  }
+
   .learning-card-generation-actions,
   .learning-card-generation-stage-actions,
   .learning-card-generation-stage-controls,
+  .learning-card-generation-stage-rubric-head,
   .learning-card-generation-correction-controls,
   .learning-card-generation-provisioning-actions,
   .learning-card-generation-cycle-actions,

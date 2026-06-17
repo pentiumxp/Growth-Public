@@ -226,7 +226,8 @@ function createServices(config) {
     rubricPolicyService: learningCardRubricPolicyService
   });
   const learningStageCheckpointControlsService = createLearningStageCheckpointControlsService({
-    stageAssessmentService: learningStageAssessmentService
+    stageAssessmentService: learningStageAssessmentService,
+    rubricPolicyService: learningCardRubricPolicyService
   });
   const learningOwnerReviewSignalService = createLearningOwnerReviewSignalService({
     repository: growthLearningStore.learningOwnerAuditReviewRepository

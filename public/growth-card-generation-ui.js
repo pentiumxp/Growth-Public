@@ -485,6 +485,59 @@
     return asArray(controls.actions).find((action) => clean(action.key) === key) || null;
   }
 
+  function stageAssessmentRubricPolicy({ controls = {}, context = {}, generated = {} } = {}) {
+    const policy = controls.rubricPolicy
+      || context.stageCheckpointRubricPolicy
+      || generated.rubricPolicy
+      || generated.draft?.rubricPolicy
+      || generated.published?.rubricPolicy
+      || null;
+    if (policy && typeof policy === "object") return policy;
+    const catalog = asArray(context.rubricCatalog);
+    return catalog.find((item) => clean(item.cardRole) === "stage_assessment") || null;
+  }
+
+  function stageAssessmentRubricPanel(policy = null, escapeHtml = defaultEscapeHtml) {
+    if (!policy || typeof policy !== "object") return "";
+    const policyId = clean(policy.policyId);
+    const dimensions = asArray(policy.rubricDimensions).length
+      ? asArray(policy.rubricDimensions)
+      : asArray(policy.dimensionIds).map((dimensionId) => ({ dimensionId, label: dimensionId }));
+    const evidenceKeys = asArray(policy.evidenceKeys).length
+      ? asArray(policy.evidenceKeys).map(clean).filter(Boolean)
+      : asArray(policy.evidenceMapping).map((item) => clean(item.evidenceKey)).filter(Boolean);
+    const assessment = policy.assessmentPolicy || {};
+    const duration = assessment.expectedDurationMinutes || {};
+    const durationText = Number(duration.min || 0) && Number(duration.max || 0)
+      ? `${Number(duration.min)}-${Number(duration.max)} 分钟`
+      : "25-30 分钟";
+    const dimensionRows = dimensions.slice(0, 4).map((dimension) => {
+      const dimensionId = clean(dimension.dimensionId || dimension);
+      return `<span>
+        <strong>${escapeHtml(clean(dimension.label) || dimensionId)}</strong>
+        <small>${escapeHtml(dimensionId)}</small>
+      </span>`;
+    }).join("");
+    return `<div class="learning-card-generation-stage-rubric" data-stage-assessment-rubric data-stage-assessment-rubric-policy-id="${escapeHtml(policyId)}">
+      <div class="learning-card-generation-stage-rubric-head">
+        <span>
+          <strong>测评规则</strong>
+          <small>${escapeHtml(policyId || "formal_assessment")}</small>
+        </span>
+        <em>${escapeHtml(clean(assessment.completionPolicy) || "formal_assessment")}</em>
+      </div>
+      <div class="learning-card-generation-stage-rubric-grid">
+        <span><small>批改</small><strong>${escapeHtml(String(Number(assessment.evaluationAttempts || 1) || 1))} 次</strong></span>
+        <span><small>反思</small><strong>${escapeHtml(String(Number(assessment.reflectionAttempts || 1) || 1))} 次</strong></span>
+        <span><small>时长</small><strong>${escapeHtml(durationText)}</strong></span>
+      </div>
+      <div class="learning-card-generation-stage-rubric-dimensions">
+        ${dimensionRows || `<span><strong>维度待读取</strong><small>summary-only</small></span>`}
+      </div>
+      ${evidenceKeys.length ? `<div class="learning-card-generation-stage-rubric-evidence">证据：${escapeHtml(evidenceKeys.slice(0, 6).join(" · "))}</div>` : ""}
+    </div>`;
+  }
+
   function learningLoopStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "loading") return "读取中";
@@ -2439,6 +2492,7 @@
   function stageAssessmentPanel({ context = {}, state = {}, readiness = {}, plan = {}, escapeHtml = defaultEscapeHtml } = {}) {
     const stage = state.stageAssessment || {};
     const controls = stage.controls || context.stageCheckpointControls || {};
+    const generated = state.generatedResult || state.dailyLoopPublishResult?.generation || {};
     const controlsSummary = controls.summary || {};
     const controlsReadiness = controls.readiness || {};
     const controlsEvidence = controlsReadiness.evidence || {};
@@ -2471,6 +2525,7 @@
     const coverage = asArray(plan.targetNodeIds).length ? asArray(plan.targetNodeIds) : [plan.targetNodeId].filter(Boolean);
     const cooldownUntil = clean(controlsReadiness.cooldownUntil || result.cooldownUntil || result.cycle?.cooldownUntil);
     const publishedTaskCardId = clean(stage.result?.published?.taskCardId);
+    const rubricPolicy = stageAssessmentRubricPolicy({ controls, context, generated });
     return `<section class="learning-card-generation-stage-assessment" data-stage-assessment-panel data-stage-assessment-status="${escapeHtml(status || "idle")}">
       <div class="learning-card-generation-stage-head">
         <span>
@@ -2485,6 +2540,7 @@
         <span><small>压力信号</small><strong>${escapeHtml(String(Number(controlsSummary.highPressureSignalCount ?? controlsEvidence.highPressureSignalCount ?? 0) || 0))}</strong></span>
       </div>
       ${cooldownUntil ? `<div class="learning-card-generation-stage-note">冷却至 ${escapeHtml(cooldownUntil.slice(0, 10))}</div>` : ""}
+      ${stageAssessmentRubricPanel(rubricPolicy, escapeHtml)}
       <div class="learning-card-generation-stage-controls" data-stage-checkpoint-controls-status="${escapeHtml(stage.controlsStatus || (controls.ok ? "ready" : "idle"))}" data-stage-checkpoint-activate-enabled="${canActivate ? "true" : "false"}">
         <span>${escapeHtml(controlsLoading ? "正在读取 controls read model。" : controlsFailed ? (stage.controlsError || controls.error || "controls 读取失败。") : canActivate ? "Owner 可以显式生成一次正式阶段测评。" : stageAssessmentControlsReasonText(activationBlockedReason || controlsReadiness.reason))}</span>
         <em>${escapeHtml(controls.ok ? "controls" : controlsLoading ? "读取中" : "待检查")}</em>

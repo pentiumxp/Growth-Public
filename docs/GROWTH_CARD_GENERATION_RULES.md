@@ -533,7 +533,10 @@ weak/stable dimension ids, evidence types, and short evidence summaries from
 that `summary_json`. `learning-profile-v2-service` attaches rubric dimension
 coverage to capability states so profile feedback can explain which rubric
 dimensions are being repaired or stabilized. UI code may render those public
-fields, but it must not inspect raw learner answers, raw model output, raw
+fields. The Owner stage-checkpoint controls DTO also exposes only the bounded
+formal `rubric:stage_assessment_v1:<subject>` policy summary needed for the
+`生成` tab to show scoring dimensions, evidence keys, and one-shot assessment
+policy. UI code must not inspect raw learner answers, raw model output, raw
 prompts, hidden answer keys, or full rubric authoring payloads.
 
 For ordinary daily cards, omitting `targetNodeId` is a supported profile-driven

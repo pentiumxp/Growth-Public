@@ -187,9 +187,11 @@ readback gate set.
   availability, and feeds `stageCheckpointControlsEvidence` into release
   evidence bundles/readiness. The embedded Owner generation panel now
   fetches that controls DTO through `GET /api/v1/growth/stage-assessments/controls`,
-  displays bounded readiness evidence, and enables formal-checkpoint generation
-  only when the `activate_stage_assessment` action is enabled; the actual write
-  still goes through `POST /api/v1/growth/stage-assessments/activate`. The next
+  displays bounded readiness evidence plus the bounded formal
+  `rubric:stage_assessment_v1:<subject>` policy summary, and enables
+  formal-checkpoint generation only when the `activate_stage_assessment`
+  action is enabled; the actual write still goes through
+  `POST /api/v1/growth/stage-assessments/activate`. The next
   target architecture is the
   Growth-owned AI learning operating loop documented in
   `docs/GROWTH_LEARNING_OPERATING_LOOP.md`: evidence ledger, Profile V2,
@@ -1468,8 +1470,11 @@ readback gate set.
   `learning-stage-checkpoint-controls-service` and Owner-only
   `GET /api/v1/growth/stage-assessments/controls`. It projects
   `growth.stageCheckpointControls.v1`, bounded readiness evidence, cooldown
-  status, policy flags, and route templates for refresh, Owner activation, and
-  learner challenge without performing any write or activation itself.
+  status, policy flags, bounded formal rubric policy summary, and route
+  templates for refresh, Owner activation, and learner challenge without
+  performing any write or activation itself. The embedded Owner UI may render
+  the supplied rubric summary but must not recompute formal rubric policy in
+  the browser.
   `npm run smoke:daily-loop` now provides a controlled local/production smoke
   entry for the same service boundary: preview is the default no-write
   operation, while `--operation draft` and `--operation publish` are rejected
