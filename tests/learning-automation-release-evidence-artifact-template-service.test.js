@@ -173,11 +173,25 @@ test("release artifact template maps only missing central visual and UI evidence
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.schemaVersion, "growth.learningAutomationReleaseEvidenceActionPlan.v1");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.status, "release_evidence_actions_required");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actionCount, 8);
-  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.submittableActionCount, 2);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.submittableActionCount, 0);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.phaseBlockedActionCount, 2);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.externalActionCount, 5);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.readyPhase, "release_evidence_prerequisites");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.blockingChecklistItemKeys.includes("artifact:central_visual"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.blockingChecklistItemKeys.includes("collection:profile_feedback"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.blockingChecklistItemKeys.includes("state:reviewed_automation_digest"), true);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.blockingChecklistItemKeys.includes("approval:writefulExecutionApproval"), true);
+  assert.deepEqual(result.releaseArtifactTemplate.releaseEvidenceActionPlan.blockingChecklistKinds, [
+    "home_ai_visual_artifact",
+    "release_evidence_collection_task",
+    "write_gated_release_evidence",
+    "release_state_prerequisite",
+    "manual_or_unsupported_release_evidence",
+    "release_approval"
+  ]);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.key, "prepare:release_evidence_artifact_manifest");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.readyToSubmit, false);
-  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextSubmittableAction.key, "record:approval:writefulExecutionApproval");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextSubmittableAction, null);
   const planActions = new Map(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actions.map((item) => [item.key, item]));
   assert.equal(planActions.get("prepare:release_evidence_artifact_manifest").artifactSlotCount, 4);
   assert.deepEqual(planActions.get("prepare:release_evidence_artifact_manifest").artifactTaskIds, [
@@ -218,8 +232,17 @@ test("release artifact template maps only missing central visual and UI evidence
   });
   assert.equal(planActions.get("record:approval:writefulExecutionApproval").bodyTemplate.approval_key, "writefulExecutionApproval");
   assert.equal(planActions.get("record:approval:writefulExecutionApproval").bodyTemplate.approval.status, "approved");
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").readyToSubmit, false);
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").blockingReason, "release_evidence_prerequisites_incomplete");
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").blockedUntilReleaseEvidenceReady, true);
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").blockedByChecklistItemKeys.includes("artifact:central_visual"), true);
   assert.equal(planActions.get("record:release_package").bodyTemplate.build_and_record_package, true);
   assert.deepEqual(planActions.get("record:release_package").bodyTemplate.tasks, ["planner_readiness", "scheduler_dry_run"]);
+  assert.equal(planActions.get("record:release_package").readyToSubmit, false);
+  assert.equal(planActions.get("record:release_package").blockingReason, "release_evidence_prerequisites_incomplete");
+  assert.equal(planActions.get("record:release_package").blockedUntilReleaseEvidenceReady, true);
+  assert.equal(planActions.get("record:release_package").blockedUntilReleaseApprovalReady, true);
+  assert.equal(planActions.get("record:release_package").blockedByChecklistItemKeys.includes("approval:writefulExecutionApproval"), true);
   assert.equal(planActions.get("authorize:daily_loop_write").writeGateRequired, true);
   assert.equal(planActions.get("state:reviewed_automation_digest").externalActionRequired, true);
   assert.equal(planActions.get("state:reviewed_automation_digest").route.path, "/api/v1/growth/automation/digests");
@@ -269,6 +292,60 @@ test("release artifact template does not widen to advertised default collection 
     summaryOnly: true
   });
   assert.equal(result.releaseArtifactTemplate.readyForManifestInput, true);
+});
+
+test("release artifact template gates records behind missing approval after evidence prerequisites clear", () => {
+  const service = createLearningAutomationReleaseEvidenceArtifactTemplateService({
+    releaseWorkbenchService: {
+      workbench() {
+        return {
+          ok: true,
+          status: "release_approval_required",
+          releaseWorkbench: {
+            summaryOnly: true,
+            status: "release_approval_required",
+            missingEvidenceKeys: [],
+            missingCheckKeys: [],
+            missingApprovalKeys: ["writefulExecutionApproval"],
+            missingRecordKinds: ["release_package"],
+            recordRoutes: [
+              {
+                key: "release_approval",
+                route: {
+                  path: "/api/v1/growth/automation/release-approvals"
+                }
+              },
+              {
+                key: "release_package",
+                route: {
+                  path: "/api/v1/growth/automation/release-packages"
+                }
+              }
+            ]
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.template({ workspaceId: "fanfan" });
+  const actionPlan = result.releaseArtifactTemplate.releaseEvidenceActionPlan;
+  const planActions = new Map(actionPlan.actions.map((item) => [item.key, item]));
+
+  assert.equal(result.ok, true);
+  assert.equal(actionPlan.actionCount, 2);
+  assert.equal(actionPlan.submittableActionCount, 1);
+  assert.equal(actionPlan.phaseBlockedActionCount, 1);
+  assert.equal(actionPlan.readyPhase, "release_approval");
+  assert.deepEqual(actionPlan.blockingChecklistItemKeys, ["approval:writefulExecutionApproval"]);
+  assert.deepEqual(actionPlan.blockingChecklistKinds, ["release_approval"]);
+  assert.equal(actionPlan.nextSubmittableAction.key, "record:approval:writefulExecutionApproval");
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").readyToSubmit, true);
+  assert.equal(planActions.get("record:release_package").readyToSubmit, false);
+  assert.equal(planActions.get("record:release_package").blockingReason, "release_approval_required");
+  assert.equal(planActions.get("record:release_package").blockedUntilReleaseEvidenceReady, false);
+  assert.equal(planActions.get("record:release_package").blockedUntilReleaseApprovalReady, true);
+  assert.deepEqual(planActions.get("record:release_package").blockedByChecklistItemKeys, ["approval:writefulExecutionApproval"]);
 });
 
 test("release artifact template fails closed through the workbench boundary", () => {

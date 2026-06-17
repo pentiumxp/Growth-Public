@@ -9,6 +9,68 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:42+08:00 - Release Artifact Action-Plan Phase Gate
+
+- Status: implemented and focused-Harness validated. No production deployment
+  was executed in this slice.
+- Problem found:
+  - `releaseEvidenceActionPlan` kept downstream approval/release-record actions
+    visible as `readyToSubmit=true` even while artifact manifest, collection,
+    state-prerequisite, write-gated, or unsupported/manual evidence checklist
+    items were still blocking release evidence;
+  - real `smoke-growth-release-artifact-template` readback for
+    `workspaceId=owner`, `learnerId=fanfan`, `domain=science`,
+    `subject=science` previously surfaced multiple submittable downstream
+    release actions before those prerequisites were complete.
+- Scope:
+  - added a no-write phase gate inside
+    `learning-automation-release-evidence-artifact-template-service`;
+  - downstream approval and release-record actions now stay visible with route
+    and body templates, but return `readyToSubmit=false`, `blockingReason`,
+    `blockedByChecklistItemKeys`, and `blockedByChecklistKinds` while evidence
+    prerequisites remain;
+  - after evidence prerequisites clear, missing approval actions can become the
+    next submittable action while record actions remain approval-blocked;
+  - added action-plan summary fields `readyPhase`,
+    `phaseBlockedActionCount`, `blockingChecklistItemKeys`, and
+    `blockingChecklistKinds`;
+  - updated Growth architecture docs, the Home AI platform-contract pointer,
+    implementation plan, test matrix, and this handoff.
+- Operational readback:
+  - `node scripts/smoke-growth-release-artifact-template.js --workspace-id
+    owner --learner-id fanfan --domain science --subject science --json`
+    returned `ok=true`, `status=artifact_manifest_required`,
+    `artifactSlotCount=8`, `statePrerequisiteItemCount=4`,
+    `unsupportedItemCount=0`, `actionCount=13`,
+    `submittableActionCount=0`, `phaseBlockedActionCount=7`,
+    `readyPhase=release_evidence_prerequisites`, and
+    `nextSubmittableAction=null`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-artifact-template-service.js`;
+  - `node --test tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js`
+    passed `9/9`.
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/growth-release-workbench-smoke-script.test.js
+    tests/learning-automation-release-workbench-action-service.test.js
+    tests/growth-release-workbench-action-smoke-script.test.js` passed `34/34`;
+  - `node --test tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `84/84`;
+  - `npm run --silent test:release-union` passed `235/235`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `924/924`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,290` nodes, and `23,065` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `95%`
+    complete;
+  - remaining work is still external release closure evidence plus any final
+    Owner UI visual regression pass before deployment.
+
 ## 2026-06-17T11:32+08:00 - SQLite Busy Timeout Runtime Readback
 
 - Status: implemented and locally validated. No production deployment was

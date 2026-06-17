@@ -843,7 +843,13 @@ Implemented backend shape:
   external artifact/manual steps. Collection body templates list only
   non-artifact tasks; blank `artifactManifest` templates are included only for
   later filling by Home AI central visual/UI tooling and are not executable
-  evidence. The route performs only target-scope normalization and delegates to
+  evidence. The action plan is phase-gated: while artifact, collection,
+  write-gated evidence, state prerequisite, or unsupported/manual checklist
+  items remain, downstream approval and release-record actions stay visible but
+  return `readyToSubmit=false`, `blockingReason`, and
+  `blockedByChecklistItemKeys`; after evidence prerequisites clear, missing
+  approval actions can become the next submittable action while record actions
+  remain approval-blocked. The route performs only target-scope normalization and delegates to
   the service; the template service does not run visual tooling, widen to
   default collection tasks when no visual/UI evidence is missing, persist
   release evidence, call Gateway, inspect SQLite directly, or expose local

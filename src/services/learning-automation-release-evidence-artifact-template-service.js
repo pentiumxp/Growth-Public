@@ -41,6 +41,13 @@ const RECORD_ROUTE_KEY_BY_KIND = Object.freeze({
   release_decision: "release_decision",
   release_preflight: "release_preflight"
 });
+const RELEASE_ACTION_PLAN_EVIDENCE_BLOCKING_CHECKLIST_KINDS = Object.freeze([
+  "home_ai_visual_artifact",
+  "release_evidence_collection_task",
+  "write_gated_release_evidence",
+  "release_state_prerequisite",
+  "manual_or_unsupported_release_evidence"
+]);
 
 function cleanString(value, max = 180) {
   return String(value || "").trim().slice(0, max);
@@ -403,6 +410,63 @@ function actionPlanItem(value = {}) {
   }, value));
 }
 
+function checklistItemsOfKinds(checklist = {}, kinds = []) {
+  const selected = new Set(kinds);
+  return asArray(objectOnly(checklist).items)
+    .map(objectOnly)
+    .filter((item) => selected.has(cleanString(item.kind, 120)));
+}
+
+function checklistItemKeys(items = []) {
+  return uniqueStrings(items.map((item) => cleanString(item.key, 180)));
+}
+
+function checklistItemKinds(items = []) {
+  return uniqueStrings(items.map((item) => cleanString(item.kind, 180)));
+}
+
+function releaseActionPhaseGate(checklist = {}) {
+  const evidenceBlockingItems = checklistItemsOfKinds(checklist, RELEASE_ACTION_PLAN_EVIDENCE_BLOCKING_CHECKLIST_KINDS);
+  const approvalBlockingItems = checklistItemsOfKinds(checklist, ["release_approval"]);
+  const evidenceBlocked = evidenceBlockingItems.length > 0;
+  const approvalBlocked = approvalBlockingItems.length > 0;
+  return {
+    evidenceBlocked,
+    approvalBlocked,
+    evidenceBlockingItems,
+    approvalBlockingItems,
+    evidenceBlockingKeys: checklistItemKeys(evidenceBlockingItems),
+    approvalBlockingKeys: checklistItemKeys(approvalBlockingItems),
+    evidenceBlockingKinds: checklistItemKinds(evidenceBlockingItems),
+    approvalBlockingKinds: checklistItemKinds(approvalBlockingItems),
+    readyPhase: evidenceBlocked
+      ? "release_evidence_prerequisites"
+      : approvalBlocked
+        ? "release_approval"
+        : "release_records"
+  };
+}
+
+function gatedActionFields(phaseGate = {}, phase = "record") {
+  const gate = objectOnly(phaseGate);
+  const blocksApproval = phase === "approval" && gate.evidenceBlocked === true;
+  const blocksRecord = phase === "record" && (gate.evidenceBlocked === true || gate.approvalBlocked === true);
+  if (!blocksApproval && !blocksRecord) return { readyToSubmit: true };
+  const blockingItems = phase === "approval"
+    ? asArray(gate.evidenceBlockingItems)
+    : [...asArray(gate.evidenceBlockingItems), ...asArray(gate.approvalBlockingItems)];
+  return {
+    readyToSubmit: false,
+    blockedUntilReleaseEvidenceReady: gate.evidenceBlocked === true,
+    blockedUntilReleaseApprovalReady: phase === "record" && gate.approvalBlocked === true,
+    blockedByChecklistItemKeys: checklistItemKeys(blockingItems),
+    blockedByChecklistKinds: checklistItemKinds(blockingItems),
+    blockingReason: gate.evidenceBlocked === true
+      ? "release_evidence_prerequisites_incomplete"
+      : "release_approval_required"
+  };
+}
+
 function supportedCollectionTaskIds(summary = {}, artifactTaskIds = []) {
   const artifactSet = new Set(artifactTaskIds);
   const supportedTaskIds = uniqueStrings(asArray(summary.releaseEvidenceCollectionSupportedTaskIds));
@@ -464,15 +528,14 @@ function collectionAction(scope = {}, summary = {}, slots = [], artifactTaskIds 
   });
 }
 
-function approvalAction(scope = {}, approvalKey = "", summary = {}) {
-  return actionPlanItem({
+function approvalAction(scope = {}, approvalKey = "", summary = {}, phaseGate = {}) {
+  return actionPlanItem(Object.assign({
     key: `record:approval:${approvalKey}`,
     kind: "owner_workbench_action",
     action: "record_release_approval",
     endpointKey: "release_approval",
     approvalKey,
     requiredActor: "owner",
-    readyToSubmit: true,
     route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
     directRecordRoutePath: routePathFor(summary, "release_approval"),
     bodyTemplate: compactObject(Object.assign({}, snakeScope(scope), {
@@ -492,7 +555,7 @@ function approvalAction(scope = {}, approvalKey = "", summary = {}) {
         summaryOnly: true
       }
     }))
-  });
+  }, gatedActionFields(phaseGate, "approval")));
 }
 
 function recordBodyTemplate(scope = {}, recordKind = "", endpointKey = "") {
@@ -527,7 +590,7 @@ function recordBodyTemplate(scope = {}, recordKind = "", endpointKey = "") {
   return compactObject(body);
 }
 
-function recordAction(scope = {}, recordKind = "", summary = {}, hasCollectionAction = false) {
+function recordAction(scope = {}, recordKind = "", summary = {}, hasCollectionAction = false, phaseGate = {}) {
   const endpointKey = RECORD_ROUTE_KEY_BY_KIND[recordKind] || "";
   const routePath = endpointKey ? routePathFor(summary, endpointKey) : "";
   if (!endpointKey) {
@@ -556,18 +619,17 @@ function recordAction(scope = {}, recordKind = "", summary = {}, hasCollectionAc
       directRecordRoutePath: routePath
     });
   }
-  return actionPlanItem({
+  return actionPlanItem(Object.assign({
     key: `record:${recordKind}`,
     kind: "owner_workbench_action",
     action: endpointKey === "release_package" ? "build_and_record_release_package" : `record_${recordKind}`,
     endpointKey,
     recordKind,
     requiredActor: "owner",
-    readyToSubmit: true,
     route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
     directRecordRoutePath: routePath,
     bodyTemplate: recordBodyTemplate(scope, recordKind, endpointKey)
-  });
+  }, gatedActionFields(phaseGate, "record")));
 }
 
 function writeGatedAction(taskId = "") {
@@ -616,13 +678,14 @@ function unsupportedAction(evidenceKey = "") {
 
 function releaseEvidenceActionPlan(scope = {}, workbenchSummary = {}, slots = [], artifactTaskIds = [], manifestTemplate = {}, checklist = {}) {
   const collection = collectionAction(scope, workbenchSummary, slots, artifactTaskIds, manifestTemplate);
+  const phaseGate = releaseActionPhaseGate(checklist);
   const actions = [
     artifactPreparationAction(slots, manifestTemplate),
     collection,
     ...asArray(workbenchSummary.releaseStatePrerequisiteActions).map(statePrerequisiteAction),
-    ...uniqueStrings(workbenchSummary.missingApprovalKeys).map((key) => approvalAction(scope, key, workbenchSummary)),
+    ...uniqueStrings(workbenchSummary.missingApprovalKeys).map((key) => approvalAction(scope, key, workbenchSummary, phaseGate)),
     ...uniqueStrings(workbenchSummary.missingRecordKinds)
-      .map((kind) => recordAction(scope, kind, workbenchSummary, Boolean(collection))),
+      .map((kind) => recordAction(scope, kind, workbenchSummary, Boolean(collection), phaseGate)),
     ...uniqueStrings(workbenchSummary.writeGatedReleaseEvidenceCollectionTasks).map(writeGatedAction),
     ...uniqueStrings(workbenchSummary.unsupportedReleaseEvidenceCollectionKeys).map(unsupportedAction)
   ].filter(Boolean);
@@ -635,7 +698,17 @@ function releaseEvidenceActionPlan(scope = {}, workbenchSummary = {}, slots = []
     checklistStatus: cleanString(checklist.status, 120),
     actionCount: actions.length,
     submittableActionCount: actions.filter((item) => item.readyToSubmit === true).length,
+    phaseBlockedActionCount: actions.filter((item) => item.blockingReason).length,
     externalActionCount: actions.filter((item) => item.externalActionRequired === true || item.manualReviewRequired === true || item.writeGateRequired === true).length,
+    readyPhase: phaseGate.readyPhase,
+    blockingChecklistItemKeys: checklistItemKeys([
+      ...asArray(phaseGate.evidenceBlockingItems),
+      ...asArray(phaseGate.approvalBlockingItems)
+    ]),
+    blockingChecklistKinds: checklistItemKinds([
+      ...asArray(phaseGate.evidenceBlockingItems),
+      ...asArray(phaseGate.approvalBlockingItems)
+    ]),
     actions,
     nextAction: nextAction ? {
       key: nextAction.key,

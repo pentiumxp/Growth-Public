@@ -74,7 +74,11 @@ When changing release artifact-template checklist or action-plan fields, run
 and `tests/growth-release-artifact-template-smoke-script.test.js`. The focused
 assertion must prove artifact-backed tasks remain behind the manifest template,
 state prerequisites are counted as `release_state_prerequisite`, and truly
-unknown manual evidence remains under unsupported/manual evidence.
+unknown manual evidence remains under unsupported/manual evidence. It must also
+prove phase gating: downstream approval/record actions are visible but not
+submittable while artifact, collection, write-gated, state, or unsupported
+evidence prerequisites remain; once evidence prerequisites clear, approvals can
+become the next submittable action while records remain approval-blocked.
 
 When changing `release_evidence_collection` workbench action success/failure
 semantics, run `tests/learning-automation-release-workbench-action-service.test.js`
