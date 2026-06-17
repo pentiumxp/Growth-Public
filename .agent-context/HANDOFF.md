@@ -9,6 +9,48 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:42+08:00 - Planner Readiness Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model protocols, plan publication, card generation, evaluation,
+  reward settlement, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-planner-readiness` delegated correctly to
+    `learning-plan-orchestrator-service.smokePlannerReadiness`, but
+    operator-critical status, write gate, target/scope, Gateway mode,
+    horizon/minutes, graph/profile evidence counts, draft schema/item count,
+    draft target nodes, and write-performed flags were available only inside
+    the service DTO;
+  - this made production planner readiness evidence harder to inspect without
+    deep JSON.
+- Scope:
+  - added `projectPlannerReadinessSmokeReadback` in
+    `scripts/smoke-growth-planner-readiness.js`;
+  - projected bounded top-level `plannerReadiness*` fields while preserving
+    the service DTO as canonical;
+  - expanded `tests/growth-planner-readiness-smoke-script.test.js` to assert
+    pure success/failure projection fields;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-planner-readiness.js`
+  - `node --test tests/growth-planner-readiness-smoke-script.test.js`
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if planner context/orchestrator behavior, Gateway protocol,
+    validation policy, plan publisher, routes, repositories, schema,
+    generation, evaluation, UI, scheduler, release-bundle mapping, or
+    release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy is required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `plannerReadiness*` fields do not add write permission, Gateway
+    access, publication rights, card generation, scheduling, reward settlement,
+    stage activation, or learner mutation.
+
 ## 2026-06-17T14:34+08:00 - Recommendation Lifecycle Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

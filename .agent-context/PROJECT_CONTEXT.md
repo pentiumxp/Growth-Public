@@ -146,7 +146,11 @@ readback gate set.
   target provisions through the Owner-only
   `POST /api/v1/growth/domain-pack-provisions` facade. The planner
   orchestrator exposes a bounded no-write readiness smoke through
-  `npm run smoke:planner-readiness`. Planner horizon policy now validates
+  `npm run smoke:planner-readiness`; the smoke CLI now mirrors top-level
+  `plannerReadiness*` operator readback for status, write gate, target/scope,
+  Gateway mode, horizon/minutes, graph/profile evidence counts, draft
+  schema/item count, draft target nodes, and write-performed flags while
+  preserving the service DTO as canonical. Planner horizon policy now validates
   low-pressure `daily_plan`, short no-backlog `weekly_plan`, low-pressure
   `repair_plan`, and `stage_checkpoint_plan` suggestions that must activate
   through `learning-stage-assessment-service`; planner context now includes
