@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:46+08:00 - Cycle History Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-cycle-history` delegated correctly to
+    `learning-cycle-history-service.listCycleHistory`, but operator-critical
+    target/filter selectors, cycle counts, latest activity, partial failures,
+    cycle ids, first-cycle selectors/counts/completeness, and
+    missing-required counts were available only inside the nested
+    `growth.learningCycleHistory.v1` DTO;
+  - this made selectable-cycle evidence and release-bundle history evidence
+    harder to audit without deep JSON inspection.
+- Scope:
+  - added `projectCycleHistorySmokeReadback` in
+    `scripts/smoke-growth-cycle-history.js`;
+  - projected bounded top-level `cycleHistory*` fields while preserving the
+    nested history DTO as canonical;
+  - expanded `tests/growth-cycle-history-smoke-script.test.js` to assert pure
+    projection and no-write empty-history script output;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-cycle-history.js`
+  - `node --test tests/growth-cycle-history-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` (`Index is up to date`;
+    earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if the cycle-history service, routes, repositories, schema,
+    Gateway, UI, scheduler, learner-state, or release-readiness boundaries
+    change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy was required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `cycleHistory*` fields do not add write permission, Gateway
+    access, publication rights, scheduling, reward settlement, stage activation,
+    or learner mutation.
+
 ## 2026-06-17T13:39+08:00 - Daily Loop Smoke Operator Readback
 
 - Status: implemented and key-node validated. No production deployment or

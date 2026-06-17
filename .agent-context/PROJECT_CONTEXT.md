@@ -970,7 +970,11 @@ readback gate set.
   DTOs into bounded `growth.learningCycleHistory.v1` rows for Owner history
   selection without writes, Gateway calls, direct repository access,
   publication, generation, evaluation, scheduling, notification delivery,
-  stage activation, or learner-state mutation. The embedded Owner `生成` tab now
+  stage activation, or learner-state mutation. The smoke CLI also mirrors
+  top-level `cycleHistory*` operator readback for target/filter selectors,
+  cycle counts, latest activity, partial failures, cycle ids, first-cycle
+  selectors/counts/completeness, and missing-required counts while preserving
+  the nested history DTO as canonical. The embedded Owner `生成` tab now
   consumes those rows through `growth-api-client.js`, renders selectable
   historical cycles, and uses only the selected row's service-provided selectors
   to refresh `learning-cycles/audit` plus `learning-cycles/completeness`; browser
