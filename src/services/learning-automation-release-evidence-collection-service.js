@@ -18,8 +18,13 @@ const UI_EVIDENCE_KEY_SET = new Set(Object.keys(UI_GATE_SPECS));
 const TRANSIENT_EVIDENCE_FILE_KEYS = new Set([
   "centralVisualEvidenceFile",
   "central_visual_evidence_file",
+  "productionDeploymentEvidenceFile",
+  "production_deployment_evidence_file",
+  "deploymentEvidenceFile",
+  "deployment_evidence_file",
   ...UI_EVIDENCE_FILE_FIELDS
 ]);
+const PRODUCTION_DEPLOYMENT_EVIDENCE_KEY = "productionDeploymentHealthEvidence";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 
@@ -352,6 +357,67 @@ function compactCentralVisualFields(source = {}) {
   }));
 }
 
+function compactDeploymentEvidencePayload(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries({
+    source: cleanString(value.source || "home-ai-macos-deployment-contract", 120),
+    pluginId: cleanString(value.pluginId || value.plugin_id, 80),
+    environment: cleanString(value.environment || value.env, 80),
+    launchdLabel: cleanString(value.launchdLabel || value.launchd_label, 120),
+    status: cleanString(value.status, 80),
+    checkedAt: cleanString(value.checkedAt || value.checked_at, 120),
+    deployedAt: cleanString(value.deployedAt || value.deployed_at, 120),
+    deploymentContractVersion: cleanString(value.deploymentContractVersion || value.deployment_contract_version, 160),
+    releaseVersion: cleanString(value.releaseVersion || value.release_version, 120),
+    gitCommit: cleanString(value.gitCommit || value.git_commit, 80),
+    runId: cleanString(value.runId || value.run_id, 160),
+    artifactId: cleanString(value.artifactId || value.artifact_id, 160),
+    serviceRunning: value.serviceRunning === true || value.service_running === true,
+    manifestOk: value.manifestOk === true || value.manifest_ok === true,
+    healthOk: value.healthOk === true || value.health_ok === true,
+    endpointReachable: value.endpointReachable === true || value.endpoint_reachable === true,
+    sqliteIntegrityOk: value.sqliteIntegrityOk === true || value.sqlite_integrity_ok === true,
+    evidenceFilePresent: value.evidenceFilePresent === true || value.evidence_file_present === true,
+    evidenceFileName: cleanString(value.evidenceFileName || value.evidence_file_name, 180),
+    checkCount: Number(value.checkCount || value.check_count || 0) || 0,
+    failedCheckCount: Number(value.failedCheckCount || value.failed_check_count || 0) || 0
+  }).filter(([, item]) => {
+    if (typeof item === "number") return item > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
+function compactDeploymentBoundary(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return {
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    homeAiOwnsDeployment: value.homeAiOwnsDeployment === true || value.home_ai_owns_deployment === true,
+    homeAiOwnsServiceRestart: value.homeAiOwnsServiceRestart === true || value.home_ai_owns_service_restart === true,
+    growthRunsNoDeployment: value.growthRunsNoDeployment === true || value.growth_runs_no_deployment === true,
+    growthReadsOnlyDeploymentHealthSummary: value.growthReadsOnlyDeploymentHealthSummary === true
+      || value.growth_reads_only_deployment_health_summary === true,
+    noRuntimeConfigMutation: value.noRuntimeConfigMutation === true || value.no_runtime_config_mutation === true,
+    noSchedulerPermission: value.noSchedulerPermission === true || value.no_scheduler_permission === true
+  };
+}
+
+function compactProductionDeploymentFields(source = {}, evidenceKey = "") {
+  if (evidenceKey !== PRODUCTION_DEPLOYMENT_EVIDENCE_KEY) return {};
+  return Object.fromEntries(Object.entries({
+    checkKey: "production_deployment_health",
+    validationSchemaVersion: cleanString(source.validationSchemaVersion || source.validation_schema_version || source.schemaVersion || source.schema_version, 180),
+    validatedBy: cleanString(source.validatedBy || source.validated_by || "learning-automation-production-deployment-evidence-service", 160),
+    deploymentEvidence: compactDeploymentEvidencePayload(source.deploymentEvidence || source.deployment_evidence),
+    deploymentBoundary: compactDeploymentBoundary(source.deploymentBoundary || source.deployment_boundary),
+    missingRequired: boundedArray(source.missingRequired || source.missing_required),
+    privateValueFindingCount: Number(source.privateValueFindingCount || source.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
   const source = objectOnly(value);
   const ownerReviewSummary = evidenceKey === "ownerReviewEvidence"
@@ -362,6 +428,9 @@ function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
     : {};
   const centralVisualFields = evidenceKey === "centralVisualEvidence"
     ? compactCentralVisualFields(source)
+    : {};
+  const productionDeploymentFields = evidenceKey === PRODUCTION_DEPLOYMENT_EVIDENCE_KEY
+    ? compactProductionDeploymentFields(source, evidenceKey)
     : {};
   return Object.fromEntries(Object.entries(Object.assign({
     schemaVersion: cleanString(source.schemaVersion || source.schema_version || "growth.learningAutomationReleaseEvidenceRecord.collectionEvidence.v1", 180),
@@ -379,7 +448,7 @@ function compactEvidenceSummary(value = {}, evidenceKey = "", extra = {}) {
     observedAt: cleanString(source.observedAt || source.observed_at || source.checkedAt || source.checked_at || source.createdAt || source.created_at || extra.observedAt, 120),
     readyForReleaseEvidence: source.readyForReleaseEvidence === true || source.ready_for_release_evidence === true || extra.readyForReleaseEvidence === true,
     ownerReviewStageSummary: ownerReviewSummary || undefined
-  }, uiEvidenceFields, centralVisualFields, extra)).filter(([, item]) => item !== undefined && item !== ""));
+  }, uiEvidenceFields, centralVisualFields, productionDeploymentFields, extra)).filter(([, item]) => item !== undefined && item !== ""));
 }
 
 function releaseEvidenceCandidates(scope, input, bundle, audit, collectionRun, createdAt) {

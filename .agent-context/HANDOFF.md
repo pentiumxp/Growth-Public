@@ -9,6 +9,84 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T06:51+0800 - Production Deployment Health Evidence
+
+- Status: implemented and persisted as summary-only release evidence. No
+  deployment, restart, release approval, runtime config mutation, scheduler
+  permission, Gateway/model call, card publication, evaluation, notification,
+  stage activation, or learner-state mutation was performed.
+- Implementation:
+  - added read-only collector `npm run collect:production-deployment-evidence`
+    backed by `scripts/collect-growth-production-deployment-evidence.js`;
+  - the collector emits
+    `growth.homeAiProductionDeploymentHealthArtifact.v1` by parsing Home AI
+    macOS launchd state, the public Growth manifest, and the public Growth
+    status endpoint;
+  - it keeps only summary booleans/counts/short ids, strips raw launchd output,
+    and does not echo raw environment, credentials, private paths, deployment
+    logs, or stdout/stderr logs;
+  - release evidence bundle/collection now forwards
+    `--production-deployment-evidence-file` to the existing
+    `smoke:production-deployment-evidence` validator, preserves bounded
+    `deploymentEvidence` / `deploymentBoundary` summaries, and strips local
+    artifact paths before persistence.
+- Real evidence:
+  - collected production summary artifact
+    `growth-production-deployment-health-20260618.json`;
+  - collector result: launchd running, manifest OK, Growth status OK, SQLite
+    integrity OK, `checkCount=4`, `failedCheckCount=0`, and no private path or
+    bearer/token-looking values in the summary artifact;
+  - `npm run smoke:production-deployment-evidence -- --workspace-id
+    weixin_stephen --learner-id weixin_stephen --domain science --subject
+    science --horizon daily_plan --production-deployment-evidence-file
+    <artifact> --json` -> `ok=true`,
+    `readyForReleaseEvidence=true`.
+- Release evidence persistence:
+  - `npm run smoke:release-evidence-collection -- --workspace-id
+    weixin_stephen --learner-id weixin_stephen --domain science --subject
+    science --horizon daily_plan --task production_deployment_health
+    --required-task production_deployment_health
+    --production-deployment-evidence-file <artifact> --write-collection-run
+    --write-release-evidence-records --allow-write --requested-by owner
+    --json`;
+  - wrote collection run `lgacrn_e8307dddd7c9db67e4`;
+  - wrote release evidence records
+    `productionDeploymentHealthEvidence` / `lgarev_dc8adeef1ae47200ff` and
+    `releaseEvidenceBundleAudit` / `lgarev_b3a3eac7fa90996802`.
+- Current readiness readback for `weixin_stephen/science/daily_plan`:
+  - `status=incomplete`;
+  - `passCheckCount=30`;
+  - `missingRequiredCount=17`;
+  - `missingEvidenceCount=13`;
+  - `persistedEvidenceKeyCount=23`;
+  - `productionDeploymentHealthEvidence` is present in persisted evidence keys;
+  - `writefulSchedulingAllowed=false`, `readyForReleaseReview=false`.
+- Validation:
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`;
+  - `git diff --check` -> pass;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=228`,
+    `checkedCount=228`;
+  - focused release/architecture tests:
+    `tests/growth-architecture-boundary.test.js`,
+    `tests/growth-production-deployment-evidence-collector.test.js`,
+    `tests/growth-production-deployment-evidence-smoke-script.test.js`,
+    `tests/learning-automation-production-deployment-evidence-service.test.js`,
+    `tests/learning-automation-release-evidence-service.test.js`,
+    `tests/learning-automation-release-evidence-bundle-service.test.js`,
+    `tests/learning-automation-release-evidence-collection-service.test.js`,
+    `tests/growth-release-evidence-bundle-script.test.js`, and
+    `tests/growth-release-evidence-collection-smoke-script.test.js` -> 124/124
+    passing.
+- Remaining gates:
+  - Owner/UI visual evidence: owner daily, owner audit, proposal review,
+    automation digest, action handoff, scheduler execution, scheduler run,
+    scheduler worker target, and release package review;
+  - state/platform/model evidence: delivered action handoff, platform
+    Action Inbox/Web Push evidence, production planner readiness, production
+    profile-feedback, controlled daily-loop write evidence;
+  - explicit approvals: writeful execution, background scheduler, and
+    background worker approvals.
+
 ## 2026-06-18T06:34+0800 - Local Central Visual Recheck
 
 - Status: completed locally for the current dev package. No production deploy,

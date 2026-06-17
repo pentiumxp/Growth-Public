@@ -52,6 +52,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
     "--tasks", "scheduler_dry_run",
     "--required-task", "planner_readiness",
     "--required-tasks", "scheduler_dry_run",
+    "--production-deployment-evidence-file", "/tmp/deployment-health.json",
     "--release-package-review-ui-evidence-file", "/tmp/release-package-review-ui.json",
     "--scheduler-run-ui-evidence-file", "/tmp/scheduler-run-ui.json",
     "--auto-select-latest-completed-cycle",
@@ -73,6 +74,7 @@ test("release evidence collection script parses scope, tasks, and write gate", (
   assert.equal(input.writeReleaseEvidenceRecords, true);
   assert.equal(input.allowWriteCollection, true);
   assert.equal(input.autoSelectLatestCompletedCycle, true);
+  assert.equal(input.productionDeploymentEvidenceFile, "/tmp/deployment-health.json");
   assert.equal(input.releasePackageReviewUiEvidenceFile, "/tmp/release-package-review-ui.json");
   assert.equal(input.schedulerRunUiEvidenceFile, "/tmp/scheduler-run-ui.json");
 });

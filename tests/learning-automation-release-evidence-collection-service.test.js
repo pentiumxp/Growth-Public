@@ -12,6 +12,9 @@ const {
   UI_GATE_SPECS,
   createLearningAutomationUiEvidenceService
 } = require("../src/services/learning-automation-ui-evidence-service");
+const {
+  createLearningAutomationProductionDeploymentEvidenceService
+} = require("../src/services/learning-automation-production-deployment-evidence-service");
 
 function scope(overrides = {}) {
   return Object.assign({
@@ -198,9 +201,52 @@ function validCentralVisualEvidence(overrides = {}) {
   }, overrides);
 }
 
+function validProductionDeploymentEvidence(overrides = {}) {
+  return Object.assign({
+    ok: true,
+    source: "growth-release-evidence-bundle-builder",
+    schemaVersion: "growth.learningAutomationProductionDeploymentEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    evidenceKey: "productionDeploymentHealthEvidence",
+    checkKey: "production_deployment_health",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    deploymentEvidence: {
+      source: "home-ai-macos-deployment-contract",
+      pluginId: "growth",
+      environment: "macos_production",
+      launchdLabel: "com.hermesmobile.plugin.growth",
+      status: "pass",
+      checkedAt: "2026-06-18T04:30:00.000Z",
+      deploymentContractVersion: "20260618-v4",
+      serviceRunning: true,
+      manifestOk: true,
+      healthOk: true,
+      endpointReachable: true,
+      sqliteIntegrityOk: true,
+      evidenceFilePresent: true,
+      evidenceFileName: "deployment-health.json",
+      checkCount: 4,
+      failedCheckCount: 0
+    },
+    deploymentBoundary: {
+      summaryOnly: true,
+      homeAiOwnsDeployment: true,
+      homeAiOwnsServiceRestart: true,
+      growthRunsNoDeployment: true,
+      growthReadsOnlyDeploymentHealthSummary: true,
+      noRuntimeConfigMutation: true,
+      noSchedulerPermission: true
+    },
+    missingRequired: []
+  }, overrides);
+}
+
 function releaseEvidenceServiceWithRows(rows = []) {
   return createLearningAutomationReleaseEvidenceService({
     uiEvidenceService: createLearningAutomationUiEvidenceService(),
+    productionDeploymentEvidenceService: createLearningAutomationProductionDeploymentEvidenceService(),
     repository: {
       saveEvidence(input) {
         const evidence = Object.assign({
@@ -499,13 +545,68 @@ test("release evidence collection service preserves central visual fields for pe
   assert.equal(JSON.stringify(visualRow.evidence).includes("/Users/"), false);
 });
 
+test("release evidence collection service preserves production deployment health fields for persisted release evidence records", () => {
+  const rows = [];
+  const releaseEvidenceService = releaseEvidenceServiceWithRows(rows);
+  const result = serviceWith({
+    releaseEvidenceService,
+    bundle: bundle({
+      evidence: {
+        productionDeploymentHealthEvidence: validProductionDeploymentEvidence()
+      },
+      tasks: [{
+        taskId: "production_deployment_health",
+        status: "pass",
+        ok: true,
+        evidenceKey: "productionDeploymentHealthEvidence"
+      }],
+      summary: {
+        taskCount: 1,
+        passedCount: 1,
+        blockedCount: 0,
+        failedTaskIds: []
+      }
+    })
+  }).collect(Object.assign(scope(), {
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.collection.artifacts.releaseEvidenceRecords.status, "pass");
+  assert.deepEqual(result.collection.artifacts.releaseEvidenceRecords.evidenceKeys, [
+    "productionDeploymentHealthEvidence",
+    "releaseEvidenceBundleAudit"
+  ]);
+  const deploymentRow = rows.find((row) => row.evidenceKey === "productionDeploymentHealthEvidence");
+  assert.ok(deploymentRow);
+  assert.equal(deploymentRow.checkKey, "production_deployment_health");
+  assert.equal(deploymentRow.evidence.schemaVersion, "growth.learningAutomationReleaseEvidenceRecord.productionDeploymentEvidence.v1");
+  assert.equal(deploymentRow.evidence.validationSchemaVersion, "growth.learningAutomationProductionDeploymentEvidence.v1");
+  assert.equal(deploymentRow.evidence.validatedBy, "learning-automation-production-deployment-evidence-service");
+  assert.equal(deploymentRow.evidence.readyForReleaseEvidence, true);
+  assert.equal(deploymentRow.evidence.deploymentEvidence.pluginId, "growth");
+  assert.equal(deploymentRow.evidence.deploymentEvidence.serviceRunning, true);
+  assert.equal(deploymentRow.evidence.deploymentEvidence.manifestOk, true);
+  assert.equal(deploymentRow.evidence.deploymentEvidence.healthOk, true);
+  assert.equal(deploymentRow.evidence.deploymentEvidence.evidenceFileName, "deployment-health.json");
+  assert.equal(deploymentRow.evidence.deploymentBoundary.homeAiOwnsDeployment, true);
+  assert.equal(deploymentRow.evidence.deploymentBoundary.growthRunsNoDeployment, true);
+  assert.equal(deploymentRow.evidence.writefulSchedulingAllowed, false);
+  assert.equal(JSON.stringify(deploymentRow.evidence).includes("/Users/"), false);
+});
+
 test("release evidence collection service strips transient evidence file inputs after bundle collection", () => {
   const records = {};
   const result = serviceWith(records).collect(Object.assign(scope(), {
     centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/central-visual.json",
+    productionDeploymentEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/deployment-health.json",
     releasePackageReviewUiEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/release-package-ui.json",
     evidence: {
-      centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/nested-central-visual.json"
+      centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/nested-central-visual.json",
+      productionDeploymentEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/nested-deployment-health.json"
     },
     writeCollectionRun: true,
     writeReleaseEvidenceRecords: true,
@@ -515,16 +616,23 @@ test("release evidence collection service strips transient evidence file inputs 
 
   assert.equal(result.ok, true);
   assert.equal(records.bundleInput.centralVisualEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/central-visual.json");
+  assert.equal(records.bundleInput.productionDeploymentEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/deployment-health.json");
   assert.equal(records.bundleInput.releasePackageReviewUiEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/release-package-ui.json");
   assert.equal(records.bundleInput.evidence.centralVisualEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/nested-central-visual.json");
+  assert.equal(records.bundleInput.evidence.productionDeploymentEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/nested-deployment-health.json");
   assert.equal(records.auditInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.auditInput.productionDeploymentEvidenceFile, undefined);
   assert.equal(records.auditInput.releasePackageReviewUiEvidenceFile, undefined);
   assert.equal(records.readinessInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.readinessInput.productionDeploymentEvidenceFile, undefined);
   assert.equal(records.readinessInput.releasePackageReviewUiEvidenceFile, undefined);
   assert.equal(records.readinessInput.evidence.centralVisualEvidenceFile, undefined);
+  assert.equal(records.readinessInput.evidence.productionDeploymentEvidenceFile, undefined);
   assert.equal(records.collectionRecordInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.collectionRecordInput.productionDeploymentEvidenceFile, undefined);
   assert.equal(records.collectionRecordInput.releasePackageReviewUiEvidenceFile, undefined);
   assert.equal(records.releaseEvidenceRecordInputs[0].centralVisualEvidenceFile, undefined);
+  assert.equal(records.releaseEvidenceRecordInputs[0].productionDeploymentEvidenceFile, undefined);
   assert.equal(records.releaseEvidenceRecordInputs[0].releasePackageReviewUiEvidenceFile, undefined);
   assert.equal(JSON.stringify(records.readinessInput).includes(".homeai-qa"), false);
   assert.equal(JSON.stringify(records.collectionRecordInput).includes(".homeai-qa"), false);

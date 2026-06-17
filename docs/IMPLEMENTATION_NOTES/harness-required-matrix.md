@@ -45,10 +45,15 @@ until real artifacts are collected:
 - production profile-feedback evidence from a real completed cycle;
 - explicit Owner approvals for writeful execution, background scheduler, and
   background worker gates;
-- Home AI macOS deployment and production service-health evidence, which
-  Growth may validate only from a bounded summary through
-  `npm run smoke:production-deployment-evidence` or a matching persisted
-  release-evidence record.
+- Home AI macOS deployment and production service-health evidence. Growth may
+  collect a bounded summary only through
+  `npm run collect:production-deployment-evidence`, then validate that summary
+  through `npm run smoke:production-deployment-evidence` or a matching
+  persisted release-evidence record. The collector must not echo raw launchd
+  output, raw environment, credentials, private paths, deployment logs, or
+  service stdout/stderr, and it must not deploy, restart, mutate runtime config,
+  grant scheduler permission, call Gateway, publish cards, or mutate learner
+  state.
 - Backend batch collection may persist only pass evidence from tasks that
   passed in a no-write preflight under the same scope. Missing Gateway config,
   missing completed-cycle selectors, and missing graph/provision target data
@@ -110,6 +115,35 @@ These are local visual artifacts. They must not be treated as production
 deployment evidence, production Gateway evidence, scheduler permission, release
 approval, or persisted release evidence unless they are separately validated and
 recorded through the release-evidence boundary under the matching scope.
+
+## Production Deployment Health Evidence Rule
+
+Production deployment health evidence is an H2/H1-adjacent release evidence
+artifact because it touches production status but must remain read-only. The
+collector owns only summary extraction; Home AI still owns deployment, restart,
+and production topology changes.
+
+Required proof for collector or projection changes:
+
+- `tests/growth-production-deployment-evidence-collector.test.js`;
+- `tests/learning-automation-production-deployment-evidence-service.test.js`;
+- `tests/growth-production-deployment-evidence-smoke-script.test.js`;
+- `tests/learning-automation-release-evidence-bundle-service.test.js`;
+- `tests/learning-automation-release-evidence-collection-service.test.js`;
+- `tests/growth-release-evidence-bundle-script.test.js`;
+- `tests/growth-release-evidence-collection-smoke-script.test.js`.
+
+The release collection path may persist
+`productionDeploymentHealthEvidence` only after the production deployment
+validator accepts the summary. The persisted record remains advisory evidence:
+it does not approve a release, enable runtime config, grant scheduler
+permission, deploy, restart, call Gateway, or mutate learner state.
+
+Current real evidence for `weixin_stephen/science/daily_plan` is recorded as
+collection run `lgacrn_e8307dddd7c9db67e4`, evidence record
+`lgarev_dc8adeef1ae47200ff`, and release-readiness readback
+`passCheckCount=30`, `missingRequiredCount=17`, with
+`productionDeploymentHealthEvidence` present in persisted evidence keys.
 
 ## Owner Primary Generation UI Rule
 

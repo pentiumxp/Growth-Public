@@ -183,6 +183,7 @@ function publicDeploymentEvidence(value = {}, scope = {}, evidenceFile = "") {
   const healthOk = boolField(value, ["healthOk", "healthCheckOk", "serviceHealthOk", "healthy"], ["health", "health_check", "service_health"]);
   const endpointReachable = boolField(value, ["endpointReachable", "baseUrlReachable", "pluginPortReachable", "portReachable"], ["endpoint", "base_url", "plugin_port"]);
   const sqliteIntegrityOk = boolField(value, ["sqliteIntegrityOk", "databaseIntegrityOk"], ["sqlite_integrity", "database_integrity"]);
+  const suppliedEvidenceFileName = cleanString(value.evidenceFileName || value.evidence_file_name, 220);
   const failedChecks = checkEntries(value).filter((item) => {
     if (!item || typeof item !== "object") return false;
     const status = cleanString(item.status || item.result || item.state, 80).toLowerCase();
@@ -206,8 +207,8 @@ function publicDeploymentEvidence(value = {}, scope = {}, evidenceFile = "") {
     healthOk,
     endpointReachable,
     sqliteIntegrityOk,
-    evidenceFilePresent: Boolean(evidenceFile),
-    evidenceFileName: evidenceFile ? path.basename(evidenceFile) : "",
+    evidenceFilePresent: Boolean(evidenceFile) || value.evidenceFilePresent === true || value.evidence_file_present === true || Boolean(suppliedEvidenceFileName),
+    evidenceFileName: evidenceFile ? path.basename(evidenceFile) : path.basename(suppliedEvidenceFileName),
     checkCount: checkEntries(value).length,
     failedCheckCount: failedChecks.length
   };

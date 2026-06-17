@@ -182,6 +182,7 @@ function publicScope(input = {}) {
     visualPluginId: cleanString(input.visualPluginId || input.visual_plugin_id || input.pluginId || input.plugin_id || "growth", 80) || "growth",
     visualScenario: cleanString(input.visualScenario || input.visual_scenario || input.scenario || "embedded-plugin-shell", 120) || "embedded-plugin-shell",
     centralVisualEvidenceFile: cleanString(input.centralVisualEvidenceFile || input.central_visual_evidence_file || "", 500),
+    productionDeploymentEvidenceFile: cleanString(input.productionDeploymentEvidenceFile || input.production_deployment_evidence_file || input.deploymentEvidenceFile || input.deployment_evidence_file || "", 500),
     activationGates: uniqueStrings(input.activationGates || input.activation_gates || []),
     requiredApprovalKeys: uniqueStrings(input.requiredApprovalKeys || input.required_approval_keys || []),
     activationRecordLimit: clampRecordLimit(input.activationRecordLimit || input.activation_record_limit || 20, 20),
@@ -205,9 +206,11 @@ function publicScope(input = {}) {
 
 function publicBundleScope(scope = {}) {
   const output = Object.assign({}, scope, {
-    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile)
+    centralVisualEvidenceFilePresent: Boolean(scope.centralVisualEvidenceFile),
+    productionDeploymentEvidenceFilePresent: Boolean(scope.productionDeploymentEvidenceFile)
   });
   delete output.centralVisualEvidenceFile;
+  delete output.productionDeploymentEvidenceFile;
   for (const task of UI_EVIDENCE_COLLECTION_TASKS) {
     output[`${task.fileField}Present`] = Boolean(scope[task.fileField]);
     delete output[task.fileField];
@@ -864,6 +867,69 @@ function centralVisualFieldsFromSmoke(value = {}) {
   }));
 }
 
+function productionDeploymentFieldsFromSmoke(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const deploymentEvidence = value.deploymentEvidence && typeof value.deploymentEvidence === "object" && !Array.isArray(value.deploymentEvidence)
+    ? value.deploymentEvidence
+    : {};
+  const deploymentBoundary = value.deploymentBoundary && typeof value.deploymentBoundary === "object" && !Array.isArray(value.deploymentBoundary)
+    ? value.deploymentBoundary
+    : {};
+  const projectedDeploymentEvidence = Object.fromEntries(Object.entries({
+    source: cleanString(deploymentEvidence.source || "home-ai-macos-deployment-contract", 120),
+    pluginId: cleanString(deploymentEvidence.pluginId || deploymentEvidence.plugin_id, 80),
+    environment: cleanString(deploymentEvidence.environment || deploymentEvidence.env, 80),
+    launchdLabel: cleanString(deploymentEvidence.launchdLabel || deploymentEvidence.launchd_label, 120),
+    status: cleanString(deploymentEvidence.status || (value.ok === true ? "pass" : ""), 80),
+    checkedAt: cleanString(deploymentEvidence.checkedAt || deploymentEvidence.checked_at, 120),
+    deployedAt: cleanString(deploymentEvidence.deployedAt || deploymentEvidence.deployed_at, 120),
+    deploymentContractVersion: cleanString(deploymentEvidence.deploymentContractVersion || deploymentEvidence.deployment_contract_version, 160),
+    releaseVersion: cleanString(deploymentEvidence.releaseVersion || deploymentEvidence.release_version, 120),
+    gitCommit: cleanString(deploymentEvidence.gitCommit || deploymentEvidence.git_commit, 80),
+    runId: cleanString(deploymentEvidence.runId || deploymentEvidence.run_id, 160),
+    artifactId: cleanString(deploymentEvidence.artifactId || deploymentEvidence.artifact_id, 160),
+    serviceRunning: deploymentEvidence.serviceRunning === true || deploymentEvidence.service_running === true,
+    manifestOk: deploymentEvidence.manifestOk === true || deploymentEvidence.manifest_ok === true,
+    healthOk: deploymentEvidence.healthOk === true || deploymentEvidence.health_ok === true,
+    endpointReachable: deploymentEvidence.endpointReachable === true || deploymentEvidence.endpoint_reachable === true,
+    sqliteIntegrityOk: deploymentEvidence.sqliteIntegrityOk === true || deploymentEvidence.sqlite_integrity_ok === true,
+    evidenceFilePresent: deploymentEvidence.evidenceFilePresent === true || deploymentEvidence.evidence_file_present === true,
+    evidenceFileName: path.basename(cleanString(deploymentEvidence.evidenceFileName || deploymentEvidence.evidence_file_name, 180)),
+    checkCount: Number(deploymentEvidence.checkCount || deploymentEvidence.check_count || 0) || 0,
+    failedCheckCount: Number(deploymentEvidence.failedCheckCount || deploymentEvidence.failed_check_count || 0) || 0
+  }).filter(([, item]) => item !== undefined && item !== ""));
+  const projectedBoundary = Object.fromEntries(Object.entries({
+    summaryOnly: deploymentBoundary.summaryOnly === true || deploymentBoundary.summary_only === true,
+    homeAiOwnsDeployment: deploymentBoundary.homeAiOwnsDeployment === true || deploymentBoundary.home_ai_owns_deployment === true,
+    homeAiOwnsServiceRestart: deploymentBoundary.homeAiOwnsServiceRestart === true || deploymentBoundary.home_ai_owns_service_restart === true,
+    growthRunsNoDeployment: deploymentBoundary.growthRunsNoDeployment === true || deploymentBoundary.growth_runs_no_deployment === true,
+    growthReadsOnlyDeploymentHealthSummary: deploymentBoundary.growthReadsOnlyDeploymentHealthSummary === true
+      || deploymentBoundary.growth_reads_only_deployment_health_summary === true,
+    noRuntimeConfigMutation: deploymentBoundary.noRuntimeConfigMutation === true || deploymentBoundary.no_runtime_config_mutation === true,
+    noSchedulerPermission: deploymentBoundary.noSchedulerPermission === true || deploymentBoundary.no_scheduler_permission === true
+  }).filter(([, item]) => item !== undefined));
+  return Object.fromEntries(Object.entries({
+    schemaVersion: cleanString(value.schemaVersion || value.schema_version, 180),
+    privacyClass: cleanString(value.privacyClass || value.privacy_class || "summary_only", 80),
+    summaryOnly: value.summaryOnly === true || value.summary_only === true,
+    evidenceKey: "productionDeploymentHealthEvidence",
+    checkKey: "production_deployment_health",
+    readyForReleaseEvidence: value.readyForReleaseEvidence === true || value.ready_for_release_evidence === true,
+    deploymentEvidence: projectedDeploymentEvidence,
+    deploymentBoundary: projectedBoundary,
+    missingRequired: Array.isArray(value.missingRequired || value.missing_required)
+      ? value.missingRequired || value.missing_required
+      : [],
+    privateValueFindingCount: Array.isArray(value.privateValueFindings || value.private_value_findings)
+      ? (value.privateValueFindings || value.private_value_findings).length
+      : Number(value.privateValueFindingCount || value.private_value_finding_count || 0) || 0
+  }).filter(([, item]) => {
+    if (Array.isArray(item)) return item.length > 0;
+    if (item && typeof item === "object") return Object.keys(item).length > 0;
+    return item !== undefined && item !== "";
+  }));
+}
+
 function releaseApprovalTaskResult(task, taskResult, generatedAt) {
   const parsed = parseJsonOutput(taskResult.stdout);
   const parsedValue = parsed.ok ? parsed.value : {};
@@ -933,6 +999,9 @@ function evidenceFromTaskResult(task, taskResult, generatedAt) {
   }
   if (task.taskId === "central_visual" && pass) {
     Object.assign(evidence, centralVisualFieldsFromSmoke(parsedValue));
+  }
+  if (task.taskId === "production_deployment_health" && pass) {
+    Object.assign(evidence, productionDeploymentFieldsFromSmoke(parsedValue));
   }
   if (!pass) {
     evidence.error = blockedError || "release_evidence_bundle_smoke_blocked";
@@ -1036,6 +1105,9 @@ function taskSpecificArgs(task, scope) {
     args.push("--plugin-id", scope.visualPluginId || "growth");
     args.push("--scenario", scope.visualScenario || "embedded-plugin-shell");
     if (scope.centralVisualEvidenceFile) args.push("--central-visual-evidence-file", scope.centralVisualEvidenceFile);
+  }
+  if (task.taskId === "production_deployment_health" && scope.productionDeploymentEvidenceFile) {
+    args.push("--production-deployment-evidence-file", scope.productionDeploymentEvidenceFile);
   }
   if (task.uiEvidenceKey) {
     args.push("--evidence-key", task.uiEvidenceKey);

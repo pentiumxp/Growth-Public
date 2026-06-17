@@ -62,6 +62,36 @@ readback gate set.
   This is local visual evidence only, not production release approval,
   production deployment, release-evidence persistence, or production Gateway
   evidence.
+- 2026-06-18 production deployment-health evidence status: Growth now has a
+  read-only summary collector,
+  `npm run collect:production-deployment-evidence`, backed by
+  `scripts/collect-growth-production-deployment-evidence.js`. The collector
+  parses Home AI macOS launchd state, the public Growth plugin manifest, and
+  the public Growth status endpoint into a
+  `growth.homeAiProductionDeploymentHealthArtifact.v1` summary artifact. It
+  never echoes raw launchd output, raw environment, credentials, private paths,
+  deployment logs, or service stdout/stderr, and it does not deploy, restart,
+  mutate runtime config, grant scheduler permission, call Gateway, or touch
+  learner state. The artifact feeds the existing
+  `learning-automation-production-deployment-evidence-service` validator and
+  the release evidence collection path as
+  `productionDeploymentHealthEvidence`.
+- 2026-06-18 real production deployment-health evidence was collected and
+  persisted under the `weixin_stephen/science/daily_plan` scope. The summary
+  artifact passed with launchd running, manifest OK, Growth status OK,
+  SQLite integrity OK, `checkCount=4`, `failedCheckCount=0`, and no private
+  path or bearer/token-looking values. `smoke:production-deployment-evidence`
+  returned `ok=true`, `readyForReleaseEvidence=true`; release evidence
+  collection wrote run `lgacrn_e8307dddd7c9db67e4` plus pass records
+  `productionDeploymentHealthEvidence` (`lgarev_dc8adeef1ae47200ff`) and
+  `releaseEvidenceBundleAudit` (`lgarev_b3a3eac7fa90996802`). Independent
+  release-readiness readback moved to `passCheckCount=30`,
+  `missingRequiredCount=17`, `missingEvidenceCount=13`,
+  `persistedEvidenceKeyCount=23`, and confirmed
+  `productionDeploymentHealthEvidence` is persisted. This still does not mark
+  the release ready, deploy code, approve release state, mutate runtime config,
+  grant scheduler permission, call Gateway, publish cards, or mutate learner
+  state.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,

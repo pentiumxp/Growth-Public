@@ -97,6 +97,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
     visualPluginId: "growth",
     visualScenario: "embedded-plugin-shell",
     centralVisualEvidenceFile: "",
+    productionDeploymentEvidenceFile: "",
     ownerDailyUiEvidenceFile: "",
     ownerAuditUiEvidenceFile: "",
     proposalReviewUiEvidenceFile: "",
@@ -1013,6 +1014,75 @@ test("release evidence bundle service collects central visual evidence from read
   assert.ok(calls[0].args.includes("growth"));
   assert.ok(calls[0].args.includes("--scenario"));
   assert.ok(calls[0].args.includes("embedded-plugin-shell"));
+});
+
+test("release evidence bundle service collects production deployment health from read-only smoke", () => {
+  const { calls, service } = createServiceWithRunner(() => ({
+    status: 0,
+    stdout: JSON.stringify({
+      ok: true,
+      source: "growth-learning-automation-production-deployment-evidence-service",
+      schemaVersion: "growth.learningAutomationProductionDeploymentEvidence.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "pass",
+      readyForReleaseEvidence: true,
+      deploymentEvidence: {
+        source: "home-ai-macos-deployment-contract",
+        pluginId: "growth",
+        environment: "macos_production",
+        launchdLabel: "com.hermesmobile.plugin.growth",
+        status: "pass",
+        checkedAt: "2026-06-18T04:30:00.000Z",
+        deploymentContractVersion: "20260618-v4",
+        serviceRunning: true,
+        manifestOk: true,
+        healthOk: true,
+        endpointReachable: true,
+        sqliteIntegrityOk: true,
+        evidenceFilePresent: true,
+        evidenceFileName: "deployment-health.json",
+        checkCount: 4,
+        failedCheckCount: 0
+      },
+      deploymentBoundary: {
+        summaryOnly: true,
+        homeAiOwnsDeployment: true,
+        homeAiOwnsServiceRestart: true,
+        growthRunsNoDeployment: true,
+        growthReadsOnlyDeploymentHealthSummary: true,
+        noRuntimeConfigMutation: true,
+        noSchedulerPermission: true
+      }
+    })
+  }));
+
+  const result = service.buildBundle({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    tasks: ["production_deployment_health"],
+    productionDeploymentEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/deployment-health.json"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.status, "pass");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.schemaVersion, "growth.learningAutomationProductionDeploymentEvidence.v1");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.privacyClass, "summary_only");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.summaryOnly, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.readyForReleaseEvidence, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.evidenceKey, "productionDeploymentHealthEvidence");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.checkKey, "production_deployment_health");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.deploymentEvidence.serviceRunning, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.deploymentEvidence.manifestOk, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.deploymentEvidence.healthOk, true);
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.deploymentEvidence.evidenceFileName, "deployment-health.json");
+  assert.equal(result.bundle.evidence.productionDeploymentHealthEvidence.deploymentBoundary.growthRunsNoDeployment, true);
+  assert.equal(result.bundle.scope.productionDeploymentEvidenceFilePresent, true);
+  assert.equal(result.bundle.scope.productionDeploymentEvidenceFile, undefined);
+  assert.equal(JSON.stringify(result.bundle).includes("/Users/xuxin/.homeai-qa"), false);
+  assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-production-deployment-evidence.js"));
+  assert.ok(calls[0].args.includes("--production-deployment-evidence-file"));
+  assert.ok(calls[0].args.includes("/Users/xuxin/.homeai-qa/artifacts/deployment-health.json"));
 });
 
 test("release evidence bundle service collects explicit release package review UI evidence from read-only smoke", () => {
