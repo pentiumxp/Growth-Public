@@ -2,12 +2,14 @@
 
 const path = require("node:path");
 const {
-  DEFAULT_TASK_IDS,
   RELEASE_EVIDENCE_BUNDLE_SCHEMA,
+  RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA
+} = require("./learning-automation-release-evidence-schemas");
+const {
+  DEFAULT_TASK_IDS,
   TASK_DEFINITIONS
-} = require("./learning-automation-release-evidence-bundle-service");
+} = require("./learning-automation-release-evidence-task-registry");
 
-const RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA = "growth.learningAutomationReleaseEvidenceBundleAudit.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|Bearer\s+|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|launch-token|Authorization:)/i;
 

@@ -194,16 +194,25 @@ readback gate set.
   `production_operating_loop_history_smoke_evidence`, and the release evidence
   service canonicalizes the key for persisted pass evidence records. The release
   workbench and artifact-template action plan map that missing readiness key
-  back to the `operating_loop_history` collection task so Owner collection
+  back to the `operating_loop_history` collection task through
+  `learning-automation-release-evidence-task-registry`, so Owner collection
   actions do not treat it as unsupported/manual evidence or a direct pass
   evidence shortcut. The same release workbench boundary treats
   `release_evidence_bundle_audit` as a collection-pass output instead of
   unsupported/manual evidence, and the artifact-template action plan uses
   workbench-advertised fallback collection tasks only when a real
-  evidence/check/collection-run gap exists.
+  evidence/check/collection-run gap exists. Release evidence task definitions,
+  default task ids, approval keys, safe collection task mapping, write-gated
+  mapping, collection-owned outputs, and collection fallback task ids are owned
+  by `learning-automation-release-evidence-task-registry`; bundle,
+  bundle-audit, artifact-template, and workbench services consume that
+  registry instead of duplicating maps. Bundle and bundle-audit schema strings
+  live in `learning-automation-release-evidence-schemas` so collection-run and
+  audit validation do not load smoke-runner service implementations only for
+  constants.
   `tests/growth-architecture-boundary.test.js` now also derives release
   readiness evidence/check keys from the readiness service and fails if any key
-  is not classified by the workbench as collection-mapped, write-gated, or
+  is not classified by the registry as collection-mapped, write-gated, or
   collection-owned. Learner work, audit/correction, target
   provisioning, graph import/selection, context refresh, and Gateway
   configuration remain separate flows and return blocked/separate-flow DTOs

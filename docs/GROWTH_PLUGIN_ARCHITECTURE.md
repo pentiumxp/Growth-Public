@@ -1,6 +1,6 @@
 # Growth Plugin Architecture
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 This document records Growth-local architecture boundaries. Platform rules stay
 in the canonical Home AI contract docs referenced by
@@ -150,7 +150,16 @@ backend boundaries:
   top-level operator readback fields so local Harness output shows status,
   missing counts, required action count, one next action, latest artifact/record
   ids, and runtime/write flags without expanding raw package or evidence
-  payloads. Those projections are convenience readbacks only.
+  payloads. Those projections are convenience readbacks only. Release evidence
+  collection task definitions, default task ids, approval keys, service-smoke
+  evidence-key mapping, write-gated task mapping, collection-owned outputs, and
+  collection fallback task ids are owned by
+  `learning-automation-release-evidence-task-registry`. Bundle, bundle-audit,
+  artifact-template, and workbench services consume that registry instead of
+  duplicating task maps or importing the bundle implementation for constants.
+  `learning-automation-release-evidence-schemas` owns the release evidence
+  bundle and bundle-audit schema strings so collection-run and audit services
+  can validate artifacts without loading smoke-runner services.
 
 Known gaps before the architecture can be called production-complete for the
 full operating loop:

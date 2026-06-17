@@ -4,8 +4,9 @@ const {
   RELEASE_EVIDENCE_ARTIFACT_MANIFEST_SCHEMA
 } = require("./learning-automation-release-evidence-artifact-manifest-service");
 const {
-  TASK_DEFINITIONS
-} = require("./learning-automation-release-evidence-bundle-service");
+  taskDefinition,
+  taskIdFromReleaseEvidenceKey
+} = require("./learning-automation-release-evidence-task-registry");
 const {
   UI_EVIDENCE_COLLECTION_TASKS,
   UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
@@ -22,14 +23,6 @@ const UI_TASK_BY_EVIDENCE_KEY = Object.freeze(Object.fromEntries(
 const UI_TASK_BY_UI_GATE = Object.freeze(Object.fromEntries(
   UI_EVIDENCE_COLLECTION_TASKS.map((task) => [task.uiGate, task])
 ));
-const TASK_BY_ID = new Map(TASK_DEFINITIONS.map((task) => [task.taskId, task]));
-const TASK_ID_BY_RELEASE_EVIDENCE_KEY = new Map();
-for (const task of TASK_DEFINITIONS) {
-  const evidenceKey = cleanString(task.evidenceKey || task.outputKey, 180);
-  if (!evidenceKey) continue;
-  TASK_ID_BY_RELEASE_EVIDENCE_KEY.set(evidenceKey, task.taskId);
-  TASK_ID_BY_RELEASE_EVIDENCE_KEY.set(snakeCaseKey(evidenceKey), task.taskId);
-}
 const CENTRAL_VISUAL_KEYS = new Set([
   "central_visual",
   "centralVisual",
@@ -131,17 +124,13 @@ function taskIdFromKey(value = "") {
   if (!key) return "";
   const normalized = key.replace(/-/g, "_");
   if (CENTRAL_VISUAL_KEYS.has(key) || CENTRAL_VISUAL_KEYS.has(normalized)) return "central_visual";
-  if (TASK_ID_BY_RELEASE_EVIDENCE_KEY.has(key)) return TASK_ID_BY_RELEASE_EVIDENCE_KEY.get(key);
-  if (TASK_ID_BY_RELEASE_EVIDENCE_KEY.has(normalized)) return TASK_ID_BY_RELEASE_EVIDENCE_KEY.get(normalized);
+  const registryTaskId = taskIdFromReleaseEvidenceKey(key) || taskIdFromReleaseEvidenceKey(normalized);
+  if (registryTaskId) return registryTaskId;
   if (UI_EVIDENCE_COLLECTION_TASK_BY_ID[normalized]) return normalized;
   if (UI_TASK_BY_EVIDENCE_KEY[key]) return UI_TASK_BY_EVIDENCE_KEY[key].taskId;
   if (UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY[key]) return UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY[key];
   if (UI_TASK_BY_UI_GATE[key]) return UI_TASK_BY_UI_GATE[key].taskId;
   return "";
-}
-
-function snakeCaseKey(key = "") {
-  return cleanString(key, 180).replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
 function collectionTaskIdsFrom(workbenchSummary = {}) {
@@ -230,10 +219,6 @@ function routePathFor(summary = {}, key = "") {
   const route = asArray(objectOnly(summary).recordRoutes)
     .find((item) => cleanString(item?.key, 140) === key);
   return cleanString(route?.route?.path || route?.path, 220);
-}
-
-function taskDefinition(taskId = "") {
-  return TASK_BY_ID.get(cleanString(taskId, 140)) || {};
 }
 
 function releaseEvidenceCollectionNeeded(summary = {}) {

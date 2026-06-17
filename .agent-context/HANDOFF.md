@@ -9,6 +9,63 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T21:17+08:00 - Release Evidence Task Registry Consolidation
+
+- Status: implemented locally; focused release validation, release-union,
+  syntax/docs/diff gates, AI Ops evidence append, and CodeGraph freshness
+  passed in this turn. No production deploy, production write smoke, runtime
+  config change, Gateway/model call, scheduler execution, notification,
+  learner-state mutation, or Home AI host logic change was performed.
+- Classification: Growth-local H2 architecture/readback consolidation for the
+  release evidence bundle/workbench/artifact-template/readiness task mapping
+  contract.
+- Scope:
+  - added `learning-automation-release-evidence-task-registry` as the
+    canonical owner for release evidence default task ids, task definitions,
+    release approval keys, safe collection task mapping, write-gated task
+    mapping, collection-owned outputs, and fallback task ids;
+  - added `learning-automation-release-evidence-schemas` for the release
+    evidence bundle and bundle-audit schema strings;
+  - `learning-automation-release-evidence-bundle-service` now imports task
+    definitions from the registry while preserving compatibility exports;
+  - `learning-automation-release-evidence-bundle-audit-service`,
+    `learning-automation-release-collection-run-service`,
+    `learning-automation-release-evidence-artifact-template-service`, and
+    `learning-automation-release-workbench-service` consume the new lightweight
+    registry/schema modules instead of loading the bundle service or duplicating
+    evidence-key maps;
+  - release workbench/artifact-template still route
+    `production_operating_loop_history_smoke_evidence` to
+    `operating_loop_history`, keep
+    `production_daily_loop_write_smoke_evidence` write-gated, and treat
+    `release_evidence_bundle_audit` as collection-owned output.
+- Harness/docs updated:
+  - `tests/learning-automation-release-evidence-task-registry.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - release dashboard/inventory/package smoke tests updated to current
+    34-slot release-readiness evidence counts;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - focused release registry/bundle/workbench/template set:
+    `node --test tests/learning-automation-release-evidence-task-registry.test.js tests/learning-automation-release-evidence-bundle-service.test.js tests/learning-automation-release-evidence-bundle-audit-service.test.js tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-release-evidence-bundle-audit-smoke-script.test.js tests/growth-release-collection-run-smoke-script.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    -> 120/120;
+  - `npm run --silent test:release-union` -> 251/251;
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged;
+  - AI Ops evidence id:
+    `evidence-86f2e94e-51b4-4a74-b548-fc12525e4136`.
+- AI Ops note:
+  - intake command text contained `no production deploy` and the Home AI AI Ops
+    classifier selected deployment-required H1 from that keyword; no deploy
+    command was run because this patch is Growth-local architecture/Harness
+    work with no production target change.
+
 ## 2026-06-17T20:57+08:00 - Release Evidence Key Map Architecture Guard
 
 - Status: implemented locally; focused validation passed in this turn. No

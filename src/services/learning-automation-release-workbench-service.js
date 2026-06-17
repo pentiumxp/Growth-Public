@@ -3,9 +3,15 @@
 const RELEASE_WORKBENCH_SCHEMA = "growth.learningAutomationReleaseWorkbench.v1";
 const {
   UI_EVIDENCE_COLLECTION_TASKS,
-  UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
   UI_EVIDENCE_FILE_FIELDS
 } = require("./learning-automation-ui-evidence-task-registry");
+const {
+  COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS,
+  RELEASE_EVIDENCE_COLLECTION_FALLBACK_TASK_IDS,
+  RELEASE_EVIDENCE_COLLECTION_TASK_ORDER,
+  releaseEvidenceCollectionTaskIdForKey,
+  writeGatedReleaseEvidenceCollectionTaskIdForKey
+} = require("./learning-automation-release-evidence-task-registry");
 const {
   CHECK_KEY_BY_EVIDENCE_KEY,
   canonicalReleaseEvidenceKey
@@ -13,65 +19,6 @@ const {
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
-const RELEASE_EVIDENCE_COLLECTION_TASKS = Object.freeze(["learning_loop_state"]);
-const COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS = new Set([
-  "release_evidence_bundle_audit"
-]);
-const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
-  "planner_readiness",
-  "daily_loop_preview",
-  "learning_loop_state",
-  "operating_loop_history",
-  "cycle_history",
-  "owner_audit",
-  "profile_feedback",
-  "recommendation_lifecycle",
-  "learner_cycle",
-  "target_provisioning",
-  "stage_assessment",
-  "stage_checkpoint_controls",
-  "proposal",
-  "platform_action",
-  "central_visual",
-  ...UI_EVIDENCE_COLLECTION_TASKS.map((task) => task.taskId),
-  "scheduler_dry_run",
-  "action_handoff",
-  "scheduler_execution",
-  "scheduler_run",
-  "scheduler_worker_target",
-  "scheduler_worker",
-  "owner_review_evidence",
-  "release_workbench"
-]);
-const RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
-  stage_checkpoint_evidence: "stage_assessment",
-  stage_checkpoint_controls_evidence: "stage_checkpoint_controls",
-  production_proposal_smoke_evidence: "proposal",
-  production_action_handoff_smoke_evidence: "action_handoff",
-  production_scheduler_execution_smoke_evidence: "scheduler_execution",
-  production_scheduler_run_smoke_evidence: "scheduler_run",
-  production_scheduler_worker_target_smoke_evidence: "scheduler_worker_target",
-  production_scheduler_worker_smoke_evidence: "scheduler_worker",
-  production_planner_readiness_evidence: "planner_readiness",
-  production_target_provisioning_smoke_evidence: "target_provisioning",
-  production_daily_loop_preview_smoke_evidence: "daily_loop_preview",
-  production_learning_loop_state_smoke_evidence: "learning_loop_state",
-  production_operating_loop_history_smoke_evidence: "operating_loop_history",
-  production_cycle_history_smoke_evidence: "cycle_history",
-  production_owner_audit_smoke_evidence: "owner_audit",
-  production_profile_feedback_smoke_evidence: "profile_feedback",
-  production_recommendation_lifecycle_smoke_evidence: "recommendation_lifecycle",
-  production_learner_cycle_smoke_evidence: "learner_cycle",
-  production_scheduler_dry_run_smoke_evidence: "scheduler_dry_run",
-  platform_action_evidence: "platform_action",
-  central_visual_evidence: "central_visual",
-  ...UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
-  release_workbench_smoke_evidence: "release_workbench",
-  owner_review_evidence: "owner_review_evidence"
-});
-const WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY = Object.freeze({
-  production_daily_loop_write_smoke_evidence: "daily_loop_write"
-});
 const RELEASE_STATE_PREREQUISITE_ACTION_BY_KEY = Object.freeze({
   reviewed_automation_digest: {
     action: "review_automation_digest",
@@ -265,12 +212,13 @@ function actionReleaseEvidenceKeys(summary = {}) {
 
 function collectionTaskIdForReleaseEvidenceKey(value = "") {
   const key = cleanString(value, 160);
-  if (RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key]) return RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
-  if (WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key]) return WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+  const directTaskId = releaseEvidenceCollectionTaskIdForKey(key)
+    || writeGatedReleaseEvidenceCollectionTaskIdForKey(key);
+  if (directTaskId) return directTaskId;
   const evidenceKey = canonicalReleaseEvidenceKey(key);
   const checkKey = CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "";
-  return RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[checkKey]
-    || WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[checkKey]
+  return releaseEvidenceCollectionTaskIdForKey(checkKey)
+    || writeGatedReleaseEvidenceCollectionTaskIdForKey(checkKey)
     || "";
 }
 
@@ -439,12 +387,12 @@ function collectionTaskPlan(keys = []) {
   const writeGatedTaskSet = new Set();
   const unsupported = [];
   for (const key of uniqueStrings(keys, 64)) {
-    const taskId = RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+    const taskId = releaseEvidenceCollectionTaskIdForKey(key);
     if (taskId) {
       safeTaskSet.add(taskId);
       continue;
     }
-    const writeGatedTaskId = WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY[key];
+    const writeGatedTaskId = writeGatedReleaseEvidenceCollectionTaskIdForKey(key);
     if (writeGatedTaskId) {
       writeGatedTaskSet.add(writeGatedTaskId);
       continue;
@@ -455,8 +403,8 @@ function collectionTaskPlan(keys = []) {
   }
   const taskIds = RELEASE_EVIDENCE_COLLECTION_TASK_ORDER.filter((taskId) => safeTaskSet.has(taskId));
   return {
-    taskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
-    requiredTaskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_TASKS),
+    taskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_FALLBACK_TASK_IDS),
+    requiredTaskIds: taskIds.length ? taskIds : Array.from(RELEASE_EVIDENCE_COLLECTION_FALLBACK_TASK_IDS),
     supportedTaskIds: taskIds,
     writeGatedTaskIds: Array.from(writeGatedTaskSet),
     unsupportedKeys: unsupported
@@ -491,7 +439,7 @@ function releaseEvidenceCollectionBody(scope = {}, taskIds = [], requiredTaskIds
 }
 
 function recordRoutes(scope = {}, collectionTasks = {}) {
-  const taskIds = asArray(collectionTasks.taskIds).length ? collectionTasks.taskIds : RELEASE_EVIDENCE_COLLECTION_TASKS;
+  const taskIds = asArray(collectionTasks.taskIds).length ? collectionTasks.taskIds : RELEASE_EVIDENCE_COLLECTION_FALLBACK_TASK_IDS;
   const requiredTaskIds = asArray(collectionTasks.requiredTaskIds).length ? collectionTasks.requiredTaskIds : taskIds;
   return [
     {

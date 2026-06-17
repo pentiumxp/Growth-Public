@@ -99,6 +99,25 @@ prove phase gating: downstream approval/record actions are visible but not
 submittable while artifact, collection, write-gated, state, or unsupported
 evidence prerequisites remain; once evidence prerequisites clear, approvals can
 become the next submittable action while records remain approval-blocked.
+
+When changing release evidence task definitions, default task membership,
+service-smoke evidence-key mapping, collection-owned output keys, write-gated
+task mapping, release evidence bundle schema constants, or the mapping consumed
+by release workbench/artifact-template, run
+`tests/learning-automation-release-evidence-task-registry.test.js`,
+`tests/learning-automation-release-evidence-bundle-service.test.js`,
+`tests/learning-automation-release-evidence-bundle-audit-service.test.js`,
+`tests/learning-automation-release-workbench-service.test.js`,
+`tests/learning-automation-release-evidence-artifact-template-service.test.js`,
+`tests/growth-release-evidence-bundle-script.test.js`,
+`tests/growth-release-evidence-bundle-audit-smoke-script.test.js`,
+`tests/growth-release-workbench-smoke-script.test.js`,
+`tests/growth-release-artifact-template-smoke-script.test.js`, and
+`tests/growth-architecture-boundary.test.js`. The focused assertion must prove
+the registry, not bundle/workbench/template services, owns the canonical task
+map; safe collection tasks, write-gated tasks, and collection-owned outputs
+remain separated; and schema consumers do not load smoke-runner services only
+to compare bundle artifact schema versions.
 When changing release-evidence-bundle, release-evidence-bundle-audit,
 release-package, release-collection-run, release-decision, release-review,
 release-authorization, release-readiness, release-controls, release-closure,

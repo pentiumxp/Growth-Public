@@ -14,24 +14,6 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function objectFreezeBlock(source, constName) {
-  const match = source.match(new RegExp(`const ${constName} = Object\\.freeze\\(\\{([\\s\\S]*?)\\}\\);`));
-  return match ? match[1] : "";
-}
-
-function stringSetBlock(source, constName) {
-  const match = source.match(new RegExp(`const ${constName} = new Set\\(\\[([\\s\\S]*?)\\]\\);`));
-  return match ? match[1] : "";
-}
-
-function objectLiteralKeys(block = "") {
-  return [...String(block).matchAll(/([a-zA-Z0-9_]+):\s*["'][^"']+["']/g)].map((match) => match[1]);
-}
-
-function quotedStrings(block = "") {
-  return [...String(block).matchAll(/["']([^"']+)["']/g)].map((match) => match[1]);
-}
-
 test("Growth check gate covers every runtime JavaScript file", () => {
   const result = checkGrowthSyntaxCoverage();
   assert.equal(result.error, undefined);
@@ -2124,6 +2106,14 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   );
   assert.match(
     packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-evidence-schemas\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
+    /node --check src\/services\/learning-automation-release-evidence-task-registry\.js/
+  );
+  assert.match(
+    packageJson.scripts.check,
     /node --check src\/services\/learning-automation-release-evidence-artifact-template-service\.js/
   );
   assert.match(
@@ -2739,35 +2729,46 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
 
   const service = read(path.join("src", "services", "learning-automation-release-evidence-bundle-service.js"));
+  const schemas = read(path.join("src", "services", "learning-automation-release-evidence-schemas.js"));
+  const taskRegistry = read(path.join("src", "services", "learning-automation-release-evidence-task-registry.js"));
+  assert.match(schemas, /RELEASE_EVIDENCE_BUNDLE_SCHEMA/);
+  assert.match(schemas, /RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA/);
   assert.match(service, /RELEASE_EVIDENCE_BUNDLE_SCHEMA/);
+  assert.match(service, /learning-automation-release-evidence-schemas/);
+  assert.match(service, /learning-automation-release-evidence-task-registry/);
   assert.match(service, /TASK_DEFINITIONS/);
   assert.match(service, /runCommand/);
   assert.match(service, /releaseApproval/);
-  assert.match(service, /release_approval/);
-  assert.match(service, /learner_cycle/);
-  assert.match(service, /daily_loop_write/);
-  assert.match(service, /productionLearnerCycleSmokeEvidence/);
-  assert.match(service, /productionCycleHistorySmokeEvidence/);
-  assert.match(service, /productionOwnerAuditSmokeEvidence/);
-  assert.match(service, /productionDailyLoopWriteSmokeEvidence/);
-  assert.match(service, /platform_action/);
-  assert.match(service, /platformActionEvidence/);
-  assert.match(service, /central_visual/);
+  assert.match(taskRegistry, /const DEFAULT_TASK_IDS/);
+  assert.match(taskRegistry, /const TASK_DEFINITIONS/);
+  assert.match(taskRegistry, /release_approval/);
+  assert.match(taskRegistry, /learner_cycle/);
+  assert.match(taskRegistry, /daily_loop_write/);
+  assert.match(taskRegistry, /operating_loop_history/);
+  assert.match(taskRegistry, /productionOperatingLoopHistorySmokeEvidence/);
+  assert.match(taskRegistry, /productionLearnerCycleSmokeEvidence/);
+  assert.match(taskRegistry, /productionCycleHistorySmokeEvidence/);
+  assert.match(taskRegistry, /productionOwnerAuditSmokeEvidence/);
+  assert.match(taskRegistry, /productionDailyLoopWriteSmokeEvidence/);
+  assert.match(taskRegistry, /platform_action/);
+  assert.match(taskRegistry, /platformActionEvidence/);
+  assert.match(taskRegistry, /central_visual/);
+  assert.match(taskRegistry, /centralVisualEvidence/);
   assert.match(service, /centralVisualEvidence/);
   assert.match(service, /centralVisualEvidenceFilePresent/);
-  assert.match(service, /release_controls/);
-  assert.match(service, /releaseControlsSmokeEvidence/);
-  assert.match(service, /release_inventory/);
-  assert.match(service, /releaseInventorySmokeEvidence/);
-  assert.match(service, /release_dashboard/);
-  assert.match(service, /releaseDashboardSmokeEvidence/);
-  assert.match(service, /release_workbench/);
-  assert.match(service, /releaseWorkbenchSmokeEvidence/);
+  assert.match(taskRegistry, /release_controls/);
+  assert.match(taskRegistry, /releaseControlsSmokeEvidence/);
+  assert.match(taskRegistry, /release_inventory/);
+  assert.match(taskRegistry, /releaseInventorySmokeEvidence/);
+  assert.match(taskRegistry, /release_dashboard/);
+  assert.match(taskRegistry, /releaseDashboardSmokeEvidence/);
+  assert.match(taskRegistry, /release_workbench/);
+  assert.match(taskRegistry, /releaseWorkbenchSmokeEvidence/);
   assert.match(service, /releaseWorkbenchSummaryFromSmoke/);
-  assert.match(service, /owner_review_evidence/);
-  assert.match(service, /ownerReviewEvidence/);
+  assert.match(taskRegistry, /owner_review_evidence/);
+  assert.match(taskRegistry, /ownerReviewEvidence/);
   assert.match(service, /ownerReviewSummaryFromSmoke/);
-  assert.match(service, /smoke-growth-automation-owner-review-evidence\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-owner-review-evidence\.js/);
   assert.match(service, /release_evidence_bundle_learner_cycle_operation_invalid/);
   assert.match(service, /LEARNER_CYCLE_BUNDLE_OPERATIONS/);
   assert.match(service, /release_evidence_bundle_write_evidence_not_allowed/);
@@ -2778,50 +2779,52 @@ test("Growth release evidence bundle builder stays service-owned and write-gated
   assert.match(service, /privacyClass: "summary_only"/);
   assert.match(service, /summaryOnly: true/);
   assert.match(service, /scanPrivacy/);
-  assert.match(service, /productionPlannerReadinessEvidence/);
-  assert.match(service, /target_provisioning/);
-  assert.match(service, /productionTargetProvisioningSmokeEvidence/);
+  assert.match(taskRegistry, /productionPlannerReadinessEvidence/);
+  assert.match(taskRegistry, /target_provisioning/);
+  assert.match(taskRegistry, /productionTargetProvisioningSmokeEvidence/);
   assert.match(service, /targetProvisioningSummaryFromSmoke/);
-  assert.match(service, /recommendation_lifecycle/);
-  assert.match(service, /productionRecommendationLifecycleSmokeEvidence/);
+  assert.match(taskRegistry, /recommendation_lifecycle/);
+  assert.match(taskRegistry, /productionRecommendationLifecycleSmokeEvidence/);
   assert.match(service, /recommendationLifecycleSummaryFromSmoke/);
-  assert.match(service, /productionDailyLoopPreviewSmokeEvidence/);
-  assert.match(service, /productionLearningLoopStateSmokeEvidence/);
-  assert.match(service, /smoke-growth-cycle-history\.js/);
-  assert.match(service, /smoke-growth-owner-audit\.js/);
-  assert.match(service, /stageCheckpointEvidence/);
-  assert.match(service, /stage_checkpoint_controls/);
-  assert.match(service, /stageCheckpointControlsEvidence/);
-  assert.match(service, /productionProposalSmokeEvidence/);
-  assert.match(service, /productionSchedulerDryRunSmokeEvidence/);
-  assert.match(service, /productionActionHandoffSmokeEvidence/);
-  assert.match(service, /productionSchedulerExecutionSmokeEvidence/);
-  assert.match(service, /productionSchedulerRunSmokeEvidence/);
-  assert.match(service, /productionSchedulerWorkerTargetSmokeEvidence/);
-  assert.match(service, /productionSchedulerWorkerSmokeEvidence/);
-  assert.match(service, /writefulExecutionApproval/);
-  assert.match(service, /backgroundSchedulerApproval/);
-  assert.match(service, /backgroundWorkerApproval/);
-  assert.match(service, /smoke-growth-planner-readiness\.js/);
-  assert.match(service, /smoke-growth-target-provisioning\.js/);
-  assert.match(service, /smoke-growth-recommendation-lifecycle\.js/);
-  assert.match(service, /smoke-growth-daily-loop-preview\.js/);
-  assert.match(service, /smoke-growth-daily-loop\.js/);
-  assert.match(service, /smoke-growth-learner-cycle\.js/);
-  assert.match(service, /smoke-growth-learning-loop-state\.js/);
-  assert.match(service, /smoke-growth-cycle-history\.js/);
-  assert.match(service, /smoke-growth-platform-action-evidence\.js/);
-  assert.match(service, /smoke-growth-central-visual-evidence\.js/);
-  assert.match(service, /smoke-growth-stage-assessment\.js/);
-  assert.match(service, /smoke-growth-release-controls\.js/);
-  assert.match(service, /smoke-growth-automation-proposal\.js/);
-  assert.match(service, /smoke-growth-scheduler-dry-run\.js/);
-  assert.match(service, /smoke-growth-automation-action-handoff\.js/);
-  assert.match(service, /smoke-growth-automation-scheduler-execution\.js/);
-  assert.match(service, /smoke-growth-automation-scheduler-run\.js/);
-  assert.match(service, /smoke-growth-automation-scheduler-worker-target\.js/);
-  assert.match(service, /smoke-growth-automation-scheduler-worker\.js/);
-  assert.match(service, /smoke-growth-automation-release-approval\.js/);
+  assert.match(taskRegistry, /productionDailyLoopPreviewSmokeEvidence/);
+  assert.match(taskRegistry, /productionLearningLoopStateSmokeEvidence/);
+  assert.match(taskRegistry, /stageCheckpointEvidence/);
+  assert.match(taskRegistry, /stage_checkpoint_controls/);
+  assert.match(taskRegistry, /stageCheckpointControlsEvidence/);
+  assert.match(taskRegistry, /productionProposalSmokeEvidence/);
+  assert.match(taskRegistry, /productionSchedulerDryRunSmokeEvidence/);
+  assert.match(taskRegistry, /productionActionHandoffSmokeEvidence/);
+  assert.match(taskRegistry, /productionSchedulerExecutionSmokeEvidence/);
+  assert.match(taskRegistry, /productionSchedulerRunSmokeEvidence/);
+  assert.match(taskRegistry, /productionSchedulerWorkerTargetSmokeEvidence/);
+  assert.match(taskRegistry, /productionSchedulerWorkerSmokeEvidence/);
+  assert.match(taskRegistry, /writefulExecutionApproval/);
+  assert.match(taskRegistry, /backgroundSchedulerApproval/);
+  assert.match(taskRegistry, /backgroundWorkerApproval/);
+  assert.match(taskRegistry, /smoke-growth-planner-readiness\.js/);
+  assert.match(taskRegistry, /smoke-growth-target-provisioning\.js/);
+  assert.match(taskRegistry, /smoke-growth-recommendation-lifecycle\.js/);
+  assert.match(taskRegistry, /smoke-growth-daily-loop-preview\.js/);
+  assert.match(taskRegistry, /smoke-growth-daily-loop\.js/);
+  assert.match(taskRegistry, /smoke-growth-learner-cycle\.js/);
+  assert.match(taskRegistry, /smoke-growth-learning-loop-state\.js/);
+  assert.match(taskRegistry, /smoke-growth-cycle-history\.js/);
+  assert.match(taskRegistry, /smoke-growth-platform-action-evidence\.js/);
+  assert.match(taskRegistry, /smoke-growth-central-visual-evidence\.js/);
+  assert.match(taskRegistry, /smoke-growth-stage-assessment\.js/);
+  assert.match(taskRegistry, /smoke-growth-release-controls\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-proposal\.js/);
+  assert.match(taskRegistry, /smoke-growth-scheduler-dry-run\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-action-handoff\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-scheduler-execution\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-scheduler-run\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-scheduler-worker-target\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-scheduler-worker\.js/);
+  assert.match(taskRegistry, /smoke-growth-automation-release-approval\.js/);
+  assert.doesNotMatch(taskRegistry, /runCommand|spawnSync|exec\(/);
+  assert.doesNotMatch(taskRegistry, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(taskRegistry, /repository\./);
+  assert.doesNotMatch(taskRegistry, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
   assert.doesNotMatch(service, /readEnv/);
   assert.doesNotMatch(service, /createServices/);
   assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
@@ -3086,16 +3089,19 @@ test("Growth release package builder stays summary-only orchestration over relea
   assert.match(collectionScriptHarness, /record a summary-only collection run/);
 
   const releaseWorkbenchService = read(path.join("src", "services", "learning-automation-release-workbench-service.js"));
+  const releaseEvidenceTaskRegistry = read(path.join("src", "services", "learning-automation-release-evidence-task-registry.js"));
   assert.match(releaseWorkbenchService, /write_release_evidence_records: true/);
   assert.match(releaseWorkbenchService, /COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS/);
-  assert.match(releaseWorkbenchService, /release_evidence_bundle_audit/);
-  assert.match(releaseWorkbenchService, /production_operating_loop_history_smoke_evidence/);
-  assert.match(releaseWorkbenchService, /operating_loop_history/);
+  assert.match(releaseWorkbenchService, /releaseEvidenceCollectionTaskIdForKey/);
+  assert.match(releaseWorkbenchService, /writeGatedReleaseEvidenceCollectionTaskIdForKey/);
+  assert.match(releaseEvidenceTaskRegistry, /release_evidence_bundle_audit/);
+  assert.match(releaseEvidenceTaskRegistry, /productionOperatingLoopHistorySmokeEvidence/);
+  assert.match(releaseEvidenceTaskRegistry, /operating_loop_history/);
   const releaseArtifactTemplateService = read(path.join("src", "services", "learning-automation-release-evidence-artifact-template-service.js"));
-  assert.match(releaseArtifactTemplateService, /TASK_ID_BY_RELEASE_EVIDENCE_KEY/);
+  assert.match(releaseArtifactTemplateService, /taskIdFromReleaseEvidenceKey/);
   assert.match(releaseArtifactTemplateService, /releaseEvidenceCollectionNeeded/);
   assert.match(releaseArtifactTemplateService, /releaseEvidenceCollectionTasks/);
-  assert.match(releaseArtifactTemplateService, /snakeCaseKey\(evidenceKey\)/);
+  assert.doesNotMatch(releaseArtifactTemplateService, /learning-automation-release-evidence-bundle-service/);
   const artifactTemplateHarness = read(path.join("tests", "learning-automation-release-evidence-artifact-template-service.test.js"));
   assert.match(artifactTemplateHarness, /productionOperatingLoopHistorySmokeEvidence/);
   assert.match(artifactTemplateHarness, /release_evidence_bundle_audit/);
@@ -3115,10 +3121,11 @@ test("Growth release package builder stays summary-only orchestration over relea
 
 test("Growth release-readiness evidence keys stay routable through workbench collection planning", () => {
   const readinessService = read(path.join("src", "services", "learning-automation-release-readiness-service.js"));
-  const releaseWorkbenchService = read(path.join("src", "services", "learning-automation-release-workbench-service.js"));
   const {
-    UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY
-  } = require("../src/services/learning-automation-ui-evidence-task-registry");
+    isCollectionOwnedReleaseEvidenceKey,
+    releaseEvidenceCollectionTaskIdForKey,
+    writeGatedReleaseEvidenceCollectionTaskIdForKey
+  } = require("../src/services/learning-automation-release-evidence-task-registry");
 
   const readinessKeys = [
     ...[...readinessService.matchAll(/presentCheck\(inputWithReleaseEvidence,\s*"([^"]+)",\s*"([^"]+)"/g)]
@@ -3129,27 +3136,20 @@ test("Growth release-readiness evidence keys stay routable through workbench col
   ];
   assert.ok(readinessKeys.length >= 34, "release-readiness evidence coverage unexpectedly shrank");
 
-  const collectionMappedKeys = new Set(objectLiteralKeys(
-    objectFreezeBlock(releaseWorkbenchService, "RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY")
-  ));
-  for (const key of Object.keys(UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY)) {
-    collectionMappedKeys.add(key);
-  }
-  const writeGatedKeys = new Set(objectLiteralKeys(
-    objectFreezeBlock(releaseWorkbenchService, "WRITE_GATED_RELEASE_EVIDENCE_COLLECTION_TASK_BY_KEY")
-  ));
-  const collectionOwnedKeys = new Set(quotedStrings(
-    stringSetBlock(releaseWorkbenchService, "COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS")
-  ));
-
-  assert.ok(collectionMappedKeys.has("production_operating_loop_history_smoke_evidence"));
-  assert.ok(writeGatedKeys.has("production_daily_loop_write_smoke_evidence"));
-  assert.ok(collectionOwnedKeys.has("release_evidence_bundle_audit"));
+  assert.equal(
+    releaseEvidenceCollectionTaskIdForKey("production_operating_loop_history_smoke_evidence"),
+    "operating_loop_history"
+  );
+  assert.equal(
+    writeGatedReleaseEvidenceCollectionTaskIdForKey("production_daily_loop_write_smoke_evidence"),
+    "daily_loop_write"
+  );
+  assert.equal(isCollectionOwnedReleaseEvidenceKey("release_evidence_bundle_audit"), true);
   assert.deepEqual(
     readinessKeys
-      .filter((key) => !collectionMappedKeys.has(key))
-      .filter((key) => !writeGatedKeys.has(key))
-      .filter((key) => !collectionOwnedKeys.has(key)),
+      .filter((key) => !releaseEvidenceCollectionTaskIdForKey(key))
+      .filter((key) => !writeGatedReleaseEvidenceCollectionTaskIdForKey(key))
+      .filter((key) => !isCollectionOwnedReleaseEvidenceKey(key)),
     []
   );
 });

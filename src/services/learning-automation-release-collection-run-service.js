@@ -1,8 +1,10 @@
 "use strict";
 
 const path = require("node:path");
-const { RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA } = require("./learning-automation-release-evidence-bundle-audit-service");
-const { RELEASE_EVIDENCE_BUNDLE_SCHEMA } = require("./learning-automation-release-evidence-bundle-service");
+const {
+  RELEASE_EVIDENCE_BUNDLE_AUDIT_SCHEMA,
+  RELEASE_EVIDENCE_BUNDLE_SCHEMA
+} = require("./learning-automation-release-evidence-schemas");
 
 const RELEASE_COLLECTION_RUN_SCHEMA = "growth.learningAutomationReleaseCollectionRun.v1";
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
