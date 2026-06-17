@@ -60,6 +60,42 @@ function sourceFreshnessKind(sourceType = "") {
   return "learning_evidence";
 }
 
+function rubricPolicyId(summary = {}) {
+  const policy = summary.rubricPolicy && typeof summary.rubricPolicy === "object" ? summary.rubricPolicy : {};
+  return cleanString(summary.rubricPolicyId || summary.rubric_policy_id || policy.policyId);
+}
+
+function rubricResultSummaries(summary = {}) {
+  return asArray(summary.rubricResults || summary.rubric_results)
+    .map((item) => {
+      const source = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+      return {
+        dimensionId: cleanString(source.dimensionId || source.rubricDimensionId),
+        scoreBand: cleanString(source.scoreBand),
+        status: cleanString(source.status),
+        evidenceType: cleanString(source.evidenceType || source.type)
+      };
+    })
+    .filter((item) => item.dimensionId)
+    .slice(0, 8);
+}
+
+function weakRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "low" || ["weak", "needs_repair", "misconception", "developing"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
+function stableRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "high" || ["stable", "mastered"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
 function latestIso(current = "", next = "") {
   return parseTimeMs(next) >= parseTimeMs(current) ? cleanString(next) : cleanString(current);
 }
@@ -98,6 +134,11 @@ function createCapabilityState(nodeId) {
     scoreBand: "",
     sourceTypes: [],
     evidenceIds: [],
+    rubricPolicyIds: [],
+    rubricDimensionIds: [],
+    rubricEvidenceTypes: [],
+    rubricWeakDimensionIds: [],
+    rubricStableDimensionIds: [],
     summaries: [],
     misconceptionSummaries: [],
     pressureSignals: []
@@ -183,6 +224,15 @@ function updateCapabilityState(state, evidence = {}, nowMs = Date.now(), staleAf
   if (ownerReviewedCorrection && summary.clearPressureSignals) state.pressureSignals = [];
   const feedback = boundedText(summary.feedbackSummary || summary.summary || summary.reflectionSummary || summary.reason || summary.note);
   if (feedback) state.summaries = uniqueStrings(state.summaries.concat(feedback)).slice(-5);
+  const rubricResults = rubricResultSummaries(summary);
+  const policyId = rubricPolicyId(summary);
+  if (policyId) state.rubricPolicyIds = uniqueStrings(state.rubricPolicyIds.concat(policyId)).slice(-12);
+  if (rubricResults.length) {
+    state.rubricDimensionIds = uniqueStrings(state.rubricDimensionIds.concat(rubricResults.map((item) => item.dimensionId))).slice(-12);
+    state.rubricEvidenceTypes = uniqueStrings(state.rubricEvidenceTypes.concat(summary.evidenceTypes || summary.evidence_types || rubricResults.map((item) => item.evidenceType))).slice(-12);
+    state.rubricWeakDimensionIds = uniqueStrings(state.rubricWeakDimensionIds.concat(weakRubricDimensionIds(rubricResults))).slice(-12);
+    state.rubricStableDimensionIds = uniqueStrings(state.rubricStableDimensionIds.concat(stableRubricDimensionIds(rubricResults))).slice(-12);
+  }
   for (const item of asArray(summary.remainingWeaknesses)) {
     const text = boundedText(item, 180);
     if (text) state.misconceptionSummaries = uniqueStrings(state.misconceptionSummaries.concat(text)).slice(-5);
@@ -228,6 +278,11 @@ function publicCapabilityState(state = {}) {
     scoreBand: cleanString(state.scoreBand),
     sourceTypes: uniqueStrings(state.sourceTypes).slice(0, 8),
     evidenceIds: uniqueStrings(state.evidenceIds).slice(0, 12),
+    rubricPolicyIds: uniqueStrings(state.rubricPolicyIds).slice(0, 12),
+    rubricDimensionIds: uniqueStrings(state.rubricDimensionIds).slice(0, 12),
+    rubricEvidenceTypes: uniqueStrings(state.rubricEvidenceTypes).slice(0, 12),
+    rubricWeakDimensionIds: uniqueStrings(state.rubricWeakDimensionIds).slice(0, 12),
+    rubricStableDimensionIds: uniqueStrings(state.rubricStableDimensionIds).slice(0, 12),
     summaries: uniqueStrings(state.summaries).slice(0, 5),
     misconceptionSummaries: uniqueStrings(state.misconceptionSummaries).slice(0, 5),
     pressureSignals: uniqueStrings(state.pressureSignals).slice(0, 5)
@@ -311,7 +366,9 @@ function createLearningProfileV2Service(options = {}) {
         nodeId: state.nodeId,
         status: state.status,
         summary: state.misconceptionSummaries[0] || state.summaries[0] || "Needs focused repair evidence.",
-        evidenceIds: state.evidenceIds.slice(0, 4)
+        evidenceIds: state.evidenceIds.slice(0, 4),
+        rubricWeakDimensionIds: state.rubricWeakDimensionIds.slice(0, 8),
+        rubricDimensionIds: state.rubricDimensionIds.slice(0, 8)
       }))
       .slice(0, 8);
     const strengths = capabilityStates
@@ -320,7 +377,9 @@ function createLearningProfileV2Service(options = {}) {
         nodeId: state.nodeId,
         status: state.status,
         summary: state.summaries[0] || "Stable evidence observed.",
-        evidenceIds: state.evidenceIds.slice(0, 4)
+        evidenceIds: state.evidenceIds.slice(0, 4),
+        rubricStableDimensionIds: state.rubricStableDimensionIds.slice(0, 8),
+        rubricDimensionIds: state.rubricDimensionIds.slice(0, 8)
       }))
       .slice(0, 8);
     const staleEvidence = capabilityStates
@@ -331,7 +390,8 @@ function createLearningProfileV2Service(options = {}) {
         evidenceFreshness: state.evidenceFreshness,
         staleReasons: state.staleReasons,
         summary: state.summaries[0] || "Learning evidence needs a low-pressure refresh.",
-        evidenceIds: state.evidenceIds.slice(0, 4)
+        evidenceIds: state.evidenceIds.slice(0, 4),
+        rubricDimensionIds: state.rubricDimensionIds.slice(0, 8)
       }))
       .slice(0, 8);
     const pressureSignals = capabilityStates
@@ -367,7 +427,10 @@ function createLearningProfileV2Service(options = {}) {
         strengthCount: strengths.length,
         pressureSignalCount: pressureSignals.length,
         staleCount: staleEvidence.length,
-        staleEvidenceCount: staleEvidence.length
+        staleEvidenceCount: staleEvidence.length,
+        rubricEvidenceCount: capabilityStates.filter((state) => state.rubricDimensionIds.length).length,
+        rubricWeakDimensionCount: uniqueStrings(capabilityStates.flatMap((state) => state.rubricWeakDimensionIds)).length,
+        rubricStableDimensionCount: uniqueStrings(capabilityStates.flatMap((state) => state.rubricStableDimensionIds)).length
       },
       capabilityStates,
       strengths,

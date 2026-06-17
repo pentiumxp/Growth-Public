@@ -16,6 +16,74 @@ function boundedText(value, max = 320) {
   return cleanString(value).slice(0, max);
 }
 
+function publicRubricPolicy(policy = {}) {
+  const source = policy && typeof policy === "object" && !Array.isArray(policy) ? policy : {};
+  return {
+    schemaVersion: cleanString(source.schemaVersion),
+    policyId: cleanString(source.policyId),
+    recipeId: cleanString(source.recipeId),
+    domain: cleanString(source.domain),
+    subject: cleanString(source.subject),
+    dimensionIds: uniqueStrings(
+      source.dimensionIds || asArray(source.rubricDimensions).map((item) => item?.dimensionId)
+    ).slice(0, 12),
+    evidenceKeys: uniqueStrings(
+      source.evidenceKeys || asArray(source.evidenceMapping).map((item) => item?.evidenceKey)
+    ).slice(0, 12)
+  };
+}
+
+function publicRubricResult(item = {}) {
+  const source = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+  return {
+    dimensionId: cleanString(source.dimensionId || source.rubricDimensionId),
+    nodeId: cleanString(source.nodeId || source.graphNodeId || source.targetNodeId),
+    scoreBand: cleanString(source.scoreBand),
+    status: cleanString(source.status),
+    evidenceType: cleanString(source.evidenceType || source.type),
+    evidenceTags: uniqueStrings(source.evidenceTags || source.tags).slice(0, 8),
+    evidenceSummary: boundedText(source.evidenceSummary || source.summary || source.evidence, 180)
+  };
+}
+
+function weakRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "low" || ["weak", "needs_repair", "misconception", "developing"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
+function stableRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "high" || ["stable", "mastered"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
+function publicRubricProjection(summary = {}) {
+  const rubricPolicy = publicRubricPolicy(summary.rubricPolicy || summary.rubric_policy || {});
+  const rubricResults = asArray(summary.rubricResults || summary.rubric_results)
+    .map(publicRubricResult)
+    .filter((item) => item.dimensionId)
+    .slice(0, 8);
+  const rubricDimensionIds = uniqueStrings(rubricResults.map((item) => item.dimensionId)).slice(0, 12);
+  const rubricEvidenceTypes = uniqueStrings(
+    summary.evidenceTypes || summary.evidence_types || rubricResults.map((item) => item.evidenceType)
+  ).slice(0, 12);
+  return {
+    rubricPolicyId: cleanString(summary.rubricPolicyId || summary.rubric_policy_id || rubricPolicy.policyId),
+    rubricPolicy,
+    rubricResults,
+    rubricResultCount: rubricResults.length,
+    rubricDimensionIds,
+    rubricEvidenceTypes,
+    rubricWeakDimensionIds: weakRubricDimensionIds(rubricResults),
+    rubricStableDimensionIds: stableRubricDimensionIds(rubricResults)
+  };
+}
+
 function clampLimit(value, fallback = 20) {
   const parsed = Number(value || fallback);
   if (!Number.isFinite(parsed)) return fallback;
@@ -23,7 +91,7 @@ function clampLimit(value, fallback = 20) {
 }
 
 function publicEvidenceSummary(summary = {}) {
-  return {
+  return Object.assign({
     summaryOnly: summary.summaryOnly !== false,
     taskCardId: cleanString(summary.taskCardId),
     title: boundedText(summary.title, 120),
@@ -47,7 +115,7 @@ function publicEvidenceSummary(summary = {}) {
     sourceEvidenceIds: uniqueStrings(summary.sourceEvidenceIds || []).slice(0, 12),
     selectedDomainPackId: cleanString(summary.selectedDomainPackId),
     selectedSubject: cleanString(summary.selectedSubject)
-  };
+  }, publicRubricProjection(summary));
 }
 
 function publicEvidenceAuditItem(item = {}) {
@@ -87,6 +155,18 @@ function countBySourceType(items = []) {
     summary[sourceType] = (summary[sourceType] || 0) + 1;
     return summary;
   }, {});
+}
+
+function rubricAuditSummary(items = []) {
+  const summaries = asArray(items).map((item) => item.summary || {});
+  return {
+    rubricEvidenceCount: summaries.filter((summary) => Number(summary.rubricResultCount || 0) > 0).length,
+    rubricPolicyIds: uniqueStrings(summaries.map((summary) => summary.rubricPolicyId)).slice(0, 12),
+    rubricDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricDimensionIds || [])).slice(0, 12),
+    rubricEvidenceTypes: uniqueStrings(summaries.flatMap((summary) => summary.rubricEvidenceTypes || [])).slice(0, 12),
+    rubricWeakDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricWeakDimensionIds || [])).slice(0, 12),
+    rubricStableDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricStableDimensionIds || [])).slice(0, 12)
+  };
 }
 
 function createLearningEvidenceAuditService(options = {}) {
@@ -149,11 +229,11 @@ function createLearningEvidenceAuditService(options = {}) {
         targetNodeIds,
         limit: filters.limit
       },
-      summary: {
+      summary: Object.assign({
         evidenceCount: items.length,
         sourceTypeCounts: countBySourceType(items),
         latestEvidenceAt: latestTimestamp(items, "createdAt")
-      },
+      }, rubricAuditSummary(items)),
       count: items.length,
       evidence: items
     };

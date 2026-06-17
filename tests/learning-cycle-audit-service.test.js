@@ -68,7 +68,28 @@ test("learning cycle audit service composes bounded audit readbacks", () => {
               taskCardId: "ltask_cycle_1",
               feedbackSummary: "Controlled one variable.",
               rawAnswer: "RAW ANSWER",
-              evaluationId: "eval_cycle_1"
+              evaluationId: "eval_cycle_1",
+              rubricPolicyId: "rubric:daily_science_v1",
+              rubricPolicy: {
+                policyId: "rubric:daily_science_v1",
+                recipeId: "daily_science_v1",
+                dimensionIds: ["science_causal_reasoning", "science_measurement_precision"],
+                evidenceKeys: ["claim", "measurement"]
+              },
+              rubricResults: [{
+                dimensionId: "science_causal_reasoning",
+                scoreBand: "medium",
+                status: "observed",
+                evidenceType: "claim",
+                evidenceSummary: "Explains variable control."
+              }, {
+                dimensionId: "science_measurement_precision",
+                scoreBand: "low",
+                status: "needs_repair",
+                evidenceType: "measurement",
+                evidenceSummary: "Measurement result is still vague."
+              }],
+              evidenceTypes: ["claim", "measurement"]
             },
             createdAt: "2026-06-15T08:10:00.000Z",
             privacyClass: "summary_only"
@@ -152,10 +173,19 @@ test("learning cycle audit service composes bounded audit readbacks", () => {
   assert.equal(result.summary.correctionCount, 1);
   assert.equal(result.summary.hasPublishedPlan, true);
   assert.equal(result.summary.hasEvaluationEvidence, true);
+  assert.equal(result.summary.rubricEvidenceCount, 1);
+  assert.deepEqual(result.summary.rubricPolicyIds, ["rubric:daily_science_v1"]);
+  assert.deepEqual(result.summary.rubricWeakDimensionIds, ["science_measurement_precision"]);
   assert.equal(result.summary.latestActivityAt, "2026-06-15T08:12:00.000Z");
   assert.deepEqual(result.timeline.map((entry) => entry.type), ["correction", "profile_delta", "evidence", "plan"]);
+  assert.deepEqual(result.timeline.find((entry) => entry.type === "evidence").rubricDimensionIds, [
+    "science_causal_reasoning",
+    "science_measurement_precision"
+  ]);
   assert.equal(result.planAudit.planDrafts[0].generatedTaskCardId, "ltask_cycle_1");
   assert.equal(result.evidenceAudit.evidence[0].summary.feedbackSummary, "Controlled one variable.");
+  assert.equal(result.evidenceAudit.evidence[0].summary.rubricPolicy.policyId, "rubric:daily_science_v1");
+  assert.equal(result.evidenceAudit.evidence[0].summary.rubricResultCount, 2);
   assert.equal(result.profileDeltaAudit.profileDeltas[0].changedCapabilities[0].afterState, "developing");
   assert.equal(result.profileCorrections.corrections[0].correctionId, "lgcorr_cycle_1");
   assert.equal(JSON.stringify(result).includes("RAW"), false);

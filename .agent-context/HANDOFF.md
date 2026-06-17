@@ -22038,3 +22038,53 @@
   - richer Owner audit rendering over persisted rubric/profile-delta evidence;
   - broader subject-specific rubric catalogs beyond V1 English/science/generic
     daily policies.
+
+## 2026-06-18T00:05+0800 - Rubric evidence audit/Profile V2 readback projection
+
+- Status:
+  - Implemented local Growth H2 readback/projection package.
+  - No SQLite schema migration, Gateway change, UI change, production deploy,
+    or release evidence collection was executed in this slice.
+- Implemented behavior:
+  - `learning-evidence-audit-service` now projects summary-only rubric
+    readback from ledger `summary_json`: `rubricPolicyId`, compact
+    `rubricPolicy`, `rubricResults`, `rubricResultCount`,
+    `rubricDimensionIds`, `rubricEvidenceTypes`,
+    `rubricWeakDimensionIds`, and `rubricStableDimensionIds`.
+  - Evidence-audit summary now aggregates rubric evidence count, policy ids,
+    dimension ids, weak/stable dimension ids, and evidence types.
+  - `learning-cycle-audit-service` preserves the same rubric projection after
+    its second public whitelist pass, adds rubric dimension/count fields to
+    evidence timeline entries, and aggregates cycle-level rubric summary.
+  - `learning-profile-v2-service` now carries rubric policy ids, dimension
+    ids, evidence types, weak dimension ids, and stable dimension ids into
+    capability states, strengths, weaknesses, and summary counts.
+  - `learning-profile-feedback-evidence-service` now summarizes rubric
+    evidence/dimension counts from evidence audit plus Profile V2 so the
+    completed-cycle-to-next-plan readiness DTO can explain rubric coverage.
+  - All additions remain summary-only; no raw learner answers, transcripts,
+    raw prompts, raw model output, hidden answers, source document bodies,
+    private paths, provider config, or credentials are exposed.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --test tests/learning-evidence-audit-service.test.js tests/learning-cycle-audit-service.test.js tests/learning-profile-v2-service.test.js tests/learning-profile-feedback-evidence-service.test.js`
+    passed `18/18`.
+  - `node --test tests/learning-card-ai-loop-harness.test.js tests/growth-profile-feedback-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `103/103`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `npm run --silent check` passed with `runtimeCount=223`.
+  - `git diff --check` passed.
+  - `codegraph sync && codegraph status` reported the index is up to date,
+    with the existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - render these rubric audit/Profile V2 fields in the embedded Owner UI;
+  - expand subject-specific rubric catalogs beyond V1 English/science/generic;
+  - collect central visual/release evidence and real production
+    profile-feedback evidence before treating the product surface as complete.

@@ -102,23 +102,51 @@ function profileSummary(profile = {}) {
     strengthCount: Number(summary.strengthCount || asArray(profile.strengths).length || 0) || 0,
     staleCount: Number(summary.staleCount || asArray(profile.staleEvidence).length || 0) || 0,
     pressureSignalCount: Number(summary.pressureSignalCount || 0) || 0,
+    rubricEvidenceCount: Number(summary.rubricEvidenceCount || 0) || 0,
+    rubricWeakDimensionCount: Number(summary.rubricWeakDimensionCount || 0) || 0,
+    rubricStableDimensionCount: Number(summary.rubricStableDimensionCount || 0) || 0,
     plannerStrategy: cleanString(profile.recommendedPlannerHints?.strategy || asArray(profile.recommendedPlannerHints)[0]?.strategy, 80),
     weaknesses: asArray(profile.weaknesses).map((item) => ({
       nodeId: cleanString(item.nodeId || item.graphNodeId, 120),
       status: cleanString(item.status, 80),
-      summary: cleanString(item.summary || item.reason, 180)
+      summary: cleanString(item.summary || item.reason, 180),
+      rubricWeakDimensionIds: uniqueStrings(item.rubricWeakDimensionIds).slice(0, 8),
+      rubricDimensionIds: uniqueStrings(item.rubricDimensionIds).slice(0, 8)
     })).filter((item) => item.nodeId).slice(0, 5)
+  };
+}
+
+function rubricSummary(evidenceAudit = {}, evidence = []) {
+  const auditSummary = evidenceAudit.summary && typeof evidenceAudit.summary === "object" ? evidenceAudit.summary : {};
+  const evidenceSummaries = asArray(evidence).map((item) => item.summary || {});
+  return {
+    rubricEvidenceCount: Number(auditSummary.rubricEvidenceCount || evidenceSummaries.filter((summary) => Number(summary.rubricResultCount || 0) > 0).length || 0) || 0,
+    rubricPolicyIds: uniqueStrings(
+      asArray(auditSummary.rubricPolicyIds).concat(evidenceSummaries.map((summary) => summary.rubricPolicyId))
+    ).slice(0, 12),
+    rubricDimensionIds: uniqueStrings(
+      asArray(auditSummary.rubricDimensionIds).concat(evidenceSummaries.flatMap((summary) => summary.rubricDimensionIds || []))
+    ).slice(0, 12),
+    rubricEvidenceTypes: uniqueStrings(
+      asArray(auditSummary.rubricEvidenceTypes).concat(evidenceSummaries.flatMap((summary) => summary.rubricEvidenceTypes || []))
+    ).slice(0, 12),
+    rubricWeakDimensionIds: uniqueStrings(
+      asArray(auditSummary.rubricWeakDimensionIds).concat(evidenceSummaries.flatMap((summary) => summary.rubricWeakDimensionIds || []))
+    ).slice(0, 12),
+    rubricStableDimensionIds: uniqueStrings(
+      asArray(auditSummary.rubricStableDimensionIds).concat(evidenceSummaries.flatMap((summary) => summary.rubricStableDimensionIds || []))
+    ).slice(0, 12)
   };
 }
 
 function evidenceSummary(evidenceAudit = {}) {
   const evidence = asArray(evidenceAudit.evidence);
-  return {
+  return Object.assign({
     available: evidenceAudit.ok !== false && evidenceAudit.available !== false,
     count: countFromResult(evidenceAudit, ["evidence"]),
     sourceTypes: uniqueStrings(evidence.map((item) => item.sourceType)).slice(0, 8),
     graphNodeIds: uniqueStrings(evidence.flatMap((item) => [item.graphNodeId, ...uniqueStrings(item.graphNodeIds)])).slice(0, 12)
-  };
+  }, rubricSummary(evidenceAudit, evidence));
 }
 
 function profileDeltaSummary(profileDeltaAudit = {}) {
@@ -510,7 +538,10 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         ? check("evidence_ledger_present", evidence.count > 0 ? "pass" : "missing", {
           label: "Evaluation evidence ledger",
           count: evidence.count,
-          sourceTypes: evidence.sourceTypes
+          sourceTypes: evidence.sourceTypes,
+          rubricEvidenceCount: evidence.rubricEvidenceCount,
+          rubricDimensionIds: evidence.rubricDimensionIds,
+          rubricWeakDimensionIds: evidence.rubricWeakDimensionIds
         }, "process_evaluation_evidence")
         : blockedDependency("evidence_ledger_present", evidenceAudit, "Evaluation evidence ledger"),
       profileDeltaAudit?.ok
@@ -527,6 +558,8 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
           evidenceCount: profile.evidenceCount,
           capabilityStateCount: profile.capabilityStateCount,
           weaknessCount: profile.weaknessCount,
+          rubricEvidenceCount: profile.rubricEvidenceCount,
+          rubricWeakDimensionCount: profile.rubricWeakDimensionCount,
           plannerStrategy: profile.plannerStrategy
         }, "project_profile_v2_from_evidence")
         : blockedDependency("profile_v2_projected", profileV2, "Profile V2 projection"),
@@ -584,9 +617,16 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         missingRequired,
         cycleComplete: Boolean(completeness.complete),
         evidenceCount: evidence.count,
+        rubricEvidenceCount: evidence.rubricEvidenceCount,
+        rubricPolicyIds: evidence.rubricPolicyIds,
+        rubricDimensionIds: evidence.rubricDimensionIds,
+        rubricWeakDimensionIds: evidence.rubricWeakDimensionIds,
+        rubricStableDimensionIds: evidence.rubricStableDimensionIds,
         profileDeltaCount: profileDelta.count,
         profileEvidenceCount: profile.evidenceCount,
         profileWeaknessCount: profile.weaknessCount,
+        profileRubricEvidenceCount: profile.rubricEvidenceCount,
+        profileRubricWeakDimensionCount: profile.rubricWeakDimensionCount,
         rewardSettlementCount: nextLoopState.reward.rewardSettlementCount,
         totalRewardCoins: nextLoopState.reward.totalRewardCoins,
         recommendationMode: nextRecommendation.mode,

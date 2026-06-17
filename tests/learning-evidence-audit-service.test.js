@@ -49,7 +49,35 @@ test("learning evidence audit service lists bounded public evidence with filters
         title: "Fair test daily practice",
         feedbackSummary: "Controlled one variable and identified a measurement gap.",
         strengths: ["Clear variable control."],
-        remainingWeaknesses: ["State measured result."]
+        remainingWeaknesses: ["State measured result."],
+        rubricPolicyId: "rubric:daily_science_v1",
+        rubricPolicy: {
+          schemaVersion: "growth.card.rubricPolicy.v1",
+          policyId: "rubric:daily_science_v1",
+          recipeId: "daily_science_v1",
+          domain: "science",
+          subject: "science",
+          dimensionIds: ["science_causal_reasoning", "science_measurement_precision"],
+          evidenceKeys: ["claim", "measurement"]
+        },
+        rubricResults: [{
+          dimensionId: "science_causal_reasoning",
+          nodeId: "kg_science_fair_test",
+          scoreBand: "medium",
+          status: "observed",
+          evidenceType: "claim",
+          evidenceTags: ["fair_test"],
+          evidenceSummary: "Explains why one variable should change."
+        }, {
+          dimensionId: "science_measurement_precision",
+          nodeId: "kg_science_fair_test",
+          scoreBand: "low",
+          status: "needs_repair",
+          evidenceType: "measurement",
+          evidenceTags: ["measurement"],
+          evidenceSummary: "Measured result is not specific yet."
+        }],
+        evidenceTypes: ["claim", "measurement"]
       },
       recordedAt: "2026-06-15T08:00:00.000Z"
     });
@@ -99,8 +127,18 @@ test("learning evidence audit service lists bounded public evidence with filters
     assert.equal(result.count, 1);
     assert.equal(result.summary.evidenceCount, 1);
     assert.deepEqual(result.summary.sourceTypeCounts, { daily_evaluation: 1 });
+    assert.equal(result.summary.rubricEvidenceCount, 1);
+    assert.deepEqual(result.summary.rubricPolicyIds, ["rubric:daily_science_v1"]);
+    assert.deepEqual(result.summary.rubricWeakDimensionIds, ["science_measurement_precision"]);
     assert.equal(result.evidence[0].sourceId, "eval_science_daily_1");
     assert.equal(result.evidence[0].summary.feedbackSummary.includes("Controlled one variable"), true);
+    assert.equal(result.evidence[0].summary.rubricPolicy.policyId, "rubric:daily_science_v1");
+    assert.deepEqual(result.evidence[0].summary.rubricDimensionIds, [
+      "science_causal_reasoning",
+      "science_measurement_precision"
+    ]);
+    assert.equal(result.evidence[0].summary.rubricResultCount, 2);
+    assert.deepEqual(result.evidence[0].summary.rubricEvidenceTypes, ["claim", "measurement"]);
     assert.equal(JSON.stringify(result).includes("RAW LEARNER ANSWER"), false);
     assert.equal(JSON.stringify(result).includes("sourceDocumentBody"), false);
 

@@ -33,6 +33,14 @@ function completeDependencies(overrides = {}) {
             graphNodeIds: ["kg_science_fair_test"],
             sourceType: "daily_evaluation",
             sourceId: "leval_daily_1",
+            summary: {
+              rubricPolicyId: "rubric:daily_science_v1",
+              rubricResultCount: 1,
+              rubricDimensionIds: ["science_measurement_precision"],
+              rubricEvidenceTypes: ["measurement"],
+              rubricWeakDimensionIds: ["science_measurement_precision"],
+              rubricStableDimensionIds: []
+            },
             rawPrompt: "must not leak"
           }]
         };
@@ -66,12 +74,17 @@ function completeDependencies(overrides = {}) {
             weaknessCount: 1,
             strengthCount: 0,
             staleCount: 0,
-            pressureSignalCount: 0
+            pressureSignalCount: 0,
+            rubricEvidenceCount: 1,
+            rubricWeakDimensionCount: 1,
+            rubricStableDimensionCount: 0
           },
           weaknesses: [{
             nodeId: "kg_science_fair_test",
             status: "needs_repair",
-            summary: "Needs measured-result reasoning."
+            summary: "Needs measured-result reasoning.",
+            rubricWeakDimensionIds: ["science_measurement_precision"],
+            rubricDimensionIds: ["science_measurement_precision"]
           }],
           recommendedPlannerHints: {
             strategy: "repair",
@@ -204,6 +217,10 @@ test("profile feedback evidence service proves a completed cycle can drive the n
   assert.equal(result.status, "pass");
   assert.equal(result.summary.readyForNextPlan, true);
   assert.equal(result.summary.evidenceCount, 1);
+  assert.equal(result.summary.rubricEvidenceCount, 1);
+  assert.deepEqual(result.summary.rubricWeakDimensionIds, ["science_measurement_precision"]);
+  assert.equal(result.summary.profileRubricEvidenceCount, 1);
+  assert.equal(result.summary.profileRubricWeakDimensionCount, 1);
   assert.equal(result.summary.profileDeltaCount, 1);
   assert.equal(result.summary.rewardSettlementCount, 1);
   assert.equal(result.summary.totalRewardCoins, 42);

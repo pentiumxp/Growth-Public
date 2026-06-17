@@ -520,6 +520,15 @@ evaluation validates returned `rubricResults` against the policy and graph
 targets, and `learning-evidence-ledger-service` stores only bounded rubric
 summaries inside `summary_json`.
 
+Rubric readback is service-owned. `learning-evidence-audit-service` and
+`learning-cycle-audit-service` project only bounded policy ids, dimension ids,
+weak/stable dimension ids, evidence types, and short evidence summaries from
+that `summary_json`. `learning-profile-v2-service` attaches rubric dimension
+coverage to capability states so profile feedback can explain which rubric
+dimensions are being repaired or stabilized. UI code may render those public
+fields, but it must not inspect raw learner answers, raw model output, raw
+prompts, hidden answer keys, or full rubric authoring payloads.
+
 For ordinary daily cards, omitting `targetNodeId` is a supported profile-driven
 generation path. It should use weak or stabilizing evidence from the selected
 learner before generic graph suggestions. Formal `stage_assessment` generation

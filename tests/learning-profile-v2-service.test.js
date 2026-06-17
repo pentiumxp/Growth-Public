@@ -52,7 +52,15 @@ test("Profile V2 aggregates ledger evidence into capability states and planner h
       status: "needs_repair",
       summary: {
         feedbackSummary: "The answer needs a clearer measured result.",
-        remainingWeaknesses: ["Does not name the measured result."]
+        remainingWeaknesses: ["Does not name the measured result."],
+        rubricPolicyId: "rubric:daily_science_v1",
+        rubricResults: [{
+          dimensionId: "science_measurement_precision",
+          scoreBand: "low",
+          status: "needs_repair",
+          evidenceType: "measurement"
+        }],
+        evidenceTypes: ["measurement"]
       },
       recordedAt: "2026-06-14T09:00:00.000Z"
     }).ok, true);
@@ -70,7 +78,17 @@ test("Profile V2 aggregates ledger evidence into capability states and planner h
       confidence: 0.91,
       scoreBand: "high",
       status: "mastered",
-      summary: { feedbackSummary: "Observation language is independently stable." },
+      summary: {
+        feedbackSummary: "Observation language is independently stable.",
+        rubricPolicyId: "rubric:stage_science_v1",
+        rubricResults: [{
+          dimensionId: "science_observation_language",
+          scoreBand: "high",
+          status: "mastered",
+          evidenceType: "formal_response"
+        }],
+        evidenceTypes: ["formal_response"]
+      },
       recordedAt: "2026-06-14T09:30:00.000Z"
     }).ok, true);
 
@@ -83,8 +101,14 @@ test("Profile V2 aggregates ledger evidence into capability states and planner h
     assert.equal(result.ok, true);
     assert.equal(result.summary.capabilityStateCount, 2);
     assert.equal(result.summary.evidenceCount, 2);
+    assert.equal(result.summary.rubricEvidenceCount, 2);
+    assert.equal(result.summary.rubricWeakDimensionCount, 1);
+    assert.equal(result.summary.rubricStableDimensionCount, 1);
     assert.equal(result.weaknesses[0].nodeId, "kg_science_fair_test");
+    assert.deepEqual(result.weaknesses[0].rubricWeakDimensionIds, ["science_measurement_precision"]);
     assert.equal(result.strengths[0].nodeId, "kg_science_observation");
+    assert.deepEqual(result.strengths[0].rubricStableDimensionIds, ["science_observation_language"]);
+    assert.deepEqual(result.capabilityStates.find((state) => state.nodeId === "kg_science_fair_test").rubricWeakDimensionIds, ["science_measurement_precision"]);
     assert.equal(result.recommendedPlannerHints.strategy, "repair");
     assert.deepEqual(result.recommendedPlannerHints.targetNodeIds, ["kg_science_fair_test"]);
     assert.equal(JSON.stringify(result).includes("RAW"), false);

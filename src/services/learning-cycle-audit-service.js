@@ -17,6 +17,74 @@ function boundedText(value, max = 320) {
   return cleanString(value).slice(0, max);
 }
 
+function publicRubricPolicy(policy = {}) {
+  const source = policy && typeof policy === "object" && !Array.isArray(policy) ? policy : {};
+  return {
+    schemaVersion: cleanString(source.schemaVersion),
+    policyId: cleanString(source.policyId),
+    recipeId: cleanString(source.recipeId),
+    domain: cleanString(source.domain),
+    subject: cleanString(source.subject),
+    dimensionIds: uniqueStrings(
+      source.dimensionIds || asArray(source.rubricDimensions).map((item) => item?.dimensionId)
+    ).slice(0, 12),
+    evidenceKeys: uniqueStrings(
+      source.evidenceKeys || asArray(source.evidenceMapping).map((item) => item?.evidenceKey)
+    ).slice(0, 12)
+  };
+}
+
+function publicRubricResult(item = {}) {
+  const source = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+  return {
+    dimensionId: cleanString(source.dimensionId || source.rubricDimensionId),
+    nodeId: cleanString(source.nodeId || source.graphNodeId || source.targetNodeId),
+    scoreBand: cleanString(source.scoreBand),
+    status: cleanString(source.status),
+    evidenceType: cleanString(source.evidenceType || source.type),
+    evidenceTags: uniqueStrings(source.evidenceTags || source.tags).slice(0, 8),
+    evidenceSummary: boundedText(source.evidenceSummary || source.summary || source.evidence, 180)
+  };
+}
+
+function weakRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "low" || ["weak", "needs_repair", "misconception", "developing"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
+function stableRubricDimensionIds(results = []) {
+  return uniqueStrings(asArray(results).filter((item) => {
+    const status = cleanString(item.status).toLowerCase();
+    const scoreBand = cleanString(item.scoreBand).toLowerCase();
+    return scoreBand === "high" || ["stable", "mastered"].includes(status);
+  }).map((item) => item.dimensionId)).slice(0, 12);
+}
+
+function publicRubricProjection(summary = {}) {
+  const rubricPolicy = publicRubricPolicy(summary.rubricPolicy || summary.rubric_policy || {});
+  const rubricResults = asArray(summary.rubricResults || summary.rubric_results)
+    .map(publicRubricResult)
+    .filter((item) => item.dimensionId)
+    .slice(0, 8);
+  const rubricDimensionIds = uniqueStrings(rubricResults.map((item) => item.dimensionId)).slice(0, 12);
+  const rubricEvidenceTypes = uniqueStrings(
+    summary.rubricEvidenceTypes || summary.evidenceTypes || summary.evidence_types || rubricResults.map((item) => item.evidenceType)
+  ).slice(0, 12);
+  return {
+    rubricPolicyId: cleanString(summary.rubricPolicyId || summary.rubric_policy_id || rubricPolicy.policyId),
+    rubricPolicy,
+    rubricResults,
+    rubricResultCount: rubricResults.length,
+    rubricDimensionIds,
+    rubricEvidenceTypes,
+    rubricWeakDimensionIds: weakRubricDimensionIds(rubricResults),
+    rubricStableDimensionIds: stableRubricDimensionIds(rubricResults)
+  };
+}
+
 function clampLimit(value, fallback = 20) {
   const parsed = Number(value || fallback);
   if (!Number.isFinite(parsed)) return fallback;
@@ -95,7 +163,7 @@ function publicEvidence(item = {}) {
     status: cleanString(item.status),
     evidenceWeight: Number(item.evidenceWeight || 0) || 0,
     confidence: Number(item.confidence || 0) || 0,
-    summary: {
+    summary: Object.assign({
       summaryOnly: summary.summaryOnly !== false,
       taskCardId: cleanString(summary.taskCardId),
       title: boundedText(summary.title, 120),
@@ -104,7 +172,7 @@ function publicEvidence(item = {}) {
       profileDeltaId: cleanString(summary.profileDeltaId),
       evaluationId: cleanString(summary.evaluationId),
       sourceEvidenceIds: uniqueStrings(summary.sourceEvidenceIds).slice(0, 12)
-    },
+    }, publicRubricProjection(summary)),
     createdAt: cleanString(item.createdAt),
     updatedAt: cleanString(item.updatedAt),
     privacyClass: cleanString(item.privacyClass)
@@ -220,6 +288,18 @@ function latestTimestamp(values = []) {
   return uniqueStrings(values).sort().pop() || "";
 }
 
+function rubricAuditSummary(items = []) {
+  const summaries = asArray(items).map((item) => item.summary || {});
+  return {
+    rubricEvidenceCount: summaries.filter((summary) => Number(summary.rubricResultCount || 0) > 0).length,
+    rubricPolicyIds: uniqueStrings(summaries.map((summary) => summary.rubricPolicyId)).slice(0, 12),
+    rubricDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricDimensionIds || [])).slice(0, 12),
+    rubricEvidenceTypes: uniqueStrings(summaries.flatMap((summary) => summary.rubricEvidenceTypes || [])).slice(0, 12),
+    rubricWeakDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricWeakDimensionIds || [])).slice(0, 12),
+    rubricStableDimensionIds: uniqueStrings(summaries.flatMap((summary) => summary.rubricStableDimensionIds || [])).slice(0, 12)
+  };
+}
+
 function timelineEntry(kind, item = {}) {
   if (kind === "plan") {
     return {
@@ -261,6 +341,8 @@ function timelineEntry(kind, item = {}) {
       taskCardId: item.sourceTaskCardId || item.summary?.taskCardId,
       evaluationId: item.summary?.evaluationId || (item.sourceType.includes("evaluation") ? item.sourceId : ""),
       targetNodeIds: targetNodeIdsFor(item),
+      rubricDimensionIds: uniqueStrings(item.summary?.rubricDimensionIds).slice(0, 12),
+      rubricResultCount: Number(item.summary?.rubricResultCount || 0) || 0,
       summary: boundedText(item.summary?.feedbackSummary || item.summary?.title, 220)
     };
   }
@@ -398,7 +480,7 @@ function createLearningCycleAuditService(options = {}) {
       source: "growth-learning-cycle-audit-service",
       target: publicTarget(Object.assign({}, baseInput, { learnerId })),
       filters,
-      summary: {
+      summary: Object.assign({
         planDraftCount: planDrafts.length,
         evidenceCount: evidence.length,
         profileDeltaCount: profileDeltas.length,
@@ -410,7 +492,7 @@ function createLearningCycleAuditService(options = {}) {
         hasProfileDelta: profileDeltas.length > 0,
         hasCorrections: corrections.length > 0,
         latestActivityAt: latestTimestamp(timeline.map((item) => item.at))
-      },
+      }, rubricAuditSummary(evidence)),
       partialFailures,
       planAudit: planResult.ok ? {
         ok: true,
