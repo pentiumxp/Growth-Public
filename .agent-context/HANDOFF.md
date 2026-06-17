@@ -9,6 +9,48 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T12:55+08:00 - Release Authorization Smoke Operator Readback
+
+- Status: implemented, key-node validated, and ready to commit locally. No
+  production deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, runtime config, scheduler permission, UI behavior,
+  production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-release-authorization` delegated correctly to
+    `learning-automation-release-authorization-service.authorize`, but
+    operator-critical authorization status, approval counts, review status,
+    collection-run/decision/package readback, package-dashboard/preflight
+    summary, and runtime/write flags were available only through nested DTOs;
+  - this made authorization less consistent with release-decision,
+    release-review, release-readiness, controls, closure, inventory,
+    dashboard, workbench, and preflight smoke readbacks.
+- Scope:
+  - added `projectReleaseAuthorizationSmokeReadback` in
+    `scripts/smoke-growth-release-authorization.js`;
+  - wrapped the smoke `authorize` operation with bounded top-level,
+    summary-only projection fields while preserving service DTOs as canonical
+    output;
+  - expanded `tests/growth-release-authorization-smoke-script.test.js` with
+    pure projection coverage, fake-service delegation assertions, and
+    temporary SQLite no-write readback assertions;
+  - updated Growth-local architecture, next-stage plan, platform-contract
+    pointer, test matrix, project context, and this handoff.
+- Validation:
+  - `node --check scripts/smoke-growth-release-authorization.js`;
+  - `node --test tests/growth-release-authorization-smoke-script.test.js` ->
+    6/6;
+  - `npm run --silent test:release-union` -> 243/243;
+  - `npm run --silent check` -> 210 runtime files checked;
+  - `node scripts/check-growth-docs-locality.js` -> ok, `requiredCount=37`;
+  - `git diff --check` -> ok;
+  - `codegraph sync && codegraph status` -> index up to date, 374 files,
+    5,348 nodes, 23,437 edges, with the existing earlier-engine advisory.
+- Note: full `npm test` was intentionally not run in this slice per the current
+  speed instruction. Key-node validation was selected because the change is
+  limited to smoke projection, Harness, and documentation.
+
 ## 2026-06-17T12:52+08:00 - Release Review Smoke Operator Readback
 
 - Status: implemented, key-node validated, and ready to commit locally. No

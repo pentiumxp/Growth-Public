@@ -66,8 +66,65 @@ function validateInput(input = {}) {
   return { ok: true };
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function projectReleaseAuthorizationSmokeReadback(result = {}) {
+  const review = objectOnly(result.review);
+  const packageReadback = objectOnly(result.packageReadback);
+  const latestCollectionRun = objectOnly(result.latestCollectionRun);
+  const latestDecision = objectOnly(result.latestDecision);
+  const latestPackage = objectOnly(result.latestPackage);
+  const status = cleanString(result.releaseAuthorizationStatus || result.status, 120);
+  return Object.assign({}, result, {
+    releaseAuthorizationStatus: status,
+    releaseAuthorizationAuthorized: result.authorized === true,
+    releaseAuthorizationReason: cleanString(result.reason || result.error, 180),
+    releaseAuthorizationRequiredApprovalCount: asArray(result.requiredApprovalKeys).length,
+    releaseAuthorizationApprovalCount: asArray(result.approvalKeys).length,
+    releaseAuthorizationMissingApprovalCount: asArray(result.missingApprovalKeys).length,
+    releaseAuthorizationReviewStatus: cleanString(review.status, 120),
+    releaseAuthorizationReviewApprovedForReleaseReview: review.approvedForReleaseReview === true,
+    releaseAuthorizationCollectionRunPresent: review.collectionRunPresent === true || Boolean(latestCollectionRun.runId),
+    releaseAuthorizationCollectionRunId: cleanString(
+      latestCollectionRun.runId
+      || latestCollectionRun.collectionRunId
+      || latestCollectionRun.collection_run_id,
+      140
+    ),
+    releaseAuthorizationCollectionRunStatus: cleanString(latestCollectionRun.status, 120),
+    releaseAuthorizationLatestDecisionId: cleanString(latestDecision.decisionId || latestDecision.decision_id, 140),
+    releaseAuthorizationLatestDecisionStatus: cleanString(latestDecision.status, 120),
+    releaseAuthorizationPackageRecordReadbackAvailable: packageReadback.packageRecordReadbackAvailable === true || review.packageRecordReadbackAvailable === true,
+    releaseAuthorizationPackageRecordPresent: packageReadback.packageRecordPresent === true || review.packageRecordPresent === true,
+    releaseAuthorizationPackageRecordStatus: cleanString(packageReadback.packageRecordStatus || review.packageRecordStatus, 120),
+    releaseAuthorizationLatestPackageId: cleanString(
+      packageReadback.latestPackageId
+      || review.latestPackageId
+      || latestPackage.packageId
+      || latestPackage.package_id,
+      140
+    ),
+    releaseAuthorizationLatestPackageDashboardStatus: cleanString(packageReadback.latestPackageDashboardStatus || review.latestPackageDashboardStatus, 120),
+    releaseAuthorizationLatestPackageDashboardNextActionKey: cleanString(packageReadback.latestPackageDashboardNextActionKey || review.latestPackageDashboardNextActionKey, 140),
+    releaseAuthorizationLatestPackageDashboardPreflightStatus: cleanString(packageReadback.latestPackageDashboardPreflightStatus || review.latestPackageDashboardPreflightStatus, 120),
+    releaseAuthorizationLatestPackageDashboardPreflightReadyForOwnerReleaseActivation: packageReadback.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true || review.latestPackageDashboardPreflightReadyForOwnerReleaseActivation === true,
+    releaseAuthorizationWritefulSchedulingAllowed: result.writefulSchedulingAllowed === true || review.writefulSchedulingAllowed === true || packageReadback.writefulSchedulingAllowed === true,
+    releaseAuthorizationRuntimeConfigChange: result.runtimeConfigChange === true || review.runtimeConfigChange === true || packageReadback.runtimeConfigChange === true
+  });
+}
+
 function runOperation(service, input) {
-  return service.authorize(input);
+  return projectReleaseAuthorizationSmokeReadback(service.authorize(input));
 }
 
 function formatResult(value, pretty = false) {
@@ -103,6 +160,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseAuthorizationSmokeReadback,
   runOperation,
   validateInput
 };

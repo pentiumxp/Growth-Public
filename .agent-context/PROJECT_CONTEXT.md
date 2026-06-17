@@ -695,14 +695,15 @@ readback gate set.
   `readyForOwnerReleaseActivation`, missing check/evidence/approval keys,
   required actions, and one next action while still keeping
   `writefulSchedulingAllowed=false` and `runtimeConfigChange=false`.
-  Release-decision, release-review, release-controls, release-closure,
-  release-inventory, release-dashboard, release-workbench, and release-preflight
-  smoke CLIs now mirror selected nested
+  Release-decision, release-review, release-authorization, release-controls,
+  release-closure, release-inventory, release-dashboard, release-workbench, and
+  release-preflight smoke CLIs now mirror selected nested
   DTO
   fields into top-level operator readbacks for status, missing counts, required
-  action count, one next action, package/record/report status, package-review
-  readiness, advisory readiness booleans, and runtime/write flags only; those
-  projections are not new release decisions or write permissions.
+  action count, one next action, approval counts, package/record/report status,
+  package-review readiness, advisory readiness booleans, and runtime/write
+  flags only; those projections are not new release decisions, scheduler
+  permissions, runtime config authority, or write permissions.
   Growth now also has
   `learning-automation-release-activation-service`,
   `npm run smoke:release-activation`, and visible-target scoped
