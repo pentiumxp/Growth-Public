@@ -12,8 +12,8 @@ stable across Codex continuation threads.
 
 | Class | Examples | Minimum Harness |
 | --- | --- | --- |
-| H1 workflow or write boundary | Gateway planner/authoring/evaluation, card publication, learner submission/evaluation/reflection, release evidence recording, approvals, scheduler execution/run/worker, activation/runtime enablement writes, route authorization changes. | Service/repository tests for the owner module, route tests when HTTP surface changes, matching smoke-script test when a CLI exists, `tests/growth-architecture-boundary.test.js`, docs-locality, `npm run --silent check`, and `npm test` before claiming closure. |
-| H2 projection or contract readback | Read-only DTO fields, release dashboard/review/authorization/closure summaries, evidence-readback projection, package-record summary readback, Owner context read models, active stage-checkpoint loop-state readback, plugin-owned SQLite runtime readback fields. | Owning service/store tests with explicit field assertions, route or smoke test when the public surface changes, architecture boundary guard when dependency direction matters, docs-locality, syntax check, and the relevant focused row in `docs/TEST_MATRIX.md`. |
+| H1 workflow or write boundary | Gateway planner/authoring/evaluation, card publication, learner submission/evaluation/reflection, formal stage-assessment activation/completion, release evidence recording, approvals, scheduler execution/run/worker, activation/runtime enablement writes, route authorization changes. | Service/repository tests for the owner module, route tests when HTTP surface changes, matching smoke-script test when a CLI exists, `tests/growth-architecture-boundary.test.js`, docs-locality, `npm run --silent check`, and `npm test` before claiming closure. |
+| H2 projection or contract readback | Read-only DTO fields, release dashboard/review/authorization/closure summaries, evidence-readback projection, package-record summary readback, Owner context read models, active stage-checkpoint loop-state readback, formal-assessment reflection-required projection, plugin-owned SQLite runtime readback fields. | Owning service/store tests with explicit field assertions, route or smoke test when the public surface changes, architecture boundary guard when dependency direction matters, docs-locality, syntax check, and the relevant focused row in `docs/TEST_MATRIX.md`. |
 | H3 docs or static non-behavioral change | Durable docs, handoff status, command matrix, comments that do not alter runtime behavior. | `node scripts/check-growth-docs-locality.js`, `tests/growth-docs-locality.test.js` when docs registration changes, `git diff --check`, and syntax coverage if runtime files changed. |
 
 When a change crosses classes, use the higher class and include every affected
@@ -62,3 +62,8 @@ until real artifacts are collected:
 - Do not store raw learner answers, transcripts, raw prompts, raw model output,
   source-document bodies, private paths, credentials, tokens, cookies, provider
   config, or long logs in docs, tests, evidence records, or handoffs.
+- Do not prove formal stage checkpoints with only readiness mocks. A formal
+  assessment flow change needs persistent evidence for activation, one
+  submission, one evaluation, one reflection, high-weight mastery evidence,
+  cooldown, and duplicate attempt rejection, unless the change is explicitly
+  docs-only.

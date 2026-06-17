@@ -330,12 +330,21 @@ function completionPolicyForTask(task = {}) {
   return policy && typeof policy === "object" ? policy : {};
 }
 
+function completionAfterForTask(task = {}) {
+  const policy = completionPolicyForTask(task);
+  return cleanString(policy.completionAfter || policy.completion_after).toLowerCase();
+}
+
 function isDailyScoreOnceTask(task = {}) {
   const policy = completionPolicyForTask(task);
   if (cleanString(policy.mode).toLowerCase() === "daily_score_once") return true;
   const source = cleanString(task.source || task.authoringAudit?.source || task.authoring_audit?.source).toLowerCase();
   const role = cleanString(task.cardRole || task.card_role || task.learningGrowthCardRole).toLowerCase();
   return source === "growth-card-authoring" && role !== "stage_assessment";
+}
+
+function requiresFormalReflection(task = {}) {
+  return completionAfterForTask(task) === "formal_reflection";
 }
 
 function dailyScoreOnceEvaluationCompletes(latest = {}) {
@@ -351,7 +360,8 @@ function taskStatus(task = {}, latest = {}, context = {}) {
   if (isDailyScoreOnceTask(task) && dailyScoreOnceEvaluationCompletes(latest)) return "complete";
   if (!latest.evaluation && cleanString(latest.evaluationJob?.status).toLowerCase() === "failed") return "evaluation_failed";
   const reflectionStatus = cleanString(latest.reflection?.status);
-  if (reflectionStatus === "accepted") return "complete";
+  if (requiresFormalReflection(task) && latest.evaluation && !reflectionStatus) return "spoken_reflection";
+  if (reflectionStatus === "accepted" || (requiresFormalReflection(task) && reflectionStatus)) return "complete";
   const evaluationStatus = cleanString(latest.evaluation?.status);
   if (evaluationStatus === "reflection_required") return "spoken_reflection";
   if (evaluationStatus === "needs_repair" || evaluationStatus === "needs_revision" || evaluationStatus === "draft_feedback") return "revise";

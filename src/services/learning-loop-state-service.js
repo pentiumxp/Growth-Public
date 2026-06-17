@@ -623,6 +623,8 @@ function createLearningLoopStateService(options = {}) {
       domainPackId: scope.domainPackId,
       domain: scope.domain,
       subject: scope.subject,
+      subjectId: input.subjectId || input.subject_id || scope.subject,
+      capabilityClusterId: input.capabilityClusterId || input.capability_cluster_id,
       targetNodeId: targetNodeIds[0],
       targetNodeIds,
       assessmentCoverageNodeIds: targetNodeIds

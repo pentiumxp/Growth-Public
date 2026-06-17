@@ -260,7 +260,12 @@ function createGrowthEvaluationService(options = {}) {
       const result = await processEvaluationJob(job);
       if (result) {
         processed += 1;
-        results.push({ jobId: job.jobId, ok: result.ok !== false, status: result.evaluation?.status || result.job?.status || "" });
+        results.push({
+          jobId: job.jobId,
+          ok: result.ok !== false,
+          status: result.evaluation?.status || result.job?.status || "",
+          stage_assessment_cycle: result.stage_assessment_cycle || null
+        });
       }
     }
     return { ok: true, processed, results };

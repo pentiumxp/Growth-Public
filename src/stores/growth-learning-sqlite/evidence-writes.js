@@ -122,11 +122,46 @@ function completionPolicy(taskCard = {}) {
   return policy && typeof policy === "object" ? policy : {};
 }
 
-function isDailyScoreOnceCard(taskCard = {}) {
+function policyMode(taskCard = {}) {
   const policy = completionPolicy(taskCard);
-  if (cleanString(policy.mode) === "daily_score_once") return true;
+  return cleanString(policy.mode).toLowerCase();
+}
+
+function taskCardRole(taskCard = {}) {
   const raw = parseJson(taskCard.raw_json, {}) || {};
-  return raw.source === "growth-card-authoring" && cleanString(taskCard.card_role || raw.cardRole) !== "stage_assessment";
+  return cleanString(taskCard.card_role || raw.cardRole).toLowerCase();
+}
+
+function isLegacyGeneratedDailyCard(taskCard = {}) {
+  const raw = parseJson(taskCard.raw_json, {}) || {};
+  return raw.source === "growth-card-authoring" && taskCardRole(taskCard) !== "stage_assessment";
+}
+
+function isSingleSubmissionCard(taskCard = {}) {
+  const policy = completionPolicy(taskCard);
+  const attempts = Number(policy.evaluationAttempts || policy.evaluation_attempts || 0);
+  const mode = policyMode(taskCard);
+  return attempts === 1 || mode === "daily_score_once" || mode === "formal_assessment" || isLegacyGeneratedDailyCard(taskCard);
+}
+
+function isSingleReflectionCard(taskCard = {}) {
+  const policy = completionPolicy(taskCard);
+  const attempts = Number(policy.reflectionAttempts || policy.reflection_attempts || 0);
+  const mode = policyMode(taskCard);
+  return attempts === 1 || mode === "daily_score_once" || mode === "formal_assessment" || isLegacyGeneratedDailyCard(taskCard);
+}
+
+function requiresEvaluationBeforeReflection(taskCard = {}) {
+  const policy = completionPolicy(taskCard);
+  const completionAfter = cleanString(policy.completionAfter || policy.completion_after).toLowerCase();
+  return isSingleReflectionCard(taskCard) && ["first_evaluation", "formal_reflection"].includes(completionAfter);
+}
+
+function attemptPolicyKind(taskCard = {}) {
+  const mode = policyMode(taskCard);
+  if (mode === "formal_assessment" || taskCardRole(taskCard) === "stage_assessment") return "formal_assessment";
+  if (mode === "daily_score_once" || isLegacyGeneratedDailyCard(taskCard)) return "daily_card";
+  return "card";
 }
 
 function ensureInteractionSession(db, values = {}) {
@@ -165,14 +200,15 @@ function createEvidenceWriter({ open }) {
       const taskCard = taskCardByIdOrKanbanId(db, taskCardId, workspaceId);
       if (!taskCard) return { ok: false, error: "task_card_not_found" };
       const canonicalTaskCardId = cleanString(taskCard.id);
-      if (isDailyScoreOnceCard(taskCard)) {
+      if (isSingleSubmissionCard(taskCard)) {
         const existingSubmissions = countSubmissionsForTask(db, canonicalTaskCardId);
         const existingEvaluations = countEvaluationsForTask(db, canonicalTaskCardId);
         const existingJobs = countOpenEvaluationJobsForTask(db, canonicalTaskCardId);
         if (existingSubmissions || existingEvaluations || existingJobs) {
+          const policyKind = attemptPolicyKind(taskCard);
           return {
             ok: false,
-            error: "daily_card_submission_already_recorded",
+            error: `${policyKind}_submission_already_recorded`,
             task_card_id: canonicalTaskCardId,
             submission_count: existingSubmissions,
             evaluation_count: existingEvaluations,
@@ -317,12 +353,20 @@ function createEvidenceWriter({ open }) {
       const taskCard = taskCardByIdOrKanbanId(db, taskCardId, workspaceId);
       if (!taskCard) return { ok: false, error: "task_card_not_found" };
       const canonicalTaskCardId = cleanString(taskCard.id);
-      if (isDailyScoreOnceCard(taskCard)) {
+      if (requiresEvaluationBeforeReflection(taskCard) && countEvaluationsForTask(db, canonicalTaskCardId) < 1) {
+        return {
+          ok: false,
+          error: `${attemptPolicyKind(taskCard)}_reflection_requires_evaluation`,
+          task_card_id: canonicalTaskCardId
+        };
+      }
+      if (isSingleReflectionCard(taskCard)) {
         const existingReflections = countReflectionsForTask(db, canonicalTaskCardId);
         if (existingReflections) {
+          const policyKind = attemptPolicyKind(taskCard);
           return {
             ok: false,
-            error: "daily_card_reflection_already_recorded",
+            error: `${policyKind}_reflection_already_recorded`,
             task_card_id: canonicalTaskCardId,
             reflection_count: existingReflections
           };

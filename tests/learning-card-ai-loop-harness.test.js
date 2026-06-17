@@ -1794,29 +1794,112 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
     assert.equal(activation.activationState, "active");
     assert.equal(activation.generation.published.card.cardRole, "stage_assessment");
 
-    const submitted = harness.store.submitEvidence({
-      workspaceId: WORKSPACE_ID,
-      taskCardId: activation.published.taskCardId,
-      text: "The strongest evidence is the exact phrase in the text. I explain the claim and quote the words that prove it.",
-      submittedAt: "2026-06-14T08:10:00.000Z"
-    });
-    assert.equal(submitted.ok, true);
-    assert.equal(submitted.evaluation_job.status, "pending");
+    const stageTaskCardId = activation.published.taskCardId;
+    const board = await harness.growthService.board({ workspaceId: WORKSPACE_ID, limit: 20 });
+    assert.equal(board.ok, true);
+    const boardCard = board.cards.find((card) => card.taskCardId === stageTaskCardId);
+    assert.ok(boardCard);
+    assert.equal(boardCard.cardRole, "stage_assessment");
+    assert.equal(boardCard.expectedDurationMinutes.min, 25);
+    assert.equal(boardCard.expectedDurationMinutes.max, 30);
+    assert.equal(boardCard.primaryAction, "submit");
 
-    const processed = await harness.evaluationService.processEvaluationQueue({
+    const detail = await harness.growthService.card({ workspaceId: WORKSPACE_ID, taskCardId: stageTaskCardId });
+    assert.equal(detail.ok, true);
+    assert.equal(detail.card.taskCardId, stageTaskCardId);
+    assert.equal(detail.card.cardRole, "stage_assessment");
+    assert.equal(detail.card.primaryAction, "submit");
+
+    const activeLoopState = harness.loopStateService.state({
       workspaceId: WORKSPACE_ID,
-      limit: 1
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      domain: "english",
+      subject: "english",
+      capabilityClusterId: "english.evidence",
+      targetNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      assessmentCoverageNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      taskCardId: stageTaskCardId
     });
-    assert.equal(processed.ok, true);
-    assert.equal(processed.processed, 1);
+    assert.equal(activeLoopState.ok, true);
+    assert.equal(activeLoopState.status, "stage_checkpoint_active");
+    assert.equal(activeLoopState.stageAssessment.status, "active");
+    assert.equal(activeLoopState.stageAssessment.generatedTaskCardId, stageTaskCardId);
+    assert.equal(activeLoopState.nextAction.action, "complete_active_stage_assessment");
+    assert.equal(activeLoopState.nextAction.taskCardId, stageTaskCardId);
+    assert.equal(JSON.stringify(activeLoopState).includes(RAW_MARKER), false);
+
+    const completed = await harness.learnerCycleService.full({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      domain: "english",
+      subject: "english",
+      capabilityClusterId: "english.evidence",
+      targetNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      taskCardId: stageTaskCardId,
+      text: "The strongest evidence is the exact phrase in the text. I explain the claim and quote the words that prove it.",
+      reflection: "I checked the formal feedback once and will keep quoting the exact words.",
+      submittedAt: "2026-06-14T08:10:00.000Z",
+      reflectedAt: "2026-06-14T08:13:00.000Z"
+    });
+    assert.equal(completed.ok, true);
+    assert.equal(completed.operation, "full");
+    assert.equal(completed.submission.status, "submitted");
+    assert.equal(completed.evaluationQueue.processed, 1);
+    assert.equal(completed.reflection.status, "submitted");
+    assert.equal(completed.evaluationQueue.results[0].stageAssessmentCycle.activationState, "cooldown");
+    assert.equal(completed.evaluationQueue.results[0].stageAssessmentCycle.cycleStatus, "completed");
+    assert.equal(JSON.stringify(completed).includes(RAW_MARKER), false);
+
+    const duplicateSubmit = await harness.learnerCycleService.submit({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      taskCardId: stageTaskCardId,
+      text: "Second formal submission should not be accepted."
+    });
+    assert.equal(duplicateSubmit.ok, false);
+    assert.equal(duplicateSubmit.error, "formal_assessment_submission_already_recorded");
+
+    const secondEvaluate = await harness.learnerCycleService.evaluate({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      taskCardId: stageTaskCardId,
+      targetNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"]
+    });
+    assert.equal(secondEvaluate.ok, true);
+    assert.equal(secondEvaluate.evaluationQueue.processed, 0);
+
+    const duplicateReflect = await harness.learnerCycleService.reflect({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      taskCardId: stageTaskCardId,
+      reflection: "Second formal reflection should not be accepted."
+    });
+    assert.equal(duplicateReflect.ok, false);
+    assert.equal(duplicateReflect.error, "formal_assessment_reflection_already_recorded");
+
+    const completedDetail = await harness.growthService.card({ workspaceId: WORKSPACE_ID, taskCardId: stageTaskCardId });
+    assert.equal(completedDetail.ok, true);
+    assert.equal(completedDetail.card.status, "completed");
+    assert.equal(completedDetail.card.primaryAction, "review");
+    assert.equal(completedDetail.card.latestSubmission.status, "submitted");
+    assert.equal(completedDetail.card.latestEvaluation.status, "completed");
+    assert.equal(completedDetail.card.latestReflection.status, "submitted");
+    assert.equal(JSON.stringify(completedDetail).includes(RAW_MARKER), false);
+
     assert.equal(harness.evaluationGatewayCalls.length, 1);
     assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "formal_assessment");
     assert.equal(harness.evaluationGatewayCalls[0].input.card.cardRole, "stage_assessment");
+    assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
 
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
     try {
       const stageCard = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?")
-        .get(activation.published.taskCardId);
+        .get(stageTaskCardId);
       assert.equal(stageCard.card_role, "stage_assessment");
       assert.equal(stageCard.mastery_evidence_weight, 1);
       assert.equal(JSON.parse(stageCard.completion_policy_json).mode, "formal_assessment");
@@ -1826,7 +1909,7 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
       assert.equal(cycle.status, "completed");
       assert.equal(cycle.completed_at, "2026-06-14T08:12:00.000Z");
       assert.equal(cycle.cooldown_until, "2026-06-19T08:12:00.000Z");
-      assert.equal(JSON.parse(cycle.raw_json).generatedTaskCardId, activation.published.taskCardId);
+      assert.equal(JSON.parse(cycle.raw_json).generatedTaskCardId, stageTaskCardId);
 
       const mastery = db.prepare("SELECT * FROM learning_growth_mastery_states WHERE node_id = ?")
         .get(TARGET_NODE_ID);
@@ -1854,6 +1937,22 @@ test("stage assessment loop activates, evaluates with formal weight, and cools t
     assert.equal(eligibilityAfterCompletion.ok, true);
     assert.equal(eligibilityAfterCompletion.eligible, false);
     assert.equal(eligibilityAfterCompletion.activationState, "cooldown");
+
+    const cooledLoopState = harness.loopStateService.state({
+      workspaceId: WORKSPACE_ID,
+      learnerId: WORKSPACE_ID,
+      programId: PROGRAM_ID,
+      domain: "english",
+      subject: "english",
+      capabilityClusterId: "english.evidence",
+      targetNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      assessmentCoverageNodeIds: [TARGET_NODE_ID, "kg_english_claim_reason"],
+      taskCardId: stageTaskCardId
+    });
+    assert.equal(cooledLoopState.ok, true);
+    assert.notEqual(cooledLoopState.status, "stage_checkpoint_active");
+    assert.equal(cooledLoopState.stageAssessment.status, "cooldown");
+    assert.equal(JSON.stringify(cooledLoopState).includes(RAW_MARKER), false);
   } finally {
     fs.rmSync(harness.root, { recursive: true, force: true });
   }

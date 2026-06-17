@@ -1,6 +1,6 @@
 # Growth Card Interaction Flow
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-17.
 
 This document defines the plugin-owned learner interaction flow for generated
 Growth cards. It covers the three learner-facing stages, evaluation refresh,
@@ -46,6 +46,24 @@ The daily learner workflow is exactly three stages:
 Each stage may expose at most one active text submission box. The learning,
 lesson, guided-practice, hint, and criteria sections can show instructions, but
 they must not create additional text areas outside the active stage.
+
+Formal stage assessment cards use a separate `formal_assessment` policy:
+
+- the learner submits one formal answer only;
+- Growth runs one formal evaluation only;
+- the evaluation writes high-weight mastery evidence across the declared
+  assessment coverage nodes;
+- the card projects `reflection_required` after evaluation until the one
+  formal reflection is submitted;
+- the formal reflection can be submitted once only and does not reopen grading;
+- completion happens after that reflection, then the assessment cycle moves
+  into cooldown.
+
+Stage assessment readiness/readback is capability-scoped. Callers that need an
+active checkpoint state must pass the same `capabilityClusterId` and
+`assessmentCoverageNodeIds` used for activation; otherwise the service may
+correctly report a different dormant or cooldown checkpoint for the broader
+subject scope.
 
 ## UI Flow
 
@@ -251,7 +269,9 @@ Business rules remain in plugin services/stores:
   `src/stores/growth-learning-sqlite/projection.js` maps a terminal
   `daily_score_once` evaluation to completed/review state regardless of pass
   line or legacy `needs_revision`/`draft_feedback` wording. Formal
-  `stage_assessment` cards keep the legacy revision/reflection lanes.
+  `stage_assessment` cards map the first evaluation to
+  `reflection_required` until the single formal reflection is recorded, then
+  project `completed_recent` / review.
 
 ## Harness
 
@@ -307,6 +327,12 @@ missing-required counts, and finding counts while preserving the nested DTO as
 canonical. Production use should run the default audit readback unless the
 submitted text/reflection is a real learner action explicitly requested by
 Owner.
+
+`tests/learning-card-ai-loop-harness.test.js` also covers the formal
+stage-assessment path: Owner activation, board/detail visibility, active
+loop-state readback with `capabilityClusterId`, learner-cycle `full`
+submit/evaluate/reflect, duplicate formal submission/reflection rejection,
+high-weight mastery evidence, and completed assessment-cycle cooldown.
 
 Gateway-backed evaluation coverage lives in
 `tests/learning-card-evaluation-service.test.js` and asserts valid streaming

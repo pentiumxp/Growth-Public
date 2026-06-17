@@ -108,9 +108,15 @@ readback gate set.
   recipe into card generation; the Owner browser should not recompute graph
   scope locally.
   Stage assessment cards are separate formal cards: activation is owned by
-  `learning-stage-assessment-service`, formal evaluation writes higher-weight
-  mastery evidence across declared assessment coverage nodes, and completed
-  assessment cycles move into cooldown. Owner checkpoint controls are now
+  `learning-stage-assessment-service`, the persisted `formal_assessment`
+  policy allows one formal submission, one formal evaluation, and one formal
+  reflection after evaluation, formal evaluation writes higher-weight mastery
+  evidence across declared assessment coverage nodes, public card projection
+  stays `reflection_required` until the formal reflection is stored, and
+  completed assessment cycles move into cooldown. Active checkpoint loop-state
+  readback is capability-scoped; callers that need the same active cycle must
+  pass the activation `capabilityClusterId` plus `assessmentCoverageNodeIds`.
+  Owner checkpoint controls are now
   exposed as a separate summary-only read model through
   `learning-stage-checkpoint-controls-service` and Owner-only
   `GET /api/v1/growth/stage-assessments/controls`; that read model delegates

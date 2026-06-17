@@ -1,6 +1,6 @@
 # Growth Card Generation Rules
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-17.
 
 This document consolidates the current Growth card-generation rules from the
 migrated Home AI Growth documents under `docs/home-ai-growth/`. It is the
@@ -52,6 +52,20 @@ assessment policy work and must not be used by daily cards:
 6. completion and reward settlement happen only after all gates pass.
 
 That flow should not be applied to ordinary daily cards.
+
+Formal `stage_assessment` cards now use the implemented
+`formal_assessment` policy instead of the old open-ended retry loop:
+
+- exactly one formal submission;
+- exactly one formal evaluation;
+- exactly one formal reflection after evaluation;
+- completion only after that formal reflection;
+- high-weight mastery evidence across the declared coverage nodes;
+- assessment-cycle cooldown after completion.
+
+The formal flow is still separate from daily planning. Daily-loop draft/publish
+must not directly publish a `stage_assessment`; activation belongs to
+`learning-stage-assessment-service`.
 
 ## Learner Runtime Flow
 
@@ -235,8 +249,10 @@ Public board/detail projection must enforce the same low-pressure rule. Once a
 `completed_recent`, `nextAction` is `complete`, and the primary action is
 review, even when the score is low or a legacy evaluator status says
 `needs_revision`, `draft_feedback`, or `reflection_required`. Formal
-`stage_assessment` cards are the exception and keep revision/reflection lanes
-until their separate assessment policy is implemented.
+`stage_assessment` cards are the exception: their `formal_assessment` policy
+projects `reflection_required` after the first evaluation, allows exactly one
+reflection, and projects completed/review only after that reflection is
+recorded.
 
 When `requireModel=true`, missing `teachingFlow` is invalid production output.
 The system should fail closed, regenerate once with explicit validation

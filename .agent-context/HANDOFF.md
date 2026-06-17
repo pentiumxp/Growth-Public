@@ -21120,3 +21120,67 @@
     current service/harness slice is committed and pushed;
   - keep visual validation/deploy as a separate release gate because this slice
     changed service behavior and harnesses, not browser layout.
+
+## 2026-06-17T19:03+0800 - Formal stage-assessment one-shot learner cycle
+
+- Status:
+  - Implemented local Growth service/store/docs/harness slice.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - Formal `stage_assessment` cards now follow the implemented
+    `formal_assessment` policy in plugin-owned SQLite writes and projection:
+    one formal submission, one formal evaluation, one formal reflection after
+    evaluation, and completed/review projection only after that reflection.
+  - `evidence-writes` now derives one-shot submission/reflection behavior from
+    completion policy and card role instead of treating only daily cards as
+    one-shot. Formal duplicate attempts return formal-specific bounded errors:
+    `formal_assessment_submission_already_recorded`,
+    `formal_assessment_reflection_requires_evaluation`, and
+    `formal_assessment_reflection_already_recorded`.
+  - `projection` now keeps formal assessment cards in `reflection_required`
+    after evaluation until the one formal reflection is stored, then projects
+    completed/review.
+  - `growth-evaluation-service.processEvaluationQueue()` now preserves bounded
+    `stage_assessment_cycle` readback in queue results so
+    `learning-learner-cycle-service.full()` can surface formal completion /
+    cooldown evidence.
+  - `learning-loop-state-service` now passes `subjectId` and
+    `capabilityClusterId` into `learning-stage-assessment-service.stageReadiness()`;
+    active checkpoint readback is therefore capability-scoped instead of falling
+    back to a broader subject/node default.
+  - The AI-loop harness now proves Owner stage-assessment activation ->
+    board/detail visibility -> active loop-state readback -> learner-cycle
+    `full()` submit/evaluate/reflect -> duplicate formal submission/reflection
+    rejection -> high-weight mastery evidence -> completed assessment-cycle
+    cooldown.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/GROWTH_CARD_INTERACTION_FLOW.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/TEST_MATRIX.md`;
+  - `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`.
+- Validation passed so far:
+  - `node --check src/services/growth-evaluation-service.js`;
+  - `node --check src/services/learning-loop-state-service.js`;
+  - `node --check src/stores/growth-learning-sqlite/evidence-writes.js`;
+  - `node --check src/stores/growth-learning-sqlite/projection.js`;
+  - `node --check tests/growth-learning-sqlite-evidence-writes.test.js`;
+  - `node --check tests/growth-learning-sqlite-store.test.js`;
+  - `node --check tests/learning-card-ai-loop-harness.test.js`;
+  - `node --test tests/growth-evaluation-service.test.js` passed `5/5`;
+  - `node --test tests/growth-learning-sqlite-evidence-writes.test.js`
+    passed `7/7`;
+  - `node --test tests/growth-learning-sqlite-store.test.js` passed `14/14`;
+  - `node --test tests/learning-loop-state-service.test.js` passed `7/7`;
+  - `node --test tests/learning-learner-cycle-service.test.js` passed `2/2`;
+  - `node --test tests/learning-card-ai-loop-harness.test.js` passed `6/6`.
+- Remaining next-step candidates:
+  - run final docs-locality, whitespace, and CodeGraph freshness checks;
+  - commit and push this formal-assessment backend/Harness/docs slice;
+  - next larger package can move back to product-visible UI polish or release
+    evidence gates, keeping visual validation/deploy separate until explicitly
+    requested.

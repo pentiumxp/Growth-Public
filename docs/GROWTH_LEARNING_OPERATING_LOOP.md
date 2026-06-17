@@ -1063,6 +1063,9 @@ Formal stage assessment cards:
 - target 25-30 minutes;
 - are not daily homework debt;
 - require activation policy and explicit coverage;
+- accept one formal submission;
+- run one formal evaluation;
+- require one formal reflection after evaluation before card completion;
 - use high evidence weight;
 - update profile more strongly than daily cards;
 - move to cooldown after completion.

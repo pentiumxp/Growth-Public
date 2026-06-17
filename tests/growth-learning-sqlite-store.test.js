@@ -580,6 +580,67 @@ test("processes pending Growth evaluation jobs into plugin-owned evaluations", a
   }
 });
 
+test("projects formal assessment as reflection-required after evaluation until reflection is submitted", () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+  const db = new DatabaseSync(dbPath);
+  try {
+    insertTaskCard(db, {
+      id: "stage_card_1",
+      title: "Formal checkpoint",
+      taskCardType: "assessment",
+      cardRole: "stage_assessment",
+      raw: {
+        source: "growth-card-authoring",
+        cardRole: "stage_assessment",
+        completionPolicy: {
+          mode: "formal_assessment",
+          evaluationAttempts: 1,
+          reflectionAttempts: 1,
+          completionAfter: "formal_reflection",
+          passScoreRequired: false
+        },
+        learningGraph: {
+          targetNodeIds: ["kg_main_idea"],
+          assessmentCoverageNodeIds: ["kg_main_idea"]
+        }
+      }
+    });
+    db.prepare(`
+      INSERT INTO learning_task_submissions(id, task_card_id, status, submission_kind, submitted_at, created_at, workspace_id, raw_json)
+      VALUES ('submission_stage_1', 'stage_card_1', 'submitted', 'text', '2026-06-10T00:01:00.000Z', '2026-06-10T00:01:00.000Z', 'weixin_child', '{}')
+    `).run();
+    db.prepare(`
+      INSERT INTO learning_evaluations(id, task_card_id, status, score, passed, summary, created_at, workspace_id)
+      VALUES ('eval_stage_1', 'stage_card_1', 'completed', 90, 1, 'Formal checkpoint passed.', '2026-06-10T00:02:00.000Z', 'weixin_child')
+    `).run();
+  } finally {
+    db.close();
+  }
+
+  const store = createGrowthLearningSqliteStore({ dbPath });
+  const beforeReflection = store.card({ workspaceId: "weixin_child", taskCardId: "stage_card_1" }).card;
+  assert.equal(beforeReflection.laneId, "reflection_required");
+  assert.equal(beforeReflection.primaryAction, "reflect");
+  assert.equal(beforeReflection.actions.canReflect, true);
+
+  const reflected = store.submitReflection({
+    workspaceId: "weixin_child",
+    taskCardId: "stage_card_1",
+    transcript: "I reviewed the checkpoint feedback once.",
+    submittedAt: "2026-06-10T00:03:00.000Z"
+  });
+  assert.equal(reflected.ok, true);
+
+  const afterReflection = store.card({ workspaceId: "weixin_child", taskCardId: "stage_card_1" }).card;
+  assert.equal(afterReflection.laneId, "completed_recent");
+  assert.equal(afterReflection.primaryAction, "review");
+  assert.equal(afterReflection.latestReflection.status, "submitted");
+
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test("recovers stale processing Growth evaluation jobs after worker restart", async () => {
   const root = tmpDir();
   const dbPath = path.join(root, "growth-learning.sqlite3");
