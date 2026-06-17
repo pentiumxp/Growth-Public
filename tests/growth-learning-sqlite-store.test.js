@@ -8,6 +8,7 @@ const {
   REQUIRED_GROWTH_TABLES,
   createGrowthLearningSqliteStore
 } = require("../src/stores/growth-learning-sqlite-store");
+const { readEnv } = require("../src/config/env");
 const { createGrowthEvaluationService } = require("../src/services/growth-evaluation-service");
 const { run: runAudioBackfill } = require("../scripts/backfill-growth-audio-blobs");
 const { run: runImport } = require("../scripts/import-growth-learning-sqlite");
@@ -263,6 +264,28 @@ test("reads Growth plugin-owned SQLite board and card projections", () => {
   assert.equal(card.ok, true);
   assert.equal(card.card.title, "Read one");
   assert.equal(card.card.experienceSummary.latestSignalType, "too_hard");
+});
+
+test("configures SQLite busy timeout for Growth store connections", () => {
+  const root = tmpDir();
+  const dbPath = path.join(root, "growth-learning.sqlite3");
+  createSourceDb(dbPath);
+
+  const defaultStore = createGrowthLearningSqliteStore({ dbPath });
+  assert.equal(defaultStore.integrity({ workspaceId: "weixin_child" }).sqlite_busy_timeout_ms, 5000);
+
+  const configuredStore = createGrowthLearningSqliteStore({
+    dbPath,
+    sqliteBusyTimeoutMs: 1200
+  });
+  assert.equal(configuredStore.integrity({ workspaceId: "weixin_child" }).sqlite_busy_timeout_ms, 1200);
+
+  const config = readEnv({
+    GROWTH_DATA_DIR: root,
+    GROWTH_SQLITE_BUSY_TIMEOUT_MS: "2500"
+  });
+  assert.equal(config.sqliteBusyTimeoutMs, 2500);
+  assert.equal(readEnv({ GROWTH_DATA_DIR: root, GROWTH_SQLITE_BUSY_TIMEOUT_MS: "0" }).sqliteBusyTimeoutMs, 0);
 });
 
 test("projects board lanes with legacy Growth UI semantics", () => {

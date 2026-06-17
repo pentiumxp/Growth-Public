@@ -50,12 +50,23 @@ const {
   visibleSequenceCards
 } = require("./growth-learning-sqlite/projection");
 
-function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
+const DEFAULT_SQLITE_BUSY_TIMEOUT_MS = 5000;
+
+function normalizeBusyTimeoutMs(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return DEFAULT_SQLITE_BUSY_TIMEOUT_MS;
+  return Math.max(0, Math.min(60000, Math.trunc(parsed)));
+}
+
+function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [], sqliteBusyTimeoutMs } = {}) {
   const resolvedPath = path.resolve(dbPath || "");
+  const busyTimeoutMs = normalizeBusyTimeoutMs(sqliteBusyTimeoutMs);
 
   function open(readOnly = true) {
     const { DatabaseSync } = sqlite();
-    return new DatabaseSync(resolvedPath, { open: true, readOnly });
+    const db = new DatabaseSync(resolvedPath, { open: true, readOnly });
+    db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
+    return db;
   }
 
   function withDb(callback) {
@@ -104,12 +115,14 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     return withDb((db) => {
       const missingTables = REQUIRED_GROWTH_TABLES.filter((tableName) => !tableExists(db, tableName));
       const quick = db.prepare("PRAGMA quick_check").get();
+      const busyTimeout = db.prepare("PRAGMA busy_timeout").get();
       const foreignKeyIssues = db.prepare("PRAGMA foreign_key_check").all().length;
       const counts = {};
       for (const tableName of REQUIRED_GROWTH_TABLES) counts[tableName] = countTable(db, tableName, filters);
       return {
         ok: missingTables.length === 0 && foreignKeyIssues === 0 && (quick?.quick_check || "") === "ok",
         db_path: resolvedPath,
+        sqlite_busy_timeout_ms: Number(busyTimeout?.timeout || busyTimeout?.busy_timeout || 0) || busyTimeoutMs,
         quick_check: quick?.quick_check || "",
         foreign_key_issues: foreignKeyIssues,
         missing_tables: missingTables,

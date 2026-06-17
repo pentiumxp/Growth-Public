@@ -51,7 +51,10 @@ backend boundaries:
   evaluation jobs, rewards, graph data, card authoring publish, stage cycles,
   evidence ledger, and learning plan drafts. The store facade remains the
   public composition boundary while modules continue to be extracted by feature
-  need.
+  need. Store-created SQLite connections set a bounded busy timeout
+  (`GROWTH_SQLITE_BUSY_TIMEOUT_MS`, default `5000`) and expose the applied
+  value through the integrity DTO so local Owner readbacks and smoke harnesses
+  do not fail immediately under short concurrent Growth SQLite access.
 - Gateway-only model boundary: Growth calls models only through Gateway
   clients. It must not import Home AI old Growth server internals or direct
   vendor SDKs.

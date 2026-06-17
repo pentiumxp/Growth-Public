@@ -94,7 +94,8 @@ function createServices(config) {
   const growthSnapshotStore = createGrowthSnapshotStore({ filePath: config.snapshotStorePath });
   const growthLearningStore = createGrowthLearningSqliteStore({
     dbPath: config.learningDbPath,
-    legacyAudioRoots: config.legacyAudioRoots
+    legacyAudioRoots: config.legacyAudioRoots,
+    sqliteBusyTimeoutMs: config.sqliteBusyTimeoutMs
   });
   const growthEventOutboxStore = createGrowthEventOutboxStore({ filePath: config.eventOutboxStorePath });
   const growthService = createGrowthService({ config, snapshotStore: growthSnapshotStore, learningStore: growthLearningStore });

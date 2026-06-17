@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:32+08:00 - SQLite Busy Timeout Runtime Readback
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - two no-write release readback smokes were briefly run in parallel during
+    local validation, and one hit SQLite `database is locked`;
+  - sequential readback succeeded, so this was not release evidence failure,
+    but plugin-owned SQLite connections had no bounded `busy_timeout` runtime
+    setting or public integrity readback for that setting.
+- Scope:
+  - added `GROWTH_SQLITE_BUSY_TIMEOUT_MS` to Growth env parsing, default
+    `5000`;
+  - passed the value through `src/app/services.js` into
+    `createGrowthLearningSqliteStore`;
+  - set `PRAGMA busy_timeout` on every plugin-owned Growth SQLite connection;
+  - exposed the applied value as `sqlite_busy_timeout_ms` in the SQLite
+    integrity DTO;
+  - added focused store Harness coverage for the default value, configured
+    value, and explicit env parsing;
+  - updated Growth architecture docs, the Home AI platform-contract pointer,
+    the local test matrix, the Harness-required matrix, and project context.
+- Operational readback:
+  - sequential `smoke-growth-release-workbench` for
+    `workspaceId=owner`, `learnerId=fanfan`, `domain=science`,
+    `subject=science` returned `ok=true`, `status=release_evidence_required`,
+    `ownerActionCount=11`, four release-state prerequisite actions, and
+    `writefulSchedulingAllowed=false`;
+  - sequential `smoke-growth-release-artifact-template` for the same scope
+    returned `ok=true`, `artifactSlotCount=8`,
+    `statePrerequisiteItemCount=4`, `unsupportedItemCount=0`, and
+    `writefulSchedulingAllowed=false`.
+- Validation passed:
+  - `node --check src/config/env.js && node --check src/app/services.js &&
+    node --check src/stores/growth-learning-sqlite-store.js`;
+  - `node --test tests/growth-learning-sqlite-store.test.js` passed `13/13`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `235/235`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `923/923`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,284` nodes, and `23,029` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `94.7%`
+    complete;
+  - remaining work is still external release closure evidence: Home AI central
+    visual/UI summary artifacts, real automation state completion, explicit
+    Owner approvals/reviews, final release closure/preflight, and production
+    deploy evidence.
+
 ## 2026-06-17T11:24+08:00 - Release Workbench State Prerequisite Actions
 
 - Status: implemented and locally validated. No production deployment was

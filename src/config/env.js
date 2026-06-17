@@ -10,6 +10,7 @@ function readEnv(env = process.env) {
     snapshotStorePath: env.GROWTH_SNAPSHOT_STORE_PATH || path.join(dataDir, "growth-snapshots.json"),
     eventOutboxStorePath: env.GROWTH_EVENT_OUTBOX_STORE_PATH || path.join(dataDir, "growth-event-outbox.json"),
     learningDbPath: env.GROWTH_LEARNING_DB_PATH || path.join(dataDir, "growth-learning.sqlite3"),
+    sqliteBusyTimeoutMs: nonNegativeInteger(env.GROWTH_SQLITE_BUSY_TIMEOUT_MS, 5000),
     dataOwner: env.GROWTH_DATA_OWNER || "home-ai",
     automationWritefulExecutionEnabled: ["1", "true", "yes", "on"].includes(String(env.GROWTH_AUTOMATION_WRITEFUL_EXECUTION_ENABLED || "").trim().toLowerCase()),
     automationBackgroundSchedulerEnabled: ["1", "true", "yes", "on"].includes(String(env.GROWTH_AUTOMATION_BACKGROUND_SCHEDULER_ENABLED || "").trim().toLowerCase()),
@@ -59,6 +60,13 @@ function parseJsonArray(text) {
   } catch (_) {
     return [];
   }
+}
+
+function nonNegativeInteger(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(0, Math.trunc(parsed));
 }
 
 function readSecretFile(filePath) {

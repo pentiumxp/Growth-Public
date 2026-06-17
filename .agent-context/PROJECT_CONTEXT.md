@@ -31,6 +31,10 @@ readback gate set.
   `GROWTH_REGISTRATION_KEY_PATH`.
 - Workspace binding: `.hermes-growth/config.json` and
   `.hermes-growth/access-key.txt`.
+- Plugin-owned SQLite connections set a bounded `PRAGMA busy_timeout`.
+  Configure it with `GROWTH_SQLITE_BUSY_TIMEOUT_MS`; default is `5000`.
+  The applied value is exposed as `sqlite_busy_timeout_ms` in SQLite
+  integrity readback.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,
