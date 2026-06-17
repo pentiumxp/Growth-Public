@@ -9,10 +9,32 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T11:45+08:00 - Full Local Suite Validation After Action Audit Smoke Readback
+
+- Status: validation-only follow-up completed locally. No runtime code changed
+  and no production deployment was executed.
+- Scope:
+  - reviewed current Growth-local docs, Handoff, platform pointer, Harness
+    matrix, and Test Matrix after commit `94082a8`;
+  - confirmed the current remaining gaps are real production release evidence
+    and deployment gates, not additional local service/database code for the
+    latest action-audit smoke readback slice;
+  - ran the full plugin-local Node suite that the H1/H2 Harness matrix requires
+    before claiming closure of a broad local backend slice.
+- Validation passed:
+  - `npm test` passed `918/918`.
+- Remaining:
+  - no production deploy in this step;
+  - real Home AI central visual/UI artifacts, platform Action Inbox/Web Push
+    evidence, production smokes, explicit Owner approvals, deployment, and
+    production health checks remain external release gates.
+
 ## 2026-06-17T11:20+08:00 - Release Workbench Action Audit Smoke Readback
 
 - Status: implemented, compressed-Harness validated locally, committed/pushed
-  in this slice. No production deployment in this slice.
+  as `94082a8`, pushed to `origin/main` and `public/main`, and followed by a
+  full local suite run in the `2026-06-17T11:45+08:00` validation-only section.
+  No production deployment in this slice.
 - Change intent:
   - close the remaining operational smoke gap for the new Owner workbench
     action-audit table;
@@ -64,9 +86,7 @@
   - `codegraph sync && codegraph status` reported the index up to date with
     `374` files, `5,263` nodes, and `22,924` edges, plus the existing
     earlier-engine advisory.
-- Validation intentionally not run:
-  - full `npm test`; run it before production deployment or if this slice is
-    bundled with runtime deployment.
+  - follow-up full `npm test` passed `918/918`.
 
 ## 2026-06-17T10:35+08:00 - Release Workbench Action Audit Persistence
 
