@@ -236,6 +236,14 @@ function taskDefinition(taskId = "") {
   return TASK_BY_ID.get(cleanString(taskId, 140)) || {};
 }
 
+function releaseEvidenceCollectionNeeded(summary = {}) {
+  return Boolean(
+    uniqueStrings(asArray(summary.missingEvidenceKeys)).length
+    || uniqueStrings(asArray(summary.missingCheckKeys)).length
+    || uniqueStrings(asArray(summary.missingRecordKinds)).includes("release_collection_run")
+  );
+}
+
 function checklistItem(value = {}) {
   return compactObject(Object.assign({
     schemaVersion: "growth.learningAutomationReleaseEvidenceChecklistItem.v1",
@@ -266,9 +274,14 @@ function artifactChecklistItems(slots = []) {
 function releaseEvidenceCollectionItems(summary = {}, artifactTaskIds = []) {
   const artifactSet = new Set(artifactTaskIds);
   const supportedTaskIds = uniqueStrings(asArray(summary.releaseEvidenceCollectionSupportedTaskIds));
+  const advertisedTaskIds = releaseEvidenceCollectionNeeded(summary)
+    ? uniqueStrings(asArray(summary.releaseEvidenceCollectionTasks))
+    : [];
   const fallbackTaskIds = supportedTaskIds.length
     ? supportedTaskIds
-    : uniqueStrings(collectionTaskIdsFrom(summary));
+    : advertisedTaskIds.length
+      ? advertisedTaskIds
+      : uniqueStrings(collectionTaskIdsFrom(summary));
   const requiredSet = new Set(uniqueStrings(asArray(summary.releaseEvidenceCollectionRequiredTaskIds)));
   const routePath = routePathFor(summary, "release_evidence_collection");
   return fallbackTaskIds
@@ -483,9 +496,14 @@ function gatedActionFields(phaseGate = {}, phase = "record") {
 function supportedCollectionTaskIds(summary = {}, artifactTaskIds = []) {
   const artifactSet = new Set(artifactTaskIds);
   const supportedTaskIds = uniqueStrings(asArray(summary.releaseEvidenceCollectionSupportedTaskIds));
+  const advertisedTaskIds = releaseEvidenceCollectionNeeded(summary)
+    ? uniqueStrings(asArray(summary.releaseEvidenceCollectionTasks))
+    : [];
   const fallbackTaskIds = supportedTaskIds.length
     ? supportedTaskIds
-    : uniqueStrings(collectionTaskIdsFrom(summary));
+    : advertisedTaskIds.length
+      ? advertisedTaskIds
+      : uniqueStrings(collectionTaskIdsFrom(summary));
   return fallbackTaskIds.filter((taskId) => !artifactSet.has(taskId));
 }
 

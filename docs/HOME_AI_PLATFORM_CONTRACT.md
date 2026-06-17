@@ -223,6 +223,11 @@ Those state prerequisite keys must not appear in
 `release_evidence` action. The artifact-template checklist/action-plan readback
 must count them as `release_state_prerequisite` items/actions, while truly
 unknown manual release evidence remains under unsupported/manual evidence.
+The collection-owned `release_evidence_bundle_audit` key is a collection-pass
+output, not manual evidence; the workbench must not surface it under
+`unsupportedReleaseEvidenceCollectionKeys`, and artifact-template action plans
+may use the workbench-advertised fallback collection task only when a real
+evidence/check/collection-run gap exists.
 
 ## Growth-Local Release-Readiness Readback Addendum
 

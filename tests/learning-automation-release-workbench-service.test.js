@@ -30,6 +30,7 @@ test("release workbench composes release services into Owner action templates wi
             missingEvidenceKeys: [
               "owner_daily_ui_evidence",
               "production_operating_loop_history_smoke_evidence",
+              "release_evidence_bundle_audit",
               "production_profile_feedback_smoke_evidence",
               "production_daily_loop_write_smoke_evidence",
               "release_package_review_ui_evidence"
@@ -254,6 +255,7 @@ test("release workbench composes release services into Owner action templates wi
     "production_daily_loop_write_smoke_evidence",
     "production_operating_loop_history_smoke_evidence",
     "production_profile_feedback_smoke_evidence",
+    "release_evidence_bundle_audit",
     "release_package_review_ui_evidence"
   ].sort());
   assert.deepEqual(result.releaseWorkbench.missingApprovalKeys, ["writefulExecutionApproval"]);
@@ -278,6 +280,7 @@ test("release workbench offers evidence collection for supported missing evidenc
             missingCheckKeys: [],
             missingEvidenceKeys: [
               "production_operating_loop_history_smoke_evidence",
+              "release_evidence_bundle_audit",
               "production_profile_feedback_smoke_evidence",
               "central_visual_evidence"
             ],

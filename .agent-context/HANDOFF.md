@@ -9,6 +9,45 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T20:53+08:00 - Release Bundle Audit Workbench Collection-Owned Mapping
+
+- Status: implemented locally; focused validation passed in this turn. No
+  deployment, production write smoke, runtime config change, scheduler,
+  Gateway/model call, Home AI host logic change, or learner UI change was
+  performed.
+- Classification: Growth-local H2 release workbench / artifact-template
+  readback contract change. It closes a second downstream Owner action-plan
+  gap for release evidence collection.
+- Scope:
+  - `learning-automation-release-workbench-service` now treats
+    `release_evidence_bundle_audit` as a collection-owned output, not as
+    unsupported/manual release evidence;
+  - `learning-automation-release-evidence-artifact-template-service` now uses
+    workbench-advertised fallback `releaseEvidenceCollectionTasks` only when a
+    real evidence/check/collection-run gap exists, so ready states do not
+    widen into default collection actions;
+  - collection-owned bundle audit gaps can remain routed through
+    `release_evidence_collection` without becoming concrete direct pass
+    `release_evidence` shortcuts.
+- Harness/docs updated:
+  - `tests/learning-automation-release-workbench-service.test.js`
+  - `tests/learning-automation-release-evidence-artifact-template-service.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_OPERATING_LOOP_BLUEPRINT.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - `node --test tests/learning-automation-release-workbench-service.test.js tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-workbench-smoke-script.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/learning-automation-release-workbench-action-service.test.js tests/growth-release-workbench-action-smoke-script.test.js tests/growth-architecture-boundary.test.js` -> 81/81;
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged;
+  - AI Ops evidence id:
+    `evidence-0f238bdb-3f3b-416c-b6a8-60135cc1cd91`.
+
 ## 2026-06-17T20:45+08:00 - Operating Loop History Workbench Collection Mapping
 
 - Status: implemented locally; focused validation passed in this turn. No

@@ -196,7 +196,11 @@ readback gate set.
   workbench and artifact-template action plan map that missing readiness key
   back to the `operating_loop_history` collection task so Owner collection
   actions do not treat it as unsupported/manual evidence or a direct pass
-  evidence shortcut. Learner work,
+  evidence shortcut. The same release workbench boundary treats
+  `release_evidence_bundle_audit` as a collection-pass output instead of
+  unsupported/manual evidence, and the artifact-template action plan uses
+  workbench-advertised fallback collection tasks only when a real
+  evidence/check/collection-run gap exists. Learner work,
   audit/correction, target
   provisioning, graph import/selection, context refresh, and Gateway
   configuration remain separate flows and return blocked/separate-flow DTOs

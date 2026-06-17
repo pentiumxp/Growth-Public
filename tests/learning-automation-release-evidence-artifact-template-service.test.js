@@ -27,6 +27,7 @@ test("release artifact template maps only missing central visual and UI evidence
               "owner_daily_ui_evidence",
               "production_operating_loop_history_smoke_evidence",
               "production_profile_feedback_smoke_evidence",
+              "release_evidence_bundle_audit",
               "release_package_review_ui_evidence"
             ],
             missingCheckKeys: ["scheduler_run_ui_evidence"],
@@ -299,6 +300,49 @@ test("release artifact template does not widen to advertised default collection 
     summaryOnly: true
   });
   assert.equal(result.releaseArtifactTemplate.readyForManifestInput, true);
+});
+
+test("release artifact template uses advertised fallback collection tasks for collection-owned audit evidence", () => {
+  const service = createLearningAutomationReleaseEvidenceArtifactTemplateService({
+    releaseWorkbenchService: {
+      workbench() {
+        return {
+          ok: true,
+          status: "release_evidence_required",
+          releaseWorkbench: {
+            summaryOnly: true,
+            status: "release_evidence_required",
+            missingEvidenceKeys: ["release_evidence_bundle_audit"],
+            missingCheckKeys: [],
+            releaseEvidenceCollectionTasks: ["learning_loop_state"],
+            releaseEvidenceCollectionRequiredTaskIds: ["learning_loop_state"],
+            unsupportedReleaseEvidenceCollectionKeys: [],
+            recordRoutes: [
+              {
+                key: "release_evidence_collection",
+                route: {
+                  path: "/api/v1/growth/automation/release-evidence-collections/run"
+                }
+              }
+            ]
+          }
+        };
+      }
+    }
+  });
+
+  const result = service.template({ workspaceId: "fanfan" });
+  const checklist = result.releaseArtifactTemplate.releaseEvidenceChecklist;
+  const action = result.releaseArtifactTemplate.releaseEvidenceActionPlan.actions
+    .find((item) => item.key === "execute:release_evidence_collection");
+
+  assert.equal(result.ok, true);
+  assert.equal(checklist.collectionTaskItemCount, 1);
+  assert.equal(checklist.unsupportedItemCount, 0);
+  assert.equal(checklist.items.some((item) => item.key === "collection:learning_loop_state"), true);
+  assert.deepEqual(action.collectionTaskIds, ["learning_loop_state"]);
+  assert.deepEqual(action.bodyTemplate.tasks, ["learning_loop_state"]);
+  assert.deepEqual(action.bodyTemplate.required_task_ids, ["learning_loop_state"]);
 });
 
 test("release artifact template gates records behind missing approval after evidence prerequisites clear", () => {

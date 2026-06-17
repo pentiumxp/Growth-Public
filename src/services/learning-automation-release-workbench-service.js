@@ -14,6 +14,9 @@ const {
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
 const RELEASE_EVIDENCE_COLLECTION_TASKS = Object.freeze(["learning_loop_state"]);
+const COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS = new Set([
+  "release_evidence_bundle_audit"
+]);
 const RELEASE_EVIDENCE_COLLECTION_TASK_ORDER = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
@@ -447,6 +450,7 @@ function collectionTaskPlan(keys = []) {
       continue;
     }
     if (statePrerequisiteDefinition(key)) continue;
+    if (COLLECTION_OWNED_RELEASE_EVIDENCE_KEYS.has(key)) continue;
     unsupported.push(key);
   }
   const taskIds = RELEASE_EVIDENCE_COLLECTION_TASK_ORDER.filter((taskId) => safeTaskSet.has(taskId));

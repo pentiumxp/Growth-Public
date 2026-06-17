@@ -68,6 +68,9 @@ mapped to their collection task ids, including
 `production_operating_loop_history_smoke_evidence` ->
 `operating_loop_history`, instead of being reported as unsupported/manual
 evidence or direct pass evidence.
+Collection-owned outputs such as `release_evidence_bundle_audit` must also stay
+out of `unsupportedReleaseEvidenceCollectionKeys`; they are produced by the
+collection pass rather than supplied as manual evidence.
 For readiness state prerequisites such as reviewed digest, active failure
 policy, delivered action handoff, and reviewed enabled worker target, the
 focused assertion must prove they are projected as
@@ -84,7 +87,11 @@ unknown manual evidence remains under unsupported/manual evidence. It must also
 prove registry-driven task-key mapping for both camelCase and snake_case
 release-evidence keys such as `productionOperatingLoopHistorySmokeEvidence` /
 `production_operating_loop_history_smoke_evidence` so non-UI service-smoke
-tasks appear in collection actions when missing, and must also
+tasks appear in collection actions when missing, prove workbench-advertised
+fallback collection tasks are used only when real
+evidence/check/collection-run gaps exist, so ready states do not widen into
+default collection actions.
+It must also
 prove phase gating: downstream approval/record actions are visible but not
 submittable while artifact, collection, write-gated, state, or unsupported
 evidence prerequisites remain; once evidence prerequisites clear, approvals can
