@@ -94,6 +94,44 @@ function nodeIdsFromTaskCard(taskCard = {}) {
   );
 }
 
+function rubricPolicyFromTaskCard(taskCard = {}) {
+  const raw = taskRaw(taskCard);
+  const policy = raw.rubricPolicy || raw.rubric_policy || {};
+  if (!policy || typeof policy !== "object" || Array.isArray(policy)) return null;
+  return {
+    schemaVersion: cleanString(policy.schemaVersion),
+    policyId: cleanString(policy.policyId),
+    recipeId: cleanString(policy.recipeId),
+    domain: cleanString(policy.domain),
+    subject: cleanString(policy.subject),
+    dimensionIds: uniqueStrings(asArray(policy.rubricDimensions).map((item) => item?.dimensionId)).slice(0, 12),
+    evidenceKeys: uniqueStrings(asArray(policy.evidenceMapping).map((item) => item?.evidenceKey)).slice(0, 12)
+  };
+}
+
+function rubricResultsFromEvaluation(evaluation = {}, nodeId = "") {
+  const explicitResults = asArray(evaluation.rubricResults);
+  const skillDerived = asArray(evaluation.skillResults)
+    .filter((item) => cleanString(item?.rubricDimensionId || item?.dimensionId))
+    .map((item) => Object.assign({}, item, {
+      dimensionId: item.rubricDimensionId || item.dimensionId,
+      evidenceType: item.evidenceType || "skill_result_summary"
+    }));
+  const sourceResults = explicitResults.length ? explicitResults : skillDerived;
+  return sourceResults.map((item) => {
+    const result = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+    return {
+      dimensionId: cleanString(result.dimensionId || result.rubricDimensionId),
+      nodeId: cleanString(result.nodeId || result.graphNodeId || result.targetNodeId),
+      scoreBand: scoreToBand(result.score),
+      status: cleanString(result.status),
+      evidenceType: cleanString(result.evidenceType || result.type),
+      evidenceTags: uniqueStrings(result.evidenceTags || result.tags).slice(0, 8),
+      evidenceSummary: boundedText(result.evidenceSummary || result.summary || result.evidence, 180)
+    };
+  }).filter((item) => item.dimensionId && (!item.nodeId || item.nodeId === nodeId)).slice(0, 8);
+}
+
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw)/i;
 
 function scanPrivacy(value, path = "$", findings = []) {
@@ -166,7 +204,8 @@ function createLearningEvidenceLedgerService(options = {}) {
     const role = cardRole(taskCard) || (formal ? "stage_assessment" : "practice");
     const evidenceWeight = evidenceWeightForTaskCard(taskCard, profileUpdate.evidenceWeight);
     const recordedAt = cleanString(evaluation.evaluatedAt || evaluation.createdAt || input.recordedAt) || now().toISOString();
-    const summary = {
+    const rubricPolicy = rubricPolicyFromTaskCard(taskCard);
+    const baseSummary = {
       summaryOnly: true,
       taskCardId: cleanString(taskCard.id || input.taskCardId),
       title: boundedText(taskCard.title, 120),
@@ -175,7 +214,9 @@ function createLearningEvidenceLedgerService(options = {}) {
       feedbackSummary: boundedText(evaluation.summary, 360),
       strengths: asArray(evaluation.feedbackSections?.strengths).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 6),
       remainingWeaknesses: asArray(evaluation.remainingWeaknesses).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 6),
-      evidenceRole: formal ? "formal_assessment" : "daily_practice"
+      evidenceRole: formal ? "formal_assessment" : "daily_practice",
+      rubricPolicy,
+      rubricPolicyId: cleanString(evaluation.rubricPolicyId || rubricPolicy?.policyId)
     };
     return publicRecordResult(targetNodeIds.map((nodeId) => writeEvidence({
       workspaceId,
@@ -191,7 +232,10 @@ function createLearningEvidenceLedgerService(options = {}) {
       confidence: clampUnit(evaluation.confidence),
       scoreBand: scoreToBand(evaluation.score),
       status: statusFromEvaluation(evaluation, taskCard),
-      summary,
+      summary: Object.assign({}, baseSummary, {
+        rubricResults: rubricResultsFromEvaluation(evaluation, nodeId),
+        evidenceTypes: uniqueStrings(rubricResultsFromEvaluation(evaluation, nodeId).map((item) => item.evidenceType)).slice(0, 8)
+      }),
       recordedAt
     })));
   }

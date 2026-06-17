@@ -536,6 +536,7 @@ test("card generation can choose the next daily English target when Owner submit
   assert.equal(gatewayCalls[0].input.cardRole, "practice");
   assert.equal(gatewayCalls[0].input.cardSchemaVersion, "growth.card.authoring.v1");
   assert.equal(gatewayCalls[0].input.nextCardStrategy.strategy, "stabilize");
+  assert.equal(gatewayCalls[0].input.rubricPolicy.policyId, "rubric:daily_english_v1");
 
   const db = new DatabaseSync(dbPath);
   try {
@@ -578,11 +579,13 @@ test("card generation can use a generic daily practice recipe for a selected sub
   assert.equal(gatewayCalls[0].input.learningGraphPlan.subject, "mathematics");
   assert.equal(gatewayCalls[0].input.cardRole, "practice");
   assert.deepEqual(gatewayCalls[0].input.evidenceRequirements, ["explain_ratio_comparison"]);
+  assert.equal(gatewayCalls[0].input.rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
 
   const db = new DatabaseSync(dbPath);
   try {
     const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
     assert.equal(card.domain, "math");
+    assert.equal(JSON.parse(card.raw_json).rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
     assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
   } finally {
     db.close();

@@ -2,6 +2,8 @@
 
 const crypto = require("node:crypto");
 
+const { createLearningCardRubricPolicyService } = require("./learning-card-rubric-policy-service");
+
 function cleanString(value) {
   return String(value || "").trim();
 }
@@ -83,6 +85,32 @@ function evidenceRequirementsFromTask(raw = {}) {
   ).slice(0, 12);
 }
 
+function learningGraphFromTaskRaw(raw = {}) {
+  return raw.learningGraph || raw.learning_graph || {};
+}
+
+function rubricPolicyFromTask(input = {}, rubricPolicyService = null) {
+  const raw = taskRawFromInput(input);
+  const taskCard = input.taskCard || {};
+  const explicit = input.rubricPolicy || input.rubric_policy || raw.rubricPolicy || raw.rubric_policy;
+  if (isObject(explicit) && cleanString(explicit.schemaVersion) === "growth.card.rubricPolicy.v1") {
+    return explicit;
+  }
+  if (!rubricPolicyService || typeof rubricPolicyService.resolveRubricPolicy !== "function") return null;
+  const graph = learningGraphFromTaskRaw(raw);
+  const resolved = rubricPolicyService.resolveRubricPolicy({
+    recipeId: raw.recipeId || raw.recipe_id || taskCard.recipe_id,
+    domain: raw.domain || graph.domain || taskCard.domain,
+    subject: raw.subject || graph.subject || taskCard.subject,
+    cardRole: raw.cardRole || raw.card_role || taskCard.card_role
+  });
+  return resolved?.ok ? resolved.policy : null;
+}
+
+function rubricDimensionIds(policy = {}) {
+  return uniqueStrings(asArray(policy.rubricDimensions).map((item) => item?.dimensionId));
+}
+
 function audioSummaryFromSubmission(raw = {}) {
   const audio = raw.audio && isObject(raw.audio) ? raw.audio : {};
   return {
@@ -93,14 +121,16 @@ function audioSummaryFromSubmission(raw = {}) {
   };
 }
 
-function structuredEvaluationInput(input = {}) {
+function structuredEvaluationInput(input = {}, options = {}) {
   const taskCard = input.taskCard || {};
   const submission = input.submission || {};
   const taskRaw = taskRawFromInput(input);
+  const graph = learningGraphFromTaskRaw(taskRaw);
   const submissionRaw = parseJson(submission.raw_json, {}) || {};
   const targetNodeIds = targetNodeIdsFromTask(input);
   const cardRole = boundedText(taskRaw.cardRole || taskRaw.card_role || taskRaw.learningGraphPlan?.cardRole || "practice", 80);
   const completionPolicy = taskRaw.completionPolicy || taskRaw.completion_policy || {};
+  const rubricPolicy = rubricPolicyFromTask(input, options.rubricPolicyService);
   return {
     schemaVersion: "growth.card.evaluation.input.v1",
     workspaceId: boundedText(input.workspaceId || submission.workspace_id || taskCard.workspace_id, 120),
@@ -117,10 +147,14 @@ function structuredEvaluationInput(input = {}) {
     card: {
       title: boundedText(taskCard.title || taskRaw.title, 160),
       cardRole,
+      recipeId: boundedText(taskRaw.recipeId || taskRaw.recipe_id || input.recipeId || input.recipe_id, 120),
+      domain: boundedText(taskRaw.domain || graph.domain || taskCard.domain, 120),
+      subject: boundedText(taskRaw.subject || graph.subject || taskCard.subject, 120),
       learningTarget: boundedText(taskRaw.teachingFlow?.learningTarget || taskRaw.learningTarget || taskRaw.learning_target, 500),
       instructionSummary: boundedText(taskRaw.instructionPreview || taskRaw.instruction || taskRaw.summary || taskCard.title, 900),
       targetNodeIds,
-      evidenceRequirements: evidenceRequirementsFromTask(taskRaw)
+      evidenceRequirements: evidenceRequirementsFromTask(taskRaw),
+      rubricPolicy
     },
     learnerEvidence: {
       text: boundedText(input.text, 4000),
@@ -200,22 +234,78 @@ function normalizeFeedbackSections(draft = {}) {
 
 function normalizeSkillResults(draft = {}, context = {}, errors = []) {
   const targetNodeIds = uniqueStrings(context.targetNodeIds);
+  const allowedDimensionIds = uniqueStrings(context.rubricDimensionIds);
   return asArray(draft.skillResults).map((item, index) => {
     const result = isObject(item) ? item : {};
     const nodeId = cleanString(result.nodeId || result.targetNodeId || result.skillId);
+    const rubricDimensionId = cleanString(result.rubricDimensionId || result.dimensionId || result.rubric_dimension_id);
     if (!nodeId) {
       errors.push({ code: "skill_result_node_required", field: `skillResults[${index}].nodeId` });
     } else if (targetNodeIds.length && !targetNodeIds.includes(nodeId)) {
       errors.push({ code: "skill_result_node_outside_graph_plan", field: `skillResults[${index}].nodeId`, nodeId });
     }
+    if (rubricDimensionId && allowedDimensionIds.length && !allowedDimensionIds.includes(rubricDimensionId)) {
+      errors.push({
+        code: "skill_result_rubric_dimension_invalid",
+        field: `skillResults[${index}].rubricDimensionId`,
+        rubricDimensionId
+      });
+    }
     return {
+      nodeId,
+      rubricDimensionId,
+      score: scoreTo100(result.score) ?? 0,
+      confidence: confidenceToUnit(result.confidence),
+      status: boundedText(result.status || "observed", 80),
+      evidenceType: boundedText(result.evidenceType || result.type, 80),
+      evidenceTags: uniqueStrings(result.evidenceTags || result.tags).slice(0, 8),
+      evidenceSummary: boundedText(result.evidenceSummary || result.summary || result.evidence, 220)
+    };
+  }).filter((item) => item.nodeId).slice(0, 12);
+}
+
+function normalizeRubricResults(draft = {}, context = {}, skillResults = [], errors = []) {
+  const targetNodeIds = uniqueStrings(context.targetNodeIds);
+  const allowedDimensionIds = uniqueStrings(context.rubricDimensionIds);
+  const explicitResults = asArray(draft.rubricResults);
+  const sourceResults = explicitResults.length
+    ? explicitResults
+    : asArray(skillResults).filter((item) => item.rubricDimensionId).map((item) => ({
+      nodeId: item.nodeId,
+      dimensionId: item.rubricDimensionId,
+      score: item.score,
+      confidence: item.confidence,
+      status: item.status,
+      evidenceType: item.evidenceType,
+      evidenceTags: item.evidenceTags,
+      evidenceSummary: item.evidenceSummary
+    }));
+  return sourceResults.map((item, index) => {
+    const result = isObject(item) ? item : {};
+    const dimensionId = cleanString(result.dimensionId || result.rubricDimensionId || result.rubric_dimension_id);
+    const nodeId = cleanString(result.nodeId || result.targetNodeId || result.graphNodeId)
+      || (targetNodeIds.length === 1 ? targetNodeIds[0] : "");
+    if (!dimensionId) {
+      errors.push({ code: "rubric_result_dimension_required", field: `rubricResults[${index}].dimensionId` });
+    } else if (allowedDimensionIds.length && !allowedDimensionIds.includes(dimensionId)) {
+      errors.push({ code: "rubric_result_dimension_invalid", field: `rubricResults[${index}].dimensionId`, dimensionId });
+    }
+    if (!nodeId) {
+      errors.push({ code: "rubric_result_node_required", field: `rubricResults[${index}].nodeId` });
+    } else if (targetNodeIds.length && !targetNodeIds.includes(nodeId)) {
+      errors.push({ code: "rubric_result_node_outside_graph_plan", field: `rubricResults[${index}].nodeId`, nodeId });
+    }
+    return {
+      dimensionId,
       nodeId,
       score: scoreTo100(result.score) ?? 0,
       confidence: confidenceToUnit(result.confidence),
       status: boundedText(result.status || "observed", 80),
+      evidenceType: boundedText(result.evidenceType || result.type || "learner_submission_summary", 80),
+      evidenceTags: uniqueStrings(result.evidenceTags || result.tags).slice(0, 8),
       evidenceSummary: boundedText(result.evidenceSummary || result.summary || result.evidence, 220)
     };
-  }).filter((item) => item.nodeId).slice(0, 12);
+  }).filter((item) => item.dimensionId && item.nodeId).slice(0, 16);
 }
 
 function evaluationIdFor(input = {}, draft = {}) {
@@ -254,6 +344,7 @@ function parseAndValidateEvaluationDraft(input = {}) {
   }
   const feedbackSections = normalizeFeedbackSections(draft);
   const skillResults = normalizeSkillResults(draft, context, errors);
+  const rubricResults = normalizeRubricResults(draft, context, skillResults, errors);
   if (errors.length) return { ok: false, error: "evaluation_draft_schema_invalid", errors };
 
   const maxScore = Math.max(1, scoreTo100(draft.maxScore) || 100);
@@ -273,6 +364,8 @@ function parseAndValidateEvaluationDraft(input = {}) {
     remainingWeaknesses,
     feedbackSections,
     skillResults,
+    rubricPolicyId: boundedText(context.rubricPolicy?.policyId || draft.rubricPolicyId || draft.rubric_policy_id, 160),
+    rubricResults,
     evidenceRefs: uniqueStrings(["growth-gateway-evaluation:v1"].concat(draft.evidenceRefs || [])).slice(0, 8),
     reward: isObject(draft.reward) ? draft.reward : {
       eligible: true,
@@ -305,18 +398,21 @@ function normalizeValidationFailure(result = {}, extra = {}) {
 
 function createLearningCardEvaluationService(options = {}) {
   const gatewayClient = options.gatewayClient;
+  const rubricPolicyService = options.rubricPolicyService || createLearningCardRubricPolicyService();
   const allowRepair = options.allowRepair !== false;
 
   async function evaluateSubmissionDraft(input = {}) {
     if (!gatewayClient || typeof gatewayClient.evaluateCardSubmission !== "function") {
       return unavailable("growth_gateway_evaluation_client_unavailable", { stage: "gateway" });
     }
-    const request = structuredEvaluationInput(input);
+    const request = structuredEvaluationInput(input, { rubricPolicyService });
     const context = {
       submissionId: request.submissionId,
       workspaceId: request.workspaceId,
       taskCardId: request.taskCardId,
-      targetNodeIds: request.card.targetNodeIds
+      targetNodeIds: request.card.targetNodeIds,
+      rubricPolicy: request.card.rubricPolicy,
+      rubricDimensionIds: rubricDimensionIds(request.card.rubricPolicy)
     };
     const gatewayResult = await gatewayClient.evaluateCardSubmission(request);
     if (!gatewayResult?.ok) {

@@ -341,7 +341,8 @@ bounded and structured:
 
 - task card id, submission id, learner/workspace ids;
 - `daily_score_once` policy with `passScoreRequired: false`;
-- card role, learning target, target node ids, and evidence requirements;
+- card role, learning target, target node ids, evidence requirements, and the
+  summary-only rubric policy when the generated card has one;
 - bounded learner text evidence and bounded audio metadata.
 
 It must not include unrelated historical learner content, raw prompts, raw
@@ -361,9 +362,11 @@ The required flow is:
 4. validate schema `growth.card.evaluation.v1`;
 5. validate `daily_score_once` policy: one evaluation, no retry-until-pass;
 6. validate `skillResults` against graph target nodes;
-7. run privacy and bounded-content scans;
-8. return a bounded evaluator DTO for `growth-evaluation-service`;
-9. let the existing queue service transactionally write evaluation, reward,
+7. validate `rubricResults` and `skillResults[*].rubricDimensionId` against
+   the card's summary-only rubric policy when present;
+8. run privacy and bounded-content scans;
+9. return a bounded evaluator DTO for `growth-evaluation-service`;
+10. let the existing queue service transactionally write evaluation, reward,
    profile, trajectory, and events.
 
 Failure behavior must be visible and must not create half-written evaluation
@@ -439,8 +442,9 @@ The service-owned runtime path is:
    `daily_subject_practice_v1`) with the target workspace, learner id, and
    selected domain/subject when the recipe is subject-scoped. The service
    supplies safe domain/subject defaults, card schema version, and the
-   `daily_score_once` policy without forcing a graph target, role, or
-   difficulty before learner profile/trajectory selection runs;
+   `daily_score_once` policy plus a summary-only rubric policy without forcing
+   a graph target, role, or difficulty before learner profile/trajectory
+   selection runs;
 2. If Owner or caller supplied a target, `learning-graph-plan-service` uses
    that explicit graph target. If a daily generation request omits a target,
    `learning-card-next-target-service` first reads
@@ -469,7 +473,8 @@ The service-owned runtime path is:
 6. `learning-next-card-strategy-service` chooses or refreshes a bounded
    next-card strategy from profile, signals, and trajectory for the selected
    plan;
-7. `learning-card-generation-service` combines graph source summaries and
+7. `learning-card-generation-service` combines graph source summaries,
+   summary-only recipe/rubric policy, and
    historical summaries without copying raw submissions, transcripts, prompts,
    answer keys, or model output into the Gateway request;
 8. `learning-card-authoring-service` calls Gateway and validates the draft;
@@ -505,6 +510,15 @@ The current implementation supports generating a formal Growth card from the
 imported knowledge graph and historical Growth SQLite summaries when a Gateway
 authoring endpoint is configured. It does not direct-call model vendors and it
 does not ask Home AI old Growth routes to author cards.
+
+Subject-aware rubric policy is service-owned by
+`learning-card-rubric-policy-service`. V1 ships summary-only policies for
+`daily_english_v1`, `daily_science_v1`, and parameterized
+`daily_subject_practice_v1`. Generation passes that policy to Gateway
+authoring, the card publisher persists it inside bounded `raw_json`, Gateway
+evaluation validates returned `rubricResults` against the policy and graph
+targets, and `learning-evidence-ledger-service` stores only bounded rubric
+summaries inside `summary_json`.
 
 For ordinary daily cards, omitting `targetNodeId` is a supported profile-driven
 generation path. It should use weak or stabilizing evidence from the selected
@@ -759,6 +773,7 @@ publishing:
 - `src/services/learning-card-generation-service.js`;
 - `src/services/learning-card-recommendation-service.js`;
 - `src/services/learning-card-next-target-service.js`;
+- `src/services/learning-card-rubric-policy-service.js`;
 - `src/services/learning-card-authoring-service.js`;
 - `src/services/growth-gateway-authoring-client.js`;
 - `src/services/learning-card-authoring-validation-service.js`;
@@ -767,6 +782,7 @@ publishing:
 
 New plugin-owned generated cards use the protected
 `POST /api/v1/growth/cards/generate` route or the same service directly. The
-remaining architecture work is broader learner policy configuration,
+remaining architecture work is broader learner policy configuration, additional
+subject-specific rubric catalogs beyond the V1 daily policies,
 stage-assessment expansion, Owner review/retry policy, and production Gateway
 configuration validation.

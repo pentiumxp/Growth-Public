@@ -52,6 +52,7 @@ const { createLearningCardGenerationRecipePolicyService } = require("../services
 const { createLearningCardGenerationService } = require("../services/learning-card-generation-service");
 const { createLearningCardNextTargetService } = require("../services/learning-card-next-target-service");
 const { createLearningCardRecommendationService } = require("../services/learning-card-recommendation-service");
+const { createLearningCardRubricPolicyService } = require("../services/learning-card-rubric-policy-service");
 const { createLearningCardTrajectoryService } = require("../services/learning-card-trajectory-service");
 const { createLearningAuditCompletenessService } = require("../services/learning-audit-completeness-service");
 const { createLearningCycleAuditService } = require("../services/learning-cycle-audit-service");
@@ -139,8 +140,10 @@ function createServices(config) {
     validationService: createLearningCardAuthoringValidationService(),
     publisher: growthLearningStore.learningCardAuthoringPublisherRepository
   });
+  const learningCardRubricPolicyService = createLearningCardRubricPolicyService();
   const learningCardEvaluationService = createLearningCardEvaluationService({
-    gatewayClient: growthGatewayEvaluationClient
+    gatewayClient: growthGatewayEvaluationClient,
+    rubricPolicyService: learningCardRubricPolicyService
   });
   const learningNextCardStrategyService = createLearningNextCardStrategyService();
   const learningEvidenceLedgerService = createLearningEvidenceLedgerService({
@@ -195,7 +198,9 @@ function createServices(config) {
     repository: growthLearningStore.masteryProfileRepository,
     profileProjectionService: learningProfileProjectionService
   });
-  const learningCardGenerationRecipePolicyService = createLearningCardGenerationRecipePolicyService();
+  const learningCardGenerationRecipePolicyService = createLearningCardGenerationRecipePolicyService({
+    rubricPolicyService: learningCardRubricPolicyService
+  });
   const learningCardNextTargetService = createLearningCardNextTargetService({
     graphRepository: growthLearningStore.learningGraphRepository,
     historySummaryRepository: growthLearningStore.learningHistorySummaryRepository,
@@ -577,6 +582,7 @@ function createServices(config) {
     learningCardGraphBindingService,
     learningCardNextTargetService,
     learningCardRecommendationService,
+    learningCardRubricPolicyService,
     learningCardTrajectoryService,
     learningAuditCompletenessService,
     learningAutomationActionHandoffService,

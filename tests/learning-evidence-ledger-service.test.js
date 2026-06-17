@@ -6,6 +6,7 @@ const test = require("node:test");
 const { DatabaseSync } = require("node:sqlite");
 
 const { createLearningEvidenceLedgerService } = require("../src/services/learning-evidence-ledger-service");
+const { dailySciencePolicy } = require("../src/services/learning-card-rubric-policy-service");
 const { createLearningEvidenceLedgerRepository } = require("../src/stores/growth-learning-sqlite/evidence-ledger");
 
 function withLedger(callback) {
@@ -33,7 +34,9 @@ function dailyTaskCard() {
     card_role: "practice",
     raw_json: JSON.stringify({
       completionPolicy: { mode: "daily_score_once" },
-      learningGraph: { targetNodeIds: ["kg_science_fair_test"] }
+      recipeId: "daily_science_v1",
+      learningGraph: { domain: "science", subject: "science", targetNodeIds: ["kg_science_fair_test"] },
+      rubricPolicy: dailySciencePolicy()
     })
   };
 }
@@ -54,7 +57,18 @@ test("evidence ledger records daily evaluation evidence idempotently without raw
         passed: true,
         confidence: 0.76,
         summary: "Explains one controlled variable but needs clearer measurement evidence.",
-        remainingWeaknesses: ["Name the measured result."]
+        remainingWeaknesses: ["Name the measured result."],
+        rubricPolicyId: "rubric:daily_science_v1",
+        rubricResults: [{
+          dimensionId: "science_causal_reasoning",
+          nodeId: "kg_science_fair_test",
+          score: 72,
+          confidence: 0.74,
+          status: "developing",
+          evidenceType: "learner_submission_summary",
+          evidenceTags: ["variable", "because"],
+          evidenceSummary: "Explains one controlled variable."
+        }]
       }
     });
     const replay = service.recordEvaluationEvidence({
@@ -66,7 +80,17 @@ test("evidence ledger records daily evaluation evidence idempotently without raw
         passed: true,
         confidence: 0.76,
         summary: "Explains one controlled variable but needs clearer measurement evidence.",
-        remainingWeaknesses: ["Name the measured result."]
+        remainingWeaknesses: ["Name the measured result."],
+        rubricPolicyId: "rubric:daily_science_v1",
+        rubricResults: [{
+          dimensionId: "science_causal_reasoning",
+          nodeId: "kg_science_fair_test",
+          score: 72,
+          confidence: 0.74,
+          status: "developing",
+          evidenceType: "learner_submission_summary",
+          evidenceSummary: "Explains one controlled variable."
+        }]
       }
     });
 
@@ -75,6 +99,9 @@ test("evidence ledger records daily evaluation evidence idempotently without raw
     assert.equal(first.entries[0].sourceType, "daily_evaluation");
     assert.equal(first.entries[0].evidenceWeight, 0.2);
     assert.equal(first.entries[0].scoreBand, "medium");
+    assert.equal(first.entries[0].summary.rubricPolicyId, "rubric:daily_science_v1");
+    assert.equal(first.entries[0].summary.rubricResults[0].dimensionId, "science_causal_reasoning");
+    assert.deepEqual(first.entries[0].summary.evidenceTypes, ["learner_submission_summary"]);
     assert.equal(replay.ok, true);
     assert.equal(replay.duplicateCount, 1);
 

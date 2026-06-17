@@ -1,5 +1,7 @@
 "use strict";
 
+const { createLearningCardRubricPolicyService } = require("./learning-card-rubric-policy-service");
+
 const DAILY_ENGLISH_RECIPE_ID = "daily_english_v1";
 const DAILY_SCIENCE_RECIPE_ID = "daily_science_v1";
 const DAILY_SUBJECT_PRACTICE_RECIPE_ID = "daily_subject_practice_v1";
@@ -114,6 +116,7 @@ function publicRecipe(recipe = {}) {
     completionPolicy: cleanString(recipe.completionPolicy),
     durationMinutes: recipe.durationMinutes || { min: 10, max: 15 },
     evidenceRequirements: uniqueStrings(recipe.evidenceRequirements),
+    rubricPolicy: recipe.rubricPolicy || null,
     rewardMode: cleanString(recipe.rewardMode)
   };
 }
@@ -131,16 +134,29 @@ function normalizeDailyGenerationInput(input = {}, recipe = dailyEnglishRecipe()
     domain,
     subject,
     cardSchemaVersion: cleanString(input.cardSchemaVersion || input.card_schema_version) || recipe.cardSchemaVersion,
-    completionPolicy: dailyScoreOnceCompletionPolicy()
+    completionPolicy: dailyScoreOnceCompletionPolicy(),
+    rubricPolicy: input.rubricPolicy || recipe.rubricPolicy || null,
+    rubricPolicyId: cleanString(input.rubricPolicyId || input.rubric_policy_id) || cleanString(recipe.rubricPolicy?.policyId)
   });
 }
 
-function createLearningCardGenerationRecipePolicyService() {
+function createLearningCardGenerationRecipePolicyService(options = {}) {
+  const rubricPolicyService = options.rubricPolicyService || createLearningCardRubricPolicyService();
+
+  function withRubricPolicy(recipe = {}) {
+    const resolved = rubricPolicyService && typeof rubricPolicyService.resolveRubricPolicy === "function"
+      ? rubricPolicyService.resolveRubricPolicy(recipe)
+      : null;
+    return Object.assign({}, recipe, {
+      rubricPolicy: resolved?.ok ? resolved.policy : null
+    });
+  }
+
   function recipes() {
     return [
-      publicRecipe(dailyEnglishRecipe()),
-      publicRecipe(dailyScienceRecipe()),
-      publicRecipe(dailySubjectPracticeRecipe())
+      publicRecipe(withRubricPolicy(dailyEnglishRecipe())),
+      publicRecipe(withRubricPolicy(dailyScienceRecipe())),
+      publicRecipe(withRubricPolicy(dailySubjectPracticeRecipe()))
     ];
   }
 
@@ -158,11 +174,12 @@ function createLearningCardGenerationRecipePolicyService() {
     if (!recipe) {
       return unavailable("unsupported_card_generation_recipe", { recipeId });
     }
+    const recipeWithRubric = withRubricPolicy(recipe);
     return {
       ok: true,
       applies: true,
-      recipeId: recipe.id,
-      recipe
+      recipeId: recipeWithRubric.id,
+      recipe: recipeWithRubric
     };
   }
 

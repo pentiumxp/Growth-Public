@@ -20,6 +20,7 @@ test("card generation recipe policy exposes daily English context without raw in
   assert.equal(result.completionPolicy.mode, "daily_score_once");
   assert.equal(result.completionPolicy.passScoreRequired, false);
   assert.equal(result.generationDefaults.cardSchemaVersion, "growth.card.authoring.v1");
+  assert.equal(result.recipes[0].rubricPolicy.policyId, "rubric:daily_english_v1");
   assert.equal(JSON.stringify(result).includes("raw learner answer"), false);
 });
 
@@ -65,6 +66,13 @@ test("card generation recipe policy normalizes daily science generation input", 
   assert.equal(result.input.cardSchemaVersion, "growth.card.authoring.v1");
   assert.equal(result.input.completionPolicy.mode, "daily_score_once");
   assert.deepEqual(result.recipe.evidenceRequirements, ["short_answer", "science_reasoning", "self_reflection_optional"]);
+  assert.equal(result.recipe.rubricPolicy.policyId, "rubric:daily_science_v1");
+  assert.deepEqual(result.recipe.rubricPolicy.rubricDimensions.map((item) => item.dimensionId), [
+    "science_concept_understanding",
+    "science_causal_reasoning",
+    "science_evidence_use",
+    "science_vocabulary_precision"
+  ]);
 });
 
 test("card generation recipe policy can use selected subject scope for generic daily practice", () => {
@@ -90,6 +98,7 @@ test("card generation recipe policy can use selected subject scope for generic d
   assert.equal(result.input.domain, "math");
   assert.equal(result.input.subject, "mathematics");
   assert.equal(result.input.completionPolicy.passScoreRequired, false);
+  assert.equal(result.input.rubricPolicy.policyId, "rubric:daily_subject_practice_v1:mathematics");
 });
 
 test("card generation recipe policy leaves stage assessment outside daily defaults", () => {

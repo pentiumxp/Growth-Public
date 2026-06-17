@@ -21984,3 +21984,57 @@
   - `git diff --check` passed.
 - Remaining next-step candidates:
   - production visual/deploy evidence remains a separate gate.
+
+## 2026-06-17T23:51+0800 - Subject-aware daily rubric policy and ledger mapping
+
+- Status:
+  - Implemented local Growth service/Harness/docs package.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - Added `learning-card-rubric-policy-service` as the service-owned
+    summary-only rubric catalog for generated daily cards.
+  - V1 rubric policies cover `daily_english_v1`, `daily_science_v1`, and
+    parameterized `daily_subject_practice_v1`, with controlled dimension ids,
+    evidence mappings, scoring scale metadata, and ledger mapping metadata.
+  - `learning-card-generation-recipe-policy-service` now attaches the
+    summary-only rubric policy to recipe defaults; `learning-card-generation`
+    forwards it into authoring; `learning-card-authoring-service` includes it
+    in the structured Gateway request; and the SQLite authoring publisher
+    persists only the bounded rubric policy in generated card `raw_json`.
+  - Gateway authoring/evaluation prompts no longer describe every daily card
+    as English-specific; they refer to the supplied subject/domain and use the
+    rubric policy when present.
+  - `learning-card-evaluation-service` now includes the card rubric policy in
+    evaluation input, validates `rubricResults` plus
+    `skillResults[*].rubricDimensionId` against allowed rubric dimensions and
+    graph target nodes, and returns bounded rubric result DTOs. Invalid rubric
+    dimensions fail validation before any evaluation row is written.
+  - `learning-evidence-ledger-service` now stores only bounded per-node rubric
+    summaries in `summary_json` (`rubricPolicyId`, compact policy summary,
+    evidence types, and rubric result summaries). No SQLite schema migration
+    was added.
+  - `package.json` syntax coverage now includes the new runtime service file.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_CARD_GENERATION_RULES.md`;
+  - `docs/GROWTH_LEARNING_OPERATING_LOOP.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --test tests/learning-card-rubric-policy-service.test.js tests/learning-card-generation-recipe-policy-service.test.js tests/learning-card-evaluation-service.test.js tests/learning-evidence-ledger-service.test.js tests/learning-card-generation-service.test.js tests/growth-evaluation-service.test.js tests/learning-card-ai-loop-harness.test.js tests/learning-profile-v2-service.test.js tests/learning-profile-delta-service.test.js tests/growth-architecture-boundary.test.js`
+    passed `89/89`;
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent check` passed with `runtimeCount=223`;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported the index is up to date,
+    with the existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - production planner readiness smoke with real Gateway config;
+  - central embedded visual/release evidence for implemented Owner controls;
+  - richer Owner audit rendering over persisted rubric/profile-delta evidence;
+  - broader subject-specific rubric catalogs beyond V1 English/science/generic
+    daily policies.

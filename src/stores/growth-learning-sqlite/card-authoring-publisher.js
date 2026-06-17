@@ -123,6 +123,8 @@ function completionPolicyForRole(role = "") {
 }
 
 function domainFromRequest(request = {}) {
+  const explicit = cleanString(request.domain || request.subject);
+  if (explicit) return explicit;
   const firstSource = asArray(request.sourceSummaries)[0] || {};
   return cleanString(firstSource.domain || firstSource.subject || "learning");
 }
@@ -162,6 +164,7 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
   return {
     source: "growth-card-authoring",
     schemaVersion: cleanString(draft.schemaVersion || request.cardSchemaVersion),
+    recipeId: cleanString(request.recipeId || request.recipe_id),
     cardRole: role,
     title: cleanString(draft.title).slice(0, 180),
     instructionPreview,
@@ -181,6 +184,7 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
       assessmentCoverageNodeIds,
       evidenceRequired: uniqueStrings(request.evidenceRequirements)
     },
+    rubricPolicy: request.rubricPolicy || null,
     taskModel: {
       activityType: taskCardType(role),
       learnerInstruction: instructionPreview,

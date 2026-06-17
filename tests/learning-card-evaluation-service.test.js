@@ -26,9 +26,22 @@ function validEvaluationDraft(overrides = {}) {
     },
     skillResults: [{
       nodeId: "kg_english_evidence_answering",
+      rubricDimensionId: "english_text_evidence",
       score: 76,
       confidence: 0.78,
       status: "developing",
+      evidenceType: "learner_submission_summary",
+      evidenceTags: ["reason", "quote"],
+      evidenceSummary: "Reason is present; quote is vague."
+    }],
+    rubricResults: [{
+      dimensionId: "english_text_evidence",
+      nodeId: "kg_english_evidence_answering",
+      score: 76,
+      confidence: 0.78,
+      status: "developing",
+      evidenceType: "learner_submission_summary",
+      evidenceTags: ["reason", "quote"],
       evidenceSummary: "Reason is present; quote is vague."
     }],
     evidenceRefs: ["rubric:daily_score_once"]
@@ -55,6 +68,7 @@ function evaluationInput(overrides = {}) {
       program_id: "program_english",
       raw_json: JSON.stringify({
         cardRole: "practice",
+        recipeId: "daily_english_v1",
         learningGraph: { targetNodeIds: ["kg_english_evidence_answering"] },
         teachingFlow: {
           learningTarget: "Use one quote as evidence.",
@@ -66,6 +80,7 @@ function evaluationInput(overrides = {}) {
     },
     taskRaw: {
       cardRole: "practice",
+      recipeId: "daily_english_v1",
       learningGraph: { targetNodeIds: ["kg_english_evidence_answering"] },
       teachingFlow: {
         learningTarget: "Use one quote as evidence.",
@@ -119,9 +134,13 @@ test("learning card evaluation service accepts a valid streaming Gateway draft",
   assert.equal(result.evaluation.maxScore, 100);
   assert.equal(result.evaluation.passed, true);
   assert.equal(result.evaluation.skillResults[0].nodeId, "kg_english_evidence_answering");
+  assert.equal(result.evaluation.skillResults[0].rubricDimensionId, "english_text_evidence");
+  assert.equal(result.evaluation.rubricPolicyId, "rubric:daily_english_v1");
+  assert.equal(result.evaluation.rubricResults[0].dimensionId, "english_text_evidence");
   assert.equal(calls[0].kind, "growth.card_evaluation.evaluate");
   assert.equal(calls[0].input.policy.completionPolicy, "daily_score_once");
   assert.equal(calls[0].input.policy.passScoreRequired, false);
+  assert.equal(calls[0].input.card.rubricPolicy.policyId, "rubric:daily_english_v1");
   assert.equal(calls[0].input.learnerEvidence.text.includes("character is kind"), true);
   assert.equal(Object.hasOwn(calls[0].input.learnerEvidence, "rawText"), false);
   assert.equal(JSON.stringify(result.evaluation).includes("stored text stays in SQLite only"), false);
@@ -219,6 +238,28 @@ test("learning card evaluation service rejects schema-missing Gateway output", a
   assert.equal(result.stage, "validation");
   assert.equal(result.error, "evaluation_draft_schema_invalid");
   assert.ok(result.errors.some((error) => error.field === "summary"));
+});
+
+test("learning card evaluation service rejects rubric dimensions outside policy", async () => {
+  const { service } = createEvaluationHarness({
+    json: {
+      output_text: JSON.stringify(validEvaluationDraft({
+        rubricResults: [{
+          dimensionId: "science_causal_reasoning",
+          nodeId: "kg_english_evidence_answering",
+          score: 80,
+          evidenceSummary: "Wrong rubric dimension for this English card."
+        }]
+      }))
+    }
+  });
+
+  const result = await service.evaluateSubmissionDraft(evaluationInput());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.stage, "validation");
+  assert.equal(result.error, "evaluation_draft_schema_invalid");
+  assert.ok(result.errors.some((error) => error.code === "rubric_result_dimension_invalid"));
 });
 
 test("learning card evaluation service rejects privacy-risk Gateway output", async () => {
