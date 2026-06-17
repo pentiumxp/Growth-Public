@@ -233,6 +233,76 @@ test("learning card evaluation service accepts a valid streaming Gateway draft",
   assert.equal(JSON.stringify(result.evaluation).includes("stored text stays in SQLite only"), false);
 });
 
+test("learning card evaluation service keeps subject capability cluster out of graph targets", async () => {
+  const { calls, service } = createEvaluationHarness({
+    json: {
+      output_text: JSON.stringify(validEvaluationDraft({
+        skillResults: [{
+          nodeId: "kg_science_ideas_evidence",
+          rubricDimensionId: "science_concept_understanding",
+          score: 82,
+          confidence: 0.8,
+          status: "developing",
+          evidenceType: "learner_submission_summary",
+          evidenceSummary: "Explains the link between idea and evidence."
+        }],
+        rubricResults: [{
+          dimensionId: "science_concept_understanding",
+          nodeId: "kg_science_ideas_evidence",
+          score: 82,
+          confidence: 0.8,
+          status: "developing",
+          evidenceType: "learner_submission_summary",
+          evidenceSummary: "Explains the link between idea and evidence."
+        }]
+      }))
+    }
+  });
+
+  const result = await service.evaluateSubmissionDraft(evaluationInput({
+    taskCard: {
+      id: "ltask_science_1",
+      title: "Science ideas and evidence",
+      learner_id: "weixin_stephen",
+      workspace_id: "weixin_stephen",
+      program_id: "",
+      domain: "science",
+      card_role: "practice",
+      capability_cluster_id: "science",
+      skill_ids_json: JSON.stringify(["kg_science_ideas_evidence"]),
+      raw_json: JSON.stringify({
+        cardRole: "practice",
+        recipeId: "daily_science_v1",
+        domain: "science",
+        subject: "science",
+        learningGraph: {
+          targetNodeIds: ["kg_science_ideas_evidence"],
+          domain: "science",
+          subject: "science"
+        },
+        teachingFlow: {
+          learningTarget: "Connect an idea to evidence.",
+          quickCheck: { expectedEvidence: ["short_answer"] }
+        },
+        evidenceToRecord: ["short_answer"],
+        completionPolicy: { mode: "daily_score_once", passScoreRequired: false }
+      })
+    },
+    taskRaw: {
+      cardRole: "practice",
+      recipeId: "daily_science_v1",
+      domain: "science",
+      subject: "science",
+      learningGraph: { targetNodeIds: ["kg_science_ideas_evidence"] },
+      completionPolicy: { mode: "daily_score_once", passScoreRequired: false }
+    }
+  }));
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(calls[0].input.card.targetNodeIds, ["kg_science_ideas_evidence"]);
+  assert.equal(calls[0].input.card.targetNodeIds.includes("science"), false);
+});
+
 test("learning card evaluation service accepts ordinary JSON Gateway drafts", async () => {
   const { service } = createEvaluationHarness({
     json: {

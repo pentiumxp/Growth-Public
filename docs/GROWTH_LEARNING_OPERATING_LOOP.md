@@ -35,6 +35,14 @@ accept learner evidence, run one evaluation, update weighted mastery evidence,
 write trajectory, recommend the next card, and close a formal stage-assessment
 cycle. That is the card-level loop.
 
+As of 2026-06-18, the local fake-Gateway harness
+`npm run smoke:local-daily-cycle` proves the ordinary Fanfan science daily
+cycle can run through planner draft, authoring, learner submit/evaluate/reflect,
+profile-feedback, and loop-state next action inside the Growth plugin service
+graph. The passing sample is local implementation evidence only and must not be
+treated as production Gateway, release, scheduler, visual, platform-action, or
+deployment evidence.
+
 The next target is broader. Growth should become a learning operating system
 inside the plugin boundary:
 
@@ -109,6 +117,12 @@ reward settlement, evidence-ledger writes, Profile V2 projection, profile
 delta projection, stage-assessment cooldown policy, and Owner audit DTOs.
 Models may provide draft content or grading summaries, but they must not
 directly write durable state.
+
+Graph target propagation is part of the deterministic boundary. For new
+graph-bound cards, evidence/profile/recommendation services must use validated
+graph, skill, or assessment node ids. `capability_cluster_id` is only a legacy
+fallback when no graph target exists; it must not be written as a KG node for
+new generated cards.
 
 ### Next Implementation Sequence
 

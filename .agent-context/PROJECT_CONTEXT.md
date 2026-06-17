@@ -35,6 +35,16 @@ readback gate set.
   Configure it with `GROWTH_SQLITE_BUSY_TIMEOUT_MS`; default is `5000`.
   The applied value is exposed as `sqlite_busy_timeout_ms` in SQLite
   integrity readback.
+- 2026-06-18 local closed-loop harness status: `npm run
+  smoke:local-daily-cycle` now runs a Growth-owned fake-Gateway full daily
+  cycle through planner draft, card authoring, learner submit/evaluate/reflect,
+  profile-feedback, and loop-state readback. The fresh Fanfan science run over
+  `kg_ls_science_scientific_enquiry_consider_evidence_and_approach` passed
+  with `ok=true`, card `ltask_483dada0919ab7f613`, evaluation
+  `lgeval_6979f9eb55f2095728`, profile-feedback `pass`, and next action
+  `draft_daily_plan`. This is local fake-Gateway implementation evidence only,
+  not production Gateway, release, visual, platform-action, scheduler, or
+  deployment evidence.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,

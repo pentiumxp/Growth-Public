@@ -203,6 +203,50 @@ can complete the wrapper action, while collections blocked before any
 release-evidence record produce a visible blocked action plus bounded audit
 readback.
 
+## Local Full-Cycle Harness
+
+Use `npm run smoke:local-daily-cycle` only for local implementation evidence
+after a change touches daily-loop publication, learner-cycle execution,
+Gateway planner/authoring/evaluation boundaries, evidence/profile projection,
+profile-feedback, or next-card recommendation.
+
+Minimum focused coverage for this harness row:
+
+- `tests/growth-daily-loop-smoke-script.test.js`
+- `tests/growth-learner-cycle-smoke-script.test.js`
+- `tests/growth-profile-feedback-smoke-script.test.js`
+- `tests/growth-learning-loop-state-smoke-script.test.js`
+- `tests/learning-card-evaluation-service.test.js`
+- `tests/learning-mastery-profile-service.test.js`
+- `tests/learning-card-trajectory-service.test.js`
+- `tests/learning-card-recommendation-service.test.js`
+- `node --check scripts/smoke-growth-local-daily-cycle.js`
+
+The operational command shape is:
+
+```bash
+npm run smoke:local-daily-cycle -- --allow-write \
+  --workspace-id <workspace> \
+  --learner-id <learner> \
+  --domain-pack-id <domain-pack> \
+  --domain <domain> \
+  --subject <subject> \
+  --target-node-id <graph-node> \
+  --json
+```
+
+The harness starts a local fake Gateway for the Growth generic `{kind,input}`
+protocol and then delegates to existing Growth smoke/service boundaries for
+daily-loop advance, learner-cycle full, profile-feedback, and loop-state. A
+passing run must keep graph target ids clean, propagate recipe ids, complete
+one submission/evaluation/reflection cycle, pass profile-feedback, and expose
+the next loop action.
+
+This harness writes local SQLite rows only with `--allow-write`. It must not
+be recorded as production Gateway evidence, production release evidence, Home
+AI central visual/UI evidence, platform Action Inbox/Web Push evidence,
+scheduler permission, runtime enablement, or deployment health evidence.
+
 ## Release Union Harness
 
 `npm run test:release-union` runs the release readback and gate chain that is

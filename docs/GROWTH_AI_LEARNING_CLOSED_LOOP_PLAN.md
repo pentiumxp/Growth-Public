@@ -117,6 +117,27 @@ durable summary-only records: plan draft, graph binding, generated card,
 evaluation, evidence ledger, Profile V2, profile-delta audit, correction
 history, trajectory, and recommendation lifecycle.
 
+### Local Harness Closure On 2026-06-18
+
+Growth now has a local full-cycle harness,
+`npm run smoke:local-daily-cycle`, for implementation evidence. It starts a
+local fake Gateway, then delegates through normal Growth services for planner
+draft, card authoring, learner submission, one evaluation, one reflection,
+profile-feedback, and loop-state readback.
+
+The current passing Fanfan science sample used target node
+`kg_ls_science_scientific_enquiry_consider_evidence_and_approach` and produced
+card `ltask_483dada0919ab7f613`, evaluation
+`lgeval_6979f9eb55f2095728`, profile delta
+`profile_delta_lgeval_6979f9eb55f2095728`, profile-feedback `pass`, and next
+loop action `draft_daily_plan`.
+
+This proves the plugin-owned implementation path can close one daily cycle
+locally. It does not prove production Gateway configuration, Home AI central
+visual/UI evidence, platform Action Inbox/Web Push receipt evidence, scheduler
+permission, release approval, runtime enablement, production deployment health,
+or production learner evidence.
+
 ## Current Capability Versus Product Capability
 
 Growth currently has two different levels of capability that should not be

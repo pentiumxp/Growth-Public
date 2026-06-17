@@ -2,6 +2,11 @@
 
 const crypto = require("node:crypto");
 
+const {
+  graphNodeIdsFromEvaluation,
+  graphNodeIdsFromTaskCard
+} = require("./learning-graph-node-utils");
+
 function cleanString(value) {
   return String(value || "").trim();
 }
@@ -282,27 +287,9 @@ function nodeIdsFromEvaluationContext(input = {}) {
   const context = input.context || {};
   const taskCard = context.taskCard || {};
   const taskRaw = context.taskRaw || {};
-  const raw = Object.assign(
-    {},
-    parseJson(taskCard.raw_json, {}),
-    parseJson(taskCard.rawJson, {}),
-    taskRaw
-  );
   return uniqueStrings(
-    asArray(taskRaw.learningGraph?.targetNodeIds)
-      .concat(taskRaw.learningGraph?.assessmentCoverageNodeIds || [])
-      .concat(taskRaw.learning_graph?.target_node_ids || [])
-      .concat(taskRaw.learning_graph?.assessment_coverage_node_ids || [])
-      .concat(raw.learningGraph?.targetNodeIds || [])
-      .concat(raw.learningGraph?.assessmentCoverageNodeIds || [])
-      .concat(raw.learning_graph?.target_node_ids || [])
-      .concat(raw.learning_graph?.assessment_coverage_node_ids || [])
-      .concat(raw.targetNodeIds || [])
-      .concat(raw.assessmentCoverageNodeIds || [])
-      .concat(parseJson(taskCard.skill_ids_json, []))
-      .concat(parseJson(taskCard.assessment_coverage_json, []))
-      .concat(asArray(input.evaluation?.skillResults).map((item) => item.nodeId || item.graphNodeId))
-      .concat(taskCard.capability_cluster_id)
+    graphNodeIdsFromTaskCard(taskCard, taskRaw)
+      .concat(graphNodeIdsFromEvaluation(input))
   ).slice(0, 40);
 }
 

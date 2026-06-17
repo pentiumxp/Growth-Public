@@ -114,6 +114,8 @@ function createLearningCardRecommendationService(options = {}) {
         workspaceId,
         learnerId,
         programId,
+        domain: input.domain,
+        subject: input.subject,
         targetNodeIds,
         masteryLimit: input.masteryLimit,
         signalLimit: input.signalLimit,

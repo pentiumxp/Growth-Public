@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 
 const { createLearningCardRubricPolicyService } = require("./learning-card-rubric-policy-service");
+const { graphNodeIdsFromTaskCard } = require("./learning-graph-node-utils");
 
 function cleanString(value) {
   return String(value || "").trim();
@@ -64,15 +65,7 @@ function taskRawFromInput(input = {}) {
 
 function targetNodeIdsFromTask(input = {}) {
   const taskCard = input.taskCard || {};
-  const raw = taskRawFromInput(input);
-  return uniqueStrings(
-    asArray(raw.learningGraph?.targetNodeIds)
-      .concat(raw.learning_graph?.target_node_ids || [])
-      .concat(raw.targetNodeIds || [])
-      .concat(raw.target_node_ids || [])
-      .concat(parseJson(taskCard.skill_ids_json, []))
-      .concat(taskCard.capability_cluster_id)
-  );
+  return graphNodeIdsFromTaskCard(taskCard, taskRawFromInput(input));
 }
 
 function evidenceRequirementsFromTask(raw = {}) {

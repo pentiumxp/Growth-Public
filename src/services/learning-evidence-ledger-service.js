@@ -1,5 +1,7 @@
 "use strict";
 
+const { graphNodeIdsFromTaskCard } = require("./learning-graph-node-utils");
+
 function cleanString(value) {
   return String(value || "").trim();
 }
@@ -79,19 +81,7 @@ function evidenceWeightForTaskCard(taskCard = {}, fallback = 0) {
 }
 
 function nodeIdsFromTaskCard(taskCard = {}) {
-  const raw = taskRaw(taskCard);
-  return uniqueStrings(
-    asArray(raw.learningGraph?.targetNodeIds)
-      .concat(raw.learningGraph?.assessmentCoverageNodeIds || [])
-      .concat(raw.learningGraph?.assessment_coverage_node_ids || [])
-      .concat(raw.learning_graph?.target_node_ids || [])
-      .concat(raw.learning_graph?.assessment_coverage_node_ids || [])
-      .concat(raw.targetNodeIds || [])
-      .concat(raw.assessmentCoverageNodeIds || [])
-      .concat(parseJson(taskCard.skill_ids_json, []))
-      .concat(parseJson(taskCard.assessment_coverage_json, []))
-      .concat(taskCard.capability_cluster_id)
-  );
+  return graphNodeIdsFromTaskCard(taskCard);
 }
 
 function rubricPolicyFromTaskCard(taskCard = {}) {

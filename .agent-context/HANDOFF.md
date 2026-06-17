@@ -9,6 +9,69 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T06:25+0800 - Local Daily Cycle Closed-Loop Harness Pass
+
+- Status: implemented locally as a Growth-owned full daily-cycle smoke
+  harness and closed-loop compatibility fix. No production deploy, release
+  approval, runtime config mutation, scheduler permission, Home AI visual
+  tooling, platform Action Inbox/Web Push delivery, or production Gateway
+  evidence was performed.
+- Harness:
+  - added `npm run smoke:local-daily-cycle`, backed by
+    `scripts/smoke-growth-local-daily-cycle.js`;
+  - the harness starts a local fake Gateway over the Growth generic
+    `{kind,input}` protocol, then delegates through the normal service graph:
+    `smoke:daily-loop --operation advance --allow-write`,
+    `smoke:learner-cycle --operation full --allow-write`,
+    `smoke:profile-feedback`, and `smoke:learning-loop-state`;
+  - it covers planner draft, card authoring, and evaluation Gateway boundary
+    shapes, but remains local fake-Gateway evidence and must not be recorded as
+    production Gateway/release evidence.
+- Runtime fixes:
+  - `scripts/smoke-growth-daily-loop.js` now parses `--recipe-id` /
+    `--recipeId` and `--selected-recipe-id` / `--selectedRecipeId`, so science
+    daily-loop requests keep `daily_science_v1` instead of falling back to the
+    English recipe;
+  - graph-node extraction now uses `learning-graph-node-utils`: graph/skill/
+    assessment nodes win, and `capability_cluster_id` is only a legacy fallback
+    when no graph nodes exist. This prevents `science` subject labels from
+    being written as KG node ids in new evidence/profile paths;
+  - mastery/profile repository compatibility now reads legacy `skill_id` and
+    `target_skill_ids_json`, writes old required trajectory/mastery/signal
+    columns when present, and passes `domain` through recommendation/profile
+    projection so science recommendations do not drift into English history.
+- Local evidence:
+  - a repaired Fanfan science cycle for card `ltask_89a3f6709181bece7c`
+    now passes `smoke:profile-feedback` with clean evidence node
+    `kg_ls_science_scientific_enquiry_obtain_and_present_evidence`;
+  - the fresh end-to-end run over
+    `kg_ls_science_scientific_enquiry_consider_evidence_and_approach` passed
+    `growth.localDailyCycleSmoke.v1` with `ok=true`, card
+    `ltask_483dada0919ab7f613`, plan draft
+    `lgplan_3e52f98a991540e968`, graph plan
+    `lgp_8f09c1e421211b67de`, evaluation
+    `lgeval_6979f9eb55f2095728`, profile delta
+    `profile_delta_lgeval_6979f9eb55f2095728`, profile-feedback `pass`, and
+    loop-state `ready_to_draft` / `draft_daily_plan`;
+  - Gateway call kinds in that run were
+    `growth.learning_planner.draft`, `growth.card_authoring.generate`, and
+    `growth.card_evaluation.evaluate`.
+- Validation so far:
+  - `npm run --silent check` -> ok, `runtimeCount=227`,
+    `checkedCount=227`, no missing/stale/duplicate syntax registrations;
+  - `node scripts/check-growth-docs-locality.js` -> ok;
+  - `node --test tests/learning-card-evaluation-service.test.js` -> 13/13;
+  - `node --test tests/learning-card-recommendation-service.test.js
+    tests/learning-profile-projection-service.test.js
+    tests/learning-mastery-profile-service.test.js
+    tests/learning-card-trajectory-service.test.js
+    tests/learning-recommendation-lifecycle-service.test.js` plus
+    `tests/growth-daily-loop-smoke-script.test.js` -> 39/39;
+  - `git diff --check` -> pass.
+- Next handling:
+  - commit and push this package;
+  - do not deploy in this package unless explicitly requested.
+
 ## 2026-06-18T05:36+0800 - KG Data Foundation And State Prerequisite Advance
 
 - Status: implemented locally as Growth runtime data recovery plus advisory

@@ -59,6 +59,26 @@ until real artifacts are collected:
   collection. The recovery proof must include KG dry-run/readback, provision
   smoke, target-provisioning resolve, and stage assessment/control readback.
 
+## Local Full-Cycle Harness Rule
+
+`npm run smoke:local-daily-cycle` is an H1 local implementation harness. It may
+write local Growth SQLite rows only when `--allow-write` is present. It starts
+a local fake Gateway and delegates through existing Growth smoke/service
+boundaries for daily-loop advance, learner-cycle full, profile-feedback, and
+loop-state readback.
+
+Use it to prove one ordinary daily cycle can close locally after service,
+repository, card-generation, evaluation, profile, or recommendation changes.
+Do not use it as production Gateway evidence, production release evidence,
+Home AI central visual/UI evidence, Action Inbox/Web Push receipt evidence,
+scheduler permission, runtime enablement, or deployment health evidence.
+
+When this harness is used as closure evidence, record the summary-only output:
+target scope, target node ids, card id, evaluation id, profile delta id,
+profile-feedback status, loop-state status/next action, and Gateway call kinds.
+Do not record raw learner answers, raw reflections, prompts, model output,
+access tokens, private paths, or full DB rows.
+
 ## Forbidden Harness Shortcuts
 
 - Do not satisfy service-owned release evidence with bare boolean `true`.

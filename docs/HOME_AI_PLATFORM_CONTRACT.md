@@ -210,6 +210,23 @@ the Growth context DTO. `learning-plan-publisher-service` must then propagate
 the selected recipe into `learning-card-generation-service`. Routes and browser
 code must not compensate by recomputing graph scope locally.
 
+## Growth-Local Full Daily-Cycle Harness Addendum
+
+`npm run smoke:local-daily-cycle` is a Growth-owned local implementation
+harness, not a platform release or production evidence boundary. It starts a
+local fake Gateway for the Growth generic `{kind,input}` planner, authoring,
+and evaluation protocol, then delegates through existing Growth smoke/service
+boundaries for daily-loop advance, learner-cycle full, profile-feedback, and
+loop-state readback.
+
+The harness requires `--allow-write` and writes local Growth SQLite rows. Its
+summary-only output may be used to prove that one ordinary daily card can close
+locally through generation, submission, one evaluation, one reflection,
+evidence/profile update, profile-feedback, and visible next action. It must
+not be recorded as production Gateway evidence, production release evidence,
+Home AI central visual/UI evidence, platform Action Inbox/Web Push evidence,
+scheduler permission, runtime enablement, or deployment health evidence.
+
 ## Growth-Local Release-Workbench State Prerequisite Addendum
 
 The release workbench is a read model and must not reinterpret Growth

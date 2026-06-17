@@ -495,6 +495,7 @@ function baseArgs() {
     "--domain-pack-id", DOMAIN_PACK_ID,
     "--domain", "science",
     "--subject", "science",
+    "--recipe-id", "daily_science_v1",
     "--target-node-id", SCIENCE_NODE_ID,
     "--json"
   ];
@@ -512,6 +513,7 @@ test("daily-loop smoke script parses operation, write guard, scope, item, and gr
     "--domain-pack-id", DOMAIN_PACK_ID,
     "--domain", "science",
     "--subject", "science",
+    "--recipe-id", "daily_science_v1",
     "--target-node-id", SCIENCE_NODE_ID,
     "--target-node-ids", `${SCIENCE_NODE_ID},${SCIENCE_PREREQ_NODE_ID}`,
     "--generation-key", "daily-loop-smoke-card",
@@ -536,6 +538,8 @@ test("daily-loop smoke script parses operation, write guard, scope, item, and gr
     domain: "science",
     subject: "science",
     horizon: "daily_plan",
+    recipeId: "daily_science_v1",
+    selectedRecipeId: "",
     availableMinutes: 15,
     limit: 12,
     itemId: "plan_item_1",

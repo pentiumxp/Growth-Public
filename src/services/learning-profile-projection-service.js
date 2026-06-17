@@ -155,6 +155,8 @@ function createLearningProfileProjectionService(options = {}) {
         workspaceId,
         learnerId,
         programId: input.programId,
+        domain: input.domain,
+        subject: input.subject,
         targetNodeIds,
         masteryLimit: input.masteryLimit || 24,
         signalLimit: input.signalLimit || 16,

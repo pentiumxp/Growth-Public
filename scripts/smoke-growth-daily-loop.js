@@ -247,6 +247,8 @@ function inputFromArgs(args) {
     domain: firstArgValue(args, ["--domain"], jsonInput.domain || ""),
     subject: firstArgValue(args, ["--subject"], jsonInput.subject || ""),
     horizon: firstArgValue(args, ["--horizon"], jsonInput.horizon || "daily_plan") || "daily_plan",
+    recipeId: firstArgValue(args, ["--recipe-id", "--recipeId"], jsonInput.recipeId || jsonInput.recipe_id || ""),
+    selectedRecipeId: firstArgValue(args, ["--selected-recipe-id", "--selectedRecipeId"], jsonInput.selectedRecipeId || jsonInput.selected_recipe_id || ""),
     availableMinutes: boundedNumberArg(args, ["--available-minutes", "--availableMinutes"], jsonInput.availableMinutes || jsonInput.available_minutes || 15, 1, 60),
     limit: boundedNumberArg(args, ["--limit"], jsonInput.limit || 12, 1, 50),
     itemId,

@@ -26,6 +26,10 @@ function boundedText(value, max = 320) {
   return cleanString(value).slice(0, max);
 }
 
+function firstColumn(columns = [], names = []) {
+  return names.find((name) => columns.includes(name)) || "";
+}
+
 function scoreTo100(value) {
   const score = numberValue(value);
   if (score > 0 && score <= 1) return Math.round(score * 100);
@@ -75,7 +79,7 @@ function publicMasteryState(row = {}) {
     workspaceId: cleanString(row.workspace_id),
     learnerId: cleanString(row.learner_id),
     programId: cleanString(row.program_id),
-    nodeId: cleanString(row.node_id || raw.nodeId),
+    nodeId: cleanString(row.node_id || row.skill_id || raw.nodeId || raw.skillId || raw.targetNodeId),
     status: cleanString(row.status || raw.status),
     masteryLevel: cleanString(row.mastery_level || raw.masteryLevel),
     score: scoreTo100(row.score || raw.score),
@@ -101,7 +105,7 @@ function publicExperienceSignal(row = {}) {
     workspaceId: cleanString(row.workspace_id),
     learnerId: cleanString(row.learner_id),
     programId: cleanString(row.program_id),
-    targetNodeId: cleanString(row.node_id || raw.targetNodeId),
+    targetNodeId: cleanString(row.node_id || row.skill_id || raw.targetNodeId || raw.nodeId || row.capability_cluster_id),
     signalType: cleanString(row.signal_type || raw.signalType),
     strength: cleanString(row.strength || raw.strength),
     summary: boundedText(row.summary || raw.summary, 260),
@@ -114,21 +118,29 @@ function publicExperienceSignal(row = {}) {
 function publicTrajectory(row = {}) {
   if (!row) return null;
   const raw = rawObject(row);
+  const nextRecommendation = parseJson(row.next_recommendation_json, raw.nextRecommendation || {}) || {};
   return {
     id: cleanString(row.id),
     workspaceId: cleanString(row.workspace_id),
     learnerId: cleanString(row.learner_id),
     programId: cleanString(row.program_id),
     taskCardId: cleanString(row.task_card_id),
-    sourceEvaluationId: cleanString(row.source_evaluation_id || raw.sourceEvaluationId),
+    sourceEvaluationId: cleanString(row.source_evaluation_id || raw.sourceEvaluationId || nextRecommendation.sourceEvaluationId),
     strategy: cleanString(row.strategy || raw.strategy),
     difficultyBand: cleanString(row.difficulty_band || raw.difficultyBand),
-    targetNodeIds: uniqueStrings(parseJson(row.target_node_ids_json, raw.targetNodeIds || [])),
+    targetNodeIds: uniqueStrings(
+      parseJson(row.target_node_ids_json, null)
+        || parseJson(row.target_skill_ids_json, null)
+        || raw.targetNodeIds
+        || raw.targetSkillIds
+        || nextRecommendation.targetNodeIds
+        || []
+    ),
     performanceSummary: boundedText(row.performance_summary || raw.performanceSummary, 360),
     confirmedStrengths: asArray(parseJson(row.confirmed_strengths_json, raw.confirmedStrengths || [])).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 8),
     remainingWeaknesses: asArray(parseJson(row.remaining_weaknesses_json, raw.remainingWeaknesses || [])).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 8),
     masteryChanges: asArray(parseJson(row.mastery_changes_json, raw.masteryChanges || [])).slice(0, 12),
-    nextRecommendation: parseJson(row.next_recommendation_json, raw.nextRecommendation || {}) || {},
+    nextRecommendation,
     createdAt: cleanString(row.created_at || raw.createdAt),
     updatedAt: cleanString(row.updated_at || raw.updatedAt)
   };
@@ -156,6 +168,7 @@ function recommendationReviewPrivacyFindings(input = {}) {
 }
 
 function findTrajectoryRecommendationRow(db, input = {}) {
+  const columns = tableColumns(db, "learning_growth_card_trajectories");
   const trajectoryId = cleanString(input.trajectoryId || input.id);
   const workspaceId = cleanString(input.workspaceId);
   const learnerId = cleanString(input.learnerId);
@@ -166,11 +179,11 @@ function findTrajectoryRecommendationRow(db, input = {}) {
   if (trajectoryId) {
     const filters = [];
     const values = [trajectoryId];
-    if (workspaceId) {
+    if (workspaceId && columns.includes("workspace_id")) {
       filters.push("workspace_id = ?");
       values.push(workspaceId);
     }
-    if (learnerId) {
+    if (learnerId && columns.includes("learner_id")) {
       filters.push("learner_id = ?");
       values.push(learnerId);
     }
@@ -179,23 +192,23 @@ function findTrajectoryRecommendationRow(db, input = {}) {
   if (!row && (sourceTaskCardId || sourceEvaluationId)) {
     const filters = [];
     const values = [];
-    if (workspaceId) {
+    if (workspaceId && columns.includes("workspace_id")) {
       filters.push("workspace_id = ?");
       values.push(workspaceId);
     }
-    if (learnerId) {
+    if (learnerId && columns.includes("learner_id")) {
       filters.push("learner_id = ?");
       values.push(learnerId);
     }
-    if (programId) {
+    if (programId && columns.includes("program_id")) {
       filters.push("program_id = ?");
       values.push(programId);
     }
-    if (sourceTaskCardId) {
+    if (sourceTaskCardId && columns.includes("task_card_id")) {
       filters.push("task_card_id = ?");
       values.push(sourceTaskCardId);
     }
-    if (sourceEvaluationId) {
+    if (sourceEvaluationId && columns.includes("source_evaluation_id")) {
       filters.push("source_evaluation_id = ?");
       values.push(sourceEvaluationId);
     }
@@ -214,6 +227,7 @@ function selectByWorkspace(db, tableName, input = {}, order = "updated_at DESC",
   const workspaceId = cleanString(input.workspaceId);
   const learnerId = cleanString(input.learnerId);
   const programId = cleanString(input.programId);
+  const domain = cleanString(input.domain);
   if (workspaceId && columns.includes("workspace_id")) {
     where.push("workspace_id = ?");
     values.push(workspaceId);
@@ -226,9 +240,53 @@ function selectByWorkspace(db, tableName, input = {}, order = "updated_at DESC",
     where.push("program_id = ?");
     values.push(programId);
   }
+  if (domain && columns.includes("domain")) {
+    where.push("domain = ?");
+    values.push(domain);
+  }
   const max = Math.max(1, Math.min(100, Number(limit || 24) || 24));
   return db.prepare(`SELECT * FROM ${tableName}${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY ${order} LIMIT ?`)
     .all(...values, max);
+}
+
+function selectExistingMasteryState(db, input = {}) {
+  const columns = tableColumns(db, "learning_growth_mastery_states");
+  const nodeColumn = firstColumn(columns, ["node_id", "skill_id"]);
+  if (!nodeColumn) return null;
+  const where = [];
+  const values = [];
+  const workspaceId = cleanString(input.workspaceId);
+  const learnerId = cleanString(input.learnerId);
+  const programId = cleanString(input.programId);
+  const domain = cleanString(input.domain);
+  const nodeId = cleanString(input.nodeId);
+  if (workspaceId && columns.includes("workspace_id")) {
+    where.push("workspace_id = ?");
+    values.push(workspaceId);
+  }
+  if (learnerId && columns.includes("learner_id")) {
+    where.push("learner_id = ?");
+    values.push(learnerId);
+  }
+  if (programId && columns.includes("program_id")) {
+    where.push("program_id = ?");
+    values.push(programId);
+  }
+  if (domain && columns.includes("domain")) {
+    where.push("domain = ?");
+    values.push(domain);
+  }
+  if (nodeId) {
+    where.push(`${nodeColumn} = ?`);
+    values.push(nodeId);
+  }
+  if (!where.length) return null;
+  return db.prepare(`
+    SELECT * FROM learning_growth_mastery_states
+    WHERE ${where.join(" AND ")}
+    ORDER BY updated_at DESC, id DESC
+    LIMIT 1
+  `).get(...values) || null;
 }
 
 function createMasteryProfileRepository({ open } = {}) {
@@ -255,15 +313,7 @@ function createMasteryProfileRepository({ open } = {}) {
       let id = cleanString(input.id) || stableMasteryStateId({ workspaceId, learnerId, programId, nodeId });
       let existing = db.prepare("SELECT * FROM learning_growth_mastery_states WHERE id = ?").get(id) || null;
       if (!existing) {
-        const legacy = db.prepare(`
-          SELECT * FROM learning_growth_mastery_states
-          WHERE workspace_id = ?
-            AND learner_id = ?
-            AND program_id = ?
-            AND node_id = ?
-          ORDER BY updated_at DESC, id DESC
-          LIMIT 1
-        `).get(workspaceId, learnerId, programId, nodeId) || null;
+        const legacy = selectExistingMasteryState(db, { workspaceId, learnerId, programId, nodeId });
         if (legacy) {
           existing = legacy;
           id = cleanString(legacy.id);
@@ -306,22 +356,42 @@ function createMasteryProfileRepository({ open } = {}) {
         dailyEvidenceCount,
         lastSignalType: cleanString(input.signalType),
         typicalWeaknesses,
+        score: nextScore,
+        confidence: Math.max(numberValue(existingState?.confidence), numberValue(input.confidence)),
+        summary: boundedText(input.summary || existingState?.summary, 320),
+        nodeId,
+        skillId: nodeId,
         sourceType: cleanString(input.sourceType || "evaluation"),
         updatedBy: "growth-learning-mastery-profile-service"
       };
+      const now = cleanString(input.recordedAt) || new Date().toISOString();
       const values = {
         id,
         workspace_id: workspaceId,
         learner_id: learnerId,
         program_id: programId,
         node_id: nodeId,
+        skill_id: nodeId,
+        taxonomy_version: cleanString(input.taxonomyVersion || input.taxonomy_version || "growth-kg-runtime-v1"),
+        domain: cleanString(input.domain || "learning"),
+        strand: cleanString(input.strand || input.domain || "growth"),
+        parent_skill_id: cleanString(input.parentSkillId || input.parent_skill_id || ""),
+        stability: cleanString(input.stability || ""),
         status: cleanString(input.status || existingState?.status || "developing"),
         mastery_level: cleanString(input.masteryLevel || existingState?.masteryLevel || ""),
         score: nextScore,
         confidence: Math.max(numberValue(existingState?.confidence), numberValue(input.confidence)),
         evidence_count: nextCount,
+        positive_evidence_count: scoreTo100(input.score) >= 70 ? nextCount : 0,
+        negative_evidence_count: scoreTo100(input.score) < 70 ? nextCount : 0,
+        recent_success_count: scoreTo100(input.score) >= 70 ? 1 : 0,
+        recent_failure_count: scoreTo100(input.score) < 70 ? 1 : 0,
+        last_evidence_ref: evidenceRef,
+        source_basis_refs_json: jsonText(evidenceRefs),
+        weaknesses_json: jsonText(typicalWeaknesses),
         summary: boundedText(input.summary || existingState?.summary, 320),
-        updated_at: cleanString(input.recordedAt) || new Date().toISOString(),
+        created_at: cleanString(existing?.created_at || existingRaw.createdAt || now),
+        updated_at: now,
         raw_json: jsonText(raw)
       };
       upsertDynamic(db, "learning_growth_mastery_states", values);
@@ -346,11 +416,16 @@ function createMasteryProfileRepository({ open } = {}) {
       if (existing) return { ok: true, duplicate: true, signal: publicExperienceSignal(existing) };
       const values = {
         id,
+        task_card_id: cleanString(input.taskCardId || input.sourceTaskCardId || input.sourceRef || "growth_profile_signal"),
         workspace_id: workspaceId,
+        learner_workspace_id: workspaceId,
         learner_id: learnerId,
         program_id: cleanString(input.programId),
         node_id: nodeId,
+        skill_id: nodeId,
+        capability_cluster_id: nodeId,
         signal_type: signalType,
+        intensity: Math.max(0, Math.min(1, numberValue(input.intensity || input.strengthValue || 1) || 1)),
         strength: cleanString(input.strength || "medium"),
         summary: boundedText(input.summary, 260),
         source_type: cleanString(input.sourceType || "evaluation"),
@@ -368,21 +443,35 @@ function createMasteryProfileRepository({ open } = {}) {
   }
 
   function supersedeOlderPendingTrajectoryRecommendations(db, input = {}) {
+    const columns = tableColumns(db, "learning_growth_card_trajectories");
     const workspaceId = cleanString(input.workspaceId);
     const learnerId = cleanString(input.learnerId) || workspaceId;
     const programId = cleanString(input.programId);
     const currentTrajectoryId = cleanString(input.currentTrajectoryId);
     const now = cleanString(input.statusUpdatedAt) || new Date().toISOString();
     if (!workspaceId || !learnerId || !currentTrajectoryId) return [];
+    const where = [];
+    const values = [];
+    if (columns.includes("workspace_id")) {
+      where.push("workspace_id = ?");
+      values.push(workspaceId);
+    }
+    if (columns.includes("learner_id")) {
+      where.push("learner_id = ?");
+      values.push(learnerId);
+    }
+    where.push("id <> ?");
+    values.push(currentTrajectoryId);
+    if (programId && columns.includes("program_id")) {
+      where.push("program_id = ?");
+      values.push(programId);
+    }
     const rows = db.prepare(`
       SELECT * FROM learning_growth_card_trajectories
-      WHERE workspace_id = ?
-        AND learner_id = ?
-        AND id <> ?
-        AND (? = '' OR program_id = ?)
+      WHERE ${where.join(" AND ")}
       ORDER BY updated_at DESC
       LIMIT 100
-    `).all(workspaceId, learnerId, currentTrajectoryId, programId, programId);
+    `).all(...values);
     const supersededIds = [];
     for (const row of rows) {
       const recommendation = parseJson(row.next_recommendation_json, {}) || {};
@@ -423,19 +512,25 @@ function createMasteryProfileRepository({ open } = {}) {
         workspace_id: workspaceId,
         learner_id: learnerId,
         program_id: cleanString(input.programId),
+        sequence_group_id: cleanString(input.sequenceGroupId || input.sequence_group_id || taskCardId || id),
         task_card_id: taskCardId,
+        sequence_index: Number(input.sequenceIndex || input.sequence_index || 0) || 0,
         source_evaluation_id: sourceEvaluationId,
         strategy: cleanString(input.strategy),
         difficulty_band: cleanString(input.difficultyBand),
         target_node_ids_json: jsonText(uniqueStrings(input.targetNodeIds)),
+        target_skill_ids_json: jsonText(uniqueStrings(input.targetNodeIds)),
+        support_skill_ids_json: jsonText(uniqueStrings(input.supportSkillIds || input.support_skill_ids)),
         performance_summary: boundedText(input.performanceSummary, 360),
         confirmed_strengths_json: jsonText(asArray(input.confirmedStrengths).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 8)),
         remaining_weaknesses_json: jsonText(asArray(input.remainingWeaknesses).map((item) => boundedText(item, 160)).filter(Boolean).slice(0, 8)),
         mastery_changes_json: jsonText(asArray(input.masteryChanges).slice(0, 12)),
         next_recommendation_json: jsonText(input.nextRecommendation || {}),
+        source_basis_refs_json: jsonText(uniqueStrings([sourceEvaluationId, taskCardId]).slice(0, 8)),
         raw_json: jsonText({
           summaryOnly: true,
           sourceEvaluationId,
+          targetNodeIds: uniqueStrings(input.targetNodeIds),
           generatedBy: "growth-learning-card-trajectory-service"
         }),
         created_at: now,
