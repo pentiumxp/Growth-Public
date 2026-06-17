@@ -98,6 +98,40 @@ function createService(options = {}) {
       }
     },
     planPublisherService: {
+      getPlanDraft(input) {
+        if (input.planDraftId === "lgplan_existing_draft") {
+          return {
+            ok: true,
+            planDraft: Object.assign({}, planDraft(), {
+              planDraftId: "lgplan_existing_draft",
+              status: "draft",
+              draft: {
+                schemaVersion: "growth.learningPlanDraft.v1",
+                horizon: "daily_plan",
+                items: [{
+                  itemId: "existing_item_1",
+                  cardRole: "repair",
+                  subject: "science",
+                  targetNodeIds: ["kg_science_existing_target"],
+                  estimatedMinutes: 10,
+                  supportLevel: "guided",
+                  reason: "Existing validated draft should be reused without a new Gateway draft."
+                }]
+              }
+            })
+          };
+        }
+        if (input.planDraftId === "lgplan_published_draft") {
+          return {
+            ok: true,
+            planDraft: Object.assign({}, planDraft(), {
+              planDraftId: "lgplan_published_draft",
+              status: "published"
+            })
+          };
+        }
+        return { ok: false, error: "learning_plan_draft_not_found" };
+      },
       async draftPlan(input) {
         draftCalls.push(input);
         return { ok: true, gatewayMode: "json", planDraft: planDraft() };
@@ -190,6 +224,39 @@ test("automation proposal service creates an Owner-reviewed dry-run proposal wit
   assert.equal(persisted.length, 1);
   assert.equal(JSON.stringify(persisted[0]).includes("rawAnswer"), false);
   assert.equal(JSON.stringify(persisted[0]).includes("rawPrompt"), false);
+});
+
+test("automation proposal service can reuse an existing validated draft without drafting again", async () => {
+  const { draftCalls, provisioningCalls, service } = createService();
+
+  const result = await service.createProposal(proposalInput({
+    existingPlanDraftId: "lgplan_existing_draft",
+    selectedItemId: "existing_item_1",
+    targetNodeIds: []
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(result.proposal.planDraftId, "lgplan_existing_draft");
+  assert.equal(result.proposal.selectedItemId, "existing_item_1");
+  assert.deepEqual(result.proposal.targetNodeIds, ["kg_science_existing_target"]);
+  assert.equal(result.publishAction.endpoint, "/api/v1/growth/learning-plans/lgplan_existing_draft/publish");
+  assert.equal(result.publishAction.itemId, "existing_item_1");
+  assert.equal(draftCalls.length, 0);
+  assert.equal(provisioningCalls.length, 1);
+  assert.deepEqual(provisioningCalls[0].targetNodeIds, ["kg_science_existing_target"]);
+});
+
+test("automation proposal service rejects existing drafts that are already published", async () => {
+  const { draftCalls, service } = createService();
+
+  const result = await service.createProposal(proposalInput({
+    existingPlanDraftId: "lgplan_published_draft"
+  }));
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "learning_automation_existing_plan_draft_not_draft");
+  assert.equal(result.stage, "plan_draft_lookup");
+  assert.equal(draftCalls.length, 0);
 });
 
 test("automation proposal service records Owner decisions without publishing", async () => {

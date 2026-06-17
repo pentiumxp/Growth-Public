@@ -71,6 +71,17 @@ function selectedItemFromDraft(planDraft = {}, requestedItemId = "") {
   return items[0] || null;
 }
 
+function existingPlanDraftId(input = {}) {
+  return cleanString(
+    input.existingPlanDraftId
+    || input.existing_plan_draft_id
+    || input.proposalPlanDraftId
+    || input.proposal_plan_draft_id
+    || input.nextPlanDraftId
+    || input.next_plan_draft_id
+  );
+}
+
 function itemTargetNodeIds(item = {}) {
   return uniqueStrings(
     item.targetNodeIds
@@ -78,6 +89,10 @@ function itemTargetNodeIds(item = {}) {
     || item.assessmentCoverageNodeIds
     || item.assessment_coverage_node_ids
   );
+}
+
+function requestedTargetNodeIds(input = {}) {
+  return uniqueStrings(input.targetNodeIds || input.target_node_ids);
 }
 
 function sourceCycleForCompleteness(input = {}, cycle = {}) {
@@ -224,39 +239,88 @@ function createLearningAutomationProposalService(options = {}) {
       });
     }
 
-    const targetProvisioning = resolveTargetProvisioning({
-      workspaceId,
-      learnerId,
-      programId: input.programId || input.program_id,
-      domainPackId: input.domainPackId || input.domain_pack_id,
-      domain: input.domain,
-      subject: input.subject,
-      targetNodeIds: input.targetNodeIds || input.target_node_ids
-    });
-    if (!targetProvisioning?.ok) return targetProvisioning;
-
-    const draftResult = await planPublisherService.draftPlan({
-      workspaceId,
-      learnerId,
-      programId: input.programId || input.program_id,
-      horizon: input.horizon || "daily_plan",
-      domainPackId: input.domainPackId || input.domain_pack_id || targetProvisioning.selectedDomainPackId,
-      domain: input.domain || targetProvisioning.selectedDomain,
-      subject: input.subject || targetProvisioning.selectedSubject,
-      availableMinutes: input.availableMinutes || input.available_minutes,
-      allowedCardRoles: input.allowedCardRoles || input.allowed_card_roles,
-      lowPressure: input.lowPressure !== undefined ? input.lowPressure : input.low_pressure,
-      targetNodeIds: input.targetNodeIds || input.target_node_ids,
-      requestedBy: input.requestedBy || input.requested_by
-    });
-    if (!draftResult?.ok) {
-      return unavailable(draftResult?.error || "learning_automation_plan_draft_failed", {
-        stage: "plan_draft",
-        draftResult: draftResult || null
+    let targetProvisioning = null;
+    let planDraft = null;
+    let selectedItem = null;
+    const requestedExistingPlanDraftId = existingPlanDraftId(input);
+    if (requestedExistingPlanDraftId) {
+      if (!planPublisherService || typeof planPublisherService.getPlanDraft !== "function") {
+        return unavailable("learning_plan_draft_lookup_unavailable", {
+          stage: "plan_draft_lookup"
+        });
+      }
+      const draftResult = planPublisherService.getPlanDraft({
+        workspaceId,
+        planDraftId: requestedExistingPlanDraftId
       });
+      if (!draftResult?.ok) {
+        return unavailable(draftResult?.error || "learning_automation_existing_plan_draft_not_found", {
+          stage: "plan_draft_lookup",
+          planDraftId: requestedExistingPlanDraftId
+        });
+      }
+      planDraft = draftResult.planDraft || {};
+      if (cleanString(planDraft.status || "draft") !== "draft") {
+        return unavailable("learning_automation_existing_plan_draft_not_draft", {
+          stage: "plan_draft_lookup",
+          planDraftId: requestedExistingPlanDraftId,
+          status: cleanString(planDraft.status)
+        });
+      }
+      selectedItem = selectedItemFromDraft(planDraft, input.itemId || input.item_id || input.selectedItemId || input.selected_item_id);
+      if (!selectedItem) {
+        return unavailable("learning_automation_plan_item_missing", {
+          stage: "plan_selection",
+          planDraft
+        });
+      }
+      const graphSummary = planDraft.contextSummary?.knowledgeGraph || {};
+      const explicitTargetNodeIds = requestedTargetNodeIds(input);
+      targetProvisioning = resolveTargetProvisioning({
+        workspaceId,
+        learnerId,
+        programId: input.programId || input.program_id || planDraft.programId,
+        domainPackId: input.domainPackId || input.domain_pack_id || graphSummary.domainPackId,
+        domain: input.domain || graphSummary.domain,
+        subject: input.subject || selectedItem.subject || graphSummary.subject,
+        targetNodeIds: explicitTargetNodeIds.length ? explicitTargetNodeIds : itemTargetNodeIds(selectedItem)
+      });
+      if (!targetProvisioning?.ok) return targetProvisioning;
+    } else {
+      targetProvisioning = resolveTargetProvisioning({
+        workspaceId,
+        learnerId,
+        programId: input.programId || input.program_id,
+        domainPackId: input.domainPackId || input.domain_pack_id,
+        domain: input.domain,
+        subject: input.subject,
+        targetNodeIds: input.targetNodeIds || input.target_node_ids
+      });
+      if (!targetProvisioning?.ok) return targetProvisioning;
+
+      const draftResult = await planPublisherService.draftPlan({
+        workspaceId,
+        learnerId,
+        programId: input.programId || input.program_id,
+        horizon: input.horizon || "daily_plan",
+        domainPackId: input.domainPackId || input.domain_pack_id || targetProvisioning.selectedDomainPackId,
+        domain: input.domain || targetProvisioning.selectedDomain,
+        subject: input.subject || targetProvisioning.selectedSubject,
+        availableMinutes: input.availableMinutes || input.available_minutes,
+        allowedCardRoles: input.allowedCardRoles || input.allowed_card_roles,
+        lowPressure: input.lowPressure !== undefined ? input.lowPressure : input.low_pressure,
+        targetNodeIds: input.targetNodeIds || input.target_node_ids,
+        requestedBy: input.requestedBy || input.requested_by
+      });
+      if (!draftResult?.ok) {
+        return unavailable(draftResult?.error || "learning_automation_plan_draft_failed", {
+          stage: "plan_draft",
+          draftResult: draftResult || null
+        });
+      }
+      planDraft = draftResult.planDraft || {};
+      selectedItem = selectedItemFromDraft(planDraft, input.itemId || input.item_id || input.selectedItemId || input.selected_item_id);
     }
-    const planDraft = draftResult.planDraft || {};
-    const selectedItem = selectedItemFromDraft(planDraft, input.itemId || input.item_id || input.selectedItemId || input.selected_item_id);
     if (!selectedItem) {
       return unavailable("learning_automation_plan_item_missing", {
         stage: "plan_selection",

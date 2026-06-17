@@ -92,6 +92,31 @@ readback gate set.
   the release ready, deploy code, approve release state, mutate runtime config,
   grant scheduler permission, call Gateway, publish cards, or mutate learner
   state.
+- 2026-06-18 profile-feedback release evidence was persisted for the same
+  `weixin_stephen/science/daily_plan` scope using the real completed-cycle
+  selector (`--auto-select-latest-completed-cycle`). Collection run
+  `lgacrn_af3f722646b2a28bea` wrote
+  `productionProfileFeedbackSmokeEvidence` plus
+  `releaseEvidenceBundleAudit`, moving readiness to `passCheckCount=31`,
+  `missingRequiredCount=16`, `missingEvidenceCount=12`, and
+  `persistedEvidenceKeyCount=24`. This was summary-only readback evidence; it
+  did not call Gateway, generate cards, publish, evaluate, notify, deploy,
+  mutate runtime config, or grant scheduler permission.
+- 2026-06-18 supervised automation proposal service now supports an explicit
+  existing-draft path: `existingPlanDraftId` / `--existing-plan-draft-id`
+  loads a draft only through `learning-plan-publisher-service.getPlanDraft`,
+  requires `status=draft`, selects a draft item, rechecks target provisioning
+  from that item, and creates the same summary-only Owner proposal without a
+  new planner call. This closes a service-first architecture gap for
+  action-handoff construction when a validated draft already exists. It is not
+  planner-readiness evidence and does not bypass release evidence,
+  publication, Gateway, scheduler, or platform delivery gates.
+- Current dev shell cannot satisfy production planner or platform delivery
+  gates because production Gateway/Home AI notification credentials are owned
+  by the running production service identity and are not readable from this
+  workspace user. Do not record credential locations. Run those gates through
+  the production service/proxy or an authorized production collector, not by
+  fabricating local fake-Gateway or local delivery evidence.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,

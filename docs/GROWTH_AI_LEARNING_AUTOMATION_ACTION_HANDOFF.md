@@ -44,6 +44,21 @@ Implemented locally:
 - focused repository, service, smoke-script, event, route, frontend, and
   architecture harnesses.
 
+2026-06-18 service/harness note:
+
+- the upstream proposal step now supports an explicit existing draft selector
+  (`existingPlanDraftId` / `--existing-plan-draft-id`) so Owner-reviewed
+  automation can reuse a validated unpublished plan draft without another
+  Gateway planner call;
+- action handoff creation still requires a reviewed digest that contains at
+  least one required Owner action or blocked candidate, plus an active failure
+  policy;
+- handoff delivery requires configured Home AI notification credentials in the
+  running Growth process. Without those credentials, `deliver` records a
+  visible `delivery_failed` state; that is useful Growth-side failure evidence
+  but does not satisfy `delivered_action_handoff` or `platformActionEvidence`
+  release gates.
+
 Not implemented by this layer:
 
 - platform Action Inbox or Web Push internals;

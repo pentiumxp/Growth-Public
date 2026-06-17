@@ -136,6 +136,24 @@ function inputFromArgs(args) {
     programId: firstArgValue(args, ["--program-id", "--programId"], jsonInput.programId || jsonInput.program_id || ""),
     proposalId: firstArgValue(args, ["--proposal-id", "--proposalId"], jsonInput.proposalId || jsonInput.proposal_id || ""),
     planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], jsonInput.planDraftId || jsonInput.plan_draft_id || ""),
+    existingPlanDraftId: firstArgValue(
+      args,
+      [
+        "--existing-plan-draft-id",
+        "--existingPlanDraftId",
+        "--proposal-plan-draft-id",
+        "--proposalPlanDraftId",
+        "--next-plan-draft-id",
+        "--nextPlanDraftId"
+      ],
+      jsonInput.existingPlanDraftId
+        || jsonInput.existing_plan_draft_id
+        || jsonInput.proposalPlanDraftId
+        || jsonInput.proposal_plan_draft_id
+        || jsonInput.nextPlanDraftId
+        || jsonInput.next_plan_draft_id
+        || ""
+    ),
     selectedItemId: firstArgValue(args, ["--selected-item-id", "--selectedItemId", "--item-id", "--itemId"], jsonInput.selectedItemId || jsonInput.selected_item_id || jsonInput.itemId || jsonInput.item_id || ""),
     sourcePlanDraftId: firstArgValue(args, ["--source-plan-draft-id", "--sourcePlanDraftId"], jsonInput.sourcePlanDraftId || jsonInput.source_plan_draft_id || ""),
     sourceTaskCardId: firstArgValue(args, ["--source-task-card-id", "--sourceTaskCardId"], jsonInput.sourceTaskCardId || jsonInput.source_task_card_id || ""),

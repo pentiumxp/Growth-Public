@@ -1,6 +1,6 @@
 # Growth AI Learning Automation Digest Plan
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-18.
 
 ## Purpose
 
@@ -33,6 +33,10 @@ Backend status:
 - Growth-owned action handoff backend and embedded Owner UI are implemented
   locally through
   `docs/GROWTH_AI_LEARNING_AUTOMATION_ACTION_HANDOFF.md`;
+- proposal creation can reuse an explicit existing validated plan draft through
+  `existingPlanDraftId` / `--existing-plan-draft-id` without drafting a new
+  plan, while still checking source-cycle completeness, target provisioning,
+  draft status, selected item, and summary-only privacy;
 - embedded digest read/refresh/review UI is implemented in the Owner generation
   panel for persisted digest rows. Digest creation UI, platform Action
   Inbox/Web Push product evidence, and writeful scheduling remain future work.
@@ -224,6 +228,29 @@ npm run smoke:digest -- \
   --subject science \
   --allow-write
 ```
+
+Example proposal creation from an already validated draft:
+
+```bash
+npm run smoke:proposal -- \
+  --operation create \
+  --workspace-id fanfan \
+  --learner-id fanfan \
+  --source-task-card-id <completed-card-id> \
+  --source-evaluation-id <evaluation-id> \
+  --existing-plan-draft-id <draft-plan-id> \
+  --selected-item-id <draft-item-id> \
+  --allow-write \
+  --json
+```
+
+This path still delegates to `learning-automation-proposal-service`, loads the
+draft through `learning-plan-publisher-service.getPlanDraft`, rejects already
+published drafts, rechecks target provisioning against the selected draft item,
+and persists only summary-only proposal metadata. It is useful when a validated
+draft already exists and Owner wants to construct the supervised digest /
+handoff chain without another planner call. It is not production planner
+readiness evidence and must not be recorded as a Gateway/model smoke pass.
 
 Example write-gated review:
 

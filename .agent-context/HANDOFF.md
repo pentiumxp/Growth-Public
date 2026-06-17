@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T07:25+0800 - Profile Feedback Evidence And Existing-Draft Proposal Path
+
+- Status: implemented locally and partially advanced release evidence. No
+  deployment, runtime config mutation, release approval, scheduler permission,
+  Gateway/model call, card publication, evaluation, notification delivery,
+  stage activation, or learner-state mutation was performed in this package.
+- Evidence advanced:
+  - real completed-cycle profile-feedback smoke for
+    `weixin_stephen/science/daily_plan` passed with the latest completed cycle
+    selector;
+  - `smoke:release-evidence-collection --task profile_feedback
+    --required-task profile_feedback --auto-select-latest-completed-cycle
+    --write-collection-run --write-release-evidence-records --allow-write`
+    wrote collection run `lgacrn_af3f722646b2a28bea`;
+  - persisted release evidence keys:
+    `productionProfileFeedbackSmokeEvidence` and
+    `releaseEvidenceBundleAudit`;
+  - release-readiness readback is now `passCheckCount=31`,
+    `missingRequiredCount=16`, `missingEvidenceCount=12`,
+    `persistedEvidenceKeyCount=24`, still `status=incomplete`,
+    `readyForReleaseReview=false`, and `writefulSchedulingAllowed=false`.
+- Implementation:
+  - `learning-automation-proposal-service` now supports an explicit
+    existing-draft proposal path through `existingPlanDraftId`;
+  - `smoke:proposal` parses `--existing-plan-draft-id` and passes it through
+    the normal service graph;
+  - the service loads the draft via
+    `learning-plan-publisher-service.getPlanDraft`, rejects non-draft rows,
+    selects the requested draft item, rechecks target provisioning from the
+    selected item, and persists the same summary-only proposal metadata without
+    a new planner call;
+  - this is an action-handoff architecture prerequisite only, not production
+    planner-readiness evidence.
+- Current blocker for the remaining production planner/platform gates:
+  - the current development user cannot read the production Gateway or Home AI
+    notification credentials owned by the production service identity;
+  - do not document credential paths or values;
+  - production planner readiness, controlled daily-loop write, delivered
+    action handoff, and platform Action Inbox/Web Push evidence must be
+    collected through the production service/proxy or an authorized production
+    collector, not by recording fake-Gateway or locally failed delivery output
+    as release evidence.
+- Validation completed:
+  - `node --test tests/learning-automation-proposal-service.test.js
+    tests/growth-automation-proposal-smoke-script.test.js` -> 14/14 passing.
+
 ## 2026-06-18T06:51+0800 - Production Deployment Health Evidence
 
 - Status: implemented and persisted as summary-only release evidence. No
