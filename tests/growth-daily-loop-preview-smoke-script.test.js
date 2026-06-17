@@ -11,6 +11,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-daily-loop-previ
 
 const {
   inputFromArgs,
+  projectDailyLoopPreviewSmokeReadback,
   targetNodeIds
 } = require("../scripts/smoke-growth-daily-loop-preview");
 
@@ -104,6 +105,15 @@ test("daily-loop preview smoke script delegates to service without writing by de
     assert.equal(output.ok, true);
     assert.equal(output.source, "growth-learning-daily-loop-service");
     assert.equal(output.operation, "preview");
+    assert.equal(output.dailyLoopOperation, "preview");
+    assert.equal(output.dailyLoopWriteOperation, false);
+    assert.equal(output.dailyLoopTargetWorkspaceId, "weixin_fanfan");
+    assert.equal(output.dailyLoopTargetLearnerId, "fanfan");
+    assert.equal(output.dailyLoopSubject, "science");
+    assert.equal(typeof output.dailyLoopOutcome, "string");
+    assert.equal(typeof output.dailyLoopReadinessReady, "boolean");
+    assert.equal(typeof output.dailyLoopCanDraft, "boolean");
+    assert.equal(typeof output.dailyLoopCanPublish, "boolean");
     assert.equal(output.target.workspaceId, "weixin_fanfan");
     assert.equal(output.scope.subject, "science");
     assert.equal(output.actions.draftAction.method, "POST");
@@ -114,6 +124,55 @@ test("daily-loop preview smoke script delegates to service without writing by de
     db.close();
     assert.deepEqual(tables, []);
   });
+});
+
+test("daily-loop preview smoke script reuses dailyLoop operator projection", () => {
+  const projected = projectDailyLoopPreviewSmokeReadback({
+    ok: true,
+    source: "growth-learning-daily-loop-service",
+    operation: "preview",
+    target: {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan"
+    },
+    scope: {
+      programId: "program_science",
+      domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      availableMinutes: 12,
+      targetNodeIds: ["kg_science_fair_test"]
+    },
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      targetProvisioned: true,
+      plannerContextReady: true,
+      plannerReady: true,
+      authoringGatewayConfigured: true,
+      evaluationGatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      operatingLoopGatewayReady: true
+    },
+    actions: {
+      canDraft: true,
+      canPublish: false,
+      draftAction: { enabled: true },
+      publishAction: { enabled: false },
+      auditRefreshAction: { enabled: false }
+    }
+  });
+
+  assert.equal(projected.dailyLoopOperation, "preview");
+  assert.equal(projected.dailyLoopOutcome, "ready_to_draft");
+  assert.equal(projected.dailyLoopWriteOperation, false);
+  assert.equal(projected.dailyLoopTargetWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.dailyLoopProgramId, "program_science");
+  assert.equal(projected.dailyLoopTargetNodeCount, 1);
+  assert.equal(projected.dailyLoopCanDraft, true);
+  assert.equal(projected.dailyLoopCanPublish, false);
+  assert.equal(projected.dailyLoopPlannerContextReady, true);
 });
 
 test("daily-loop preview smoke script fails closed for privacy-risk input", () => {

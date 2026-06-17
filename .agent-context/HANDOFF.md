@@ -9,6 +9,47 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:48+08:00 - Daily Loop Preview Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan draft/publish behavior, card generation,
+  evaluation, reward settlement, runtime config, scheduler permission, UI
+  behavior, production deployment, or learner state.
+- Problem found:
+  - `smoke-growth-daily-loop-preview` delegated correctly to
+    `learning-daily-loop-service.preview`, but operator-critical daily-loop
+    operation/outcome, write gate, target/scope, readiness gates, action
+    availability, audit/completeness availability, and no-write status were
+    not mirrored at the CLI top level;
+  - the controlled `smoke-growth-daily-loop` CLI already had the canonical
+    `dailyLoop*` projection, so the preview CLI could reuse it instead of
+    growing a separate readback shape.
+- Scope:
+  - wired `scripts/smoke-growth-daily-loop-preview.js` through
+    `projectDailyLoopSmokeReadback` as
+    `projectDailyLoopPreviewSmokeReadback`;
+  - expanded `tests/growth-daily-loop-preview-smoke-script.test.js` to assert
+    preview smoke top-level `dailyLoop*` fields plus no-write temporary SQLite
+    behavior;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-daily-loop-preview.js`
+  - `node --test tests/growth-daily-loop-preview-smoke-script.test.js`
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if daily-loop service behavior, routes, repositories, schema,
+    Gateway, plan publisher, card generation, evaluation, UI, scheduler,
+    release-bundle mapping, or release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy is required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `dailyLoop*` preview fields do not add write permission, Gateway
+    access, publication rights, card generation, scheduling, reward settlement,
+    stage activation, or learner mutation.
+
 ## 2026-06-17T14:42+08:00 - Planner Readiness Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

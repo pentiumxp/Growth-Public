@@ -2,6 +2,7 @@
 
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
+const { projectDailyLoopSmokeReadback } = require("./smoke-growth-daily-loop");
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -111,6 +112,10 @@ function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
 
+function projectDailyLoopPreviewSmokeReadback(result = {}) {
+  return projectDailyLoopSmokeReadback(result);
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const pretty = hasFlag(args, "--json");
@@ -136,7 +141,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = services.learningDailyLoopService.preview(input);
+  const result = projectDailyLoopPreviewSmokeReadback(services.learningDailyLoopService.preview(input));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -154,5 +159,6 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectDailyLoopPreviewSmokeReadback,
   targetNodeIds
 };

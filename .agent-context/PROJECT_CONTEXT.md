@@ -799,13 +799,14 @@ readback gate set.
   graph and provides local or production daily-loop context/readiness evidence
   without Gateway calls, plan draft/publish, card generation, scheduling,
   notifications, stage activation, direct repository access, SQLite writes, or
-  learner-state mutation. The controlled `npm run smoke:daily-loop` CLI also
-  mirrors top-level `dailyLoop*` operator readback for operation/outcome,
-  write-operation flag, target/scope, readiness gates, action availability,
-  plan draft/item ids/status/counts, generated/published card ids,
-  generation/gateway summary, recommendation acceptance, duplicate/error/stage,
-  cycle audit/completeness counts, and missing-required counts while preserving
-  the nested daily-loop DTO as canonical. Learning-loop state now also has
+  learner-state mutation. The preview CLI now reuses the same top-level
+  `dailyLoop*` operator readback as the controlled `npm run smoke:daily-loop`
+  CLI for operation/outcome, write-operation flag, target/scope, readiness
+  gates, action availability, plan draft/item ids/status/counts,
+  generated/published card ids, generation/gateway summary, recommendation
+  acceptance, duplicate/error/stage, cycle audit/completeness counts, and
+  missing-required counts while preserving the nested daily-loop DTO as
+  canonical. Learning-loop state now also has
   `npm run smoke:learning-loop-state`, a service-owned no-write CLI that
   delegates to `learning-loop-state-service` through the normal service graph.
   It projects compact `growth.learningLoopState.v1` summary-only state and the
