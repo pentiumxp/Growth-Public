@@ -11,6 +11,7 @@ const {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectRecommendationLifecycleSmokeReadback,
   runOperation,
   targetNodeIds,
   validateInput
@@ -145,6 +146,69 @@ test("recommendation lifecycle smoke script delegates to service only", () => {
   assert.deepEqual(calls[0], { workspaceId: "weixin_fanfan" });
 });
 
+test("recommendation lifecycle smoke script projects operator readback", () => {
+  const projected = projectRecommendationLifecycleSmokeReadback({
+    ok: true,
+    source: "growth-learning-recommendation-lifecycle-service",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    filters: {
+      trajectoryId: "",
+      taskCardId: "ltask_source",
+      sourceEvaluationId: "eval_source",
+      generatedTaskCardId: "ltask_generated",
+      generatedLearningGraphPlanId: "lgp_generated",
+      status: ["pending", "accepted"],
+      targetNodeIds: ["kg_a"],
+      limit: 12
+    },
+    count: 2,
+    lifecycle: [{
+      trajectoryId: "lgtraj_pending",
+      status: "pending",
+      targetNodeIds: ["kg_a"]
+    }, {
+      trajectoryId: "lgtraj_accepted",
+      status: "accepted",
+      generatedTaskCardId: "ltask_generated",
+      targetNodeIds: ["kg_b"]
+    }],
+    summary: {
+      lifecycleCount: 2,
+      pendingCount: 1,
+      acceptedCount: 1,
+      statusCounts: { pending: 1, accepted: 1 },
+      latestTrajectoryId: "lgtraj_pending",
+      latestStatus: "pending",
+      latestTargetNodeIds: ["kg_a"],
+      hasPending: true,
+      hasAccepted: true
+    },
+    writePerformed: false,
+    writesPerformed: false
+  }, "list");
+
+  assert.equal(projected.recommendationLifecycleStatus, "pass");
+  assert.equal(projected.recommendationLifecycleOk, true);
+  assert.equal(projected.recommendationLifecycleOperation, "list");
+  assert.equal(projected.recommendationLifecycleWriteOperation, false);
+  assert.equal(projected.recommendationLifecycleWritesPerformed, false);
+  assert.equal(projected.recommendationLifecycleCount, 2);
+  assert.equal(projected.recommendationLifecyclePendingCount, 1);
+  assert.equal(projected.recommendationLifecycleAcceptedCount, 1);
+  assert.equal(projected.recommendationLifecycleHasPending, true);
+  assert.equal(projected.recommendationLifecycleLatestTrajectoryId, "lgtraj_pending");
+  assert.deepEqual(projected.recommendationLifecycleTrajectoryIds, ["lgtraj_pending", "lgtraj_accepted"]);
+  assert.deepEqual(projected.recommendationLifecyclePendingTrajectoryIds, ["lgtraj_pending"]);
+  assert.deepEqual(projected.recommendationLifecycleAcceptedGeneratedTaskCardIds, ["ltask_generated"]);
+  assert.deepEqual(projected.recommendationLifecycleFilterStatuses, ["pending", "accepted"]);
+  assert.deepEqual(projected.recommendationLifecycleFilterTargetNodeIds, ["kg_a"]);
+  assert.equal(projected.recommendationLifecycleFilterTaskCardId, "ltask_source");
+});
+
 test("recommendation lifecycle smoke script reads temporary SQLite without writing", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -166,6 +230,19 @@ test("recommendation lifecycle smoke script reads temporary SQLite without writi
     assert.equal(output.source, "growth-learning-recommendation-lifecycle-service");
     assert.equal(output.count, 1);
     assert.equal(output.summary.pendingCount, 1);
+    assert.equal(output.recommendationLifecycleStatus, "pass");
+    assert.equal(output.recommendationLifecycleOk, true);
+    assert.equal(output.recommendationLifecycleOperation, "list");
+    assert.equal(output.recommendationLifecycleWriteOperation, false);
+    assert.equal(output.recommendationLifecycleWritesPerformed, false);
+    assert.equal(output.recommendationLifecycleCount, 1);
+    assert.equal(output.recommendationLifecyclePendingCount, 1);
+    assert.equal(output.recommendationLifecycleHasPending, true);
+    assert.equal(output.recommendationLifecycleLatestTrajectoryId, "lgtraj_smoke_pending");
+    assert.deepEqual(output.recommendationLifecycleTrajectoryIds, ["lgtraj_smoke_pending"]);
+    assert.deepEqual(output.recommendationLifecyclePendingTrajectoryIds, ["lgtraj_smoke_pending"]);
+    assert.deepEqual(output.recommendationLifecycleFilterStatuses, ["pending"]);
+    assert.deepEqual(output.recommendationLifecycleFilterTargetNodeIds, ["kg_science_variables"]);
     assert.equal(output.lifecycle[0].trajectoryId, "lgtraj_smoke_pending");
     assert.equal(output.lifecycle[0].status, "pending");
     assert.equal(output.writesPerformed, false);

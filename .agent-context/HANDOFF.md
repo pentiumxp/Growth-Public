@@ -9,6 +9,49 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T14:34+08:00 - Recommendation Lifecycle Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-recommendation-lifecycle` delegated correctly to
+    `learning-recommendation-lifecycle-service`, but operator-critical
+    operation/status, write gate, target/scope, filters, lifecycle counts,
+    status counts, latest trajectory, pending trajectory ids, accepted
+    generated-card ids, and write-performed flags were only available inside
+    the nested `growth.recommendationLifecycle.v1` DTO;
+  - this made recommendation lifecycle release evidence harder to inspect
+    without deep JSON.
+- Scope:
+  - added `projectRecommendationLifecycleSmokeReadback` in
+    `scripts/smoke-growth-recommendation-lifecycle.js`;
+  - projected bounded top-level `recommendationLifecycle*` fields while
+    preserving nested lifecycle DTOs as canonical;
+  - expanded `tests/growth-recommendation-lifecycle-smoke-script.test.js` to
+    assert pure projection plus no-write temporary SQLite smoke readback
+    fields;
+  - updated Growth-local platform-contract, architecture, AI card loop,
+    next-stage, test matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-recommendation-lifecycle.js`
+  - `node --test tests/growth-recommendation-lifecycle-smoke-script.test.js`
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if recommendation lifecycle service behavior, routes,
+    repositories, schema, Gateway, generation, evaluation, UI, scheduler,
+    learner-state, release-bundle mapping, or release-readiness boundaries
+    change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy is required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `recommendationLifecycle*` fields do not add write permission,
+    Gateway access, publication rights, scheduling, reward settlement, stage
+    activation, or learner mutation.
+
 ## 2026-06-17T14:21+08:00 - Target Provisioning Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

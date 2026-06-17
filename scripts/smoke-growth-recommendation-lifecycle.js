@@ -49,6 +49,28 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 24) {
+  return uniqueStrings(asArray(values).map((value) => cleanString(value, 160))).slice(0, maxItems);
+}
+
+function numberValue(value, fallback = 0) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return numeric;
+}
+
 function numberArg(args, names, fallback) {
   const raw = firstArgValue(args, names, "");
   if (!raw) return fallback;
@@ -71,6 +93,66 @@ function operationFromArgs(args) {
 
 function allowWrite(args) {
   return hasFlag(args, "--allow-write") || hasFlag(args, "--allowWrite");
+}
+
+function projectRecommendationLifecycleSmokeReadback(result = {}, operation = "list") {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const summary = objectOnly(readback.summary);
+  const filters = objectOnly(readback.filters);
+  const lifecycle = asArray(readback.lifecycle);
+  const statusCounts = objectOnly(summary.statusCounts);
+  const trajectoryIds = uniqueBoundedStrings(lifecycle.map((item) => item.trajectoryId));
+  const statuses = uniqueBoundedStrings([
+    ...Object.keys(statusCounts),
+    ...lifecycle.map((item) => item.status)
+  ], 12);
+  const pendingTrajectoryIds = uniqueBoundedStrings(lifecycle
+    .filter((item) => item.status === "pending")
+    .map((item) => item.trajectoryId));
+  const acceptedGeneratedTaskCardIds = uniqueBoundedStrings(lifecycle
+    .filter((item) => item.status === "accepted")
+    .map((item) => item.generatedTaskCardId));
+  return Object.assign({}, readback, {
+    recommendationLifecycleStatus: cleanString(readback.ok === false ? readback.error || "failed" : "pass", 140),
+    recommendationLifecycleOk: readback.ok !== false,
+    recommendationLifecycleOperation: cleanString(operation, 80),
+    recommendationLifecycleWriteOperation: false,
+    recommendationLifecycleWritesPerformed: readback.writePerformed === true || readback.writesPerformed === true,
+    recommendationLifecycleWorkspaceId: cleanString(readback.workspaceId, 160),
+    recommendationLifecycleLearnerId: cleanString(readback.learnerId, 160),
+    recommendationLifecycleProgramId: cleanString(readback.programId, 160),
+    recommendationLifecyclePrivacyClass: cleanString(readback.privacyClass, 80),
+    recommendationLifecycleSummaryOnly: readback.summaryOnly === true,
+    recommendationLifecycleCount: numberValue(readback.count, lifecycle.length),
+    recommendationLifecycleSummaryCount: numberValue(summary.lifecycleCount, lifecycle.length),
+    recommendationLifecyclePendingCount: numberValue(summary.pendingCount ?? statusCounts.pending, 0),
+    recommendationLifecycleAcceptedCount: numberValue(summary.acceptedCount ?? statusCounts.accepted, 0),
+    recommendationLifecycleSkippedCount: numberValue(summary.skippedCount ?? statusCounts.skipped, 0),
+    recommendationLifecycleExpiredCount: numberValue(summary.expiredCount ?? statusCounts.expired, 0),
+    recommendationLifecycleSupersededCount: numberValue(summary.supersededCount ?? statusCounts.superseded, 0),
+    recommendationLifecycleMissingCount: numberValue(summary.missingCount ?? statusCounts.missing, 0),
+    recommendationLifecycleHasPending: summary.hasPending === true,
+    recommendationLifecycleHasAccepted: summary.hasAccepted === true,
+    recommendationLifecycleHasSkipped: summary.hasSkipped === true,
+    recommendationLifecycleHasExpired: summary.hasExpired === true,
+    recommendationLifecycleHasSuperseded: summary.hasSuperseded === true,
+    recommendationLifecycleLatestTrajectoryId: cleanString(summary.latestTrajectoryId, 180),
+    recommendationLifecycleLatestStatus: cleanString(summary.latestStatus, 80),
+    recommendationLifecycleLatestTargetNodeIds: uniqueBoundedStrings(summary.latestTargetNodeIds),
+    recommendationLifecycleTrajectoryIds: trajectoryIds,
+    recommendationLifecycleStatuses: statuses,
+    recommendationLifecyclePendingTrajectoryIds: pendingTrajectoryIds,
+    recommendationLifecycleAcceptedGeneratedTaskCardIds: acceptedGeneratedTaskCardIds,
+    recommendationLifecycleFilterTrajectoryId: cleanString(filters.trajectoryId, 180),
+    recommendationLifecycleFilterTaskCardId: cleanString(filters.taskCardId, 180),
+    recommendationLifecycleFilterSourceEvaluationId: cleanString(filters.sourceEvaluationId, 180),
+    recommendationLifecycleFilterGeneratedTaskCardId: cleanString(filters.generatedTaskCardId, 180),
+    recommendationLifecycleFilterGeneratedLearningGraphPlanId: cleanString(filters.generatedLearningGraphPlanId, 180),
+    recommendationLifecycleFilterStatuses: uniqueBoundedStrings(filters.status, 12),
+    recommendationLifecycleFilterTargetNodeIds: uniqueBoundedStrings(filters.targetNodeIds),
+    recommendationLifecycleFilterLimit: numberValue(filters.limit, 0)
+  });
 }
 
 function inputFromArgs(args) {
@@ -140,8 +222,8 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services, operation, input);
-  process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
+  const result = projectRecommendationLifecycleSmokeReadback(Object.assign({ operation }, runOperation(services, operation, input)), operation);
+  process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
 
@@ -160,6 +242,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectRecommendationLifecycleSmokeReadback,
   runOperation,
   targetNodeIds,
   validateInput

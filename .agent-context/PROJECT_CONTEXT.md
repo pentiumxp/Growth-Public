@@ -856,7 +856,11 @@ readback gate set.
   bounded target nodes, and aggregate counts. It feeds release evidence as
   `productionRecommendationLifecycleSmokeEvidence` /
   `production_recommendation_lifecycle_smoke_evidence`, rejects write flags in
-  the smoke CLI, and does not call Gateway, publish, generate, evaluate,
+  the smoke CLI, mirrors top-level `recommendationLifecycle*` operator
+  readback for operation/status, write gate, scope, filters, lifecycle counts,
+  status counts, latest trajectory, pending trajectory ids, accepted
+  generated-card ids, and write-performed flags while preserving the nested DTO
+  as canonical, and does not call Gateway, publish, generate, evaluate,
   schedule, notify, activate stage assessments, inspect SQLite tables directly
   outside the repository, or mutate learner state. The Owner
   `生成` tab now reads the same

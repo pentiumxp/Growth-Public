@@ -187,6 +187,10 @@ generic graph suggestion.
   - exposes summary-only pending/accepted/skipped/expired/superseded readback through
     `GET /api/v1/growth/recommendations/lifecycle` and
     `npm run smoke:recommendation-lifecycle`;
+  - mirrors top-level `recommendationLifecycle*` smoke operator readback for
+    operation/status, write gate, scope, filters, lifecycle counts, status
+    counts, latest trajectory, pending trajectory ids, accepted generated-card
+    ids, and write-performed flags while keeping the service DTO canonical;
   - exposes Owner-only `POST /api/v1/growth/recommendations/lifecycle/review`
     for explicit `skipped` or `expired` decisions on pending recommendations;
   - rejects attempts to mark recommendations accepted, overwrite accepted or
