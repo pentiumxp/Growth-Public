@@ -17,6 +17,7 @@ const {
   inputFromArgs,
   operationFromArgs,
   projectDailyLoopSmokeReadback,
+  runOperation,
   targetNodeIds,
   validateOperation
 } = require("../scripts/smoke-growth-daily-loop");
@@ -544,6 +545,13 @@ test("daily-loop smoke script parses operation, write guard, scope, item, and gr
     requestedBy: "owner"
   });
   assert.equal(validateOperation("publish", inputFromArgs(args), args).ok, true);
+  assert.deepEqual(validateOperation("advance", inputFromArgs(args), args.filter((item) => item !== "--allow-write")), {
+    ok: false,
+    error: "daily_loop_smoke_write_not_allowed",
+    operation: "advance",
+    requiredFlag: "--allow-write"
+  });
+  assert.equal(validateOperation("advance", inputFromArgs(args), args).ok, true);
 });
 
 test("daily-loop smoke script projects top-level operator readback", () => {
@@ -584,8 +592,10 @@ test("daily-loop smoke script projects top-level operator readback", () => {
     },
     actions: {
       canDraft: true,
+      canAdvance: true,
       canPublish: true,
       draftAction: { enabled: true },
+      advanceAction: { enabled: true },
       publishAction: {
         enabled: true,
         planDraftId: "lgplan_daily_1",
@@ -685,6 +695,7 @@ test("daily-loop smoke script projects top-level operator readback", () => {
   assert.equal(output.dailyLoopPlannerReady, true);
   assert.equal(output.dailyLoopOperatingLoopGatewayReady, true);
   assert.equal(output.dailyLoopCanDraft, true);
+  assert.equal(output.dailyLoopCanAdvance, true);
   assert.equal(output.dailyLoopCanPublish, true);
   assert.equal(output.dailyLoopPlanDraftId, "lgplan_daily_1");
   assert.equal(output.dailyLoopPlanDraftStatus, "published");
@@ -708,6 +719,40 @@ test("daily-loop smoke script projects top-level operator readback", () => {
   assert.equal(output.dailyLoopCycleComplete, true);
   assert.equal(output.dailyLoopReadyForAutomation, true);
   assert.equal(output.dailyLoopMissingRequiredCount, 0);
+});
+
+test("daily-loop smoke script delegates advance to the daily-loop service", async () => {
+  const calls = [];
+  const result = await runOperation({
+    learningDailyLoopService: {
+      advance(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          operation: "advance",
+          stage: "published",
+          target: { workspaceId: input.workspaceId, learnerId: input.learnerId },
+          scope: { targetNodeIds: input.targetNodeIds || [] },
+          readiness: {},
+          actions: {},
+          planDraft: { planDraftId: "lgplan_advance_1" },
+          generation: { published: { taskCardId: "ltask_advance_1" } }
+        };
+      }
+    }
+  }, "advance", {
+    workspaceId: WORKSPACE_ID,
+    learnerId: LEARNER_ID,
+    targetNodeIds: [SCIENCE_NODE_ID]
+  });
+
+  assert.equal(result.operation, "advance");
+  assert.equal(result.stage, "published");
+  assert.deepEqual(calls, [{
+    workspaceId: WORKSPACE_ID,
+    learnerId: LEARNER_ID,
+    targetNodeIds: [SCIENCE_NODE_ID]
+  }]);
 });
 
 test("daily-loop smoke script defaults to no-write preview", () => {
@@ -738,7 +783,7 @@ test("daily-loop smoke script defaults to no-write preview", () => {
   });
 });
 
-test("daily-loop smoke script rejects draft and publish without explicit write flag", () => {
+test("daily-loop smoke script rejects draft, publish, and advance without explicit write flag", () => {
   withTempDb(({ dir, dbPath }) => {
     const draft = runScript(["--operation", "draft", ...baseArgs()], {
       GROWTH_DATA_DIR: dir,
@@ -761,6 +806,18 @@ test("daily-loop smoke script rejects draft and publish without explicit write f
       ok: false,
       error: "daily_loop_smoke_write_not_allowed",
       operation: "publish",
+      requiredFlag: "--allow-write"
+    });
+
+    const advance = runScript(["--operation", "advance", ...baseArgs()], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+    assert.equal(advance.status, 2);
+    assert.deepEqual(parseStdout(advance), {
+      ok: false,
+      error: "daily_loop_smoke_write_not_allowed",
+      operation: "advance",
       requiredFlag: "--allow-write"
     });
 

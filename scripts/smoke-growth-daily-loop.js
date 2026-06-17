@@ -3,8 +3,8 @@
 const { readEnv } = require("../src/config/env");
 const { createServices } = require("../src/app/services");
 
-const WRITE_OPERATIONS = new Set(["draft", "publish"]);
-const OPERATIONS = new Set(["preview", "draft", "publish"]);
+const WRITE_OPERATIONS = new Set(["draft", "publish", "advance"]);
+const OPERATIONS = new Set(["preview", "draft", "publish", "advance"]);
 
 function argValue(args, name, fallback = "") {
   const index = args.indexOf(name);
@@ -113,6 +113,7 @@ function dailyLoopOutcome(result = {}) {
   if (result.ok === false) return cleanString(result.error || "failed", 140);
   const actions = objectOnly(result.actions);
   if (result.operation === "publish") return "published";
+  if (result.operation === "advance" && result.stage === "published") return "published";
   if (result.operation === "draft") return "drafted";
   if (actions.canPublish || actions.publishAction?.enabled) return "ready_to_publish";
   if (actions.canDraft || actions.draftAction?.enabled) return "ready_to_draft";
@@ -128,6 +129,7 @@ function projectDailyLoopSmokeReadback(result = {}) {
   const targetProvisioning = objectOnly(readiness.targetProvisioning);
   const actions = objectOnly(dailyLoop.actions);
   const draftAction = objectOnly(actions.draftAction);
+  const advanceAction = objectOnly(actions.advanceAction);
   const publishAction = objectOnly(actions.publishAction);
   const auditRefreshAction = objectOnly(actions.auditRefreshAction);
   const planDraft = objectOnly(dailyLoop.planDraft);
@@ -170,8 +172,10 @@ function projectDailyLoopSmokeReadback(result = {}) {
     dailyLoopOperatingLoopGatewayReady: readiness.operatingLoopGatewayReady === true,
     dailyLoopBlockingOpenGeneration: readiness.blockingOpenGeneration === true,
     dailyLoopCanDraft: actions.canDraft === true || draftAction.enabled === true,
+    dailyLoopCanAdvance: actions.canAdvance === true || advanceAction.enabled === true,
     dailyLoopCanPublish: actions.canPublish === true || publishAction.enabled === true,
     dailyLoopDraftActionEnabled: draftAction.enabled === true,
+    dailyLoopAdvanceActionEnabled: advanceAction.enabled === true,
     dailyLoopPublishActionEnabled: publishAction.enabled === true,
     dailyLoopAuditRefreshEnabled: auditRefreshAction.enabled === true,
     dailyLoopPlanDraftId: cleanString(planDraft.planDraftId || publishAction.planDraftId, 180),
@@ -284,6 +288,7 @@ async function runOperation(services, operation, input) {
   const service = services.learningDailyLoopService;
   if (operation === "draft") return service.draft(input);
   if (operation === "publish") return service.publish(input);
+  if (operation === "advance") return service.advance(input);
   return service.preview(input);
 }
 

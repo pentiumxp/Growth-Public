@@ -21039,3 +21039,38 @@
     submit/evaluate/reflect flow preserved;
   - production visual validation and deploy should remain a separate release
     gate.
+
+## 2026-06-17T18:29+0800 - Daily-loop smoke supports advance
+
+- Status:
+  - Implemented local Growth harness/docs slice.
+  - No production deploy was executed in this slice.
+- Implemented behavior:
+  - `scripts/smoke-growth-daily-loop.js` now supports `--operation advance`.
+  - `advance` is a write operation and fails closed unless `--allow-write` is
+    supplied, matching draft/publish write gating.
+  - `advance` delegates directly to `learningDailyLoopService.advance()`; the
+    CLI does not compose draft/publish itself.
+  - Top-level `dailyLoop*` readback now mirrors advance action availability via
+    `dailyLoopCanAdvance` and `dailyLoopAdvanceActionEnabled`.
+- Documentation updated:
+  - `.agent-context/HANDOFF.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-daily-loop.js`;
+  - `node --check tests/growth-daily-loop-smoke-script.test.js`;
+  - `node --test tests/growth-daily-loop-smoke-script.test.js` passed `8/8`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37` and no missing harness references;
+  - `git diff --check` passed;
+  - `codegraph sync && codegraph status` reported index up to date, with the
+    existing earlier-engine advisory.
+- Remaining next-step candidates:
+  - next larger package can focus on real sample operation evidence and visual
+    validation: Fanfan science recipe selection, one-click advance, board/detail
+    visibility, and learner one-submit/one-evaluate/one-reflect flow;
+  - production write smoke should still be run only under explicit Owner intent
+    and release gating.
