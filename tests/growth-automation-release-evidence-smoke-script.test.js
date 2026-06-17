@@ -144,6 +144,16 @@ test("automation release evidence smoke script parses default read-only list inp
   });
 });
 
+test("automation release evidence smoke script keeps default list limit when omitted", () => {
+  const input = inputFromArgs([
+    "--operation", "bag",
+    "--workspace-id", "weixin_fanfan",
+    "--learner-id", "fanfan"
+  ]);
+
+  assert.equal(input.limit, 20);
+});
+
 test("automation release evidence smoke script requires explicit allow-write for record", () => {
   const input = {
     workspaceId: "weixin_fanfan",

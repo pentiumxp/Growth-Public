@@ -573,7 +573,16 @@ readback gate set.
   `release_package_review_ui` bundle task can flow through this facade from a
   supplied summary UI artifact file; the raw artifact path is treated as
   transient input, stripped from public artifacts, and never persisted. The
-  release workbench now maps missing `release_package_review_ui_evidence` to
+  collection service now strips transient central visual/UI evidence-file
+  fields, including nested `evidence` fields, after bundle collection and
+  before bundle-audit, release-readiness, collection-run, and release-evidence
+  record paths. That keeps local Home AI artifact paths out of downstream
+  privacy scans and persisted records while still letting the bundle builder
+  read explicit summary-artifact inputs. The release-evidence CLI `bag`/`list`
+  default limit remains `20` when `--limit` is omitted, so multi-record
+  readback such as `centralVisualEvidence` plus `releaseEvidenceBundleAudit`
+  is visible without an explicit limit. The release workbench now maps missing
+  `release_package_review_ui_evidence` to
   that collection task, Owner action routing accepts the matching transient
   artifact-file field only as a whitelisted collection input, and the embedded
   Owner UI preserves the derived task selector in its action payload. The

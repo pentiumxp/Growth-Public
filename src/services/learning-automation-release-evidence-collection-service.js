@@ -102,6 +102,16 @@ function inputForPrivacyScan(value) {
   ]));
 }
 
+function inputWithoutTransientEvidenceFiles(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(inputWithoutTransientEvidenceFiles);
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !TRANSIENT_EVIDENCE_FILE_KEYS.has(key))
+      .map(([key, child]) => [key, inputWithoutTransientEvidenceFiles(child)])
+  );
+}
+
 function unavailable(error, scope = {}, extra = {}) {
   return Object.assign({}, scope, {
     ok: false,
@@ -449,10 +459,11 @@ function recordReleaseEvidenceRecords({
 }
 
 function readinessInput(scope, input, bundle, audit) {
-  const evidence = Object.assign({}, objectOnly(bundle.evidence), objectOnly(input.evidence || input.evidence_summary), {
+  const safeInput = inputWithoutTransientEvidenceFiles(input);
+  const evidence = Object.assign({}, objectOnly(bundle.evidence), objectOnly(safeInput.evidence || safeInput.evidence_summary), {
     releaseEvidenceBundleAudit: audit
   });
-  return Object.assign({}, input, scope, {
+  return Object.assign({}, safeInput, scope, {
     evidence,
     releaseApproval: Object.assign({}, objectOnly(bundle.releaseApproval || bundle.release_approval), objectOnly(input.releaseApproval || input.release_approval || input.approvals)),
     createdAt: cleanString(input.createdAt || input.created_at, 80),
@@ -542,10 +553,11 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
     }
 
     const createdAt = cleanString(input.createdAt || input.created_at, 80) || nowIso(now);
+    const downstreamInput = inputWithoutTransientEvidenceFiles(input);
     const bundleResult = evidenceBundleService.buildBundle(Object.assign({}, input, scope, { createdAt }));
     const bundle = bundleArtifact(bundleResult);
     const audit = bundle
-      ? evidenceBundleAuditService.evaluate(Object.assign({}, input, scope, {
+      ? evidenceBundleAuditService.evaluate(Object.assign({}, downstreamInput, scope, {
         bundle,
         requiredTaskIds: input.requiredTaskIds || input.required_task_ids || input.requiredTasks || input.required_tasks
       }))
@@ -562,7 +574,7 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
       });
     }
     const runInput = bundle
-      ? Object.assign({}, input, scope, {
+      ? Object.assign({}, downstreamInput, scope, {
         releaseEvidenceBundle: bundle,
         releaseEvidenceBundleAudit: audit,
         releaseReadiness: readiness,
@@ -579,7 +591,7 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
     const releaseEvidenceRecords = bundle
       ? recordReleaseEvidenceRecords({
         scope,
-        input,
+        input: downstreamInput,
         optionBag,
         bundle,
         audit,
@@ -589,7 +601,7 @@ function createLearningAutomationReleaseEvidenceCollectionService(options = {}) 
       })
       : recordReleaseEvidenceRecords({
         scope,
-        input,
+        input: downstreamInput,
         optionBag,
         bundle: {},
         audit: {},

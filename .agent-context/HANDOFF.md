@@ -9,6 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:18+08:00 - Release Evidence Artifact Input Stripping And Readback
+
+- Status: implemented and validated locally. No production deployment was
+  executed in this slice.
+- Scope:
+  - fixed `learning-automation-release-evidence-collection-service` so
+    transient central visual/UI evidence-file inputs may reach the bundle
+    builder, then are stripped from downstream bundle-audit, release-readiness,
+    collection-run, and release-evidence record inputs;
+  - the stripping also applies to nested `evidence` payloads, preventing local
+    Home AI visual artifact paths from reaching release-readiness privacy
+    scans or persisted release-evidence records;
+  - fixed `scripts/smoke-growth-automation-release-evidence.js` so omitted
+    `--limit` keeps the default readback limit (`20`) instead of clamping a
+    blank value to `1`;
+  - updated service and smoke Harness coverage for downstream artifact-path
+    stripping and default release-evidence bag/list readback.
+- Central visual and release evidence collected before this code slice:
+  - Home AI central embedded-plugin visual harness passed for plugin `growth`
+    with scenario `embedded-plugin-shell`;
+  - bounded visual summary artifact:
+    `$HOME/.homeai-qa/artifacts/growth-central-visual-summary-20260617T020537Z.json`;
+  - Growth central visual evidence smoke accepted that summary as
+    `growth.learningAutomationCentralVisualEvidence.v1`;
+  - release-evidence collection persisted pass records for
+    `centralVisualEvidence` and `releaseEvidenceBundleAudit`;
+  - `npm run smoke:release-evidence` bag readback now returns count `4` and
+    exposes both evidence keys without requiring an explicit `--limit`.
+- Durable docs updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-collection-service.js`;
+  - `node --test tests/learning-automation-release-evidence-collection-service.test.js`;
+  - `node --check scripts/smoke-growth-automation-release-evidence.js`;
+  - `node --test tests/growth-automation-release-evidence-smoke-script.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `node --test tests/growth-release-evidence-collection-smoke-script.test.js tests/learning-automation-release-evidence-service.test.js tests/learning-automation-release-readiness-service.test.js tests/growth-architecture-boundary.test.js`;
+  - `npm run --silent test:release-union` passed `233/233`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `node scripts/smoke-growth-automation-release-evidence.js --operation bag
+    --workspace-id owner --learner-id fanfan --json` returned `ok=true`,
+    `count=4`, and evidence keys `centralVisualEvidence` plus
+    `releaseEvidenceBundleAudit`;
+  - `npm test` passed `920/920`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,264` nodes, and `22,947` edges, plus the existing
+    earlier-engine advisory.
+- Remaining:
+  - release-readiness remains intentionally advisory and incomplete; the latest
+    collection path removed the artifact-path privacy failure, but the release
+    review still has missing production/Owner evidence actions;
+  - Home AI production plugin root/probe evidence, platform Action Inbox/Web
+    Push evidence, controlled production daily-loop write evidence, production
+    profile-feedback evidence from a real completed cycle, explicit Owner
+    approvals, production deploy, and production health checks remain open;
+  - scheduler/runtime writeful execution must stay disabled until those gates
+    are closed.
+
 ## 2026-06-17T01:56Z - Central AI Ops Release Evidence Preflight
 
 - Status: central-contract preflight progressed. No Growth runtime code changed

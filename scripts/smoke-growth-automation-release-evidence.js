@@ -41,7 +41,9 @@ function parseJsonArg(args, names, fallback = {}) {
 }
 
 function boundedNumberArg(args, names, fallback, min = 1, max = 100) {
-  const value = Number(firstArgValue(args, names, ""));
+  const raw = firstArgValue(args, names, "");
+  if (!raw) return fallback;
+  const value = Number(raw);
   if (!Number.isFinite(value)) return fallback;
   return Math.max(min, Math.min(max, Math.round(value)));
 }

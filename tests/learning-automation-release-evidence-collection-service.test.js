@@ -409,6 +409,37 @@ test("release evidence collection service preserves UI evidence fields for persi
   assert.equal(uiRow.evidence.writefulSchedulingAllowed, false);
 });
 
+test("release evidence collection service strips transient evidence file inputs after bundle collection", () => {
+  const records = {};
+  const result = serviceWith(records).collect(Object.assign(scope(), {
+    centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/central-visual.json",
+    releasePackageReviewUiEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/release-package-ui.json",
+    evidence: {
+      centralVisualEvidenceFile: "/Users/xuxin/.homeai-qa/artifacts/nested-central-visual.json"
+    },
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true,
+    allowWriteCollection: true,
+    requestedBy: "owner"
+  }));
+
+  assert.equal(result.ok, true);
+  assert.equal(records.bundleInput.centralVisualEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/central-visual.json");
+  assert.equal(records.bundleInput.releasePackageReviewUiEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/release-package-ui.json");
+  assert.equal(records.bundleInput.evidence.centralVisualEvidenceFile, "/Users/xuxin/.homeai-qa/artifacts/nested-central-visual.json");
+  assert.equal(records.auditInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.auditInput.releasePackageReviewUiEvidenceFile, undefined);
+  assert.equal(records.readinessInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.readinessInput.releasePackageReviewUiEvidenceFile, undefined);
+  assert.equal(records.readinessInput.evidence.centralVisualEvidenceFile, undefined);
+  assert.equal(records.collectionRecordInput.centralVisualEvidenceFile, undefined);
+  assert.equal(records.collectionRecordInput.releasePackageReviewUiEvidenceFile, undefined);
+  assert.equal(records.releaseEvidenceRecordInputs[0].centralVisualEvidenceFile, undefined);
+  assert.equal(records.releaseEvidenceRecordInputs[0].releasePackageReviewUiEvidenceFile, undefined);
+  assert.equal(JSON.stringify(records.readinessInput).includes(".homeai-qa"), false);
+  assert.equal(JSON.stringify(records.collectionRecordInput).includes(".homeai-qa"), false);
+});
+
 test("release evidence collection service surfaces release evidence record failures", () => {
   const records = {
     recordEvidenceResult(input) {
