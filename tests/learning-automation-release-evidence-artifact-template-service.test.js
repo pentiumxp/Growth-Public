@@ -136,6 +136,58 @@ test("release artifact template maps only missing central visual and UI evidence
       .find((item) => item.key === "record:release_package").routePath,
     "/api/v1/growth/automation/release-packages"
   );
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.schemaVersion, "growth.learningAutomationReleaseEvidenceActionPlan.v1");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.status, "release_evidence_actions_required");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actionCount, 6);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.submittableActionCount, 2);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.externalActionCount, 3);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.key, "prepare:release_evidence_artifact_manifest");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction.readyToSubmit, false);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextSubmittableAction.key, "record:approval:writefulExecutionApproval");
+  const planActions = new Map(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actions.map((item) => [item.key, item]));
+  assert.equal(planActions.get("prepare:release_evidence_artifact_manifest").artifactSlotCount, 4);
+  assert.deepEqual(planActions.get("prepare:release_evidence_artifact_manifest").artifactTaskIds, [
+    "central_visual",
+    "owner_daily_ui",
+    "release_package_review_ui",
+    "scheduler_run_ui"
+  ]);
+  assert.equal(planActions.get("prepare:release_evidence_artifact_manifest").followupRoute.path, "/api/v1/growth/automation/release-workbench/actions");
+  assert.equal(planActions.get("execute:release_evidence_collection").route.path, "/api/v1/growth/automation/release-workbench/actions");
+  assert.equal(planActions.get("execute:release_evidence_collection").directCollectionRoutePath, "/api/v1/growth/automation/release-evidence-collections/run");
+  assert.equal(planActions.get("execute:release_evidence_collection").readyToSubmit, false);
+  assert.equal(planActions.get("execute:release_evidence_collection").blockedUntilArtifactManifestFilled, true);
+  assert.deepEqual(planActions.get("execute:release_evidence_collection").collectionTaskIds, [
+    "profile_feedback",
+    "platform_action"
+  ]);
+  assert.deepEqual(planActions.get("execute:release_evidence_collection").pendingArtifactTaskIds, [
+    "central_visual",
+    "owner_daily_ui",
+    "release_package_review_ui",
+    "scheduler_run_ui"
+  ]);
+  assert.deepEqual(planActions.get("execute:release_evidence_collection").bodyTemplate.tasks, [
+    "profile_feedback",
+    "platform_action"
+  ]);
+  assert.deepEqual(planActions.get("execute:release_evidence_collection").bodyTemplate.required_task_ids, [
+    "profile_feedback",
+    "platform_action"
+  ]);
+  assert.equal(planActions.get("execute:release_evidence_collection").bodyTemplate.endpoint_key, "release_evidence_collection");
+  assert.equal(planActions.get("execute:release_evidence_collection").bodyTemplate.artifactManifest.centralVisualEvidenceFile, "");
+  assert.deepEqual(planActions.get("execute:release_evidence_collection").bodyTemplate.artifactManifest.uiEvidenceFiles, {
+    ownerDailyUiEvidence: "",
+    releasePackageReviewUiEvidence: "",
+    schedulerRunUiEvidence: ""
+  });
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").bodyTemplate.approval_key, "writefulExecutionApproval");
+  assert.equal(planActions.get("record:approval:writefulExecutionApproval").bodyTemplate.approval.status, "approved");
+  assert.equal(planActions.get("record:release_package").bodyTemplate.build_and_record_package, true);
+  assert.deepEqual(planActions.get("record:release_package").bodyTemplate.tasks, ["planner_readiness", "scheduler_dry_run"]);
+  assert.equal(planActions.get("authorize:daily_loop_write").writeGateRequired, true);
+  assert.equal(planActions.get("manual:manual_owner_signoff_evidence").manualReviewRequired, true);
   assert.equal(result.releaseArtifactTemplate.readyForManifestInput, false);
   assert.equal(result.writefulSchedulingAllowed, false);
   assert.equal(result.runtimeConfigMutationPerformed, false);
@@ -169,6 +221,10 @@ test("release artifact template does not widen to advertised default collection 
   assert.deepEqual(result.releaseArtifactTemplate.artifactTaskIds, []);
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.status, "release_evidence_ready_for_review");
   assert.equal(result.releaseArtifactTemplate.releaseEvidenceChecklist.itemCount, 0);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.status, "release_evidence_ready_for_review");
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.actionCount, 0);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextAction, null);
+  assert.equal(result.releaseArtifactTemplate.releaseEvidenceActionPlan.nextSubmittableAction, null);
   assert.deepEqual(result.releaseArtifactTemplate.artifactManifestTemplate, {
     schemaVersion: "growth.learningAutomationReleaseEvidenceArtifactManifest.v1",
     privacyClass: "summary_only",

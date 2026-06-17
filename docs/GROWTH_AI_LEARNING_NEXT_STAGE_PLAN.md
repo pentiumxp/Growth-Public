@@ -675,9 +675,15 @@ Use the Growth-owned release-readiness boundary:
   visual/UI artifact items, supported collection tasks, write-gated tasks,
   missing approvals, missing record actions, and unsupported/manual evidence
   keys so Owner/release tooling can execute the remaining real-evidence steps
-  without fabricating passing evidence. They do not run visual tooling, call
-  Gateway, persist release evidence, write collection runs, apply runtime
-  config, or widen to default UI tasks when no visual/UI evidence is missing.
+  without fabricating passing evidence. It also includes
+  `growth.learningAutomationReleaseEvidenceActionPlan.v1`, which projects
+  summary-only Owner workbench-action route/body templates for collection,
+  approvals, package records, activation/runtime audit records, plus
+  non-submittable external artifact/manual steps. Collection body templates
+  include only non-artifact task selectors until the blank manifest is filled.
+  They do not run visual tooling, call Gateway, persist release evidence, write
+  collection runs, apply runtime config, or widen to default UI tasks when no
+  visual/UI evidence is missing.
 - release authorization smoke CLI:
   `npm run smoke:release-authorization -- --workspace-id <workspace> --learner-id <learner> --collection-run-id <collection-run> --json`.
   The CLI is no-write and reads through the normal service graph. It authorizes

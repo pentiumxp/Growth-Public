@@ -13,6 +13,8 @@ const {
 } = require("./learning-automation-ui-evidence-task-registry");
 
 const RELEASE_EVIDENCE_ARTIFACT_TEMPLATE_SCHEMA = "growth.learningAutomationReleaseEvidenceArtifactTemplate.v1";
+const RELEASE_EVIDENCE_ACTION_PLAN_SCHEMA = "growth.learningAutomationReleaseEvidenceActionPlan.v1";
+const WORKBENCH_ACTION_ROUTE_PATH = "/api/v1/growth/automation/release-workbench/actions";
 
 const UI_TASK_BY_EVIDENCE_KEY = Object.freeze(Object.fromEntries(
   UI_EVIDENCE_COLLECTION_TASKS.map((task) => [task.evidenceKey, task])
@@ -353,6 +355,265 @@ function releaseEvidenceChecklist(workbenchSummary = {}, slots = [], artifactTas
   };
 }
 
+function snakeScope(scope = {}) {
+  return compactObject({
+    workspace_id: scope.workspaceId,
+    learner_id: scope.learnerId,
+    program_id: scope.programId,
+    domain_pack_id: scope.domainPackId,
+    domain: scope.domain,
+    subject: scope.subject,
+    horizon: scope.horizon
+  });
+}
+
+function routeTemplate(path = WORKBENCH_ACTION_ROUTE_PATH) {
+  return {
+    method: "POST",
+    path,
+    ownerOnly: true,
+    workspaceBearerRequired: true
+  };
+}
+
+function actionPlanItem(value = {}) {
+  return compactObject(Object.assign({
+    schemaVersion: "growth.learningAutomationReleaseEvidenceActionPlanItem.v1",
+    summaryOnly: true
+  }, value));
+}
+
+function supportedCollectionTaskIds(summary = {}, artifactTaskIds = []) {
+  const artifactSet = new Set(artifactTaskIds);
+  const supportedTaskIds = uniqueStrings(asArray(summary.releaseEvidenceCollectionSupportedTaskIds));
+  const fallbackTaskIds = supportedTaskIds.length
+    ? supportedTaskIds
+    : uniqueStrings(collectionTaskIdsFrom(summary));
+  return fallbackTaskIds.filter((taskId) => !artifactSet.has(taskId));
+}
+
+function requiredCollectionTaskIds(summary = {}, collectionTaskIds = []) {
+  const collectionSet = new Set(collectionTaskIds);
+  return uniqueStrings(asArray(summary.releaseEvidenceCollectionRequiredTaskIds))
+    .filter((taskId) => collectionSet.has(taskId));
+}
+
+function artifactPreparationAction(slots = [], manifestTemplate = {}) {
+  if (!slots.length) return null;
+  return actionPlanItem({
+    key: "prepare:release_evidence_artifact_manifest",
+    kind: "artifact_manifest_preparation",
+    action: "fill_release_evidence_artifact_manifest",
+    requiredActor: "owner",
+    readyToSubmit: false,
+    externalActionRequired: true,
+    artifactSlotCount: slots.length,
+    artifactTaskIds: slots.map((slot) => slot.taskId),
+    artifactManifestTemplate: manifestTemplate,
+    followupEndpointKey: "release_evidence_collection",
+    followupRoute: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH)
+  });
+}
+
+function collectionAction(scope = {}, summary = {}, slots = [], artifactTaskIds = [], manifestTemplate = {}) {
+  const collectionTaskIds = supportedCollectionTaskIds(summary, artifactTaskIds);
+  if (!collectionTaskIds.length && !slots.length) return null;
+  const requiredTaskIds = requiredCollectionTaskIds(summary, collectionTaskIds);
+  const bodyTemplate = compactObject(Object.assign({}, snakeScope(scope), {
+    endpoint_key: "release_evidence_collection",
+    action_key: "collect_missing_release_evidence",
+    tasks: collectionTaskIds,
+    required_task_ids: requiredTaskIds.length ? requiredTaskIds : collectionTaskIds,
+    artifactManifest: slots.length ? manifestTemplate : undefined,
+    write_collection_run: true,
+    write_release_evidence_records: true
+  }));
+  return actionPlanItem({
+    key: "execute:release_evidence_collection",
+    kind: "owner_workbench_action",
+    action: "run_release_evidence_collection",
+    endpointKey: "release_evidence_collection",
+    requiredActor: "owner",
+    readyToSubmit: slots.length === 0,
+    blockedUntilArtifactManifestFilled: slots.length > 0,
+    route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
+    directCollectionRoutePath: routePathFor(summary, "release_evidence_collection"),
+    collectionTaskIds,
+    pendingArtifactTaskIds: slots.map((slot) => slot.taskId),
+    bodyTemplate
+  });
+}
+
+function approvalAction(scope = {}, approvalKey = "", summary = {}) {
+  return actionPlanItem({
+    key: `record:approval:${approvalKey}`,
+    kind: "owner_workbench_action",
+    action: "record_release_approval",
+    endpointKey: "release_approval",
+    approvalKey,
+    requiredActor: "owner",
+    readyToSubmit: true,
+    route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
+    directRecordRoutePath: routePathFor(summary, "release_approval"),
+    bodyTemplate: compactObject(Object.assign({}, snakeScope(scope), {
+      endpoint_key: "release_approval",
+      action_key: `approval:${approvalKey}`,
+      approval_key: approvalKey,
+      approval: {
+        schemaVersion: "growth.learningAutomationReleaseApproval.v1",
+        summaryOnly: true,
+        approvalKey,
+        approved: true,
+        status: "approved",
+        writefulSchedulingAllowed: false
+      },
+      evidence: {
+        schemaVersion: "growth.learningAutomationReleaseApproval.evidence.v1",
+        summaryOnly: true
+      }
+    }))
+  });
+}
+
+function recordBodyTemplate(scope = {}, recordKind = "", endpointKey = "") {
+  const body = Object.assign({}, snakeScope(scope), {
+    endpoint_key: endpointKey,
+    action_key: `record:${recordKind}`
+  });
+  if (recordKind === "release_package") {
+    return compactObject(Object.assign(body, {
+      build_and_record_package: true,
+      tasks: ["planner_readiness", "scheduler_dry_run"],
+      required_task_ids: ["planner_readiness", "scheduler_dry_run"],
+      activation_gates: ["writeful_execution"]
+    }));
+  }
+  if (endpointKey === "release_activation") {
+    return compactObject(Object.assign(body, {
+      activation_decision: {
+        schemaVersion: "growth.learningAutomationReleaseActivation.decision.v1",
+        summaryOnly: true
+      }
+    }));
+  }
+  if (endpointKey === "runtime_enablement") {
+    return compactObject(Object.assign(body, {
+      enablement_decision: {
+        schemaVersion: "growth.learningAutomationRuntimeEnablement.decision.v1",
+        summaryOnly: true
+      }
+    }));
+  }
+  return compactObject(body);
+}
+
+function recordAction(scope = {}, recordKind = "", summary = {}, hasCollectionAction = false) {
+  const endpointKey = RECORD_ROUTE_KEY_BY_KIND[recordKind] || "";
+  const routePath = endpointKey ? routePathFor(summary, endpointKey) : "";
+  if (!endpointKey) {
+    return actionPlanItem({
+      key: `record:${recordKind}`,
+      kind: "manual_release_record",
+      action: `record_${recordKind}`,
+      recordKind,
+      requiredActor: "owner",
+      readyToSubmit: false,
+      manualReviewRequired: true
+    });
+  }
+  if (endpointKey === "release_evidence_collection" && hasCollectionAction) return null;
+  if (endpointKey === "release_evidence_collection") {
+    return actionPlanItem({
+      key: `record:${recordKind}`,
+      kind: "owner_workbench_action",
+      action: "run_release_evidence_collection",
+      endpointKey,
+      recordKind,
+      requiredActor: "owner",
+      readyToSubmit: false,
+      manualReviewRequired: true,
+      route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
+      directRecordRoutePath: routePath
+    });
+  }
+  return actionPlanItem({
+    key: `record:${recordKind}`,
+    kind: "owner_workbench_action",
+    action: endpointKey === "release_package" ? "build_and_record_release_package" : `record_${recordKind}`,
+    endpointKey,
+    recordKind,
+    requiredActor: "owner",
+    readyToSubmit: true,
+    route: routeTemplate(WORKBENCH_ACTION_ROUTE_PATH),
+    directRecordRoutePath: routePath,
+    bodyTemplate: recordBodyTemplate(scope, recordKind, endpointKey)
+  });
+}
+
+function writeGatedAction(taskId = "") {
+  const task = taskDefinition(taskId);
+  return actionPlanItem({
+    key: `authorize:${taskId}`,
+    kind: "owner_authorization_required",
+    action: "explicit_owner_write_evidence_authorization_required",
+    taskId,
+    evidenceKey: task.evidenceKey || task.outputKey,
+    commandName: task.commandName,
+    requiredActor: "owner",
+    readyToSubmit: false,
+    writeGateRequired: true
+  });
+}
+
+function unsupportedAction(evidenceKey = "") {
+  return actionPlanItem({
+    key: `manual:${evidenceKey}`,
+    kind: "manual_or_unsupported_release_evidence",
+    action: "owner_review_required",
+    evidenceKey,
+    requiredActor: "owner",
+    readyToSubmit: false,
+    manualReviewRequired: true
+  });
+}
+
+function releaseEvidenceActionPlan(scope = {}, workbenchSummary = {}, slots = [], artifactTaskIds = [], manifestTemplate = {}, checklist = {}) {
+  const collection = collectionAction(scope, workbenchSummary, slots, artifactTaskIds, manifestTemplate);
+  const actions = [
+    artifactPreparationAction(slots, manifestTemplate),
+    collection,
+    ...uniqueStrings(workbenchSummary.missingApprovalKeys).map((key) => approvalAction(scope, key, workbenchSummary)),
+    ...uniqueStrings(workbenchSummary.missingRecordKinds)
+      .map((kind) => recordAction(scope, kind, workbenchSummary, Boolean(collection))),
+    ...uniqueStrings(workbenchSummary.writeGatedReleaseEvidenceCollectionTasks).map(writeGatedAction),
+    ...uniqueStrings(workbenchSummary.unsupportedReleaseEvidenceCollectionKeys).map(unsupportedAction)
+  ].filter(Boolean);
+  const nextAction = actions[0] || null;
+  const nextSubmittableAction = actions.find((item) => item.readyToSubmit === true) || null;
+  return {
+    schemaVersion: RELEASE_EVIDENCE_ACTION_PLAN_SCHEMA,
+    summaryOnly: true,
+    status: actions.length ? "release_evidence_actions_required" : "release_evidence_ready_for_review",
+    checklistStatus: cleanString(checklist.status, 120),
+    actionCount: actions.length,
+    submittableActionCount: actions.filter((item) => item.readyToSubmit === true).length,
+    externalActionCount: actions.filter((item) => item.externalActionRequired === true || item.manualReviewRequired === true || item.writeGateRequired === true).length,
+    actions,
+    nextAction: nextAction ? {
+      key: nextAction.key,
+      action: nextAction.action,
+      requiredActor: nextAction.requiredActor,
+      readyToSubmit: nextAction.readyToSubmit === true
+    } : null,
+    nextSubmittableAction: nextSubmittableAction ? {
+      key: nextSubmittableAction.key,
+      action: nextSubmittableAction.action,
+      endpointKey: nextSubmittableAction.endpointKey,
+      route: nextSubmittableAction.route || null
+    } : null
+  };
+}
+
 function createLearningAutomationReleaseEvidenceArtifactTemplateService(options = {}) {
   const releaseWorkbenchService = options.releaseWorkbenchService || null;
 
@@ -377,7 +638,9 @@ function createLearningAutomationReleaseEvidenceArtifactTemplateService(options 
       .filter((taskId) => taskIds.includes(taskId));
     const slots = artifactSlotsFor(taskIds, requiredTaskIds);
     const artifactTaskIds = slots.map((slot) => slot.taskId);
+    const manifestTemplate = manifestTemplateFromSlots(slots);
     const checklist = releaseEvidenceChecklist(workbenchSummary, slots, artifactTaskIds);
+    const actionPlan = releaseEvidenceActionPlan(scope, workbenchSummary, slots, artifactTaskIds, manifestTemplate, checklist);
     const status = slots.length ? "artifact_manifest_required" : "no_artifact_manifest_required";
 
     return Object.assign({}, scope, {
@@ -395,13 +658,14 @@ function createLearningAutomationReleaseEvidenceArtifactTemplateService(options 
         artifactSlotCount: slots.length,
         artifactTaskIds,
         artifactSlots: slots,
-        artifactManifestTemplate: manifestTemplateFromSlots(slots),
+        artifactManifestTemplate: manifestTemplate,
         readyForManifestInput: slots.length === 0,
         missingEvidenceKeys: uniqueStrings(workbenchSummary.missingEvidenceKeys),
         missingCheckKeys: uniqueStrings(workbenchSummary.missingCheckKeys),
         unsupportedReleaseEvidenceCollectionKeys: uniqueStrings(workbenchSummary.unsupportedReleaseEvidenceCollectionKeys),
         writeGatedReleaseEvidenceCollectionTasks: uniqueStrings(workbenchSummary.writeGatedReleaseEvidenceCollectionTasks),
         releaseEvidenceChecklist: checklist,
+        releaseEvidenceActionPlan: actionPlan,
         nextAction: slots.length ? {
           key: "fill_release_evidence_artifact_manifest",
           action: "collect_home_ai_central_visual_ui_summary_artifacts",

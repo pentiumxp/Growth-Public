@@ -55,10 +55,15 @@ readback gate set.
   `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` template for
   Home AI central visual-toolchain summary artifacts. The same readback now
   includes a summary-only `growth.learningAutomationReleaseEvidenceChecklist.v1`
-  checklist that separates artifact slots, supported collection tasks,
-  write-gated tasks, missing approvals, missing record actions, and
-  unsupported/manual evidence keys for Owner execution planning. The route
-  performs only visible-target scope normalization. It does not run visual
+  checklist plus a summary-only
+  `growth.learningAutomationReleaseEvidenceActionPlan.v1` action plan. The
+  checklist separates artifact slots, supported collection tasks, write-gated
+  tasks, missing approvals, missing record actions, and unsupported/manual
+  evidence keys. The action plan projects only Owner-safe route/body templates
+  for the existing workbench action route plus external artifact/manual steps;
+  blank manifest templates remain unfilled, and collection body templates keep
+  artifact tasks outside `tasks` until the filled manifest is supplied. The
+  route performs only visible-target scope normalization. It does not run visual
   tooling, persist release evidence, call Gateway, inspect SQLite directly, or
   widen to default UI tasks when no visual/UI evidence is missing. The normal
   service graph also wires

@@ -9,6 +9,65 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T09:16+08:00 - Release Artifact Template Action Plan
+
+- Status: implemented, compressed-Harness validated locally, and ready for
+  commit/push. No production deployment in this slice.
+- Change intent:
+  - make the no-write release artifact-template readback emit a
+    `growth.learningAutomationReleaseEvidenceActionPlan.v1` DTO so Owner UI or
+    release tooling can see the next route/body templates without Codex
+    hand-splicing payloads;
+  - keep the new projection summary-only and route it through the existing
+    Owner workbench action boundary rather than creating a new executor;
+  - keep visual artifacts and manual/write-gated evidence explicit as
+    non-submittable steps until Owner supplies real artifacts or approvals.
+- Scope:
+  - `learning-automation-release-evidence-artifact-template-service` now
+    returns `releaseEvidenceActionPlan` beside `releaseEvidenceChecklist`;
+  - collection body templates use
+    `POST /api/v1/growth/automation/release-workbench/actions`, include only
+    non-artifact task selectors, and include a blank inline `artifactManifest`
+    only as a template for Home AI central visual/UI summary artifacts;
+  - approval/package/activation/runtime audit steps are projected as
+    Owner-safe workbench-action body templates where applicable;
+  - write-gated and unsupported/manual evidence remain non-submittable plan
+    items;
+  - no route, repository, table, Gateway, visual tooling, scheduler, runtime
+    config, or deployment boundary changed.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-artifact-template-service.js`;
+  - focused Harness:
+    `node --test tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    passed `91/91`;
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent test:release-union` passed `206/206`;
+  - `npm run --silent check` passed with `runtimeCount=209` and
+    `checkedCount=209`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` reported index up to date with `372`
+    files, `5,229` nodes, and `22,703` edges, plus the existing earlier-engine
+    advisory.
+- Validation intentionally not run in this accelerated slice:
+  - full `npm test`; run it before production deployment or if this slice is
+    bundled with runtime deployment.
+- Remaining:
+  - collect real Home AI central visual/UI summary artifacts;
+  - submit the generated Owner workbench action bodies with real evidence and
+    approvals;
+  - continue through package, preflight, activation/runtime enablement
+    readbacks, production health checks, and deployment only after real
+    release evidence is present.
+
 ## 2026-06-17T09:05+08:00 - Release Artifact Template Evidence Checklist
 
 - Status: implemented, compressed-Harness validated locally, and ready for

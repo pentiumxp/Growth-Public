@@ -835,11 +835,19 @@ Implemented backend shape:
   release-evidence collection tasks, write-gated evidence tasks, missing
   approvals, missing record actions, and unsupported/manual evidence keys so
   Owner/release tooling can plan the remaining real evidence without Codex
-  hand-splicing DTOs. The route performs only target-scope normalization and
-  delegates to the service; the template service does not run visual tooling,
-  widen to default collection tasks when no visual/UI evidence is missing,
-  persist release evidence, call Gateway, inspect SQLite directly, or expose
-  local artifact paths. The Owner workbench action HTTP route accepts an inline
+  hand-splicing DTOs. The same readback includes
+  `growth.learningAutomationReleaseEvidenceActionPlan.v1`, a summary-only
+  action-plan projection with Owner-safe `POST
+  /api/v1/growth/automation/release-workbench/actions` body templates for
+  collection, approval, package, activation, or runtime-audit steps plus
+  external artifact/manual steps. Collection body templates list only
+  non-artifact tasks; blank `artifactManifest` templates are included only for
+  later filling by Home AI central visual/UI tooling and are not executable
+  evidence. The route performs only target-scope normalization and delegates to
+  the service; the template service does not run visual tooling, widen to
+  default collection tasks when no visual/UI evidence is missing, persist
+  release evidence, call Gateway, inspect SQLite directly, or expose local
+  artifact paths. The Owner workbench action HTTP route accepts an inline
   `artifactManifest` / `releaseEvidenceArtifactManifest` summary body for the
   same artifact slots, strips it after parsing, expands only whitelisted central
   visual/UI task selectors into transient collection inputs, and deliberately
