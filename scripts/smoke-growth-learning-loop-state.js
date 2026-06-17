@@ -122,6 +122,8 @@ function projectLearningLoopStateSmokeReadback(result = {}) {
   const recommendationEvidenceTrace = objectOnly(recommendationEvidence.evidenceTrace);
   const rewardTrace = objectOnly(recommendationEvidence.rewardTrace);
   const rewardSummary = objectOnly(rewardTrace.summary);
+  const ownerReview = objectOnly(state.ownerReview);
+  const ownerReviewSummary = objectOnly(ownerReview.summary);
   const stageAssessment = objectOnly(state.stageAssessment);
   const targetNodeIds = uniqueBoundedStrings(scope.targetNodeIds);
   const missingRequired = uniqueBoundedStrings(summary.missingRequired || audit.missingRequired);
@@ -174,6 +176,12 @@ function projectLearningLoopStateSmokeReadback(result = {}) {
     learningLoopStateRecommendationEvidenceIdCount: Number(recommendationEvidenceSummary.evidenceIdCount || countArray(recommendationEvidenceTrace.evidenceIds) || 0) || 0,
     learningLoopStateRecommendationProfileDeltaCount: Number(recommendationEvidenceSummary.profileDeltaCount || 0) || 0,
     learningLoopStateRecommendationCorrectionCount: Number(recommendationEvidenceSummary.correctionCount || 0) || 0,
+    learningLoopStateRecommendationOwnerReviewCount: Number(recommendationEvidenceSummary.ownerReviewCount || ownerReviewSummary.reviewCount || 0) || 0,
+    learningLoopStateOwnerReviewStatus: cleanString(ownerReview.status || ownerReviewSummary.latestStatus, 120),
+    learningLoopStateOwnerReviewDecision: cleanString(ownerReviewSummary.latestDecision, 120),
+    learningLoopStateOwnerReviewCount: Number(ownerReviewSummary.reviewCount || ownerReview.reviewCount || 0) || 0,
+    learningLoopStateOwnerReviewFollowUpRequired: ownerReviewSummary.followUpRequired === true,
+    learningLoopStateOwnerReviewUseForNextPlan: ownerReviewSummary.useForNextPlan !== false,
     learningLoopStateRecommendationLifecycleCount: Number(recommendationEvidenceSummary.recommendationLifecycleCount || 0) || 0,
     learningLoopStateRewardSettlementCount: Number(recommendationEvidenceSummary.rewardSettlementCount || rewardSummary.rewardSettlementCount || 0) || 0,
     learningLoopStateTotalRewardCoins: Number(recommendationEvidenceSummary.totalRewardCoins || rewardSummary.totalCoinAmount || 0) || 0,

@@ -69,6 +69,77 @@ function publicStageReadiness(readiness = {}) {
   };
 }
 
+function publicOwnerReviewSignal(signal = {}) {
+  if (!signal || signal.ok === false || signal.available === false) {
+    return {
+      ok: false,
+      available: false,
+      status: cleanString(signal?.status || "unavailable"),
+      error: cleanString(signal?.error || "owner_review_signal_unavailable"),
+      reviewCount: 0,
+      latestReview: null,
+      plannerSignal: {
+        status: "unavailable",
+        trustLevel: "unavailable",
+        followUpRequired: false,
+        useForNextPlan: true,
+        strategyBias: "use_profile_without_owner_review"
+      },
+      summary: {
+        ownerReviewed: false,
+        followUpRequired: false,
+        useForNextPlan: true,
+        reviewCount: 0
+      }
+    };
+  }
+  const latest = signal.latestReview && typeof signal.latestReview === "object" ? signal.latestReview : {};
+  const summary = signal.summary && typeof signal.summary === "object" ? signal.summary : {};
+  const plannerSignal = signal.plannerSignal && typeof signal.plannerSignal === "object" ? signal.plannerSignal : {};
+  return {
+    ok: true,
+    available: true,
+    schemaVersion: "growth.learningOwnerReviewSignal.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: cleanString(signal.status || summary.latestStatus || "missing"),
+    reviewCount: Number(signal.reviewCount || summary.reviewCount || 0) || 0,
+    latestReview: latest.reviewId ? {
+      reviewId: cleanString(latest.reviewId),
+      decision: cleanString(latest.decision),
+      status: cleanString(latest.status),
+      taskCardId: cleanString(latest.taskCardId),
+      evaluationId: cleanString(latest.evaluationId),
+      profileDeltaId: cleanString(latest.profileDeltaId),
+      correctionId: cleanString(latest.correctionId),
+      targetNodeIds: uniqueStrings(latest.targetNodeIds).slice(0, 12),
+      reviewedAt: cleanString(latest.reviewedAt),
+      updatedAt: cleanString(latest.updatedAt)
+    } : null,
+    plannerSignal: {
+      status: cleanString(plannerSignal.status || summary.latestStatus || "missing"),
+      trustLevel: cleanString(plannerSignal.trustLevel || "unreviewed"),
+      followUpRequired: Boolean(plannerSignal.followUpRequired || summary.followUpRequired),
+      useForNextPlan: plannerSignal.useForNextPlan !== false,
+      strategyBias: cleanString(plannerSignal.strategyBias || summary.strategyBias, 160)
+    },
+    summary: {
+      ownerReviewed: Boolean(summary.ownerReviewed || latest.reviewId),
+      latestDecision: cleanString(summary.latestDecision || latest.decision),
+      latestStatus: cleanString(summary.latestStatus || latest.status),
+      latestReviewId: cleanString(summary.latestReviewId || latest.reviewId),
+      followUpRequired: Boolean(summary.followUpRequired || plannerSignal.followUpRequired),
+      useForNextPlan: summary.useForNextPlan !== false && plannerSignal.useForNextPlan !== false,
+      strategyBias: cleanString(summary.strategyBias || plannerSignal.strategyBias, 160),
+      acceptedCount: Number(summary.acceptedCount || 0) || 0,
+      needsFollowUpCount: Number(summary.needsFollowUpCount || 0) || 0,
+      correctionRecordedCount: Number(summary.correctionRecordedCount || 0) || 0,
+      blockedCount: Number(summary.blockedCount || 0) || 0,
+      reviewCount: Number(summary.reviewCount || signal.reviewCount || 0) || 0
+    }
+  };
+}
+
 function defaultConstraints(input = {}) {
   const horizon = cleanString(input.horizon) || "daily_plan";
   const defaultMinutes = horizon === "daily_plan" || horizon === "repair_plan"
@@ -97,6 +168,7 @@ function createLearningPlannerContextService(options = {}) {
   const profileV2Service = options.profileV2Service || null;
   const evidenceLedgerService = options.evidenceLedgerService || null;
   const stageAssessmentService = options.stageAssessmentService || null;
+  const ownerReviewSignalService = options.ownerReviewSignalService || null;
 
   function candidateNodes(input = {}) {
     if (!graphRepository) return [];
@@ -132,7 +204,7 @@ function createLearningPlannerContextService(options = {}) {
         workspaceId,
         learnerId,
         programId: input.programId,
-        targetNodeIds,
+        targetNodeIds: targetNodeIds.length ? targetNodeIds : coverageNodeIds,
         evidenceLimit: input.evidenceLimit || 40
       })
       : { ok: false, available: false, error: "profile_v2_service_unavailable" };
@@ -164,6 +236,19 @@ function createLearningPlannerContextService(options = {}) {
         assessmentCoverageNodeIds: coverageNodeIds
       })))
       : publicStageReadiness({ ok: false, available: false, error: "stage_assessment_service_unavailable" });
+    const ownerReviewSignal = ownerReviewSignalService && typeof ownerReviewSignalService.ownerReviewSignal === "function"
+      ? publicOwnerReviewSignal(ownerReviewSignalService.ownerReviewSignal({
+        workspaceId,
+        learnerId,
+        programId: input.programId,
+        domainPackId: input.domainPackId,
+        domain: input.domain,
+        subject: input.subject,
+        horizon: input.horizon || "daily_plan",
+        targetNodeIds: targetNodeIds.length ? targetNodeIds : coverageNodeIds,
+        limit: input.ownerReviewLimit || 6
+      }))
+      : publicOwnerReviewSignal({ ok: false, available: false, error: "owner_review_signal_service_unavailable" });
     return {
       ok: true,
       source: "growth-learning-planner-context-service",
@@ -191,6 +276,7 @@ function createLearningPlannerContextService(options = {}) {
       } : { unavailable: true, error: profile.error || "profile_v2_unavailable" },
       recentEvidence,
       stageAssessment,
+      ownerReviewSignal,
       privacy: {
         noFullChildAnswers: true,
         noFullTranscripts: true,

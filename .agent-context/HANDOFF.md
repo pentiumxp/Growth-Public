@@ -9,6 +9,59 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T22:59+08:00 - Owner Review Signal Readback
+
+- Status: implemented locally; focused backend harness, docs locality,
+  `npm run check`, `git diff --check`, and CodeGraph sync passed. No production
+  deploy, production visual harness, runtime config change, Gateway/model call,
+  scheduler execution, notification, learner-state mutation, stage activation,
+  or Home AI host logic change was performed.
+- Classification: H2 Growth readback/projection extension over the existing
+  Owner audit-review rows. It adds no table, no route, no write CLI, no release
+  permission, no scheduler permission, and no card/evidence/Profile V2 writes.
+- Scope:
+  - added `learning-owner-review-signal-service` and
+    `growth.learningOwnerReviewSignal.v1`;
+  - injected the summary-only signal into `learning-planner-context-service`,
+    `learning-profile-feedback-evidence-service`, and
+    `learning-loop-state-service`;
+  - projected Owner audit-review ids/status/decision/counts into
+    recommendation evidence and loop-state top-level smoke readback;
+  - kept missing Owner review advisory only for low-pressure daily planning;
+  - stripped Owner notes, raw prompts, raw learner/model content, private paths,
+    provider config, and secrets from public DTOs.
+- Harness/docs updated:
+  - `tests/learning-owner-review-signal-service.test.js`
+  - `tests/learning-planner-context-service.test.js`
+  - `tests/learning-profile-feedback-evidence-service.test.js`
+  - `tests/learning-loop-state-service.test.js`
+  - `tests/growth-learning-loop-state-smoke-script.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - targeted `node --check` for touched runtime/service/smoke files;
+  - focused owner-review signal/planner/profile-feedback/loop-state/smoke/
+    architecture suite -> 65/65;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `codegraph sync` -> already up to date.
+- AI Ops:
+  - intake classifications were inconsistent across wording; local Growth
+    matrix was used as authoritative for this H2 readback-only package.
+  - evidence id:
+    `evidence-ba0d38a5-9e89-42d4-8e65-41386e4d34a2`.
+- Remaining gate:
+  - full local `npm test`, production deployment, production smoke evidence,
+    and Home AI central visual evidence remain deferred by the user's current
+    speed/deploy instructions.
+
 ## 2026-06-17T22:35+08:00 - Owner Audit Review Closure Records
 
 - Status: implemented locally; syntax/check/docs/diff/focused/full local suite

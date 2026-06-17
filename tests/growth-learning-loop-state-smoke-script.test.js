@@ -171,6 +171,10 @@ test("learning-loop state smoke script projects top-level operator readback", ()
         evidenceIdCount: 3,
         profileDeltaCount: 1,
         correctionCount: 1,
+        ownerReviewCount: 1,
+        ownerReviewDecision: "accepted",
+        ownerReviewStatus: "reviewed",
+        ownerReviewFollowUpRequired: false,
         recommendationLifecycleCount: 2,
         rewardSettlementCount: 1,
         totalRewardCoins: 8
@@ -180,6 +184,19 @@ test("learning-loop state smoke script projects top-level operator readback", ()
           rewardSettlementCount: 1,
           totalCoinAmount: 8
         }
+      }
+    },
+    ownerReview: {
+      status: "accepted",
+      reviewCount: 1,
+      summary: {
+        ownerReviewed: true,
+        latestDecision: "accepted",
+        latestStatus: "reviewed",
+        latestReviewId: "lgaudit_review_1",
+        followUpRequired: false,
+        useForNextPlan: true,
+        reviewCount: 1
       }
     },
     stageAssessment: {
@@ -250,6 +267,12 @@ test("learning-loop state smoke script projects top-level operator readback", ()
   assert.equal(output.learningLoopStateRecommendationEvidenceIdCount, 3);
   assert.equal(output.learningLoopStateRecommendationProfileDeltaCount, 1);
   assert.equal(output.learningLoopStateRecommendationCorrectionCount, 1);
+  assert.equal(output.learningLoopStateRecommendationOwnerReviewCount, 1);
+  assert.equal(output.learningLoopStateOwnerReviewStatus, "accepted");
+  assert.equal(output.learningLoopStateOwnerReviewDecision, "accepted");
+  assert.equal(output.learningLoopStateOwnerReviewCount, 1);
+  assert.equal(output.learningLoopStateOwnerReviewFollowUpRequired, false);
+  assert.equal(output.learningLoopStateOwnerReviewUseForNextPlan, true);
   assert.equal(output.learningLoopStateRecommendationLifecycleCount, 2);
   assert.equal(output.learningLoopStateRewardSettlementCount, 1);
   assert.equal(output.learningLoopStateTotalRewardCoins, 8);

@@ -241,7 +241,7 @@ function preview(overrides = {}) {
 
 function createService(options = {}) {
   const calls = [];
-  const service = createLearningLoopStateService({
+  const config = {
     dailyLoopService: {
       preview(input) {
         calls.push({ type: "preview", input });
@@ -329,7 +329,16 @@ function createService(options = {}) {
         };
       }
     }
-  });
+  };
+  if (options.ownerReviewSignal) {
+    config.ownerReviewSignalService = {
+      ownerReviewSignal(input) {
+        calls.push({ type: "ownerReviewSignal", input });
+        return options.ownerReviewSignal;
+      }
+    };
+  }
+  const service = createLearningLoopStateService(config);
   return { calls, service };
 }
 
@@ -380,6 +389,82 @@ test("learning loop state projects a summary-only ready-to-draft state", () => {
   assert.equal(JSON.stringify(result).includes("authoringDraft"), false);
   assert.equal(JSON.stringify(result).includes("idempotencyKey"), false);
   assert.equal(JSON.stringify(result).includes("ledgerEntry"), false);
+});
+
+test("learning loop state links Owner review signal into recommendation evidence", () => {
+  const { calls, service } = createService({
+    ownerReviewSignal: {
+      ok: true,
+      available: true,
+      status: "accepted",
+      reviewCount: 1,
+      reviews: [{
+        reviewId: "lgaudit_review_1",
+        decision: "accepted",
+        status: "reviewed",
+        taskCardId: "ltask_science_1",
+        evaluationId: "eval_science_1",
+        profileDeltaId: "pdelta_science_1",
+        targetNodeIds: ["kg_science_fair_test"],
+        reviewedAt: "2026-06-15T08:35:00.000Z",
+        ownerNote: "must not leak"
+      }],
+      latestReview: {
+        reviewId: "lgaudit_review_1",
+        decision: "accepted",
+        status: "reviewed",
+        taskCardId: "ltask_science_1",
+        evaluationId: "eval_science_1",
+        profileDeltaId: "pdelta_science_1",
+        targetNodeIds: ["kg_science_fair_test"],
+        reviewedAt: "2026-06-15T08:35:00.000Z",
+        rawPrompt: "must not leak"
+      },
+      plannerSignal: {
+        status: "accepted",
+        trustLevel: "owner_accepted",
+        followUpRequired: false,
+        useForNextPlan: true,
+        strategyBias: "use_owner_accepted_profile_feedback"
+      },
+      summary: {
+        ownerReviewed: true,
+        latestDecision: "accepted",
+        latestStatus: "reviewed",
+        latestReviewId: "lgaudit_review_1",
+        followUpRequired: false,
+        useForNextPlan: true,
+        strategyBias: "use_owner_accepted_profile_feedback",
+        acceptedCount: 1,
+        reviewCount: 1
+      }
+    }
+  });
+
+  const result = service.state({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domain: "science",
+    subject: "science",
+    taskCardId: "ltask_science_1",
+    evaluationId: "eval_science_1"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.ownerReview.schemaVersion, "growth.learningOwnerReviewSignal.v1");
+  assert.equal(result.ownerReview.summary.latestDecision, "accepted");
+  assert.equal(result.summary.ownerReviewDecision, "accepted");
+  assert.equal(result.summary.ownerReviewCount, 1);
+  assert.equal(result.recommendationEvidence.evidenceTrace.ownerAuditReviewIds[0], "lgaudit_review_1");
+  assert.equal(result.recommendationEvidence.auditTrace.ownerAuditReviews[0].reviewId, "lgaudit_review_1");
+  assert.equal(result.recommendationEvidence.summary.ownerReviewCount, 1);
+  assert.equal(result.recommendationEvidence.summary.ownerReviewDecision, "accepted");
+  assert.deepEqual(calls.map((call) => call.type), ["preview", "rewardAudit", "ownerReviewSignal", "stageReadiness"]);
+  assert.equal(calls[2].input.taskCardId, "ltask_science_1");
+  assert.equal(calls[2].input.evaluationId, "eval_science_1");
+  assert.equal(JSON.stringify(result).includes("ownerNote"), false);
+  assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
 });
 
 test("learning loop state prefers publish when a selected plan is ready", () => {

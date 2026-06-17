@@ -68,6 +68,7 @@ const { createLearningGraphPlanService } = require("../services/learning-graph-p
 const { createLearningMasteryProfileService } = require("../services/learning-mastery-profile-service");
 const { createLearningNextCardStrategyService } = require("../services/learning-next-card-strategy-service");
 const { createLearningOwnerAuditReviewService } = require("../services/learning-owner-audit-review-service");
+const { createLearningOwnerReviewSignalService } = require("../services/learning-owner-review-signal-service");
 const { createLearningOwnerCorrectionService } = require("../services/learning-owner-correction-service");
 const { createLearningPlanAuditService } = require("../services/learning-plan-audit-service");
 const { createLearningPlanOrchestratorService } = require("../services/learning-plan-orchestrator-service");
@@ -220,11 +221,15 @@ function createServices(config) {
   const learningStageCheckpointControlsService = createLearningStageCheckpointControlsService({
     stageAssessmentService: learningStageAssessmentService
   });
+  const learningOwnerReviewSignalService = createLearningOwnerReviewSignalService({
+    repository: growthLearningStore.learningOwnerAuditReviewRepository
+  });
   const learningPlannerContextService = createLearningPlannerContextService({
     evidenceLedgerService: learningEvidenceLedgerService,
     graphRepository: growthLearningStore.learningGraphRepository,
     profileV2Service: learningProfileV2Service,
-    stageAssessmentService: learningStageAssessmentService
+    stageAssessmentService: learningStageAssessmentService,
+    ownerReviewSignalService: learningOwnerReviewSignalService
   });
   const learningPlanValidationService = createLearningPlanValidationService();
   const learningPlanOrchestratorService = createLearningPlanOrchestratorService({
@@ -506,7 +511,8 @@ function createServices(config) {
   const learningLoopStateService = createLearningLoopStateService({
     dailyLoopService: learningDailyLoopService,
     rewardAuditService: learningRewardAuditService,
-    stageAssessmentService: learningStageAssessmentService
+    stageAssessmentService: learningStageAssessmentService,
+    ownerReviewSignalService: learningOwnerReviewSignalService
   });
   const learningOperatingLoopService = createLearningOperatingLoopService({
     loopStateService: learningLoopStateService,
@@ -521,7 +527,8 @@ function createServices(config) {
     profileV2Service: learningProfileV2Service,
     recommendationService: learningCardRecommendationService,
     loopStateService: learningLoopStateService,
-    cycleHistoryService: learningCycleHistoryService
+    cycleHistoryService: learningCycleHistoryService,
+    ownerReviewSignalService: learningOwnerReviewSignalService
   });
   const learningOwnerAuditReviewService = createLearningOwnerAuditReviewService({
     repository: growthLearningStore.learningOwnerAuditReviewRepository,
@@ -621,6 +628,7 @@ function createServices(config) {
     learningMasteryProfileService,
     learningNextCardStrategyService,
     learningOwnerAuditReviewService,
+    learningOwnerReviewSignalService,
     learningOwnerCorrectionService,
     learningOperatingLoopService,
     learningPlanAuditService,

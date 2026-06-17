@@ -262,6 +262,21 @@ function publicCorrectionTraceItem(item = {}) {
   };
 }
 
+function publicOwnerReviewTraceItem(item = {}) {
+  return {
+    reviewId: cleanString(item.reviewId),
+    decision: cleanString(item.decision),
+    status: cleanString(item.status),
+    taskCardId: cleanString(item.taskCardId),
+    evaluationId: cleanString(item.evaluationId),
+    profileDeltaId: cleanString(item.profileDeltaId),
+    correctionId: cleanString(item.correctionId),
+    targetNodeIds: uniqueStrings(item.targetNodeIds).slice(0, 8),
+    reviewedAt: cleanString(item.reviewedAt, 64),
+    updatedAt: cleanString(item.updatedAt, 64)
+  };
+}
+
 function publicProfileTraceItem(item = {}) {
   return {
     nodeId: cleanString(item.nodeId),
@@ -347,7 +362,69 @@ function publicRewardAudit(rewardAudit = {}) {
   };
 }
 
-function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {}, profile = {}, audit = {}, rewardAudit = {}) {
+function publicOwnerReviewSignal(signal = {}) {
+  const summary = signal.summary && typeof signal.summary === "object" ? signal.summary : {};
+  const plannerSignal = signal.plannerSignal && typeof signal.plannerSignal === "object" ? signal.plannerSignal : {};
+  const reviews = asArray(signal.reviews).map(publicOwnerReviewTraceItem).filter((item) => item.reviewId).slice(0, 5);
+  const latest = signal.latestReview ? publicOwnerReviewTraceItem(signal.latestReview) : (reviews[0] || null);
+  if (!signal || signal.ok === false || signal.available === false) {
+    return {
+      ok: false,
+      available: false,
+      status: cleanString(signal?.status || "unavailable"),
+      error: cleanString(signal?.error || "owner_review_signal_unavailable"),
+      latestReview: null,
+      reviews: [],
+      plannerSignal: {
+        status: "unavailable",
+        trustLevel: "unavailable",
+        followUpRequired: false,
+        useForNextPlan: true,
+        strategyBias: "use_profile_without_owner_review"
+      },
+      summary: {
+        ownerReviewed: false,
+        followUpRequired: false,
+        useForNextPlan: true,
+        reviewCount: 0
+      }
+    };
+  }
+  return {
+    ok: true,
+    available: true,
+    schemaVersion: "growth.learningOwnerReviewSignal.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: cleanString(signal.status || summary.latestStatus || "missing"),
+    reviewCount: Number(signal.reviewCount || summary.reviewCount || reviews.length || 0) || 0,
+    latestReview: latest && latest.reviewId ? latest : null,
+    reviews,
+    plannerSignal: {
+      status: cleanString(plannerSignal.status || summary.latestStatus || "missing"),
+      trustLevel: cleanString(plannerSignal.trustLevel || "unreviewed"),
+      followUpRequired: Boolean(plannerSignal.followUpRequired || summary.followUpRequired),
+      useForNextPlan: plannerSignal.useForNextPlan !== false && summary.useForNextPlan !== false,
+      strategyBias: cleanString(plannerSignal.strategyBias || summary.strategyBias, 160)
+    },
+    summary: {
+      ownerReviewed: Boolean(summary.ownerReviewed || latest?.reviewId),
+      latestDecision: cleanString(summary.latestDecision || latest?.decision),
+      latestStatus: cleanString(summary.latestStatus || latest?.status),
+      latestReviewId: cleanString(summary.latestReviewId || latest?.reviewId),
+      followUpRequired: Boolean(summary.followUpRequired || plannerSignal.followUpRequired),
+      useForNextPlan: summary.useForNextPlan !== false && plannerSignal.useForNextPlan !== false,
+      strategyBias: cleanString(summary.strategyBias || plannerSignal.strategyBias, 160),
+      acceptedCount: Number(summary.acceptedCount || 0) || 0,
+      needsFollowUpCount: Number(summary.needsFollowUpCount || 0) || 0,
+      correctionRecordedCount: Number(summary.correctionRecordedCount || 0) || 0,
+      blockedCount: Number(summary.blockedCount || 0) || 0,
+      reviewCount: Number(summary.reviewCount || signal.reviewCount || reviews.length || 0) || 0
+    }
+  };
+}
+
+function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {}, profile = {}, audit = {}, rewardAudit = {}, ownerReviewSignal = {}) {
   const context = preview.context || {};
   const nextCardRecommendation = context.nextCardRecommendation || {};
   const ownerAudit = context.ownerAudit || {};
@@ -388,6 +465,8 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
     .slice(0, 6);
   const rewardTrace = publicRewardAudit(rewardAudit);
   const rewardSettlements = rewardTrace.rewardSettlements;
+  const ownerReview = publicOwnerReviewSignal(ownerReviewSignal);
+  const ownerReviewItems = ownerReview.reviews;
   const evidenceIds = uniqueStrings([
     ...evidenceItems.map((item) => item.evidenceId),
     ...planDrafts.flatMap((item) => item.basisEvidenceIds),
@@ -414,9 +493,10 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
     ...lifecycle.map((item) => item.trajectoryId)
   ]).slice(0, 12);
   const rewardSettlementIds = uniqueStrings(rewardSettlements.map((item) => item.rewardSettlementId)).slice(0, 12);
+  const ownerAuditReviewIds = uniqueStrings(ownerReviewItems.map((item) => item.reviewId)).slice(0, 12);
   const explanationReady = Boolean(
     recommendation.available
-    && (evidenceIds.length || profileDeltas.length || lifecycle.length || planDrafts.length || rewardSettlementIds.length || profile.evidenceCount || audit.profileDeltaCount)
+    && (evidenceIds.length || profileDeltas.length || lifecycle.length || planDrafts.length || rewardSettlementIds.length || ownerAuditReviewIds.length || profile.evidenceCount || audit.profileDeltaCount)
   );
   return {
     schemaVersion: "growth.learningLoopState.recommendationEvidence.v1",
@@ -446,6 +526,7 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       planDraftIds: planDrafts.map((item) => item.planDraftId),
       profileDeltaIds: profileDeltas.map((item) => item.profileDeltaId),
       correctionIds: corrections.map((item) => item.correctionId),
+      ownerAuditReviewIds,
       rewardSettlementIds
     },
     profileTrace: {
@@ -470,6 +551,7 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       evidenceItems,
       profileDeltas,
       corrections,
+      ownerAuditReviews: ownerReviewItems,
       recommendationLifecycle: lifecycle,
       rewardSettlements
     },
@@ -488,6 +570,10 @@ function recommendationEvidenceFrom(preview = {}, scope = {}, recommendation = {
       correctionCount: corrections.length,
       rewardSettlementCount: rewardSettlements.length,
       totalRewardCoins: rewardTrace.summary.totalCoinAmount,
+      ownerReviewCount: ownerReviewItems.length,
+      ownerReviewDecision: ownerReview.summary.latestDecision,
+      ownerReviewStatus: ownerReview.summary.latestStatus,
+      ownerReviewFollowUpRequired: ownerReview.summary.followUpRequired,
       recommendationLifecycleCount: lifecycle.length,
       basisTrajectoryPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.trajectoryId)),
       basisEvaluationPresent: Boolean(cleanString(nextCardRecommendation.evidenceBasis?.sourceEvaluationId))
@@ -607,6 +693,7 @@ function createLearningLoopStateService(options = {}) {
   const dailyLoopService = options.dailyLoopService || null;
   const rewardAuditService = options.rewardAuditService || null;
   const stageAssessmentService = options.stageAssessmentService || null;
+  const ownerReviewSignalService = options.ownerReviewSignalService || null;
 
   function stageAssessmentFor(input = {}, preview = {}) {
     const target = targetFrom(preview, input);
@@ -649,6 +736,38 @@ function createLearningLoopStateService(options = {}) {
     });
   }
 
+  function ownerReviewSignalFor(input = {}, target = {}, scope = {}, recommendationEvidence = {}) {
+    if (!ownerReviewSignalService || typeof ownerReviewSignalService.ownerReviewSignal !== "function") {
+      return publicOwnerReviewSignal({ ok: false, available: false, error: "owner_review_signal_service_unavailable" });
+    }
+    const trace = recommendationEvidence.evidenceTrace || {};
+    try {
+      return publicOwnerReviewSignal(ownerReviewSignalService.ownerReviewSignal({
+        workspaceId: target.workspaceId,
+        learnerId: target.learnerId,
+        programId: scope.programId,
+        domainPackId: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
+        taskCardId: input.taskCardId || input.task_card_id || trace.sourceTaskCardIds?.[0],
+        evaluationId: input.evaluationId || input.evaluation_id || trace.sourceEvaluationIds?.[0],
+        profileDeltaId: input.profileDeltaId || input.profile_delta_id || trace.profileDeltaIds?.[0],
+        evidenceId: input.evidenceId || input.evidence_id || trace.evidenceIds?.[0],
+        correctionId: input.correctionId || input.correction_id || trace.correctionIds?.[0],
+        targetNodeIds: scope.targetNodeIds,
+        limit: input.ownerReviewLimit || input.owner_review_limit || 6
+      }));
+    } catch (error) {
+      return publicOwnerReviewSignal({
+        ok: false,
+        available: false,
+        error: "owner_review_signal_failed",
+        detail: cleanString(error && error.message ? error.message : error, 180)
+      });
+    }
+  }
+
   function state(input = {}) {
     const privacyFindings = scanPrivacy(input);
     if (privacyFindings.length) {
@@ -674,7 +793,8 @@ function createLearningLoopStateService(options = {}) {
     const recommendation = recommendationFrom(preview.context || {});
     const initialRecommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit);
     const rewardAudit = rewardAuditFor(input, target, scope, initialRecommendationEvidence);
-    const recommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit, rewardAudit);
+    const ownerReview = ownerReviewSignalFor(input, target, scope, initialRecommendationEvidence);
+    const recommendationEvidence = recommendationEvidenceFrom(preview, scope, recommendation, profile, audit, rewardAudit, ownerReview);
     const stageAssessmentReadiness = stageAssessmentFor(input, preview);
     const stageAssessment = publicStageAssessment(stageAssessmentReadiness);
     stageAssessment.targetNodeIds = scope.targetNodeIds;
@@ -692,6 +812,7 @@ function createLearningLoopStateService(options = {}) {
       readiness,
       profile,
       audit,
+      ownerReview,
       stageAssessment,
       recommendation,
       recommendationEvidence,
@@ -704,6 +825,10 @@ function createLearningLoopStateService(options = {}) {
         stageCheckpointActive: stageAssessment.status === "active",
         auditComplete: audit.completenessAvailable ? audit.complete : false,
         recommendationEvidenceReady: recommendationEvidence.summary.explanationReady,
+        ownerReviewDecision: ownerReview.summary.latestDecision,
+        ownerReviewStatus: ownerReview.summary.latestStatus,
+        ownerReviewCount: ownerReview.summary.reviewCount,
+        ownerReviewFollowUpRequired: ownerReview.summary.followUpRequired,
         weaknessCount: profile.weaknessCount,
         missingRequired: audit.missingRequired
       }

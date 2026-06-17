@@ -219,6 +219,28 @@ function loopStateSummary(loopState = {}) {
   };
 }
 
+function ownerReviewSummary(ownerReviewSignal = {}) {
+  const summary = ownerReviewSignal.summary && typeof ownerReviewSignal.summary === "object" ? ownerReviewSignal.summary : {};
+  const plannerSignal = ownerReviewSignal.plannerSignal && typeof ownerReviewSignal.plannerSignal === "object" ? ownerReviewSignal.plannerSignal : {};
+  const latest = ownerReviewSignal.latestReview && typeof ownerReviewSignal.latestReview === "object" ? ownerReviewSignal.latestReview : {};
+  return {
+    available: ownerReviewSignal.ok === true && ownerReviewSignal.available !== false,
+    status: cleanString(ownerReviewSignal.status || summary.latestStatus || "missing", 80),
+    reviewCount: Number(ownerReviewSignal.reviewCount || summary.reviewCount || 0) || 0,
+    latestReviewId: cleanString(summary.latestReviewId || latest.reviewId, 140),
+    latestDecision: cleanString(summary.latestDecision || latest.decision, 80),
+    latestStatus: cleanString(summary.latestStatus || latest.status, 80),
+    followUpRequired: Boolean(summary.followUpRequired || plannerSignal.followUpRequired),
+    useForNextPlan: summary.useForNextPlan !== false && plannerSignal.useForNextPlan !== false,
+    strategyBias: cleanString(summary.strategyBias || plannerSignal.strategyBias, 160),
+    targetNodeIds: uniqueStrings(latest.targetNodeIds).slice(0, 12),
+    acceptedCount: Number(summary.acceptedCount || 0) || 0,
+    needsFollowUpCount: Number(summary.needsFollowUpCount || 0) || 0,
+    correctionRecordedCount: Number(summary.correctionRecordedCount || 0) || 0,
+    blockedCount: Number(summary.blockedCount || 0) || 0
+  };
+}
+
 function selectorFromCycle(cycle = {}) {
   const selectors = cycle.selectors || {};
   return {
@@ -355,6 +377,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
   const recommendationService = options.recommendationService || null;
   const loopStateService = options.loopStateService || null;
   const cycleHistoryService = options.cycleHistoryService || null;
+  const ownerReviewSignalService = options.ownerReviewSignalService || null;
 
   function evaluate(input = {}) {
     let scope = publicScope(input);
@@ -460,12 +483,19 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
       scope,
       "profile_feedback_loop_state_unavailable"
     );
+    const ownerReviewSignal = callService(
+      ownerReviewSignalService,
+      "ownerReviewSignal",
+      scope,
+      "profile_feedback_owner_review_signal_unavailable"
+    );
 
     const evidence = evidenceSummary(evidenceAudit);
     const profileDelta = profileDeltaSummary(profileDeltaAudit);
     const profile = profileSummary(profileV2);
     const nextRecommendation = recommendationSummary(recommendation);
     const nextLoopState = loopStateSummary(loopState);
+    const ownerReview = ownerReviewSummary(ownerReviewSignal);
 
     const checks = [
       completeness?.ok
@@ -545,6 +575,7 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
       profileDelta,
       recommendation: nextRecommendation,
       loopState: nextLoopState,
+      ownerReview,
       selectorDiscovery,
       autoSelection,
       selectedCompletedCycle,
@@ -560,6 +591,10 @@ function createLearningProfileFeedbackEvidenceService(options = {}) {
         totalRewardCoins: nextLoopState.reward.totalRewardCoins,
         recommendationMode: nextRecommendation.mode,
         recommendationStrategy: nextRecommendation.strategy,
+        ownerReviewStatus: ownerReview.status,
+        ownerReviewDecision: ownerReview.latestDecision,
+        ownerReviewCount: ownerReview.reviewCount,
+        ownerReviewFollowUpRequired: ownerReview.followUpRequired,
         loopStatus: nextLoopState.status,
         selectorDiscoveryStatus: selectorDiscovery ? selectorDiscovery.status : "",
         autoSelectionStatus: autoSelection ? autoSelection.status : "",

@@ -121,6 +121,14 @@ readback gate set.
   bounded notes. It does not write learner evidence, mutate Profile V2, call
   Gateway, generate cards, evaluate submissions, schedule, notify, activate
   stage assessments, or act as release/deploy permission.
+  Growth also projects those persisted review rows back into the next planning
+  loop through `learning-owner-review-signal-service`. The signal is read-only
+  and summary-only (`growth.learningOwnerReviewSignal.v1`), excludes Owner
+  notes/raw learner/model content, and is consumed by planner context,
+  profile-feedback evidence, and learning-loop state as advisory strategy bias
+  such as accepted, corrected, follow-up, or blocked. It does not write
+  reviews, evidence, Profile V2, cards, scheduler state, notifications, or
+  stage assessments.
   Compact ordinary-card
   recipe generation now supports `daily_english_v1`, `daily_science_v1`, and
   `daily_subject_practice_v1` while preserving target provisioning, graph

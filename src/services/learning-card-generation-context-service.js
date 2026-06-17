@@ -448,6 +448,13 @@ function publicPlannerContextPreview(context = {}) {
       profileSummary: { unavailable: true },
       recentEvidence: [],
       recentEvidenceCount: 0,
+      ownerReviewSignal: {
+        ok: false,
+        available: false,
+        status: "unavailable",
+        reviewCount: 0,
+        summary: { ownerReviewed: false, followUpRequired: false, useForNextPlan: true, reviewCount: 0 }
+      },
       privacy: { privacyClass: "summary_only" }
     };
   }
@@ -522,6 +529,60 @@ function publicPlannerContextPreview(context = {}) {
         sourceCardIds: asArray(context.stageAssessment?.evidence?.sourceCardIds).map(cleanString).filter(Boolean).slice(0, 8)
       }
     };
+  const rawOwnerReviewSignal = context.ownerReviewSignal && typeof context.ownerReviewSignal === "object"
+    ? context.ownerReviewSignal
+    : { ok: false, available: false, status: "unavailable", summary: {} };
+  const ownerReviewSummary = rawOwnerReviewSignal.summary && typeof rawOwnerReviewSignal.summary === "object"
+    ? rawOwnerReviewSignal.summary
+    : {};
+  const ownerReviewPlannerSignal = rawOwnerReviewSignal.plannerSignal && typeof rawOwnerReviewSignal.plannerSignal === "object"
+    ? rawOwnerReviewSignal.plannerSignal
+    : {};
+  const ownerReviewLatest = rawOwnerReviewSignal.latestReview && typeof rawOwnerReviewSignal.latestReview === "object"
+    ? rawOwnerReviewSignal.latestReview
+    : {};
+  const ownerReviewSignal = {
+    ok: rawOwnerReviewSignal.ok !== false,
+    available: rawOwnerReviewSignal.available !== false,
+    schemaVersion: "growth.learningOwnerReviewSignal.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    status: cleanString(rawOwnerReviewSignal.status || ownerReviewSummary.latestStatus || "missing"),
+    reviewCount: Number(rawOwnerReviewSignal.reviewCount || ownerReviewSummary.reviewCount || 0) || 0,
+    latestReview: ownerReviewLatest.reviewId ? {
+      reviewId: cleanString(ownerReviewLatest.reviewId),
+      decision: cleanString(ownerReviewLatest.decision),
+      status: cleanString(ownerReviewLatest.status),
+      taskCardId: cleanString(ownerReviewLatest.taskCardId),
+      evaluationId: cleanString(ownerReviewLatest.evaluationId),
+      profileDeltaId: cleanString(ownerReviewLatest.profileDeltaId),
+      correctionId: cleanString(ownerReviewLatest.correctionId),
+      targetNodeIds: asArray(ownerReviewLatest.targetNodeIds).map(cleanString).filter(Boolean).slice(0, 12),
+      reviewedAt: cleanString(ownerReviewLatest.reviewedAt),
+      updatedAt: cleanString(ownerReviewLatest.updatedAt)
+    } : null,
+    plannerSignal: {
+      status: cleanString(ownerReviewPlannerSignal.status || ownerReviewSummary.latestStatus || "missing"),
+      trustLevel: cleanString(ownerReviewPlannerSignal.trustLevel || "unreviewed"),
+      followUpRequired: Boolean(ownerReviewPlannerSignal.followUpRequired || ownerReviewSummary.followUpRequired),
+      useForNextPlan: ownerReviewPlannerSignal.useForNextPlan !== false && ownerReviewSummary.useForNextPlan !== false,
+      strategyBias: cleanString(ownerReviewPlannerSignal.strategyBias || ownerReviewSummary.strategyBias).slice(0, 160)
+    },
+    summary: {
+      ownerReviewed: Boolean(ownerReviewSummary.ownerReviewed || ownerReviewLatest.reviewId),
+      latestDecision: cleanString(ownerReviewSummary.latestDecision || ownerReviewLatest.decision),
+      latestStatus: cleanString(ownerReviewSummary.latestStatus || ownerReviewLatest.status),
+      latestReviewId: cleanString(ownerReviewSummary.latestReviewId || ownerReviewLatest.reviewId),
+      followUpRequired: Boolean(ownerReviewSummary.followUpRequired || ownerReviewPlannerSignal.followUpRequired),
+      useForNextPlan: ownerReviewSummary.useForNextPlan !== false && ownerReviewPlannerSignal.useForNextPlan !== false,
+      strategyBias: cleanString(ownerReviewSummary.strategyBias || ownerReviewPlannerSignal.strategyBias).slice(0, 160),
+      acceptedCount: Number(ownerReviewSummary.acceptedCount || 0) || 0,
+      needsFollowUpCount: Number(ownerReviewSummary.needsFollowUpCount || 0) || 0,
+      correctionRecordedCount: Number(ownerReviewSummary.correctionRecordedCount || 0) || 0,
+      blockedCount: Number(ownerReviewSummary.blockedCount || 0) || 0,
+      reviewCount: Number(ownerReviewSummary.reviewCount || rawOwnerReviewSignal.reviewCount || 0) || 0
+    }
+  };
   return {
     ok: true,
     available: true,
@@ -543,6 +604,7 @@ function publicPlannerContextPreview(context = {}) {
     recentEvidence,
     recentEvidenceCount: recentEvidence.length,
     stageAssessment,
+    ownerReviewSignal,
     privacy: {
       noFullChildAnswers: Boolean(context.privacy?.noFullChildAnswers),
       noFullTranscripts: Boolean(context.privacy?.noFullTranscripts),

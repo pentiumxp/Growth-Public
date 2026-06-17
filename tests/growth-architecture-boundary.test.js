@@ -1617,10 +1617,23 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(plannerContextService, /growth\.learningPlanner\.input\.v1/);
   assert.match(plannerContextService, /stageAssessmentService/);
   assert.match(plannerContextService, /stageReadiness/);
+  assert.match(plannerContextService, /ownerReviewSignalService/);
+  assert.match(plannerContextService, /growth\.learningOwnerReviewSignal\.v1/);
   assert.match(plannerContextService, /staleEvidence: profile\.staleEvidence/);
   assert.match(plannerContextService, /noFullChildAnswers/);
   assert.doesNotMatch(plannerContextService, /rawAnswer/);
+  assert.doesNotMatch(plannerContextService, /ownerNote/);
   assert.doesNotMatch(plannerContextService, /evaluateEligibility/);
+
+  const ownerReviewSignalService = read(path.join("src", "services", "learning-owner-review-signal-service.js"));
+  assert.match(ownerReviewSignalService, /growth\.learningOwnerReviewSignal\.v1/);
+  assert.match(ownerReviewSignalService, /repository\.listReviews/);
+  assert.match(ownerReviewSignalService, /summary_only/);
+  assert.match(ownerReviewSignalService, /plannerSignal/);
+  assert.doesNotMatch(ownerReviewSignalService, /recordReview/);
+  assert.doesNotMatch(ownerReviewSignalService, /review\(/);
+  assert.doesNotMatch(ownerReviewSignalService, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(ownerReviewSignalService, /generateCard|evaluateSubmission|publishPlanItem|activateStageAssessment|executeOnce|runOnce|deliverHandoff/);
 
   const plannerGateway = read(path.join("src", "services", "growth-gateway-planner-client.js"));
   assert.match(plannerGateway, /growth\.learning_planner\.draft/);
@@ -3881,6 +3894,8 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
   assert.match(service, /dailyLoopService\.preview/);
   assert.match(service, /stageAssessmentService\.stageReadiness/);
   assert.match(service, /recommendationEvidenceFrom/);
+  assert.match(service, /ownerReviewSignalService/);
+  assert.match(service, /ownerAuditReviewIds/);
   assert.match(service, /evidenceTrace/);
   assert.match(service, /auditTrace/);
   assert.match(service, /profileTrace/);
@@ -3902,6 +3917,7 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
   const serviceHarness = read(path.join("tests", "learning-loop-state-service.test.js"));
   assert.match(serviceHarness, /projects a summary-only ready-to-draft state/);
   assert.match(serviceHarness, /recommendationEvidence/);
+  assert.match(serviceHarness, /links Owner review signal into recommendation evidence/);
   assert.match(serviceHarness, /traj_science_1/);
   assert.match(serviceHarness, /prefers publish when a selected plan is ready/);
   assert.match(serviceHarness, /surfaces incomplete audit before drafting more work/);
@@ -3910,6 +3926,7 @@ test("Growth learning-loop state smoke CLI stays service-owned, summary-only, an
 
   const scriptHarness = read(path.join("tests", "growth-learning-loop-state-smoke-script.test.js"));
   assert.match(scriptHarness, /delegates to service without writing/);
+  assert.match(scriptHarness, /learningLoopStateOwnerReviewStatus/);
   assert.match(scriptHarness, /fails closed for privacy-risk input/);
   assert.match(scriptHarness, /fails closed for missing workspace and invalid JSON/);
 });

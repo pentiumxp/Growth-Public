@@ -172,6 +172,14 @@ function completeDependencies(overrides = {}) {
       }
     }
   };
+  if (overrides.ownerReviewSignal) {
+    services.ownerReviewSignalService = {
+      ownerReviewSignal(input) {
+        calls.push({ type: "ownerReviewSignal", input });
+        return overrides.ownerReviewSignal;
+      }
+    };
+  }
   return { calls, services };
 }
 
@@ -216,6 +224,77 @@ test("profile feedback evidence service proves a completed cycle can drive the n
     "recommendation",
     "loopState"
   ]);
+});
+
+test("profile feedback evidence includes Owner review signal without making it a required gate", () => {
+  const { calls, services } = completeDependencies({
+    ownerReviewSignal: {
+      ok: true,
+      available: true,
+      status: "needs_follow_up",
+      reviewCount: 1,
+      latestReview: {
+        reviewId: "lgaudit_review_1",
+        decision: "needs_follow_up",
+        status: "needs_follow_up",
+        taskCardId: "ltask_science_daily_1",
+        evaluationId: "leval_daily_1",
+        targetNodeIds: ["kg_science_fair_test"],
+        ownerNote: "must not leak"
+      },
+      plannerSignal: {
+        status: "needs_follow_up",
+        trustLevel: "reviewed_follow_up",
+        followUpRequired: true,
+        useForNextPlan: true,
+        strategyBias: "prefer_low_pressure_repair_or_owner_follow_up"
+      },
+      summary: {
+        ownerReviewed: true,
+        latestDecision: "needs_follow_up",
+        latestStatus: "needs_follow_up",
+        latestReviewId: "lgaudit_review_1",
+        followUpRequired: true,
+        useForNextPlan: true,
+        strategyBias: "prefer_low_pressure_repair_or_owner_follow_up",
+        needsFollowUpCount: 1,
+        reviewCount: 1
+      }
+    }
+  });
+  const service = createLearningProfileFeedbackEvidenceService(services);
+
+  const result = service.evaluate({
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domain: "science",
+    subject: "science",
+    taskCardId: "ltask_science_daily_1",
+    evaluationId: "leval_daily_1",
+    targetNodeIds: ["kg_science_fair_test"]
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, "pass");
+  assert.equal(result.summary.readyForNextPlan, true);
+  assert.equal(result.ownerReview.status, "needs_follow_up");
+  assert.equal(result.ownerReview.latestDecision, "needs_follow_up");
+  assert.equal(result.ownerReview.followUpRequired, true);
+  assert.equal(result.summary.ownerReviewStatus, "needs_follow_up");
+  assert.equal(result.summary.ownerReviewFollowUpRequired, true);
+  assert.deepEqual(result.summary.missingRequired, []);
+  assert.deepEqual(calls.map((call) => call.type), [
+    "completeness",
+    "evidenceAudit",
+    "profileDeltaAudit",
+    "profileV2",
+    "recommendation",
+    "loopState",
+    "ownerReviewSignal"
+  ]);
+  assert.equal(JSON.stringify(result).includes("ownerNote"), false);
+  assert.equal(JSON.stringify(result).includes("must not leak"), false);
 });
 
 test("profile feedback evidence service requires a completed-cycle selector", () => {

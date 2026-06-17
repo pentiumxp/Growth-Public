@@ -81,6 +81,49 @@ test("planner context assembles summary-only cross-subject planning input", () =
           }
         };
       }
+    },
+    ownerReviewSignalService: {
+      ownerReviewSignal(input) {
+        assert.equal(input.workspaceId, "weixin_stephen");
+        assert.deepEqual(input.targetNodeIds, ["kg_science_fair_test"]);
+        return {
+          ok: true,
+          available: true,
+          status: "correction_recorded",
+          reviewCount: 1,
+          latestReview: {
+            reviewId: "lgaudit_review_1",
+            decision: "correction_recorded",
+            status: "corrected",
+            taskCardId: "ltask_science_1",
+            evaluationId: "leval_science_1",
+            profileDeltaId: "lgpdelta_science_1",
+            correctionId: "corr_science_1",
+            targetNodeIds: ["kg_science_fair_test"],
+            reviewedAt: "2026-06-16T08:00:00.000Z",
+            ownerNote: "must not leak"
+          },
+          plannerSignal: {
+            status: "correction_recorded",
+            trustLevel: "owner_corrected",
+            followUpRequired: false,
+            useForNextPlan: true,
+            strategyBias: "use_owner_corrected_profile_signal",
+            rawPrompt: "must not leak"
+          },
+          summary: {
+            ownerReviewed: true,
+            latestDecision: "correction_recorded",
+            latestStatus: "corrected",
+            latestReviewId: "lgaudit_review_1",
+            followUpRequired: false,
+            useForNextPlan: true,
+            strategyBias: "use_owner_corrected_profile_signal",
+            correctionRecordedCount: 1,
+            reviewCount: 1
+          }
+        };
+      }
     }
   });
 
@@ -108,7 +151,12 @@ test("planner context assembles summary-only cross-subject planning input", () =
   assert.equal(result.stageAssessment.activationState, "eligible");
   assert.equal(result.stageAssessment.evidence.recentTrajectoryCount, 4);
   assert.deepEqual(result.stageAssessment.coverageNodeIds, ["kg_science_fair_test"]);
+  assert.equal(result.ownerReviewSignal.schemaVersion, "growth.learningOwnerReviewSignal.v1");
+  assert.equal(result.ownerReviewSignal.summary.latestDecision, "correction_recorded");
+  assert.equal(result.ownerReviewSignal.plannerSignal.strategyBias, "use_owner_corrected_profile_signal");
   assert.equal(result.privacy.noFullChildAnswers, true);
   assert.equal(JSON.stringify(result).includes("rawAnswer"), false);
   assert.equal(JSON.stringify(result).includes("transcript"), false);
+  assert.equal(JSON.stringify(result).includes("ownerNote"), false);
+  assert.equal(JSON.stringify(result).includes("rawPrompt"), false);
 });
