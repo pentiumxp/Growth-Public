@@ -9,6 +9,40 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T20:38+08:00 - Operating Loop History Release Evidence
+
+- Status: implemented locally; focused release-bundle Harness, syntax,
+  docs-locality, syntax coverage, diff hygiene, and CodeGraph freshness passed.
+  No production deployment, production write smoke, browser visual evidence, or
+  runtime config change was performed.
+- Classification: Growth-local H2 release-evidence/readback integration over
+  the already-persisted operating-loop run history. It adds no new writes and
+  does not change Gateway/model boundaries, scheduler config, notification
+  delivery, Home AI host logic, DB schema, or learner UI behavior.
+- Scope:
+  - added default release bundle task `operating_loop_history`, mapped to
+    `productionOperatingLoopHistorySmokeEvidence`;
+  - the bundle task calls only
+    `scripts/smoke-growth-operating-loop.js --operation list-runs --json`
+    through the existing injected smoke runner;
+  - bundle scope now supports optional operating-loop history filters:
+    `operatingLoopRunStatus`, `operatingLoopAction`, and
+    `operatingLoopRunId`, with CLI flags
+    `--operating-loop-run-status`, `--operating-loop-action`, and
+    `--operating-loop-run-id`;
+  - summary projection keeps only run count, latest run id/action/status/error,
+    write flag, and bounded artifact ids; it never executes `run-next`, writes
+    state, calls Gateway, publishes, evaluates, schedules, notifies, activates
+    stage assessments, or imports repositories from the bundle.
+- Focused validation already run:
+  - `node --test tests/learning-automation-release-evidence-bundle-service.test.js tests/growth-release-evidence-bundle-script.test.js tests/growth-operating-loop-smoke-script.test.js tests/growth-architecture-boundary.test.js` -> 89/89
+  - `node --check src/services/learning-automation-release-evidence-bundle-service.js && node --check scripts/build-growth-release-evidence-bundle.js && node --check tests/learning-automation-release-evidence-bundle-service.test.js && node --check tests/growth-release-evidence-bundle-script.test.js`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `npm run --silent check`
+  - `codegraph sync && codegraph status` -> index up to date; existing
+    earlier-engine advisory remains.
+
 ## 2026-06-17T20:28+08:00 - Learning Operating Loop Run Audit Persistence
 
 - Status: implemented locally; focused H1 Harness, full local test suite,

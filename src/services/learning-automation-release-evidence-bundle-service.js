@@ -19,6 +19,7 @@ const DEFAULT_TASK_IDS = Object.freeze([
   "planner_readiness",
   "daily_loop_preview",
   "learning_loop_state",
+  "operating_loop_history",
   "cycle_history",
   "owner_audit",
   "profile_feedback",
@@ -64,6 +65,13 @@ const TASK_DEFINITIONS = Object.freeze([
     evidenceKey: "productionLearningLoopStateSmokeEvidence",
     script: "scripts/smoke-growth-learning-loop-state.js",
     commandName: "npm run smoke:learning-loop-state"
+  },
+  {
+    taskId: "operating_loop_history",
+    evidenceKey: "productionOperatingLoopHistorySmokeEvidence",
+    script: "scripts/smoke-growth-operating-loop.js",
+    commandName: "npm run smoke:operating-loop",
+    extraArgs: ["--operation", "list-runs"]
   },
   {
     taskId: "cycle_history",
@@ -363,6 +371,9 @@ function publicScope(input = {}) {
     autoSelectLatestCompletedCycle: booleanFlag(input.autoSelectLatestCompletedCycle || input.auto_select_latest_completed_cycle),
     dailyLoopWriteOperation,
     learnerCycleOperation,
+    operatingLoopRunStatus: cleanString(input.operatingLoopRunStatus || input.operating_loop_run_status, 80),
+    operatingLoopAction: cleanString(input.operatingLoopAction || input.operating_loop_action || input.action, 120),
+    operatingLoopRunId: cleanString(input.operatingLoopRunId || input.operating_loop_run_id, 120),
     taskCardId: cleanString(input.taskCardId || input.task_card_id, 120),
     planDraftId: cleanString(input.planDraftId || input.plan_draft_id, 120),
     collectionRunId: cleanString(input.collectionRunId || input.collection_run_id || input.runId || input.run_id, 120),
@@ -846,6 +857,34 @@ function recommendationLifecycleSummaryFromSmoke(value = {}) {
   };
 }
 
+function operatingLoopHistorySummaryFromSmoke(value = {}) {
+  const summary = value.summary && typeof value.summary === "object" && !Array.isArray(value.summary)
+    ? value.summary
+    : {};
+  const latestRun = value.latestRun && typeof value.latestRun === "object" && !Array.isArray(value.latestRun)
+    ? value.latestRun
+    : {};
+  return {
+    source: cleanString(value.source || "growth-learning-operating-loop-service", 160),
+    status: cleanString(value.status || summary.latestStatus || (value.ok === true ? "listed" : ""), 120),
+    operation: cleanString(value.operation || "list_runs", 80),
+    runCount: Number(value.operatingLoopRunCount || value.count || summary.runCount || 0) || 0,
+    latestRunId: cleanString(value.operatingLoopLatestRunId || latestRun.runId || summary.latestRunId, 160),
+    latestAction: cleanString(value.operatingLoopLatestRunAction || latestRun.action || summary.latestAction, 140),
+    latestStatus: cleanString(value.operatingLoopLatestRunStatus || latestRun.status || summary.latestStatus, 120),
+    latestError: cleanString(value.operatingLoopLatestRunError || latestRun.error || summary.latestError, 180),
+    latestWritePerformed: value.operatingLoopLatestRunWritePerformed === true
+      || latestRun.writePerformed === true
+      || summary.latestWritePerformed === true,
+    latestTaskCardId: cleanString(value.operatingLoopReadbackTaskCardId || latestRun.taskCardId, 160),
+    latestPlanDraftId: cleanString(value.operatingLoopReadbackPlanDraftId || latestRun.planDraftId, 160),
+    latestStageAssessmentCycleId: cleanString(
+      value.operatingLoopReadbackStageAssessmentCycleId || latestRun.stageAssessmentCycleId,
+      160
+    )
+  };
+}
+
 function summaryForTask(task, value) {
   if (task.taskId === "release_controls") return releaseControlsSummaryFromSmoke(value);
   if (task.taskId === "release_inventory") return releaseInventorySummaryFromSmoke(value);
@@ -855,6 +894,7 @@ function summaryForTask(task, value) {
   if (task.taskId === "platform_action") return platformActionSummaryFromSmoke(value);
   if (task.taskId === "target_provisioning") return targetProvisioningSummaryFromSmoke(value);
   if (task.taskId === "recommendation_lifecycle") return recommendationLifecycleSummaryFromSmoke(value);
+  if (task.taskId === "operating_loop_history") return operatingLoopHistorySummaryFromSmoke(value);
   return summaryFromSmoke(value);
 }
 
@@ -1070,6 +1110,11 @@ function taskSpecificArgs(task, scope) {
   if (task.taskId === "learner_cycle") {
     args.push("--operation", scope.learnerCycleOperation);
     if (scope.taskCardId) args.push("--task-card-id", scope.taskCardId);
+  }
+  if (task.taskId === "operating_loop_history") {
+    if (scope.operatingLoopRunStatus) args.push("--status", scope.operatingLoopRunStatus);
+    if (scope.operatingLoopAction) args.push("--action", scope.operatingLoopAction);
+    if (scope.operatingLoopRunId) args.push("--run-id", scope.operatingLoopRunId);
   }
   if (task.taskId === "daily_loop_write") {
     args.push("--operation", scope.dailyLoopWriteOperation, "--allow-write");

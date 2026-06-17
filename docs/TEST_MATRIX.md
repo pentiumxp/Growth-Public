@@ -111,6 +111,17 @@ assertion must prove top-level operator fields mirror the nested service DTO
 without adding writes, runtime-config mutation, Gateway calls, or raw artifact
 paths.
 
+When changing the release evidence bundle default task set, run
+`tests/learning-automation-release-evidence-bundle-service.test.js`,
+`tests/growth-release-evidence-bundle-script.test.js`, and
+`tests/growth-architecture-boundary.test.js`. The focused assertion must prove
+new default tasks are no-write unless explicitly documented otherwise. For
+`operating_loop_history`, the bundle must call only
+`npm run smoke:operating-loop -- --operation list-runs`, map the result into
+`productionOperatingLoopHistorySmokeEvidence`, and never execute `run-next`,
+Gateway, publication, evaluation, scheduler, notification, stage activation, or
+direct repository access.
+
 When changing `release_evidence_collection` workbench action success/failure
 semantics, run `tests/learning-automation-release-workbench-action-service.test.js`
 and `tests/growth-release-workbench-action-smoke-script.test.js`. The focused

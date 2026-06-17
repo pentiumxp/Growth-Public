@@ -186,7 +186,11 @@ readback gate set.
   explicit Owner stage confirmation. Every non-privacy attempt is persisted as
   summary-only `learning_growth_operating_loop_runs` audit readback through the
   injected run repository; `runs` / `list-runs` / `history` smoke operations
-  are no-write history reads. Learner work, audit/correction, target
+  are no-write history reads. Release evidence bundles now include default
+  no-write `operating_loop_history` evidence mapped to
+  `productionOperatingLoopHistorySmokeEvidence`, proving the Owner operating
+  loop has auditable run history without executing `runNext`. Learner work,
+  audit/correction, target
   provisioning, graph import/selection, context refresh, and Gateway
   configuration remain separate flows and return blocked/separate-flow DTOs
   instead of automatic side effects. A service-level

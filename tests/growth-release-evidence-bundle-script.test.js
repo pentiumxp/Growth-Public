@@ -191,6 +191,9 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     "--evidence-id", "lgevd_science_daily_1",
     "--source-id", "source_science_daily_1",
     "--learner-cycle-operation", "audit",
+    "--operating-loop-run-status", "executed",
+    "--operating-loop-action", "draft_daily_plan",
+    "--operating-loop-run-id", "lgloop_release_1",
     "--allow-write-evidence",
     "--daily-loop-write-operation", "publish",
     "--plan-draft-id", "lgpd_daily_1",
@@ -257,6 +260,9 @@ test("release evidence bundle script parses bounded scope, tasks, targets, and o
     correctionId: "",
     sourceId: "source_science_daily_1",
     learnerCycleOperation: "audit",
+    operatingLoopRunStatus: "executed",
+    operatingLoopAction: "draft_daily_plan",
+    operatingLoopRunId: "lgloop_release_1",
     allowWriteEvidence: true,
     dailyLoopWriteOperation: "publish",
     planDraftId: "lgpd_daily_1",
@@ -311,6 +317,7 @@ test("release evidence bundle script fails closed for missing workspace and inva
   assert.deepEqual(output.invalidTaskIds, ["not_a_task"]);
   assert.ok(output.allowedTaskIds.includes("planner_readiness"));
   assert.ok(output.allowedTaskIds.includes("learning_loop_state"));
+  assert.ok(output.allowedTaskIds.includes("operating_loop_history"));
   assert.ok(output.allowedTaskIds.includes("cycle_history"));
   assert.ok(output.allowedTaskIds.includes("owner_audit"));
   assert.ok(output.allowedTaskIds.includes("profile_feedback"));
@@ -441,6 +448,42 @@ test("release evidence bundle script writes bounded cycle-history evidence from 
     assert.deepEqual(fileBundle.summary.failedTaskIds, []);
     assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
     assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+  });
+});
+
+test("release evidence bundle script writes bounded operating-loop history evidence from no-write smoke", () => {
+  withTempDb(({ dir, dbPath }) => {
+    const bundlePath = path.join(dir, "operating-loop-history-bundle.json");
+    const result = runScript([
+      "--workspace-id", "weixin_fanfan",
+      "--learner-id", "fanfan",
+      "--task", "operating_loop_history",
+      "--operating-loop-run-status", "executed",
+      "--output-file", bundlePath,
+      "--json"
+    ], {
+      GROWTH_DATA_DIR: dir,
+      GROWTH_LEARNING_DB_PATH: dbPath
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const output = parseStdout(result);
+    const fileBundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.source, "growth-release-evidence-bundle-builder");
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.smoke, "npm run smoke:operating-loop");
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.status, "pass");
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.source, "growth-learning-operating-loop-service");
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.operation, "list_runs");
+    assert.equal(fileBundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.runCount, 0);
+    assert.deepEqual(fileBundle.summary.failedTaskIds, []);
+    assert.equal(output.releaseEvidenceBundleEvidenceKeys.includes("productionOperatingLoopHistorySmokeEvidence"), true);
+    assert.equal(JSON.stringify(fileBundle).includes("stdout"), false);
+    assert.equal(JSON.stringify(fileBundle).includes("rawPrompt"), false);
+
+    const db = new DatabaseSync(dbPath, { open: true });
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = ?").all("table");
+    db.close();
+    assert.deepEqual(tables, []);
   });
 });
 

@@ -29,6 +29,7 @@ test("release evidence bundle service normalizes scope and task args", () => {
   assert.deepEqual(normalizeTaskIds({}), Array.from(DEFAULT_TASK_IDS));
   assert.equal(DEFAULT_TASK_IDS.includes("profile_feedback"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("cycle_history"), true);
+  assert.equal(DEFAULT_TASK_IDS.includes("operating_loop_history"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("owner_audit"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("learner_cycle"), true);
   assert.equal(DEFAULT_TASK_IDS.includes("target_provisioning"), true);
@@ -81,6 +82,9 @@ test("release evidence bundle service normalizes scope and task args", () => {
     autoSelectLatestCompletedCycle: false,
     dailyLoopWriteOperation: "draft",
     learnerCycleOperation: "audit",
+    operatingLoopRunStatus: "",
+    operatingLoopAction: "",
+    operatingLoopRunId: "",
     taskCardId: "",
     planDraftId: "",
     collectionRunId: "",
@@ -167,7 +171,9 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     targetNodeIds: ["kg_science_fair_test"],
     autoSelectLatestCompletedCycle: true,
     taskCardId: "ltask_science_daily_1",
-    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "cycle_history", "owner_audit", "profile_feedback", "learner_cycle", "stage_assessment", "stage_checkpoint_controls", "proposal", "owner_review_evidence"],
+    tasks: ["planner_readiness", "daily_loop_preview", "learning_loop_state", "operating_loop_history", "cycle_history", "owner_audit", "profile_feedback", "learner_cycle", "stage_assessment", "stage_checkpoint_controls", "proposal", "owner_review_evidence"],
+    operatingLoopRunStatus: "executed",
+    operatingLoopAction: "draft_daily_plan",
     requestedBy: "owner"
   });
 
@@ -181,6 +187,7 @@ test("release evidence bundle service builds summary-only bundle from no-write s
     "productionPlannerReadinessEvidence",
     "productionDailyLoopPreviewSmokeEvidence",
     "productionLearningLoopStateSmokeEvidence",
+    "productionOperatingLoopHistorySmokeEvidence",
     "productionCycleHistorySmokeEvidence",
     "productionOwnerAuditSmokeEvidence",
     "productionProfileFeedbackSmokeEvidence",
@@ -192,42 +199,51 @@ test("release evidence bundle service builds summary-only bundle from no-write s
   ]);
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.status, "pass");
   assert.equal(result.bundle.evidence.productionPlannerReadinessEvidence.ok, true);
+  assert.equal(result.bundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.operation, "readiness");
+  assert.equal(result.bundle.evidence.productionOperatingLoopHistorySmokeEvidence.summary.runCount, 0);
   assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.rewardSettlementCount, 1);
   assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.totalRewardCoins, 42);
   assert.equal(result.bundle.evidence.productionProfileFeedbackSmokeEvidence.summary.nextAction, "draft_daily_plan");
-  assert.equal(result.bundle.summary.taskCount, 11);
+  assert.equal(result.bundle.summary.taskCount, 12);
   assert.equal(result.bundle.summary.blockedCount, 0);
-  assert.equal(calls.length, 11);
+  assert.equal(calls.length, 12);
   assert.equal(calls[0].command, "/node");
   assert.ok(calls[0].args[0].endsWith("scripts/smoke-growth-planner-readiness.js"));
   assert.ok(calls[2].args[0].endsWith("scripts/smoke-growth-learning-loop-state.js"));
-  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-cycle-history.js"));
-  assert.ok(calls[3].args.includes("--task-card-id"));
-  assert.ok(calls[3].args.includes("ltask_science_daily_1"));
-  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-owner-audit.js"));
-  assert.equal(calls[4].args.includes("--operation"), false);
+  assert.ok(calls[3].args[0].endsWith("scripts/smoke-growth-operating-loop.js"));
+  assert.ok(calls[3].args.includes("--operation"));
+  assert.ok(calls[3].args.includes("list-runs"));
+  assert.ok(calls[3].args.includes("--status"));
+  assert.ok(calls[3].args.includes("executed"));
+  assert.ok(calls[3].args.includes("--action"));
+  assert.ok(calls[3].args.includes("draft_daily_plan"));
+  assert.ok(calls[4].args[0].endsWith("scripts/smoke-growth-cycle-history.js"));
   assert.ok(calls[4].args.includes("--task-card-id"));
   assert.ok(calls[4].args.includes("ltask_science_daily_1"));
-  assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-profile-feedback.js"));
+  assert.ok(calls[5].args[0].endsWith("scripts/smoke-growth-owner-audit.js"));
   assert.equal(calls[5].args.includes("--operation"), false);
-  assert.equal(calls[5].args.includes("--auto-select-latest-completed-cycle"), true);
   assert.ok(calls[5].args.includes("--task-card-id"));
   assert.ok(calls[5].args.includes("ltask_science_daily_1"));
-  assert.ok(calls[6].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));
-  assert.ok(calls[6].args.includes("--operation"));
-  assert.ok(calls[6].args.includes("audit"));
+  assert.ok(calls[6].args[0].endsWith("scripts/smoke-growth-profile-feedback.js"));
+  assert.equal(calls[6].args.includes("--operation"), false);
+  assert.equal(calls[6].args.includes("--auto-select-latest-completed-cycle"), true);
   assert.ok(calls[6].args.includes("--task-card-id"));
   assert.ok(calls[6].args.includes("ltask_science_daily_1"));
-  assert.ok(calls[7].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
-  assert.ok(calls[7].args.includes("--target-node-id"));
-  assert.ok(calls[7].args.includes("kg_science_fair_test"));
-  assert.ok(calls[8].args[0].endsWith("scripts/smoke-growth-stage-checkpoint-controls.js"));
+  assert.ok(calls[7].args[0].endsWith("scripts/smoke-growth-learner-cycle.js"));
+  assert.ok(calls[7].args.includes("--operation"));
+  assert.ok(calls[7].args.includes("audit"));
+  assert.ok(calls[7].args.includes("--task-card-id"));
+  assert.ok(calls[7].args.includes("ltask_science_daily_1"));
+  assert.ok(calls[8].args[0].endsWith("scripts/smoke-growth-stage-assessment.js"));
   assert.ok(calls[8].args.includes("--target-node-id"));
   assert.ok(calls[8].args.includes("kg_science_fair_test"));
-  assert.ok(calls[9].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
-  assert.ok(calls[10].args[0].endsWith("scripts/smoke-growth-automation-owner-review-evidence.js"));
-  assert.ok(calls[3].args.includes("--target-node-id"));
-  assert.ok(calls[6].args.includes("--target-node-id"));
+  assert.ok(calls[9].args[0].endsWith("scripts/smoke-growth-stage-checkpoint-controls.js"));
+  assert.ok(calls[9].args.includes("--target-node-id"));
+  assert.ok(calls[9].args.includes("kg_science_fair_test"));
+  assert.ok(calls[10].args[0].endsWith("scripts/smoke-growth-automation-proposal.js"));
+  assert.ok(calls[11].args[0].endsWith("scripts/smoke-growth-automation-owner-review-evidence.js"));
+  assert.ok(calls[4].args.includes("--target-node-id"));
+  assert.ok(calls[7].args.includes("--target-node-id"));
   assert.ok(calls[0].args.includes("--json"));
   assert.ok(JSON.stringify(result.bundle).includes("stdout") === false);
 });

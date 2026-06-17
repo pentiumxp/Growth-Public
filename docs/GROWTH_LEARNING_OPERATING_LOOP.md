@@ -1554,6 +1554,13 @@ The next implementation should add focused tests before broad integration:
     without exposing raw learner or model payloads;
   - top-level `operatingLoop*` fields mirror both execution DTOs and run-history
     DTOs for operator/release evidence.
+- `tests/learning-automation-release-evidence-bundle-service.test.js` and
+  `tests/growth-release-evidence-bundle-script.test.js`
+  - implemented for operating-loop history release evidence;
+  - the default bundle task `operating_loop_history` calls only
+    `npm run smoke:operating-loop -- --operation list-runs`;
+  - it maps bounded run count/latest-run evidence into
+    `productionOperatingLoopHistorySmokeEvidence` without executing `runNext`.
 - `tests/learning-automation-proposal-service.test.js`
   - required for the proposal slice;
   - source-cycle id is required before any planner draft call;
