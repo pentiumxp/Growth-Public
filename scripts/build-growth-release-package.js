@@ -86,6 +86,93 @@ function writeJsonFile(filePath, value) {
   return resolved;
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function compactStep(value = {}) {
+  const step = objectOnly(value);
+  if (!Object.keys(step).length) return null;
+  return {
+    key: cleanString(step.key || step.stepKey || step.step_key, 120),
+    status: cleanString(step.status, 120),
+    ok: step.ok === true,
+    requiredActionCount: Number(step.requiredActionCount || step.required_action_count || 0) || 0,
+    nextActionKey: cleanString(step.nextActionKey || step.next_action_key, 120)
+  };
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function releasePackageReadbackFields(releasePackage = {}, record = {}) {
+  const summary = objectOnly(releasePackage.summary);
+  const artifacts = objectOnly(releasePackage.artifacts);
+  const dashboard = objectOnly(artifacts.releaseDashboard?.releaseDashboard || artifacts.releaseDashboard?.release_dashboard || artifacts.releaseDashboard?.summary);
+  const controls = objectOnly(artifacts.releaseControls?.releaseControls || artifacts.releaseControls?.release_controls || artifacts.releaseControls?.summary);
+  const collectionRun = objectOnly(artifacts.releaseCollectionRun || artifacts.release_collection_run);
+  const steps = asArray(releasePackage.steps).map(compactStep).filter(Boolean);
+  const nextStep = steps.find((step) => step.status && step.status !== "pass") || null;
+  const packageRecord = objectOnly(record.package);
+  const status = cleanString(releasePackage.status || summary.status, 120);
+  return {
+    releasePackageStatus: status,
+    releasePackageStepCount: Number(summary.stepCount || steps.length || 0) || 0,
+    releasePackagePassedCount: Number(summary.passedCount || steps.filter((step) => step.status === "pass").length || 0) || 0,
+    releasePackageBlockedCount: Number(summary.blockedCount || steps.filter((step) => step.status === "blocked").length || 0) || 0,
+    releasePackageIncompleteCount: Number(summary.incompleteCount || steps.filter((step) => step.status === "incomplete").length || 0) || 0,
+    releasePackageStepStatuses: steps,
+    releasePackageNextStep: nextStep,
+    releasePackageReadyForReleaseReview: releasePackage.readyForReleaseReview === true || summary.readyForReleaseReview === true || collectionRun.readyForReleaseReview === true,
+    releasePackageCollectionRunId: cleanString(summary.collectionRunId || collectionRun.collectionRunId || collectionRun.collection_run_id, 160),
+    releasePackageCollectionRunWritten: summary.collectionRunWritten === true,
+    releasePackageWriteCollectionRun: releasePackage.writeCollectionRun === true,
+    releasePackageWritePackageRecord: releasePackage.writePackageRecord === true,
+    releasePackageRecordRequested: summary.packageRecordRequested === true || releasePackage.writePackageRecord === true,
+    releasePackageRecordWritten: summary.packageRecordWritten === true || record.ok === true,
+    releasePackageRecordId: cleanString(summary.packageRecordId || packageRecord.packageId || packageRecord.package_id, 160),
+    releasePackageLatestPreflightReportId: cleanString(releasePackage.latestPreflightReportId || summary.latestPreflightReportId, 180),
+    releasePackageLatestPreflightStatus: cleanString(releasePackage.latestPreflightStatus || summary.latestPreflightStatus, 120),
+    releasePackageLatestPreflightReadyForProductionDeployReview: releasePackage.latestPreflightReadyForProductionDeployReview === true || summary.latestPreflightReadyForProductionDeployReview === true,
+    releasePackageLatestPreflightReadyForOwnerReleaseActivation: releasePackage.latestPreflightReadyForOwnerReleaseActivation === true || summary.latestPreflightReadyForOwnerReleaseActivation === true,
+    releasePackageControlsStatus: cleanString(controls.status, 120),
+    releasePackageDashboardStatus: cleanString(dashboard.status, 120),
+    releasePackageReadinessEvidencePresentCount: Number(dashboard.readinessEvidencePresentCount || dashboard.readiness_evidence_present_count || 0) || 0,
+    releasePackageReadinessEvidenceMissingCount: Number(dashboard.readinessEvidenceMissingCount || dashboard.readiness_evidence_missing_count || 0) || 0,
+    releasePackageMissingCheckCount: countArray(dashboard.missingCheckKeys || dashboard.missing_check_keys),
+    releasePackageMissingEvidenceCount: countArray(dashboard.missingEvidenceKeys || dashboard.missing_evidence_keys),
+    releasePackageMissingApprovalCount: countArray(dashboard.missingApprovalKeys || dashboard.missing_approval_keys),
+    releasePackageWritefulSchedulingAllowed: releasePackage.writefulSchedulingAllowed === true || summary.writefulSchedulingAllowed === true,
+    releasePackageRuntimeConfigChange: releasePackage.runtimeConfigChange === true || summary.runtimeConfigChange === true,
+    releasePackageConfigChangeApplied: releasePackage.configChangeApplied === true || summary.configChangeApplied === true,
+    releasePackageSchedulerPermissionGranted: releasePackage.schedulerPermissionGranted === true || summary.schedulerPermissionGranted === true
+  };
+}
+
+function projectReleasePackageSmokeReadback(result = {}) {
+  const releasePackage = objectOnly(result.package).schemaVersion
+    ? objectOnly(result.package)
+    : objectOnly(result);
+  if (!Object.keys(releasePackage).length) return result;
+  const fields = releasePackageReadbackFields(releasePackage, objectOnly(result.record));
+  const projectedPackage = Object.assign({}, releasePackage, fields);
+  if (result.package && typeof result.package === "object") {
+    return Object.assign({}, result, fields, {
+      package: projectedPackage
+    });
+  }
+  return projectedPackage;
+}
+
 function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
 }
@@ -106,17 +193,18 @@ async function main() {
   }
   const services = createServices(readEnv(process.env));
   const service = services.learningAutomationReleasePackageBuildService || services.learningAutomationReleasePackageService;
-  const result = service.buildPackage(input);
+  const result = projectReleasePackageSmokeReadback(service.buildPackage(input));
   const outputFile = outputFileFromArgs(args);
   if (outputFile && result.package) {
     const writtenPath = writeJsonFile(outputFile, result.package);
     if (hasFlag(args, "--result-json")) {
-      process.stdout.write(formatResult({
+      const readback = releasePackageReadbackFields(result.package, result.record);
+      process.stdout.write(formatResult(Object.assign({
         ok: result.ok,
         outputFile: writtenPath,
         summary: result.summary,
         record: result.record || undefined
-      }, pretty));
+      }, readback), pretty));
     } else {
       process.stdout.write(formatResult(result.package, pretty));
     }
@@ -142,6 +230,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   outputFileFromArgs,
+  projectReleasePackageSmokeReadback,
   requiredApprovalKeys,
   requiredTaskIdsFromArgs,
   taskIds

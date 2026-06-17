@@ -12,6 +12,7 @@ const scriptPath = path.join(repoRoot, "scripts", "build-growth-release-package.
 const {
   inputFromArgs,
   outputFileFromArgs,
+  projectReleasePackageSmokeReadback,
   requiredTaskIdsFromArgs,
   taskIds
 } = require("../scripts/build-growth-release-package");
@@ -103,6 +104,111 @@ test("release package script fails closed for package-record write without allow
   assert.equal(output.writePackageRecord, true);
 });
 
+test("release package script projects top-level operator readback", () => {
+  const result = projectReleasePackageSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-release-package-service",
+    package: {
+      schemaVersion: "growth.learningAutomationReleasePackage.v1",
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "ready_for_release_review",
+      writeCollectionRun: true,
+      writePackageRecord: true,
+      writefulSchedulingAllowed: false,
+      runtimeConfigChange: false,
+      configChangeApplied: false,
+      schedulerPermissionGranted: false,
+      latestPreflightReportId: "lgarpf_ready_1",
+      latestPreflightStatus: "ready_for_owner_release_activation",
+      latestPreflightReadyForProductionDeployReview: true,
+      latestPreflightReadyForOwnerReleaseActivation: true,
+      steps: [{
+        key: "release_evidence_bundle",
+        status: "pass",
+        ok: true
+      }, {
+        key: "release_readiness",
+        status: "incomplete",
+        ok: false,
+        requiredActionCount: 3,
+        nextActionKey: "owner_daily_ui_evidence"
+      }],
+      summary: {
+        schemaVersion: "growth.learningAutomationReleasePackage.summary.v1",
+        status: "ready_for_release_review",
+        stepCount: 2,
+        passedCount: 1,
+        blockedCount: 0,
+        incompleteCount: 1,
+        readyForReleaseReview: true,
+        collectionRunId: "lgacrn_ready_1",
+        collectionRunWritten: true,
+        packageRecordRequested: true,
+        packageRecordWritten: true,
+        packageRecordId: "lgarpkg_ready_1",
+        writefulSchedulingAllowed: false,
+        runtimeConfigChange: false,
+        configChangeApplied: false
+      },
+      artifacts: {
+        releaseDashboard: {
+          releaseDashboard: {
+            status: "release_evidence_required",
+            readinessEvidencePresentCount: 2,
+            readinessEvidenceMissingCount: 4,
+            missingCheckKeys: ["owner_daily_ui_evidence"],
+            missingEvidenceKeys: ["ownerDailyUiEvidence"],
+            missingApprovalKeys: ["writefulExecutionApproval"]
+          }
+        },
+        releaseControls: {
+          releaseControls: {
+            status: "release_evidence_required"
+          }
+        }
+      }
+    },
+    record: {
+      ok: true,
+      package: {
+        packageId: "lgarpkg_ready_1"
+      }
+    }
+  });
+
+  assert.equal(result.releasePackageStatus, "ready_for_release_review");
+  assert.equal(result.releasePackageStepCount, 2);
+  assert.equal(result.releasePackagePassedCount, 1);
+  assert.equal(result.releasePackageIncompleteCount, 1);
+  assert.deepEqual(result.releasePackageNextStep, {
+    key: "release_readiness",
+    status: "incomplete",
+    ok: false,
+    requiredActionCount: 3,
+    nextActionKey: "owner_daily_ui_evidence"
+  });
+  assert.equal(result.releasePackageReadyForReleaseReview, true);
+  assert.equal(result.releasePackageCollectionRunId, "lgacrn_ready_1");
+  assert.equal(result.releasePackageCollectionRunWritten, true);
+  assert.equal(result.releasePackageRecordRequested, true);
+  assert.equal(result.releasePackageRecordWritten, true);
+  assert.equal(result.releasePackageRecordId, "lgarpkg_ready_1");
+  assert.equal(result.releasePackageLatestPreflightReportId, "lgarpf_ready_1");
+  assert.equal(result.releasePackageLatestPreflightStatus, "ready_for_owner_release_activation");
+  assert.equal(result.releasePackageLatestPreflightReadyForProductionDeployReview, true);
+  assert.equal(result.releasePackageControlsStatus, "release_evidence_required");
+  assert.equal(result.releasePackageDashboardStatus, "release_evidence_required");
+  assert.equal(result.releasePackageReadinessEvidencePresentCount, 2);
+  assert.equal(result.releasePackageReadinessEvidenceMissingCount, 4);
+  assert.equal(result.releasePackageMissingCheckCount, 1);
+  assert.equal(result.releasePackageMissingEvidenceCount, 1);
+  assert.equal(result.releasePackageMissingApprovalCount, 1);
+  assert.equal(result.releasePackageWritefulSchedulingAllowed, false);
+  assert.equal(result.releasePackageRuntimeConfigChange, false);
+  assert.equal(result.package.releasePackageStatus, "ready_for_release_review");
+});
+
 test("release package script writes summary-only package output from selected no-write smoke tasks", () => {
   withTempDb(({ dir, dbPath }) => {
     const packagePath = path.join(dir, "release-package.json");
@@ -136,6 +242,18 @@ test("release package script writes summary-only package output from selected no
     assert.equal(output.artifacts.releaseDashboard.schemaVersion, "growth.learningAutomationReleaseDashboard.v1");
     assert.equal(output.steps.map((step) => step.key).includes("release_dashboard"), true);
     assert.equal(output.summary.stepCount, 6);
+    assert.equal(output.releasePackageStatus, output.status);
+    assert.equal(output.releasePackageStepCount, 6);
+    assert.equal(output.releasePackageBlockedCount, output.summary.blockedCount);
+    assert.deepEqual(output.releasePackageStepStatuses.map((step) => step.key), [
+      "release_evidence_bundle",
+      "release_evidence_bundle_audit",
+      "release_readiness",
+      "release_collection_run",
+      "release_controls",
+      "release_dashboard"
+    ]);
+    assert.equal(output.releasePackageWritefulSchedulingAllowed, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(JSON.stringify(output).includes("stdout"), false);
@@ -175,6 +293,10 @@ test("release package script can write a summary-only package record to Growth S
     assert.equal(output.record.package.releaseDashboardSummary.status.length > 0, true);
     assert.equal(output.record.package.releaseDashboardSummary.readinessEvidencePresentCount, 0);
     assert.equal(output.record.package.releaseDashboardSummary.readinessEvidenceMissingCount, 33);
+    assert.equal(output.releasePackageRecordWritten, true);
+    assert.equal(output.releasePackageRecordId, output.record.package.packageId);
+    assert.equal(output.package.releasePackageRecordWritten, true);
+    assert.equal(output.package.releasePackageRecordId, output.record.package.packageId);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });
     try {

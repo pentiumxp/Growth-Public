@@ -545,6 +545,12 @@ readback gate set.
   stage-summary counters when present, persisted evidence keys, and latest
   preflight report id/status/advisory readiness flags from the package's
   release-dashboard summary.
+  The `smoke:release-package` CLI / `build-growth-release-package.js` also
+  mirrors bounded top-level `releasePackage*` operator readback fields for
+  package status, step counts/statuses, collection-run id/write state,
+  package-record request/write/id, latest preflight fields, dashboard/controls
+  status, readiness evidence counts, missing check/evidence/approval counts,
+  and runtime/write flags while preserving the nested package DTO as canonical.
   The
   release review, authorization, closure, controls, inventory, and dashboard
   readbacks project that dashboard summary as latest-package dashboard status,
