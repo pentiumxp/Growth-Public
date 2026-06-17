@@ -387,7 +387,13 @@ readback gate set.
   receipt counts, latest Action Inbox/Web Push receipt metadata, missing
   requirements, platform boundary ownership, and false runtime/writeful flags
   while preserving the nested service DTO as canonical. The builder maps central Home AI
-  visual harness artifact validation into `centralVisualEvidence`, controlled daily-loop write smoke into
+  visual harness artifact validation into `centralVisualEvidence`, and
+  `npm run smoke:central-visual-evidence` now mirrors bounded top-level
+  `centralVisualEvidence*` operator readback for status, write gate, scope,
+  plugin/scenario, screenshot/artifact metadata, assertion counts, private
+  value findings, Home AI visual-toolchain ownership, and false
+  runtime/writeful flags while preserving the nested service DTO as canonical.
+  The builder maps controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`, and explicit non-default release
   workbench smoke into `releaseWorkbenchSmokeEvidence`, and backend Owner

@@ -21,6 +21,28 @@ function firstArgValue(args, names, fallback = "") {
   return fallback;
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 16) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 180)).filter(Boolean))).slice(0, limit);
+}
+
 function parseJsonArg(args, names, fallback = null) {
   const text = firstArgValue(args, names, "");
   if (!text) return fallback;
@@ -62,6 +84,61 @@ function inputFromArgs(args) {
   };
 }
 
+function projectCentralVisualEvidenceSmokeReadback(result = {}, input = {}) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const visualEvidence = objectOnly(readback.visualEvidence);
+  const centralBoundary = objectOnly(readback.centralBoundary);
+  const missingRequired = uniqueBoundedStrings(readback.missingRequired, 16);
+  const privateValueFindings = uniqueBoundedStrings(readback.privateValueFindings, 16);
+  return Object.assign({}, readback, {
+    centralVisualEvidenceStatus: cleanString(readback.status || readback.error || (readback.ok ? "pass" : "missing"), 120),
+    centralVisualEvidenceOk: readback.ok === true,
+    centralVisualEvidenceWriteOperation: false,
+    centralVisualEvidenceWriteAllowed: false,
+    centralVisualEvidenceWritesPerformed: false,
+    centralVisualEvidenceWorkspaceId: cleanString(readback.workspaceId || input.workspaceId, 160),
+    centralVisualEvidenceLearnerId: cleanString(readback.learnerId || input.learnerId, 160),
+    centralVisualEvidenceProgramId: cleanString(readback.programId || input.programId, 160),
+    centralVisualEvidenceDomainPackId: cleanString(readback.domainPackId || input.domainPackId, 180),
+    centralVisualEvidenceDomain: cleanString(readback.domain || input.domain, 120),
+    centralVisualEvidenceSubject: cleanString(readback.subject || input.subject, 120),
+    centralVisualEvidenceHorizon: cleanString(readback.horizon || input.horizon, 80),
+    centralVisualEvidencePluginId: cleanString(readback.pluginId || input.pluginId, 120),
+    centralVisualEvidenceScenario: cleanString(readback.scenario || input.scenario, 160),
+    centralVisualEvidenceSource: cleanString(readback.source, 180),
+    centralVisualEvidenceSchemaVersion: cleanString(readback.schemaVersion, 180),
+    centralVisualEvidencePrivacyClass: cleanString(readback.privacyClass, 80),
+    centralVisualEvidenceSummaryOnly: readback.summaryOnly === true,
+    centralVisualEvidenceReadyForReleaseEvidence: readback.readyForReleaseEvidence === true,
+    centralVisualEvidenceMissingRequired: missingRequired,
+    centralVisualEvidenceMissingRequiredCount: missingRequired.length,
+    centralVisualEvidencePrivateValueFindings: privateValueFindings,
+    centralVisualEvidencePrivateValueFindingCount: privateValueFindings.length,
+    centralVisualEvidenceVisualSource: cleanString(visualEvidence.source, 180),
+    centralVisualEvidenceVisualPluginId: cleanString(visualEvidence.pluginId, 120),
+    centralVisualEvidenceVisualScenario: cleanString(visualEvidence.scenario, 160),
+    centralVisualEvidenceVisualStatus: cleanString(visualEvidence.status, 80),
+    centralVisualEvidenceCheckedAt: cleanString(visualEvidence.checkedAt, 120),
+    centralVisualEvidenceClientVersion: cleanString(visualEvidence.clientVersion, 160),
+    centralVisualEvidenceDebugUrlPresent: visualEvidence.debugUrlPresent === true,
+    centralVisualEvidenceVisualLaneId: cleanString(visualEvidence.visualLaneId, 160),
+    centralVisualEvidenceScreenshotPresent: visualEvidence.screenshotPresent === true,
+    centralVisualEvidenceScreenshotArtifactName: cleanString(visualEvidence.screenshotArtifactName, 220),
+    centralVisualEvidenceEvidenceFilePresent: visualEvidence.evidenceFilePresent === true,
+    centralVisualEvidenceEvidenceFileName: cleanString(visualEvidence.evidenceFileName, 220),
+    centralVisualEvidenceAssertionCount: numberValue(visualEvidence.assertionCount, 0),
+    centralVisualEvidenceFailedAssertionCount: numberValue(visualEvidence.failedAssertionCount, 0),
+    centralVisualEvidenceBoundarySummaryOnly: centralBoundary.summaryOnly === true,
+    centralVisualEvidenceHomeAiOwnsVisualHarness: centralBoundary.homeAiOwnsVisualHarness === true,
+    centralVisualEvidenceGrowthRunsNoAppium: centralBoundary.growthRunsNoAppium === true,
+    centralVisualEvidenceGrowthReadsOnlyCentralHarnessArtifacts: centralBoundary.growthReadsOnlyCentralHarnessArtifacts === true,
+    centralVisualEvidenceRuntimeConfigChange: false,
+    centralVisualEvidenceConfigChangeApplied: false,
+    centralVisualEvidenceWritefulSchedulingAllowed: false
+  });
+}
+
 function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
 }
@@ -94,7 +171,10 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = services.learningAutomationCentralVisualEvidenceService.evaluate(input);
+  const result = projectCentralVisualEvidenceSmokeReadback(
+    services.learningAutomationCentralVisualEvidenceService.evaluate(input),
+    input
+  );
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = 0;
 }
@@ -111,5 +191,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  inputFromArgs
+  inputFromArgs,
+  projectCentralVisualEvidenceSmokeReadback
 };
