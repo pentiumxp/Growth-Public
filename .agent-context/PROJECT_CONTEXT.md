@@ -820,7 +820,11 @@ readback gate set.
   normal service graph and provides local or production dry-run evidence
   without Gateway calls, publication, scheduler execution, scheduler ticks,
   notification delivery, stage activation, direct repository access, or
-  learner-state mutation. Daily-loop preview now also has
+  learner-state mutation. The CLI now mirrors bounded top-level
+  `schedulerDryRun*` operator readback for status, scope, selectors, candidate
+  counts, candidate ids/decisions, privacy finding count, no-write/no-publish
+  state, and false runtime/scheduling flags while preserving the nested service
+  DTO as canonical. Daily-loop preview now also has
   `npm run smoke:daily-loop-preview`, a service-owned no-write CLI that
   delegates to `learning-daily-loop-service.preview` through the normal service
   graph and provides local or production daily-loop context/readiness evidence

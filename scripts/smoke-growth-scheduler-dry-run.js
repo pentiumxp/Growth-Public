@@ -60,6 +60,24 @@ function collectCsvValues(args, names) {
     .filter(Boolean);
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
 function uniqueStrings(values = []) {
   return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
 }
@@ -116,6 +134,53 @@ function inputFromArgs(args) {
   }));
 }
 
+function projectSchedulerDryRunSmokeReadback(result = {}, input = {}) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const summary = objectOnly(readback.summary);
+  const candidates = asArray(readback.candidates);
+  const wouldPublish = candidates.filter((item) => item && item.wouldPublish === true);
+  const blocked = candidates.filter((item) => String(item && item.decision || "").startsWith("blocked"));
+  const skipped = candidates.filter((item) => String(item && item.decision || "").startsWith("skipped"));
+  const candidateProposalIds = uniqueStrings(candidates.map((item) => cleanString(item && item.proposalId, 180))).slice(0, 24);
+  return Object.assign({}, readback, {
+    schedulerDryRunStatus: cleanString(readback.ok === false ? readback.error || "failed" : "complete", 140),
+    schedulerDryRunOk: readback.ok !== false,
+    schedulerDryRunDryRun: readback.dryRun === true,
+    schedulerDryRunWritePlanned: readback.writePlanned === true,
+    schedulerDryRunWritesPerformed: readback.writesPerformed === true,
+    schedulerDryRunPublishPlanned: readback.publishPlanned === true,
+    schedulerDryRunWorkspaceId: cleanString(readback.workspaceId || input.workspaceId, 160),
+    schedulerDryRunLearnerId: cleanString(readback.learnerId || input.learnerId, 160),
+    schedulerDryRunProgramId: cleanString(readback.programId || input.programId, 160),
+    schedulerDryRunDomainPackId: cleanString(input.domainPackId, 180),
+    schedulerDryRunDomain: cleanString(input.domain, 120),
+    schedulerDryRunSubject: cleanString(input.subject, 120),
+    schedulerDryRunHorizon: cleanString(input.horizon, 80),
+    schedulerDryRunProposalId: cleanString(input.proposalId, 180),
+    schedulerDryRunPlanDraftId: cleanString(input.planDraftId, 180),
+    schedulerDryRunSelectedItemId: cleanString(input.selectedItemId, 180),
+    schedulerDryRunTargetNodeIds: uniqueStrings(asArray(input.targetNodeIds)).slice(0, 24),
+    schedulerDryRunSourceTargetNodeIds: uniqueStrings(asArray(input.sourceTargetNodeIds)).slice(0, 24),
+    schedulerDryRunCount: numberValue(readback.count, candidates.length),
+    schedulerDryRunInspectedCount: numberValue(summary.inspected, candidates.length),
+    schedulerDryRunWouldPublishCount: numberValue(summary.wouldPublish, wouldPublish.length),
+    schedulerDryRunBlockedCount: numberValue(summary.blocked, blocked.length),
+    schedulerDryRunSkippedCount: numberValue(summary.skipped, skipped.length),
+    schedulerDryRunCandidateProposalIds: candidateProposalIds,
+    schedulerDryRunWouldPublishProposalIds: uniqueStrings(wouldPublish.map((item) => cleanString(item && item.proposalId, 180))).slice(0, 24),
+    schedulerDryRunBlockedProposalIds: uniqueStrings(blocked.map((item) => cleanString(item && item.proposalId, 180))).slice(0, 24),
+    schedulerDryRunSkippedProposalIds: uniqueStrings(skipped.map((item) => cleanString(item && item.proposalId, 180))).slice(0, 24),
+    schedulerDryRunDecisions: uniqueStrings(candidates.map((item) => cleanString(item && item.decision, 120))).slice(0, 16),
+    schedulerDryRunSafeToPublishCount: candidates.filter((item) => item && item.safeToPublish === true).length,
+    schedulerDryRunPrivacyFindingCount: asArray(readback.privacyFindings).length,
+    schedulerDryRunWritefulSchedulingAllowed: false,
+    schedulerDryRunSchedulerExecutionAllowed: false,
+    schedulerDryRunRuntimeConfigChange: false,
+    schedulerDryRunConfigChangeApplied: false
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -145,7 +210,10 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = services.learningAutomationSchedulerService.dryRun(input);
+  const result = projectSchedulerDryRunSmokeReadback(
+    services.learningAutomationSchedulerService.dryRun(input),
+    input
+  );
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -163,6 +231,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectSchedulerDryRunSmokeReadback,
   sourceTargetNodeIds,
   targetNodeIds
 };

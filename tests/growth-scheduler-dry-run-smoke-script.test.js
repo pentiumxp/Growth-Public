@@ -11,6 +11,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-scheduler-dry-ru
 
 const {
   inputFromArgs,
+  projectSchedulerDryRunSmokeReadback,
   sourceTargetNodeIds,
   targetNodeIds
 } = require("../scripts/smoke-growth-scheduler-dry-run");
@@ -94,6 +95,85 @@ test("scheduler dry-run smoke script parses bounded scope and graph selectors", 
   });
 });
 
+test("scheduler dry-run smoke script projects bounded operator readback", () => {
+  const projected = projectSchedulerDryRunSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-scheduler-service",
+    dryRun: true,
+    writePlanned: false,
+    writesPerformed: false,
+    publishPlanned: false,
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    count: 2,
+    summary: {
+      inspected: 2,
+      wouldPublish: 1,
+      blocked: 1,
+      skipped: 0
+    },
+    candidates: [{
+      proposalId: "lgauto_ready_1",
+      decision: "would_publish",
+      safeToPublish: true,
+      wouldPublish: true
+    }, {
+      proposalId: "lgauto_blocked_1",
+      decision: "blocked_audit",
+      safeToPublish: false,
+      wouldPublish: false
+    }]
+  }, {
+    workspaceId: "weixin_fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    proposalId: "lgauto_ready_1",
+    planDraftId: "lgplan_next_science",
+    selectedItemId: "plan_item_next_1",
+    targetNodeIds: ["kg_science_fair_test"],
+    sourceTargetNodeIds: ["kg_science_previous"]
+  });
+
+  assert.equal(projected.schedulerDryRunStatus, "complete");
+  assert.equal(projected.schedulerDryRunOk, true);
+  assert.equal(projected.schedulerDryRunDryRun, true);
+  assert.equal(projected.schedulerDryRunWritePlanned, false);
+  assert.equal(projected.schedulerDryRunWritesPerformed, false);
+  assert.equal(projected.schedulerDryRunPublishPlanned, false);
+  assert.equal(projected.schedulerDryRunWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.schedulerDryRunLearnerId, "fanfan");
+  assert.equal(projected.schedulerDryRunProgramId, "program_science");
+  assert.equal(projected.schedulerDryRunDomainPackId, "domain_pack_fanfan_cambridge_pathway_v1");
+  assert.equal(projected.schedulerDryRunDomain, "science");
+  assert.equal(projected.schedulerDryRunSubject, "science");
+  assert.equal(projected.schedulerDryRunHorizon, "daily_plan");
+  assert.equal(projected.schedulerDryRunProposalId, "lgauto_ready_1");
+  assert.equal(projected.schedulerDryRunPlanDraftId, "lgplan_next_science");
+  assert.equal(projected.schedulerDryRunSelectedItemId, "plan_item_next_1");
+  assert.deepEqual(projected.schedulerDryRunTargetNodeIds, ["kg_science_fair_test"]);
+  assert.deepEqual(projected.schedulerDryRunSourceTargetNodeIds, ["kg_science_previous"]);
+  assert.equal(projected.schedulerDryRunCount, 2);
+  assert.equal(projected.schedulerDryRunInspectedCount, 2);
+  assert.equal(projected.schedulerDryRunWouldPublishCount, 1);
+  assert.equal(projected.schedulerDryRunBlockedCount, 1);
+  assert.equal(projected.schedulerDryRunSkippedCount, 0);
+  assert.deepEqual(projected.schedulerDryRunCandidateProposalIds, ["lgauto_ready_1", "lgauto_blocked_1"]);
+  assert.deepEqual(projected.schedulerDryRunWouldPublishProposalIds, ["lgauto_ready_1"]);
+  assert.deepEqual(projected.schedulerDryRunBlockedProposalIds, ["lgauto_blocked_1"]);
+  assert.deepEqual(projected.schedulerDryRunDecisions, ["would_publish", "blocked_audit"]);
+  assert.equal(projected.schedulerDryRunSafeToPublishCount, 1);
+  assert.equal(projected.schedulerDryRunPrivacyFindingCount, 0);
+  assert.equal(projected.schedulerDryRunWritefulSchedulingAllowed, false);
+  assert.equal(projected.schedulerDryRunSchedulerExecutionAllowed, false);
+  assert.equal(projected.schedulerDryRunRuntimeConfigChange, false);
+  assert.equal(projected.schedulerDryRunConfigChangeApplied, false);
+});
+
 test("scheduler dry-run smoke script delegates to service without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -117,6 +197,23 @@ test("scheduler dry-run smoke script delegates to service without writing by def
     assert.equal(output.publishPlanned, false);
     assert.equal(output.count, 0);
     assert.deepEqual(output.candidates, []);
+    assert.equal(output.schedulerDryRunStatus, "complete");
+    assert.equal(output.schedulerDryRunOk, true);
+    assert.equal(output.schedulerDryRunDryRun, true);
+    assert.equal(output.schedulerDryRunWritePlanned, false);
+    assert.equal(output.schedulerDryRunWritesPerformed, false);
+    assert.equal(output.schedulerDryRunPublishPlanned, false);
+    assert.equal(output.schedulerDryRunWorkspaceId, "weixin_fanfan");
+    assert.equal(output.schedulerDryRunLearnerId, "fanfan");
+    assert.equal(output.schedulerDryRunDomain, "science");
+    assert.equal(output.schedulerDryRunSubject, "science");
+    assert.equal(output.schedulerDryRunCount, 0);
+    assert.equal(output.schedulerDryRunWouldPublishCount, 0);
+    assert.equal(output.schedulerDryRunBlockedCount, 0);
+    assert.equal(output.schedulerDryRunSkippedCount, 0);
+    assert.deepEqual(output.schedulerDryRunCandidateProposalIds, []);
+    assert.equal(output.schedulerDryRunWritefulSchedulingAllowed, false);
+    assert.equal(output.schedulerDryRunSchedulerExecutionAllowed, false);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
@@ -142,6 +239,10 @@ test("scheduler dry-run smoke script fails closed for privacy-risk input", () =>
     assert.equal(output.ok, false);
     assert.equal(output.error, "learning_automation_scheduler_privacy_failed");
     assert.equal(output.privacyFindings.includes("$.rawPrompt"), true);
+    assert.equal(output.schedulerDryRunStatus, "learning_automation_scheduler_privacy_failed");
+    assert.equal(output.schedulerDryRunOk, false);
+    assert.equal(output.schedulerDryRunPrivacyFindingCount, 1);
+    assert.equal(output.schedulerDryRunWritesPerformed, false);
   });
 });
 

@@ -9,6 +9,36 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T16:48+08:00 - Scheduler Dry-Run Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change scheduler dry-run service behavior, route authorization,
+  repositories, DB schema, Gateway/model calls, card publication, scheduler
+  execution/tick behavior, action-handoff delivery, runtime config, UI
+  behavior, production deployment, or learner state.
+- Scope:
+  - added `projectSchedulerDryRunSmokeReadback()` in
+    `scripts/smoke-growth-scheduler-dry-run.js`;
+  - projected bounded top-level `schedulerDryRun*` fields for status, scope,
+    selectors, candidate counts, candidate ids/decisions, privacy finding
+    count, no-write/no-publish state, and false runtime/scheduling flags while
+    preserving the nested service DTO as canonical;
+  - kept the smoke no-write and no-publish; there is still no write flag for
+    this operation;
+  - expanded `tests/growth-scheduler-dry-run-smoke-script.test.js` to assert
+    pure projection plus default dry-run and privacy-failure readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-scheduler-dry-run.js`
+  - `node --test tests/growth-scheduler-dry-run-smoke-script.test.js`
+  - `npm run --silent smoke:scheduler-dry-run -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with release bundle/release collection readback gaps.
+
 ## 2026-06-17T16:43+08:00 - UI Evidence Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production
