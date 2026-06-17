@@ -9,6 +9,60 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:45+08:00 - Release Workbench Evidence Action Template Fix
+
+- Status: implemented and locally validated. No production deployment was
+  executed in this slice.
+- Problem found:
+  - scoped release-readiness for `workspaceId=owner`, `learnerId=fanfan`,
+    `domain=science`, `subject=science` now reads persisted
+    `centralVisualEvidence` and `releaseEvidenceBundleAudit`, but the
+    release-workbench Owner action projection still advertised
+    `release_evidence` routes with blank `evidence_key` and `check_key`;
+  - this made the Owner/workbench action body unusable as a direct record
+    template because external tooling or UI would have to splice keys manually,
+    risking scope drift or empty release-evidence writes.
+- Scope:
+  - exported `CHECK_KEY_BY_EVIDENCE_KEY` from
+    `learning-automation-release-evidence-service` so workbench projection uses
+    the same canonical evidence/check-key contract as release evidence writes;
+  - updated `learning-automation-release-workbench-service` so specific
+    `release_evidence` Owner actions carry canonical `evidence_key`, matching
+    `check_key`, summary-only evidence metadata, and the current
+    learner/domain/subject/horizon scope;
+  - kept the release workbench read-only: it still owns no repository, writes
+    no evidence, and only projects action templates for the existing action
+    facade and release-evidence service.
+- Operational readback:
+  - `node scripts/smoke-growth-release-workbench.js --workspace-id owner
+    --learner-id fanfan --domain science --subject science --json` now shows
+    evidence actions such as `owner_daily_ui_evidence`,
+    `stage_checkpoint_evidence`, and `stage_checkpoint_controls_evidence` with
+    concrete camel-case evidence keys, matching snake-case check keys, and
+    `domain=science` / `subject=science` in the route body.
+- Validation passed:
+  - `node --check src/services/learning-automation-release-evidence-service.js`;
+  - `node --check src/services/learning-automation-release-workbench-service.js`;
+  - `node --test tests/learning-automation-release-workbench-service.test.js
+    tests/growth-release-workbench-smoke-script.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `node --test tests/growth-docs-locality.test.js`;
+  - `git diff --check`;
+  - `npm run --silent test:release-union` passed `233/233`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `npm test` passed `920/920`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,267` nodes, and `22,952` edges, plus the existing
+    earlier-engine advisory.
+- Progress estimate after this slice:
+  - overall Growth closed-loop/release-readiness work is about `93%`
+    complete;
+  - remaining work is real UI/platform/production evidence, explicit Owner
+    approval/review gates, production deploy evidence, and final readiness
+    closure. These cannot be replaced with local synthetic records.
+
 ## 2026-06-17T10:34+08:00 - Scoped Release Evidence Bag Readiness Fix
 
 - Status: implemented and locally validated. No production deployment was

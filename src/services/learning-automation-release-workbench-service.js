@@ -6,6 +6,10 @@ const {
   UI_EVIDENCE_COLLECTION_TASK_BY_CHECK_KEY,
   UI_EVIDENCE_FILE_FIELDS
 } = require("./learning-automation-ui-evidence-task-registry");
+const {
+  CHECK_KEY_BY_EVIDENCE_KEY,
+  canonicalReleaseEvidenceKey
+} = require("./learning-automation-release-evidence-service");
 
 const PRIVACY_KEY_RE = /(raw|prompt|transcript|answer[_-]?key|secret|token|cookie|authorization|provider[_-]?config|api[_-]?key|access[_-]?key|private[_-]?key)/i;
 const PRIVATE_VALUE_RE = /(\/Users\/|C:\\Users\\|access-key|\.hermes-growth|Authorization:|Bearer\s+)/i;
@@ -214,6 +218,45 @@ function routeTemplate(path, body = {}) {
   };
 }
 
+function actionReleaseEvidenceKeys(summary = {}) {
+  const evidenceKey = canonicalReleaseEvidenceKey(summary.key);
+  const checkKey = CHECK_KEY_BY_EVIDENCE_KEY[evidenceKey] || "";
+  return { evidenceKey, checkKey };
+}
+
+function scopedReleaseEvidenceRoute(route = null, scope = {}, summary = {}) {
+  if (!route || route.path !== "/api/v1/growth/automation/release-evidence") return route;
+  const { evidenceKey, checkKey } = actionReleaseEvidenceKeys(summary);
+  if (!evidenceKey || !checkKey) return route;
+  const baseBody = objectOnly(route.body);
+  return Object.assign({}, route, {
+    body: Object.assign({}, baseBody, {
+      workspace_id: scope.workspaceId,
+      learner_id: scope.learnerId,
+      program_id: scope.programId,
+      domain_pack_id: scope.domainPackId,
+      domain: scope.domain,
+      subject: scope.subject,
+      horizon: scope.horizon,
+      evidence_key: evidenceKey,
+      check_key: checkKey,
+      status: baseBody.status || "pass",
+      evidence_summary: Object.assign({}, objectOnly(baseBody.evidence_summary), {
+        summaryOnly: true,
+        evidenceKey,
+        checkKey,
+        status: baseBody.status || "pass"
+      })
+    })
+  });
+}
+
+function routeForOwnerAction(endpointKey = "", scope = {}, collectionTasks = {}, summary = {}) {
+  const route = recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null;
+  if (endpointKey === "release_evidence") return scopedReleaseEvidenceRoute(route, scope, summary);
+  return route;
+}
+
 function readRoutes() {
   return [
     { key: "release_readiness", method: "GET", path: "/api/v1/growth/automation/release-readiness" },
@@ -306,6 +349,10 @@ function recordRoutes(scope = {}, collectionTasks = {}) {
         workspace_id: scope.workspaceId,
         learner_id: scope.learnerId,
         program_id: scope.programId,
+        domain_pack_id: scope.domainPackId,
+        domain: scope.domain,
+        subject: scope.subject,
+        horizon: scope.horizon,
         collection_run_id: scope.collectionRunId,
         status: "pass",
         evidence_key: "",
@@ -440,7 +487,7 @@ function ownerAction(action = {}, scope = {}, source = "", collectionTasks = {})
   const summary = actionSummary(action);
   if (!summary) return null;
   const endpointKey = endpointForAction(summary);
-  const route = recordRoutes(scope, collectionTasks).find((item) => item.key === endpointKey)?.route || null;
+  const route = routeForOwnerAction(endpointKey, scope, collectionTasks, summary);
   const externalActionRequired = endpointKey === "runtime_enablement"
     && /manual_config|enable_runtime_config/.test(summary.action || summary.key);
   return {

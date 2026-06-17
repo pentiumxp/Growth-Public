@@ -111,6 +111,10 @@ test("release workbench composes release services into Owner action templates wi
     workspaceId: "fanfan",
     learnerId: "fanfan",
     programId: "program_science",
+    domainPackId: "science_foundation",
+    domain: "science",
+    subject: "biology",
+    horizon: "daily_plan",
     collectionRunId: "lgacrn_1",
     activationGates: ["writeful_execution"]
   });
@@ -128,6 +132,18 @@ test("release workbench composes release services into Owner action templates wi
   }
   assert.equal(result.releaseWorkbench.summaryOnly, true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence"), true);
+  const evidenceAction = result.releaseWorkbench.ownerActions
+    .find((action) => action.endpointKey === "release_evidence" && action.key === "owner_daily_ui_evidence");
+  assert.equal(evidenceAction.route.path, "/api/v1/growth/automation/release-evidence");
+  assert.equal(evidenceAction.route.body.evidence_key, "ownerDailyUiEvidence");
+  assert.equal(evidenceAction.route.body.check_key, "owner_daily_ui_evidence");
+  assert.equal(evidenceAction.route.body.domain_pack_id, "science_foundation");
+  assert.equal(evidenceAction.route.body.domain, "science");
+  assert.equal(evidenceAction.route.body.subject, "biology");
+  assert.equal(evidenceAction.route.body.horizon, "daily_plan");
+  assert.equal(evidenceAction.route.body.evidence_summary.summaryOnly, true);
+  assert.equal(evidenceAction.route.body.evidence_summary.evidenceKey, "ownerDailyUiEvidence");
+  assert.equal(evidenceAction.route.body.evidence_summary.checkKey, "owner_daily_ui_evidence");
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_approval"), true);
   assert.equal(result.releaseWorkbench.ownerActions.some((action) => action.endpointKey === "release_evidence_collection"), true);
   const collectionAction = result.releaseWorkbench.ownerActions.find((action) => action.endpointKey === "release_evidence_collection");

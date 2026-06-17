@@ -465,6 +465,7 @@ function createLearningAutomationReleaseEvidenceService(options = {}) {
 }
 
 module.exports = {
+  CHECK_KEY_BY_EVIDENCE_KEY,
   RELEASE_EVIDENCE_KEYS,
   UI_RELEASE_EVIDENCE_KEYS,
   canonicalReleaseEvidenceKey,

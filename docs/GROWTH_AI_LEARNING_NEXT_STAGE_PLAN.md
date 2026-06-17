@@ -808,6 +808,12 @@ Use the Growth-owned release-readiness boundary:
   It exists so Owner UI can show bounded read routes, Owner-only record-route
   templates, missing evidence/check/approval/record summaries, and manual
   runtime-config follow-up hints without Codex joining DTOs or applying config.
+  For `release_evidence` Owner actions, the projected action route body must be
+  executable without manual key splicing: it carries the canonical
+  `evidence_key`, matching `check_key`, summary-only evidence metadata, and the
+  current learner/domain/subject/horizon scope. The generic record-route catalog
+  may still expose blank placeholders, but `ownerActions[*].route.body` for a
+  specific missing evidence key must be concrete.
   Its bounded output can be passed to release-readiness through explicit
   `--evidence-json`, collected by the non-default `release_workbench` release
   evidence bundle task as `releaseWorkbenchSmokeEvidence`, or persisted through
@@ -856,7 +862,10 @@ Use the Growth-owned release-readiness boundary:
   supported `release_evidence`, `release_approval`,
   `release_evidence_collection`, `release_decision`, `release_package`,
   `release_activation`, and `runtime_enablement` endpoints. It is UI glue over
-  existing services. For `release_evidence_collection`, the UI sends bounded
+  existing services. For `release_evidence`, the UI should submit the advertised
+  concrete action template from `ownerActions[*].route.body`; it should not
+  reconstruct evidence/check keys in the browser or fall back to blank generic
+  route templates. For `release_evidence_collection`, the UI sends bounded
   collection tasks, `write_collection_run=true`, and
   `write_release_evidence_records=true` from the backend action template. Those
   task ids come from the workbench's missing-evidence-derived no-write plan,

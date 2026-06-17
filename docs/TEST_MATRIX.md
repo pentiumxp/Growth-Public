@@ -52,6 +52,14 @@ release-readiness, run both
 assertion must prove pass records keep `summaryOnly`, `privacyClass`,
 `schemaVersion`, `evidenceKey`, and `checkKey` in the bag projection.
 
+When changing release-workbench Owner action route bodies, run
+`tests/learning-automation-release-workbench-service.test.js`,
+`tests/growth-release-workbench-smoke-script.test.js`, and
+`tests/learning-automation-release-workbench-action-service.test.js`. The
+focused assertion must prove concrete `release_evidence` action templates carry
+canonical `evidence_key`, matching `check_key`, summary-only evidence metadata,
+and the current learner/domain/subject/horizon scope.
+
 ## Release Union Harness
 
 `npm run test:release-union` runs the release readback and gate chain that is
