@@ -5177,6 +5177,160 @@ test("growth automation central visual evidence route validates inline visible-t
   }
 });
 
+test("growth automation UI evidence route validates inline visible-target summary", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        if (input.actorRole === "owner") {
+          return {
+            ok: true,
+            viewer: { role: "owner", canSwitch: true },
+            current_workspace_id: input.currentWorkspaceId,
+            targets: [
+              { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+              { workspaceId: "weixin_fanfan", label: "凡凡", current: input.currentWorkspaceId === "weixin_fanfan" }
+            ]
+          };
+        }
+        return {
+          ok: true,
+          viewer: { role: "workspace", canSwitch: false },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationUiEvidenceService: {
+      evaluate(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          source: "growth-learning-automation-ui-evidence-service",
+          schemaVersion: "growth.learningAutomationUiEvidence.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workspaceId: input.workspaceId,
+          learnerId: input.learnerId,
+          programId: input.programId,
+          evidenceKey: input.evidenceKey,
+          checkKey: "owner_daily_ui_evidence",
+          uiGate: "owner_daily",
+          status: "pass",
+          readyForReleaseEvidence: true,
+          uiEvidence: {
+            source: "home-ai-ios-pwa-visual-harness",
+            evidenceKey: "ownerDailyUiEvidence",
+            checkKey: "owner_daily_ui_evidence",
+            uiGate: "owner_daily",
+            status: "pass",
+            route: "/plugins/growth",
+            screen: "owner_daily_generation",
+            screenshotPresent: true,
+            screenshotArtifactName: "growth-owner-daily.png",
+            evidenceFilePresent: false,
+            coverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+            requiredCoverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+            missingCoverage: [],
+            assertionCount: 1,
+            failedAssertionCount: 0
+          },
+          missingRequired: [],
+          privateValueFindings: [],
+          uiEvidenceBoundary: {
+            summaryOnly: true,
+            growthReadsOnlyEvidenceArtifacts: true,
+            growthRunsNoVisualTooling: true,
+            homeAiOwnsVisualHarness: true,
+            noLearnerStateMutation: true,
+            noModelCalls: true
+          }
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/growth/automation/ui-evidence`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "growth:weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        horizon: "daily_plan",
+        uiEvidenceFile: "/tmp/owner-daily-ui.json",
+        evidenceFile: "/tmp/evidence-ignored.json",
+        uiEvidence: {
+          source: "home-ai-ios-pwa-visual-harness",
+          evidenceKey: "ownerDailyUiEvidence",
+          status: "pass",
+          route: "/plugins/growth",
+          screen: "owner_daily_generation",
+          screenshotFile: "growth-owner-daily.png",
+          coverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+          assertions: [{ key: "owner_daily_generation", ok: true }]
+        }
+      })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.schemaVersion, "growth.learningAutomationUiEvidence.v1");
+    assert.equal(body.uiEvidence.screenshotPresent, true);
+    assert.equal(body.uiEvidence.screenshotArtifactName, "growth-owner-daily.png");
+    assert.equal(body.uiEvidenceBoundary.homeAiOwnsVisualHarness, true);
+    assert.equal(body.uiEvidenceBoundary.growthRunsNoVisualTooling, true);
+    assert.equal(body.uiEvidenceBoundary.noLearnerStateMutation, true);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      evidenceKey: "ownerDailyUiEvidence",
+      uiEvidence: {
+        source: "home-ai-ios-pwa-visual-harness",
+        evidenceKey: "ownerDailyUiEvidence",
+        status: "pass",
+        route: "/plugins/growth",
+        screen: "owner_daily_generation",
+        screenshotFile: "growth-owner-daily.png",
+        coverage: ["owner_daily_generation", "daily_loop_preview", "target_context"],
+        assertions: [{ key: "owner_daily_generation", ok: true }]
+      }
+    });
+    assert.equal(calls[0].uiEvidenceFile, undefined);
+    assert.equal(calls[0].evidenceFile, undefined);
+
+    const denied = await fetch(`${baseUrl}/api/v1/growth/automation/ui-evidence`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspaceId: "weixin_fanfan", uiEvidence: { evidenceKey: "ownerDailyUiEvidence", ok: true } })
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth automation release workbench route returns visible-target Owner action read model", async () => {
   const calls = [];
   const server = createServer({

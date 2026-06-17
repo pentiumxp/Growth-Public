@@ -9,6 +9,48 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T01:45+08:00 - UI Evidence HTTP Readback
+
+- Status: implemented locally; focused UI-evidence service/smoke, route,
+  architecture, syntax, docs-locality, global check, diff check, and CodeGraph
+  freshness passed. No production deploy, production Home AI UI/visual harness
+  run, runtime config change, scheduler execution, Gateway/model call,
+  release-evidence persistence, learner-state mutation, or Home AI host logic
+  change was performed.
+- Classification: H2 Growth readback extension. It adds a visible-target
+  scoped no-write HTTP validation route over the existing UI evidence service
+  and does not add a write path, table, release permission, scheduler
+  permission, visual-tool execution, or Home AI visual internals access.
+- Scope:
+  - added `POST /api/v1/growth/automation/ui-evidence`;
+  - added `normalizeAutomationUiEvidenceInput` for bounded
+    workspace/learner/program/domain/subject/horizon plus UI gate selectors;
+  - route delegates only to `learningAutomationUiEvidenceService.evaluate()`;
+  - HTTP accepts inline Home AI UI/visual summary JSON only and deliberately
+    does not forward `uiEvidenceFile` / `evidenceFile` / server-local artifact
+    paths to the service.
+- Harness/docs updated:
+  - `src/routes/growth-routes.js`
+  - `tests/growth-routes.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+- Validation evidence:
+  - `node --check src/routes/growth-routes.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`;
+  - `node --test tests/learning-automation-ui-evidence-service.test.js tests/growth-ui-evidence-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`
+    -> 106/106.
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining gate:
+  - real production Home AI UI/visual artifact evidence still depends on
+    running the Home AI visual/tooling path for the target surface; this local
+    package only exposes Growth-side inline summary validation/readback.
+
 ## 2026-06-18T01:10+08:00 - Central Visual Evidence HTTP Readback
 
 - Status: implemented locally; focused central-visual service/smoke, route,

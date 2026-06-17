@@ -569,6 +569,43 @@ function normalizeAutomationCentralVisualEvidenceInput(body = {}, target) {
   };
 }
 
+function normalizeAutomationUiEvidenceInput(body = {}, target) {
+  const uiEvidence = body.uiEvidence
+    || body.ui_evidence
+    || body.evidence
+    || body.evidenceSummary
+    || body.evidence_summary
+    || null;
+  const nestedEvidence = uiEvidence && typeof uiEvidence === "object" && !Array.isArray(uiEvidence)
+    ? uiEvidence
+    : {};
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: body.learnerId || body.learner_id || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: body.programId || body.program_id || "",
+    domainPackId: body.domainPackId || body.domain_pack_id || "",
+    domain: body.domain || "",
+    subject: body.subject || "",
+    horizon: body.horizon || "daily_plan",
+    evidenceKey: body.evidenceKey
+      || body.evidence_key
+      || body.checkKey
+      || body.check_key
+      || body.uiGate
+      || body.ui_gate
+      || nestedEvidence.evidenceKey
+      || nestedEvidence.evidence_key
+      || nestedEvidence.checkKey
+      || nestedEvidence.check_key
+      || nestedEvidence.uiGate
+      || nestedEvidence.ui_gate
+      || "",
+    uiEvidence
+  };
+}
+
 function normalizeAutomationSchedulerExecutionListInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -1931,6 +1968,20 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, workspaceId);
     const result = services.learningAutomationCentralVisualEvidenceService.evaluate(
       normalizeAutomationCentralVisualEvidenceInput(body, target)
+    );
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/ui-evidence") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    const workspaceId = body.workspaceId
+      || body.workspace_id
+      || url.searchParams.get("workspaceId")
+      || url.searchParams.get("workspace_id")
+      || requestedWorkspaceId(request, url, "");
+    const target = visibleTargetByWorkspace(request, url, services, workspaceId);
+    const result = services.learningAutomationUiEvidenceService.evaluate(
+      normalizeAutomationUiEvidenceInput(body, target)
     );
     return sendJson(response, result.ok ? 200 : 400, result);
   }

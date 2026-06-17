@@ -389,6 +389,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/central-visual-evidence/);
   assert.match(routes, /normalizeAutomationCentralVisualEvidenceInput/);
   assert.match(routes, /learningAutomationCentralVisualEvidenceService\.evaluate/);
+  assert.match(routes, /automation\/ui-evidence/);
+  assert.match(routes, /normalizeAutomationUiEvidenceInput/);
+  assert.match(routes, /learningAutomationUiEvidenceService\.evaluate/);
   assert.match(routes, /automation\/release-workbench\/actions/);
   assert.match(routes, /normalizeAutomationReleaseWorkbenchActionInput/);
   assert.match(routes, /applyReleaseEvidenceArtifactManifestInput/);

@@ -86,7 +86,16 @@ readback gate set.
   summary-only central visual readback but does not create the required Home AI
   central visual artifact, run visual tooling, persist release evidence, call
   Gateway, mutate learner state, apply runtime config, or grant scheduler /
-  release permission. The
+  release permission. The UI evidence boundary now also has a visible-target
+  scoped no-write `POST /api/v1/growth/automation/ui-evidence` API that
+  delegates only to `learningAutomationUiEvidenceService.evaluate()`, accepts
+  inline Home AI UI/visual summary JSON only, and does not read or forward
+  `uiEvidenceFile`, `evidenceFile`, or other server-local artifact paths over
+  HTTP. It validates and returns bounded summary-only UI gate evidence readback
+  for the registered release UI gates but does not create the required Home AI
+  visual artifact, run visual tooling, persist release evidence, call Gateway,
+  mutate learner state, apply runtime config, or grant scheduler / release
+  permission. The
   `smoke:release-evidence-collection` CLI now also mirrors bounded top-level
   `releaseEvidenceCollection*` operator readback for collection status, step
   counts/statuses, collection-run id/write state, release-evidence record
