@@ -1295,7 +1295,12 @@ readback gate set.
   profile-delta audit/correction readback through the normal service graph,
   and records a correction only with explicit
   `--operation correction --allow-write` through
-  `learning-owner-correction-service.recordCorrection`. The embedded Owner
+  `learning-owner-correction-service.recordCorrection`. The smoke CLI also
+  mirrors top-level `ownerAudit*` operator readback for operation/status, write
+  gate, target/scope selectors, downstream audit availability, plan/evidence/
+  profile-delta/correction counts, completeness, missing-required counts,
+  partial failures, latest activity, and correction-record metadata while
+  preserving the nested audit/readback DTOs as canonical. The embedded Owner
   `生成` tab now consumes the same context-level audit/correction DTOs and can
   write bounded correction evidence. It also renders current-card
   single-cycle `learning-cycles/audit` and `learning-cycles/completeness`

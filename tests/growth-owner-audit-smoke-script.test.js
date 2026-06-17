@@ -13,6 +13,7 @@ const {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectOwnerAuditSmokeReadback,
   runOperation,
   sourceEvidenceIds,
   targetNodeIds,
@@ -125,6 +126,133 @@ test("owner audit smoke script rejects write operations unless explicitly allowe
     operation: "repair",
     allowedOperations: ["audit", "correction"]
   });
+});
+
+test("owner audit smoke script projects top-level operator readback", () => {
+  const output = projectOwnerAuditSmokeReadback({
+    ok: true,
+    source: "growth-owner-audit-smoke",
+    operation: "correction",
+    scope: {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      planDraftId: "lgplan_daily_1",
+      taskCardId: "ltask_daily_1",
+      evaluationId: "leval_daily_1",
+      profileDeltaId: "lgpdelta_daily_1",
+      evidenceId: "lgevd_daily_1",
+      correctionId: "lgcorr_owner_1",
+      targetNodeIds: ["kg_science_fair_test"],
+      limit: 12
+    },
+    correction: {
+      ok: true,
+      correctionId: "lgcorr_owner_1",
+      correction: {
+        correctionId: "lgcorr_owner_1",
+        status: "needs_repair",
+        reviewAction: "mark_needs_repair"
+      }
+    },
+    readback: {
+      ok: true,
+      source: "growth-owner-audit-smoke",
+      operation: "audit",
+      scope: {
+        workspaceId: "weixin_fanfan",
+        learnerId: "fanfan",
+        programId: "program_science",
+        planDraftId: "lgplan_daily_1",
+        taskCardId: "ltask_daily_1",
+        evaluationId: "leval_daily_1",
+        profileDeltaId: "lgpdelta_daily_1",
+        evidenceId: "lgevd_daily_1",
+        correctionId: "lgcorr_owner_1",
+        targetNodeIds: ["kg_science_fair_test"],
+        limit: 12
+      },
+      cycleAudit: {
+        ok: true,
+        summary: {
+          planDraftCount: 1,
+          evidenceCount: 2,
+          profileDeltaCount: 1,
+          correctionCount: 1,
+          failedPublishAttemptCount: 0,
+          blockedPublishAttemptCount: 0,
+          hasPublishedPlan: true,
+          hasEvaluationEvidence: true,
+          hasProfileDelta: true,
+          hasCorrections: true,
+          latestActivityAt: "2026-06-17T06:00:00.000Z"
+        },
+        timeline: [{ id: "timeline_1" }]
+      },
+      completeness: {
+        ok: true,
+        complete: true,
+        readyForAutomation: true,
+        summary: {
+          requiredCount: 6,
+          satisfiedRequiredCount: 6,
+          missingRequired: []
+        }
+      },
+      evidenceAudit: {
+        ok: true,
+        summary: { evidenceCount: 2 },
+        evidence: [{ evidenceId: "lgevd_daily_1" }]
+      },
+      profileDeltaAudit: {
+        ok: true,
+        count: 1,
+        profileDeltas: [{ profileDeltaId: "lgpdelta_daily_1" }]
+      },
+      corrections: {
+        ok: true,
+        count: 1,
+        corrections: [{ correctionId: "lgcorr_owner_1" }]
+      },
+      partialFailures: []
+    }
+  });
+
+  assert.equal(output.ownerAuditOperation, "correction");
+  assert.equal(output.ownerAuditStatus, "correction_recorded");
+  assert.equal(output.ownerAuditWriteOperation, true);
+  assert.equal(output.ownerAuditTargetWorkspaceId, "weixin_fanfan");
+  assert.equal(output.ownerAuditTargetLearnerId, "fanfan");
+  assert.equal(output.ownerAuditProgramId, "program_science");
+  assert.equal(output.ownerAuditTaskCardId, "ltask_daily_1");
+  assert.equal(output.ownerAuditEvaluationId, "leval_daily_1");
+  assert.equal(output.ownerAuditCorrectionId, "lgcorr_owner_1");
+  assert.deepEqual(output.ownerAuditTargetNodeIds, ["kg_science_fair_test"]);
+  assert.equal(output.ownerAuditTargetNodeCount, 1);
+  assert.equal(output.ownerAuditReadbackOk, true);
+  assert.equal(output.ownerAuditCycleAuditOk, true);
+  assert.equal(output.ownerAuditCompletenessOk, true);
+  assert.equal(output.ownerAuditEvidenceAuditOk, true);
+  assert.equal(output.ownerAuditProfileDeltaAuditOk, true);
+  assert.equal(output.ownerAuditCorrectionsOk, true);
+  assert.equal(output.ownerAuditPlanDraftCount, 1);
+  assert.equal(output.ownerAuditEvidenceCount, 2);
+  assert.equal(output.ownerAuditProfileDeltaCount, 1);
+  assert.equal(output.ownerAuditCorrectionCount, 1);
+  assert.equal(output.ownerAuditHasPublishedPlan, true);
+  assert.equal(output.ownerAuditHasEvaluationEvidence, true);
+  assert.equal(output.ownerAuditHasProfileDelta, true);
+  assert.equal(output.ownerAuditHasCorrections, true);
+  assert.equal(output.ownerAuditTimelineCount, 1);
+  assert.equal(output.ownerAuditComplete, true);
+  assert.equal(output.ownerAuditReadyForAutomation, true);
+  assert.equal(output.ownerAuditRequiredCount, 6);
+  assert.equal(output.ownerAuditSatisfiedRequiredCount, 6);
+  assert.equal(output.ownerAuditMissingRequiredCount, 0);
+  assert.equal(output.ownerAuditPartialFailureCount, 0);
+  assert.equal(output.ownerAuditCorrectionRecorded, true);
+  assert.equal(output.ownerAuditCorrectionStatus, "needs_repair");
+  assert.equal(output.ownerAuditCorrectionReviewAction, "mark_needs_repair");
 });
 
 test("owner audit smoke script delegates read-only audit to all audit readback services", async () => {
@@ -277,6 +405,23 @@ test("owner audit smoke script runs read-only audit on an empty DB without writi
     assert.equal(output.source, "growth-owner-audit-smoke");
     assert.equal(output.operation, "audit");
     assert.equal(output.scope.workspaceId, "weixin_fanfan");
+    assert.equal(output.ownerAuditOperation, "audit");
+    assert.equal(output.ownerAuditStatus, "audit_complete");
+    assert.equal(output.ownerAuditWriteOperation, false);
+    assert.equal(output.ownerAuditTargetWorkspaceId, "weixin_fanfan");
+    assert.equal(output.ownerAuditTargetLearnerId, "fanfan");
+    assert.equal(output.ownerAuditProgramId, "program_science");
+    assert.equal(output.ownerAuditReadbackOk, true);
+    assert.equal(output.ownerAuditCycleAuditOk, true);
+    assert.equal(output.ownerAuditCompletenessOk, true);
+    assert.equal(output.ownerAuditEvidenceAuditOk, true);
+    assert.equal(output.ownerAuditProfileDeltaAuditOk, true);
+    assert.equal(output.ownerAuditCorrectionsOk, true);
+    assert.equal(output.ownerAuditPlanDraftCount, 0);
+    assert.equal(output.ownerAuditEvidenceCount, 0);
+    assert.equal(output.ownerAuditProfileDeltaCount, 0);
+    assert.equal(output.ownerAuditCorrectionCount, 0);
+    assert.equal(output.ownerAuditPartialFailureCount, 0);
     assert.equal(output.corrections.count, 0);
 
     const db = new DatabaseSync(dbPath, { open: true, readOnly: true });

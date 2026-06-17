@@ -101,6 +101,29 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 12) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
 function operationFromArgs(args) {
   const operation = firstArgValue(args, ["--operation", "--mode"], "audit").trim().toLowerCase();
   return operation || "audit";
@@ -265,6 +288,81 @@ function readAudit(services, input) {
   };
 }
 
+function ownerAuditStatus(result = {}, audit = {}) {
+  if (result.ok === false) return cleanString(result.error || "failed", 140);
+  const partialFailures = asArray(audit.partialFailures);
+  if (partialFailures.length) return "partial_audit";
+  if (result.operation === "correction") return "correction_recorded";
+  return "audit_complete";
+}
+
+function projectOwnerAuditSmokeReadback(result = {}) {
+  const ownerAudit = objectOnly(result);
+  if (!Object.keys(ownerAudit).length) return result;
+  const audit = objectOnly(ownerAudit.operation === "correction" ? ownerAudit.readback : ownerAudit);
+  const scope = objectOnly(ownerAudit.scope || audit.scope);
+  const cycleAudit = objectOnly(audit.cycleAudit);
+  const cycleSummary = objectOnly(cycleAudit.summary);
+  const completeness = objectOnly(audit.completeness);
+  const completenessSummary = objectOnly(completeness.summary);
+  const evidenceAudit = objectOnly(audit.evidenceAudit);
+  const evidenceSummary = objectOnly(evidenceAudit.summary);
+  const profileDeltaAudit = objectOnly(audit.profileDeltaAudit);
+  const corrections = objectOnly(audit.corrections);
+  const correction = objectOnly(ownerAudit.correction);
+  const correctionBody = objectOnly(correction.correction);
+  const targetNodeIds = uniqueBoundedStrings(scope.targetNodeIds);
+  const missingRequired = uniqueBoundedStrings(completenessSummary.missingRequired || completeness.missingRequired);
+  const partialFailures = uniqueBoundedStrings(audit.partialFailures || ownerAudit.partialFailures);
+  return Object.assign({}, ownerAudit, {
+    ownerAuditOperation: cleanString(ownerAudit.operation || audit.operation, 80),
+    ownerAuditStatus: ownerAuditStatus(ownerAudit, audit),
+    ownerAuditWriteOperation: WRITE_OPERATIONS.has(cleanString(ownerAudit.operation || audit.operation, 80)),
+    ownerAuditTargetWorkspaceId: cleanString(scope.workspaceId, 160),
+    ownerAuditTargetLearnerId: cleanString(scope.learnerId, 160),
+    ownerAuditProgramId: cleanString(scope.programId, 160),
+    ownerAuditPlanDraftId: cleanString(scope.planDraftId, 180),
+    ownerAuditTaskCardId: cleanString(scope.taskCardId, 180),
+    ownerAuditEvaluationId: cleanString(scope.evaluationId, 180),
+    ownerAuditProfileDeltaId: cleanString(scope.profileDeltaId, 180),
+    ownerAuditEvidenceId: cleanString(scope.evidenceId, 180),
+    ownerAuditCorrectionId: cleanString(correction.correctionId || correctionBody.correctionId || scope.correctionId, 180),
+    ownerAuditTargetNodeIds: targetNodeIds,
+    ownerAuditTargetNodeCount: targetNodeIds.length,
+    ownerAuditLimit: Number(scope.limit || 0) || 0,
+    ownerAuditReadbackAvailable: Boolean(audit && Object.keys(audit).length),
+    ownerAuditReadbackOk: audit.ok === true,
+    ownerAuditCycleAuditOk: cycleAudit.ok === true,
+    ownerAuditCompletenessOk: completeness.ok === true,
+    ownerAuditEvidenceAuditOk: evidenceAudit.ok === true,
+    ownerAuditProfileDeltaAuditOk: profileDeltaAudit.ok === true,
+    ownerAuditCorrectionsOk: corrections.ok === true,
+    ownerAuditPlanDraftCount: Number(cycleSummary.planDraftCount || cycleAudit.planAudit?.count || 0) || 0,
+    ownerAuditEvidenceCount: Number(cycleSummary.evidenceCount || evidenceSummary.evidenceCount || evidenceAudit.count || countArray(evidenceAudit.evidence) || 0) || 0,
+    ownerAuditProfileDeltaCount: Number(cycleSummary.profileDeltaCount || profileDeltaAudit.count || countArray(profileDeltaAudit.profileDeltas) || 0) || 0,
+    ownerAuditCorrectionCount: Number(cycleSummary.correctionCount || corrections.count || countArray(corrections.corrections) || 0) || 0,
+    ownerAuditFailedPublishAttemptCount: Number(cycleSummary.failedPublishAttemptCount || 0) || 0,
+    ownerAuditBlockedPublishAttemptCount: Number(cycleSummary.blockedPublishAttemptCount || 0) || 0,
+    ownerAuditHasPublishedPlan: cycleSummary.hasPublishedPlan === true,
+    ownerAuditHasEvaluationEvidence: cycleSummary.hasEvaluationEvidence === true,
+    ownerAuditHasProfileDelta: cycleSummary.hasProfileDelta === true,
+    ownerAuditHasCorrections: cycleSummary.hasCorrections === true,
+    ownerAuditTimelineCount: countArray(cycleAudit.timeline),
+    ownerAuditLatestActivityAt: cleanString(cycleSummary.latestActivityAt || completenessSummary.latestActivityAt, 120),
+    ownerAuditComplete: completeness.complete === true,
+    ownerAuditReadyForAutomation: completeness.readyForAutomation === true,
+    ownerAuditRequiredCount: Number(completenessSummary.requiredCount || 0) || 0,
+    ownerAuditSatisfiedRequiredCount: Number(completenessSummary.satisfiedRequiredCount || 0) || 0,
+    ownerAuditMissingRequired: missingRequired,
+    ownerAuditMissingRequiredCount: missingRequired.length,
+    ownerAuditPartialFailures: partialFailures,
+    ownerAuditPartialFailureCount: partialFailures.length,
+    ownerAuditCorrectionRecorded: correction.ok === true,
+    ownerAuditCorrectionStatus: cleanString(correction.status || correctionBody.status, 120),
+    ownerAuditCorrectionReviewAction: cleanString(correction.reviewAction || correctionBody.reviewAction, 120)
+  });
+}
+
 async function runOperation(services, operation, input) {
   if (operation === "correction") {
     const correction = callService(
@@ -325,7 +423,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services, operation, input);
+  const result = projectOwnerAuditSmokeReadback(await runOperation(services, operation, input));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -345,6 +443,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectOwnerAuditSmokeReadback,
   runOperation,
   sourceEvidenceIds,
   targetNodeIds,

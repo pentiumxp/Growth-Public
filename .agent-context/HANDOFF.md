@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:52+08:00 - Owner Audit Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-owner-audit` delegated correctly to the existing cycle audit,
+    completeness, evidence audit, profile-delta audit, and Owner correction
+    services, but operator-critical operation/status, write gate, target/scope
+    selectors, downstream audit availability, plan/evidence/profile-delta/
+    correction counts, completeness, missing-required counts, partial failures,
+    latest activity, and correction-record metadata were available only inside
+    nested audit/readback DTOs;
+  - this made Owner audit release evidence harder to inspect without deep JSON.
+- Scope:
+  - added `projectOwnerAuditSmokeReadback` in
+    `scripts/smoke-growth-owner-audit.js`;
+  - projected bounded top-level `ownerAudit*` fields while preserving nested
+    audit/readback DTOs as canonical;
+  - expanded `tests/growth-owner-audit-smoke-script.test.js` to assert pure
+    projection and no-write empty-audit script output;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-owner-audit.js`
+  - `node --test tests/growth-owner-audit-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` (`Index is up to date`;
+    earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if the Owner audit/correction services, routes, repositories,
+    schema, Gateway, UI, scheduler, learner-state, or release-readiness
+    boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy was required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `ownerAudit*` fields do not add write permission, Gateway access,
+    publication rights, scheduling, reward settlement, stage activation, or
+    learner mutation.
+
 ## 2026-06-17T13:46+08:00 - Cycle History Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment
