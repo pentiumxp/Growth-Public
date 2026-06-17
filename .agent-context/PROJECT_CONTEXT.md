@@ -90,6 +90,16 @@ readback gate set.
   bounded completion/mastery/review event emission. It also owns native
   knowledge-graph import/planning/binding and Gateway-backed card generation
   from graph plans plus historical SQLite summaries. Compact ordinary-card
+  Growth now exposes a v1-minimal plugin-side Reference Contract through
+  `learning-reference-contract-service`, read-only reference APIs,
+  `growth.reference_object_types` / `growth.reference_get` /
+  `growth.reference_summarize` MCP tools, and `npm run smoke:references`.
+  The contract is summary-only for Growth-owned `program`, `task_card`,
+  `submission`, `evaluation`, `reflection`, `mastery_profile`,
+  `learning_graph_plan`, and `plan_draft` objects. It deliberately does not
+  implement central Reference/Memory Graph edges, global search/resolve, note
+  links, or central graph tables.
+  Compact ordinary-card
   recipe generation now supports `daily_english_v1`, `daily_science_v1`, and
   `daily_subject_practice_v1` while preserving target provisioning, graph
   planning, graph-node evidence requirements, Gateway authoring validation, and

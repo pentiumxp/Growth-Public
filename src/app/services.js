@@ -78,6 +78,7 @@ const { createLearningProfileDeltaService } = require("../services/learning-prof
 const { createLearningProfileFeedbackEvidenceService } = require("../services/learning-profile-feedback-evidence-service");
 const { createLearningProfileProjectionService } = require("../services/learning-profile-projection-service");
 const { createLearningProfileV2Service } = require("../services/learning-profile-v2-service");
+const { createLearningReferenceContractService } = require("../services/learning-reference-contract-service");
 const { createLearningRecommendationLifecycleService } = require("../services/learning-recommendation-lifecycle-service");
 const { createLearningRewardAuditService } = require("../services/learning-reward-audit-service");
 const { createLearningStageCheckpointControlsService } = require("../services/learning-stage-checkpoint-controls-service");
@@ -540,13 +541,20 @@ function createServices(config) {
     cycleAuditService: learningCycleAuditService,
     auditCompletenessService: learningAuditCompletenessService
   });
+  const learningReferenceContractService = createLearningReferenceContractService({
+    repository: growthLearningStore.learningReferenceProjectionRepository,
+    growthService,
+    graphRepository: growthLearningStore.learningGraphRepository,
+    planDraftRepository: growthLearningStore.learningPlanDraftRepository,
+    profileV2Service: learningProfileV2Service
+  });
   return {
     config,
     growthEvaluationService,
     growthEventService,
     growthGatewayEvaluationClient,
     growthGatewayPlannerClient,
-    growthMcpExecutor: createGrowthMcpExecutor({ growthService }),
+    growthMcpExecutor: createGrowthMcpExecutor({ growthService, referenceContractService: learningReferenceContractService }),
     growthService,
     learningCardAuthoringService,
     learningCardEvaluationService,
@@ -618,6 +626,7 @@ function createServices(config) {
     learningProfileFeedbackEvidenceService,
     learningProfileProjectionService,
     learningProfileV2Service,
+    learningReferenceContractService,
     learningRecommendationLifecycleService,
     learningRewardAuditService,
     learningStageCheckpointControlsService,

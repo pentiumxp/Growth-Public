@@ -1704,6 +1704,40 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(planPublisher, /draftLearningPlan/);
 });
 
+test("Growth reference contract stays service-owned and summary-only", () => {
+  const services = read(path.join("src", "app", "services.js"));
+  assert.match(services, /createLearningReferenceContractService/);
+  assert.match(services, /learningReferenceContractService/);
+  assert.match(services, /learningReferenceProjectionRepository/);
+  assert.match(services, /referenceContractService: learningReferenceContractService/);
+
+  const store = read(path.join("src", "stores", "growth-learning-sqlite-store.js"));
+  assert.match(store, /createLearningReferenceProjectionRepository/);
+  assert.match(store, /learningReferenceProjectionRepository/);
+
+  const referenceService = read(path.join("src", "services", "learning-reference-contract-service.js"));
+  assert.match(referenceService, /growth\.referenceObject\.v1/);
+  assert.match(referenceService, /growth\.referenceSummary\.v1/);
+  assert.match(referenceService, /summary_only/);
+  assert.doesNotMatch(referenceService, /raw_json/);
+  assert.doesNotMatch(referenceService, /answerText/);
+  assert.doesNotMatch(referenceService, /transcript/);
+
+  const routes = read(path.join("src", "routes", "growth-routes.js"));
+  assert.match(routes, /references\/object-types/);
+  assert.match(routes, /referenceGet/);
+  assert.match(routes, /referenceSummarize/);
+  assert.doesNotMatch(routes, /learningReferenceProjectionRepository/);
+  assert.doesNotMatch(routes, /learning_task_submissions/);
+  assert.doesNotMatch(routes, /learning_evaluations/);
+
+  const mcp = read(path.join("src", "mcp", "growth-mcp-schemas.js"));
+  assert.match(mcp, /growth\.reference_object_types/);
+  assert.match(mcp, /growth\.reference_get/);
+  assert.match(mcp, /growth\.reference_summarize/);
+  assert.doesNotMatch(mcp, /learningReferenceProjectionRepository/);
+});
+
 test("Growth release-readiness smoke CLI stays service-owned and non-writeful by default", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:release-readiness/);

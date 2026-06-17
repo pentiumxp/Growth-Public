@@ -40,6 +40,7 @@ they become Growth-owned.
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
 | `docs/GROWTH_CARD_GENERATION_RULES.md` | Consolidated card generation and evaluation rules for new Growth card authoring and one-shot grading. |
 | `docs/GROWTH_AI_CARD_LOOP.md` | Growth-owned AI loop for learner profile, next-card strategy, card generation, Gateway evaluation evidence, trajectory, and profile update. |
+| `docs/GROWTH_REFERENCE_CONTRACT.md` | Growth V1-minimal summary-only Reference / Memory Graph plugin-side contract, object types, API, MCP tools, service ownership, privacy boundary, and Harness. |
 | `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` | Owner card generation management flow, planner-backed UI plan, browser-complete science sample path, API contract, progress/error contract, and harness plan. |
 | `docs/GROWTH_CARD_INTERACTION_FLOW.md` | Learner-facing generated card submission, one-shot evaluation, optional reflection, audio evidence, and harness contract. |
 | `docs/home-ai-growth/` | Migrated Home AI Growth-specific docs kept in their original structure for continuity. |
@@ -101,10 +102,13 @@ For the AI-driven learning scheme, use this reading order before implementation:
 16. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
    runtime layers, architecture backlog, and route/service/repository
    ownership rules.
-17. `docs/TEST_MATRIX.md` and
+17. `docs/GROWTH_REFERENCE_CONTRACT.md` before changing Growth plugin-side
+   stable object references, reference MCP tools, or summary-only reference
+   projections.
+18. `docs/TEST_MATRIX.md` and
    `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` for focused
    Harness selection and H1/H2/H3 validation obligations.
-18. UI-specific work then reads
+19. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 

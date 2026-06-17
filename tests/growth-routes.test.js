@@ -6170,6 +6170,88 @@ test("growth MCP execute route requires workspace bearer", async () => {
   }
 });
 
+test("growth reference contract routes expose only visible summary-only references", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets({ actorRole }) {
+        return actorRole === "owner"
+          ? { ok: true, targets: [{ workspaceId: "weixin_fanfan", label: "Fanfan" }] }
+          : { ok: true, targets: [] };
+      }
+    },
+    learningReferenceContractService: {
+      referenceObjectTypes(input) {
+        calls.push({ method: "types", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.referenceObjectTypes.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          objectTypes: [{ objectType: "task_card" }]
+        };
+      },
+      async referenceGet(input) {
+        calls.push({ method: "get", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.referenceObject.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workspaceId: input.workspaceId,
+          objectType: input.objectType,
+          objectId: input.objectId,
+          display: { title: "Science card" },
+          summary: { taskCardId: input.objectId }
+        };
+      },
+      async referenceSummarize(input) {
+        calls.push({ method: "summarize", input });
+        return {
+          ok: true,
+          schemaVersion: "growth.referenceSummary.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workspaceId: input.workspaceId,
+          objectType: input.objectType,
+          objectId: input.objectId,
+          purpose: input.purpose,
+          display: { title: "Science card" },
+          summary: { title: "Science card" }
+        };
+      }
+    },
+    growthEventService: {},
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const types = await fetch(`${baseUrl}/api/v1/growth/references/object-types?workspace_id=weixin_fanfan`);
+    assert.equal(types.status, 200);
+    assert.equal((await types.json()).objectTypes[0].objectType, "task_card");
+
+    const hidden = await fetch(`${baseUrl}/api/v1/growth/references/task_card/card_1?workspace_id=weixin_fanfan`);
+    assert.equal(hidden.status, 403);
+
+    const object = await fetch(`${baseUrl}/api/v1/growth/references/task_card/card_1?workspace_id=weixin_fanfan`, {
+      headers: { "x-hermes-plugin-actor-role": "owner" }
+    });
+    assert.equal(object.status, 200);
+    assert.equal((await object.json()).summary.taskCardId, "card_1");
+
+    const summary = await fetch(`${baseUrl}/api/v1/growth/references/task_card/card_1/summary?workspace_id=weixin_fanfan&purpose=graph`, {
+      headers: { "x-hermes-plugin-actor-role": "owner" }
+    });
+    assert.equal(summary.status, 200);
+    assert.equal((await summary.json()).purpose, "graph");
+    assert.deepEqual(calls.map((item) => item.method), ["types", "get", "summarize"]);
+    assert.equal(calls[1].input.workspaceId, "weixin_fanfan");
+  } finally {
+    await close(server);
+  }
+});
+
 test("growth audio route streams plugin-owned audio evidence", async () => {
   const server = createServer({
     pluginService: {

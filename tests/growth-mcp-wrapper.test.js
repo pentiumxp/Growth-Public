@@ -107,7 +107,15 @@ test("exposes local Gateway tool names without workspace override fields", () =>
   assert.equal(tool.name, "get_board");
   assert.equal(tool.inputSchema.properties.workspace_id, undefined);
   assert.deepEqual(tool.inputSchema.required, []);
-  assert.deepEqual(toolsList().map((item) => item.name), ["get_status", "get_board", "list_cards", "get_card"]);
+  assert.deepEqual(toolsList().map((item) => item.name), [
+    "get_status",
+    "get_board",
+    "list_cards",
+    "get_card",
+    "reference_object_types",
+    "reference_get",
+    "reference_summarize"
+  ]);
 });
 
 test("stdio wrapper calls Growth MCP execute with workspace access key", async () => {
@@ -139,7 +147,15 @@ test("stdio wrapper calls Growth MCP execute with workspace access key", async (
     const initialized = await waitForLine(lines, 1);
     assert.equal(initialized.result.serverInfo.name, "growth");
     const listed = await waitForLine(lines, 2);
-    assert.deepEqual(listed.result.tools.map((tool) => tool.name), ["get_status", "get_board", "list_cards", "get_card"]);
+    assert.deepEqual(listed.result.tools.map((tool) => tool.name), [
+      "get_status",
+      "get_board",
+      "list_cards",
+      "get_card",
+      "reference_object_types",
+      "reference_get",
+      "reference_summarize"
+    ]);
     assert.equal(listed.result.tools.some((tool) => JSON.stringify(tool).includes("workspace_id")), false);
     const called = await waitForLine(lines, 3);
     const content = JSON.parse(called.result.content[0].text);

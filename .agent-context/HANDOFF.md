@@ -9,6 +9,65 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T21:41+08:00 - Growth Reference Contract V1 Minimal
+
+- Status: implemented locally; full Growth test suite, syntax/check/docs/diff
+  gates, reference smoke, and CodeGraph freshness passed. No production deploy,
+  production write smoke, runtime config change, Gateway/model call, scheduler
+  execution, notification, learner-state mutation, or Home AI host logic change
+  was performed.
+- Classification: H1 Growth plugin reference-contract API/MCP/object-type
+  behavior change. It implements a plugin-side object-reference contract only;
+  central Reference/Memory Graph edges, global search/resolve, note links, and
+  central graph tables remain out of scope.
+- Scope:
+  - added `learning-reference-contract-service` as the Growth-owned
+    summary-only reference boundary for `program`, `task_card`, `submission`,
+    `evaluation`, `reflection`, `mastery_profile`, `learning_graph_plan`, and
+    `plan_draft`;
+  - added SQLite `learning-reference-projection-repository` for bounded
+    program/evidence/draft projections without exposing raw JSON;
+  - wired read-only Growth APIs:
+    `GET /api/v1/growth/references/object-types`,
+    `GET /api/v1/growth/references/:objectType/:objectId`, and
+    `GET /api/v1/growth/references/:objectType/:objectId/summary`;
+  - wired MCP tools `growth.reference_object_types`,
+    `growth.reference_get`, and `growth.reference_summarize`;
+  - added `scripts/smoke-growth-reference-contract.js` and
+    `npm run smoke:references`; the smoke is read-only and mirrors bounded
+    top-level `referenceContract*` operator fields.
+- Harness/docs updated:
+  - `tests/learning-reference-contract-service.test.js`
+  - `tests/growth-reference-contract-smoke-script.test.js`
+  - `tests/growth-mcp-schemas.test.js`
+  - `tests/growth-mcp-wrapper.test.js`
+  - `tests/growth-routes.test.js`
+  - `tests/growth-architecture-boundary.test.js`
+  - `docs/GROWTH_REFERENCE_CONTRACT.md`
+  - `docs/GROWTH_DOCS_INDEX.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/TEST_MATRIX.md`
+  - `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md`
+- Validation evidence:
+  - focused reference/MCP/route/architecture set -> 105/105;
+  - targeted `node --check` set for new service/projection/smoke and touched
+    wiring files;
+  - `npm run --silent check`;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `git diff --check`;
+  - `npm test` -> 1031/1031;
+  - `npm run --silent smoke:references -- --operation object-types --workspace-id weixin_fanfan --json`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- AI Ops note:
+  - intake classified the reference-contract API/MCP behavior change as H1 and
+    returned the platform default deployment-required gate. Deployment was not
+    run because the user explicitly directed that deployment should happen
+    later after more work is complete.
+  - evidence id:
+    `evidence-a44de67f-7167-4605-8e3f-8e2ddc2ccaf4`.
+
 ## 2026-06-17T21:17+08:00 - Release Evidence Task Registry Consolidation
 
 - Status: implemented locally; focused release validation, release-union,

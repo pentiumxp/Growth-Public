@@ -12,7 +12,7 @@ stable across Codex continuation threads.
 
 | Class | Examples | Minimum Harness |
 | --- | --- | --- |
-| H1 workflow or write boundary | Gateway planner/authoring/evaluation, card publication, learner submission/evaluation/reflection, operating-loop `run-next` execution, formal stage-assessment activation/completion, release evidence recording, approvals, scheduler execution/run/worker, activation/runtime enablement writes, route authorization changes. | Service/repository tests for the owner module, route tests when HTTP surface changes, matching smoke-script test when a CLI exists, `tests/growth-architecture-boundary.test.js`, docs-locality, `npm run --silent check`, and `npm test` before claiming closure. |
+| H1 workflow, cross-plugin contract, or write boundary | Gateway planner/authoring/evaluation, card publication, learner submission/evaluation/reflection, operating-loop `run-next` execution, formal stage-assessment activation/completion, Growth plugin reference-contract API/MCP/object-type behavior, release evidence recording, approvals, scheduler execution/run/worker, activation/runtime enablement writes, route authorization changes. | Service/repository tests for the owner module, route tests when HTTP surface changes, matching smoke-script test when a CLI exists, `tests/growth-architecture-boundary.test.js`, docs-locality, `npm run --silent check`, and `npm test` before claiming closure. |
 | H2 projection or contract readback | Read-only DTO fields, release dashboard/review/authorization/closure summaries, evidence-readback projection, package-record summary readback, Owner context read models, active stage-checkpoint loop-state readback, formal-assessment reflection-required projection, plugin-owned SQLite runtime readback fields. | Owning service/store tests with explicit field assertions, route or smoke test when the public surface changes, architecture boundary guard when dependency direction matters, docs-locality, syntax check, and the relevant focused row in `docs/TEST_MATRIX.md`. |
 | H3 docs or static non-behavioral change | Durable docs, handoff status, command matrix, comments that do not alter runtime behavior. | `node scripts/check-growth-docs-locality.js`, `tests/growth-docs-locality.test.js` when docs registration changes, `git diff --check`, and syntax coverage if runtime files changed. |
 
@@ -74,3 +74,8 @@ until real artifacts are collected:
   submission, one evaluation, one reflection, high-weight mastery evidence,
   cooldown, and duplicate attempt rejection, unless the change is explicitly
   docs-only.
+- Do not treat Growth plugin references as a fact store or graph backend.
+  Reference-contract outputs must remain summary-only pointers resolved by the
+  owning Growth service; they must not expose raw learner/model content,
+  provider config, private paths, secrets, full card instructions, full
+  `teachingFlow`, or full plan JSON.

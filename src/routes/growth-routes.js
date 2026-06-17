@@ -1652,6 +1652,36 @@ async function handleGrowthRoute(request, response, url, services) {
     }));
   }
 
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/references/object-types") {
+    const workspaceId = requestedWorkspaceId(request, url, "");
+    const result = services.learningReferenceContractService.referenceObjectTypes({ workspaceId });
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  const referenceSummaryMatch = url.pathname.match(/^\/api\/v1\/growth\/references\/([^/]+)\/([^/]+)\/summary$/);
+  if (request.method === "GET" && referenceSummaryMatch) {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = await services.learningReferenceContractService.referenceSummarize({
+      workspaceId: target.workspaceId,
+      objectType: decodeURIComponent(referenceSummaryMatch[1] || ""),
+      objectId: decodeURIComponent(referenceSummaryMatch[2] || ""),
+      purpose: url.searchParams.get("purpose") || ""
+    });
+    return sendJson(response, result.ok ? 200 : 404, result);
+  }
+
+  const referenceGetMatch = url.pathname.match(/^\/api\/v1\/growth\/references\/([^/]+)\/([^/]+)$/);
+  if (request.method === "GET" && referenceGetMatch) {
+    const target = readableTargetFromRequest(request, url, services);
+    const result = await services.learningReferenceContractService.referenceGet({
+      workspaceId: target.workspaceId,
+      objectType: decodeURIComponent(referenceGetMatch[1] || ""),
+      objectId: decodeURIComponent(referenceGetMatch[2] || ""),
+      purpose: url.searchParams.get("purpose") || ""
+    });
+    return sendJson(response, result.ok ? 200 : 404, result);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/v1/growth/card-generation/context") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningCardGenerationContextService.context(normalizeCardGenerationContextInput(url, target));
