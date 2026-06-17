@@ -169,6 +169,15 @@ top-level readback projection fields, run the matching smoke-script test:
 assertion must prove top-level operator fields mirror the nested service DTO
 without adding writes, runtime-config mutation, Gateway calls, or raw artifact
 paths.
+For release-preflight production closure gate fields, run
+`tests/learning-automation-release-preflight-service.test.js` and
+`tests/growth-release-preflight-smoke-script.test.js`. The focused assertion
+must prove `productionClosureGateSummary` / `productionClosureGates` classify
+Growth backend readiness, Home AI visual/UI artifacts, Home AI Action Inbox/Web
+Push receipts, Owner release activation, runtime enablement readback, and
+production deployment/health evidence; `production_deployment_health` must stay
+external and pending in Growth local preflight, and top-level smoke fields must
+mirror the nested gate status/count/pending-count/next-action projection.
 
 When changing the release evidence bundle default task set, run
 `tests/learning-automation-release-evidence-bundle-service.test.js`,

@@ -630,7 +630,14 @@ readback gate set.
   `npm run smoke:release-preflight`. This is a summary-only final backend
   release preflight audit boundary over release-dashboard, release-workbench,
   and release-closure DTOs. It can persist only Owner-authorized preflight
-  report rows, keeps `readyForProductionDeploy=false`, and never applies runtime
+  report rows, keeps `readyForProductionDeploy=false`, and now projects
+  summary-only `productionClosureGateSummary` /
+  `productionClosureGates` readback. Those gates separate Growth backend
+  readiness, Home AI central visual/UI artifact evidence, Home AI Action Inbox
+  / Web Push receipt evidence, Owner release activation, runtime enablement
+  readback, and production deployment/health evidence. The production
+  deployment/health gate remains external and cannot be marked passing by
+  Growth local preflight. The service never applies runtime
   config, grants scheduler permission, runs smoke tasks internally, calls
   Gateway/model providers, publishes, evaluates, schedules, deploys, or mutates
   learner state. The release workbench now advertises `release_preflight` and

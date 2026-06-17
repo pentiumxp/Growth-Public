@@ -117,6 +117,7 @@ function compactAction(value = {}) {
 function projectReleasePreflightSmokeReadback(result = {}) {
   const preflight = objectOnly(result.releasePreflight);
   const report = objectOnly(result.report);
+  const productionClosureGateSummary = objectOnly(preflight.productionClosureGateSummary);
   return Object.assign({}, result, {
     releasePreflightStatus: cleanString(preflight.status || result.status, 120),
     releasePreflightRequiredActionCount: Number(preflight.requiredActionCount || 0) || 0,
@@ -139,6 +140,12 @@ function projectReleasePreflightSmokeReadback(result = {}) {
     releasePreflightReadinessEvidencePresentCount: Number(preflight.readinessEvidencePresentCount || 0) || 0,
     releasePreflightReadinessEvidenceMissingCount: Number(preflight.readinessEvidenceMissingCount || 0) || 0,
     releasePreflightOwnerActionCount: Number(preflight.ownerActionCount || 0) || 0,
+    releasePreflightProductionClosureGateStatus: cleanString(productionClosureGateSummary.status, 120),
+    releasePreflightProductionClosureGateCount: Number(preflight.productionClosureGateCount || productionClosureGateSummary.gateCount || 0) || 0,
+    releasePreflightProductionClosurePendingGateCount: Number(preflight.productionClosurePendingGateCount || productionClosureGateSummary.pendingGateCount || 0) || 0,
+    releasePreflightProductionClosureNextExternalAction: compactAction(productionClosureGateSummary.nextExternalAction),
+    releasePreflightDeploymentEvidenceRequired: preflight.deploymentEvidenceRequired === true || productionClosureGateSummary.deploymentEvidenceRequired === true,
+    releasePreflightPlatformEvidenceRequired: preflight.platformEvidenceRequired === true || productionClosureGateSummary.platformEvidenceRequired === true,
     releasePreflightWritefulSchedulingAllowed: preflight.writefulSchedulingAllowed === true || result.writefulSchedulingAllowed === true,
     releasePreflightRuntimeConfigChange: preflight.runtimeConfigChange === true || result.runtimeConfigChange === true,
     releasePreflightRuntimeConfigMutationPerformed: preflight.runtimeConfigMutationPerformed === true || result.runtimeConfigMutationPerformed === true,

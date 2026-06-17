@@ -139,6 +139,22 @@ test("release preflight smoke script projects nested service summary into top-le
       readinessEvidencePresentCount: 9,
       readinessEvidenceMissingCount: 1,
       ownerActionCount: 4,
+      productionClosureGateSummary: {
+        status: "external_or_runtime_gates_pending",
+        gateCount: 6,
+        pendingGateCount: 2,
+        nextExternalAction: {
+          key: "runtime_enablement_readback",
+          action: "record_runtime_enablement_after_manual_config",
+          requiredActor: "owner"
+        },
+        deploymentEvidenceRequired: true,
+        platformEvidenceRequired: true
+      },
+      productionClosureGateCount: 6,
+      productionClosurePendingGateCount: 2,
+      deploymentEvidenceRequired: true,
+      platformEvidenceRequired: true,
       writefulSchedulingAllowed: false,
       runtimeConfigChange: false,
       runtimeConfigMutationPerformed: false,
@@ -171,6 +187,16 @@ test("release preflight smoke script projects nested service summary into top-le
   assert.equal(output.releasePreflightReadinessEvidencePresentCount, 9);
   assert.equal(output.releasePreflightReadinessEvidenceMissingCount, 1);
   assert.equal(output.releasePreflightOwnerActionCount, 4);
+  assert.equal(output.releasePreflightProductionClosureGateStatus, "external_or_runtime_gates_pending");
+  assert.equal(output.releasePreflightProductionClosureGateCount, 6);
+  assert.equal(output.releasePreflightProductionClosurePendingGateCount, 2);
+  assert.deepEqual(output.releasePreflightProductionClosureNextExternalAction, {
+    key: "runtime_enablement_readback",
+    action: "record_runtime_enablement_after_manual_config",
+    requiredActor: "owner"
+  });
+  assert.equal(output.releasePreflightDeploymentEvidenceRequired, true);
+  assert.equal(output.releasePreflightPlatformEvidenceRequired, true);
   assert.equal(output.releasePreflightWritefulSchedulingAllowed, false);
   assert.equal(output.releasePreflightRuntimeConfigChange, false);
   assert.equal(output.releasePreflightRuntimeConfigMutationPerformed, false);
@@ -217,6 +243,10 @@ test("release preflight smoke script runs no-write evaluate against a temporary 
     assert.equal(output.releasePreflightReadyForProductionDeployReview, output.releasePreflight.readyForProductionDeployReview);
     assert.equal(output.releasePreflightReadyForOwnerReleaseActivation, output.releasePreflight.readyForOwnerReleaseActivation);
     assert.equal(output.releasePreflightBackendEvidenceComplete, output.releasePreflight.backendEvidenceComplete);
+    assert.equal(output.releasePreflightProductionClosureGateCount, output.releasePreflight.productionClosureGateCount);
+    assert.equal(output.releasePreflightProductionClosurePendingGateCount, output.releasePreflight.productionClosurePendingGateCount);
+    assert.equal(output.releasePreflightDeploymentEvidenceRequired, true);
+    assert.equal(output.releasePreflight.productionClosureGates.some((gate) => gate.key === "production_deployment_health"), true);
     assert.equal(output.releasePreflightWritefulSchedulingAllowed, false);
     assert.equal(output.releasePreflightRuntimeConfigChange, false);
     assert.equal(output.releasePreflightRuntimeConfigMutationPerformed, false);

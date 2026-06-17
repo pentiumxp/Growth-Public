@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T02:07+08:00 - Release Preflight Production Closure Gate Readback
+
+- Status: implemented locally; focused preflight service/smoke/architecture
+  Harness and release-union passed. No production deploy, production Home AI
+  visual/UI harness run, platform Action Inbox/Web Push delivery, runtime config
+  change, scheduler execution, Gateway/model call, learner-state mutation,
+  release approval, or Home AI host logic change was performed.
+- Classification: H2 Growth release-readback projection. It extends the
+  existing `learning-automation-release-preflight-service` DTO and smoke
+  top-level readback; it adds no table, no route, no write permission, no
+  scheduler permission, no runtime config mutation, and no deployment behavior.
+- Scope:
+  - `releasePreflight.productionClosureGateSummary` /
+    `releasePreflight.productionClosureGates` now separate Growth backend
+    readiness, Home AI central visual/UI artifact evidence, Home AI Action
+    Inbox/Web Push receipt evidence, Owner release activation, runtime
+    enablement readback, and production deployment/health evidence;
+  - `production_deployment_health` remains external and pending in Growth local
+    preflight, so `readyForProductionDeploy` stays false even when local backend
+    evidence is ready for external review;
+  - the smoke script mirrors bounded top-level gate status/count/pending-count,
+    next external action, and deployment/platform evidence requirement fields.
+- Harness/docs updated:
+  - `src/services/learning-automation-release-preflight-service.js`
+  - `scripts/smoke-growth-release-preflight.js`
+  - `tests/learning-automation-release-preflight-service.test.js`
+  - `tests/growth-release-preflight-smoke-script.test.js`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`
+  - `docs/TEST_MATRIX.md`
+  - `.agent-context/PROJECT_CONTEXT.md`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check src/services/learning-automation-release-preflight-service.js scripts/smoke-growth-release-preflight.js tests/learning-automation-release-preflight-service.test.js tests/growth-release-preflight-smoke-script.test.js`;
+  - `node --test tests/learning-automation-release-preflight-service.test.js tests/growth-release-preflight-smoke-script.test.js`
+    -> 9/9;
+  - `node --test tests/learning-automation-release-preflight-service.test.js tests/growth-release-preflight-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    -> 46/46;
+  - `npm run test:release-union` -> 260/260.
+- Remaining gate:
+  - final production release still requires Home AI visual/UI artifact runs,
+    platform Action Inbox/Web Push receipt evidence, deployment/health evidence,
+    explicit release approvals, and real runtime enablement readback outside
+    this local package.
+
 ## 2026-06-18T01:58+08:00 - Release Artifact Template Full-Suite Closure
 
 - Status: implemented locally; release-union, full `npm test`, docs-locality,

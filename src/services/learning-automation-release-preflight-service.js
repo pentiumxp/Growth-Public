@@ -4,6 +4,19 @@ const RELEASE_PREFLIGHT_SCHEMA = "growth.learningAutomationReleasePreflight.v1";
 
 const PRIVATE_KEY_PATTERN = /(raw.*answer|answer.*key|transcript|raw.*prompt|prompt.*raw|hidden.*prompt|system.*prompt|developer.*prompt|model.*prompt|secret|token|cookie|password|private.*path|provider.*config|raw.*model|model.*raw|source.*document|source.*body|access.*token|api.*key|authorization|localstorage|sessionstorage|cookie.*jar)/i;
 const PRIVATE_VALUE_PATTERN = /(\/Users\/|[A-Z]:\\Users\\|\\Users\\|\.homeai-qa|\.hermes-growth|Bearer\s+|Authorization:|X-Hermes-Web-Key|X-Hermes-Access-Key|access-key\.txt|access-key|launch-token)/i;
+const HOME_AI_VISUAL_UI_EVIDENCE_KEYS = [
+  "central_visual_evidence",
+  "owner_daily_ui_evidence",
+  "owner_audit_ui_evidence",
+  "proposal_review_ui_evidence",
+  "automation_digest_ui_evidence",
+  "automation_action_handoff_ui_evidence",
+  "scheduler_execution_ui_evidence",
+  "scheduler_run_ui_evidence",
+  "scheduler_worker_target_ui_evidence",
+  "release_package_review_ui_evidence"
+];
+const HOME_AI_PLATFORM_ACTION_EVIDENCE_KEYS = ["platform_action_evidence"];
 
 function cleanString(value, max = 500) {
   const text = String(value || "").trim();
@@ -237,6 +250,129 @@ function firstAction(...actions) {
   return null;
 }
 
+function gateSummary({
+  key,
+  label,
+  status,
+  passed,
+  requiredActor,
+  action,
+  evidenceSource,
+  missingKeys = [],
+  blocksProductionDeploy = true
+}) {
+  return {
+    key: cleanString(key, 140),
+    label: cleanString(label, 180),
+    status: cleanString(status, 120),
+    passed: passed === true,
+    requiredActor: cleanString(requiredActor || "owner", 80),
+    action: cleanString(action, 180),
+    evidenceSource: cleanString(evidenceSource, 180),
+    missingKeys: uniqueStrings(missingKeys),
+    blocksProductionDeploy: blocksProductionDeploy === true,
+    summaryOnly: true
+  };
+}
+
+function missingGateKeys(allMissingKeys, keys) {
+  const missing = new Set(asArray(allMissingKeys).map((item) => cleanString(item, 180)).filter(Boolean));
+  return uniqueStrings(keys.filter((key) => missing.has(key)));
+}
+
+function buildProductionClosureGateSummary(scope, preflight) {
+  const allMissingKeys = uniqueStrings([]
+    .concat(preflight.missingCheckKeys)
+    .concat(preflight.blockedCheckKeys)
+    .concat(preflight.missingEvidenceKeys));
+  const visualUiMissingKeys = missingGateKeys(allMissingKeys, HOME_AI_VISUAL_UI_EVIDENCE_KEYS);
+  const platformActionMissingKeys = missingGateKeys(allMissingKeys, HOME_AI_PLATFORM_ACTION_EVIDENCE_KEYS);
+  const growthBackendReady = preflight.readyForProductionDeployReview === true;
+  const ownerActivationRecorded = Boolean(preflight.latestActivationId);
+  const runtimeEnablementRecorded = Boolean(preflight.latestRuntimeEnablementId);
+  const gates = [
+    gateSummary({
+      key: "growth_backend_release_evidence",
+      label: "Growth backend release evidence and approval readback",
+      status: growthBackendReady ? "ready_for_external_gate_review" : "pending_growth_backend_evidence",
+      passed: growthBackendReady,
+      requiredActor: "owner",
+      action: growthBackendReady ? "review_external_platform_gates" : "complete_growth_release_preflight_actions",
+      evidenceSource: "Growth release preflight",
+      missingKeys: growthBackendReady ? [] : allMissingKeys
+    }),
+    gateSummary({
+      key: "home_ai_visual_ui_artifacts",
+      label: "Home AI central visual and UI artifact evidence",
+      status: visualUiMissingKeys.length ? "pending_external_visual_evidence" : "evidence_recorded",
+      passed: visualUiMissingKeys.length === 0,
+      requiredActor: "home_ai_platform",
+      action: visualUiMissingKeys.length ? "run_home_ai_visual_ui_toolchain_and_attach_summaries" : "review_recorded_visual_ui_evidence",
+      evidenceSource: "Home AI central visual/UI harness",
+      missingKeys: visualUiMissingKeys
+    }),
+    gateSummary({
+      key: "home_ai_platform_action_receipts",
+      label: "Home AI Action Inbox and Web Push receipt evidence",
+      status: platformActionMissingKeys.length ? "pending_platform_action_receipts" : "evidence_recorded",
+      passed: platformActionMissingKeys.length === 0,
+      requiredActor: "home_ai_platform",
+      action: platformActionMissingKeys.length ? "deliver_platform_action_and_attach_receipts" : "review_platform_action_receipts",
+      evidenceSource: "Home AI Action Inbox/Web Push boundary",
+      missingKeys: platformActionMissingKeys
+    }),
+    gateSummary({
+      key: "owner_release_activation_record",
+      label: "Owner release activation audit record",
+      status: ownerActivationRecorded ? "recorded" : "pending_release_activation_record",
+      passed: ownerActivationRecorded,
+      requiredActor: "owner",
+      action: ownerActivationRecorded ? "review_release_activation_record" : "record_owner_release_activation_after_closure",
+      evidenceSource: "Growth release activation service"
+    }),
+    gateSummary({
+      key: "runtime_enablement_readback",
+      label: "Runtime enablement audit and config readback",
+      status: runtimeEnablementRecorded ? "readback_recorded" : "pending_runtime_enablement_readback",
+      passed: runtimeEnablementRecorded,
+      requiredActor: "owner",
+      action: runtimeEnablementRecorded ? "review_runtime_enablement_readback" : "record_runtime_enablement_after_manual_config",
+      evidenceSource: "Growth runtime enablement service"
+    }),
+    gateSummary({
+      key: "production_deployment_health",
+      label: "Production deployment and health evidence",
+      status: "pending_external_deployment_evidence",
+      passed: false,
+      requiredActor: "home_ai_platform",
+      action: "deploy_through_home_ai_macos_contract_and_attach_health_readback",
+      evidenceSource: "Home AI macOS deployment contract",
+      blocksProductionDeploy: true
+    })
+  ];
+  const pendingGates = gates.filter((gate) => gate.blocksProductionDeploy && gate.passed !== true);
+  return Object.assign({}, scope, {
+    schemaVersion: "growth.learningAutomationReleasePreflight.productionClosureGates.v1",
+    summaryOnly: true,
+    status: pendingGates.length ? "external_or_runtime_gates_pending" : "ready_for_production_deploy_evidence",
+    readyForProductionDeploy: false,
+    readyForProductionDeployReview: preflight.readyForProductionDeployReview === true,
+    gateCount: gates.length,
+    passedGateCount: gates.length - pendingGates.length,
+    pendingGateCount: pendingGates.length,
+    gates,
+    nextExternalAction: actionSummary(pendingGates[0]),
+    deploymentEvidenceRequired: true,
+    platformEvidenceRequired: pendingGates.some((gate) => gate.requiredActor === "home_ai_platform"),
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  });
+}
+
 function buildPreflightSummary(scope, dashboard, workbench, closure) {
   const missingCheckKeys = uniqueStrings(dashboard.missingCheckKeys.concat(workbench.missingCheckKeys));
   const blockedCheckKeys = uniqueStrings(dashboard.blockedCheckKeys);
@@ -251,7 +387,7 @@ function buildPreflightSummary(scope, dashboard, workbench, closure) {
     workbench.ownerActionCount,
     missingCheckKeys.length + missingEvidenceKeys.length + missingApprovalKeys.length + missingRecordKinds.length + blockedRecordKinds.length
   );
-  return Object.assign({}, scope, {
+  const releasePreflight = Object.assign({}, scope, {
     schemaVersion: "growth.learningAutomationReleasePreflight.summary.v1",
     summaryOnly: true,
     status,
@@ -288,6 +424,16 @@ function buildPreflightSummary(scope, dashboard, workbench, closure) {
     writefulSchedulingAllowed: false,
     backgroundSchedulingAllowed: false,
     backgroundWorkerAllowed: false
+  });
+  const productionClosureGateSummary = buildProductionClosureGateSummary(scope, releasePreflight);
+  return Object.assign({}, releasePreflight, {
+    productionClosureGateSummary,
+    productionClosureGates: productionClosureGateSummary.gates,
+    productionClosureGateCount: productionClosureGateSummary.gateCount,
+    productionClosurePendingGateCount: productionClosureGateSummary.pendingGateCount,
+    productionClosurePassedGateCount: productionClosureGateSummary.passedGateCount,
+    deploymentEvidenceRequired: true,
+    platformEvidenceRequired: productionClosureGateSummary.platformEvidenceRequired === true
   });
 }
 

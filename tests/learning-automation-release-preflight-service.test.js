@@ -30,6 +30,8 @@ function createReadyService(extra = {}) {
             readinessEvidenceMissingCount: 0,
             persistedApprovalKeys: ["writefulExecutionApproval"],
             persistedEvidenceKeys: ["owner_daily_ui_evidence"],
+            latestActivationId: "lgaract_ready_1",
+            latestRuntimeEnablementId: "lgarten_ready_1",
             nextAction: { key: "manual_config_change", action: "enable_runtime_config", requiredActor: "owner" }
           }
         }, extra.dashboardResult || {});
@@ -112,6 +114,13 @@ test("release preflight evaluates summary-only release readiness without writefu
   assert.equal(result.releasePreflight.readyForOwnerReleaseActivation, true);
   assert.equal(result.releasePreflight.readyForProductionDeploy, false);
   assert.equal(result.releasePreflight.readyForProductionDeployReview, true);
+  assert.equal(result.releasePreflight.productionClosureGateSummary.status, "external_or_runtime_gates_pending");
+  assert.equal(result.releasePreflight.productionClosureGateCount, 6);
+  assert.equal(result.releasePreflight.productionClosurePendingGateCount, 1);
+  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").status, "pending_external_deployment_evidence");
+  assert.equal(result.releasePreflight.productionClosureGates.find((gate) => gate.key === "production_deployment_health").passed, false);
+  assert.equal(result.releasePreflight.productionClosureGateSummary.nextExternalAction.key, "production_deployment_health");
+  assert.equal(result.releasePreflight.deploymentEvidenceRequired, true);
   assert.equal(result.releasePreflight.readinessEvidencePresentCount, 12);
   assert.deepEqual(result.releasePreflight.persistedApprovalKeys, ["writefulExecutionApproval"]);
   assert.deepEqual(result.releasePreflight.persistedEvidenceKeys, ["owner_daily_ui_evidence"]);
@@ -163,6 +172,39 @@ test("release preflight report write requires explicit authorization and delegat
   assert.equal(recorded[0].workspaceId, "weixin_fanfan");
   assert.equal(recorded[0].requestedBy, "owner");
   assert.equal(recorded[0].releasePreflight.readyForProductionDeploy, false);
+  assert.equal(recorded[0].releasePreflight.productionClosureGateSummary.deploymentEvidenceRequired, true);
+});
+
+test("release preflight keeps Home AI visual and platform evidence as explicit external gates", () => {
+  const { service } = createReadyService({
+    dashboardResult: {
+      releaseDashboard: {
+        missingCheckKeys: ["central_visual_evidence", "platform_action_evidence"],
+        missingEvidenceKeys: ["release_package_review_ui_evidence"],
+        readinessEvidenceMissingCount: 3,
+        latestActivationId: "",
+        latestRuntimeEnablementId: ""
+      }
+    },
+    workbenchResult: {
+      releaseWorkbench: {
+        ownerActionCount: 3,
+        missingCheckKeys: ["central_visual_evidence", "platform_action_evidence"],
+        missingEvidenceKeys: ["release_package_review_ui_evidence"]
+      }
+    }
+  });
+
+  const result = service.evaluate({ workspaceId: "weixin_fanfan" });
+  const visualGate = result.releasePreflight.productionClosureGates.find((gate) => gate.key === "home_ai_visual_ui_artifacts");
+  const platformGate = result.releasePreflight.productionClosureGates.find((gate) => gate.key === "home_ai_platform_action_receipts");
+
+  assert.equal(result.releasePreflight.readyForProductionDeploy, false);
+  assert.equal(result.releasePreflight.productionClosureGateSummary.platformEvidenceRequired, true);
+  assert.equal(visualGate.status, "pending_external_visual_evidence");
+  assert.deepEqual(visualGate.missingKeys.sort(), ["central_visual_evidence", "release_package_review_ui_evidence"].sort());
+  assert.equal(platformGate.status, "pending_platform_action_receipts");
+  assert.deepEqual(platformGate.missingKeys, ["platform_action_evidence"]);
 });
 
 test("release preflight fails closed on privacy risks and missing dependencies", () => {
