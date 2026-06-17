@@ -1589,7 +1589,7 @@ test("Fanfan science operating loop drafts, publishes, evaluates, and updates Pr
   }
 });
 
-test("provisioned non-sample science operating loop is blocked until target provision and then stays target-scoped", async () => {
+test("provisioned non-sample science daily loop advances, completes, and stays target-scoped", async () => {
   const harness = createLoopHarness();
   const learnerWorkspaceId = "weixin_alice";
   const learnerId = "alice";
@@ -1659,73 +1659,126 @@ test("provisioned non-sample science operating loop is blocked until target prov
     assert.equal(wrongSubject.error, "learning_domain_pack_not_provisioned");
     assert.equal(harness.plannerGatewayCalls.length, 0);
 
-    const draft = await harness.planPublisherService.draftPlan({
+    const recipeContext = harness.contextService.context({
       workspaceId: learnerWorkspaceId,
       learnerId,
       programId,
-      horizon: "daily_plan",
-      domainPackId: "domain_pack_ai_loop_science",
-      domain: "science",
-      subject: "science",
-      targetNodeIds: [SCIENCE_NODE_ID],
-      availableMinutes: 15
+      displayName: "Alice",
+      recipeId: "daily_science_v1"
     });
-    assert.equal(draft.ok, true);
-    assert.equal(draft.planDraft.workspaceId, learnerWorkspaceId);
-    assert.equal(draft.planDraft.learnerId, learnerId);
-    assert.equal(draft.planDraft.validation.targetProvisioning.mode, "explicit_provision");
-    assert.equal(draft.planDraft.validation.targetProvisioning.selectedDomainPackId, "domain_pack_ai_loop_science");
-    assert.equal(draft.planDraft.contextSummary.knowledgeGraph.domainPackId, "domain_pack_ai_loop_science");
-    assert.equal(draft.planDraft.contextSummary.knowledgeGraph.candidateNodes[0].nodeId, SCIENCE_NODE_ID);
+    assert.equal(recipeContext.ok, true);
+    assert.equal(recipeContext.selectedRecipeId, "daily_science_v1");
+    assert.equal(recipeContext.target.workspaceId, learnerWorkspaceId);
+    assert.equal(recipeContext.target.learnerId, learnerId);
+    assert.equal(recipeContext.targetProvisioning.mode, "explicit_provision");
+    assert.equal(recipeContext.targetProvisioning.selectedDomainPackId, "domain_pack_ai_loop_science");
+    assert.equal(recipeContext.targetProvisioning.selectedSubject, "science");
+    assert.equal(recipeContext.suggestedPlan.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(recipeContext).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(recipeContext).includes(RAW_MARKER), false);
+
+    const advanced = await harness.dailyLoopService.advance({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      displayName: "Alice",
+      recipeId: "daily_science_v1",
+      requestedBy: "owner"
+    });
+    assert.equal(advanced.ok, true);
+    assert.equal(advanced.operation, "advance");
+    assert.equal(advanced.stage, "published");
+    assert.equal(advanced.target.workspaceId, learnerWorkspaceId);
+    assert.equal(advanced.target.learnerId, learnerId);
+    assert.equal(advanced.scope.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(advanced.scope.domain, "science");
+    assert.equal(advanced.scope.subject, "science");
+    assert.equal(advanced.generation.targetProvisioning.mode, "explicit_provision");
+    assert.equal(advanced.generation.learningGraphPlan.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(advanced.generation.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
     assert.equal(harness.plannerGatewayCalls.length, 1);
     assert.equal(harness.plannerGatewayCalls[0].input.target.workspaceId, learnerWorkspaceId);
     assert.equal(harness.plannerGatewayCalls[0].input.target.learnerId, learnerId);
     assert.equal(harness.plannerGatewayCalls[0].input.knowledgeGraph.domainPackId, "domain_pack_ai_loop_science");
-    assert.equal(JSON.stringify(harness.plannerGatewayCalls[0]).includes(RAW_MARKER), false);
-
-    const published = await harness.planPublisherService.publishPlanItem({
-      workspaceId: learnerWorkspaceId,
-      learnerId,
-      planDraftId: draft.planDraft.planDraftId,
-      itemId: "plan_item_science_fair_test"
-    });
-    assert.equal(published.ok, true);
-    assert.equal(published.generation.targetProvisioning.mode, "explicit_provision");
-    assert.equal(published.generation.learningGraphPlan.workspaceId, learnerWorkspaceId);
-    assert.equal(published.generation.learningGraphPlan.learnerId, learnerId);
-    assert.equal(published.generation.learningGraphPlan.domainPackId, "domain_pack_ai_loop_science");
-    assert.equal(published.generation.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
     assert.equal(harness.gatewayCalls.length, 1);
     assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.workspaceId, learnerWorkspaceId);
     assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.learnerId, learnerId);
     assert.equal(harness.gatewayCalls[0].input.learningGraphPlan.domainPackId, "domain_pack_ai_loop_science");
+    assert.equal(JSON.stringify(harness.plannerGatewayCalls[0]).includes(RAW_MARKER), false);
     assert.equal(JSON.stringify(harness.gatewayCalls[0]).includes(RAW_MARKER), false);
 
-    const submitted = harness.store.submitEvidence({
-      workspaceId: learnerWorkspaceId,
-      taskCardId: published.generation.published.taskCardId,
-      text: "I changed the light and measured the plant height. The result changed because the plant had more light.",
-      submittedAt: "2026-06-14T08:05:00.000Z"
-    });
-    assert.equal(submitted.ok, true);
-    assert.equal(submitted.workspace_id, learnerWorkspaceId);
-    assert.equal(submitted.submission.taskCardId, published.generation.published.taskCardId);
-    assert.equal(submitted.evaluation_job.status, "pending");
+    const taskCardId = advanced.generation.published.taskCardId;
+    const board = await harness.growthService.board({ workspaceId: learnerWorkspaceId, limit: 20 });
+    assert.equal(board.ok, true);
+    const boardCard = board.cards.find((card) => card.taskCardId === taskCardId);
+    assert.ok(boardCard);
+    assert.equal(boardCard.domain, "science");
+    assert.equal(boardCard.cardRole, "teaching");
+    assert.deepEqual(boardCard.targetNodeIds, [SCIENCE_NODE_ID]);
+    assert.equal(boardCard.primaryAction, "submit");
+    assert.equal(JSON.stringify(board).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(board).includes(RAW_MARKER), false);
 
-    const pendingJob = harness.store.listEvaluationJobs({ status: "pending", workspaceId: learnerWorkspaceId })[0];
-    const processed = await harness.evaluationService.processEvaluationJob(pendingJob);
-    assert.equal(processed.ok, true);
-    assert.equal(processed.evaluation.taskCardId, published.generation.published.taskCardId);
-    assert.equal(processed.evaluation.status, "completed");
-    assert.equal(processed.profile_delta.ok, true);
-    assert.equal(processed.profile_delta.workspaceId, learnerWorkspaceId);
-    assert.equal(processed.profile_delta.learnerId, learnerId);
-    assert.equal(processed.profile_delta.changedCapabilities[0].nodeId, SCIENCE_NODE_ID);
+    const detail = await harness.growthService.card({ workspaceId: learnerWorkspaceId, taskCardId });
+    assert.equal(detail.ok, true);
+    assert.equal(detail.card.taskCardId, taskCardId);
+    assert.equal(detail.card.domain, "science");
+    assert.equal(detail.card.primaryAction, "submit");
+    assert.equal(JSON.stringify(detail).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(detail).includes(RAW_MARKER), false);
+
+    const completed = await harness.learnerCycleService.full({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      planDraftId: advanced.planDraft.planDraftId,
+      taskCardId,
+      targetNodeIds: [SCIENCE_NODE_ID],
+      domain: "science",
+      subject: "science",
+      text: "I changed the light and measured the plant height. The result changed because the plant had more light.",
+      reflection: "I should name the changed variable and measured result every time.",
+      author: "alice",
+      submittedAt: "2026-06-14T08:05:00.000Z",
+      reflectedAt: "2026-06-14T08:15:00.000Z"
+    });
+    assert.equal(completed.ok, true);
+    assert.equal(completed.submission.status, "submitted");
+    assert.equal(completed.evaluationQueue.processed, 1);
+    assert.equal(completed.reflection.status, "submitted");
+    assert.equal(completed.cycleAudit.summary.hasPublishedPlan, true);
+    assert.equal(completed.cycleAudit.summary.hasEvaluationEvidence, true);
+    assert.equal(completed.cycleAudit.summary.hasProfileDelta, true);
+    assert.equal(completed.completeness.readyForAutomation, true);
+    assert.deepEqual(completed.completeness.summary.missingRequired, []);
     assert.equal(harness.evaluationGatewayCalls.length, 1);
     assert.equal(harness.evaluationGatewayCalls[0].input.workspaceId, learnerWorkspaceId);
     assert.equal(harness.evaluationGatewayCalls[0].input.learnerId, learnerId);
     assert.equal(harness.evaluationGatewayCalls[0].input.card.targetNodeIds[0], SCIENCE_NODE_ID);
+    assert.equal(harness.evaluationGatewayCalls[0].input.policy.completionPolicy, "daily_score_once");
+    assert.equal(JSON.stringify(completed).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(completed).includes(RAW_MARKER), false);
     assert.equal(JSON.stringify(harness.evaluationGatewayCalls[0]).includes(RAW_MARKER), false);
+
+    const duplicateSubmit = await harness.learnerCycleService.submit({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      taskCardId,
+      text: "Second submission should not be accepted."
+    });
+    assert.equal(duplicateSubmit.ok, false);
+    assert.equal(duplicateSubmit.error, "daily_card_submission_already_recorded");
+
+    const duplicateReflect = await harness.learnerCycleService.reflect({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      taskCardId,
+      reflection: "Second reflection should not be accepted."
+    });
+    assert.equal(duplicateReflect.ok, false);
+    assert.equal(duplicateReflect.error, "daily_card_reflection_already_recorded");
 
     const profileV2 = harness.profileV2Service.profileV2({
       workspaceId: learnerWorkspaceId,
@@ -1740,6 +1793,45 @@ test("provisioned non-sample science operating loop is blocked until target prov
     assert.equal(JSON.stringify(profileV2).includes(WORKSPACE_ID), false);
     assert.equal(JSON.stringify(profileV2).includes(RAW_MARKER), false);
 
+    const nextLoopState = harness.loopStateService.state({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      taskCardId,
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(nextLoopState.ok, true);
+    assert.equal(nextLoopState.status, "ready_to_draft");
+    assert.equal(nextLoopState.target.workspaceId, learnerWorkspaceId);
+    assert.equal(nextLoopState.target.learnerId, learnerId);
+    assert.equal(nextLoopState.audit.readyForAutomation, true);
+    assert.equal(nextLoopState.recommendation.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(nextLoopState.nextAction.action, "draft_daily_plan");
+    assert.equal(JSON.stringify(nextLoopState).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(nextLoopState).includes(RAW_MARKER), false);
+
+    const profileFeedbackEvidence = harness.profileFeedbackEvidenceService.evaluate({
+      workspaceId: learnerWorkspaceId,
+      learnerId,
+      programId,
+      taskCardId,
+      evaluationId: completed.evaluationQueue.results[0].evaluationId,
+      profileDeltaId: completed.evaluationQueue.results[0].profileDelta?.profileDeltaId,
+      evidenceId: completed.evaluationQueue.results[0].profileDelta?.basis?.evidenceIds?.[0],
+      domain: "science",
+      subject: "science",
+      targetNodeIds: [SCIENCE_NODE_ID]
+    });
+    assert.equal(profileFeedbackEvidence.ok, true);
+    assert.equal(profileFeedbackEvidence.status, "pass");
+    assert.equal(profileFeedbackEvidence.summary.readyForNextPlan, true);
+    assert.equal(profileFeedbackEvidence.summary.rewardSettlementCount >= 1, true);
+    assert.equal(profileFeedbackEvidence.recommendation.targetNodeId, SCIENCE_NODE_ID);
+    assert.equal(JSON.stringify(profileFeedbackEvidence).includes(WORKSPACE_ID), false);
+    assert.equal(JSON.stringify(profileFeedbackEvidence).includes(RAW_MARKER), false);
+
     const db = new DatabaseSync(harness.dbPath, { readOnly: true });
     try {
       const provisionRows = db.prepare("SELECT * FROM learning_growth_domain_pack_provisions WHERE workspace_id = ?").all(learnerWorkspaceId);
@@ -1748,17 +1840,28 @@ test("provisioned non-sample science operating loop is blocked until target prov
       assert.equal(provisionRows[0].subject, "science");
 
       const planRow = db.prepare("SELECT * FROM learning_growth_plan_drafts WHERE plan_draft_id = ?")
-        .get(draft.planDraft.planDraftId);
+        .get(advanced.planDraft.planDraftId);
       assert.equal(planRow.workspace_id, learnerWorkspaceId);
       assert.equal(planRow.learner_id, learnerId);
+      assert.equal(planRow.status, "published");
+      assert.equal(planRow.generated_task_card_id, taskCardId);
       assert.equal(JSON.parse(planRow.validation_json).targetProvisioning.mode, "explicit_provision");
       assert.equal(JSON.parse(planRow.context_summary_json).target.workspaceId, learnerWorkspaceId);
 
-      const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(published.generation.published.taskCardId);
+      const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(taskCardId);
       assert.equal(card.workspace_id, learnerWorkspaceId);
       assert.equal(card.learner_id, learnerId);
       assert.equal(card.domain, "science");
+      assert.equal(card.status, "completed");
       assert.equal(JSON.parse(card.raw_json).learningGraph.domainPackId, "domain_pack_ai_loop_science");
+      assert.equal(JSON.parse(card.raw_json).completionPolicy.mode, "daily_score_once");
+
+      const submissions = db.prepare("SELECT COUNT(*) AS count FROM learning_task_submissions WHERE task_card_id = ?").get(taskCardId);
+      const evaluations = db.prepare("SELECT COUNT(*) AS count FROM learning_evaluations WHERE task_card_id = ?").get(taskCardId);
+      const reflections = db.prepare("SELECT COUNT(*) AS count FROM learning_task_reflections WHERE task_card_id = ?").get(taskCardId);
+      assert.equal(submissions.count, 1);
+      assert.equal(evaluations.count, 1);
+      assert.equal(reflections.count, 1);
 
       const ledgerRows = db.prepare("SELECT * FROM learning_growth_evidence_ledger WHERE workspace_id = ? AND graph_node_id = ?").all(learnerWorkspaceId, SCIENCE_NODE_ID);
       assert.equal(ledgerRows.length >= 1, true);

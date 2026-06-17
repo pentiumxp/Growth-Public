@@ -1042,8 +1042,12 @@ readback gate set.
   `domainPackId`, graph plan/card audit propagation of `domainPackId`,
   `domain`, and `subject`, and a non-sample provisioned science vertical
   harness that proves unprovisioned blocking, explicit provision enablement,
-  wrong-subject blocking, and target-workspace scoped plan/card/evidence/
-  Profile V2/profile-delta rows. The same target-resolution evidence is now
+  wrong-subject blocking, `learning-daily-loop-service.advance()` over the
+  same recipe/context path, board/detail visibility, one submission, one
+  evaluation, one reflection, duplicate daily submission/reflection rejection,
+  target-workspace scoped plan/card/evidence/Profile V2/profile-delta rows,
+  next loop-state readback, and profile-feedback evidence without leaking or
+  mixing Fanfan rows. The same target-resolution evidence is now
   collected by the default release evidence bundle and represented in
   release-readiness before any production scheduling decision.
   Evidence-ledger audit readback is now implemented through

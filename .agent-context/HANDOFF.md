@@ -9,6 +9,42 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T19:23+08:00 - Non-Sample Daily Loop Service Closure Harness
+
+- Status: implemented locally; focused Harness passed. No production
+  deployment or browser visual evidence was performed in this package.
+- Classification: Growth-local H2/H1-adjacent service-level operating-loop
+  closure. It proves backend multi-target behavior without changing route
+  authorization, Gateway/model boundaries, DB schema, scheduler runtime,
+  notification delivery, stage-assessment activation, production config, or
+  deployment state.
+- Scope:
+  - expanded `tests/learning-card-ai-loop-harness.test.js` so a non-sample
+    visible learner is blocked until explicit domain-pack/subject provision,
+    then uses the same `daily_science_v1` recipe/context path and
+    `learning-daily-loop-service.advance()` as the Fanfan sample;
+  - proved generated science card board/detail visibility, one
+    submit/evaluate/reflect daily learner cycle, duplicate daily
+    submission/reflection rejection, Gateway evaluation input scoping, Profile
+    V2 readback, next loop-state readback, and
+    `growth.learningProfileFeedbackEvidence.v1` profile-feedback evidence;
+  - asserted target-workspace-owned plan/card/evidence/Profile V2/profile-delta
+    SQLite rows and no Fanfan/raw-private marker leakage in the non-sample
+    path;
+  - updated Growth architecture, next-stage plan, card-generation UI plan,
+    platform-contract pointer, test matrix, and project context to make this
+    service-level closure durable.
+- Validation:
+  - `node --check tests/learning-card-ai-loop-harness.test.js`
+  - `node --test tests/learning-card-ai-loop-harness.test.js tests/learning-target-provisioning-service.test.js tests/learning-daily-loop-service.test.js` -> 19/19
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` -> index up to date; existing
+    earlier-engine advisory remains.
+- Follow-up:
+  - browser/production visual closure for non-sample Owner target selection is
+    still pending before claiming UI completion for generalized targets.
+
 ## 2026-06-17T19:14+08:00 - Owner Active Checkpoint Readback UI Package
 
 - Status: implemented locally; key Harness passed. No production deployment was
