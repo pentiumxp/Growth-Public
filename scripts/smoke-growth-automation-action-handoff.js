@@ -55,6 +55,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 16) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function operationFromArgs(args) {
   const explicit = firstArgValue(args, ["--operation"], "");
   const operation = explicit || (hasFlag(args, "--create") ? "create" : hasFlag(args, "--deliver") ? "deliver" : "list");
@@ -111,6 +133,80 @@ async function runOperation(service, operation, input) {
   return service.listHandoffs(input);
 }
 
+function summarizeStatuses(handoffs = [], key = "status") {
+  return asArray(handoffs).reduce((counts, handoff) => {
+    const status = cleanString(handoff && handoff[key], 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationActionHandoffSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const handoffs = asArray(readback.handoffs);
+  const handoff = objectOnly(readback.handoff || handoffs[0]);
+  const actionSummary = objectOnly(handoff.actionSummary);
+  const policyReadiness = objectOnly(handoff.policyReadiness);
+  const notification = objectOnly(handoff.notification);
+  const delivery = objectOnly(readback.delivery || handoff.delivery);
+  const actions = asArray(handoff.actions);
+  const blocked = asArray(handoff.blocked);
+  const statusRows = handoffs.length ? handoffs : handoff.handoffId ? [handoff] : [];
+  const handoffStatusCounts = summarizeStatuses(statusRows, "status");
+  const deliveryStatusCounts = summarizeStatuses(statusRows, "deliveryStatus");
+  const deliveryStatus = cleanString(readback.deliveryStatus || handoff.deliveryStatus || (operation === "list" ? "listed" : "pass"), 120);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  return Object.assign({}, readback, {
+    automationActionHandoffStatus: cleanString(
+      readback.ok === false ? readback.error || "failed" : deliveryStatus,
+      140
+    ),
+    automationActionHandoffOk: readback.ok !== false,
+    automationActionHandoffOperation: cleanString(operation, 80),
+    automationActionHandoffWriteOperation: writeOperation,
+    automationActionHandoffWriteAllowed: writeAllowed === true,
+    automationActionHandoffWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationActionHandoffDuplicate: readback.duplicate === true,
+    automationActionHandoffWorkspaceId: cleanString(readback.workspaceId || handoff.workspaceId || input.workspaceId, 160),
+    automationActionHandoffLearnerId: cleanString(readback.learnerId || handoff.learnerId || input.learnerId, 160),
+    automationActionHandoffProgramId: cleanString(handoff.programId || input.programId, 160),
+    automationActionHandoffDomainPackId: cleanString(handoff.domainPackId || input.domainPackId, 180),
+    automationActionHandoffDomain: cleanString(handoff.domain || input.domain, 120),
+    automationActionHandoffSubject: cleanString(handoff.subject || input.subject, 120),
+    automationActionHandoffHorizon: cleanString(handoff.horizon || input.horizon, 80),
+    automationActionHandoffCount: numberValue(readback.count, handoffs.length),
+    automationActionHandoffHandoffId: cleanString(handoff.handoffId || input.handoffId, 180),
+    automationActionHandoffHandoffIds: uniqueBoundedStrings(handoffs.map((item) => item && item.handoffId), 24),
+    automationActionHandoffDigestId: cleanString(handoff.digestId || actionSummary.digestId || input.digestId, 180),
+    automationActionHandoffPolicyId: cleanString(handoff.policyId || policyReadiness.policyId, 180),
+    automationActionHandoffPrivacyClass: cleanString(handoff.privacyClass, 80),
+    automationActionHandoffStatuses: uniqueBoundedStrings(Object.keys(handoffStatusCounts), 12),
+    automationActionHandoffPendingDeliveryCount: numberValue(handoffStatusCounts.pending_delivery, 0),
+    automationActionHandoffDeliveryStatuses: uniqueBoundedStrings(Object.keys(deliveryStatusCounts), 12),
+    automationActionHandoffNotDeliveredCount: numberValue(deliveryStatusCounts.not_delivered, 0),
+    automationActionHandoffDeliveredCount: numberValue(deliveryStatusCounts.delivered, 0),
+    automationActionHandoffDeliveryFailedCount: numberValue(deliveryStatusCounts.delivery_failed, 0),
+    automationActionHandoffDeliveryStatus: deliveryStatus,
+    automationActionHandoffDelivered: deliveryStatus === "delivered",
+    automationActionHandoffDeliveryError: cleanString(delivery.error || readback.error, 220),
+    automationActionHandoffDeliveryInboxItemId: cleanString(delivery.inboxItemId, 180),
+    automationActionHandoffNotificationEventType: cleanString(notification.eventType, 140),
+    automationActionHandoffNotificationRoute: cleanString(notification.route && notification.route.pluginRoute, 120),
+    automationActionHandoffActionRequiredBeforeScheduling: readback.actionHandoffRequiredBeforeScheduling === true || Boolean(handoff.handoffId),
+    automationActionHandoffWritefulSchedulingAllowed: readback.writefulSchedulingAllowed === true || policyReadiness.writefulSchedulingAllowed === true,
+    automationActionHandoffPolicyReady: policyReadiness.readyForWritefulAutomationPrerequisite === true,
+    automationActionHandoffRequiredActionCount: numberValue(actionSummary.requiredActions, actions.length),
+    automationActionHandoffBlockedCount: numberValue(actionSummary.blocked, blocked.length),
+    automationActionHandoffInspectedCount: numberValue(actionSummary.inspected, 0),
+    automationActionHandoffWouldPublishCount: numberValue(actionSummary.wouldPublish, 0),
+    automationActionHandoffSkippedCount: numberValue(actionSummary.skipped, 0),
+    automationActionHandoffActionCandidateIds: uniqueBoundedStrings(actions.map((item) => item && item.candidateId), 24),
+    automationActionHandoffActionEndpoints: uniqueBoundedStrings(actions.map((item) => item && item.endpoint), 12),
+    automationActionHandoffBlockedCandidateIds: uniqueBoundedStrings(blocked.map((item) => item && item.candidateId), 24)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -145,7 +241,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services.learningAutomationActionHandoffService, operation, input);
+  const result = projectAutomationActionHandoffSmokeReadback(
+    Object.assign({ operation }, await runOperation(services.learningAutomationActionHandoffService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -164,6 +265,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationActionHandoffSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

@@ -9,6 +9,37 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T15:32+08:00 - Automation Action Handoff Smoke Operator Readback
+
+- Status: implemented and key-node validated locally. No production deployment
+  or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change action-handoff service behavior, route authorization, repositories, DB
+  schema, Gateway/model calls, card publication, proposal execution, scheduler
+  execution/ticks, stage activation, runtime config, UI behavior, production
+  deployment, or learner state.
+- Scope:
+  - added `projectAutomationActionHandoffSmokeReadback()` in
+    `scripts/smoke-growth-automation-action-handoff.js`;
+  - projected bounded top-level `automationActionHandoff*` fields for
+    operation/write gate, scope, handoff/digest/policy ids, delivery state,
+    Owner action counts, blocked counts, notification event type, and
+    `writefulSchedulingAllowed=false` while preserving nested list/create/deliver
+    DTOs as canonical;
+  - kept create/deliver behind the existing explicit `--allow-write` gate;
+  - expanded `tests/growth-automation-action-handoff-smoke-script.test.js` to
+    assert pure projection, default no-write list readback, create readback, and
+    delivery-failure readback;
+  - updated Growth-local architecture, operating-loop, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-automation-action-handoff.js`
+  - `node --test tests/growth-automation-action-handoff-smoke-script.test.js`
+  - `npm run --silent smoke:action-handoff -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - continue with scheduler execution smoke top-level readback as the next
+    automation loop visibility slice, using key-node validation only.
+
 ## 2026-06-17T15:22+08:00 - Automation Digest Smoke Operator Readback
 
 - Status: implemented and key-node validated locally. No production deployment

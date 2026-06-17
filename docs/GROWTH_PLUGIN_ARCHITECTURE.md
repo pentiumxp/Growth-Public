@@ -303,10 +303,12 @@ full operating loop:
 - action handoff smoke CLI is implemented locally through
   `npm run smoke:action-handoff`; it defaults to read-only scoped handoff
   listing, requires explicit `--allow-write` for `create` and `deliver`,
-  delegates only to `learning-automation-action-handoff-service`, and provides
-  a bounded Growth-side platform-action evidence path without publishing,
-  executing scheduler actions, calling Gateway, running scheduler ticks, or
-  activating stage assessments;
+  delegates only to `learning-automation-action-handoff-service`, mirrors
+  bounded top-level `automationActionHandoff*` operator readback from the
+  nested list/create/deliver DTOs, and provides a bounded Growth-side
+  platform-action evidence path without publishing, executing scheduler
+  actions, calling Gateway, running scheduler ticks, or activating stage
+  assessments;
 - Owner-safe Profile V2 and evidence-ledger audit projections are available in
   the backend/API generation context, and evidence-ledger audit readback is
   available through `GET /api/v1/growth/evidence/audit`;

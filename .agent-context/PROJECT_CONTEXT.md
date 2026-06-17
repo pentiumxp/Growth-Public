@@ -1123,7 +1123,11 @@ readback gate set.
   `npm run smoke:action-handoff` now provides the service-owned operational
   smoke for this boundary: `list` is the default read-only operation, while
   `create` and `deliver` require explicit `--allow-write` and still delegate
-  only to `learning-automation-action-handoff-service`.
+  only to `learning-automation-action-handoff-service`. The smoke also mirrors
+  bounded top-level `automationActionHandoff*` operator readback for operation,
+  write gate, scope, handoff/digest/policy ids, delivery state, Owner action
+  counts, blocked counts, notification event type, and
+  `writefulSchedulingAllowed=false` while keeping the nested DTOs canonical.
   Backend-only Owner automation evidence is now implemented through
   `learning-automation-owner-review-evidence-service`,
   visible-target scoped

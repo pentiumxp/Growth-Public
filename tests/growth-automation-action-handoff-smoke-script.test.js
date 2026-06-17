@@ -19,6 +19,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-actio
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationActionHandoffSmokeReadback,
   shouldAllowWrite,
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-action-handoff");
@@ -192,6 +193,90 @@ test("automation action handoff smoke script parses operation, scope, and write 
   });
 });
 
+test("automation action handoff smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationActionHandoffSmokeReadback({
+    ok: true,
+    count: 2,
+    handoffs: [{
+      handoffId: "lgahand_pending",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      digestId: "lgadig_reviewed",
+      policyId: "lgafpol_active",
+      status: "pending_delivery",
+      deliveryStatus: "not_delivered",
+      privacyClass: "summary_only",
+      actionSummary: {
+        inspected: 2,
+        wouldPublish: 1,
+        blocked: 1,
+        skipped: 0,
+        requiredActions: 1
+      },
+      policyReadiness: {
+        readyForWritefulAutomationPrerequisite: true,
+        writefulSchedulingAllowed: false
+      },
+      notification: {
+        eventType: "growth.automation.action_required",
+        route: { pluginRoute: "automation" }
+      },
+      actions: [{
+        candidateId: "candidate_1",
+        endpoint: "/api/v1/growth/automation/proposals/lgauto_ready/publish"
+      }],
+      blocked: [{ candidateId: "candidate_2" }]
+    }, {
+      handoffId: "lgahand_delivered",
+      status: "pending_delivery",
+      deliveryStatus: "delivered"
+    }]
+  }, "list", { workspaceId: "weixin_fanfan", learnerId: "fanfan" }, false);
+
+  assert.equal(projected.automationActionHandoffStatus, "not_delivered");
+  assert.equal(projected.automationActionHandoffOk, true);
+  assert.equal(projected.automationActionHandoffOperation, "list");
+  assert.equal(projected.automationActionHandoffWriteOperation, false);
+  assert.equal(projected.automationActionHandoffWriteAllowed, false);
+  assert.equal(projected.automationActionHandoffWritesPerformed, false);
+  assert.equal(projected.automationActionHandoffWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationActionHandoffLearnerId, "fanfan");
+  assert.equal(projected.automationActionHandoffProgramId, "program_science");
+  assert.equal(projected.automationActionHandoffDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(projected.automationActionHandoffDomain, "science");
+  assert.equal(projected.automationActionHandoffSubject, "science");
+  assert.equal(projected.automationActionHandoffCount, 2);
+  assert.equal(projected.automationActionHandoffHandoffId, "lgahand_pending");
+  assert.deepEqual(projected.automationActionHandoffHandoffIds, ["lgahand_pending", "lgahand_delivered"]);
+  assert.deepEqual(projected.automationActionHandoffStatuses, ["pending_delivery"]);
+  assert.deepEqual(projected.automationActionHandoffDeliveryStatuses, ["not_delivered", "delivered"]);
+  assert.equal(projected.automationActionHandoffPendingDeliveryCount, 2);
+  assert.equal(projected.automationActionHandoffNotDeliveredCount, 1);
+  assert.equal(projected.automationActionHandoffDeliveredCount, 1);
+  assert.equal(projected.automationActionHandoffDigestId, "lgadig_reviewed");
+  assert.equal(projected.automationActionHandoffPolicyId, "lgafpol_active");
+  assert.equal(projected.automationActionHandoffPrivacyClass, "summary_only");
+  assert.equal(projected.automationActionHandoffDeliveryStatus, "not_delivered");
+  assert.equal(projected.automationActionHandoffDelivered, false);
+  assert.equal(projected.automationActionHandoffNotificationEventType, "growth.automation.action_required");
+  assert.equal(projected.automationActionHandoffNotificationRoute, "automation");
+  assert.equal(projected.automationActionHandoffActionRequiredBeforeScheduling, true);
+  assert.equal(projected.automationActionHandoffWritefulSchedulingAllowed, false);
+  assert.equal(projected.automationActionHandoffPolicyReady, true);
+  assert.equal(projected.automationActionHandoffRequiredActionCount, 1);
+  assert.equal(projected.automationActionHandoffBlockedCount, 1);
+  assert.equal(projected.automationActionHandoffInspectedCount, 2);
+  assert.equal(projected.automationActionHandoffWouldPublishCount, 1);
+  assert.deepEqual(projected.automationActionHandoffActionCandidateIds, ["candidate_1"]);
+  assert.deepEqual(projected.automationActionHandoffBlockedCandidateIds, ["candidate_2"]);
+  assert.deepEqual(projected.automationActionHandoffActionEndpoints, ["/api/v1/growth/automation/proposals/lgauto_ready/publish"]);
+});
+
 test("automation action handoff smoke script lists without writing by default", () => {
   withTempDb(({ dir, dbPath, eventOutboxPath }) => {
     const result = runScript([
@@ -211,6 +296,16 @@ test("automation action handoff smoke script lists without writing by default", 
     assert.equal(output.source, "growth-learning-automation-action-handoff-service");
     assert.equal(output.count, 0);
     assert.deepEqual(output.handoffs, []);
+    assert.equal(output.automationActionHandoffStatus, "listed");
+    assert.equal(output.automationActionHandoffOk, true);
+    assert.equal(output.automationActionHandoffOperation, "list");
+    assert.equal(output.automationActionHandoffWriteOperation, false);
+    assert.equal(output.automationActionHandoffWriteAllowed, false);
+    assert.equal(output.automationActionHandoffWritesPerformed, false);
+    assert.equal(output.automationActionHandoffWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationActionHandoffLearnerId, "fanfan");
+    assert.equal(output.automationActionHandoffCount, 0);
+    assert.deepEqual(output.automationActionHandoffHandoffIds, []);
     assert.equal(tableExists(dbPath, "learning_growth_automation_action_handoffs"), undefined);
   });
 });
@@ -255,6 +350,15 @@ test("automation action handoff smoke script creates and delivers only with expl
     assert.equal(createOutput.writefulSchedulingAllowed, false);
     assert.equal(createOutput.handoff.deliveryStatus, "not_delivered");
     assert.equal(createOutput.handoff.notification.eventType, "growth.automation.action_required");
+    assert.equal(createOutput.automationActionHandoffStatus, "not_delivered");
+    assert.equal(createOutput.automationActionHandoffOperation, "create");
+    assert.equal(createOutput.automationActionHandoffWriteOperation, true);
+    assert.equal(createOutput.automationActionHandoffWriteAllowed, true);
+    assert.equal(createOutput.automationActionHandoffWritesPerformed, true);
+    assert.equal(createOutput.automationActionHandoffDigestId, seeded.digest.digestId);
+    assert.equal(createOutput.automationActionHandoffRequiredActionCount, 1);
+    assert.equal(createOutput.automationActionHandoffNotificationEventType, "growth.automation.action_required");
+    assert.equal(createOutput.automationActionHandoffWritefulSchedulingAllowed, false);
 
     const delivered = runScript([
       "--operation", "deliver",
@@ -275,6 +379,14 @@ test("automation action handoff smoke script creates and delivers only with expl
     assert.equal(deliverOutput.deliveryStatus, "delivery_failed");
     assert.equal(deliverOutput.handoff.deliveryStatus, "delivery_failed");
     assert.equal(deliverOutput.handoff.delivery.error, "delivery_not_configured");
+    assert.equal(deliverOutput.automationActionHandoffStatus, "delivery_failed");
+    assert.equal(deliverOutput.automationActionHandoffOperation, "deliver");
+    assert.equal(deliverOutput.automationActionHandoffWriteOperation, true);
+    assert.equal(deliverOutput.automationActionHandoffWriteAllowed, true);
+    assert.equal(deliverOutput.automationActionHandoffWritesPerformed, true);
+    assert.equal(deliverOutput.automationActionHandoffDeliveryStatus, "delivery_failed");
+    assert.equal(deliverOutput.automationActionHandoffDeliveryFailedCount, 1);
+    assert.equal(deliverOutput.automationActionHandoffDeliveryError, "delivery_not_configured");
     assert.equal(fs.existsSync(eventOutboxPath), true);
   });
 });
