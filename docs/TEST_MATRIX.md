@@ -51,6 +51,59 @@ surface contrast/token assertions. They do not prove production deployment,
 production Gateway, release approval, scheduler permission, or persisted release
 evidence.
 
+## Release UI Evidence Artifact Builder Gate
+
+Growth can adapt one Home AI central visual summary into release UI evidence
+artifact files, but it still does not own the visual toolchain. Use this only
+after the Home AI central visual report already exists:
+
+```bash
+npm run build:release-ui-evidence-artifacts -- \
+  --central-visual-evidence-file <home-ai-central-visual-summary.json> \
+  --output-dir <tmp-output-dir> \
+  --json
+
+npm run smoke:release-evidence-collection -- \
+  --workspace-id weixin_stephen \
+  --learner-id weixin_stephen \
+  --domain science \
+  --subject science \
+  --horizon daily_plan \
+  --task owner_daily_ui \
+  --task owner_audit_ui \
+  --task proposal_review_ui \
+  --task release_package_review_ui \
+  --task automation_digest_ui \
+  --task automation_action_handoff_ui \
+  --task scheduler_execution_ui \
+  --task scheduler_run_ui \
+  --task scheduler_worker_target_ui \
+  --required-task owner_daily_ui \
+  --required-task owner_audit_ui \
+  --required-task proposal_review_ui \
+  --required-task release_package_review_ui \
+  --required-task automation_digest_ui \
+  --required-task automation_action_handoff_ui \
+  --required-task scheduler_execution_ui \
+  --required-task scheduler_run_ui \
+  --required-task scheduler_worker_target_ui \
+  --release-evidence-artifact-manifest-file <manifest.json> \
+  --json
+```
+
+Focused coverage is
+`tests/growth-release-ui-evidence-artifacts-script.test.js`,
+`tests/growth-ui-evidence-smoke-script.test.js`, and
+`tests/learning-automation-ui-evidence-service.test.js`. The builder must emit
+nine validator-ready `growth.learningAutomationReleaseUiEvidenceArtifact.v1`
+files and one manifest. Public artifact JSON must store only screenshot
+presence, artifact basename, bytes, marker coverage, assertions, and boundary
+flags. The manifest may carry transient local file paths only so the collection
+CLI can read the files. The builder must not run Home AI visual tooling, call
+Gateway, persist release evidence, approve release state, mutate runtime
+config, grant scheduler permission, deploy, publish cards, evaluate learner
+work, or mutate learner state.
+
 ## Production Deployment Health Gate
 
 Growth owns only the summary evidence collector and validator for production

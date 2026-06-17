@@ -159,6 +159,22 @@ readback gate set.
   written for an Owner/testing scope does not satisfy a domain-scoped release;
   the same Home AI summary artifact must be replayed or collected under the
   matching workspace/learner/domain/subject/horizon scope.
+- 2026-06-18 release UI artifact-builder status:
+  `npm run build:release-ui-evidence-artifacts` now reads one Home AI central
+  `embedded-plugin-shell` visual summary artifact and Growth-rendered Owner UI
+  marker coverage, then writes nine summary-only
+  `growth.learningAutomationReleaseUiEvidenceArtifact.v1` files plus a
+  `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` manifest. The
+  generated artifact JSON stores only screenshot presence, artifact basename,
+  byte count, coverage, assertions, and boundary flags; it strips raw Home AI
+  screenshot paths such as `/Users/...` and `.homeai-qa`. A no-write
+  release-evidence collection run over the generated manifest proved all nine
+  UI tasks can pass bundle and bundle-audit validation, moving the temporary
+  readback to `passedCheckCount=40` while leaving seven non-UI gates. This is
+  local adapter evidence only; it does not run visual tooling, call Gateway,
+  persist release evidence, approve release state, deploy, mutate runtime
+  config, grant scheduler permission, publish/evaluate cards, or mutate
+  learner state.
   embedded Owner `生成` tab now consumes this readback inside the release
   workbench panel as a summary-only `证据清单` subpanel with artifact slots,
   checklist rows, action-plan rows, manifest schema status, and refresh

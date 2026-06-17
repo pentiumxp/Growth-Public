@@ -9,6 +9,105 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T07:49+0800 - Release UI Evidence Artifact Builder v1
+
+- Status: implemented locally after the stable HEAD deploy below. This package
+  has not been deployed yet.
+- Implementation:
+  - added `npm run build:release-ui-evidence-artifacts`, backed by
+    `scripts/build-growth-release-ui-evidence-artifacts.js`;
+  - the builder reads one Home AI central `embedded-plugin-shell` visual
+    summary artifact, renders the Growth Owner card-generation panel with
+    summary-only sample state, checks all nine release UI gate marker sets,
+    writes nine `growth.learningAutomationReleaseUiEvidenceArtifact.v1` JSON
+    files, and writes a
+    `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` manifest for
+    the existing release-evidence collection CLIs;
+  - generated artifact JSON stores only screenshot presence, screenshot
+    artifact basename, byte count, coverage, assertions, and boundary flags;
+    it strips raw `/Users/...` and `.homeai-qa` paths from public artifacts;
+  - the manifest may contain transient local artifact-file inputs only so the
+    collection CLI can read the generated files.
+- Harness/documentation:
+  - added `tests/growth-release-ui-evidence-artifacts-script.test.js`;
+  - registered the test in `scripts/run-growth-release-union-tests.js`;
+  - updated `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`, `docs/TEST_MATRIX.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Validation performed for this package:
+  - focused builder/UI validation:
+    `node --test tests/growth-release-ui-evidence-artifacts-script.test.js
+    tests/growth-ui-evidence-smoke-script.test.js
+    tests/learning-automation-ui-evidence-service.test.js` -> 17/17 passing;
+  - syntax:
+    `node --check scripts/build-growth-release-ui-evidence-artifacts.js &&
+    node --check scripts/run-growth-release-union-tests.js &&
+    node --check tests/growth-release-ui-evidence-artifacts-script.test.js`;
+  - docs locality:
+    `node scripts/check-growth-docs-locality.js` -> `ok=true`;
+  - whitespace:
+    `git diff --check` -> pass;
+  - full syntax/coverage registration:
+    `npm run --silent check` -> `ok=true`, `runtimeCount=229`,
+    `checkedCount=229`;
+  - release union:
+    `npm run --silent test:release-union` -> 274/274 passing;
+  - builder run against the real Home AI central visual clean artifact wrote
+    nine UI artifacts and one manifest under a temporary output directory;
+  - artifact privacy scan over the generated JSON found no `/Users/` or
+    `.homeai-qa` leakage;
+  - a no-write `npm run smoke:release-evidence-collection` over the generated
+    manifest passed all nine UI evidence tasks in bundle/audit validation and
+    returned `bundleTaskCount=9`, `bundlePassedCount=9`,
+    `bundleBlockedCount=0`, `auditStatus=pass`, `passedCheckCount=40`,
+    `missingCheckCount=7`, and `readyForReleaseReview=false`;
+  - the seven remaining non-UI release gaps are: delivered action handoff,
+    production planner readiness evidence, production daily-loop write smoke
+    evidence, platform action evidence, writeful execution release approval,
+    background scheduler release approval, and background worker release
+    approval.
+- Boundaries:
+  - this builder does not run Home AI visual tooling, call Gateway, persist
+    release evidence, approve release state, build packages, deploy, mutate
+    runtime config, grant scheduler permission, publish/evaluate cards, or
+    mutate learner state;
+  - production release still requires a real current Home AI visual/UI
+    artifact and the remaining non-UI gates.
+
+## 2026-06-18T07:43+0800 - Stable Growth HEAD Production Deploy
+
+- User asked for a progress update and said one deploy could be done first.
+- Progress estimate for the full Growth objective:
+  - approximately 82% complete for the practical target of Owner-supervised
+    AI-driven daily/science card generation, learner submit/evaluate/reflect,
+    profile feedback, operating-loop audit, and release evidence visibility;
+  - approximately 18% remains, concentrated in production Gateway/planner
+    evidence, platform Action Inbox/Web Push receipt evidence, real UI
+    artifact evidence, explicit release approvals, and scheduler/runtime
+    enablement gates.
+- Deployed only the already committed and pushed stable Growth HEAD:
+  `c61f4b6f67c6` (`feat: reuse validated drafts for automation proposals`).
+- The current development worktree had unfinished release UI artifact-builder
+  work, so deployment used a clean detached worktree under the Home AI dev root
+  and did not publish the dirty `package.json` /
+  `scripts/build-growth-release-ui-evidence-artifacts.js` changes.
+- Production deploy command target:
+  `plugin:growth`, surface `full`, reason `growth-stable-head-c61f4b6`.
+- Deploy backup:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260617T234316Z-plugin-growth-growth-stable-head-c61f4b6`.
+- Deploy validation passed:
+  - production file hash readback for `public/index.html`;
+  - `com.hermesmobile.plugin.growth` launchd state readback was running;
+  - public Growth manifest health URL returned HTTP 200 and plugin id
+    `growth`.
+- The deployment did not approve release state, grant scheduler permission,
+  mutate runtime config, call Gateway, publish cards, evaluate learner
+  evidence, or write learner state.
+- Continue current development package after this deploy:
+  finish `build-growth-release-ui-evidence-artifacts.js`, add focused Harness
+  coverage, update docs, then commit/push that package only after validation.
+
 ## 2026-06-18T07:25+0800 - Profile Feedback Evidence And Existing-Draft Proposal Path
 
 - Status: implemented locally and partially advanced release evidence. No
