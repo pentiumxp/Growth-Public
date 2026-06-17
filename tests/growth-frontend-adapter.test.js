@@ -4951,8 +4951,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /await refreshReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function draftDailyLoopFromUi/);
   assert.match(source, /api\.draftGrowthDailyLoop\(payload, targetWorkspaceId\)/);
-  assert.match(source, /function advanceDailyLoopFromUi/);
-  assert.match(source, /api\.advanceGrowthDailyLoop\(payload, targetWorkspaceId\)/);
+  assert.match(source, /function advanceOperatingLoopFromUi/);
+  assert.match(source, /api\.advanceLearningOperatingLoop\(payload, targetWorkspaceId\)/);
+  assert.match(source, /button\.hasAttribute\("data-card-generation-advance"\)[\s\S]*\? advanceOperatingLoopFromUi/);
   assert.match(source, /pageState\.cardGeneration\.status = "drafted";[\s\S]*pageState\.cardGeneration\.dailyLoopDraftResult = result;[\s\S]*await refreshLearningLoopState\(targetWorkspaceId, pageState\.cardGeneration\.context\)/);
   assert.match(source, /function publishDailyLoopFromUi/);
   assert.match(source, /api\.publishGrowthDailyLoop\(payload, targetWorkspaceId\)/);

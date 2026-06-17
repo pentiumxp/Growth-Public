@@ -9,6 +9,33 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18 - Owner Primary Generation Facade Alignment
+
+- Status: implemented locally after the full daily-cycle Harness package. No
+  deployment, production visual evidence, release approval, scheduler
+  permission, or production Gateway evidence was performed.
+- UI boundary:
+  - the primary Owner `生成卡片` button now calls
+    `advanceOperatingLoopFromUi()`, which sends `action=run_next` to
+    `POST /api/v1/growth/learning-loop/advance`;
+  - the button uses the service-projected `learningLoopState.nextAction` before
+    enabling daily generation and blocks non-daily actions, such as formal
+    checkpoint review, into the dedicated `闭环执行` / stage-assessment panels;
+  - direct `POST /api/v1/growth/daily-loop/advance` and
+    `advanceGrowthDailyLoop()` remain compatibility/API/Harness surfaces, but
+    they are no longer the primary browser policy selector.
+- Docs/Harness:
+  - updated `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`,
+    `docs/GROWTH_LEARNING_OPERATING_LOOP.md`, and `docs/TEST_MATRIX.md`;
+  - updated the frontend adapter architecture assertion so the main UI binding
+    is guarded against regressing to direct daily-loop advance.
+- Validation:
+  - `node --test tests/growth-frontend-adapter.test.js` -> 33/33;
+  - `npm run --silent check` -> ok, `runtimeCount=227`,
+    `checkedCount=227`, no missing/stale/duplicate syntax registrations;
+  - `node scripts/check-growth-docs-locality.js` -> ok;
+  - `git diff --check` -> pass.
+
 ## 2026-06-18T06:25+0800 - Local Daily Cycle Closed-Loop Harness Pass
 
 - Status: implemented locally as a Growth-owned full daily-cycle smoke

@@ -79,6 +79,22 @@ profile-feedback status, loop-state status/next action, and Gateway call kinds.
 Do not record raw learner answers, raw reflections, prompts, model output,
 access tokens, private paths, or full DB rows.
 
+## Owner Primary Generation UI Rule
+
+The embedded Owner `生成卡片` button is an operating-loop UI boundary. It must
+execute the current service-projected next action through
+`POST /api/v1/growth/learning-loop/advance` with `action=run_next`; it must not
+use direct `POST /api/v1/growth/daily-loop/advance` as the primary browser
+policy selector. Direct daily-loop advance remains a service/API/smoke
+compatibility path.
+
+Any change to that button or its blocking state must update
+`tests/growth-frontend-adapter.test.js` so the source-level assertion proves the
+button is wired to `advanceOperatingLoopFromUi()` /
+`advanceLearningOperatingLoop()`, daily actions use service-projected
+`learningLoopState.nextAction`, non-daily next actions are blocked into
+dedicated panels, and progress/error states remain visible.
+
 ## Forbidden Harness Shortcuts
 
 - Do not satisfy service-owned release evidence with bare boolean `true`.

@@ -55,6 +55,13 @@ inside the plugin boundary:
 7. explain the next recommendation to Owner;
 8. repeat over weeks and months without creating high-pressure backlog debt.
 
+The embedded Owner UI must use the operating-loop facade as the primary
+one-click daily action boundary. The `生成卡片` button sends
+`action=run_next` to `POST /api/v1/growth/learning-loop/advance` and lets
+`learning-operating-loop-service` execute the current service-projected next
+action. Direct `POST /api/v1/growth/daily-loop/advance` remains a compatibility
+route and harness target, not the primary browser policy selector.
+
 ## Product Principles
 
 Growth V1 should optimize for these constraints:

@@ -291,6 +291,12 @@ Backend facade status:
   adapter Harness covers the API client, proxy path, panel rendering, and
   payload privacy. Central Home AI visual harness evidence is still required
   before production UI release.
+- The primary Owner `生成卡片` button is aligned with the same facade. It
+  executes `learning-loop/advance` with `action=run_next` for service-projected
+  daily actions, while direct `daily-loop/advance` remains compatibility API
+  surface only. The browser blocks non-daily next actions, such as formal
+  checkpoint review, into their dedicated panels instead of selecting learning
+  policy locally.
 
 ## Learning State Model
 

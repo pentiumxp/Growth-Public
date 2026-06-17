@@ -3751,6 +3751,21 @@
     return "";
   }
 
+  function primaryGenerationBlockedReason({ state = {}, context = {}, readiness = {}, plan = {} } = {}) {
+    const loopBlocked = operatingLoopRunBlockedReason({ state, context });
+    if (loopBlocked) return loopBlocked;
+    const data = state.learningLoopState?.data || context.learningLoopState || {};
+    const action = clean(data.nextAction?.action);
+    if (action === "draft_daily_plan") return dailyLoopAdvanceBlockedReason({ state, context, readiness, plan });
+    if (action === "publish_selected_plan_item") {
+      if (readiness.blockingOpenGeneration) return "已有生成任务正在处理，请稍后再试。";
+      if (!(readiness.authoringGatewayConfigured ?? readiness.gatewayConfigured)) return "Gateway authoring 尚未配置，暂不能生成卡片。";
+      return "";
+    }
+    if (action === "review_stage_assessment") return "当前下一步是阶段测评，请使用闭环执行或阶段测评面板。";
+    return "当前服务端 next action 不会直接生成日常卡。";
+  }
+
   function progressStepRows(activeStep = "prepare", escapeHtml = defaultEscapeHtml) {
     const steps = [
       ["context", "整理上下文", "图谱、画像、近期信号"],
@@ -4043,7 +4058,7 @@
     const publishResult = state.dailyLoopPublishResult || {};
     const draftBlockedReason = busy ? "" : dailyLoopDraftBlockedReason({ state, context, readiness, plan });
     const publishBlockedReason = busy ? "" : dailyLoopPublishBlockedReason({ state, context, readiness, draftResult });
-    const advanceBlockedReason = busy ? "" : dailyLoopAdvanceBlockedReason({ state, context, readiness, plan });
+    const advanceBlockedReason = busy ? "" : primaryGenerationBlockedReason({ state, context, readiness, plan });
     const canDraft = Boolean(!busy && !draftBlockedReason);
     const canPublish = Boolean(!busy && !publishBlockedReason);
     const canAdvance = Boolean(!busy && !advanceBlockedReason);

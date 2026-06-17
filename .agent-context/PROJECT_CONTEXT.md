@@ -45,6 +45,11 @@ readback gate set.
   `draft_daily_plan`. This is local fake-Gateway implementation evidence only,
   not production Gateway, release, visual, platform-action, scheduler, or
   deployment evidence.
+- 2026-06-18 Owner primary generation UI boundary: the embedded Owner
+  `生成卡片` button now uses `POST /api/v1/growth/learning-loop/advance` with
+  `action=run_next` through `advanceOperatingLoopFromUi()`. Direct
+  `daily-loop/advance` remains a compatibility and Harness route, but the
+  browser must not use it as the primary policy selector.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,

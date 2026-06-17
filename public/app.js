@@ -780,7 +780,7 @@
         }
         if (button.disabled) return;
         const action = button.hasAttribute("data-card-generation-advance")
-          ? advanceDailyLoopFromUi
+          ? advanceOperatingLoopFromUi
           : button.hasAttribute("data-card-generation-publish")
             ? publishDailyLoopFromUi
             : draftDailyLoopFromUi;
