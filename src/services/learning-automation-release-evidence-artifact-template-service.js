@@ -676,7 +676,8 @@ function statePrerequisiteAction(action = {}) {
     endpointKey: cleanString(item.endpointKey, 120),
     requiredActor: cleanString(item.requiredActor || "owner", 80),
     readyToSubmit: item.readyToSubmit === true,
-    externalActionRequired: item.externalActionRequired === true,
+    externalActionRequired:
+      item.externalActionRequired === undefined ? true : item.externalActionRequired === true,
     manualReviewRequired: item.manualReviewRequired === undefined ? true : item.manualReviewRequired === true,
     route: Object.keys(route).length ? route : null,
     followupRoute,

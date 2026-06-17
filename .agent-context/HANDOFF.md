@@ -9,6 +9,42 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T01:58+08:00 - Release Artifact Template Full-Suite Closure
+
+- Status: implemented locally; release-union, full `npm test`, docs-locality,
+  global check, diff check, and CodeGraph freshness passed. No production
+  deploy, production Home AI visual/UI harness run, runtime config change,
+  scheduler execution, Gateway/model call, learner-state mutation, release
+  approval, or Home AI host logic change was performed.
+- Classification: H2 Growth release-readback contract fix. AI Ops intake
+  classified the overall final closure lane as H1 because remaining gates cross
+  Home AI visual/deployment boundaries; this local patch only fixes Growth's
+  release artifact-template action-plan semantics.
+- Scope:
+  - `statePrerequisiteAction()` now defaults omitted
+    `externalActionRequired` values to `true`;
+  - explicit `externalActionRequired: false` remains respected;
+  - this keeps state prerequisite actions visible as Owner/external
+    prerequisites unless a caller deliberately marks them internal.
+- Harness/docs updated:
+  - `src/services/learning-automation-release-evidence-artifact-template-service.js`
+  - `.agent-context/HANDOFF.md`
+- Validation evidence:
+  - `node --check src/services/learning-automation-release-evidence-artifact-template-service.js tests/learning-automation-release-evidence-artifact-template-service.test.js`;
+  - `node --test tests/learning-automation-release-evidence-artifact-template-service.test.js tests/growth-release-artifact-template-smoke-script.test.js tests/growth-architecture-boundary.test.js`
+    -> 48/48;
+  - `npm run test:release-union` -> 259/259;
+  - `npm test` -> 1066/1066;
+  - `node scripts/check-growth-docs-locality.js`;
+  - `npm run --silent check` -> 223/223 runtime files covered;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` -> index up to date, with the
+    existing earlier-engine advisory unchanged.
+- Remaining gate:
+  - final production release still requires Home AI visual/UI artifact runs,
+    deployment/health evidence, explicit release approvals, and real runtime
+    enablement readback outside this local package.
+
 ## 2026-06-18T01:45+08:00 - UI Evidence HTTP Readback
 
 - Status: implemented locally; focused UI-evidence service/smoke, route,
