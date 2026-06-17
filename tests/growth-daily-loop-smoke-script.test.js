@@ -16,6 +16,7 @@ const {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectDailyLoopSmokeReadback,
   targetNodeIds,
   validateOperation
 } = require("../scripts/smoke-growth-daily-loop");
@@ -545,6 +546,170 @@ test("daily-loop smoke script parses operation, write guard, scope, item, and gr
   assert.equal(validateOperation("publish", inputFromArgs(args), args).ok, true);
 });
 
+test("daily-loop smoke script projects top-level operator readback", () => {
+  const output = projectDailyLoopSmokeReadback({
+    ok: true,
+    source: "growth-learning-daily-loop-service",
+    operation: "publish",
+    target: {
+      workspaceId: WORKSPACE_ID,
+      learnerId: LEARNER_ID
+    },
+    scope: {
+      programId: PROGRAM_ID,
+      domainPackId: DOMAIN_PACK_ID,
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      availableMinutes: 12,
+      targetNodeIds: [SCIENCE_NODE_ID, SCIENCE_PREREQ_NODE_ID]
+    },
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      targetProvisioned: true,
+      learningGraphReady: true,
+      plannerReady: true,
+      plannerContextReady: true,
+      authoringGatewayConfigured: true,
+      evaluationGatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      operatingLoopGatewayReady: true,
+      blockingOpenGeneration: false,
+      targetProvisioning: {
+        ok: true,
+        targetEnabled: true,
+        mode: "existing"
+      }
+    },
+    actions: {
+      canDraft: true,
+      canPublish: true,
+      draftAction: { enabled: true },
+      publishAction: {
+        enabled: true,
+        planDraftId: "lgplan_daily_1",
+        itemId: "plan_item_science_fair_test"
+      },
+      auditRefreshAction: { enabled: true }
+    },
+    planDraft: {
+      planDraftId: "lgplan_daily_1",
+      programId: PROGRAM_ID,
+      horizon: "daily_plan",
+      status: "published",
+      selectedItemId: "plan_item_science_fair_test",
+      generatedTaskCardId: "ltask_daily_1",
+      generatedLearningGraphPlanId: "lgplan_graph_1",
+      targetNodeIds: [SCIENCE_NODE_ID],
+      itemCount: 1,
+      selectedItem: {
+        itemId: "plan_item_science_fair_test",
+        cardRole: "repair",
+        estimatedMinutes: 12,
+        evidenceRequirements: ["explain_controlled_variable"]
+      },
+      publishAttempt: {
+        status: "published",
+        stage: "complete",
+        attemptCount: 1
+      }
+    },
+    selectedItem: {
+      itemId: "plan_item_science_fair_test",
+      cardRole: "repair",
+      estimatedMinutes: 12,
+      evidenceRequirements: ["explain_controlled_variable"]
+    },
+    generation: {
+      ok: true,
+      recipeId: "daily_science_v1",
+      gatewayMode: "fake_gateway",
+      sourceSummaryCount: 2,
+      learningGraphPlan: {
+        learningGraphPlanId: "lgplan_graph_1",
+        targetNodeId: SCIENCE_NODE_ID,
+        targetNodeIds: [SCIENCE_NODE_ID],
+        domainPackId: DOMAIN_PACK_ID,
+        domain: "science",
+        subject: "science",
+        cardRole: "repair"
+      },
+      published: {
+        taskCardId: "ltask_daily_1",
+        transaction: "committed",
+        status: "published"
+      },
+      recommendationAcceptance: {
+        ok: true,
+        recommendationId: "lgrec_1",
+        status: "accepted"
+      }
+    },
+    cycleAudit: {
+      ok: true,
+      summary: {
+        evidenceCount: 2,
+        profileDeltaCount: 1
+      }
+    },
+    completeness: {
+      complete: true,
+      readyForAutomation: true,
+      summary: {
+        missingRequired: []
+      }
+    },
+    duplicate: false,
+    publishAttempt: {
+      status: "published",
+      stage: "complete",
+      attemptCount: 1
+    }
+  });
+
+  assert.equal(output.dailyLoopOperation, "publish");
+  assert.equal(output.dailyLoopOutcome, "published");
+  assert.equal(output.dailyLoopWriteOperation, true);
+  assert.equal(output.dailyLoopTargetWorkspaceId, WORKSPACE_ID);
+  assert.equal(output.dailyLoopTargetLearnerId, LEARNER_ID);
+  assert.equal(output.dailyLoopProgramId, PROGRAM_ID);
+  assert.equal(output.dailyLoopDomainPackId, DOMAIN_PACK_ID);
+  assert.equal(output.dailyLoopDomain, "science");
+  assert.equal(output.dailyLoopSubject, "science");
+  assert.equal(output.dailyLoopHorizon, "daily_plan");
+  assert.equal(output.dailyLoopAvailableMinutes, 12);
+  assert.deepEqual(output.dailyLoopTargetNodeIds, [SCIENCE_NODE_ID, SCIENCE_PREREQ_NODE_ID]);
+  assert.equal(output.dailyLoopReadinessReady, true);
+  assert.equal(output.dailyLoopTargetProvisioned, true);
+  assert.equal(output.dailyLoopPlannerReady, true);
+  assert.equal(output.dailyLoopOperatingLoopGatewayReady, true);
+  assert.equal(output.dailyLoopCanDraft, true);
+  assert.equal(output.dailyLoopCanPublish, true);
+  assert.equal(output.dailyLoopPlanDraftId, "lgplan_daily_1");
+  assert.equal(output.dailyLoopPlanDraftStatus, "published");
+  assert.equal(output.dailyLoopPlanItemCount, 1);
+  assert.equal(output.dailyLoopSelectedItemId, "plan_item_science_fair_test");
+  assert.equal(output.dailyLoopSelectedCardRole, "repair");
+  assert.equal(output.dailyLoopSelectedEstimatedMinutes, 12);
+  assert.equal(output.dailyLoopGeneratedTaskCardId, "ltask_daily_1");
+  assert.equal(output.dailyLoopGeneratedLearningGraphPlanId, "lgplan_graph_1");
+  assert.equal(output.dailyLoopPublishedTaskCardId, "ltask_daily_1");
+  assert.equal(output.dailyLoopPublishTransaction, "committed");
+  assert.equal(output.dailyLoopGenerationRecipeId, "daily_science_v1");
+  assert.equal(output.dailyLoopGenerationSourceSummaryCount, 2);
+  assert.equal(output.dailyLoopRecommendationAccepted, true);
+  assert.equal(output.dailyLoopRecommendationId, "lgrec_1");
+  assert.equal(output.dailyLoopPublishAttemptStatus, "published");
+  assert.equal(output.dailyLoopPublishAttemptCount, 1);
+  assert.equal(output.dailyLoopCycleAuditAvailable, true);
+  assert.equal(output.dailyLoopCycleEvidenceCount, 2);
+  assert.equal(output.dailyLoopCompletenessAvailable, true);
+  assert.equal(output.dailyLoopCycleComplete, true);
+  assert.equal(output.dailyLoopReadyForAutomation, true);
+  assert.equal(output.dailyLoopMissingRequiredCount, 0);
+});
+
 test("daily-loop smoke script defaults to no-write preview", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript(baseArgs(), {
@@ -556,6 +721,15 @@ test("daily-loop smoke script defaults to no-write preview", () => {
     const output = parseStdout(result);
     assert.equal(output.ok, true);
     assert.equal(output.operation, "preview");
+    assert.equal(output.dailyLoopOperation, "preview");
+    assert.equal(output.dailyLoopWriteOperation, false);
+    assert.equal(output.dailyLoopTargetWorkspaceId, WORKSPACE_ID);
+    assert.equal(output.dailyLoopTargetLearnerId, LEARNER_ID);
+    assert.equal(output.dailyLoopDomain, "science");
+    assert.equal(output.dailyLoopSubject, "science");
+    assert.equal(output.dailyLoopTargetNodeCount, 1);
+    assert.equal(output.dailyLoopCanDraft, output.actions.canDraft || output.actions.draftAction.enabled);
+    assert.equal(output.dailyLoopCanPublish, output.actions.canPublish || output.actions.publishAction.enabled);
 
     const db = new DatabaseSync(dbPath, { open: true });
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = ?").all("table");
@@ -614,7 +788,14 @@ test("daily-loop smoke script drafts a summary-only plan only with explicit writ
       const output = parseStdout(result);
       assert.equal(output.ok, true);
       assert.equal(output.operation, "draft");
+      assert.equal(output.dailyLoopOperation, "draft");
+      assert.equal(output.dailyLoopOutcome, "drafted");
+      assert.equal(output.dailyLoopWriteOperation, true);
       assert.equal(output.planDraft.status, "draft");
+      assert.equal(output.dailyLoopPlanDraftId, output.planDraft.planDraftId);
+      assert.equal(output.dailyLoopPlanDraftStatus, "draft");
+      assert.equal(output.dailyLoopPlanItemCount, output.planDraft.itemCount);
+      assert.equal(output.dailyLoopGenerationOk, false);
       assert.equal(output.planDraft.privacyClass, "summary_only");
       assert.equal(output.planDraft.items[0].itemId, "plan_item_science_fair_test");
       assert.equal(calls.some((call) => call.kind === "growth.learning_planner.draft"), true);
@@ -658,11 +839,22 @@ test("daily-loop smoke script publishes a selected daily plan item only with exp
       const output = parseStdout(publish);
       assert.equal(output.ok, true);
       assert.equal(output.operation, "publish");
+      assert.equal(output.dailyLoopOperation, "publish");
+      assert.equal(output.dailyLoopOutcome, "published");
+      assert.equal(output.dailyLoopWriteOperation, true);
       assert.equal(output.planDraft.status, "published");
+      assert.equal(output.dailyLoopPlanDraftId, planDraftId);
+      assert.equal(output.dailyLoopPlanDraftStatus, "published");
+      assert.equal(output.dailyLoopSelectedItemId, itemId);
       assert.equal(output.selectedItem.itemId, itemId);
       assert.equal(output.generation.learningGraphPlan.targetNodeId, SCIENCE_NODE_ID);
       assert.equal(output.generation.published.transaction, "committed");
       assert.ok(output.generation.published.taskCardId);
+      assert.equal(output.dailyLoopPublishedTaskCardId, output.generation.published.taskCardId);
+      assert.equal(output.dailyLoopGeneratedTaskCardId, output.generation.published.taskCardId);
+      assert.equal(output.dailyLoopGeneratedLearningGraphPlanId, output.generation.learningGraphPlan.learningGraphPlanId);
+      assert.equal(output.dailyLoopPublishTransaction, "committed");
+      assert.equal(output.dailyLoopGenerationOk, true);
       assert.equal(JSON.stringify(output).includes("teachingFlow"), false);
       assert.equal(calls.some((call) => call.kind === "growth.card_authoring.generate"), true);
 

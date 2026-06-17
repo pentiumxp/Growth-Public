@@ -795,7 +795,13 @@ readback gate set.
   graph and provides local or production daily-loop context/readiness evidence
   without Gateway calls, plan draft/publish, card generation, scheduling,
   notifications, stage activation, direct repository access, SQLite writes, or
-  learner-state mutation. Learning-loop state now also has
+  learner-state mutation. The controlled `npm run smoke:daily-loop` CLI also
+  mirrors top-level `dailyLoop*` operator readback for operation/outcome,
+  write-operation flag, target/scope, readiness gates, action availability,
+  plan draft/item ids/status/counts, generated/published card ids,
+  generation/gateway summary, recommendation acceptance, duplicate/error/stage,
+  cycle audit/completeness counts, and missing-required counts while preserving
+  the nested daily-loop DTO as canonical. Learning-loop state now also has
   `npm run smoke:learning-loop-state`, a service-owned no-write CLI that
   delegates to `learning-loop-state-service` through the normal service graph.
   It projects compact `growth.learningLoopState.v1` summary-only state and the
@@ -1232,7 +1238,10 @@ readback gate set.
   entry for the same service boundary: preview is the default no-write
   operation, while `--operation draft` and `--operation publish` are rejected
   unless `--allow-write` is present; publish also requires a selected
-  `--plan-draft-id`. This complements the no-write
+  `--plan-draft-id`. Its top-level `dailyLoop*` readback is a bounded operator
+  projection only; it does not add write permission, Gateway access,
+  publication rights, scheduling, reward settlement, stage activation, or
+  learner mutation. This complements the no-write
   `npm run smoke:daily-loop-preview` command.
   Embedded UI consumption remains a future slice. Central visual evidence now
   has a Growth-owned read-only ingestion boundary through

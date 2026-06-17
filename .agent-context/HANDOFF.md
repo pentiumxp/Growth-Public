@@ -9,6 +9,53 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T13:39+08:00 - Daily Loop Smoke Operator Readback
+
+- Status: implemented and key-node validated. No production deployment or
+  visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change service behavior, route authorization, repositories, DB schema,
+  Gateway/model calls, plan publication, card generation, evaluation, reward
+  settlement, runtime config, scheduler permission, UI behavior, production
+  deployment, or learner state.
+- Problem found:
+  - `smoke-growth-daily-loop` delegated correctly to
+    `learning-daily-loop-service`, but operator-critical operation/outcome,
+    write-operation flag, target/scope, readiness gates, action availability,
+    plan draft/item ids/status/counts, generated/published card ids,
+    generation/gateway summary, recommendation acceptance, duplicate/error/stage,
+    cycle audit/completeness counts, and missing-required counts were available
+    only inside nested preview/draft/publish DTOs;
+  - this made controlled write evidence and release-bundle evidence harder to
+    audit without deep JSON inspection.
+- Scope:
+  - added `projectDailyLoopSmokeReadback` in
+    `scripts/smoke-growth-daily-loop.js`;
+  - projected bounded top-level `dailyLoop*` fields while preserving the nested
+    daily-loop DTO as canonical;
+  - expanded `tests/growth-daily-loop-smoke-script.test.js` to assert pure
+    projection, no-write preview readback, write-gated draft readback, and
+    write-gated publish readback;
+  - updated Growth-local platform-contract, architecture, next-stage, test
+    matrix, project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-daily-loop.js`
+  - `node --test tests/growth-daily-loop-smoke-script.test.js`
+  - `npm run --silent check`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync`
+  - `codegraph status` (`Index is up to date`; earlier-engine advisory only)
+  - Full-suite tests intentionally skipped under the current speed directive;
+    run only if the daily-loop service, routes, repositories, schema, Gateway,
+    UI, scheduler, learner-state, or release-readiness boundaries change.
+- Release/deploy notes:
+  - no release-union, visual harness, or deploy was required because this slice
+    changes only CLI readback projection and focused Harness coverage;
+  - top-level `dailyLoop*` fields do not add write permission, Gateway access,
+    publication rights, scheduling, reward settlement, stage activation, or
+    learner mutation.
+
 ## 2026-06-17T13:30+08:00 - Learning Loop State Smoke Operator Readback
 
 - Status: implemented and key-node validated. No production deployment or

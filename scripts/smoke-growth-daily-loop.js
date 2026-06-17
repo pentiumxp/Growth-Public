@@ -86,6 +86,130 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function countArray(value) {
+  return asArray(value).filter(Boolean).length;
+}
+
+function uniqueBoundedStrings(values = [], maxItems = 12) {
+  return Array.from(new Set(asArray(values)
+    .map((value) => cleanString(value, 160))
+    .filter(Boolean)))
+    .slice(0, maxItems);
+}
+
+function dailyLoopOutcome(result = {}) {
+  if (result.ok === false) return cleanString(result.error || "failed", 140);
+  const actions = objectOnly(result.actions);
+  if (result.operation === "publish") return "published";
+  if (result.operation === "draft") return "drafted";
+  if (actions.canPublish || actions.publishAction?.enabled) return "ready_to_publish";
+  if (actions.canDraft || actions.draftAction?.enabled) return "ready_to_draft";
+  return "owner_review_required";
+}
+
+function projectDailyLoopSmokeReadback(result = {}) {
+  const dailyLoop = objectOnly(result);
+  if (!Object.keys(dailyLoop).length) return result;
+  const target = objectOnly(dailyLoop.target);
+  const scope = objectOnly(dailyLoop.scope);
+  const readiness = objectOnly(dailyLoop.readiness);
+  const targetProvisioning = objectOnly(readiness.targetProvisioning);
+  const actions = objectOnly(dailyLoop.actions);
+  const draftAction = objectOnly(actions.draftAction);
+  const publishAction = objectOnly(actions.publishAction);
+  const auditRefreshAction = objectOnly(actions.auditRefreshAction);
+  const planDraft = objectOnly(dailyLoop.planDraft);
+  const selectedItem = objectOnly(dailyLoop.selectedItem || planDraft.selectedItem);
+  const generation = objectOnly(dailyLoop.generation);
+  const graphPlan = objectOnly(generation.learningGraphPlan);
+  const published = objectOnly(generation.published);
+  const recommendationAcceptance = objectOnly(generation.recommendationAcceptance);
+  const cycleAudit = objectOnly(dailyLoop.cycleAudit);
+  const cycleAuditSummary = objectOnly(cycleAudit.summary);
+  const completeness = objectOnly(dailyLoop.completeness);
+  const completenessSummary = objectOnly(completeness.summary);
+  const publishAttempt = objectOnly(dailyLoop.publishAttempt || planDraft.publishAttempt);
+  const targetNodeIds = uniqueBoundedStrings(scope.targetNodeIds || planDraft.targetNodeIds || graphPlan.targetNodeIds);
+  const missingRequired = uniqueBoundedStrings(completenessSummary.missingRequired || completeness.missingRequired);
+  return Object.assign({}, dailyLoop, {
+    dailyLoopOperation: cleanString(dailyLoop.operation, 80),
+    dailyLoopOutcome: dailyLoopOutcome(dailyLoop),
+    dailyLoopWriteOperation: WRITE_OPERATIONS.has(cleanString(dailyLoop.operation, 80)),
+    dailyLoopTargetWorkspaceId: cleanString(target.workspaceId, 160),
+    dailyLoopTargetLearnerId: cleanString(target.learnerId, 160),
+    dailyLoopProgramId: cleanString(scope.programId || planDraft.programId, 160),
+    dailyLoopDomainPackId: cleanString(scope.domainPackId || graphPlan.domainPackId, 160),
+    dailyLoopDomain: cleanString(scope.domain || graphPlan.domain, 120),
+    dailyLoopSubject: cleanString(scope.subject || graphPlan.subject, 120),
+    dailyLoopHorizon: cleanString(scope.horizon || planDraft.horizon, 80),
+    dailyLoopAvailableMinutes: Number(scope.availableMinutes || selectedItem.estimatedMinutes || 0) || 0,
+    dailyLoopTargetNodeIds: targetNodeIds,
+    dailyLoopTargetNodeCount: targetNodeIds.length,
+    dailyLoopReadinessReady: readiness.ready === true,
+    dailyLoopTargetEnabled: readiness.targetEnabled === true,
+    dailyLoopTargetProvisioned: readiness.targetProvisioned === true,
+    dailyLoopTargetProvisioningMode: cleanString(targetProvisioning.mode, 120),
+    dailyLoopLearningGraphReady: readiness.learningGraphReady === true,
+    dailyLoopPlannerReady: readiness.plannerReady === true,
+    dailyLoopPlannerContextReady: readiness.plannerContextReady === true,
+    dailyLoopAuthoringGatewayConfigured: readiness.authoringGatewayConfigured === true,
+    dailyLoopEvaluationGatewayConfigured: readiness.evaluationGatewayConfigured === true,
+    dailyLoopPlannerGatewayConfigured: readiness.plannerGatewayConfigured === true,
+    dailyLoopOperatingLoopGatewayReady: readiness.operatingLoopGatewayReady === true,
+    dailyLoopBlockingOpenGeneration: readiness.blockingOpenGeneration === true,
+    dailyLoopCanDraft: actions.canDraft === true || draftAction.enabled === true,
+    dailyLoopCanPublish: actions.canPublish === true || publishAction.enabled === true,
+    dailyLoopDraftActionEnabled: draftAction.enabled === true,
+    dailyLoopPublishActionEnabled: publishAction.enabled === true,
+    dailyLoopAuditRefreshEnabled: auditRefreshAction.enabled === true,
+    dailyLoopPlanDraftId: cleanString(planDraft.planDraftId || publishAction.planDraftId, 180),
+    dailyLoopPlanDraftStatus: cleanString(planDraft.status, 120),
+    dailyLoopPlanItemCount: Number(planDraft.itemCount || countArray(planDraft.items) || 0) || 0,
+    dailyLoopSelectedItemId: cleanString(selectedItem.itemId || planDraft.selectedItemId || publishAction.itemId, 180),
+    dailyLoopSelectedCardRole: cleanString(selectedItem.cardRole || graphPlan.cardRole, 120),
+    dailyLoopSelectedEstimatedMinutes: Number(selectedItem.estimatedMinutes || 0) || 0,
+    dailyLoopSelectedEvidenceRequirementCount: countArray(selectedItem.evidenceRequirements),
+    dailyLoopGeneratedTaskCardId: cleanString(planDraft.generatedTaskCardId || published.taskCardId, 180),
+    dailyLoopGeneratedLearningGraphPlanId: cleanString(planDraft.generatedLearningGraphPlanId || graphPlan.learningGraphPlanId, 180),
+    dailyLoopPublishedTaskCardId: cleanString(published.taskCardId, 180),
+    dailyLoopPublishedStatus: cleanString(published.status, 120),
+    dailyLoopPublishTransaction: cleanString(published.transaction, 120),
+    dailyLoopGenerationOk: generation.ok === true,
+    dailyLoopGenerationRecipeId: cleanString(generation.recipeId, 160),
+    dailyLoopGenerationGatewayMode: cleanString(generation.gatewayMode || dailyLoop.gatewayMode, 120),
+    dailyLoopGenerationSourceSummaryCount: Number(generation.sourceSummaryCount || 0) || 0,
+    dailyLoopRecommendationAccepted: recommendationAcceptance.ok === true,
+    dailyLoopRecommendationId: cleanString(recommendationAcceptance.recommendationId, 180),
+    dailyLoopRecommendationStatus: cleanString(recommendationAcceptance.status, 120),
+    dailyLoopDuplicate: dailyLoop.duplicate === true,
+    dailyLoopError: cleanString(dailyLoop.error, 180),
+    dailyLoopStage: cleanString(dailyLoop.stage || publishAttempt.stage, 120),
+    dailyLoopPublishAttemptStatus: cleanString(publishAttempt.status, 120),
+    dailyLoopPublishAttemptCount: Number(publishAttempt.attemptCount || 0) || 0,
+    dailyLoopCycleAuditAvailable: Boolean(dailyLoop.cycleAudit),
+    dailyLoopCycleAuditOk: cycleAudit.ok === true,
+    dailyLoopCycleEvidenceCount: Number(cycleAuditSummary.evidenceCount || 0) || 0,
+    dailyLoopCycleProfileDeltaCount: Number(cycleAuditSummary.profileDeltaCount || 0) || 0,
+    dailyLoopCompletenessAvailable: Boolean(dailyLoop.completeness),
+    dailyLoopCycleComplete: completeness.complete === true,
+    dailyLoopReadyForAutomation: completeness.readyForAutomation === true,
+    dailyLoopMissingRequired: missingRequired,
+    dailyLoopMissingRequiredCount: missingRequired.length
+  });
+}
+
 function operationFromArgs(args) {
   const operation = firstArgValue(args, ["--operation", "--mode"], "preview").trim().toLowerCase();
   return operation || "preview";
@@ -199,7 +323,7 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = await runOperation(services, operation, input);
+  const result = projectDailyLoopSmokeReadback(await runOperation(services, operation, input));
   process.stdout.write(formatResult(result, pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -219,6 +343,7 @@ module.exports = {
   allowWrite,
   inputFromArgs,
   operationFromArgs,
+  projectDailyLoopSmokeReadback,
   runOperation,
   targetNodeIds,
   validateOperation
