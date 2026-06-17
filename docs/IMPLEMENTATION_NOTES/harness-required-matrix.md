@@ -79,6 +79,38 @@ profile-feedback status, loop-state status/next action, and Gateway call kinds.
 Do not record raw learner answers, raw reflections, prompts, model output,
 access tokens, private paths, or full DB rows.
 
+## Local Central Visual Harness Rule
+
+Home AI owns the central iOS PWA visual toolchain. Growth work must not copy or
+fork that toolchain into the plugin workspace. For local visual validation of
+the current Growth workspace, run a local Growth server on a non-production
+port, point Home AI dev at that local manifest, provision the target workspace
+through the Home AI grant route, then run the central visual scenarios from the
+Home AI app workspace.
+
+The current local reference topology is:
+
+- Growth dev server: `http://127.0.0.1:14881`;
+- Home AI dev server: `http://0.0.0.0:18797`;
+- iOS live-debug server: `http://127.0.0.1:19073/`.
+
+Required scenarios before claiming mobile embedded-shell or dark-mode closure:
+
+- `embedded-plugin-shell --plugin-id growth`;
+- `dark-growth-surfaces`.
+
+Latest local pass evidence for this package:
+
+- embedded shell:
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T223324Z.png`;
+- dark Growth surfaces:
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260617T223337Z.png`.
+
+These are local visual artifacts. They must not be treated as production
+deployment evidence, production Gateway evidence, scheduler permission, release
+approval, or persisted release evidence unless they are separately validated and
+recorded through the release-evidence boundary under the matching scope.
+
 ## Owner Primary Generation UI Rule
 
 The embedded Owner `生成卡片` button is an operating-loop UI boundary. It must

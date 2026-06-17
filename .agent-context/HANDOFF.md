@@ -9,6 +9,40 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T06:34+0800 - Local Central Visual Recheck
+
+- Status: completed locally for the current dev package. No production deploy,
+  production release approval, scheduler permission, runtime config mutation,
+  production Gateway evidence, or release-evidence persistence was performed.
+- Local validation topology:
+  - Growth plugin dev server: `http://127.0.0.1:14881`, started from this
+    workspace with plugin-owned SQLite and dev registration-key path;
+  - Home AI dev server: `http://0.0.0.0:18797`, with
+    `HERMES_MOBILE_GROWTH_PLUGIN_MANIFEST_URL` pointed at the local Growth
+    manifest;
+  - the Home AI Owner grant route was used to provision `owner`, resulting in
+    Growth manifest readback `available=true` through the same-origin proxy.
+- Central Home AI visual harness evidence:
+  - `npm run ios:pwa:visual -- --scenario embedded-plugin-shell
+    --plugin-id growth --app-url
+    http://192.168.10.110:18797/?source=pwa --debug-url
+    http://127.0.0.1:19073/ --timeout-ms 30000` -> `ok=true`,
+    screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T223324Z.png`;
+  - `npm run ios:pwa:visual -- --scenario dark-growth-surfaces --app-url
+    http://192.168.10.110:18797/?source=pwa --debug-url
+    http://127.0.0.1:19073/ --timeout-ms 30000` -> `ok=true`,
+    screenshot
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260617T223337Z.png`.
+- Notes:
+  - the earlier visual failure was a local dev authorization/provisioning issue,
+    not a Growth iframe layout failure;
+  - the successful embedded-shell screenshot shows the current `owner` local
+    Growth board with no task rows in that workspace, so it proves shell
+    loading and mobile layout, not Fanfan task content;
+  - the dark-surface scenario covers the central contrast/token assertions for
+    Growth teaching-card surfaces.
+
 ## 2026-06-18 - Owner Primary Generation Facade Alignment
 
 - Status: implemented locally after the full daily-cycle Harness package. No

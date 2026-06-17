@@ -26,6 +26,31 @@ documentation change:
 | Full local suite | `npm test` | Full plugin-local Node test suite. |
 | CodeGraph freshness | `codegraph status` after edits; `codegraph sync` when needed | Structural claims use the current indexed source. |
 
+## Central Visual Gate
+
+Growth does not own the Home AI Appium/live-debug visual toolchain. For any
+mobile layout, embedded-shell, dark-mode, or production UI-release claim, run
+the central Home AI harness from `/Users/hermes-dev/HermesMobileDev/app`.
+
+For local dev validation of the current Growth workspace, start Growth on a
+non-production port with a dev registration-key path, point Home AI dev at that
+manifest through `HERMES_MOBILE_GROWTH_PLUGIN_MANIFEST_URL`, and provision the
+workspace through the Home AI grant route. Do not hand-edit authorization JSON
+or copy raw keys into docs. The current local reference topology is Growth
+`127.0.0.1:14881`, Home AI `18797`, and iOS live-debug `19073`.
+
+Latest local central visual evidence for this package:
+
+| Scenario | Result | Artifact |
+| --- | --- | --- |
+| `embedded-plugin-shell --plugin-id growth` | `ok=true` | `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T223324Z.png` |
+| `dark-growth-surfaces` | `ok=true` | `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260617T223337Z.png` |
+
+These artifacts prove local shell loading, mobile framing, and Growth dark
+surface contrast/token assertions. They do not prove production deployment,
+production Gateway, release approval, scheduler permission, or persisted release
+evidence.
+
 ## Focused Harness Rows
 
 Use the smallest row that covers the change, then widen when a touched contract

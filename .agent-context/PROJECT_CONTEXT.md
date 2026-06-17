@@ -50,6 +50,18 @@ readback gate set.
   `action=run_next` through `advanceOperatingLoopFromUi()`. Direct
   `daily-loop/advance` remains a compatibility and Harness route, but the
   browser must not use it as the primary policy selector.
+- 2026-06-18 local central visual status: the current dev package was rechecked
+  through the Home AI central iOS PWA visual toolchain using a local Growth
+  dev server on `127.0.0.1:14881` and Home AI dev on `18797` with the Growth
+  manifest pointed at that local plugin. Owner provisioning was performed
+  through the host grant route, after which `embedded-plugin-shell
+  --plugin-id growth` and `dark-growth-surfaces` both passed. Artifacts:
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T223324Z.png`
+  and
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260617T223337Z.png`.
+  This is local visual evidence only, not production release approval,
+  production deployment, release-evidence persistence, or production Gateway
+  evidence.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,
