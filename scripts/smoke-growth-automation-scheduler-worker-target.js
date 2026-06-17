@@ -61,6 +61,28 @@ function stripUndefined(value) {
   );
 }
 
+function cleanString(value, max = 180) {
+  const text = String(value || "").trim();
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function uniqueBoundedStrings(values = [], limit = 16) {
+  return Array.from(new Set(asArray(values).map((value) => cleanString(value, 220)).filter(Boolean))).slice(0, limit);
+}
+
 function normalizeOperation(operation) {
   return operation === "list-runnable" ? "runnable" : operation;
 }
@@ -133,6 +155,83 @@ function runOperation(service, operation, input) {
   return service.listTargets(input);
 }
 
+function targetIdFrom(target = {}) {
+  return cleanString(target.targetId || target.target_id || target.workerTargetId || target.worker_target_id, 180);
+}
+
+function summarizeStatuses(targets = []) {
+  return asArray(targets).reduce((counts, target) => {
+    const status = cleanString(target && target.status, 80) || "missing";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function projectAutomationSchedulerWorkerTargetSmokeReadback(result = {}, operation = "list", input = {}, writeAllowed = false) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const targets = asArray(readback.targets);
+  const records = asArray(readback.records);
+  const targetRows = records.length ? records : targets;
+  const target = objectOnly(readback.target || targetRows[0] || targets[0]);
+  const targetSummary = objectOnly(target.target);
+  const policy = objectOnly(target.policy);
+  const readiness = objectOnly(readback.readiness || target.readiness);
+  const review = objectOnly(target.review);
+  const targetNodeIds = uniqueBoundedStrings(targetSummary.targetNodeIds || target.targetNodeIds || input.targetNodeIds, 24);
+  const statusCounts = summarizeStatuses(targetRows.length ? targetRows : targetIdFrom(target) ? [target] : []);
+  const writeOperation = WRITE_OPERATIONS.has(operation);
+  const status = cleanString(
+    readback.ok === false ? readback.error || "failed" : target.status || (operation === "runnable" ? "runnable" : operation === "list" ? "listed" : "pass"),
+    140
+  );
+  return Object.assign({}, readback, {
+    automationSchedulerWorkerTargetStatus: status,
+    automationSchedulerWorkerTargetOk: readback.ok === true,
+    automationSchedulerWorkerTargetOperation: cleanString(operation, 80),
+    automationSchedulerWorkerTargetWriteOperation: writeOperation,
+    automationSchedulerWorkerTargetWriteAllowed: writeAllowed === true,
+    automationSchedulerWorkerTargetWritesPerformed: writeOperation && writeAllowed === true && readback.ok === true && readback.duplicate !== true,
+    automationSchedulerWorkerTargetDuplicate: readback.duplicate === true,
+    automationSchedulerWorkerTargetWorkspaceId: cleanString(readback.workspaceId || target.workspaceId || targetSummary.workspaceId || input.workspaceId, 160),
+    automationSchedulerWorkerTargetLearnerId: cleanString(readback.learnerId || target.learnerId || targetSummary.learnerId || input.learnerId, 160),
+    automationSchedulerWorkerTargetProgramId: cleanString(target.programId || targetSummary.programId || input.programId, 160),
+    automationSchedulerWorkerTargetDomainPackId: cleanString(target.domainPackId || targetSummary.domainPackId || readiness.selectedDomainPackId || input.domainPackId, 180),
+    automationSchedulerWorkerTargetDomain: cleanString(target.domain || targetSummary.domain || readiness.selectedDomain || input.domain, 120),
+    automationSchedulerWorkerTargetSubject: cleanString(target.subject || targetSummary.subject || readiness.selectedSubject || input.subject, 120),
+    automationSchedulerWorkerTargetHorizon: cleanString(target.horizon || targetSummary.horizon || input.horizon, 80),
+    automationSchedulerWorkerTargetCount: numberValue(readback.count, targetRows.length),
+    automationSchedulerWorkerTargetRunnableCount: operation === "runnable" ? numberValue(readback.count, targets.length) : 0,
+    automationSchedulerWorkerTargetTargetId: targetIdFrom(target) || cleanString(input.targetId, 180),
+    automationSchedulerWorkerTargetTargetIds: uniqueBoundedStrings(targetRows.map(targetIdFrom), 24),
+    automationSchedulerWorkerTargetStatuses: uniqueBoundedStrings(Object.keys(statusCounts), 12),
+    automationSchedulerWorkerTargetProposedCount: numberValue(statusCounts.proposed, 0),
+    automationSchedulerWorkerTargetEnabledCount: numberValue(statusCounts.enabled, 0),
+    automationSchedulerWorkerTargetDisabledCount: numberValue(statusCounts.disabled, 0),
+    automationSchedulerWorkerTargetArchivedCount: numberValue(statusCounts.archived, 0),
+    automationSchedulerWorkerTargetTargetVersion: cleanString(target.targetVersion || target.target_version || input.targetVersion, 160),
+    automationSchedulerWorkerTargetPrivacyClass: cleanString(target.privacyClass, 80),
+    automationSchedulerWorkerTargetRequiresOwnerReview: readback.workerTargetRequiresOwnerReview === true || policy.ownerReviewRequired === true,
+    automationSchedulerWorkerTargetProductionSchedulingAllowed: readback.productionSchedulingAllowed === true || policy.productionSchedulingAllowed === true || readiness.productionSchedulingAllowed === true || review.productionSchedulingAllowed === true,
+    automationSchedulerWorkerTargetProvisioningReady: readiness.targetProvisioningReady === true,
+    automationSchedulerWorkerTargetEnabled: readiness.targetEnabled === true || target.status === "enabled",
+    automationSchedulerWorkerTargetReadinessMode: cleanString(readiness.mode || targetSummary.provisionMode, 120),
+    automationSchedulerWorkerTargetSelectedDomainPackId: cleanString(readiness.selectedDomainPackId || targetSummary.domainPackId, 180),
+    automationSchedulerWorkerTargetSelectedDomain: cleanString(readiness.selectedDomain || targetSummary.domain, 120),
+    automationSchedulerWorkerTargetSelectedSubject: cleanString(readiness.selectedSubject || targetSummary.subject, 120),
+    automationSchedulerWorkerTargetNodeCount: targetNodeIds.length,
+    automationSchedulerWorkerTargetNodeIds: targetNodeIds,
+    automationSchedulerWorkerTargetWorkerMode: cleanString(policy.workerMode, 120),
+    automationSchedulerWorkerTargetSchedulerRunMode: cleanString(policy.schedulerRunMode, 120),
+    automationSchedulerWorkerTargetOwnerReviewRequired: policy.ownerReviewRequired === true,
+    automationSchedulerWorkerTargetTargetProvisioningRequired: policy.targetProvisioningRequired === true,
+    automationSchedulerWorkerTargetActionHandoffRequiredBeforeScheduling: policy.actionHandoffRequiredBeforeScheduling === true,
+    automationSchedulerWorkerTargetMaxActionsPerTick: numberValue(policy.maxActionsPerTick || target.limit, input.limit || 0),
+    automationSchedulerWorkerTargetReviewedBy: cleanString(target.reviewedBy || review.reviewedBy || input.requestedBy, 160),
+    automationSchedulerWorkerTargetReviewStatus: cleanString(review.status || target.status, 80)
+  });
+}
+
 function formatResult(result, pretty) {
   return `${JSON.stringify(result, null, pretty ? 2 : 0)}\n`;
 }
@@ -167,7 +266,12 @@ async function main() {
   }
   const config = readEnv(process.env);
   const services = createServices(config);
-  const result = runOperation(services.learningAutomationSchedulerWorkerTargetService, operation, input);
+  const result = projectAutomationSchedulerWorkerTargetSmokeReadback(
+    Object.assign({ operation }, runOperation(services.learningAutomationSchedulerWorkerTargetService, operation, input)),
+    operation,
+    input,
+    shouldAllowWrite(args)
+  );
   process.stdout.write(formatResult(Object.assign({ operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -186,6 +290,7 @@ if (require.main === module) {
 module.exports = {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerWorkerTargetSmokeReadback,
   runOperation,
   shouldAllowWrite,
   validateOperationInput

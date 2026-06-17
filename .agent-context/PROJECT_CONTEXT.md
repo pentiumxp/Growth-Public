@@ -1235,7 +1235,12 @@ readback gate set.
   `listRunnableTargets`; `create` and `review` require explicit
   `--allow-write` and delegate only to
   `learning-automation-scheduler-worker-target-service.createTarget` /
-  `reviewTarget`. The CLI keeps `productionSchedulingAllowed=false` and must
+  `reviewTarget`. The smoke mirrors bounded top-level
+  `automationSchedulerWorkerTarget*` operator readback for operation, write
+  gate, scope, target ids/status counts, provisioning/readiness, Owner review,
+  runnable ids, policy flags, and `productionSchedulingAllowed=false` while
+  preserving nested DTOs as canonical. The CLI keeps
+  `productionSchedulingAllowed=false` and must
   not start workers, claim leases, call scheduler run/execution, inspect
   handoffs, publish, call Gateway, generate cards, activate stage assessments,
   or mutate learner evidence/profile state. Environment JSON targets remain a

@@ -14,6 +14,7 @@ const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-automation-sched
 const {
   inputFromArgs,
   operationFromArgs,
+  projectAutomationSchedulerWorkerTargetSmokeReadback,
   shouldAllowWrite,
   validateOperationInput
 } = require("../scripts/smoke-growth-automation-scheduler-worker-target");
@@ -151,6 +152,84 @@ test("automation scheduler worker target smoke script parses operation, target s
   });
 });
 
+test("automation scheduler worker target smoke script projects bounded operator readback", () => {
+  const projected = projectAutomationSchedulerWorkerTargetSmokeReadback({
+    ok: true,
+    count: 2,
+    targets: [{
+      targetId: "lgastgt_proposed",
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      status: "proposed",
+      targetVersion: "growth.learningAutomationSchedulerWorkerTarget.v1",
+      privacyClass: "summary_only",
+      target: {
+        targetNodeIds: ["kg_science_fair_test"],
+        provisionMode: "explicit_provision"
+      },
+      policy: {
+        workerMode: "background_worker_tick",
+        schedulerRunMode: "background_supervised_tick",
+        ownerReviewRequired: true,
+        targetProvisioningRequired: true,
+        actionHandoffRequiredBeforeScheduling: true,
+        productionSchedulingAllowed: false,
+        maxActionsPerTick: 4
+      },
+      readiness: {
+        targetProvisioningReady: true,
+        targetEnabled: false,
+        selectedDomainPackId: "uk_hk_curriculum_foundation",
+        selectedDomain: "science",
+        selectedSubject: "science",
+        productionSchedulingAllowed: false
+      }
+    }, {
+      targetId: "lgastgt_enabled",
+      status: "enabled"
+    }]
+  }, "list", { workspaceId: "weixin_fanfan", learnerId: "fanfan" }, false);
+
+  assert.equal(projected.automationSchedulerWorkerTargetStatus, "proposed");
+  assert.equal(projected.automationSchedulerWorkerTargetOk, true);
+  assert.equal(projected.automationSchedulerWorkerTargetOperation, "list");
+  assert.equal(projected.automationSchedulerWorkerTargetWriteOperation, false);
+  assert.equal(projected.automationSchedulerWorkerTargetWriteAllowed, false);
+  assert.equal(projected.automationSchedulerWorkerTargetWritesPerformed, false);
+  assert.equal(projected.automationSchedulerWorkerTargetWorkspaceId, "weixin_fanfan");
+  assert.equal(projected.automationSchedulerWorkerTargetLearnerId, "fanfan");
+  assert.equal(projected.automationSchedulerWorkerTargetProgramId, "program_science");
+  assert.equal(projected.automationSchedulerWorkerTargetDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(projected.automationSchedulerWorkerTargetDomain, "science");
+  assert.equal(projected.automationSchedulerWorkerTargetSubject, "science");
+  assert.equal(projected.automationSchedulerWorkerTargetCount, 2);
+  assert.equal(projected.automationSchedulerWorkerTargetTargetId, "lgastgt_proposed");
+  assert.deepEqual(projected.automationSchedulerWorkerTargetTargetIds, ["lgastgt_proposed", "lgastgt_enabled"]);
+  assert.deepEqual(projected.automationSchedulerWorkerTargetStatuses, ["proposed", "enabled"]);
+  assert.equal(projected.automationSchedulerWorkerTargetProposedCount, 1);
+  assert.equal(projected.automationSchedulerWorkerTargetEnabledCount, 1);
+  assert.equal(projected.automationSchedulerWorkerTargetTargetVersion, "growth.learningAutomationSchedulerWorkerTarget.v1");
+  assert.equal(projected.automationSchedulerWorkerTargetPrivacyClass, "summary_only");
+  assert.equal(projected.automationSchedulerWorkerTargetRequiresOwnerReview, true);
+  assert.equal(projected.automationSchedulerWorkerTargetProductionSchedulingAllowed, false);
+  assert.equal(projected.automationSchedulerWorkerTargetProvisioningReady, true);
+  assert.equal(projected.automationSchedulerWorkerTargetEnabled, false);
+  assert.equal(projected.automationSchedulerWorkerTargetReadinessMode, "explicit_provision");
+  assert.equal(projected.automationSchedulerWorkerTargetNodeCount, 1);
+  assert.deepEqual(projected.automationSchedulerWorkerTargetNodeIds, ["kg_science_fair_test"]);
+  assert.equal(projected.automationSchedulerWorkerTargetWorkerMode, "background_worker_tick");
+  assert.equal(projected.automationSchedulerWorkerTargetSchedulerRunMode, "background_supervised_tick");
+  assert.equal(projected.automationSchedulerWorkerTargetOwnerReviewRequired, true);
+  assert.equal(projected.automationSchedulerWorkerTargetTargetProvisioningRequired, true);
+  assert.equal(projected.automationSchedulerWorkerTargetActionHandoffRequiredBeforeScheduling, true);
+  assert.equal(projected.automationSchedulerWorkerTargetMaxActionsPerTick, 4);
+});
+
 test("automation scheduler worker target smoke script lists without writing by default", () => {
   withTempDb(({ dir, dbPath }) => {
     const result = runScript([
@@ -169,6 +248,16 @@ test("automation scheduler worker target smoke script lists without writing by d
     assert.equal(output.source, "growth-learning-automation-scheduler-worker-target-service");
     assert.equal(output.count, 0);
     assert.deepEqual(output.targets, []);
+    assert.equal(output.automationSchedulerWorkerTargetStatus, "listed");
+    assert.equal(output.automationSchedulerWorkerTargetOk, true);
+    assert.equal(output.automationSchedulerWorkerTargetOperation, "list");
+    assert.equal(output.automationSchedulerWorkerTargetWriteOperation, false);
+    assert.equal(output.automationSchedulerWorkerTargetWriteAllowed, false);
+    assert.equal(output.automationSchedulerWorkerTargetWritesPerformed, false);
+    assert.equal(output.automationSchedulerWorkerTargetWorkspaceId, "weixin_fanfan");
+    assert.equal(output.automationSchedulerWorkerTargetLearnerId, "fanfan");
+    assert.equal(output.automationSchedulerWorkerTargetCount, 0);
+    assert.deepEqual(output.automationSchedulerWorkerTargetTargetIds, []);
     assert.equal(tableExists(dbPath, "learning_growth_automation_scheduler_worker_targets"), undefined);
   });
 });
@@ -216,6 +305,15 @@ test("automation scheduler worker target smoke script creates, reviews, and list
     assert.equal(createOutput.target.policy.maxActionsPerTick, 4);
     assert.equal(createOutput.target.readiness.targetProvisioningReady, true);
     assert.equal(createOutput.target.readiness.productionSchedulingAllowed, false);
+    assert.equal(createOutput.automationSchedulerWorkerTargetStatus, "proposed");
+    assert.equal(createOutput.automationSchedulerWorkerTargetOperation, "create");
+    assert.equal(createOutput.automationSchedulerWorkerTargetWriteOperation, true);
+    assert.equal(createOutput.automationSchedulerWorkerTargetWriteAllowed, true);
+    assert.equal(createOutput.automationSchedulerWorkerTargetWritesPerformed, true);
+    assert.equal(createOutput.automationSchedulerWorkerTargetTargetId, createOutput.target.targetId);
+    assert.equal(createOutput.automationSchedulerWorkerTargetProvisioningReady, true);
+    assert.equal(createOutput.automationSchedulerWorkerTargetProductionSchedulingAllowed, false);
+    assert.equal(createOutput.automationSchedulerWorkerTargetMaxActionsPerTick, 4);
 
     const reviewed = runScript([
       "--operation", "review",
@@ -238,6 +336,13 @@ test("automation scheduler worker target smoke script creates, reviews, and list
     assert.equal(reviewOutput.productionSchedulingAllowed, false);
     assert.equal(reviewOutput.target.status, "enabled");
     assert.equal(reviewOutput.target.review.productionSchedulingAllowed, false);
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetStatus, "enabled");
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetOperation, "review");
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetWriteOperation, true);
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetWriteAllowed, true);
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetWritesPerformed, true);
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetEnabled, true);
+    assert.equal(reviewOutput.automationSchedulerWorkerTargetProductionSchedulingAllowed, false);
 
     const runnable = runScript([
       "--operation", "runnable",
@@ -254,6 +359,13 @@ test("automation scheduler worker target smoke script creates, reviews, and list
     assert.equal(runnableOutput.count, 1);
     assert.equal(runnableOutput.targets[0].workerTargetId, createOutput.target.targetId);
     assert.equal(runnableOutput.targets[0].limit, 4);
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetStatus, "enabled");
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetOperation, "runnable");
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetRunnableCount, 1);
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetTargetId, createOutput.target.targetId);
+    assert.deepEqual(runnableOutput.automationSchedulerWorkerTargetTargetIds, [createOutput.target.targetId]);
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetEnabledCount, 1);
+    assert.equal(runnableOutput.automationSchedulerWorkerTargetMaxActionsPerTick, 4);
   });
 });
 
