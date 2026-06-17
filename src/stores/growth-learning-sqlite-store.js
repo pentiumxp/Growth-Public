@@ -18,6 +18,7 @@ const { createLearningAutomationReleaseCollectionRunRepository } = require("./gr
 const { createLearningAutomationReleaseDecisionRepository } = require("./growth-learning-sqlite/automation-release-decisions");
 const { createLearningAutomationReleasePackageRepository } = require("./growth-learning-sqlite/automation-release-packages");
 const { createLearningAutomationReleasePreflightReportRepository } = require("./growth-learning-sqlite/automation-release-preflight-reports");
+const { createLearningAutomationReleaseWorkbenchActionAuditRepository } = require("./growth-learning-sqlite/automation-release-workbench-actions");
 const { createLearningAutomationReleaseApprovalRepository } = require("./growth-learning-sqlite/automation-release-approvals");
 const { createLearningAutomationReleaseEvidenceRepository } = require("./growth-learning-sqlite/automation-release-evidence");
 const { createLearningAutomationReleaseActivationRepository } = require("./growth-learning-sqlite/automation-release-activations");
@@ -78,6 +79,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
   const learningAutomationReleaseDecisionRepository = createLearningAutomationReleaseDecisionRepository({ open });
   const learningAutomationReleasePackageRepository = createLearningAutomationReleasePackageRepository({ open });
   const learningAutomationReleasePreflightReportRepository = createLearningAutomationReleasePreflightReportRepository({ open });
+  const learningAutomationReleaseWorkbenchActionAuditRepository = createLearningAutomationReleaseWorkbenchActionAuditRepository({ open });
   const learningAutomationReleaseApprovalRepository = createLearningAutomationReleaseApprovalRepository({ open });
   const learningAutomationReleaseEvidenceRepository = createLearningAutomationReleaseEvidenceRepository({ open });
   const learningAutomationReleaseActivationRepository = createLearningAutomationReleaseActivationRepository({ open });
@@ -177,6 +179,7 @@ function createGrowthLearningSqliteStore({ dbPath, legacyAudioRoots = [] }) {
     learningAutomationReleaseDecisionRepository,
     learningAutomationReleasePackageRepository,
     learningAutomationReleasePreflightReportRepository,
+    learningAutomationReleaseWorkbenchActionAuditRepository,
     learningAutomationReleaseApprovalRepository,
     learningAutomationReleaseEvidenceRepository,
     learningAutomationReleaseActivationRepository,

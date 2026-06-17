@@ -9,10 +9,71 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T10:35+08:00 - Release Workbench Action Audit Persistence
+
+- Status: implemented, compressed-Harness validated locally, ready for
+  commit/push. No production deployment in this slice.
+- Change intent:
+  - close the process-audit gap for Owner release workbench button actions;
+  - keep downstream release records owned by their existing services while the
+    workbench action facade owns only a wrapper action-audit trail;
+  - expose Owner-visible readback so action attempts can be audited without
+    inspecting SQLite manually.
+- Scope:
+  - added `automation-release-workbench-actions.js` and
+    `learning_growth_automation_release_workbench_actions`;
+  - wired `learningAutomationReleaseWorkbenchActionAuditRepository` through the
+    SQLite store and app service graph;
+  - `learning-automation-release-workbench-action-service` now writes bounded
+    `growth.learningAutomationReleaseWorkbenchActionAudit.v1` rows for recorded
+    actions and post-privacy blocked actions when the repository is available;
+  - added Owner-only
+    `GET /api/v1/growth/automation/release-workbench/action-audits` through the
+    same service;
+  - action-audit rows store scope, endpoint/action key, status, action-record
+    id/status, duplicate/workbench status, bounded error, requestedBy, and
+    summary flags only; they do not store raw request bodies, artifact paths,
+    raw evidence, delegated `writeResult` payloads, prompts, transcripts, model
+    output, provider config, or secrets.
+- Harness added/updated:
+  - `tests/learning-automation-release-workbench-action-repository.test.js`;
+  - `tests/learning-automation-release-workbench-action-service.test.js`;
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `scripts/run-growth-release-union-tests.js`;
+  - `package.json` syntax coverage.
+- Documentation updated:
+  - `.agent-context/PROJECT_CONTEXT.md`;
+  - `.agent-context/HANDOFF.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`;
+  - `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`;
+  - `docs/TEST_MATRIX.md`.
+- Validation passed:
+  - `node --check` for the changed service/route/store files;
+  - `node --test tests/learning-automation-release-workbench-action-repository.test.js`;
+  - `node --test tests/learning-automation-release-workbench-action-service.test.js`;
+  - `node --test tests/growth-routes.test.js`;
+  - `node --test tests/growth-architecture-boundary.test.js`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`;
+  - `npm run --silent test:release-union` passed `210/210`;
+  - `npm run --silent check` passed with `runtimeCount=210` and
+    `checkedCount=210`;
+  - `git diff --check`;
+  - `codegraph sync && codegraph status` reported the index up to date with
+    `374` files, `5,262` nodes, and `22,907` edges, plus the existing
+    earlier-engine advisory.
+- Validation intentionally not run in this accelerated slice:
+  - full `npm test`; run it before production deployment or if this slice is
+    bundled with runtime deployment.
+
 ## 2026-06-17T09:16+08:00 - Release Artifact Template Action Plan
 
-- Status: implemented, compressed-Harness validated locally, and ready for
-  commit/push. No production deployment in this slice.
+- Status: implemented, compressed-Harness validated locally, committed as
+  `7fc742c`, and pushed to `origin/main` and `public/main`. No production
+  deployment in this slice.
 - Change intent:
   - make the no-write release artifact-template readback emit a
     `growth.learningAutomationReleaseEvidenceActionPlan.v1` DTO so Owner UI or
@@ -70,8 +131,9 @@
 
 ## 2026-06-17T09:05+08:00 - Release Artifact Template Evidence Checklist
 
-- Status: implemented, compressed-Harness validated locally, and ready for
-  commit/push. No production deployment in this slice.
+- Status: implemented, compressed-Harness validated locally, committed as
+  `2265a39`, and pushed to `origin/main` and `public/main`. No production
+  deployment in this slice.
 - Change intent:
   - make the existing no-write release artifact-template output a
     summary-only release evidence checklist, so Owner/release tooling can see

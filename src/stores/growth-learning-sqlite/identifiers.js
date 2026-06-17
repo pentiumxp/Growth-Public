@@ -289,6 +289,27 @@ function stableLearningAutomationReleasePackageId(input = {}) {
   return `lgapkg_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
 }
 
+function stableLearningAutomationReleaseWorkbenchActionAuditId(input = {}) {
+  const explicit = cleanString(input.actionAuditId || input.action_audit_id || input.auditId || input.audit_id || input.id);
+  if (explicit) return explicit;
+  const seed = [
+    cleanString(input.workspaceId || input.workspace_id),
+    cleanString(input.learnerId || input.learner_id),
+    cleanString(input.programId || input.program_id),
+    cleanString(input.domainPackId || input.domain_pack_id),
+    cleanString(input.domain),
+    cleanString(input.subject),
+    cleanString(input.horizon),
+    cleanString(input.collectionRunId || input.collection_run_id || input.runId || input.run_id),
+    cleanString(input.endpointKey || input.endpoint_key),
+    cleanString(input.actionKey || input.action_key),
+    cleanString(input.status),
+    cleanString(input.recordId || input.record_id),
+    cleanString(input.createdAt || input.created_at || input.requestedAt || input.requested_at)
+  ].join(":");
+  return `lgawba_${sha256Hex(seed || `${Date.now()}:${Math.random()}`).slice(0, 18)}`;
+}
+
 function stableLearningAutomationReleaseApprovalId(input = {}) {
   const explicit = cleanString(input.approvalId || input.approval_id || input.id);
   if (explicit) return explicit;
@@ -430,6 +451,7 @@ module.exports = {
   stableLearningAutomationReleaseEvidenceRecordId,
   stableLearningAutomationReleasePreflightReportId,
   stableLearningAutomationReleasePackageId,
+  stableLearningAutomationReleaseWorkbenchActionAuditId,
   stableLearningAutomationReleaseReadinessId,
   stableLearningAutomationRuntimeEnablementId,
   stableLearningEvidenceId,

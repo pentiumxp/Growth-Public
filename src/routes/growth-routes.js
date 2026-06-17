@@ -715,6 +715,16 @@ function normalizeAutomationReleaseWorkbenchInput(url, target) {
   return normalizeAutomationReleaseDashboardInput(url, target);
 }
 
+function normalizeAutomationReleaseWorkbenchActionAuditListInput(url, target) {
+  return Object.assign(normalizeAutomationReleaseWorkbenchInput(url, target), {
+    collectionRunId: url.searchParams.get("collectionRunId") || url.searchParams.get("collection_run_id") || url.searchParams.get("runId") || url.searchParams.get("run_id") || "",
+    endpointKey: url.searchParams.get("endpointKey") || url.searchParams.get("endpoint_key") || "",
+    actionKey: url.searchParams.get("actionKey") || url.searchParams.get("action_key") || "",
+    status: url.searchParams.get("status") || "",
+    limit: url.searchParams.get("limit") || ""
+  });
+}
+
 function normalizeAutomationReleasePreflightInput(url, target) {
   return normalizeAutomationReleaseWorkbenchInput(url, target);
 }
@@ -1762,6 +1772,17 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-workbench") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationReleaseWorkbenchService.workbench(normalizeAutomationReleaseWorkbenchInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/release-workbench/action-audits") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_release_workbench_action_audit_owner_required", "Automation release workbench action audits require Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationReleaseWorkbenchActionService.listActionAudits(
+      normalizeAutomationReleaseWorkbenchActionAuditListInput(url, target)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

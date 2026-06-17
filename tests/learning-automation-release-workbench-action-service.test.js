@@ -216,7 +216,8 @@ function serviceWith(overrides = {}) {
           evaluated: { status: "verified_enabled" }
         };
       }
-    }
+    },
+    actionAuditRepository: overrides.actionAuditRepository
   });
   return { service, calls };
 }
@@ -243,6 +244,106 @@ test("release workbench action records evidence through the existing evidence se
   assert.equal(calls[1][1].workspaceId, "fanfan");
   assert.equal(calls[1][1].evidenceKey, "owner_daily_ui_evidence");
   assert.equal(calls[1][1].evidence.summaryOnly, true);
+});
+
+test("release workbench action persists bounded summary-only action audit rows when repository is present", () => {
+  const saved = [];
+  const { service } = serviceWith({
+    actionAuditRepository: {
+      saveActionAudit(input) {
+        saved.push(input);
+        return {
+          ok: true,
+          duplicate: false,
+          actionAudit: Object.assign({ actionAuditId: "lgawba_1" }, input)
+        };
+      },
+      listActionAudits(input) {
+        return saved.filter((item) => item.workspaceId === input.workspaceId);
+      }
+    }
+  });
+
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence",
+    evidence: { evidenceId: "ui_evidence_1" },
+    requestedBy: "owner",
+    createdAt: "2026-06-17T07:00:00.000Z"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.actionAuditStatus, "recorded");
+  assert.equal(result.actionAudit.actionAuditId, "lgawba_1");
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].workspaceId, "fanfan");
+  assert.equal(saved[0].endpointKey, "release_evidence");
+  assert.equal(saved[0].status, "recorded");
+  assert.equal(saved[0].recordId, "lgarev_1");
+  assert.equal(saved[0].actionRecord.recordId, "lgarev_1");
+  assert.equal(saved[0].actionSummary.writefulSchedulingAllowed, false);
+  assert.equal(saved[0].writeResult, undefined);
+  assert.equal(JSON.stringify(saved[0]).includes("ui_evidence_1"), false);
+
+  const listed = service.listActionAudits({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence",
+    limit: 5
+  });
+  assert.equal(listed.ok, true);
+  assert.equal(listed.schemaVersion, "growth.learningAutomationReleaseWorkbenchActionAuditList.v1");
+  assert.equal(listed.actionAuditCount, 1);
+  assert.equal(listed.actionAudits[0].recordId, "lgarev_1");
+});
+
+test("release workbench action persists bounded blocked audit rows for post-privacy action failures", () => {
+  const saved = [];
+  const { service } = serviceWith({
+    releaseEvidenceService: {
+      recordEvidence() {
+        return {
+          ok: false,
+          error: "release_evidence_record_rejected",
+          evidence: {
+            evidenceRecordId: "lgarev_rejected",
+            rawPrompt: "must not be copied into action audit"
+          }
+        };
+      }
+    },
+    actionAuditRepository: {
+      saveActionAudit(input) {
+        saved.push(input);
+        return {
+          ok: true,
+          duplicate: false,
+          actionAudit: Object.assign({ actionAuditId: "lgawba_blocked_1" }, input)
+        };
+      }
+    }
+  });
+
+  const result = service.recordAction({
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    endpointKey: "release_evidence",
+    evidenceKey: "owner_daily_ui_evidence",
+    requestedBy: "owner"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "release_evidence_record_rejected");
+  assert.equal(result.actionAuditStatus, "recorded");
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].status, "blocked");
+  assert.equal(saved[0].error, "release_evidence_record_rejected");
+  assert.equal(saved[0].recordId, "");
+  assert.equal(saved[0].actionRecord.rawPrompt, undefined);
+  assert.equal(JSON.stringify(saved[0]).includes("must not be copied"), false);
 });
 
 test("release workbench action runs evidence collection even when readiness remains incomplete", () => {

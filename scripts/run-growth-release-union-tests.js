@@ -18,6 +18,7 @@ const RELEASE_UNION_TEST_FILES = Object.freeze([
   "tests/learning-automation-release-closure-service.test.js",
   "tests/learning-automation-release-preflight-service.test.js",
   "tests/learning-automation-release-preflight-repository.test.js",
+  "tests/learning-automation-release-workbench-action-repository.test.js",
   "tests/learning-automation-release-activation-service.test.js",
   "tests/learning-automation-runtime-enablement-service.test.js",
   "tests/growth-release-controls-smoke-script.test.js",
@@ -59,4 +60,3 @@ module.exports = {
   buildNodeTestArgs,
   runReleaseUnionTests
 };
-

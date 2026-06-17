@@ -1301,7 +1301,13 @@ Remaining release gaps:
   build-and-record to the package service with bounded unavailable-service
   failure, or delegate a `release_preflight` action to
   `learning-automation-release-preflight-service.recordReport` without owning
-  the preflight repository. Local Harness also proves that a validated
+  the preflight repository. It also proves the Owner workbench action wrapper
+  can persist and read back bounded
+  `growth.learningAutomationReleaseWorkbenchActionAudit.v1` rows through
+  `learning_growth_automation_release_workbench_actions` without storing raw
+  request bodies, artifact paths, raw evidence, delegated write results,
+  prompts, transcripts, model output, provider config, or secrets. Local
+  Harness also proves that a validated
   release-package-review UI evidence summary can be recorded through
   `npm run smoke:release-evidence` into a temporary Growth SQLite database and
   read back from the release-evidence bag with top-level evidence/check keys

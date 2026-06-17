@@ -100,6 +100,7 @@ test("Growth SQLite store facade stays a composition boundary", () => {
   assert.match(store, /createLearningAutomationReleaseCollectionRunRepository/);
   assert.match(store, /createLearningAutomationReleaseDecisionRepository/);
   assert.match(store, /createLearningAutomationReleaseReadinessRepository/);
+  assert.match(store, /createLearningAutomationReleaseWorkbenchActionAuditRepository/);
   assert.match(store, /createLearningEvidenceLedgerRepository/);
   assert.match(store, /createProfileDeltaAuditRepository/);
   assert.match(store, /createMasteryProfileRepository/);
@@ -287,6 +288,7 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /repository: growthLearningStore\.learningAutomationReleaseCollectionRunRepository/);
   assert.match(services, /repository: growthLearningStore\.learningAutomationReleaseDecisionRepository/);
   assert.match(services, /repository: growthLearningStore\.learningAutomationReleasePackageRepository/);
+  assert.match(services, /actionAuditRepository: growthLearningStore\.learningAutomationReleaseWorkbenchActionAuditRepository/);
   assert.match(services, /readinessService: learningAutomationReleaseReadinessService/);
   assert.match(services, /collectionRunService: learningAutomationReleaseCollectionRunService/);
   assert.match(services, /decisionService: learningAutomationReleaseDecisionService/);
@@ -1494,6 +1496,21 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(automationReleasePackageRepository, /learning_automation_release_package_privacy_class_required/);
   assert.match(automationReleasePackageRepository, /learning_automation_release_package_status_invalid/);
   assert.doesNotMatch(automationReleasePackageRepository, /openai\.com/);
+
+  const automationReleaseWorkbenchActionAuditRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-release-workbench-actions.js"));
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /learning_growth_automation_release_workbench_actions/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /createLearningAutomationReleaseWorkbenchActionAuditRepository/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /summary_only/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /scanPrivacyKeys/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /scanPrivateValues/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /PRIVATE_VALUE_PATTERN/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /saveActionAudit/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /listActionAudits/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /action_record_json/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /action_summary_json/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /learning_automation_release_workbench_action_audit_privacy_class_required/);
+  assert.match(automationReleaseWorkbenchActionAuditRepository, /learning_automation_release_workbench_action_audit_status_invalid/);
+  assert.doesNotMatch(automationReleaseWorkbenchActionAuditRepository, /openai\.com/);
 
   const automationReleasePreflightReportRepository = read(path.join("src", "stores", "growth-learning-sqlite", "automation-release-preflight-reports.js"));
   assert.match(automationReleasePreflightReportRepository, /learning_growth_automation_release_preflight_reports/);

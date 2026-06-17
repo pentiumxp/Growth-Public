@@ -1,6 +1,7 @@
 "use strict";
 
 const RELEASE_WORKBENCH_ACTION_SCHEMA = "growth.learningAutomationReleaseWorkbenchAction.v1";
+const RELEASE_WORKBENCH_ACTION_AUDIT_LIST_SCHEMA = "growth.learningAutomationReleaseWorkbenchActionAuditList.v1";
 const {
   UI_EVIDENCE_FILE_FIELDS
 } = require("./learning-automation-ui-evidence-task-registry");
@@ -301,6 +302,62 @@ function actionRecordId(record = {}) {
   );
 }
 
+function actionRecordSummary(endpointKey, input = {}, record = {}) {
+  return {
+    schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.record.v1",
+    summaryOnly: true,
+    endpointKey,
+    actionKey: actionKeyFrom(input),
+    recordId: actionRecordId(record),
+    recordStatus: cleanString(record?.status, 120)
+  };
+}
+
+function requestedByFrom(input = {}) {
+  return cleanString(input.requestedBy || input.requested_by || input.createdBy || input.created_by || input.recordedBy || input.recorded_by, 180);
+}
+
+function auditSummaryFrom({ endpointKey, input, status, actionRecord, duplicate, workbenchStatus, error } = {}) {
+  return {
+    schemaVersion: "growth.learningAutomationReleaseWorkbenchActionAudit.summary.v1",
+    summaryOnly: true,
+    endpointKey,
+    actionKey: actionKeyFrom(input),
+    status: cleanString(status, 80),
+    recordId: cleanString(actionRecord?.recordId, 180),
+    recordStatus: cleanString(actionRecord?.recordStatus, 120),
+    duplicate: duplicate === true,
+    workbenchStatus: cleanString(workbenchStatus, 120),
+    error: cleanString(error, 180),
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  };
+}
+
+function auditInputFrom({ input, scope, endpointKey, status, actionRecord, duplicate, workbenchStatus, error } = {}) {
+  const summary = auditSummaryFrom({ endpointKey, input, status, actionRecord, duplicate, workbenchStatus, error });
+  return Object.assign({}, scope, {
+    endpointKey,
+    actionKey: actionKeyFrom(input),
+    status: summary.status || "blocked",
+    recordId: summary.recordId,
+    recordStatus: summary.recordStatus,
+    duplicate: summary.duplicate,
+    workbenchStatus: summary.workbenchStatus,
+    error: summary.error,
+    actionRecord: actionRecord || {},
+    actionSummary: summary,
+    requestedBy: requestedByFrom(input),
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    createdAt: input.createdAt || input.created_at || input.requestedAt || input.requested_at
+  });
+}
+
 function actionWriteSucceeded(endpointKey, result = {}) {
   if (endpointKey === "release_evidence_collection") return Boolean(result?.collection);
   if (endpointKey === "release_package" && result?.record) return result.record.ok === true;
@@ -319,6 +376,22 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   const releasePreflightService = options.releasePreflightService || null;
   const releaseActivationService = options.releaseActivationService || null;
   const runtimeEnablementService = options.runtimeEnablementService || null;
+  const actionAuditRepository = options.actionAuditRepository || options.repository || null;
+
+  function saveActionAudit(auditInput) {
+    if (!actionAuditRepository || typeof actionAuditRepository.saveActionAudit !== "function") return null;
+    return actionAuditRepository.saveActionAudit(auditInput);
+  }
+
+  function attachActionAudit(response, auditInput) {
+    const saved = saveActionAudit(auditInput);
+    if (!saved) return response;
+    return Object.assign({}, response, {
+      actionAudit: saved.actionAudit || null,
+      actionAuditStatus: saved.ok ? "recorded" : "failed",
+      actionAuditError: saved.ok ? undefined : cleanString(saved.error, 180)
+    });
+  }
 
   function recordAction(input = {}) {
     const scope = scopeFrom(input);
@@ -334,13 +407,32 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
 
     const workbench = releaseWorkbenchService.workbench(Object.assign({}, input, scope));
     if (!workbench?.ok) {
-      return unavailable(workbench?.error || "release_workbench_action_workbench_blocked", scope, {
+      const response = unavailable(workbench?.error || "release_workbench_action_workbench_blocked", scope, {
+        endpointKey,
         workbenchStatus: cleanString(workbench?.status, 120)
       });
+      return attachActionAudit(response, auditInputFrom({
+        input,
+        scope,
+        endpointKey,
+        status: "blocked",
+        duplicate: false,
+        workbenchStatus: response.workbenchStatus,
+        error: response.error
+      }));
     }
     const routes = availableRecordRoutes(workbench);
     if (!routes.has(endpointKey)) {
-      return unavailable("release_workbench_action_endpoint_not_advertised", scope, { endpointKey });
+      const response = unavailable("release_workbench_action_endpoint_not_advertised", scope, { endpointKey });
+      return attachActionAudit(response, auditInputFrom({
+        input,
+        scope,
+        endpointKey,
+        status: "blocked",
+        duplicate: false,
+        workbenchStatus: cleanString(workbench.status, 120),
+        error: response.error
+      }));
     }
 
     const services = {
@@ -356,16 +448,36 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
       runtimeEnablementService
     };
     const missing = requireEndpointService(scope, endpointKey, services);
-    if (missing) return missing;
+    if (missing) {
+      return attachActionAudit(missing, auditInputFrom({
+        input,
+        scope,
+        endpointKey,
+        status: "blocked",
+        duplicate: false,
+        workbenchStatus: cleanString(workbench.status, 120),
+        error: missing.error
+      }));
+    }
     const result = callWriteService(endpointKey, input, scope, services);
     if (!actionWriteSucceeded(endpointKey, result)) {
-      return Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {
+      const response = Object.assign(unavailable(result?.error || "release_workbench_action_record_failed", scope, {
         endpointKey,
         writeResult: result || null
       }), { duplicate: result?.duplicate === true });
+      return attachActionAudit(response, auditInputFrom({
+        input,
+        scope,
+        endpointKey,
+        status: "blocked",
+        duplicate: response.duplicate === true,
+        workbenchStatus: cleanString(workbench.status, 120),
+        error: response.error
+      }));
     }
     const record = resultRecord(endpointKey, result);
-    return Object.assign({}, scope, {
+    const actionRecord = actionRecordSummary(endpointKey, input, record);
+    const response = Object.assign({}, scope, {
       ok: true,
       source: "growth-learning-automation-release-workbench-action-service",
       schemaVersion: RELEASE_WORKBENCH_ACTION_SCHEMA,
@@ -375,16 +487,44 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
       endpointKey,
       actionKey: actionKeyFrom(input),
       duplicate: result.duplicate === true,
-      actionRecord: {
-        schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.record.v1",
-        summaryOnly: true,
-        endpointKey,
-        actionKey: actionKeyFrom(input),
-        recordId: actionRecordId(record),
-        recordStatus: cleanString(record?.status, 120)
-      },
+      actionRecord,
       writeResult: result,
       workbenchStatus: cleanString(workbench.status, 120),
+      configChangeApplied: false,
+      runtimeConfigChange: false,
+      runtimeConfigMutationPerformed: false,
+      writefulSchedulingAllowed: false,
+      backgroundSchedulingAllowed: false,
+      backgroundWorkerAllowed: false
+    });
+    return attachActionAudit(response, auditInputFrom({
+      input,
+      scope,
+      endpointKey,
+      status: "recorded",
+      actionRecord,
+      duplicate: result.duplicate === true,
+      workbenchStatus: response.workbenchStatus,
+      error: ""
+    }));
+  }
+
+  function listActionAudits(input = {}) {
+    const scope = scopeFrom(input);
+    if (!scope.workspaceId) return unavailable("release_workbench_action_audit_scope_required", scope);
+    if (!actionAuditRepository || typeof actionAuditRepository.listActionAudits !== "function") {
+      return unavailable("learning_automation_release_workbench_action_audit_repository_unavailable", scope);
+    }
+    const audits = actionAuditRepository.listActionAudits(Object.assign({}, input, scope));
+    return Object.assign({}, scope, {
+      ok: true,
+      source: "growth-learning-automation-release-workbench-action-service",
+      schemaVersion: RELEASE_WORKBENCH_ACTION_AUDIT_LIST_SCHEMA,
+      privacyClass: "summary_only",
+      summaryOnly: true,
+      status: "listed",
+      actionAudits: audits,
+      actionAuditCount: audits.length,
       configChangeApplied: false,
       runtimeConfigChange: false,
       runtimeConfigMutationPerformed: false,
@@ -395,11 +535,13 @@ function createLearningAutomationReleaseWorkbenchActionService(options = {}) {
   }
 
   return {
+    listActionAudits,
     recordAction
   };
 }
 
 module.exports = {
+  RELEASE_WORKBENCH_ACTION_AUDIT_LIST_SCHEMA,
   RELEASE_WORKBENCH_ACTION_SCHEMA,
   SUPPORTED_ENDPOINTS,
   createLearningAutomationReleaseWorkbenchActionService

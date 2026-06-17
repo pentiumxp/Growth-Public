@@ -407,14 +407,24 @@ readback gate set.
   It requires only the
   selected endpoint's write service instead of requiring every possible
   release-workbench action dependency at construction time. It stores/passes only
-  summary-only bounded action/evidence/approval/decision/package data. Default
+  summary-only bounded action/evidence/approval/decision/package data. It also
+  writes and reads bounded wrapper audits through
+  `learningAutomationReleaseWorkbenchActionAuditRepository` /
+  `learning_growth_automation_release_workbench_actions` and Owner-only
+  `GET /api/v1/growth/automation/release-workbench/action-audits`; those audit
+  rows store only scope, endpoint/action, status, action-record id/status,
+  duplicate/workbench status, bounded error, requestedBy, and summary flags, and
+  must not store raw request bodies, artifact paths, raw evidence, delegated
+  write results, prompts, transcripts, model output, provider config, or
+  secrets. Default
   `release_package` actions still record only an existing package artifact; only
   an explicit `buildReleasePackage` / `build_and_record_package` request
   delegates package build-and-record to
   `learning-automation-release-package-service.buildPackage` with package-record
   write authorization. The facade does not build packages itself, run smoke tasks
   internally, call Gateway/model providers, publish, schedule, mutate runtime
-  config, grant scheduler permission, or mutate learner state.
+  config, grant scheduler permission, own downstream release record tables, or
+  mutate learner state.
   Growth now also has `learning-automation-release-preflight-service`,
   `automation-release-preflight-reports.js`,
   `learning_growth_automation_release_preflight_reports`,
