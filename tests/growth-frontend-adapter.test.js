@@ -164,6 +164,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     suggestedPlan: {
       domain: "english",
       subject: "english",
+      capabilityClusterId: "english.evidence",
       targetNodeIds: ["kg_main_idea", "kg_evidence"]
     },
     generationDefaults: { availableMinutes: 15 }
@@ -318,6 +319,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     domain_pack_id: "uk_hk_curriculum_foundation",
     domain: "science",
     subject: "science",
+    subject_id: "science",
+    capability_cluster_id: "science.observation",
     target_node_ids: ["kg_science_observation"],
     assessment_coverage_node_ids: ["kg_science_observation", "kg_science_fair_test"]
   }, "weixin_fanfan");
@@ -349,7 +352,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     target_node_ids: ["kg_main_idea"],
     subject: "science"
   });
-  assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence");
+  assert.equal(calls[1].path, "/api/v1/growth/learning-loop/state?workspaceId=weixin_fanfan&learnerId=fanfan&domain=english&subject=english&subjectId=english&capabilityClusterId=english.evidence&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_main_idea%2Ckg_evidence&assessmentCoverageNodeIds=kg_main_idea%2Ckg_evidence");
   assert.equal(calls[2].path, "/api/v1/growth/cards/generate");
   assert.equal(calls[2].options.method, "POST");
   assert.deepEqual(JSON.parse(calls[2].options.body), {
@@ -489,7 +492,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     status: "enabled",
     reason: "Owner reviewed target."
   });
-  assert.equal(calls[35].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
+  assert.equal(calls[35].path, "/api/v1/growth/stage-assessments/controls?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&subjectId=science&capabilityClusterId=science.observation&targetNodeIds=kg_science_observation&assessmentCoverageNodeIds=kg_science_observation%2Ckg_science_fair_test");
   assert.equal(calls[36].path, "/api/v1/growth/recommendations/lifecycle/review");
   assert.deepEqual(JSON.parse(calls[36].options.body), {
     workspace_id: "weixin_fanfan",
@@ -2551,6 +2554,69 @@ test("Growth card generation UI renders stage assessment eligibility and activat
   assert.match(html, /近期练习证据足够/);
   assert.match(html, /<strong>2<\/strong>/);
   assert.match(html, /打开阶段测评/);
+  assert.match(html, /data-learning-open-growth-task="stage_card_1"/);
+});
+
+test("Growth card generation UI renders active checkpoint from learning-loop state", () => {
+  const windowRef = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: { workspaceId: "weixin_fanfan", learnerId: "fanfan", displayName: "凡凡", enabled: true },
+    selectedRecipeId: "daily_science_v1",
+    recipes: [{ id: "daily_science_v1", label: "日常科学卡" }],
+    readiness: {
+      ready: true,
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      gatewayConfigured: true,
+      plannerGatewayConfigured: true,
+      plannerContextReady: true
+    },
+    graph: { nodeCount: 294, edgeCount: 329 },
+    suggestedPlan: {
+      targetNodeId: "kg_science_fair_test",
+      targetNodeIds: ["kg_science_fair_test", "kg_science_variables"],
+      assessmentCoverageNodeIds: ["kg_science_fair_test", "kg_science_variables"],
+      capabilityClusterId: "science.fair_test",
+      title: "Science checkpoint",
+      domain: "science",
+      subject: "science",
+      evidenceRequirements: ["short_answer"]
+    }
+  };
+  const html = windowRef.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+    state: {
+      cardGeneration: {
+        status: "ready",
+        context,
+        learningLoopState: {
+          status: "ready",
+          data: {
+            schemaVersion: "growth.learningLoopState.v1",
+            status: "stage_checkpoint_active",
+            summary: { weaknessCount: 0, missingRequired: [] },
+            stageAssessment: {
+              status: "active",
+              eligible: true,
+              generatedTaskCardId: "stage_card_1"
+            },
+            nextAction: {
+              action: "complete_active_stage_assessment",
+              reason: "stage_checkpoint_active",
+              taskCardId: "stage_card_1"
+            }
+          }
+        }
+      }
+    },
+    viewTargets: [{ workspaceId: "weixin_fanfan", label: "凡凡" }],
+    workspaceId: "weixin_fanfan"
+  });
+
+  assert.match(html, /data-learning-loop-state-status="stage_checkpoint_active"/);
+  assert.match(html, /阶段测评进行中/);
+  assert.match(html, /完成阶段测评/);
   assert.match(html, /data-learning-open-growth-task="stage_card_1"/);
 });
 

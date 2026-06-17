@@ -231,6 +231,9 @@ function normalizeCardGenerationContextInput(url, target) {
 }
 
 function normalizeDailyLoopQueryInput(url, target, request) {
+  const subject = url.searchParams.get("subject") || "";
+  const targetNodeIds = csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || "");
+  const assessmentCoverageNodeIds = csvStrings(url.searchParams.get("assessmentCoverageNodeIds") || url.searchParams.get("assessment_coverage_node_ids") || url.searchParams.get("assessmentCoverage") || url.searchParams.get("assessment_coverage") || "");
   return {
     workspaceId: target.workspaceId,
     learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
@@ -240,10 +243,13 @@ function normalizeDailyLoopQueryInput(url, target, request) {
     programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
     domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
     domain: url.searchParams.get("domain") || "",
-    subject: url.searchParams.get("subject") || "",
+    subject,
+    subjectId: url.searchParams.get("subjectId") || url.searchParams.get("subject_id") || subject,
+    capabilityClusterId: url.searchParams.get("capabilityClusterId") || url.searchParams.get("capability_cluster_id") || "",
     horizon: url.searchParams.get("horizon") || "daily_plan",
     availableMinutes: url.searchParams.get("availableMinutes") || url.searchParams.get("available_minutes") || "",
-    targetNodeIds: csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || ""),
+    targetNodeIds,
+    assessmentCoverageNodeIds: assessmentCoverageNodeIds.length ? assessmentCoverageNodeIds : targetNodeIds,
     planDraftId: url.searchParams.get("planDraftId") || url.searchParams.get("plan_draft_id") || "",
     itemId: url.searchParams.get("itemId") || url.searchParams.get("item_id") || url.searchParams.get("selectedItemId") || url.searchParams.get("selected_item_id") || "",
     taskCardId: url.searchParams.get("taskCardId") || url.searchParams.get("task_card_id") || "",

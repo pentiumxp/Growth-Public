@@ -492,6 +492,7 @@
     if (value === "ready_to_draft") return "可起草";
     if (value === "ready_to_publish") return "可发布";
     if (value === "stage_checkpoint_ready") return "测评就绪";
+    if (value === "stage_checkpoint_active") return "测评进行中";
     if (value === "audit_incomplete") return "补审计";
     if (value === "blocked") return "阻塞";
     if (value === "needs_owner_review") return "需检查";
@@ -503,6 +504,7 @@
     if (value === "draft_daily_plan") return "起草日常计划";
     if (value === "publish_selected_plan_item") return "发布已选计划";
     if (value === "review_stage_assessment") return "检查阶段测评";
+    if (value === "complete_active_stage_assessment") return "完成阶段测评";
     if (value === "complete_cycle_audit") return "补齐审计";
     if (value === "provision_learning_target") return "开通学习目标";
     if (value === "import_or_select_learning_graph") return "选择学习图谱";
@@ -518,6 +520,7 @@
       daily_plan_ready: "可以根据当前画像起草一张低压力日常卡。",
       validated_plan_ready: "已有验证过的计划项，可以由 Owner 明确发布。",
       stage_checkpoint_ready: "近期证据满足阶段测评检查条件。",
+      stage_checkpoint_active: "已有正式阶段测评卡进行中，先完成这张卡再生成下一步。",
       cycle_audit_incomplete: "上一轮学习证据还没有补齐审计闭环。",
       target_not_enabled: "当前学习目标还未开通。",
       learning_graph_not_ready: "学习图谱目标尚未就绪。",
@@ -541,6 +544,7 @@
     const stage = data.stageAssessment || {};
     const summary = data.summary || {};
     const action = learningLoopActionText(nextAction.action);
+    const activeStageTaskCardId = clean(stage.generatedTaskCardId || nextAction.taskCardId);
     const reason = failed
       ? clean(holder.error) || "learning_loop_state_unavailable"
       : loading
@@ -560,6 +564,10 @@
         <span><small>审计缺口</small><strong>${escapeHtml(String(asArray(summary.missingRequired || audit.missingRequired).length))}</strong></span>
         <span><small>阶段测评</small><strong>${escapeHtml(stage.eligible ? "可检查" : learningLoopStatusText(stage.status || "dormant"))}</strong></span>
       </div>
+      ${clean(stage.status) === "active" && activeStageTaskCardId ? `<div class="learning-card-generation-loop-action">
+        <span>阶段测评进行中</span>
+        <button type="button" class="learning-card-generation-open-card" data-learning-open-growth-task="${escapeHtml(activeStageTaskCardId)}">打开阶段测评</button>
+      </div>` : ""}
     </section>`;
   }
 

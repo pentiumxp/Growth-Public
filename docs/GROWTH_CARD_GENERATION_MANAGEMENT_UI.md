@@ -22,10 +22,12 @@ compact learning-loop state readback through
 `GET /api/v1/growth/learning-loop/state`, no-write learning-loop state smoke,
 and a no-write planner readiness smoke. The Owner `生成` tab now reads that
 state after loading generation context, renders a summary-only status/next
-action panel, applies recipe defaults before target-provisioning and graph
-suggestion, lets Owner switch recipe by refreshing context with `recipeId`
-instead of stale graph selectors, renders `targetProvisioning` plus filtered
-`graphOptions`, lets
+action panel, forwards the selected subject/capability/coverage selectors so
+active checkpoint readback is scoped to the same graph target, shows a direct
+`打开阶段测评` action when the state reports an active formal checkpoint,
+applies recipe defaults before target-provisioning and graph suggestion, lets
+Owner switch recipe by refreshing context with `recipeId` instead of stale
+graph selectors, renders `targetProvisioning` plus filtered `graphOptions`, lets
 Owner apply a selected domain pack/subject to context refresh, and can call the
 Owner-only `POST /api/v1/growth/domain-pack-provisions` route for explicit
 target enablement. The same Owner tab now also reads
@@ -140,7 +142,12 @@ selected learner target, not the iframe's Owner workspace.
 5. Growth reads compact learning-loop state for the selected target through
    `GET /api/v1/growth/learning-loop/state` and shows the current status, next
    action, weakness count, audit-gap count, and stage-checkpoint state. This
-   panel is read-only UI glue over the backend state service.
+   query must include the current `subjectId`, `capabilityClusterId`, and
+   `assessmentCoverageNodeIds` when available, because active formal
+   checkpoints are capability-scoped. If the state returns
+   `stage_checkpoint_active`, the panel shows the existing formal task-card id
+   as an open-card action instead of drafting another daily card. This panel is
+   read-only UI glue over the backend state service.
 6. Growth reads compact release workbench state for the selected target through
    `GET /api/v1/growth/automation/release-workbench`. This panel is UI glue
    over backend release services. It may record only advertised Owner actions
@@ -1164,8 +1171,8 @@ Add focused tests before broad regression runs:
 | Domain-pack provision route | `tests/growth-routes.test.js` proves Owner-only provision writes and view-target scoping |
 | Profile projection service | returns bounded mastery, weakness, signal, trajectory, and next-card strategy without raw answer/source-ref leakage |
 | Context route | Owner-scoped workspace target, not actor-as-target fallback |
-| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
-| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
+| API client | GET context with target/domain-pack/subject query handling, GET learning-loop state with subject/capability/coverage selectors, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
+| UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, and absence of `writefulSchedulingAllowed`, raw prompts, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |

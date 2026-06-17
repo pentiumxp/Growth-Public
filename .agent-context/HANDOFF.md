@@ -9,6 +9,32 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T19:14+08:00 - Owner Active Checkpoint Readback UI Package
+
+- Status: implemented locally; key Harness passed. No production deployment was
+  performed in this package.
+- Classification: Growth-local H2 route/API/UI readback alignment.
+- Scope:
+  - updated the Owner learning-loop state API client query to forward
+    `subjectId`, `capabilityClusterId`, and `assessmentCoverageNodeIds` from
+    the selected plan/context;
+  - updated the Owner learning-loop state route normalizer so direct callers
+    get `subjectId` from `subject` and coverage defaults from target nodes;
+  - updated the Owner `生成` panel to render
+    `stage_checkpoint_active` / `complete_active_stage_assessment` and show an
+    `打开阶段测评` action for the existing formal task card when loop-state
+    readback reports an active checkpoint;
+  - updated Growth docs and Harness references for the capability-scoped active
+    checkpoint readback contract.
+- Validation:
+  - `node --check public/growth-api-client.js && node --check public/growth-card-generation-ui.js && node --check src/routes/growth-routes.js && node --check tests/growth-frontend-adapter.test.js && node --check tests/growth-routes.test.js`
+  - `node --test tests/growth-frontend-adapter.test.js` -> 32/32
+  - `node --test tests/growth-routes.test.js` -> 51/51
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+  - `codegraph sync && codegraph status` -> up to date; existing earlier-engine
+    advisory remains.
+
 ## 2026-06-17T18:01+08:00 - Docs Locality Harness Reference Guard
 
 - Status: implemented locally; focused Harness passed. No Growth runtime

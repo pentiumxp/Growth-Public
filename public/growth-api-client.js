@@ -100,12 +100,20 @@
       appendQueryParam(params, "domainPackId", context.domainPackId || plan.domainPackId);
       appendQueryParam(params, "domain", plan.domain || context.domain || defaults.domain);
       appendQueryParam(params, "subject", plan.subject || context.subject || defaults.subject || plan.domain || context.domain);
+      appendQueryParam(params, "subjectId", plan.subjectId || plan.subject_id || plan.subject || context.subjectId || context.subject_id || context.subject || defaults.subject);
+      appendQueryParam(params, "capabilityClusterId", plan.capabilityClusterId || plan.capability_cluster_id || context.capabilityClusterId || context.capability_cluster_id);
       appendQueryParam(params, "horizon", context.horizon || defaults.horizon || "daily_plan");
       appendQueryParam(params, "availableMinutes", defaults.availableMinutes || context.availableMinutes || 15);
       const targetNodeIds = Array.isArray(plan.targetNodeIds) && plan.targetNodeIds.length
         ? plan.targetNodeIds
         : [plan.targetNodeId].filter(Boolean);
       appendQueryParam(params, "targetNodeIds", targetNodeIds.join(","));
+      const assessmentCoverageNodeIds = Array.isArray(plan.assessmentCoverageNodeIds) && plan.assessmentCoverageNodeIds.length
+        ? plan.assessmentCoverageNodeIds
+        : Array.isArray(plan.assessmentCoverage) && plan.assessmentCoverage.length
+          ? plan.assessmentCoverage
+          : targetNodeIds;
+      appendQueryParam(params, "assessmentCoverageNodeIds", assessmentCoverageNodeIds.join(","));
       const query = params.toString();
       return query ? `?${query}` : "";
     }

@@ -14068,6 +14068,27 @@ body.task-markdown-preview-open {
   background: var(--ui-card-surface);
 }
 
+.learning-card-generation-loop-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: var(--ui-card-surface);
+}
+
+.learning-card-generation-loop-action span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .learning-card-generation-profile {
   padding: 10px;
   background: rgba(255, 255, 252, 0.70);

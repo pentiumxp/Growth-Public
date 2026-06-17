@@ -116,6 +116,10 @@ readback gate set.
   completed assessment cycles move into cooldown. Active checkpoint loop-state
   readback is capability-scoped; callers that need the same active cycle must
   pass the activation `capabilityClusterId` plus `assessmentCoverageNodeIds`.
+  The Owner generation panel forwards those selectors from the selected plan
+  and, when the loop-state service returns `stage_checkpoint_active`, renders
+  an open-card action for the existing formal task card rather than drafting or
+  publishing a replacement card.
   Owner checkpoint controls are now
   exposed as a separate summary-only read model through
   `learning-stage-checkpoint-controls-service` and Owner-only
