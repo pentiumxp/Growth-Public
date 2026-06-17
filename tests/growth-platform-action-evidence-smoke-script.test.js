@@ -7,7 +7,10 @@ const test = require("node:test");
 
 const repoRoot = path.join(__dirname, "..");
 const scriptPath = path.join(repoRoot, "scripts", "smoke-growth-platform-action-evidence.js");
-const { inputFromArgs } = require("../scripts/smoke-growth-platform-action-evidence");
+const {
+  inputFromArgs,
+  projectPlatformActionEvidenceSmokeReadback
+} = require("../scripts/smoke-growth-platform-action-evidence");
 
 function withTempOutbox(callback) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "growth-platform-action-evidence-"));
@@ -63,6 +66,91 @@ test("platform action evidence smoke script fails closed for missing workspace",
   assert.equal(parseStdout(result).error, "platform_action_evidence_workspace_required");
 });
 
+test("platform action evidence smoke script projects bounded operator readback", () => {
+  const projected = projectPlatformActionEvidenceSmokeReadback({
+    ok: true,
+    source: "growth-learning-automation-platform-action-evidence-service",
+    schemaVersion: "growth.learningAutomationPlatformActionEvidence.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    workspaceId: "smoke_workspace",
+    learnerId: "smoke_learner",
+    programId: "program_science",
+    domainPackId: "domain_pack_fanfan_cambridge_pathway_v1",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "pass",
+    readyForReleaseEvidence: true,
+    count: 1,
+    latestReceipt: {
+      eventId: "event_delivered",
+      actionHandoffId: "lgahand_smoke",
+      digestId: "lgadig_smoke",
+      deliveredAt: "2026-06-15T06:20:00.000Z",
+      deliveryStatus: "delivered",
+      homeAiStatus: 202,
+      inboxItemId: "inbox_smoke",
+      actionInboxReceiptPresent: true,
+      clickUrlPresent: true,
+      webPushReceiptPresent: true,
+      webPushEnabled: true,
+      webPushAttempted: 1,
+      webPushSent: 1,
+      webPushFailed: 0,
+      webPushSkipped: false
+    },
+    receipts: [],
+    missingRequired: [],
+    platformBoundary: {
+      summaryOnly: true,
+      homeAiOwnsActionInbox: true,
+      homeAiOwnsWebPush: true,
+      growthReadsOnlyBoundedReceiptSummary: true
+    }
+  }, { workspaceId: "smoke_workspace", learnerId: "smoke_learner" });
+
+  assert.equal(projected.platformActionEvidenceStatus, "pass");
+  assert.equal(projected.platformActionEvidenceOk, true);
+  assert.equal(projected.platformActionEvidenceWriteOperation, false);
+  assert.equal(projected.platformActionEvidenceWriteAllowed, false);
+  assert.equal(projected.platformActionEvidenceWritesPerformed, false);
+  assert.equal(projected.platformActionEvidenceWorkspaceId, "smoke_workspace");
+  assert.equal(projected.platformActionEvidenceLearnerId, "smoke_learner");
+  assert.equal(projected.platformActionEvidenceProgramId, "program_science");
+  assert.equal(projected.platformActionEvidenceDomainPackId, "domain_pack_fanfan_cambridge_pathway_v1");
+  assert.equal(projected.platformActionEvidenceDomain, "science");
+  assert.equal(projected.platformActionEvidenceSubject, "science");
+  assert.equal(projected.platformActionEvidenceHorizon, "daily_plan");
+  assert.equal(projected.platformActionEvidenceSource, "growth-learning-automation-platform-action-evidence-service");
+  assert.equal(projected.platformActionEvidenceSchemaVersion, "growth.learningAutomationPlatformActionEvidence.v1");
+  assert.equal(projected.platformActionEvidencePrivacyClass, "summary_only");
+  assert.equal(projected.platformActionEvidenceSummaryOnly, true);
+  assert.equal(projected.platformActionEvidenceReadyForReleaseEvidence, true);
+  assert.equal(projected.platformActionEvidenceCount, 1);
+  assert.deepEqual(projected.platformActionEvidenceMissingRequired, []);
+  assert.equal(projected.platformActionEvidenceMissingRequiredCount, 0);
+  assert.equal(projected.platformActionEvidenceLatestEventId, "event_delivered");
+  assert.equal(projected.platformActionEvidenceLatestActionHandoffId, "lgahand_smoke");
+  assert.equal(projected.platformActionEvidenceLatestDigestId, "lgadig_smoke");
+  assert.equal(projected.platformActionEvidenceHomeAiStatus, 202);
+  assert.equal(projected.platformActionEvidenceInboxItemId, "inbox_smoke");
+  assert.equal(projected.platformActionEvidenceActionInboxReceiptPresent, true);
+  assert.equal(projected.platformActionEvidenceClickUrlPresent, true);
+  assert.equal(projected.platformActionEvidenceWebPushReceiptPresent, true);
+  assert.equal(projected.platformActionEvidenceWebPushEnabled, true);
+  assert.equal(projected.platformActionEvidenceWebPushAttempted, 1);
+  assert.equal(projected.platformActionEvidenceWebPushSent, 1);
+  assert.equal(projected.platformActionEvidenceWebPushFailed, 0);
+  assert.equal(projected.platformActionEvidencePlatformBoundarySummaryOnly, true);
+  assert.equal(projected.platformActionEvidenceHomeAiOwnsActionInbox, true);
+  assert.equal(projected.platformActionEvidenceHomeAiOwnsWebPush, true);
+  assert.equal(projected.platformActionEvidenceGrowthReadsOnlyBoundedReceiptSummary, true);
+  assert.equal(projected.platformActionEvidenceRuntimeConfigChange, false);
+  assert.equal(projected.platformActionEvidenceConfigChangeApplied, false);
+  assert.equal(projected.platformActionEvidenceWritefulSchedulingAllowed, false);
+});
+
 test("platform action evidence smoke script reports missing evidence without writing", () => {
   withTempOutbox(({ dir, eventOutboxPath }) => {
     fs.writeFileSync(eventOutboxPath, JSON.stringify({ events: [] }), "utf8");
@@ -84,6 +172,20 @@ test("platform action evidence smoke script reports missing evidence without wri
       "delivered_platform_action_inbox_receipt",
       "delivered_platform_web_push_receipt"
     ]);
+    assert.equal(output.platformActionEvidenceStatus, "missing");
+    assert.equal(output.platformActionEvidenceOk, false);
+    assert.equal(output.platformActionEvidenceWriteOperation, false);
+    assert.equal(output.platformActionEvidenceWriteAllowed, false);
+    assert.equal(output.platformActionEvidenceWorkspaceId, "smoke_workspace");
+    assert.equal(output.platformActionEvidenceLearnerId, "smoke_learner");
+    assert.equal(output.platformActionEvidenceReadyForReleaseEvidence, false);
+    assert.equal(output.platformActionEvidenceCount, 0);
+    assert.deepEqual(output.platformActionEvidenceMissingRequired, [
+      "delivered_platform_action_inbox_receipt",
+      "delivered_platform_web_push_receipt"
+    ]);
+    assert.equal(output.platformActionEvidenceMissingRequiredCount, 2);
+    assert.equal(output.platformActionEvidenceWritefulSchedulingAllowed, false);
   });
 });
 
@@ -141,6 +243,20 @@ test("platform action evidence smoke script returns summary-only delivered recei
     assert.equal(output.latestReceipt.clickUrlPresent, true);
     assert.equal(output.latestReceipt.webPushReceiptPresent, true);
     assert.equal(output.latestReceipt.webPushSent, 1);
+    assert.equal(output.platformActionEvidenceStatus, "pass");
+    assert.equal(output.platformActionEvidenceOk, true);
+    assert.equal(output.platformActionEvidenceReadyForReleaseEvidence, true);
+    assert.equal(output.platformActionEvidenceCount, 1);
+    assert.equal(output.platformActionEvidenceLatestEventId, "event_delivered");
+    assert.equal(output.platformActionEvidenceLatestActionHandoffId, "lgahand_smoke");
+    assert.equal(output.platformActionEvidenceLatestDigestId, "lgadig_smoke");
+    assert.equal(output.platformActionEvidenceInboxItemId, "inbox_smoke");
+    assert.equal(output.platformActionEvidenceActionInboxReceiptPresent, true);
+    assert.equal(output.platformActionEvidenceClickUrlPresent, true);
+    assert.equal(output.platformActionEvidenceWebPushReceiptPresent, true);
+    assert.equal(output.platformActionEvidenceWebPushSent, 1);
+    assert.equal(output.platformActionEvidenceHomeAiOwnsActionInbox, true);
+    assert.equal(output.platformActionEvidenceHomeAiOwnsWebPush, true);
     assert.equal(JSON.stringify(output).includes("/?view=inbox"), false);
     assert.equal(JSON.stringify(output).includes("access-key"), false);
   });

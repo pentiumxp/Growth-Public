@@ -9,6 +9,38 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T16:31+08:00 - Platform Action Evidence Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change platform-action-evidence service behavior, route authorization,
+  repositories, DB schema, Gateway/model calls, card publication, scheduler
+  run/execution behavior, action-handoff delivery, Home AI Action Inbox/Web
+  Push internals, runtime config, UI behavior, production deployment, or
+  learner state.
+- Scope:
+  - added `projectPlatformActionEvidenceSmokeReadback()` in
+    `scripts/smoke-growth-platform-action-evidence.js`;
+  - projected bounded top-level `platformActionEvidence*` fields for status,
+    write gate, scope, receipt counts, latest Action Inbox/Web Push receipt
+    metadata, missing requirements, platform boundary ownership, and false
+    runtime/writeful flags while preserving the nested service DTO as
+    canonical;
+  - kept the smoke no-write; there is still no write flag for this operation;
+  - expanded `tests/growth-platform-action-evidence-smoke-script.test.js` to
+    assert pure projection plus missing and delivered-receipt readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-platform-action-evidence.js`
+  - `node --test tests/growth-platform-action-evidence-smoke-script.test.js`
+  - `npm run --silent smoke:platform-action-evidence -- --workspace-id smoke_workspace --learner-id smoke_learner --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    with central visual, UI evidence, scheduler-dry-run, or release bundle
+    smoke readback gaps.
+
 ## 2026-06-17T16:24+08:00 - Release Evidence Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production

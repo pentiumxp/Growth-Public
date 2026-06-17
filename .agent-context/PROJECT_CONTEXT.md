@@ -381,7 +381,12 @@ readback gate set.
   into `productionProfileFeedbackSmokeEvidence`, cycle-history smoke into
   `productionCycleHistorySmokeEvidence`, Owner audit smoke into
   `productionOwnerAuditSmokeEvidence`, platform action evidence from delivered
-  Growth event-outbox receipts into `platformActionEvidence`, central Home AI
+  Growth event-outbox receipts into `platformActionEvidence`, and
+  `npm run smoke:platform-action-evidence` now mirrors bounded top-level
+  `platformActionEvidence*` operator readback for status, write gate, scope,
+  receipt counts, latest Action Inbox/Web Push receipt metadata, missing
+  requirements, platform boundary ownership, and false runtime/writeful flags
+  while preserving the nested service DTO as canonical. The builder maps central Home AI
   visual harness artifact validation into `centralVisualEvidence`, controlled daily-loop write smoke into
   `productionDailyLoopWriteSmokeEvidence`, learner-cycle audit smoke into
   `productionLearnerCycleSmokeEvidence`, and explicit non-default release
