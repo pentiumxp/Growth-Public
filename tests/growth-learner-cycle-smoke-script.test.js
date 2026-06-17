@@ -582,7 +582,21 @@ test("learner-cycle smoke script projects top-level operator readback", () => {
     evaluationQueue: {
       available: true,
       processed: 1,
-      results: [{ jobId: "lejob_cycle_1", ok: true, status: "done" }]
+      results: [{
+        jobId: "lejob_cycle_1",
+        ok: true,
+        status: "done",
+        stageAssessmentCycle: {
+          ok: true,
+          skipped: false,
+          activationState: "cooldown",
+          cycleId: "stage_cycle_1",
+          cycleStatus: "completed",
+          generatedTaskCardId: TASK_CARD_ID,
+          completedAt: "2026-06-15T01:05:00.000Z",
+          cooldownUntil: "2026-06-20T01:05:00.000Z"
+        }
+      }]
     },
     reflection: {
       reflectionId: "lref_cycle_1",
@@ -647,6 +661,12 @@ test("learner-cycle smoke script projects top-level operator readback", () => {
   assert.equal(output.learnerCycleEvaluationQueueAvailable, true);
   assert.equal(output.learnerCycleEvaluationProcessedCount, 1);
   assert.equal(output.learnerCycleEvaluationDoneCount, 1);
+  assert.equal(output.learnerCycleStageAssessmentCycleCount, 1);
+  assert.equal(output.learnerCycleStageAssessmentCompletionCount, 1);
+  assert.equal(output.learnerCycleStageAssessmentLatestCycleId, "stage_cycle_1");
+  assert.equal(output.learnerCycleStageAssessmentLatestStatus, "cooldown");
+  assert.equal(output.learnerCycleStageAssessmentLatestGeneratedTaskCardId, TASK_CARD_ID);
+  assert.equal(output.learnerCycleStageAssessmentLatestCooldownUntil, "2026-06-20T01:05:00.000Z");
   assert.equal(output.learnerCycleReflectionAvailable, true);
   assert.equal(output.learnerCycleReflectionHasAudio, true);
   assert.equal(output.learnerCycleAuditAvailable, true);

@@ -9,6 +9,34 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:48+08:00 - Learner-Cycle Stage Assessment Completion Readback
+
+- Status: implemented locally; focused Harness passed. No DB schema, route
+  authorization, Gateway/model call, publication, generation, evaluation
+  semantics, reward settlement, scheduler action, notification, stage
+  activation write, runtime config, UI behavior, production deployment, or
+  learner-state mutation was changed in this slice.
+- Classification: Growth-local H2 projection/readback change.
+- Scope:
+  - updated `src/services/learning-learner-cycle-service.js` so
+    `evaluationQueue.results[]` preserves bounded summary-only
+    `stageAssessmentCycle` readback from the existing evaluation result
+    `stage_assessment_cycle`;
+  - updated `scripts/smoke-growth-learner-cycle.js` to expose top-level
+    `learnerCycleStageAssessment*` counters and latest cycle/task-card/cooldown
+    readback for operator evidence;
+  - expanded `tests/growth-learner-cycle-smoke-script.test.js` to assert formal
+    checkpoint completion/cooldown readback from an evaluation result;
+  - updated Growth architecture, next-stage plan, test matrix, project context,
+    and handoff docs.
+- Validation:
+  - `node --check src/services/learning-learner-cycle-service.js`
+  - `node --check scripts/smoke-growth-learner-cycle.js`
+  - `node --test tests/growth-learner-cycle-smoke-script.test.js`
+- Follow-up:
+  - run docs-locality, diff whitespace checks, CodeGraph sync/status, then
+    commit/push if clean.
+
 ## 2026-06-17T17:41+08:00 - Active Stage Checkpoint Loop-State Priority
 
 - Status: implemented locally; focused Harness passed. No production

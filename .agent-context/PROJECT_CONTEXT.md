@@ -948,7 +948,8 @@ readback gate set.
   raw model output, credentials, or provider config. The smoke CLI also mirrors
   top-level `learnerCycle*` operator readback for operation/status, write gate,
   target/scope selectors, card/evaluation-job state, submission/evaluation/
-  reflection ids and counts, cycle-audit counts, completeness readiness,
+  reflection ids and counts, formal stage-assessment cycle completion/cooldown
+  ids from evaluation results, cycle-audit counts, completeness readiness,
   missing-required counts, and finding counts while preserving the nested
   `growth.learningLearnerCycleSmoke.v1` DTO as canonical. Its harness now also
   chains a write-gated `full` learner-cycle smoke into a no-write

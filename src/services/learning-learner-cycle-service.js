@@ -143,6 +143,22 @@ function publicReflection(result = {}) {
   };
 }
 
+function publicStageAssessmentCycle(result = {}) {
+  if (!result || typeof result !== "object" || !Object.keys(result).length) return null;
+  const cycle = result.cycle || {};
+  return {
+    ok: result.ok !== false,
+    skipped: result.skipped === true,
+    reason: cleanString(result.reason),
+    activationState: cleanString(result.activationState || cycle.status),
+    cycleId: cleanString(cycle.cycleId || cycle.id),
+    cycleStatus: cleanString(cycle.status),
+    generatedTaskCardId: cleanString(cycle.generatedTaskCardId || cycle.generated_task_card_id),
+    completedAt: cleanString(result.completedAt || cycle.completedAt || cycle.completed_at),
+    cooldownUntil: cleanString(result.cooldownUntil || cycle.cooldownUntil || cycle.cooldown_until)
+  };
+}
+
 function publicEvaluationQueue(result = {}) {
   return {
     ok: result.ok !== false,
@@ -151,7 +167,8 @@ function publicEvaluationQueue(result = {}) {
     results: asArray(result.results).slice(0, 20).map((item) => ({
       jobId: cleanString(item.jobId),
       ok: item.ok !== false,
-      status: cleanString(item.status)
+      status: cleanString(item.status),
+      stageAssessmentCycle: publicStageAssessmentCycle(item.stageAssessmentCycle || item.stage_assessment_cycle)
     }))
   };
 }

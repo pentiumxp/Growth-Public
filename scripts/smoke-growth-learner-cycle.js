@@ -117,6 +117,20 @@ function countFindingFailures(findings = []) {
   return asArray(findings).filter((finding) => objectOnly(finding).ok === false).length;
 }
 
+function stageAssessmentCyclesFromResults(results = []) {
+  return asArray(results)
+    .map((item) => objectOnly(objectOnly(item).stageAssessmentCycle || objectOnly(item).stage_assessment_cycle))
+    .filter((cycle) => Object.keys(cycle).length && cycle.skipped !== true);
+}
+
+function countCompletedStageAssessmentCycles(cycles = []) {
+  return asArray(cycles).filter((cycle) => {
+    const item = objectOnly(cycle);
+    const state = cleanString(item.activationState || item.cycleStatus, 120);
+    return Boolean(item.completedAt) || state === "cooldown" || state === "completed";
+  }).length;
+}
+
 function projectLearnerCycleSmokeReadback(result = {}) {
   const cycle = objectOnly(result);
   if (!Object.keys(cycle).length) return result;
@@ -134,6 +148,8 @@ function projectLearnerCycleSmokeReadback(result = {}) {
   const completenessSummary = objectOnly(completeness.summary);
   const targetNodeIds = uniqueBoundedStrings(target.targetNodeIds);
   const missingRequired = uniqueBoundedStrings(completenessSummary.missingRequired);
+  const stageAssessmentCycles = stageAssessmentCyclesFromResults(evaluationResults);
+  const latestStageAssessmentCycle = objectOnly(stageAssessmentCycles[stageAssessmentCycles.length - 1]);
   return Object.assign({}, cycle, {
     learnerCycleStatus: cleanString(cycle.ok === false ? cycle.error || "failed" : "pass", 140),
     learnerCycleOk: cycle.ok !== false,
@@ -169,6 +185,12 @@ function projectLearnerCycleSmokeReadback(result = {}) {
     learnerCycleEvaluationResultCount: countArray(evaluationResults),
     learnerCycleEvaluationDoneCount: countQueueStatus(evaluationResults, "done"),
     learnerCycleEvaluationFailedCount: countQueueStatus(evaluationResults, "failed"),
+    learnerCycleStageAssessmentCycleCount: stageAssessmentCycles.length,
+    learnerCycleStageAssessmentCompletionCount: countCompletedStageAssessmentCycles(stageAssessmentCycles),
+    learnerCycleStageAssessmentLatestCycleId: cleanString(latestStageAssessmentCycle.cycleId, 180),
+    learnerCycleStageAssessmentLatestStatus: cleanString(latestStageAssessmentCycle.activationState || latestStageAssessmentCycle.cycleStatus, 120),
+    learnerCycleStageAssessmentLatestGeneratedTaskCardId: cleanString(latestStageAssessmentCycle.generatedTaskCardId, 180),
+    learnerCycleStageAssessmentLatestCooldownUntil: cleanString(latestStageAssessmentCycle.cooldownUntil, 120),
     learnerCycleReflectionAvailable: Boolean(reflection.reflectionId),
     learnerCycleReflectionId: cleanString(reflection.reflectionId, 180),
     learnerCycleReflectionStatus: cleanString(reflection.status, 120),
