@@ -21,7 +21,7 @@ documentation change:
 | Gate | Command | Meaning |
 | --- | --- | --- |
 | Syntax and coverage registration | `npm run --silent check` | Every runtime JS file under `scripts`, `src`, and `public` is syntax-checked and registered in `scripts/check-growth-syntax-coverage.js`. |
-| Docs locality | `node scripts/check-growth-docs-locality.js` | Growth-specific durable docs exist in this plugin workspace and avoid stale Home AI Growth doc pointers. |
+| Docs locality | `node scripts/check-growth-docs-locality.js` | Growth-specific durable docs exist in this plugin workspace, avoid stale Home AI Growth doc pointers, and reference only existing local `tests/*.test.js` Harness files from the core Harness docs. |
 | Whitespace | `git diff --check` | No trailing whitespace or patch format issues. |
 | Full local suite | `npm test` | Full plugin-local Node test suite. |
 | CodeGraph freshness | `codegraph status` after edits; `codegraph sync` when needed | Structural claims use the current indexed source. |

@@ -9,6 +9,28 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T18:01+08:00 - Docs Locality Harness Reference Guard
+
+- Status: implemented locally; focused Harness passed. No Growth runtime
+  service behavior, Gateway/model call, DB schema, route authorization,
+  publication, generation, evaluation, scheduler, notification, runtime config,
+  UI behavior, production deployment, or learner-state mutation changed.
+- Classification: Growth-local H3/Harness guardrail update.
+- Scope:
+  - updated `scripts/check-growth-docs-locality.js` to scan the core Growth
+    Harness docs for `tests/*.test.js` references and fail if referenced local
+    Harness files are missing;
+  - updated `tests/growth-docs-locality.test.js` to cover unique test-reference
+    extraction and assert `missingHarnessReferences=[]`;
+  - updated `docs/TEST_MATRIX.md` so the docs-locality gate documents this
+    new Harness-reference consistency check.
+- Validation:
+  - `node --check scripts/check-growth-docs-locality.js`
+  - `node --check tests/growth-docs-locality.test.js`
+  - `node --test tests/growth-docs-locality.test.js`
+  - `node scripts/check-growth-docs-locality.js`
+  - `git diff --check`
+
 ## 2026-06-17T17:59+08:00 - Card Authoring Validation Service Harness
 
 - Status: implemented locally; focused Harness passed. No production service

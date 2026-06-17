@@ -89,14 +89,40 @@ const FORBIDDEN_PLAYBOOK_DOMAIN_PACK_MARKERS = Object.freeze([
   "\"selectedDomainPackId\": \"uk_hk_curriculum_foundation\""
 ]);
 
+const HARNESS_REFERENCE_DOCS = Object.freeze([
+  "docs/TEST_MATRIX.md",
+  "docs/IMPLEMENTATION_NOTES/harness-required-matrix.md",
+  "docs/GROWTH_PLUGIN_ARCHITECTURE.md"
+]);
+
+const TEST_REFERENCE_PATTERN = /tests\/[A-Za-z0-9._/-]+\.test\.js/g;
+
 function read(relPath) {
   return fs.readFileSync(path.join(ROOT, relPath), "utf8");
+}
+
+function extractTestReferences(text = "") {
+  return Array.from(new Set(String(text || "").match(TEST_REFERENCE_PATTERN) || [])).sort();
+}
+
+function missingHarnessReferences() {
+  const missing = [];
+  for (const relPath of HARNESS_REFERENCE_DOCS) {
+    if (!fs.existsSync(path.join(ROOT, relPath))) continue;
+    for (const reference of extractTestReferences(read(relPath))) {
+      if (!fs.existsSync(path.join(ROOT, reference))) {
+        missing.push({ file: relPath, reference });
+      }
+    }
+  }
+  return missing;
 }
 
 function checkGrowthDocsLocality() {
   const missing = REQUIRED_DOCS.filter((relPath) => !fs.existsSync(path.join(ROOT, relPath)));
   const forbiddenPointers = [];
   const stalePlaybookDomainPackMarkers = [];
+  const missingHarnessReferencesResult = missingHarnessReferences();
   for (const relPath of CURRENT_DOCS) {
     if (!fs.existsSync(path.join(ROOT, relPath))) continue;
     const text = read(relPath);
@@ -114,11 +140,14 @@ function checkGrowthDocsLocality() {
   return {
     ok: missing.length === 0
       && forbiddenPointers.length === 0
-      && stalePlaybookDomainPackMarkers.length === 0,
+      && stalePlaybookDomainPackMarkers.length === 0
+      && missingHarnessReferencesResult.length === 0,
     requiredCount: REQUIRED_DOCS.length,
     missing,
     forbiddenPointers,
-    stalePlaybookDomainPackMarkers
+    stalePlaybookDomainPackMarkers,
+    harnessReferenceDocCount: HARNESS_REFERENCE_DOCS.length,
+    missingHarnessReferences: missingHarnessReferencesResult
   };
 }
 
@@ -132,6 +161,9 @@ if (require.main === module) {
 }
 
 module.exports = {
+  HARNESS_REFERENCE_DOCS,
   REQUIRED_DOCS,
-  checkGrowthDocsLocality
+  checkGrowthDocsLocality,
+  extractTestReferences,
+  missingHarnessReferences
 };
