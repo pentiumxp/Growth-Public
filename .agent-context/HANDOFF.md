@@ -9,6 +9,39 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-17T17:24+08:00 - Release Workbench Action Smoke Operator Readback
+
+- Status: implemented locally; key-node validation has passed. No production
+  deployment or visual harness was executed in this slice.
+- Classification: Growth-local H2 smoke/Harness/readback change. It does not
+  change release workbench action service behavior, repository schema, route
+  authorization, downstream record semantics, Gateway/model calls, card
+  publication, scheduler execution/tick behavior, action-handoff delivery,
+  runtime config, UI behavior, production deployment, or learner state.
+- Scope:
+  - added `projectReleaseWorkbenchActionSmokeReadback()` in
+    `scripts/smoke-growth-release-workbench-action.js`;
+  - projected bounded top-level `releaseWorkbenchAction*` fields for
+    operation/status, scope, endpoint/action keys, wrapper action-record and
+    action-audit status/id, delegated collection summary counters, requested
+    task/write flags, and false runtime/scheduling flags while preserving the
+    service DTO as canonical;
+  - kept `record` write-gated behind the existing `--allow-write` validation
+    and kept `list-audits` no-write;
+  - expanded `tests/growth-release-workbench-action-smoke-script.test.js` to
+    assert pure projection plus success, blocked, list-audits, and release
+    evidence record readback;
+  - updated Growth-local architecture, next-stage, test matrix,
+    project-context, and handoff docs.
+- Validation:
+  - `node --check scripts/smoke-growth-release-workbench-action.js`
+  - `node --test tests/growth-release-workbench-action-smoke-script.test.js`
+  - `npm run --silent smoke:release-workbench-action -- --workspace-id smoke_workspace --endpoint-key release_evidence --json` returned the expected write-gated `release_workbench_action_write_not_allowed` visible failure with top-level readback.
+  - `npm run --silent smoke:release-workbench-action -- --operation list-audits --workspace-id smoke_workspace --json`
+- Follow-up:
+  - run the standard key-node checks, commit/push this slice, then continue
+    scanning any remaining release readback gaps.
+
 ## 2026-06-17T17:14+08:00 - Release Evidence Bundle Audit Smoke Operator Readback
 
 - Status: implemented locally; key-node validation has passed. No production

@@ -61,6 +61,23 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
 }
 
+function cleanString(value, max = 180) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function numberValue(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
 function listArg(args, repeatedNames, csvNames) {
   return uniqueStrings([
     ...collectRepeatedValues(args, repeatedNames),
@@ -203,6 +220,86 @@ function formatResult(value, pretty = false) {
   return `${JSON.stringify(value, null, pretty ? 2 : 0)}\n`;
 }
 
+function projectReleaseWorkbenchActionSmokeReadback(result = {}, input = {}) {
+  const readback = objectOnly(result);
+  if (!Object.keys(readback).length) return result;
+  const actionRecord = objectOnly(readback.actionRecord);
+  const actionAudit = objectOnly(readback.actionAudit);
+  const actionSummary = objectOnly(actionAudit.actionSummary || readback.actionSummary);
+  const latestAudit = objectOnly(asArray(readback.actionAudits)[0]);
+  const writeResult = objectOnly(readback.writeResult);
+  const collection = objectOnly(writeResult.collection || readback.collection);
+  const collectionSummary = objectOnly(collection.summary || writeResult.summary);
+  return Object.assign({}, readback, {
+    releaseWorkbenchActionOperation: cleanString(readback.operation || input.operation || "", 80),
+    releaseWorkbenchActionStatus: cleanString(
+      readback.status
+        || readback.error
+        || actionRecord.recordStatus
+        || actionAudit.status
+        || latestAudit.status,
+      140
+    ),
+    releaseWorkbenchActionOk: readback.ok === true,
+    releaseWorkbenchActionWorkspaceId: cleanString(readback.workspaceId || input.workspaceId, 160),
+    releaseWorkbenchActionLearnerId: cleanString(readback.learnerId || input.learnerId, 160),
+    releaseWorkbenchActionProgramId: cleanString(readback.programId || input.programId, 160),
+    releaseWorkbenchActionDomainPackId: cleanString(readback.domainPackId || input.domainPackId, 180),
+    releaseWorkbenchActionDomain: cleanString(readback.domain || input.domain, 120),
+    releaseWorkbenchActionSubject: cleanString(readback.subject || input.subject, 120),
+    releaseWorkbenchActionHorizon: cleanString(readback.horizon || input.horizon, 80),
+    releaseWorkbenchActionEndpointKey: cleanString(
+      readback.endpointKey || actionRecord.endpointKey || actionAudit.endpointKey || latestAudit.endpointKey || input.endpointKey,
+      140
+    ),
+    releaseWorkbenchActionActionKey: cleanString(
+      readback.actionKey || actionRecord.actionKey || actionAudit.actionKey || latestAudit.actionKey || input.actionKey,
+      140
+    ),
+    releaseWorkbenchActionDuplicate: readback.duplicate === true
+      || actionSummary.duplicate === true
+      || actionAudit.duplicate === true
+      || latestAudit.duplicate === true,
+    releaseWorkbenchActionRecordId: cleanString(
+      actionRecord.recordId || readback.recordId || actionAudit.recordId || latestAudit.recordId,
+      180
+    ),
+    releaseWorkbenchActionRecordStatus: cleanString(
+      actionRecord.recordStatus || readback.recordStatus || actionAudit.recordStatus || latestAudit.recordStatus,
+      120
+    ),
+    releaseWorkbenchActionAuditStatus: cleanString(readback.actionAuditStatus || actionAudit.status || latestAudit.status, 120),
+    releaseWorkbenchActionAuditId: cleanString(actionAudit.actionAuditId || latestAudit.actionAuditId, 180),
+    releaseWorkbenchActionAuditCount: numberValue(readback.actionAuditCount, asArray(readback.actionAudits).length),
+    releaseWorkbenchActionWorkbenchStatus: cleanString(readback.workbenchStatus || actionAudit.workbenchStatus || latestAudit.workbenchStatus, 120),
+    releaseWorkbenchActionWriteResultStatus: cleanString(writeResult.status || writeResult.error || collection.status, 140),
+    releaseWorkbenchActionWriteResultOk: writeResult.ok === true,
+    releaseWorkbenchActionCollectionStatus: cleanString(collection.status, 120),
+    releaseWorkbenchActionCollectionRunId: cleanString(
+      collectionSummary.collectionRunId || collection.collectionRunId || actionRecord.recordId,
+      180
+    ),
+    releaseWorkbenchActionCollectionRunWritten: collectionSummary.collectionRunWritten === true
+      || collection.collectionRunWritten === true,
+    releaseWorkbenchActionReleaseEvidenceRecordAttemptedCount: numberValue(collectionSummary.releaseEvidenceRecordAttemptedCount, 0),
+    releaseWorkbenchActionReleaseEvidenceRecordWrittenCount: numberValue(collectionSummary.releaseEvidenceRecordWrittenCount, 0),
+    releaseWorkbenchActionReleaseEvidenceRecordBlockedCount: numberValue(collectionSummary.releaseEvidenceRecordBlockedCount, 0),
+    releaseWorkbenchActionReleaseEvidenceRecordDuplicateCount: numberValue(collectionSummary.releaseEvidenceRecordDuplicateCount, 0),
+    releaseWorkbenchActionTaskCount: asArray(input.tasks).length,
+    releaseWorkbenchActionRequiredTaskCount: asArray(input.requiredTaskIds).length,
+    releaseWorkbenchActionArtifactTaskCount: asArray(input.artifactTaskIds).length,
+    releaseWorkbenchActionWriteCollectionRunRequested: input.writeCollectionRun === true,
+    releaseWorkbenchActionWriteReleaseEvidenceRecordsRequested: input.writeReleaseEvidenceRecords === true,
+    releaseWorkbenchActionBuildReleasePackageRequested: input.buildReleasePackage === true,
+    releaseWorkbenchActionConfigChangeApplied: readback.configChangeApplied === true,
+    releaseWorkbenchActionRuntimeConfigChange: readback.runtimeConfigChange === true,
+    releaseWorkbenchActionRuntimeConfigMutationPerformed: readback.runtimeConfigMutationPerformed === true,
+    releaseWorkbenchActionWritefulSchedulingAllowed: readback.writefulSchedulingAllowed === true,
+    releaseWorkbenchActionBackgroundSchedulingAllowed: readback.backgroundSchedulingAllowed === true,
+    releaseWorkbenchActionBackgroundWorkerAllowed: readback.backgroundWorkerAllowed === true
+  });
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const pretty = hasFlag(args, "--json") || hasFlag(args, "--pretty");
@@ -219,22 +316,25 @@ async function main() {
     return;
   }
   if (input.releaseEvidenceArtifactManifestError) {
-    process.stdout.write(formatResult({
+    process.stdout.write(formatResult(projectReleaseWorkbenchActionSmokeReadback({
       ok: false,
       error: input.releaseEvidenceArtifactManifestError,
       invalidArtifactManifestEntries: input.invalidArtifactManifestEntries || []
-    }, pretty));
+    }, input), pretty));
     process.exitCode = 2;
     return;
   }
   const validation = validateInput(input, hasFlag(args, "--allow-write"));
   if (!validation.ok) {
-    process.stdout.write(formatResult(validation, pretty));
+    process.stdout.write(formatResult(projectReleaseWorkbenchActionSmokeReadback(validation, input), pretty));
     process.exitCode = 2;
     return;
   }
   const services = createServices(readEnv(process.env));
-  const result = runOperation(services.learningAutomationReleaseWorkbenchActionService, input);
+  const result = projectReleaseWorkbenchActionSmokeReadback(
+    Object.assign({ operation: input.operation }, runOperation(services.learningAutomationReleaseWorkbenchActionService, input)),
+    input
+  );
   process.stdout.write(formatResult(Object.assign({ operation: input.operation }, result), pretty));
   process.exitCode = result.ok ? 0 : 1;
 }
@@ -252,6 +352,7 @@ if (require.main === module) {
 
 module.exports = {
   inputFromArgs,
+  projectReleaseWorkbenchActionSmokeReadback,
   releaseEvidenceArtifactManifestFileFromArgs,
   runOperation,
   validateInput

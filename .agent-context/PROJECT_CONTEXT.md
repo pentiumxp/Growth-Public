@@ -461,7 +461,12 @@ readback gate set.
   summary-only bounded action/evidence/approval/decision/package data. The
   smoke CLI keeps `--operation record` write-gated behind `--allow-write` and
   also exposes no-write `--operation list-audits` / `--list-action-audits`
-  readback through the same service. It writes and reads bounded wrapper audits
+  readback through the same service. The CLI mirrors bounded top-level
+  `releaseWorkbenchAction*` operator readback for operation/status, target
+  scope, endpoint/action keys, wrapper action-record and action-audit
+  status/id, delegated collection counters, requested task/write flags, and
+  false runtime/scheduling flags while preserving the service DTO as canonical.
+  It writes and reads bounded wrapper audits
   through
   `learningAutomationReleaseWorkbenchActionAuditRepository` /
   `learning_growth_automation_release_workbench_actions` and Owner-only

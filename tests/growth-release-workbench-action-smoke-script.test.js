@@ -10,6 +10,7 @@ const { DatabaseSync } = require("node:sqlite");
 
 const {
   inputFromArgs,
+  projectReleaseWorkbenchActionSmokeReadback,
   runOperation,
   validateInput
 } = require("../scripts/smoke-growth-release-workbench-action");
@@ -183,6 +184,103 @@ test("release workbench action smoke script requires explicit write flag", () =>
   });
 });
 
+test("release workbench action smoke script projects top-level operator readback", () => {
+  const result = projectReleaseWorkbenchActionSmokeReadback({
+    operation: "record",
+    ok: false,
+    schemaVersion: "growth.learningAutomationReleaseWorkbenchAction.v1",
+    privacyClass: "summary_only",
+    summaryOnly: true,
+    workspaceId: "fanfan",
+    learnerId: "fanfan",
+    programId: "program_science",
+    domainPackId: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    status: "blocked",
+    endpointKey: "release_evidence_collection",
+    actionKey: "release_collection_run",
+    workbenchStatus: "release_evidence_required",
+    actionRecord: {
+      endpointKey: "release_evidence_collection",
+      actionKey: "release_collection_run",
+      recordId: "lgacrn_blocked_1",
+      recordStatus: "blocked"
+    },
+    actionAuditStatus: "recorded",
+    actionAudit: {
+      actionAuditId: "lgawba_1",
+      endpointKey: "release_evidence_collection",
+      actionKey: "release_collection_run",
+      status: "blocked",
+      recordId: "lgacrn_blocked_1",
+      recordStatus: "blocked",
+      workbenchStatus: "release_evidence_required"
+    },
+    writeResult: {
+      ok: false,
+      collection: {
+        status: "blocked",
+        summary: {
+          collectionRunId: "lgacrn_blocked_1",
+          collectionRunWritten: false,
+          releaseEvidenceRecordAttemptedCount: 2,
+          releaseEvidenceRecordWrittenCount: 1,
+          releaseEvidenceRecordBlockedCount: 1,
+          releaseEvidenceRecordDuplicateCount: 0
+        }
+      }
+    },
+    configChangeApplied: false,
+    runtimeConfigChange: false,
+    runtimeConfigMutationPerformed: false,
+    writefulSchedulingAllowed: false,
+    backgroundSchedulingAllowed: false,
+    backgroundWorkerAllowed: false
+  }, {
+    tasks: ["learning_loop_state", "owner_daily_ui"],
+    requiredTaskIds: ["owner_daily_ui"],
+    artifactTaskIds: ["owner_daily_ui"],
+    writeCollectionRun: true,
+    writeReleaseEvidenceRecords: true
+  });
+
+  assert.equal(result.releaseWorkbenchActionOperation, "record");
+  assert.equal(result.releaseWorkbenchActionStatus, "blocked");
+  assert.equal(result.releaseWorkbenchActionOk, false);
+  assert.equal(result.releaseWorkbenchActionWorkspaceId, "fanfan");
+  assert.equal(result.releaseWorkbenchActionLearnerId, "fanfan");
+  assert.equal(result.releaseWorkbenchActionProgramId, "program_science");
+  assert.equal(result.releaseWorkbenchActionDomainPackId, "uk_hk_curriculum_foundation");
+  assert.equal(result.releaseWorkbenchActionDomain, "science");
+  assert.equal(result.releaseWorkbenchActionSubject, "science");
+  assert.equal(result.releaseWorkbenchActionHorizon, "daily_plan");
+  assert.equal(result.releaseWorkbenchActionEndpointKey, "release_evidence_collection");
+  assert.equal(result.releaseWorkbenchActionActionKey, "release_collection_run");
+  assert.equal(result.releaseWorkbenchActionRecordId, "lgacrn_blocked_1");
+  assert.equal(result.releaseWorkbenchActionRecordStatus, "blocked");
+  assert.equal(result.releaseWorkbenchActionAuditStatus, "recorded");
+  assert.equal(result.releaseWorkbenchActionAuditId, "lgawba_1");
+  assert.equal(result.releaseWorkbenchActionWorkbenchStatus, "release_evidence_required");
+  assert.equal(result.releaseWorkbenchActionCollectionStatus, "blocked");
+  assert.equal(result.releaseWorkbenchActionCollectionRunId, "lgacrn_blocked_1");
+  assert.equal(result.releaseWorkbenchActionCollectionRunWritten, false);
+  assert.equal(result.releaseWorkbenchActionReleaseEvidenceRecordAttemptedCount, 2);
+  assert.equal(result.releaseWorkbenchActionReleaseEvidenceRecordWrittenCount, 1);
+  assert.equal(result.releaseWorkbenchActionReleaseEvidenceRecordBlockedCount, 1);
+  assert.equal(result.releaseWorkbenchActionTaskCount, 2);
+  assert.equal(result.releaseWorkbenchActionRequiredTaskCount, 1);
+  assert.equal(result.releaseWorkbenchActionArtifactTaskCount, 1);
+  assert.equal(result.releaseWorkbenchActionWriteCollectionRunRequested, true);
+  assert.equal(result.releaseWorkbenchActionWriteReleaseEvidenceRecordsRequested, true);
+  assert.equal(result.releaseWorkbenchActionConfigChangeApplied, false);
+  assert.equal(result.releaseWorkbenchActionRuntimeConfigChange, false);
+  assert.equal(result.releaseWorkbenchActionWritefulSchedulingAllowed, false);
+  assert.equal(result.releaseWorkbenchActionBackgroundSchedulingAllowed, false);
+  assert.equal(result.releaseWorkbenchActionBackgroundWorkerAllowed, false);
+});
+
 test("release workbench action smoke script delegates only to action service", () => {
   const calls = [];
   const service = {
@@ -329,6 +427,15 @@ test("release workbench action smoke script can run evidence collection through 
     assert.equal(typeof output.writeResult.collection.summary.releaseEvidenceRecordAttemptedCount, "number");
     assert.equal(output.writeResult.collection.writeReleaseEvidenceRecords, true);
     assert.equal(output.writeResult.collection.writefulSchedulingAllowed, false);
+    assert.equal(output.releaseWorkbenchActionOperation, "record");
+    assert.equal(output.releaseWorkbenchActionStatus, "recorded");
+    assert.equal(output.releaseWorkbenchActionOk, true);
+    assert.equal(output.releaseWorkbenchActionEndpointKey, "release_evidence_collection");
+    assert.match(output.releaseWorkbenchActionRecordId, /^lgacrn_/);
+    assert.equal(output.releaseWorkbenchActionCollectionRunWritten, true);
+    assert.equal(typeof output.releaseWorkbenchActionReleaseEvidenceRecordAttemptedCount, "number");
+    assert.equal(output.releaseWorkbenchActionWriteCollectionRunRequested, true);
+    assert.equal(output.releaseWorkbenchActionWriteReleaseEvidenceRecordsRequested, true);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
@@ -356,6 +463,12 @@ test("release workbench action smoke script can run evidence collection through 
     assert.equal(auditOutput.ok, true);
     assert.equal(auditOutput.schemaVersion, "growth.learningAutomationReleaseWorkbenchActionAuditList.v1");
     assert.equal(auditOutput.actionAuditCount, 1);
+    assert.equal(auditOutput.releaseWorkbenchActionOperation, "list-audits");
+    assert.equal(auditOutput.releaseWorkbenchActionStatus, "listed");
+    assert.equal(auditOutput.releaseWorkbenchActionOk, true);
+    assert.equal(auditOutput.releaseWorkbenchActionAuditCount, 1);
+    assert.equal(auditOutput.releaseWorkbenchActionEndpointKey, "release_evidence_collection");
+    assert.equal(auditOutput.releaseWorkbenchActionActionKey, "release_collection_run");
     assert.equal(auditOutput.actionAudits[0].privacyClass, "summary_only");
     assert.equal(auditOutput.actionAudits[0].endpointKey, "release_evidence_collection");
     assert.equal(auditOutput.actionAudits[0].actionKey, "release_collection_run");
@@ -419,6 +532,14 @@ test("release workbench action smoke script surfaces blocked evidence collection
     assert.equal(output.actionAuditStatus, "recorded");
     assert.equal(output.actionAudit.status, "blocked");
     assert.equal(output.actionAudit.recordStatus, "blocked");
+    assert.equal(output.releaseWorkbenchActionOperation, "record");
+    assert.equal(output.releaseWorkbenchActionStatus, "blocked");
+    assert.equal(output.releaseWorkbenchActionOk, false);
+    assert.equal(output.releaseWorkbenchActionEndpointKey, "release_evidence_collection");
+    assert.equal(output.releaseWorkbenchActionRecordStatus, "blocked");
+    assert.match(output.releaseWorkbenchActionRecordId, /^lgacrn_/);
+    assert.equal(output.releaseWorkbenchActionAuditStatus, "recorded");
+    assert.equal(output.releaseWorkbenchActionWritefulSchedulingAllowed, false);
     assert.equal(JSON.stringify(output.actionAudit).includes("writeResult"), false);
     assert.equal(JSON.stringify(output.actionAudit).includes(dir), false);
 
@@ -483,6 +604,13 @@ test("release workbench action smoke script writes evidence only with explicit a
     assert.equal(output.endpointKey, "release_evidence");
     assert.equal(output.actionRecord.recordStatus, "pass");
     assert.match(output.actionRecord.recordId, /^lgarev_/);
+    assert.equal(output.releaseWorkbenchActionOperation, "record");
+    assert.equal(output.releaseWorkbenchActionStatus, "recorded");
+    assert.equal(output.releaseWorkbenchActionOk, true);
+    assert.equal(output.releaseWorkbenchActionEndpointKey, "release_evidence");
+    assert.equal(output.releaseWorkbenchActionRecordStatus, "pass");
+    assert.match(output.releaseWorkbenchActionRecordId, /^lgarev_/);
+    assert.equal(output.releaseWorkbenchActionWritefulSchedulingAllowed, false);
     assert.equal(output.writefulSchedulingAllowed, false);
     assert.equal(output.runtimeConfigChange, false);
     assert.equal(output.configChangeApplied, false);
