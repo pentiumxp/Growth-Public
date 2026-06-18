@@ -9254,3 +9254,141 @@ test("automation cycle closure prepare route is Owner scoped and delegates to se
     await close(server);
   }
 });
+
+test("automation review advancement route is Owner scoped and delegates to service", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "owner-token" || workspaceId !== "weixin_stephen") {
+          const error = new Error("denied");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { workspace_id: "growth:weixin_stephen", hermes_workspace_id: "weixin_stephen" };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationReviewAdvancementService: {
+      async advance(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          status: "not_delivered",
+          schemaVersion: "growth.learningAutomationReviewAdvancement.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          summary: {
+            selectedCycleId: "cycle_route_1",
+            proposalId: "lgauto_route_1",
+            digestId: "lgadig_route_1",
+            digestStatus: "reviewed",
+            policyId: "lgafpol_route_1",
+            policyStatus: "active",
+            handoffId: "lgahand_route_1",
+            handoffDeliveryStatus: "not_delivered",
+            publishPerformed: false,
+            schedulerStarted: false
+          },
+          stages: [
+            { name: "cycle_closure", ok: true },
+            { name: "digest_review", ok: true },
+            { name: "failure_policy_review", ok: true },
+            { name: "handoff_create", ok: true }
+          ],
+          writesPerformed: true,
+          publishPerformed: false,
+          schedulerStarted: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const advanced = await fetch(`${baseUrl}/api/v1/growth/automation/review-advancements/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        target_node_ids: ["kg_science_fair_test"],
+        prepare_review_packet: true,
+        review_digest: true,
+        ensure_failure_policy: true,
+        create_handoff: true,
+        deliver_handoff: false,
+        attempt_execution: false
+      })
+    });
+    assert.equal(advanced.status, 201);
+    const advancedBody = await advanced.json();
+    assert.equal(advancedBody.summary.handoffId, "lgahand_route_1");
+    assert.equal(advancedBody.publishPerformed, false);
+    assert.equal(advancedBody.schedulerStarted, false);
+    assert.equal(calls[0].workspaceId, "weixin_fanfan");
+    assert.equal(calls[0].learnerId, "fanfan");
+    assert.equal(calls[0].displayName, "凡凡");
+    assert.equal(calls[0].programId, "program_science");
+    assert.equal(calls[0].prepareReviewPacket, true);
+    assert.equal(calls[0].reviewDigest, true);
+    assert.equal(calls[0].ensureFailurePolicy, true);
+    assert.equal(calls[0].createHandoff, true);
+    assert.equal(calls[0].deliverHandoff, false);
+    assert.equal(calls[0].attemptExecution, false);
+    assert.deepEqual(calls[0].targetNodeIds, ["kg_science_fair_test"]);
+    assert.equal(calls[0].requestedBy, "weixin_stephen");
+
+    const deniedRole = await fetch(`${baseUrl}/api/v1/growth/automation/review-advancements/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen" })
+    });
+    assert.equal(deniedRole.status, 403);
+    assert.equal((await deniedRole.json()).error.code, "growth_automation_review_advancement_owner_required");
+
+    const deniedTarget = await fetch(`${baseUrl}/api/v1/growth/automation/review-advancements/advance`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_unknown" })
+    });
+    assert.equal(deniedTarget.status, 403);
+    assert.equal((await deniedTarget.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});

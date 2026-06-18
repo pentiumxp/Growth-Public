@@ -1524,6 +1524,26 @@ function normalizeAutomationCycleClosureInput(body, workspaceId, target, request
   };
 }
 
+function normalizeAutomationReviewAdvancementInput(body, workspaceId, target, request, url) {
+  return Object.assign(normalizeAutomationCycleClosureInput(body, workspaceId, target, request, url), {
+    digestId: body.digestId || body.digest_id,
+    handoffId: body.handoffId || body.handoff_id,
+    proposalId: body.proposalId || body.proposal_id,
+    planDraftId: body.nextPlanDraftId || body.next_plan_draft_id || body.planDraftId || body.plan_draft_id,
+    selectedItemId: body.selectedItemId || body.selected_item_id,
+    prepareReviewPacket: body.prepareReviewPacket !== undefined ? body.prepareReviewPacket : body.prepare_review_packet,
+    reviewDigest: body.reviewDigest !== undefined ? body.reviewDigest : body.review_digest,
+    ensureFailurePolicy: body.ensureFailurePolicy !== undefined ? body.ensureFailurePolicy : body.ensure_failure_policy,
+    failurePolicyReviewReason: body.failurePolicyReviewReason || body.failure_policy_review_reason,
+    failurePolicyReviewNote: body.failurePolicyReviewNote || body.failure_policy_review_note,
+    digestReviewReason: body.digestReviewReason || body.digest_review_reason,
+    digestReviewNote: body.digestReviewNote || body.digest_review_note || body.note,
+    createHandoff: body.createHandoff !== undefined ? body.createHandoff : body.create_handoff,
+    deliverHandoff: body.deliverHandoff !== undefined ? body.deliverHandoff : body.deliver_handoff,
+    attemptExecution: body.attemptExecution !== undefined ? body.attemptExecution : body.attempt_execution
+  });
+}
+
 function normalizeAutomationFailurePolicyInput(body, workspaceId, target, request, url) {
   return {
     workspaceId,
@@ -2459,6 +2479,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = await services.learningAutomationCycleClosureService.prepareReviewPacket(
       normalizeAutomationCycleClosureInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/review-advancements/advance") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_review_advancement_owner_required", "Automation review advancement requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = await services.learningAutomationReviewAdvancementService.advance(
+      normalizeAutomationReviewAdvancementInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? 201 : 400, result);
   }

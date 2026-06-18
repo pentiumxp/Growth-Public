@@ -618,6 +618,42 @@ vendors, card authoring, evaluation, scheduler execution, scheduler ticks,
 direct repositories, direct SQLite tables, stage activation, notification
 internals, or deployment/runtime switches.
 
+## Owner-Supervised Review Advancement
+
+Review advancement is the next Owner action after a completed-cycle review
+packet. It turns the pending packet into a reviewed digest, an active
+summary-only failure policy, and a handoff record that can be inspected or
+delivered later.
+
+Boundary:
+
+| Boundary | Contract |
+| --- | --- |
+| Service | `learning-automation-review-advancement-service` composes cycle closure, digest review, failure-policy readiness/create/review, action handoff create/deliver, and optional default-disabled scheduler execution evidence. It owns orchestration only and persists nothing directly. |
+| Route | Owner-only `POST /api/v1/growth/automation/review-advancements/advance`, workspace-bearer authorized and Growth visible-target scoped. |
+| CLI harness | `npm run smoke:review-advancement -- --allow-write` delegates only to `learningAutomationReviewAdvancementService.advance()` and mirrors bounded `automationReviewAdvancement*` readback fields. |
+| UI | The embedded Owner `生成` tab exposes `复核链推进`, which advances the selected/latest completed-cycle packet through digest review, failure-policy activation, and handoff creation. |
+
+Default behavior:
+
+1. It prepares or reuses the cycle-closure packet and keeps proposal creation
+   inside the existing planner boundary only.
+2. It reviews the digest once as Owner-reviewed automation evidence.
+3. It evaluates failure-policy readiness; if no active policy exists, it creates
+   a summary-only visible-failure policy and activates it through Owner review.
+4. It creates an action handoff, but does not deliver it by default.
+5. It does not execute scheduling by default. Optional execution is an explicit
+   Owner request and remains default-disabled unless the scheduler execution
+   service is separately enabled by release controls.
+
+The service must not call Gateway directly, model vendors, Home AI old Growth
+server logic, card generation, evaluation, plan publication outside delegated
+proposal execution, scheduler ticks, worker timers, direct repositories/tables,
+stage activation, deployment, or runtime switches. It returns
+`growth.learningAutomationReviewAdvancement.v1` summary-only stage readback with
+`publishPerformed=false` and `schedulerStarted=false` unless a downstream
+explicit execution service reports a real publish.
+
 ## Scheduler Dry-Run Layer
 
 The first scheduling layer is implemented as read-only dry-run evidence. It is
@@ -789,6 +825,7 @@ Minimum harness by boundary:
 | Learning-cycle history readback | `learning-cycle-history-service`, Owner/workspace `GET /api/v1/growth/learning-cycles/history`, `scripts/smoke-growth-cycle-history.js`, `tests/learning-cycle-history-service.test.js`, `tests/growth-cycle-history-smoke-script.test.js`, route visible-target tests, and architecture guards prove selectable summary-only history over public plan/evidence/profile-delta/correction/completeness DTOs without Gateway, direct repository access, writes, publication, generation, evaluation, scheduling, notification, stage activation, or learner-state mutation. |
 | Profile feedback evidence | `learning-profile-feedback-evidence-service`, `scripts/smoke-growth-profile-feedback.js`, `tests/learning-profile-feedback-evidence-service.test.js`, `tests/growth-profile-feedback-smoke-script.test.js`, the post-cycle profile-feedback assertion in `tests/learning-card-ai-loop-harness.test.js`, and the `profile_feedback` object type in the Growth Reference Contract prove summary-only completed-cycle audit/evidence/profile-delta/Profile V2/recommendation/next-state readback. The evidence projection carries bounded reward readback from the next loop state, including settlement count and total learning coins, plus non-required Owner review signal summaries when they exist. Missing Owner review does not block low-pressure daily next planning; it remains visible as review status. The release-bundle `profile_feedback` task plus reference-contract projection preserve these fields in summary form. The default boundary still requires a completed-cycle selector and fails closed when one is absent. Only explicit `autoSelectCompletedCycle` or `autoSelectLatestCompletedCycle` input may turn read-only cycle-history discovery into a selected completed-cycle selector; the selection is summary-only, prefers the most recent completed candidate only when the broader flag is present, and must never fabricate learner history. Architecture coverage requires no Gateway, direct repository, publication, generation, evaluation, scheduler, notification, stage activation, or learner-state mutation. |
 | Automation cycle closure | `learning-automation-cycle-closure-service`, Owner-only `POST /api/v1/growth/automation/cycle-closures/prepare`, `npm run smoke:cycle-closure`, `tests/learning-automation-cycle-closure-service.test.js`, `tests/growth-automation-cycle-closure-smoke-script.test.js`, route tests, frontend adapter tests, and architecture guards prove the completed-cycle-to-review-packet bridge. The service can auto-select the latest completed cycle through profile-feedback, create a supervised proposal, record the default accepted proposal decision, create a pending digest, and optionally delegate digest review/action handoff/delivery. It returns summary-only `growth.learningAutomationCycleClosure.v1`, keeps `publishPerformed=false` and `schedulerStarted=false`, rejects privacy-risk keys, writes only through the owning proposal/digest/handoff services, and must not call Gateway directly, publish cards, generate/evaluate cards, execute scheduler actions, run scheduler ticks, activate stage assessments, inspect repositories/tables directly, notify except through the action-handoff service, mutate learner profile/evidence state, or use Home AI old Growth server internals. |
+| Automation review advancement | `learning-automation-review-advancement-service`, Owner-only `POST /api/v1/growth/automation/review-advancements/advance`, `npm run smoke:review-advancement`, `tests/learning-automation-review-advancement-service.test.js`, `tests/growth-automation-review-advancement-smoke-script.test.js`, route tests, frontend adapter tests, and architecture guards prove the Owner-supervised packet-to-handoff bridge. The service delegates to cycle closure, digest, failure-policy, action-handoff, and optional scheduler-execution services; defaults to digest review plus active failure-policy plus handoff creation; keeps handoff delivery and scheduler execution off by default; treats default-disabled scheduler execution as expected blocked evidence; keeps `publishPerformed=false` and `schedulerStarted=false` by default; rejects privacy-risk keys; and must not call Gateway directly, Home AI old Growth server logic, model vendors, card generation/evaluation, direct publication, scheduler ticks, worker timers, stage activation, direct repositories/tables, deployment, runtime config, or learner-state mutation. |
 | Supervised automation proposal | previous-cycle source id required; completeness gate before planner draft; target provisioning before planner draft; summary-only proposal persistence; duplicate/idempotent save; Owner decision status, terminal-decision idempotency, conflicting-decision rejection, accepted-only publish execution, successful execution idempotency, failed/blocked execution visibility, legacy decision/execution-column migration; Owner-only write routes; visible-target read route; `npm run smoke:proposal` read-only list/write-gated operational evidence; completed-cycle integration evidence from `tests/learning-card-ai-loop-harness.test.js`; no direct Gateway, direct-card-generation, direct plan-publisher, stage-assessment activation, or scheduler calls from the CLI. |
 | Scheduler dry-run | accepted-proposal listing; skip already-published proposals; recheck audit completeness before provisioning; block unprovisioned targets; return `would_publish` only when safe; Owner-only write-style route authorization; no Gateway, plan publication, card generation, proposal execution writes, notifications, stage-assessment activation, or direct table access. |
 | Stage assessment smoke | `npm run smoke:stage-assessment` defaults to read-only `stageReadiness`, gates `eligibility`, `activate`, and `complete` with explicit `--allow-write`, delegates only to `learning-stage-assessment-service`, and has architecture coverage proving no direct repository, Gateway, plan publication, evaluation, automation, or learner-state bypass from the CLI. |
@@ -840,8 +877,14 @@ cycle-closure review-packet boundary is implemented locally through
 `npm run smoke:cycle-closure`, route/frontend/architecture harnesses, and the
 embedded Owner `闭环复核包` panel. It prepares an accepted proposal plus pending
 digest from a selected or latest completed cycle while keeping
-`publishPerformed=false` and `schedulerStarted=false`. The
-automation digest backend is also implemented locally:
+`publishPerformed=false` and `schedulerStarted=false`. The Owner-supervised
+review-advancement boundary is also implemented through
+`learning-automation-review-advancement-service`,
+`POST /api/v1/growth/automation/review-advancements/advance`,
+`npm run smoke:review-advancement`, route/frontend/architecture harnesses, and
+the embedded Owner `复核链推进` panel. It reviews the digest, ensures an active
+failure policy, and creates a handoff without default delivery, scheduler
+execution, or publication. The automation digest backend is also implemented locally:
 it creates, lists, and reviews summary-only dry-run digest packets through
 `learning-automation-digest-service`, `automation-digests.js`, and
 Owner/visible-target scoped `/api/v1/growth/automation/digests` routes without

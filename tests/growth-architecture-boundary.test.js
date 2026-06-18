@@ -205,6 +205,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationActionHandoffService/);
   assert.match(services, /createLearningAutomationCycleClosureService/);
   assert.match(services, /learningAutomationCycleClosureService/);
+  assert.match(services, /createLearningAutomationReviewAdvancementService/);
+  assert.match(services, /learningAutomationReviewAdvancementService/);
   assert.match(services, /createLearningAutomationDigestService/);
   assert.match(services, /learningAutomationDigestService/);
   assert.match(services, /createLearningAutomationFailurePolicyService/);
@@ -456,6 +458,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/cycle-closures\/prepare/);
   assert.match(routes, /normalizeAutomationCycleClosureInput/);
   assert.match(routes, /learningAutomationCycleClosureService\.prepareReviewPacket/);
+  assert.match(routes, /automation\/review-advancements\/advance/);
+  assert.match(routes, /normalizeAutomationReviewAdvancementInput/);
+  assert.match(routes, /learningAutomationReviewAdvancementService\.advance/);
   assert.match(routes, /automationDigestReviewMatch/);
   assert.match(routes, /normalizeAutomationDigestInput/);
   assert.match(routes, /normalizeAutomationDigestReviewInput/);
@@ -3529,6 +3534,66 @@ test("Growth automation cycle closure stays service-owned and write-gated", () =
 
   const scriptHarness = read(path.join("tests", "growth-automation-cycle-closure-smoke-script.test.js"));
   assert.match(scriptHarness, /parses prepare input and write gate/);
+  assert.match(scriptHarness, /projects operator readback/);
+});
+
+test("Growth automation review advancement stays service-owned and write-gated", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:review-advancement/);
+  assert.match(packageJson, /smoke-growth-automation-review-advancement\.js/);
+  assert.match(packageJson, /learning-automation-review-advancement-service\.js/);
+
+  const service = read(path.join("src", "services", "learning-automation-review-advancement-service.js"));
+  assert.match(service, /createLearningAutomationReviewAdvancementService/);
+  assert.match(service, /cycleClosureService\.prepareReviewPacket/);
+  assert.match(service, /digestService\.reviewDigest/);
+  assert.match(service, /failurePolicyService\.evaluateReadiness/);
+  assert.match(service, /failurePolicyService\.createPolicy/);
+  assert.match(service, /failurePolicyService\.reviewPolicy/);
+  assert.match(service, /actionHandoffService\.createHandoff/);
+  assert.match(service, /actionHandoffService\.deliverHandoff/);
+  assert.match(service, /schedulerExecutionService\.executeOnce/);
+  assert.match(service, /summaryOnly: true/);
+  assert.match(service, /publishPerformed/);
+  assert.match(service, /schedulerStarted: false/);
+  assert.match(service, /cycle_closure_proposal_creation_may_call_planner_gateway_only/);
+  assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(service, /publishPlanItem|generateCard|evaluateSubmission|runOnce|dryRun|tickTargets/);
+  assert.doesNotMatch(service, /activateStageAssessment/);
+  assert.doesNotMatch(service, /Home AI old Growth/);
+
+  const script = read(path.join("scripts", "smoke-growth-automation-review-advancement.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningAutomationReviewAdvancementService/);
+  assert.match(script, /advance/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /automation_review_advancement_smoke_write_not_allowed/);
+  assert.match(script, /automation_review_advancement_smoke_invalid_json/);
+  assert.match(script, /automation_review_advancement_smoke_operation_invalid/);
+  assert.match(script, /workspace_id_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /draftPlan/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /publishAcceptedProposal/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const serviceHarness = read(path.join("tests", "learning-automation-review-advancement-service.test.js"));
+  assert.match(serviceHarness, /prepares review packet, reviews digest, activates policy, and creates handoff/);
+  assert.match(serviceHarness, /default-disabled execution as expected blocked readback/);
+  assert.match(serviceHarness, /missing digest and privacy-risk input/);
+
+  const scriptHarness = read(path.join("tests", "growth-automation-review-advancement-smoke-script.test.js"));
+  assert.match(scriptHarness, /parses advance input and write gate/);
   assert.match(scriptHarness, /projects operator readback/);
 });
 

@@ -2085,6 +2085,23 @@
     }));
   }
 
+  function createAutomationReviewAdvancementPayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
+    const payload = createAutomationCycleClosurePayload({ context, workspaceId, selectedCycle });
+    return Object.fromEntries(Object.entries(Object.assign({}, payload, {
+      prepare_review_packet: true,
+      review_digest: true,
+      ensure_failure_policy: true,
+      create_handoff: true,
+      deliver_handoff: false,
+      attempt_execution: false,
+      requested_by: "owner"
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "boolean") return true;
+      return clean(value);
+    }));
+  }
+
   function automationCycleClosureStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "submitting") return "准备中";
@@ -2149,6 +2166,71 @@
       </div>
       ${failedStages.length ? `<div class="learning-card-generation-proposal-empty">阻塞阶段：${escapeHtml(failedStages.join(" · "))}</div>` : ""}
       ${automationCycleClosureStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
+  function automationReviewAdvancementStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "submitting") return "推进中";
+    if (value === "advanced") return "已推进";
+    if (value === "reviewed") return "已复核";
+    if (value === "handoff_ready" || value === "pending_delivery" || value === "not_delivered") return "Handoff 就绪";
+    if (value === "execution_blocked" || value === "blocked") return "已阻塞";
+    if (value === "published") return "已发布";
+    if (value === "failed") return "失败";
+    return value || "待推进";
+  }
+
+  function automationReviewAdvancementStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const summary = result.summary || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "advanced"
+      ? `复核链已推进：${clean(summary.digestId) || "digest"} / ${clean(summary.handoffId) || "handoff"}。`
+      : status === "submitting"
+        ? "正在复核 digest、校验失败策略并创建 handoff。"
+        : error || clean(result.error) || "复核链推进失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-review-advancement-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationReviewAdvancementStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationReviewAdvancementPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationReviewAdvancement || {};
+    const result = holder.actionResult || {};
+    const summary = result.summary || {};
+    const stages = asArray(result.stages);
+    const busy = clean(holder.actionStatus) === "submitting";
+    const status = clean(holder.actionStatus || result.status || "idle");
+    const digestId = clean(summary.digestId || result.digest?.digestId || result.digest?.digest_id);
+    const policyId = clean(summary.policyId || result.failurePolicy?.policyId || result.failurePolicy?.policy_id);
+    const handoffId = clean(summary.handoffId || result.handoff?.handoffId || result.handoff?.handoff_id);
+    const failedStages = stages.filter((stage = {}) => stage.ok === false).map((stage = {}) => clean(stage.name)).filter(Boolean);
+    const detail = clean(holder.actionError)
+      || clean(result.error)
+      || (handoffId
+        ? "已完成 Owner 复核链，等待后续显式投递或执行。"
+        : "复核 digest，补齐失败策略并创建 handoff；默认不投递、不执行。");
+    return `<section class="learning-card-generation-proposals learning-card-generation-review-advancement" data-automation-review-advancement-panel data-automation-review-advancement-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>复核链推进</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" class="primary${busy ? " disabled" : ""}" data-automation-review-advancement-advance ${busy ? "disabled" : ""}>${busy ? "推进中" : "推进复核链"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>Digest</small><strong>${escapeHtml(digestId || "auto")}</strong></span>
+        <span><small>失败策略</small><strong>${escapeHtml(policyId || "待确认")}</strong></span>
+        <span><small>Handoff</small><strong>${escapeHtml(handoffId || "待创建")}</strong></span>
+      </div>
+      ${failedStages.length ? `<div class="learning-card-generation-proposal-empty">阻塞阶段：${escapeHtml(failedStages.join(" · "))}</div>` : ""}
+      ${automationReviewAdvancementStatusPanel(holder, escapeHtml)}
     </section>`;
   }
 
@@ -4199,6 +4281,7 @@
           ${operatingLoopPanel(context, state, escapeHtml)}
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
           ${automationCycleClosurePanel(context, state, escapeHtml)}
+          ${automationReviewAdvancementPanel(context, state, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
           ${automationFailurePolicyPanel(context, state, escapeHtml)}
@@ -4247,6 +4330,7 @@
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
     createAutomationCycleClosurePayload,
+    createAutomationReviewAdvancementPayload,
     createAutomationProposalCreatePayload,
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,

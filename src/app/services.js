@@ -17,6 +17,7 @@ const { createLearningAutomationOwnerReviewEvidenceService } = require("../servi
 const { createLearningAutomationPlatformActionEvidenceService } = require("../services/learning-automation-platform-action-evidence-service");
 const { createLearningAutomationProductionDeploymentEvidenceService } = require("../services/learning-automation-production-deployment-evidence-service");
 const { createLearningAutomationProposalService } = require("../services/learning-automation-proposal-service");
+const { createLearningAutomationReviewAdvancementService } = require("../services/learning-automation-review-advancement-service");
 const { createLearningAutomationReleaseApprovalService } = require("../services/learning-automation-release-approval-service");
 const { createLearningAutomationReleaseEvidenceService } = require("../services/learning-automation-release-evidence-service");
 const { createLearningAutomationReleaseActivationService } = require("../services/learning-automation-release-activation-service");
@@ -554,6 +555,13 @@ function createServices(config) {
     digestService: learningAutomationDigestService,
     actionHandoffService: learningAutomationActionHandoffService
   });
+  const learningAutomationReviewAdvancementService = createLearningAutomationReviewAdvancementService({
+    cycleClosureService: learningAutomationCycleClosureService,
+    digestService: learningAutomationDigestService,
+    failurePolicyService: learningAutomationFailurePolicyService,
+    actionHandoffService: learningAutomationActionHandoffService,
+    schedulerExecutionService: learningAutomationSchedulerExecutionService
+  });
   const learningOwnerAuditReviewService = createLearningOwnerAuditReviewService({
     repository: growthLearningStore.learningOwnerAuditReviewRepository,
     profileFeedbackService: learningProfileFeedbackEvidenceService
@@ -613,6 +621,7 @@ function createServices(config) {
     learningAutomationPlatformActionEvidenceService,
     learningAutomationProductionDeploymentEvidenceService,
     learningAutomationProposalService,
+    learningAutomationReviewAdvancementService,
     learningAutomationReleaseApprovalService,
     learningAutomationReleaseActivationService,
     learningAutomationReleaseAuthorizationService,

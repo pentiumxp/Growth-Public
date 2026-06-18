@@ -655,6 +655,12 @@
       }, payload));
     }
 
+    function advanceGrowthAutomationReview(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "review-advancements", "advance"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function createGrowthAutomationProposal(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "proposals"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -946,6 +952,7 @@
       fetchLearningLoopState,
       fetchLearningOperatingLoopRuns,
       generateGrowthCard,
+      advanceGrowthAutomationReview,
       prepareGrowthAutomationCycleClosure,
       postJson,
       processGrowthEvaluations,

@@ -68,6 +68,11 @@
         actionResult: null,
         actionError: ""
       },
+      automationReviewAdvancement: {
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       automationProposals: {
         status: "idle",
         data: null,
@@ -1099,6 +1104,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-review-advancement-advance]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        advanceAutomationReviewFromUi().catch((error) => {
+          pageState.cardGeneration.automationReviewAdvancement = Object.assign({}, pageState.cardGeneration.automationReviewAdvancement, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1577,6 +1595,11 @@
     pageState.cardGeneration.automationCycleClosure = {
       actionStatus: "idle",
       actionResult: pageState.cardGeneration.automationCycleClosure?.actionResult || null,
+      actionError: ""
+    };
+    pageState.cardGeneration.automationReviewAdvancement = {
+      actionStatus: "idle",
+      actionResult: pageState.cardGeneration.automationReviewAdvancement?.actionResult || null,
       actionError: ""
     };
     pageState.cardGeneration.automationProposals = {
@@ -2695,6 +2718,20 @@
     };
   }
 
+  function createAutomationReviewAdvancementPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationReviewAdvancementPayload !== "function") {
+      throw new Error("automation_review_advancement_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const selectedCycle = pageState.cardGeneration.cycleHistory?.selectedCycle || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationReviewAdvancementPayload({ context, workspaceId: targetWorkspaceId, selectedCycle }),
+      targetWorkspaceId
+    };
+  }
+
   function createAutomationProposalCreatePayload() {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createAutomationProposalCreatePayload !== "function") {
@@ -2742,6 +2779,34 @@
       renderShell();
     } catch (error) {
       pageState.cardGeneration.automationCycleClosure = Object.assign({}, pageState.cardGeneration.automationCycleClosure, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
+  }
+
+  async function advanceAutomationReviewFromUi() {
+    const { payload, targetWorkspaceId } = createAutomationReviewAdvancementPayload();
+    pageState.cardGeneration.automationReviewAdvancement = Object.assign({}, pageState.cardGeneration.automationReviewAdvancement, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationReviewAdvancement?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.advanceGrowthAutomationReview(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationReviewAdvancement = Object.assign({}, pageState.cardGeneration.automationReviewAdvancement, {
+        actionStatus: result.ok ? "advanced" : "failed",
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "automation_review_advancement_failed")
+      });
+      await refreshAutomationProposalReviewStack(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationReviewAdvancement = Object.assign({}, pageState.cardGeneration.automationReviewAdvancement, {
         actionStatus: "failed",
         actionError: error.message || String(error)
       });
@@ -3640,6 +3705,11 @@
         actionError: ""
       };
       pageState.cardGeneration.automationCycleClosure = {
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
+      pageState.cardGeneration.automationReviewAdvancement = {
         actionStatus: "idle",
         actionResult: null,
         actionError: ""
