@@ -1,0 +1,4 @@
+# Codex Mobile Web runtime handoff files.
+# Keep generated continuation handoffs out of commits.
+*
+!.gitignore

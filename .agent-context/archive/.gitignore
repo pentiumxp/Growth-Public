@@ -1,0 +1,3 @@
+# Archived full workspace context must stay out of commits.
+*
+!.gitignore
