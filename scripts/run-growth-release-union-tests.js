@@ -24,6 +24,7 @@ const RELEASE_UNION_TEST_FILES = Object.freeze([
   "tests/learning-automation-release-workbench-action-service.test.js",
   "tests/learning-automation-release-workbench-action-repository.test.js",
   "tests/growth-release-workbench-action-smoke-script.test.js",
+  "tests/growth-home-ai-proxy-smoke-script.test.js",
   "tests/learning-automation-release-activation-service.test.js",
   "tests/learning-automation-runtime-enablement-service.test.js",
   "tests/growth-release-controls-smoke-script.test.js",

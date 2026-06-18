@@ -263,6 +263,10 @@ function normalizeDailyLoopQueryInput(url, target, request) {
   };
 }
 
+function normalizePlannerReadinessQueryInput(url, target, request) {
+  return normalizeDailyLoopQueryInput(url, target, request);
+}
+
 function normalizeStageCheckpointControlsInput(url, target, request) {
   const targetNodeIds = csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || "");
   const assessmentCoverageNodeIds = csvStrings(
@@ -1868,6 +1872,17 @@ async function handleGrowthRoute(request, response, url, services) {
     }
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningDailyLoopService.preview(normalizeDailyLoopQueryInput(url, target, request));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/planner-readiness") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_planner_readiness_owner_required", "Planner readiness requires Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = await services.learningPlanOrchestratorService.smokePlannerReadiness(
+      normalizePlannerReadinessQueryInput(url, target, request)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

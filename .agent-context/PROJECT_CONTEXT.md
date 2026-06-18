@@ -134,6 +134,22 @@ readback gate set.
   action evidence currently has zero delivered receipts and reports missing
   Action Inbox plus Web Push receipt evidence. Do not convert these failures
   into pass records.
+- 2026-06-18 Home AI proxy evidence harness status: Growth now exposes
+  Owner-only `GET /api/v1/growth/automation/planner-readiness`, delegating only
+  to `learningPlanOrchestratorService.smokePlannerReadiness()` with
+  visible-target normalization, so production planner-readiness evidence can be
+  collected through the Home AI same-origin plugin proxy. `npm run
+  smoke:home-ai-proxy` calls Growth only through
+  `/api/hermes-plugins/growth/proxy/...` with a Home AI web access boundary and
+  supports release-readiness, planner-readiness, platform-action evidence,
+  controlled daily-loop writes, action-handoff operations, and workbench
+  action/audit routes. The harness rejects writes unless `--allow-write` is
+  present and prints only bounded route/status/projection fields; it must not
+  print raw access keys, access-key file paths, bearer headers, provider
+  output, private payloads, or plugin workspace bearer values. This adds the
+  authorized production evidence path for the remaining gates, but does not
+  satisfy them by itself and does not change runtime config, grant scheduler
+  permission, deliver notifications, or deploy.
 - Gateway planner, authoring, and evaluation clients now preserve bounded HTTP
   failure summaries (`gateway_http_error`, status, gateway error code/type)
   from fetch-like Responses objects and prevent blank `error` fields from

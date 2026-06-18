@@ -9,6 +9,39 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T09:05+0800 - Home AI Proxy Production Evidence Harness
+
+- Status: implemented locally in the current package; validation/commit/deploy
+  are pending for this entry.
+- Added Owner-only `GET /api/v1/growth/automation/planner-readiness` in
+  `src/routes/growth-routes.js`. The route uses normal visible-target
+  resolution and delegates only to
+  `learningPlanOrchestratorService.smokePlannerReadiness()`, giving the Home AI
+  same-origin plugin proxy a real HTTP facade for production planner-readiness
+  evidence.
+- Added `npm run smoke:home-ai-proxy`, backed by
+  `scripts/smoke-growth-home-ai-proxy.js`. It calls Growth only through
+  `/api/hermes-plugins/growth/proxy/...` with a Home AI web access boundary,
+  never by injecting the Growth workspace bearer directly.
+- Supported proxy operations:
+  `release-readiness`, `planner-readiness`, `platform-action-evidence`,
+  `daily-loop-preview`, `daily-loop-draft`, `daily-loop-advance`,
+  `daily-loop-publish`, `action-handoff-list`, `action-handoff-create`,
+  `action-handoff-deliver`, `workbench-action-record`, and
+  `workbench-action-audits`.
+- Write operations are rejected unless `--allow-write` is present. Output is
+  bounded to operation, route path, HTTP status, projected smoke/readback
+  fields, and write-gate booleans. It must not print raw access keys, key-file
+  paths, bearer headers, provider output, raw prompts, learner private payloads,
+  or plugin workspace bearer values.
+- Added focused Harness coverage in
+  `tests/growth-home-ai-proxy-smoke-script.test.js` and route coverage in
+  `tests/growth-routes.test.js`.
+- This package creates the authorized production evidence path for the four
+  remaining release gates, but does not itself satisfy those gates, persist pass
+  evidence, deliver platform notifications, call Gateway directly, change
+  runtime config, grant scheduler permission, or deploy.
+
 ## 2026-06-18T08:20+0800 - Release Gate Advance And Gateway Failure Harness
 
 - Status: implemented, committed, pushed to private/public remotes, and
