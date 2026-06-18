@@ -11,8 +11,22 @@
 
 ## 2026-06-18T09:05+0800 - Home AI Proxy Production Evidence Harness
 
-- Status: implemented locally in the current package; validation/commit/deploy
-  are pending for this entry.
+- Status: implemented, validated, committed, pushed to private/public remotes,
+  and deployed to production Growth.
+- Implementation commit: `13e504792820` (`feat: add home ai proxy evidence
+  harness`).
+- Production deploy target:
+  `plugin:growth`, surface `full`, reason
+  `growth-home-ai-proxy-evidence-13e5047`.
+- Deploy backup:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260618T003608Z-plugin-growth-growth-home-ai-proxy-evidence-13e5047`.
+- Deploy validation passed:
+  - production file hash readback for `public/index.html`;
+  - `com.hermesmobile.plugin.growth` launchd state readback was running;
+  - public Growth manifest health URL returned HTTP 200 and plugin id
+    `growth`;
+  - Codex auth profile audit had `codexIssueCount=0`. The broader audit still
+    reported non-Codex issues, matching the existing production audit pattern.
 - Added Owner-only `GET /api/v1/growth/automation/planner-readiness` in
   `src/routes/growth-routes.js`. The route uses normal visible-target
   resolution and delegates only to
@@ -37,10 +51,23 @@
 - Added focused Harness coverage in
   `tests/growth-home-ai-proxy-smoke-script.test.js` and route coverage in
   `tests/growth-routes.test.js`.
+- Validation performed:
+  - `node --test tests/growth-home-ai-proxy-smoke-script.test.js
+    tests/growth-routes.test.js` -> 64/64 passing;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=230`,
+    `checkedCount=230`;
+  - `npm run --silent test:release-union` -> 279/279 passing;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`;
+  - `git diff --check` -> pass.
+- Post-implementation release-readiness readback remained `43/47`, with the
+  same four missing gates: `delivered_action_handoff`,
+  `production_planner_readiness_evidence`,
+  `production_daily_loop_write_smoke_evidence`, and
+  `platform_action_evidence`.
 - This package creates the authorized production evidence path for the four
   remaining release gates, but does not itself satisfy those gates, persist pass
   evidence, deliver platform notifications, call Gateway directly, change
-  runtime config, grant scheduler permission, or deploy.
+  runtime config, grant scheduler permission, or fabricate evidence.
 
 ## 2026-06-18T08:20+0800 - Release Gate Advance And Gateway Failure Harness
 
