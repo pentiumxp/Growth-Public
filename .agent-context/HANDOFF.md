@@ -64,9 +64,13 @@
     static version and `data-card-generation-secondary-readbacks` /
     `data-card-generation-disclosure` runtime markers.
 - Visual note: the Browser plugin control tool was not exposed in this session,
-  and this Growth package does not include Playwright. The local verification
-  therefore used service/static/DOM contract readback plus frontend/layout
-  harnesses, not a screenshot artifact.
+  and this Growth package does not include Playwright. A Home AI central
+  `embedded-plugin-shell --plugin-id growth` visual probe was attempted after
+  deployment with `--debug-url http://127.0.0.1:19073/ --timeout-ms 5000`, but
+  the central harness returned `fetch failed` because the live-debug lane was
+  not reachable. The verified evidence for this package is therefore
+  service/static/DOM contract readback plus frontend/layout harnesses, not a
+  screenshot artifact.
 
 ## 2026-06-18T11:55+0800 - Owner Generation Profile Feedback And Action UI
 
