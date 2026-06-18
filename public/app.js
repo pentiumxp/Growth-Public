@@ -23,6 +23,11 @@
         actionResult: null,
         actionError: ""
       },
+      profileFeedback: {
+        status: "idle",
+        data: null,
+        error: ""
+      },
       automationClosedLoopActionPlan: {
         status: "idle",
         data: null,
@@ -920,9 +925,25 @@
         refreshOwnerAuditReviews(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
           renderShell();
         }).catch(() => null);
+        refreshProfileFeedback(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
+          renderShell();
+        }).catch(() => null);
         refreshAutomationClosedLoopActionPlan(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
           renderShell();
         }).catch(() => null);
+      });
+    });
+    root.querySelectorAll("[data-profile-feedback-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshProfileFeedback().catch((error) => {
+          pageState.cardGeneration.profileFeedback = Object.assign({}, pageState.cardGeneration.profileFeedback || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
       });
     });
     root.querySelectorAll("[data-reference-chain-refresh]").forEach((button) => {
@@ -1581,6 +1602,11 @@
       actionResult: null,
       actionError: ""
     };
+    pageState.cardGeneration.profileFeedback = {
+      status: "loading",
+      data: pageState.cardGeneration.profileFeedback?.data || null,
+      error: ""
+    };
     pageState.cardGeneration.automationClosedLoopActionPlan = {
       status: "loading",
       data: pageState.cardGeneration.automationClosedLoopActionPlan?.data || null,
@@ -1734,6 +1760,7 @@
     await refreshLearningLoopState(requestedTargetWorkspaceId, context);
     await refreshOperatingLoopRuns(requestedTargetWorkspaceId, context);
     await refreshCycleHistoryFromUi({ silent: true });
+    await refreshProfileFeedback(requestedTargetWorkspaceId, context, { silent: true });
     await refreshOwnerAuditReviews(requestedTargetWorkspaceId, context, { silent: true });
     await refreshReferenceChain(requestedTargetWorkspaceId, context);
     await refreshAutomationProposals(requestedTargetWorkspaceId, context);
@@ -2063,6 +2090,62 @@
         actionStatus: previous.actionStatus || "idle",
         actionResult: previous.actionResult || null,
         actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  function createProfileFeedbackQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createProfileFeedbackQueryPayload !== "function") {
+      throw new Error("profile_feedback_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createProfileFeedbackQueryPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  async function refreshProfileFeedback(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.profileFeedback || {};
+    pageState.cardGeneration.profileFeedback = {
+      status: "loading",
+      data: previous.data || null,
+      error: ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createProfileFeedbackQueryPayload({
+        context,
+        workspaceId: requestedTargetWorkspaceId,
+        selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {}
+      });
+      const result = await api.fetchGrowthProfileFeedback(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.profileFeedback = {
+        status: result.ok === false ? clean(result.status || "blocked") : "ready",
+        data: result,
+        error: result.ok === false ? clean(result.error || "profile_feedback_blocked") : ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        profileFeedback: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.profileFeedback = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error)
       };
       if (!options.silent) renderShell();
       return null;
@@ -3748,6 +3831,7 @@
       if (options.refreshDrilldown && selectedCycle) {
         await refreshOwnerCycleDrilldownFromUi({ silent: true });
       }
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       if (!options.silent) renderShell();
       return result;
     } catch (error) {
@@ -3791,6 +3875,7 @@
         completeness,
         error: ""
       };
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       if (!options.silent) renderShell();
       return { audit, completeness };
     } catch (error) {
@@ -4027,6 +4112,7 @@
       }
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
       await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -4143,6 +4229,7 @@
       }
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId);
       await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -4209,6 +4296,7 @@
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "闭环已执行，但" });
       await refreshOperatingLoopRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       clearCardGenerationProgressTimers();
@@ -4250,6 +4338,7 @@
         error: ""
       };
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "纠偏已保存，但" });
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       pageState.cardGeneration.ownerCorrection = {
@@ -4296,6 +4385,7 @@
       });
       await refreshCardGenerationContextAfterPublish(targetWorkspaceId, { errorPrefix: "完成周期审核已记录，但" });
       await refreshOwnerAuditReviews(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshProfileFeedback(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       renderShell();
     } catch (error) {
       pageState.cardGeneration.ownerAuditReviews = Object.assign({}, pageState.cardGeneration.ownerAuditReviews || {}, {

@@ -50,15 +50,26 @@ readback gate set.
   `action=run_next` through `advanceOperatingLoopFromUi()`. Direct
   `daily-loop/advance` remains a compatibility and Harness route, but the
   browser must not use it as the primary policy selector.
+- 2026-06-18 Owner generation readability/mobile closure: the embedded Owner
+  `生成` tab now front-loads a `生成操作` panel after target provisioning and
+  readiness, before profile-feedback, automation, scheduler, and release
+  workbench readbacks. The panel contains `刷新状态`, `生成卡片`, `规划下一张`,
+  and `发布为卡片`; Harness asserts it precedes `画像反馈` and the release
+  workbench. iOS WebView DOM readback at 402px confirmed
+  `documentElement.scrollWidth=402`, no overflowing elements, active `生成` tab
+  inside the viewport, action panel top around `1791`, primary generate button
+  top around `2069`, profile feedback top around `3384`, and release workbench
+  top around `12229`. Static asset query version is
+  `20260618-profile-feedback-action-ui-v2`.
 - 2026-06-18 local central visual status: the current dev package was rechecked
   through the Home AI central iOS PWA visual toolchain using a local Growth
   dev server on `127.0.0.1:14881` and Home AI dev on `18797` with the Growth
   manifest pointed at that local plugin. Owner provisioning was performed
   through the host grant route, after which `embedded-plugin-shell
   --plugin-id growth` and `dark-growth-surfaces` both passed. Artifacts:
-  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260617T223324Z.png`
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260618T035158Z.png`
   and
-  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260617T223337Z.png`.
+  `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260618T035208Z.png`.
   This is local visual evidence only, not production release approval,
   production deployment, release-evidence persistence, or production Gateway
   evidence.

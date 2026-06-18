@@ -437,6 +437,16 @@ function normalizeLearningCycleHistoryInput(url, target) {
   });
 }
 
+function normalizeProfileFeedbackInput(url, target, request) {
+  return Object.assign(normalizeLearningCycleHistoryInput(url, target), {
+    horizon: url.searchParams.get("horizon") || "daily_plan",
+    availableMinutes: url.searchParams.get("availableMinutes") || url.searchParams.get("available_minutes") || "",
+    autoSelectCompletedCycle: truthy(url.searchParams.get("autoSelectCompletedCycle") || url.searchParams.get("auto_select_completed_cycle")),
+    autoSelectLatestCompletedCycle: truthy(url.searchParams.get("autoSelectLatestCompletedCycle") || url.searchParams.get("auto_select_latest_completed_cycle")),
+    requestedBy: String(request.headers["x-hermes-plugin-workspace-id"] || requestedWorkspaceId(request, url, ""))
+  });
+}
+
 function normalizeRecommendationLifecycleInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -2069,6 +2079,18 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAuditCompletenessService.evaluateCycleCompleteness(normalizeLearningCycleAuditInput(url, target));
     return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/profile-feedback") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_profile_feedback_owner_required", "Profile feedback requires Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningProfileFeedbackEvidenceService.evaluate(
+      normalizeProfileFeedbackInput(url, target, request)
+    );
+    const readableSummary = result?.privacyClass === "summary_only" || result?.summaryOnly === true || result?.summary_only === true;
+    return sendJson(response, result.ok || readableSummary ? 200 : 400, result);
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/proposals") {

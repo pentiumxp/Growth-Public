@@ -146,6 +146,8 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(ui, /release_evidence_collection/);
   assert.match(ui, /data-automation-closed-loop-action-plan-panel/);
   assert.match(ui, /createAutomationClosedLoopActionPlanQueryPayload/);
+  assert.match(ui, /data-profile-feedback-panel/);
+  assert.match(ui, /createProfileFeedbackQueryPayload/);
   assert.match(ui, /data-automation-proposal-panel/);
   assert.match(ui, /createAutomationProposalDecisionPayload/);
   assert.match(ui, /createAutomationProposalPublishPayload/);
@@ -160,6 +162,8 @@ test("Growth learning profile projection stays service-owned", () => {
   const apiClient = read(path.join("public", "growth-api-client.js"));
   assert.match(apiClient, /reviewGrowthRecommendationLifecycle/);
   assert.match(apiClient, /growthApiPath\("recommendations", "lifecycle", "review"\)/);
+  assert.match(apiClient, /fetchGrowthProfileFeedback/);
+  assert.match(apiClient, /growthApiPath\("profile-feedback"\)/);
 });
 
 test("Growth learning operating loop foundation stays service-owned", () => {
@@ -618,6 +622,11 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(profileFeedbackEvidenceService, /activateStageAssessment/);
   assert.doesNotMatch(profileFeedbackEvidenceService, /rawAnswer:/);
   assert.doesNotMatch(profileFeedbackEvidenceService, /rawPrompt:/);
+
+  assert.match(routes, /\/api\/v1\/growth\/profile-feedback/);
+  assert.match(routes, /growth_profile_feedback_owner_required/);
+  assert.match(routes, /learningProfileFeedbackEvidenceService\.evaluate/);
+  assert.match(routes, /readableSummary/);
 
   const planAuditService = read(path.join("src", "services", "learning-plan-audit-service.js"));
   assert.match(planAuditService, /listPlanDrafts/);
@@ -4605,6 +4614,9 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /preferredCardGenerationWorkspaceId/);
   assert.match(app, /refreshLearningLoopState/);
   assert.match(app, /fetchLearningLoopState/);
+  assert.match(app, /refreshProfileFeedback/);
+  assert.match(app, /fetchGrowthProfileFeedback/);
+  assert.match(app, /data-profile-feedback-refresh/);
   assert.match(app, /refreshAutomationClosedLoopActionPlan/);
   assert.match(app, /fetchGrowthAutomationClosedLoopActionPlan/);
   assert.match(app, /runAutomationClosedLoopActionPlanFromUi/);
@@ -4676,6 +4688,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /selectedCycle/);
   assert.match(generationUi, /data-release-workbench-panel/);
   assert.match(generationUi, /releaseWorkbenchPanel/);
+  assert.match(generationUi, /data-card-generation-action-panel/);
+  assert.match(generationUi, /cardGenerationActionPanel/);
+  const ownerRenderUi = generationUi.slice(generationUi.indexOf("function renderOwnerCardGenerationPanel"));
+  assert.ok(ownerRenderUi.indexOf("cardGenerationActionPanel({") < ownerRenderUi.indexOf("releaseWorkbenchPanel(context"));
   assert.match(generationUi, /data-release-artifact-template-panel/);
   assert.match(generationUi, /releaseArtifactTemplatePanel/);
   assert.match(generationUi, /createReleaseArtifactTemplateQueryPayload/);
@@ -4704,6 +4720,11 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /data-automation-closed-loop-action-plan-refresh/);
   assert.match(generationUi, /data-automation-closed-loop-action-run/);
   assert.match(generationUi, /data-automation-closed-loop-phase/);
+  assert.match(generationUi, /data-profile-feedback-panel/);
+  assert.match(generationUi, /profileFeedbackPanel/);
+  assert.match(generationUi, /createProfileFeedbackQueryPayload/);
+  assert.match(generationUi, /data-profile-feedback-refresh/);
+  assert.match(generationUi, /data-profile-feedback-row/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
   assert.match(generationUi, /createAutomationProposalCreatePayload/);
@@ -4764,6 +4785,8 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /createGrowthAutomationFailurePolicy/);
   assert.match(apiClient, /reviewGrowthAutomationFailurePolicy/);
   assert.match(apiClient, /fetchGrowthAutomationActionHandoffs/);
+  assert.match(apiClient, /fetchGrowthProfileFeedback/);
+  assert.match(apiClient, /growthApiPath\("profile-feedback"\)/);
   assert.match(apiClient, /fetchGrowthAutomationClosedLoopActionPlan/);
   assert.match(apiClient, /createGrowthAutomationActionHandoff/);
   assert.match(apiClient, /deliverGrowthAutomationActionHandoff/);

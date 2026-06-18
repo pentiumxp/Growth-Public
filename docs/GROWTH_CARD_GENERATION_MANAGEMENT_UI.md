@@ -230,29 +230,39 @@ selected learner target, not the iframe's Owner workspace.
    - Gateway evaluation boundary is shown separately so Owner can see whether
      the post-submit AI loop is model-backed;
    - there is no blocking open generation job.
-10. Owner reviews the structured plan preview:
+10. Growth renders a front-loaded `生成操作` panel immediately after target
+    provisioning and readiness. It must show the graph target, daily completion
+    policy, evidence requirements, and the `刷新状态` / `生成卡片` /
+    `规划下一张` / `发布为卡片` actions before long audit, scheduler, and release
+    workbench panels. This is a mobile readability requirement: Owner must not
+    need to scroll through release evidence or automation panels just to start a
+    normal daily card.
+11. Owner reviews the structured plan preview:
    - learning graph plan;
    - learner/mastery summary;
    - recent experience signals;
    - card role, difficulty, and evidence requirements;
    - `daily_score_once` completion policy.
-11. Owner presses `生成卡片`.
-12. Growth immediately renders a visible progress box with four bounded stages:
+12. Owner presses `生成卡片`.
+13. Growth immediately renders a visible progress box with four bounded stages:
    `prepare`, `gateway`, `validation`, and `publish`. The progress box is
    shown inside the plugin UI, uses `role="status"` / `aria-live="polite"`,
    and must remain visible on mobile embedded viewports without relying on the
    user scrolling back to the generate button.
-13. Growth calls `POST /api/v1/growth/daily-loop/advance`.
-14. `learning-daily-loop-service.advance()` drafts the plan, publishes the
-    selected item, and returns bounded draft/publish summaries.
-15. Gateway output is converted to an authoring draft through the existing
+14. Growth calls the Owner operating-loop path,
+    `POST /api/v1/growth/learning-loop/advance` with `action=run_next`. The
+    older `daily-loop/advance` route remains a compatibility/Harness route, but
+    the browser primary generate button must use the operating-loop boundary.
+15. The service-owned loop path drafts the plan, publishes the selected item,
+    and returns bounded draft/publish summaries.
+16. Gateway output is converted to an authoring draft through the existing
     Growth Gateway authoring boundary.
-16. Validation passes or returns a visible authoring error.
-17. A validated card is transactionally published to Growth SQLite, including
+17. Validation passes or returns a visible authoring error.
+18. A validated card is transactionally published to Growth SQLite, including
     the native program/draft parent rows required by the card table.
-17. Owner sees the generated card preview and can open the card on the learner
+19. Owner sees the generated card preview and can open the card on the learner
     board.
-18. The learner can submit the generated card from the plugin card detail,
+20. The learner can submit the generated card from the plugin card detail,
     optionally attach a recording, see one-shot evaluation feedback, and submit
     one optional reflection without Codex involvement. The detailed learner
     flow is defined in `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
@@ -332,6 +342,14 @@ This browser operation is implemented for the supervised daily-loop path.
     and completeness DTOs.
 11. Growth shows the existing generation progress surface, then preserves the
     published card preview and refreshes context/audit state.
+
+The `生成` tab mobile layout is part of the product contract. At 402px iOS
+viewport width, the Owner settings tab list must keep the active `生成` tab
+inside the viewport, `documentElement.scrollWidth` must equal the viewport
+width, and the primary action panel must appear before `画像反馈`, automation,
+scheduler, and release workbench readbacks. Long release/workbench panels remain
+available for audit closure, but they are not allowed to obscure the daily card
+generation workflow.
 
 The UI must not call Gateway directly, must not generate from a free-form
 prompt, and must not publish a plan item without backend validation. The route
@@ -1266,6 +1284,7 @@ Add focused tests before broad regression runs:
 | API client | GET context with target/domain-pack/subject query handling, GET learning-loop state with subject/capability/coverage selectors, legacy POST generate compatibility, daily-loop advance/draft/publish helpers, profile-correction POST helper, recommendation lifecycle review POST helper, domain-pack provision POST helper, and workspace query/proxy handling |
 | UI render | Owner sees `生成`; learner does not; Owner generation page renders target provisioning, domain-pack/subject selectors, learning-loop state, active checkpoint open-card action, formal stage-checkpoint rubric readback from the controls DTO, learning profile/trajectory projection, Owner audit/correction summary, one-click `生成卡片`, separate draft/publish buttons, visible progress, and bounded plan preview |
 | UI closed-loop action plan | renders `data-automation-closed-loop-action-plan-panel` before operating-loop execution, calls the no-write action-plan route through `fetchGrowthAutomationClosedLoopActionPlan`, shows the service-provided next action, phase rows, readiness booleans, and visible action/error state, refreshes after context/proposal/digest/failure-policy/handoff changes, and dispatches only supported next actions to existing Growth-owned functions (`learning-loop/advance`, cycle-closure prepare, review-advancement advance, and action-handoff delivery). Unsupported next actions remain visible and blocked instead of silently doing nothing. The browser must not call Gateway, generate/evaluate cards directly, execute schedulers, infer scheduler permission, reconstruct policy, or include raw prompts/transcripts/private payloads. |
+| UI profile feedback | renders `data-profile-feedback-panel` near learning-loop state and learner profile, calls Owner-only `GET /api/v1/growth/profile-feedback` through `fetchGrowthProfileFeedback`, and shows completed-cycle selector, evidence count, profile-delta count, reward coins, Owner review signal, recommendation strategy, and next action from the summary-only service DTO. Missing or blocked completed-cycle evidence must remain visible as `待补齐` / `无完成周期` rather than becoming a generic network failure. The browser may pass selected-cycle selectors or explicit read-only auto-selection flags, but it must not compute Profile V2, fabricate cycle selectors, inspect ledger/profile/reward storage, call Gateway, generate/evaluate cards, schedule work, or mutate learner state. |
 | UI release workbench | renders `data-release-workbench-panel`, release status/missing evidence/approval/record counts, advertised Owner actions, action result/error state, and constructs summary-only `release-workbench/actions` payloads for supported evidence/approval/evidence-collection/decision/package/activation/runtime enablement endpoints without package placeholders. It also renders `data-release-artifact-template-panel` from the no-write release artifact-template readback, including artifact slots, checklist rows, action-plan rows, manifest schema status, refresh state, and direct/proxy API client coverage for `GET /api/v1/growth/automation/release-artifact-template`. It renders `data-release-status-readbacks-panel` as read-only release ladder visibility, renders `data-release-evidence-ledger-panel` as read-only persisted release evidence/approval ledger visibility over the existing list routes, and renders `data-release-lifecycle-records-panel` for explicit Owner record/list coverage over preflight reports, activation records, and runtime enablement records. The frontend harness explicitly covers `release_approval` payloads with `approval_key`/`config_gate`, `release_evidence_collection` payloads with missing-evidence-derived bounded `tasks` / `required_task_ids` / `write_collection_run` / `write_release_evidence_records`, workbench-provided `auto_select_latest_completed_cycle` for profile-feedback collection, `release_decision` payloads with `auto_select_latest_ready_collection_run`, release artifact-template query payloads, release evidence-ledger query payloads, release lifecycle record query/record payloads, and absence of `writefulSchedulingAllowed`, raw prompts, raw artifact paths, or transcripts. |
 | UI target state | Visible targets are selectable; non-sample targets do not draft/publish until target provisioning passes |
 | UI plan preview | renders the validated daily-loop plan draft id, selected item, target nodes, role, difficulty, evidence requirements, publish attempt state, and publishes only after explicit Owner action |

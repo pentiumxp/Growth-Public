@@ -9,6 +9,72 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T11:55+0800 - Owner Generation Profile Feedback And Action UI
+
+- Status: implemented, locally validated, and ready for commit/push/deploy in
+  this operator turn.
+- Scope: the embedded Owner `生成` page now has a front-loaded `生成操作`
+  panel before the profile-feedback, automation, scheduler, and release
+  workbench readbacks. It also renders a summary-only `画像反馈` panel from a
+  Growth-owned profile-feedback route so Owner can see whether the latest
+  learner cycle produced enough evidence for profile update and next-card
+  planning.
+- Backend/API boundary:
+  - Added Owner-only `GET /api/v1/growth/profile-feedback`.
+  - The route delegates to `learning-profile-feedback-evidence-service`,
+    applies Growth visible-target scope, supports bounded completed-cycle
+    selectors and latest completed-cycle auto-selection, and returns
+    HTTP-readable summary-only pass/blocked/missing fields.
+  - It does not call Gateway, publish or generate cards, evaluate learner
+    submissions, deliver notifications, execute schedulers, mutate runtime
+    config, inspect private payloads, or bypass the service boundary.
+- UI boundary:
+  - `public/growth-api-client.js` adds resilient JSON readback for profile
+    feedback.
+  - `public/growth-card-generation-ui.js` renders `data-card-generation-action-panel`
+    and `data-profile-feedback-panel`.
+  - `public/app.js` refreshes profile feedback after context load,
+    generation, planning, correction/review, selected-cycle changes, and
+    closed-loop state refreshes.
+  - Static asset version is `20260618-profile-feedback-action-ui-v2`.
+- Mobile/readability closure: action controls (`刷新状态`, `生成卡片`,
+  `规划下一张`, `发布为卡片`) are now reachable near the top of the Owner
+  generation route. iOS WebView DOM readback at 402px confirmed
+  `documentElement.scrollWidth=402`, no overflowing elements, active `生成` tab
+  inside the viewport, action panel top around `1791`, primary generate button
+  top around `2069`, profile feedback top around `3384`, and release workbench
+  top around `12229`.
+- Harness/docs updated in this package:
+  - `tests/growth-routes.test.js`;
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`;
+  - `docs/GROWTH_PLUGIN_ARCHITECTURE.md`;
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`;
+  - `docs/TEST_MATRIX.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/growth-routes.test.js
+    tests/growth-frontend-adapter.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/learning-profile-feedback-evidence-service.test.js
+    tests/growth-profile-feedback-smoke-script.test.js` -> `150/150`
+    passing;
+  - `node --check public/growth-card-generation-ui.js && node --check
+    tests/growth-frontend-adapter.test.js && node --check
+    tests/growth-architecture-boundary.test.js`;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=236`;
+  - `git diff --check`;
+  - Home AI central visual toolchain with local Growth `14881`, local Home AI
+    `18797`, and live-debug `19073`: `embedded-plugin-shell --plugin-id
+    growth` passed with screenshot
+    `ios-pwa-visual-embedded-plugin-shell-growth-20260618T035158Z.png`;
+    `dark-growth-surfaces` passed with screenshot
+    `ios-pwa-visual-dark-growth-surfaces-20260618T035208Z.png`.
+
 ## 2026-06-18T11:35+0800 - Owner Closed-Loop Action Plan UI
 
 - Status: implemented, locally validated, committed, pushed, deployed, and

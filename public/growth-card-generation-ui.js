@@ -441,6 +441,134 @@
     </section>`;
   }
 
+  function profileFeedbackStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "failed") return "读取失败";
+    if (value === "pass" || value === "ready" || value === "ready_for_next_plan") return "可进入下一轮";
+    if (value === "blocked") return "待补齐";
+    if (value === "missing") return "无完成周期";
+    return value || "待读取";
+  }
+
+  function profileFeedbackNextActionText(action = "") {
+    const value = clean(action).toLowerCase();
+    if (value === "draft_daily_plan") return "起草下一张";
+    if (value === "owner_review") return "Owner 审核";
+    if (value === "produce_completed_daily_cycle") return "完成一轮练习";
+    if (value === "complete_cycle_audit") return "补齐审计";
+    return learningLoopActionText(value);
+  }
+
+  function profileFeedbackSummaryRows(data = {}, escapeHtml = defaultEscapeHtml) {
+    const summary = data.summary || {};
+    const evidence = data.evidence || {};
+    const profile = data.profile || {};
+    const profileDelta = data.profileDelta || {};
+    const recommendation = data.recommendation || {};
+    const loopState = data.loopState || {};
+    const reward = loopState.reward || {};
+    const ownerReview = data.ownerReviewSignal || data.ownerReview || {};
+    const rows = [
+      {
+        key: "evidence",
+        title: "证据",
+        detail: `${Number(summary.evidenceCount ?? evidence.count ?? 0) || 0} 条 summary-only evidence`,
+        meta: asArray(summary.evidenceSourceTypes || evidence.sourceTypes).slice(0, 3).join(" · ") || "daily"
+      },
+      {
+        key: "profile_delta",
+        title: "画像变化",
+        detail: `${Number(summary.profileDeltaCount ?? profileDelta.count ?? 0) || 0} 条 delta`,
+        meta: clean(summary.latestProfileDeltaId || profileDelta.latestProfileDeltaId || "profile")
+      },
+      {
+        key: "reward",
+        title: "成长币",
+        detail: `${Number(summary.totalRewardCoins ?? reward.totalRewardCoins ?? 0) || 0} coins`,
+        meta: `${Number(summary.rewardSettlementCount ?? reward.rewardSettlementCount ?? 0) || 0} settlements`
+      },
+      {
+        key: "recommendation",
+        title: "下一推荐",
+        detail: profileFeedbackNextActionText(summary.nextAction || loopState.nextAction?.action),
+        meta: clean(summary.recommendationStrategy || recommendation.strategy || recommendation.targetNodeId || "strategy")
+      },
+      {
+        key: "owner_review",
+        title: "Owner 审核",
+        detail: clean(ownerReview.latestDecision || ownerReview.summary?.latestDecision || ownerReview.status || "未审核"),
+        meta: `${Number(ownerReview.reviewCount || ownerReview.summary?.reviewCount || 0) || 0} reviews`
+      },
+      {
+        key: "profile",
+        title: "画像状态",
+        detail: `${Number(summary.profileEvidenceCount ?? profile.evidenceCount ?? 0) || 0} evidence`,
+        meta: `${Number(summary.profileWeaknessCount ?? profile.weaknessCount ?? 0) || 0} weak`
+      }
+    ];
+    return rows.map((row) => `<div class="learning-card-generation-profile-feedback-row" data-profile-feedback-row="${escapeHtml(row.key)}">
+      <span>
+        <strong>${escapeHtml(row.title)}</strong>
+        <small>${escapeHtml(row.detail)}</small>
+      </span>
+      <em>${escapeHtml(row.meta)}</em>
+    </div>`).join("");
+  }
+
+  function profileFeedbackPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.profileFeedback || {};
+    const data = holder.data || context.profileFeedback || {};
+    const summary = data.summary || {};
+    const status = holder.status === "loading"
+      ? "loading"
+      : holder.status === "failed"
+        ? "failed"
+        : clean(data.status || holder.status || "idle");
+    const loading = status === "loading";
+    const failed = status === "failed" || data.ok === false;
+    const missingRequired = asArray(summary.missingRequired || data.missingRequired);
+    const selectedCycle = state.cycleHistory?.selectedCycle || {};
+    const selected = cycleSelectionPayload(selectedCycle);
+    const selectedLabel = firstCleanValue(
+      selected.task_card_id,
+      selected.evaluation_id,
+      selected.profile_delta_id,
+      data.selectedCycle?.cycleId,
+      data.target?.taskCardId
+    );
+    const detail = failed
+      ? clean(holder.error || data.error || "profile_feedback_unavailable")
+      : loading
+        ? "正在读取完成周期的证据、画像变化、奖励和下一推荐。"
+        : data.ok
+          ? "本轮练习反馈来自 Growth profile-feedback service。"
+          : "选择一个已完成周期，或让服务只读选择最新 completed cycle。";
+    const ready = Boolean(summary.readyForNextPlan || data.readyForNextPlan);
+    return `<section class="learning-card-generation-profile-feedback" data-profile-feedback-panel data-profile-feedback-status="${escapeHtml(status || "idle")}">
+      <div class="learning-card-generation-profile-feedback-head">
+        <span>
+          <strong>画像反馈</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(profileFeedbackStatusText(failed ? "failed" : ready ? "pass" : status))}</em>
+      </div>
+      <div class="learning-card-generation-profile-feedback-grid">
+        <span><small>完成周期</small><strong>${escapeHtml(selectedLabel || clean(data.selectedCycle?.cycleId) || "自动选择")}</strong></span>
+        <span><small>证据</small><strong>${escapeHtml(String(Number(summary.evidenceCount || 0) || 0))}</strong></span>
+        <span><small>画像变化</small><strong>${escapeHtml(String(Number(summary.profileDeltaCount || 0) || 0))}</strong></span>
+        <span><small>下一步</small><strong>${escapeHtml(profileFeedbackNextActionText(summary.nextAction || data.loopState?.nextAction?.action))}</strong></span>
+      </div>
+      <div class="learning-card-generation-profile-feedback-actions">
+        <span>${escapeHtml(missingRequired.length ? `待补齐：${missingRequired.slice(0, 4).join(" · ")}` : ready ? "已具备进入下一轮计划的 summary-only 证据。" : "还没有完成周期反馈。")}</span>
+        <button type="button" data-profile-feedback-refresh ${loading ? "disabled" : ""}>${loading ? "读取中" : "刷新反馈"}</button>
+      </div>
+      <div class="learning-card-generation-profile-feedback-list">
+        ${profileFeedbackSummaryRows(data, escapeHtml)}
+      </div>
+    </section>`;
+  }
+
   function stageAssessmentStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "checking") return "检查中";
@@ -4295,6 +4423,19 @@
     }));
   }
 
+  function createProfileFeedbackQueryPayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
+    const scope = ownerAuditReviewScopeFromContext(context, workspaceId, selectedCycle);
+    const hasAnchor = ownerAuditReviewHasAnchor(scope);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      auto_select_completed_cycle: hasAnchor ? "" : "true",
+      auto_select_latest_completed_cycle: hasAnchor ? "" : "true",
+      limit: 12
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return clean(value);
+    }));
+  }
+
   function createOwnerAuditReviewPayload({ context = {}, workspaceId = "", selectedCycle = {}, decision = "accepted", note = "" } = {}) {
     const scope = ownerAuditReviewScopeFromContext(context, workspaceId, selectedCycle);
     const payload = Object.assign({}, scope, {
@@ -4381,6 +4522,42 @@
     };
   }
 
+  function cardGenerationActionPanel({
+    state = {},
+    plan = {},
+    canAdvance = false,
+    canDraft = false,
+    canPublish = false,
+    advanceClass = "",
+    draftClass = "",
+    publishClass = "",
+    advanceBlockedAttrs = "",
+    draftBlockedAttrs = "",
+    publishBlockedAttrs = "",
+    escapeHtml = defaultEscapeHtml
+  } = {}) {
+    return `<section class="learning-card-generation-action-panel" data-card-generation-action-panel>
+      <div class="learning-card-generation-action-head">
+        <span>
+          <strong>生成操作</strong>
+          <small>先确认目标和画像，再生成/规划/发布。</small>
+        </span>
+        <em>${escapeHtml(canAdvance || canDraft || canPublish ? "可操作" : "待补齐")}</em>
+      </div>
+      <div class="learning-card-generation-field-list learning-card-generation-action-facts">
+        <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
+        <div><span><strong>完成规则</strong><small>提交一次，批改一次，反思最多一次，不设通过线</small></span><em>daily</em></div>
+        <div><span><strong>证据要求</strong><small>${escapeHtml(asArray(plan.evidenceRequirements).join(" · ") || "short_answer")}</small></span><em>摘要</em></div>
+      </div>
+      <div class="learning-card-generation-actions">
+        <button type="button" data-card-generation-refresh>刷新状态</button>
+        <button type="button" class="${advanceClass}" data-card-generation-advance ${advanceBlockedAttrs} ${state.status === "advancing" ? "disabled" : ""}>${state.status === "advancing" ? "正在生成" : "生成卡片"}</button>
+        <button type="button" class="${draftClass}" data-card-generation-draft ${draftBlockedAttrs} ${state.status === "drafting" ? "disabled" : ""}>${state.status === "drafting" ? "正在规划" : "规划下一张"}</button>
+        <button type="button" class="${publishClass}" data-card-generation-publish ${publishBlockedAttrs} ${state.status === "publishing" ? "disabled" : ""}>${state.status === "publishing" ? "正在发布" : "发布为卡片"}</button>
+      </div>
+    </section>`;
+  }
+
   function renderOwnerCardGenerationPanel(options = {}) {
     const escapeHtml = options.escapeHtml || defaultEscapeHtml;
     const state = options.state?.cardGeneration || {};
@@ -4447,10 +4624,30 @@
             ${readinessRows(context, escapeHtml)}
           </div>
           ${targetProvisioningPanel(context, state, escapeHtml)}
+          ${cardGenerationActionPanel({
+            state,
+            plan,
+            canAdvance,
+            canDraft,
+            canPublish,
+            advanceClass,
+            draftClass,
+            publishClass,
+            advanceBlockedAttrs,
+            draftBlockedAttrs,
+            publishBlockedAttrs,
+            escapeHtml
+          })}
           ${learningLoopStatePanel(state, context, escapeHtml)}
+          ${learningProfilePanel(context, state, escapeHtml)}
+          ${profileFeedbackPanel(context, state, escapeHtml)}
           ${automationClosedLoopActionPlanPanel(context, state, escapeHtml)}
           ${operatingLoopPanel(context, state, escapeHtml)}
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
+          ${ownerAuditPanel(context, state, escapeHtml)}
+          ${cycleDrilldownPanel(context, state, escapeHtml)}
+          ${ownerAuditReviewPanel(context, state, escapeHtml)}
+          ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
           ${automationCycleClosurePanel(context, state, escapeHtml)}
           ${automationReviewAdvancementPanel(context, state, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
@@ -4461,23 +4658,6 @@
           ${automationSchedulerRunPanel(context, state, escapeHtml)}
           ${automationSchedulerWorkerTargetPanel(context, state, escapeHtml)}
           ${releaseWorkbenchPanel(context, state, escapeHtml)}
-          ${learningProfilePanel(context, state, escapeHtml)}
-          ${ownerAuditPanel(context, state, escapeHtml)}
-          ${cycleDrilldownPanel(context, state, escapeHtml)}
-          ${ownerAuditReviewPanel(context, state, escapeHtml)}
-          ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
-          <div class="learning-card-generation-field-list">
-            <div><span><strong>图谱目标</strong><small>${escapeHtml(plan.title || plan.targetNodeId || "未选择")}</small></span><em>${escapeHtml(plan.domain || "english")}</em></div>
-            <div><span><strong>完成规则</strong><small>提交一次，批改一次，反思最多一次，不设通过线</small></span><em>daily</em></div>
-            <div><span><strong>证据要求</strong><small>${escapeHtml(asArray(plan.evidenceRequirements).join(" · ") || "short_answer")}</small></span><em>摘要</em></div>
-          </div>
-          <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
-          <div class="learning-card-generation-actions">
-            <button type="button" data-card-generation-refresh>刷新状态</button>
-            <button type="button" class="${advanceClass}" data-card-generation-advance ${advanceBlockedAttrs} ${state.status === "advancing" ? "disabled" : ""}>${state.status === "advancing" ? "正在生成" : "生成卡片"}</button>
-            <button type="button" class="${draftClass}" data-card-generation-draft ${draftBlockedAttrs} ${state.status === "drafting" ? "disabled" : ""}>${state.status === "drafting" ? "正在规划" : "规划下一张"}</button>
-            <button type="button" class="${publishClass}" data-card-generation-publish ${publishBlockedAttrs} ${state.status === "publishing" ? "disabled" : ""}>${state.status === "publishing" ? "正在发布" : "发布为卡片"}</button>
-          </div>
         </section>
 
         <section class="learning-coin-panel learning-card-generation-preview">
@@ -4487,6 +4667,7 @@
           </div>
           ${dailyLoopPlanPreview({ draftResult, publishResult }, escapeHtml)}
           ${generatedCardPreview(generated, escapeHtml)}
+          <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
           <div class="learning-card-generation-audit">
             <span>teachingFlow contract <em></em></span>
             <span>graph binding <em></em></span>
@@ -4529,6 +4710,7 @@
     createDailyLoopPublishPayload,
     createOperatingLoopAdvancePayload,
     createOperatingLoopRunQueryPayload,
+    createProfileFeedbackQueryPayload,
     createCycleAuditQueryPayload,
     createCycleHistoryQueryPayload,
     createOwnerAuditReviewPayload,

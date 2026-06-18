@@ -793,6 +793,64 @@ test("Growth API client fetches release evidence ledger through direct and proxy
   assert.equal(proxyCalls[1].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/automation/release-approvals?targetWorkspaceId=weixin_stephen&learnerId=fanfan&limit=2");
 });
 
+test("Growth API client reads profile feedback through direct and proxy routes", async () => {
+  const windowRef = loadPublicScript("growth-api-client.js");
+  const directCalls = [];
+  const directClient = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "owner",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
+    fetchImpl: async (path, options = {}) => {
+      directCalls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, schemaVersion: "growth.learningProfileFeedbackEvidence.v1" })
+      };
+    }
+  });
+  await directClient.fetchGrowthProfileFeedback({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    task_card_id: "ltask_daily_1",
+    evaluation_id: "leval_daily_1",
+    profile_delta_id: "lgpdelta_daily_1",
+    evidence_id: "lgevd_daily_1",
+    target_node_ids: ["kg_science_fair_test"],
+    auto_select_latest_completed_cycle: true,
+    limit: 4
+  }, "weixin_fanfan");
+
+  assert.equal(directCalls[0].path, "/api/v1/growth/profile-feedback?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&taskCardId=ltask_daily_1&evaluationId=leval_daily_1&profileDeltaId=lgpdelta_daily_1&evidenceId=lgevd_daily_1&targetNodeIds=kg_science_fair_test&autoSelectLatestCompletedCycle=true&limit=4");
+
+  const proxyCalls = [];
+  const proxyClient = windowRef.HermesGrowthApiClient.createGrowthApiClient({
+    getWorkspaceId: () => "owner",
+    historyRef: { replaceState: () => null },
+    locationRef: { href: "http://homeai.local/api/hermes-plugins/growth/proxy/?embed=hermes&workspaceId=owner" },
+    fetchImpl: async (path, options = {}) => {
+      proxyCalls.push({ path, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: false, status: "blocked" })
+      };
+    }
+  });
+  await proxyClient.fetchGrowthProfileFeedback({
+    learner_id: "fanfan",
+    auto_select_completed_cycle: true,
+    auto_select_latest_completed_cycle: true
+  }, "weixin_fanfan");
+
+  assert.equal(proxyCalls[0].path, "/api/hermes-plugins/growth/proxy/api/v1/growth/profile-feedback?targetWorkspaceId=weixin_fanfan&learnerId=fanfan&autoSelectCompletedCycle=true&autoSelectLatestCompletedCycle=true&limit=12");
+});
+
 test("Growth API client routes API calls through the Home AI plugin proxy when embedded", async () => {
   const windowRef = loadPublicScript("growth-api-client.js");
   const calls = [];
@@ -2298,6 +2356,43 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        profileFeedback: {
+          status: "ready",
+          data: {
+            ok: true,
+            source: "growth-learning-profile-feedback-evidence-service",
+            schemaVersion: "growth.learningProfileFeedbackEvidence.v1",
+            privacyClass: "summary_only",
+            status: "pass",
+            summary: {
+              readyForNextPlan: true,
+              evidenceCount: 2,
+              evidenceSourceTypes: ["daily_evaluation"],
+              profileDeltaCount: 1,
+              latestProfileDeltaId: "lgpdelta_history_1",
+              rewardSettlementCount: 1,
+              totalRewardCoins: 8,
+              recommendationStrategy: "repair",
+              nextAction: "draft_daily_plan",
+              profileEvidenceCount: 3,
+              profileWeaknessCount: 1
+            },
+            recommendation: {
+              strategy: "repair",
+              targetNodeId: "kg_history_node"
+            },
+            loopState: {
+              status: "ready_to_draft",
+              nextAction: { action: "draft_daily_plan" },
+              reward: { totalRewardCoins: 8, rewardSettlementCount: 1 }
+            },
+            ownerReviewSignal: {
+              status: "accepted",
+              reviewCount: 1,
+              latestDecision: "accepted"
+            }
+          }
+        },
         automationClosedLoopActionPlan: {
           status: "ready",
           data: {
@@ -2913,11 +3008,24 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-subject/);
   assert.match(html, /data-card-generation-apply-target/);
   assert.match(html, /data-card-generation-provision-target/);
+  assert.match(html, /data-card-generation-action-panel/);
+  assert.match(html, /生成操作/);
+  assert.match(html, /data-card-generation-advance/);
+  assert.match(html, /data-card-generation-draft/);
+  assert.match(html, /data-card-generation-publish/);
+  assert.ok(html.indexOf("data-card-generation-action-panel") < html.indexOf("data-profile-feedback-panel"));
+  assert.ok(html.indexOf("data-card-generation-action-panel") < html.indexOf("data-release-workbench-panel"));
   assert.match(html, /UK\/HK Curriculum Foundation/);
   assert.match(html, /science/);
   assert.match(html, /data-card-generation-profile/);
   assert.match(html, /data-card-generation-recommendation/);
   assert.match(html, /data-card-generation-lifecycle/);
+  assert.match(html, /data-profile-feedback-panel/);
+  assert.match(html, /画像反馈/);
+  assert.match(html, /data-profile-feedback-refresh/);
+  assert.match(html, /data-profile-feedback-row="reward"/);
+  assert.match(html, /8 coins/);
+  assert.match(html, /可进入下一轮/);
   assert.match(html, /data-card-generation-owner-audit/);
   assert.match(html, /审计与纠偏/);
   assert.match(html, /lgplan_science_1/);
@@ -3095,6 +3203,50 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
     source_id: "eval_history_1",
     limit: 5
   });
+
+  const profileFeedbackQueryPayload = windowRef.HermesGrowthCardGenerationUi.createProfileFeedbackQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        planDraftId: "lgplan_history_1",
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        profileDeltaId: "lgpdelta_history_1",
+        evidenceId: "lgevidence_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(profileFeedbackQueryPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    recipe_id: "daily_english_v1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: 15,
+    target_node_ids: ["kg_history_node"],
+    card_schema_version: "growth.card.authoring.v1",
+    plan_draft_id: "lgplan_history_1",
+    task_card_id: "ltask_history_1",
+    evaluation_id: "eval_history_1",
+    profile_delta_id: "lgpdelta_history_1",
+    evidence_id: "lgevidence_history_1",
+    source_id: "eval_history_1",
+    limit: 12
+  });
+  assert.equal(Object.hasOwn(profileFeedbackQueryPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(profileFeedbackQueryPayload, "transcript"), false);
+
+  const autoProfileFeedbackPayload = windowRef.HermesGrowthCardGenerationUi.createProfileFeedbackQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {}
+  });
+  assert.equal(autoProfileFeedbackPayload.auto_select_completed_cycle, "true");
+  assert.equal(autoProfileFeedbackPayload.auto_select_latest_completed_cycle, "true");
 
   const ownerAuditReviewPayload = windowRef.HermesGrowthCardGenerationUi.createOwnerAuditReviewPayload({
     context,
@@ -5120,7 +5272,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-release-evidence-ledger-ui-v1";
+  const staticVersion = "20260618-profile-feedback-action-ui-v2";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
@@ -5167,6 +5319,11 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function refreshAutomationClosedLoopActionPlan/);
   assert.match(source, /api\.fetchGrowthAutomationClosedLoopActionPlan\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /function refreshProfileFeedback/);
+  assert.match(source, /api\.fetchGrowthProfileFeedback\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-profile-feedback-refresh/);
+  assert.match(source, /profileFeedback/);
+  assert.match(source, /await refreshProfileFeedback\(requestedTargetWorkspaceId, context, \{ silent: true \}\)/);
   assert.match(source, /function runAutomationClosedLoopActionPlanFromUi/);
   assert.match(source, /function refreshReleaseWorkbench/);
   assert.match(source, /api\.fetchGrowthReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);

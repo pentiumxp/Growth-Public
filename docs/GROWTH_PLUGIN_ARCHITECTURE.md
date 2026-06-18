@@ -58,14 +58,15 @@ backend boundaries:
 - Reference-ready: Growth implements the plugin-side V1-minimal stable object
   reference contract in `learning-reference-contract-service`. It exposes
   summary-only references for programs, task cards, submissions, evaluations,
-  reflections, mastery profiles, learning graph plans, and plan drafts through
-  `GET /api/v1/growth/references/*`, `growth.reference_object_types`,
-  `growth.reference_get`, `growth.reference_summarize`, and
-  `npm run smoke:references`. The embedded Owner `生成` tab may consume
-  object-types and summary routes as a read-only Reference Chain panel for
-  current profile, plan, card, and selected-cycle evidence references. This is
-  not the central Reference / Memory Graph; Growth does not own graph edges,
-  Note links, natural-language resolve/search, or cross-plugin graph tables.
+  reflections, mastery profiles, learning graph plans, plan drafts, and
+  completed-cycle `profile_feedback` readbacks through `GET
+  /api/v1/growth/references/*`, `growth.reference_object_types`,
+  `growth.reference_get`, `growth.reference_summarize`, and `npm run
+  smoke:references`. The embedded Owner `生成` tab may consume object-types and
+  summary routes as a read-only Reference Chain panel for current profile,
+  plan, card, and selected-cycle evidence references. This is not the central
+  Reference / Memory Graph; Growth does not own graph edges, Note links,
+  natural-language resolve/search, or cross-plugin graph tables.
 - Gateway-only model boundary: Growth calls models only through Gateway
   clients. It must not import Home AI old Growth server internals or direct
   vendor SDKs. Gateway client failures are projected as bounded status/error
@@ -87,6 +88,16 @@ backend boundaries:
   auditable state adjustments, but they do not refresh learner evidence
   recency. Stale strengths become low-pressure review hints instead of stretch
   claims.
+- Profile-feedback-readable: Owner-only `GET
+  /api/v1/growth/profile-feedback` delegates to
+  `learning-profile-feedback-evidence-service.evaluate()` and returns only
+  summary-only completed-cycle feedback. The Owner `生成` tab renders this as
+  a readable `画像反馈` panel with evidence counts, profile-delta counts,
+  reward coins, Owner review signal, recommendation strategy, and next action.
+  Missing or blocked completed-cycle selectors remain visible UI states instead
+  of hidden HTTP failures; the route and browser must not compute Profile V2,
+  read repositories directly, call Gateway, generate/evaluate cards, schedule,
+  or mutate learner state.
 - Stage-safe: planner stage-checkpoint drafts are suggestions only. Publishing
   a formal `stage_assessment` card remains blocked at
   `learning-plan-publisher-service` and must go through

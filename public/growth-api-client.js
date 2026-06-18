@@ -443,6 +443,33 @@
       return query ? `?${query}` : "";
     }
 
+    function profileFeedbackQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const params = new URLSearchParams();
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "availableMinutes", payload.availableMinutes || payload.available_minutes);
+      appendQueryParam(params, "planDraftId", payload.planDraftId || payload.plan_draft_id);
+      appendQueryParam(params, "taskCardId", payload.taskCardId || payload.task_card_id);
+      appendQueryParam(params, "evaluationId", payload.evaluationId || payload.evaluation_id);
+      appendQueryParam(params, "profileDeltaId", payload.profileDeltaId || payload.profile_delta_id);
+      appendQueryParam(params, "evidenceId", payload.evidenceId || payload.evidence_id);
+      appendQueryParam(params, "correctionId", payload.correctionId || payload.correction_id);
+      appendQueryParam(params, "sourceId", payload.sourceId || payload.source_id);
+      appendQueryArrayParam(params, "targetNodeIds", payload.targetNodeIds || payload.target_node_ids || payload.nodeIds || payload.node_ids);
+      appendQueryParam(params, "autoSelectCompletedCycle", payload.autoSelectCompletedCycle || payload.auto_select_completed_cycle);
+      appendQueryParam(params, "autoSelectLatestCompletedCycle", payload.autoSelectLatestCompletedCycle || payload.auto_select_latest_completed_cycle);
+      appendQueryParam(params, "limit", payload.limit || 12);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function ownerAuditReviewQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -511,6 +538,18 @@
       const response = await fetchImpl(resolveApiPath(path), Object.assign({ cache: "no-store" }, options));
       const result = await response.json();
       if (!response.ok || result.ok === false) {
+        const error = typeof result.error === "string"
+          ? result.error
+          : clean(result.error?.code || result.error?.message);
+        throw new Error(error || `request_failed:${response.status}`);
+      }
+      return result;
+    }
+
+    async function fetchReadableJson(path, options = {}) {
+      const response = await fetchImpl(resolveApiPath(path), Object.assign({ cache: "no-store" }, options));
+      const result = await response.json();
+      if (!response.ok) {
         const error = typeof result.error === "string"
           ? result.error
           : clean(result.error?.code || result.error?.message);
@@ -771,6 +810,10 @@
       return fetchJson(`${growthApiPath("learning-cycles", "history")}${cycleHistoryQuery(targetWorkspaceId, payload)}`);
     }
 
+    function fetchGrowthProfileFeedback(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchReadableJson(`${growthApiPath("profile-feedback")}${profileFeedbackQuery(targetWorkspaceId, payload)}`);
+    }
+
     function fetchGrowthOwnerAuditReviews(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return fetchJson(`${growthApiPath("owner-audit", "reviews")}${ownerAuditReviewQuery(targetWorkspaceId, payload)}`);
     }
@@ -976,6 +1019,7 @@
       fetchGrowthCycleAudit,
       fetchGrowthCycleCompleteness,
       fetchGrowthCycleHistory,
+      fetchGrowthProfileFeedback,
       fetchGrowthOwnerAuditReviews,
       fetchGrowthCard,
       fetchGrowthReferenceObjectTypes,
