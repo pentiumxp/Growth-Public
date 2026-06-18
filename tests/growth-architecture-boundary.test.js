@@ -3604,8 +3604,11 @@ test("Growth Home AI proxy smoke stays proxy-owned and write-gated", () => {
 
   const script = read(path.join("scripts", "smoke-growth-home-ai-proxy.js"));
   assert.match(script, /DEFAULT_PROXY_PREFIX = "\/api\/hermes-plugins\/growth\/proxy"/);
+  assert.match(script, /"cycle-closure"/);
   assert.match(script, /"review-advancement"/);
+  assert.match(script, /automation\/cycle-closures\/prepare/);
   assert.match(script, /automation\/review-advancements\/advance/);
+  assert.match(script, /projectAutomationCycleClosureSmokeReadback/);
   assert.match(script, /projectAutomationReviewAdvancementSmokeReadback/);
   assert.match(script, /home_ai_proxy_smoke_write_not_allowed/);
   assert.match(script, /X-Hermes-Web-Key/);
@@ -3620,6 +3623,7 @@ test("Growth Home AI proxy smoke stays proxy-owned and write-gated", () => {
   assert.doesNotMatch(script, /publishPlanItem|publishAcceptedProposal|generateCard|evaluateSubmission|executeOnce|runOnce|dryRun|activateStageAssessment/);
 
   const harness = read(path.join("tests", "growth-home-ai-proxy-smoke-script.test.js"));
+  assert.match(harness, /posts cycle closure through proxy/);
   assert.match(harness, /posts review advancement through proxy/);
   assert.match(harness, /home_ai_proxy_smoke_write_not_allowed/);
   assert.match(harness, /owner-web-key/);

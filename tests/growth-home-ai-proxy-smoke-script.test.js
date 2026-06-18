@@ -93,6 +93,14 @@ test("home ai proxy smoke script gates writes unless explicitly allowed", () => 
   ], {}));
   assert.equal(reviewBlocked.ok, false);
   assert.equal(reviewBlocked.error, "home_ai_proxy_smoke_write_not_allowed");
+
+  const cycleClosureBlocked = validateInput(inputFromArgs([
+    "--operation", "cycle-closure",
+    "--workspace-id", "weixin_fanfan",
+    "--home-ai-access-key-file", "/tmp/private-home-ai-key"
+  ], {}));
+  assert.equal(cycleClosureBlocked.ok, false);
+  assert.equal(cycleClosureBlocked.error, "home_ai_proxy_smoke_write_not_allowed");
 });
 
 test("home ai proxy smoke script posts controlled daily-loop writes through proxy", async () => {
@@ -153,6 +161,136 @@ test("home ai proxy smoke script posts controlled daily-loop writes through prox
   assert.equal(result.homeAiProxySmokeWriteOperation, true);
   assert.equal(result.homeAiProxySmokeWriteAllowed, true);
   assert.equal(result.homeAiProxySmokeWritesPerformed, true);
+});
+
+test("home ai proxy smoke script posts cycle closure through proxy", async () => {
+  const calls = [];
+  const input = inputFromArgs([
+    "--operation", "automation-cycle-prepare",
+    "--home-ai-base-url", "http://homeai.local",
+    "--home-ai-access-key-file", "/tmp/private-home-ai-key",
+    "--workspace-id", "weixin_fanfan",
+    "--learner-id", "fanfan",
+    "--program-id", "program_science",
+    "--cycle-id", "cycle_proxy_1",
+    "--domain-pack-id", "uk_hk_curriculum_foundation",
+    "--domain", "science",
+    "--subject", "science",
+    "--target-node-id", "kg_science_fair_test",
+    "--source-target-node-id", "kg_science_previous",
+    "--selected-candidate-id", "lgauto_proxy_1:lgplan_proxy_1:item_proxy_1",
+    "--allowed-card-role", "daily_practice",
+    "--source-plan-draft-id", "lgplan_source_1",
+    "--source-task-card-id", "ltask_source_1",
+    "--source-evaluation-id", "lgeval_source_1",
+    "--profile-delta-id", "lgpdelta_source_1",
+    "--evidence-id", "lgevidence_source_1",
+    "--accept-proposal",
+    "--create-digest",
+    "--no-review-digest",
+    "--no-create-handoff",
+    "--no-deliver-handoff",
+    "--auto-select-latest-completed-cycle",
+    "--requested-by", "owner",
+    "--allow-write"
+  ], {});
+
+  assert.equal(input.operation, "cycle-closure");
+  const result = await runProxyOperation(input, {
+    readFile: () => "owner-web-key",
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), options, body: JSON.parse(options.body) });
+      return responseJson(201, {
+        ok: true,
+        status: "digest_pending",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        writesPerformed: true,
+        publishPerformed: false,
+        schedulerStarted: false,
+        stages: [
+          { name: "profile_feedback", ok: true, status: "pass" },
+          { name: "proposal_create", ok: true, status: "proposed" },
+          { name: "proposal_review", ok: true, status: "accepted" },
+          { name: "digest_create", ok: true, status: "pending" }
+        ],
+        summary: {
+          selectedCycleId: "cycle_proxy_1",
+          selectedTaskCardId: "ltask_source_1",
+          proposalId: "lgauto_proxy_1",
+          proposalStatus: "accepted",
+          digestId: "lgadig_proxy_1",
+          digestStatus: "pending",
+          publishPerformed: false,
+          schedulerStarted: false,
+          gatewayBoundary: "proposal_creation_may_call_planner_gateway_only"
+        },
+        selectedCycle: {
+          cycleId: "cycle_proxy_1",
+          taskCardId: "ltask_source_1"
+        },
+        proposal: {
+          proposalId: "lgauto_proxy_1",
+          status: "accepted",
+          workspaceId: "weixin_fanfan",
+          learnerId: "fanfan",
+          programId: "program_science",
+          domainPackId: "uk_hk_curriculum_foundation",
+          domain: "science",
+          subject: "science",
+          horizon: "daily_plan"
+        },
+        digest: {
+          digestId: "lgadig_proxy_1",
+          status: "pending"
+        }
+      });
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "http://homeai.local/api/hermes-plugins/growth/proxy/api/v1/growth/automation/cycle-closures/prepare?targetWorkspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&cycleId=cycle_proxy_1&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_fair_test&sourceTargetNodeIds=kg_science_previous&selectedCandidateIds=lgauto_proxy_1%3Algplan_proxy_1%3Aitem_proxy_1&allowedCardRoles=daily_practice&sourcePlanDraftId=lgplan_source_1&sourceTaskCardId=ltask_source_1&sourceEvaluationId=lgeval_source_1&profileDeltaId=lgpdelta_source_1&evidenceId=lgevidence_source_1");
+  assert.equal(calls[0].options.method, "POST");
+  assert.deepEqual(calls[0].body, {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    program_id: "program_science",
+    cycle_id: "cycle_proxy_1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: "15",
+    target_node_ids: ["kg_science_fair_test"],
+    source_target_node_ids: ["kg_science_previous"],
+    selected_candidate_ids: ["lgauto_proxy_1:lgplan_proxy_1:item_proxy_1"],
+    allowed_card_roles: ["daily_practice"],
+    source_plan_draft_id: "lgplan_source_1",
+    source_task_card_id: "ltask_source_1",
+    source_evaluation_id: "lgeval_source_1",
+    profile_delta_id: "lgpdelta_source_1",
+    evidence_id: "lgevidence_source_1",
+    auto_select_latest_completed_cycle: true,
+    accept_proposal: true,
+    create_digest: true,
+    review_digest: false,
+    create_handoff: false,
+    deliver_handoff: false,
+    requested_by: "owner"
+  });
+  assert.equal(result.homeAiProxySmokeOperation, "cycle-closure");
+  assert.equal(result.homeAiProxySmokeRoutePath, "/api/v1/growth/automation/cycle-closures/prepare");
+  assert.equal(result.homeAiProxySmokeWriteOperation, true);
+  assert.equal(result.homeAiProxySmokeWriteAllowed, true);
+  assert.equal(result.homeAiProxySmokeWritesPerformed, true);
+  assert.equal(result.automationCycleClosureStatus, "digest_pending");
+  assert.equal(result.automationCycleClosureProposalStatus, "accepted");
+  assert.equal(result.automationCycleClosureDigestStatus, "pending");
+  assert.equal(result.automationCycleClosurePublishPerformed, false);
+  assert.equal(result.automationCycleClosureSchedulerStarted, false);
+  assert.deepEqual(result.automationCycleClosureStageNames, ["profile_feedback", "proposal_create", "proposal_review", "digest_create"]);
+  assert.equal(JSON.stringify(result).includes("owner-web-key"), false);
+  assert.equal(JSON.stringify(result).includes("/tmp/private-home-ai-key"), false);
 });
 
 test("home ai proxy smoke script posts review advancement through proxy", async () => {

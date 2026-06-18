@@ -9,6 +9,9 @@ const {
   projectDailyLoopSmokeReadback
 } = require("./smoke-growth-daily-loop");
 const {
+  projectAutomationCycleClosureSmokeReadback
+} = require("./smoke-growth-automation-cycle-closure");
+const {
   projectAutomationReviewAdvancementSmokeReadback
 } = require("./smoke-growth-automation-review-advancement");
 const {
@@ -31,6 +34,7 @@ const WRITE_OPERATIONS = new Set([
   "daily-loop-draft",
   "daily-loop-advance",
   "daily-loop-publish",
+  "cycle-closure",
   "review-advancement",
   "action-handoff-create",
   "action-handoff-deliver",
@@ -105,6 +109,10 @@ function operationFromArgs(args) {
   if (operation === "planner") return "planner-readiness";
   if (operation === "platform-action") return "platform-action-evidence";
   if (operation === "daily-loop") return "daily-loop-advance";
+  if (operation === "automation-cycle-closure") return "cycle-closure";
+  if (operation === "automation-cycle-prepare") return "cycle-closure";
+  if (operation === "cycle-closure-prepare") return "cycle-closure";
+  if (operation === "cycle-prepare") return "cycle-closure";
   if (operation === "automation-review-advancement") return "review-advancement";
   if (operation === "automation-review-advance") return "review-advancement";
   if (operation === "review-advance") return "review-advancement";
@@ -136,6 +144,7 @@ function selectorInputFromArgs(args) {
     targetNodeIds: targetNodeIds(args),
     sourceTargetNodeIds: listArg(args, ["--source-target-node-id", "--sourceTargetNodeId"], ["--source-target-node-ids", "--sourceTargetNodeIds"]),
     selectedCandidateIds: listArg(args, ["--selected-candidate-id", "--selectedCandidateId"], ["--selected-candidate-ids", "--selectedCandidateIds"]),
+    allowedCardRoles: listArg(args, ["--allowed-card-role", "--allowedCardRole"], ["--allowed-card-roles", "--allowedCardRoles"]),
     sourcePlanDraftId: firstArgValue(args, ["--source-plan-draft-id", "--sourcePlanDraftId"], ""),
     sourceTaskCardId: firstArgValue(args, ["--source-task-card-id", "--sourceTaskCardId", "--task-card-id", "--taskCardId"], ""),
     sourceEvaluationId: firstArgValue(args, ["--source-evaluation-id", "--sourceEvaluationId", "--evaluation-id", "--evaluationId"], ""),
@@ -159,8 +168,11 @@ function selectorInputFromArgs(args) {
     requiredApprovalKeys: listArg(args, ["--required-approval-key", "--requiredApprovalKey"], ["--required-approval-keys", "--requiredApprovalKeys"]),
     writeCollectionRun: hasFlag(args, "--write-collection-run") || hasFlag(args, "--writeCollectionRun"),
     writeReleaseEvidenceRecords: hasFlag(args, "--write-release-evidence-records") || hasFlag(args, "--writeReleaseEvidenceRecords"),
+    autoSelectCompletedCycle: hasFlag(args, "--auto-select-completed-cycle") || hasFlag(args, "--autoSelectCompletedCycle"),
     autoSelectLatestCompletedCycle: hasFlag(args, "--auto-select-latest-completed-cycle") || hasFlag(args, "--autoSelectLatestCompletedCycle"),
     autoSelectLatestReadyCollectionRun: hasFlag(args, "--auto-select-latest-ready-collection-run") || hasFlag(args, "--autoSelectLatestReadyCollectionRun"),
+    acceptProposal: hasFlag(args, "--accept-proposal") || hasFlag(args, "--acceptProposal") ? true : hasFlag(args, "--no-accept-proposal") || hasFlag(args, "--noAcceptProposal") ? false : undefined,
+    createDigest: hasFlag(args, "--create-digest") || hasFlag(args, "--createDigest") ? true : hasFlag(args, "--no-create-digest") || hasFlag(args, "--noCreateDigest") ? false : undefined,
     prepareReviewPacket: hasFlag(args, "--prepare-review-packet") || hasFlag(args, "--prepareReviewPacket") ? true : hasFlag(args, "--no-prepare-review-packet") || hasFlag(args, "--noPrepareReviewPacket") ? false : undefined,
     reviewDigest: hasFlag(args, "--review-digest") || hasFlag(args, "--reviewDigest") ? true : hasFlag(args, "--no-review-digest") || hasFlag(args, "--noReviewDigest") ? false : undefined,
     ensureFailurePolicy: hasFlag(args, "--ensure-failure-policy") || hasFlag(args, "--ensureFailurePolicy") ? true : hasFlag(args, "--no-ensure-failure-policy") || hasFlag(args, "--noEnsureFailurePolicy") ? false : undefined,
@@ -223,6 +235,7 @@ function compactSelectorForQuery(selector = {}) {
     targetNodeIds: selector.targetNodeIds?.length ? selector.targetNodeIds.join(",") : "",
     sourceTargetNodeIds: selector.sourceTargetNodeIds?.length ? selector.sourceTargetNodeIds.join(",") : "",
     selectedCandidateIds: selector.selectedCandidateIds?.length ? selector.selectedCandidateIds.join(",") : "",
+    allowedCardRoles: selector.allowedCardRoles?.length ? selector.allowedCardRoles.join(",") : "",
     sourcePlanDraftId: selector.sourcePlanDraftId,
     sourceTaskCardId: selector.sourceTaskCardId,
     sourceEvaluationId: selector.sourceEvaluationId,
@@ -259,6 +272,7 @@ function compactSelectorForBody(selector = {}) {
     target_node_ids: selector.targetNodeIds?.length ? selector.targetNodeIds : undefined,
     source_target_node_ids: selector.sourceTargetNodeIds?.length ? selector.sourceTargetNodeIds : undefined,
     selected_candidate_ids: selector.selectedCandidateIds?.length ? selector.selectedCandidateIds : undefined,
+    allowed_card_roles: selector.allowedCardRoles?.length ? selector.allowedCardRoles : undefined,
     source_plan_draft_id: selector.sourcePlanDraftId,
     source_task_card_id: selector.sourceTaskCardId,
     source_evaluation_id: selector.sourceEvaluationId,
@@ -282,8 +296,11 @@ function compactSelectorForBody(selector = {}) {
     required_approval_keys: selector.requiredApprovalKeys?.length ? selector.requiredApprovalKeys : undefined,
     write_collection_run: selector.writeCollectionRun === true ? true : undefined,
     write_release_evidence_records: selector.writeReleaseEvidenceRecords === true ? true : undefined,
+    auto_select_completed_cycle: selector.autoSelectCompletedCycle === true ? true : undefined,
     auto_select_latest_completed_cycle: selector.autoSelectLatestCompletedCycle === true ? true : undefined,
     auto_select_latest_ready_collection_run: selector.autoSelectLatestReadyCollectionRun === true ? true : undefined,
+    accept_proposal: selector.acceptProposal,
+    create_digest: selector.createDigest,
     prepare_review_packet: selector.prepareReviewPacket,
     review_digest: selector.reviewDigest,
     ensure_failure_policy: selector.ensureFailurePolicy,
@@ -304,6 +321,7 @@ function operationSpec(operation, selector = {}) {
   if (operation === "daily-loop-draft") return { method: "POST", path: "/api/v1/growth/daily-loop/draft", projection: "daily-loop", dailyLoopOperation: "draft" };
   if (operation === "daily-loop-advance") return { method: "POST", path: "/api/v1/growth/daily-loop/advance", projection: "daily-loop", dailyLoopOperation: "advance" };
   if (operation === "daily-loop-publish") return { method: "POST", path: "/api/v1/growth/daily-loop/publish", projection: "daily-loop", dailyLoopOperation: "publish" };
+  if (operation === "cycle-closure") return { method: "POST", path: "/api/v1/growth/automation/cycle-closures/prepare", projection: "cycle-closure" };
   if (operation === "review-advancement") return { method: "POST", path: "/api/v1/growth/automation/review-advancements/advance", projection: "review-advancement" };
   if (operation === "action-handoff-list") return { method: "GET", path: "/api/v1/growth/automation/action-handoffs", projection: "action-handoff", actionHandoffOperation: "list" };
   if (operation === "action-handoff-create") return { method: "POST", path: "/api/v1/growth/automation/action-handoffs", projection: "action-handoff", actionHandoffOperation: "create" };
@@ -370,6 +388,7 @@ async function fetchJson(url, options = {}, fetchImpl = globalThis.fetch) {
 function projectOperationResult(body = {}, input = {}, spec = {}) {
   if (spec.projection === "planner-readiness") return projectPlannerReadinessSmokeReadback(body, input.selector);
   if (spec.projection === "daily-loop") return projectDailyLoopSmokeReadback(Object.assign({ operation: spec.dailyLoopOperation }, body));
+  if (spec.projection === "cycle-closure") return projectAutomationCycleClosureSmokeReadback(body, "prepare", input.selector, input.allowWrite);
   if (spec.projection === "review-advancement") return projectAutomationReviewAdvancementSmokeReadback(body, "advance", input.selector, input.allowWrite);
   if (spec.projection === "action-handoff") {
     return projectAutomationActionHandoffSmokeReadback(
