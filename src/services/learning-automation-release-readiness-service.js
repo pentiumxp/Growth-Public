@@ -76,6 +76,7 @@ function hasOwn(object, key) {
 function mergeEvidenceBags(input = {}, persisted = {}) {
   const merged = Object.assign({}, persisted);
   Object.entries(evidenceBag(input) || {}).forEach(([key, value]) => {
+    if (value === false && hasOwn(merged, key)) return;
     if (value !== undefined) merged[key] = value;
   });
   Object.entries(input || {}).forEach(([key, value]) => {

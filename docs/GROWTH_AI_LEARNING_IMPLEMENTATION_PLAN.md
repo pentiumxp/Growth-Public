@@ -768,7 +768,11 @@ Implemented backend shape:
   keys and projects active pass records back into release-readiness input before
   one-off CLI/query evidence is evaluated. Pass UI evidence records must be
   revalidated through `learning-automation-ui-evidence-service` before
-  persistence, including records proposed by release evidence collection;
+  persistence, including records proposed by release evidence collection. An
+  absent or false inline evidence flag from an HTTP query/body must not mask a
+  matching persisted pass release-evidence record in the same scope; persisted
+  pass records remain the durable evidence source unless a caller supplies a
+  newer explicit evidence object for the same key;
 - `learning-automation-platform-action-evidence-service` reads only Growth
   event-outbox delivered `growth.automation.action_required` receipts and
   emits summary-only `growth.learningAutomationPlatformActionEvidence.v1`
