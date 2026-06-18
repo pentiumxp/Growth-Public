@@ -61,6 +61,16 @@ readback gate set.
   top around `2069`, profile feedback top around `3384`, and release workbench
   top around `12229`. Static asset query version is
   `20260618-profile-feedback-action-ui-v2`.
+- 2026-06-18 Owner generation management readability package: the embedded
+  Owner `生成` tab now demotes long secondary readbacks into default-collapsed
+  disclosures under `data-card-generation-secondary-readbacks`. The groups are
+  `画像与证据`, `闭环与自动化`, and `发布与审计`; the right-side structured input
+  and validation audit are also collapsed under
+  `data-card-generation-disclosure="structured-preview"`. The primary
+  `生成操作` panel remains before those secondary readbacks, so Owner can
+  generate/plan/publish before opening audit, automation, scheduler, or release
+  details. Static asset query version is
+  `20260618-generation-workbench-readable-v1`.
 - 2026-06-18 local central visual status: the current dev package was rechecked
   through the Home AI central iOS PWA visual toolchain using a local Growth
   dev server on `127.0.0.1:14881` and Home AI dev on `18797` with the Growth

@@ -39,6 +39,10 @@ test("Owner settings and generation tabs remain scrollable on mobile iframes", (
   assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?-webkit-overflow-scrolling: touch;/);
   assert.match(css, /\.growth-shell \.learning-growth-settings-tabs \.learning-growth-tab-panel\.active\s*\{[\s\S]*?touch-action: pan-y;/);
   assert.match(css, /\.learning-card-generation-manager\s*\{[\s\S]*?touch-action: pan-y;/);
+  assert.match(css, /\.learning-card-generation-secondary-readbacks\s*\{[\s\S]*?display: grid;/);
+  assert.match(css, /\.learning-card-generation-disclosure\s*\{[\s\S]*?border-radius: 8px;/);
+  assert.match(css, /\.learning-card-generation-disclosure > summary\s*\{[\s\S]*?grid-template-columns: auto minmax\(0, 1fr\) auto;/);
+  assert.match(css, /\.learning-card-generation-disclosure-body\s*\{[\s\S]*?display: grid;/);
 });
 
 test("Owner card generation progress and dark mode contrast are covered", () => {
@@ -63,6 +67,7 @@ test("Owner card generation progress and dark mode contrast are covered", () => 
   assert.match(css, /:root\[data-theme="dark"\][\s\S]*\.learning-card-generation-lifecycle-row em/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-lifecycle-head em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-lifecycle-row em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-plan-head em,[\s\S]*?:root\[data-theme="dark"\] \.learning-card-generation-plan-row em\s*\{[\s\S]*?background: #245c64;/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-stage-assessment/);
+  assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-disclosure/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-stage-controls/);
   assert.match(css, /\.learning-card-generation-stage-controls\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;/);
   assert.match(css, /:root\[data-theme="dark"\] \.learning-card-generation-actions button\.primary/);

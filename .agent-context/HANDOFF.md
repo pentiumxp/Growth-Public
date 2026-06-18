@@ -9,6 +9,52 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T12:35+0800 - Owner Generation Workbench Readability
+
+- Status: implemented and locally validated; commit/push/deploy follows this
+  handoff entry in the same operator turn.
+- Scope: the embedded Owner `生成` tab no longer renders profile, automation,
+  scheduler, release, and structured-input readbacks as one long permanently
+  expanded vertical page. The primary target/readiness/action workflow remains
+  first; secondary readbacks now live under
+  `data-card-generation-secondary-readbacks`.
+- UI structure:
+  - `画像与证据` groups learner profile, profile feedback, reference chain,
+    Owner audit, cycle drilldown, and Owner audit review.
+  - `闭环与自动化` groups closed-loop next action, operating-loop history,
+    stage assessment, cycle closure, review advancement, proposals, digest,
+    failure policy, action handoff, scheduler execution/run, and worker target.
+  - `发布与审计` groups the release workbench and release evidence/readback
+    panels.
+  - The right-side structured input JSON plus validation audit are collapsed
+    under `data-card-generation-disclosure="structured-preview"`.
+- Boundary: this is a browser layout/readability change only. It does not add a
+  Gateway call, browser-side policy selector, scheduler permission, release
+  approval, card publication shortcut, or learner-state mutation.
+- Static asset query version:
+  `20260618-generation-workbench-readable-v1`.
+- Harness/docs updated:
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-embedded-layout.test.js`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/TEST_MATRIX.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --check public/growth-card-generation-ui.js`;
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-embedded-layout.test.js` -> `39/39` passing;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=236`;
+  - `git diff --check`;
+  - local Growth service static readback on `127.0.0.1:14881` confirmed the new
+    static version and `data-card-generation-secondary-readbacks` /
+    `data-card-generation-disclosure` runtime markers.
+- Visual note: the Browser plugin control tool was not exposed in this session,
+  and this Growth package does not include Playwright. The local verification
+  therefore used service/static/DOM contract readback plus frontend/layout
+  harnesses, not a screenshot artifact.
+
 ## 2026-06-18T11:55+0800 - Owner Generation Profile Feedback And Action UI
 
 - Status: implemented, locally validated, committed, pushed, deployed, and

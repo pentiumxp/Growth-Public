@@ -14225,6 +14225,107 @@ body.task-markdown-preview-open {
   flex: 1 1 96px;
 }
 
+.learning-card-generation-secondary-readbacks {
+  display: grid;
+  gap: 8px;
+}
+
+.learning-card-generation-disclosure {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ui-hairline);
+  border-radius: 8px;
+  background: rgba(255, 255, 252, 0.72);
+}
+
+.learning-card-generation-disclosure > summary {
+  min-width: 0;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.learning-card-generation-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.learning-card-generation-disclosure > summary::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 180ms var(--motion-snap);
+}
+
+.learning-card-generation-disclosure[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.learning-card-generation-disclosure > summary {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.learning-card-generation-disclosure > summary span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.learning-card-generation-disclosure > summary strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 860;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-disclosure > summary small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 740;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-card-generation-disclosure > summary em {
+  justify-self: end;
+  min-width: 54px;
+  padding: 4px 8px;
+  color: var(--ui-accent-ink);
+  background: var(--ui-accent-soft);
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 860;
+  text-align: center;
+}
+
+.learning-card-generation-disclosure-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.learning-card-generation-disclosure-body > .learning-card-generation-profile,
+.learning-card-generation-disclosure-body > .learning-card-generation-profile-feedback,
+.learning-card-generation-disclosure-body > .learning-card-generation-reference-chain,
+.learning-card-generation-disclosure-body > .learning-card-generation-owner-audit,
+.learning-card-generation-disclosure-body > .learning-card-generation-cycle-drilldown,
+.learning-card-generation-disclosure-body > .learning-card-generation-lifecycle,
+.learning-card-generation-disclosure-body > .learning-card-generation-release-workbench {
+  background: var(--ui-card-surface);
+}
+
 .learning-card-generation-profile-feedback {
   gap: 8px;
   padding: 10px;
@@ -15177,6 +15278,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-cycle-drilldown,
 :root[data-theme="dark"] .learning-card-generation-plan-preview,
 :root[data-theme="dark"] .learning-card-generation-stage-assessment,
+:root[data-theme="dark"] .learning-card-generation-disclosure,
 :root[data-theme="dark"] .learning-card-generation-progress {
   border-color: rgba(255, 255, 255, 0.18);
   background: rgba(22, 26, 29, 0.98);
@@ -15218,6 +15320,7 @@ body.task-markdown-preview-open {
 :root[data-theme="dark"] .learning-card-generation-preview-head em,
 :root[data-theme="dark"] .learning-card-generation-preview-meta b,
 :root[data-theme="dark"] .learning-card-generation-flow span em,
+:root[data-theme="dark"] .learning-card-generation-disclosure > summary em,
 :root[data-theme="dark"] .learning-card-generation-progress-head em,
 :root[data-theme="dark"] .learning-card-generation-progress-steps em {
   border: 1px solid rgba(184, 211, 216, 0.22);
@@ -15314,6 +15417,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-cycle-drilldown,
   :root[data-theme="system"] .learning-card-generation-plan-preview,
   :root[data-theme="system"] .learning-card-generation-stage-assessment,
+  :root[data-theme="system"] .learning-card-generation-disclosure,
   :root[data-theme="system"] .learning-card-generation-progress {
     border-color: rgba(255, 255, 255, 0.18);
     background: rgba(22, 26, 29, 0.98);
@@ -15355,6 +15459,7 @@ body.task-markdown-preview-open {
   :root[data-theme="system"] .learning-card-generation-preview-head em,
   :root[data-theme="system"] .learning-card-generation-preview-meta b,
   :root[data-theme="system"] .learning-card-generation-flow span em,
+  :root[data-theme="system"] .learning-card-generation-disclosure > summary em,
   :root[data-theme="system"] .learning-card-generation-progress-head em,
   :root[data-theme="system"] .learning-card-generation-progress-steps em {
     border: 1px solid rgba(184, 211, 216, 0.22);

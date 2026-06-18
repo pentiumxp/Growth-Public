@@ -658,16 +658,24 @@ Desktop layout:
 
 - Top summary bar: selected target, recipe, readiness, last generated result.
 - Left column: target learner list and generation history.
-- Middle column: recipe, graph target, difficulty, evidence requirements, and
-  structured input preview.
-- Right column: generated card preview and validation/audit result.
+- Middle column: recipe, target provisioning, readiness, the primary
+  `生成操作` action panel, and compact learning-loop state.
+- Secondary readbacks under the middle column are grouped into default-collapsed
+  disclosures: `画像与证据`, `闭环与自动化`, and `发布与审计`.
+- Right column: plan/card preview. The structured input JSON and validation
+  audit are also default-collapsed so they remain available for Owner audit
+  without becoming the first reading burden.
 
 Mobile layout:
 
 - Target selector becomes a horizontal compact row.
 - Recipe and readiness appear before the generate button.
-- Generated card preview appears directly below the action area.
-- Generation history is collapsed after the current result.
+- The primary `生成操作` panel appears before profile feedback, automation,
+  scheduler, release, and structured-input readbacks.
+- Generated plan/card preview appears before long audit readbacks.
+- Profile/evidence, automation, release, and structured-input readbacks are
+  default-collapsed. Owner should open one group at a time instead of reading an
+  endless vertical log wall.
 
 Mobile scroll contract:
 
@@ -687,6 +695,11 @@ Mobile scroll contract:
   `-webkit-overflow-scrolling: touch`, and `touch-action: pan-y`.
 - The `生成` tab inherits that active-panel scroll surface so the lower
   controls, including `生成卡片`, remain reachable on mobile viewports.
+- Long audit, automation, scheduler, release, and structured-input panels must
+  live under `data-card-generation-secondary-readbacks` or a sibling
+  `data-card-generation-disclosure`. The main action panel must render before
+  that secondary-readback region, and the structured preview must default to a
+  collapsed disclosure.
 - Release validation for mobile layout must include the central Home AI visual
   toolchain:
 

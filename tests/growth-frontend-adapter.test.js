@@ -3016,6 +3016,13 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-card-generation-advance/);
   assert.match(html, /data-card-generation-draft/);
   assert.match(html, /data-card-generation-publish/);
+  assert.match(html, /data-card-generation-secondary-readbacks/);
+  assert.match(html, /data-card-generation-disclosure="profile"/);
+  assert.match(html, /data-card-generation-disclosure="automation"/);
+  assert.match(html, /data-card-generation-disclosure="release"/);
+  assert.match(html, /data-card-generation-disclosure="structured-preview"/);
+  assert.ok(html.indexOf("data-card-generation-action-panel") < html.indexOf("data-card-generation-secondary-readbacks"));
+  assert.ok(html.indexOf("data-card-generation-secondary-readbacks") < html.indexOf("data-release-workbench-panel"));
   assert.ok(html.indexOf("data-card-generation-action-panel") < html.indexOf("data-profile-feedback-panel"));
   assert.ok(html.indexOf("data-card-generation-action-panel") < html.indexOf("data-release-workbench-panel"));
   assert.match(html, /UK\/HK Curriculum Foundation/);
@@ -5275,7 +5282,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-ios-top-safe-area-v1";
+  const staticVersion = "20260618-generation-workbench-readable-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",

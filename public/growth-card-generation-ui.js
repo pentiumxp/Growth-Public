@@ -4558,6 +4558,81 @@
     </section>`;
   }
 
+  function cardGenerationDisclosure({
+    key = "",
+    title = "",
+    subtitle = "",
+    status = "",
+    body = "",
+    open = false,
+    escapeHtml = defaultEscapeHtml
+  } = {}) {
+    return `<details class="learning-card-generation-disclosure" data-card-generation-disclosure="${escapeHtml(clean(key))}" ${open ? "open" : ""}>
+      <summary>
+        <span>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(subtitle)}</small>
+        </span>
+        <em>${escapeHtml(status)}</em>
+      </summary>
+      <div class="learning-card-generation-disclosure-body">
+        ${body}
+      </div>
+    </details>`;
+  }
+
+  function cardGenerationSecondaryReadbacks(context = {}, state = {}, workspaceId = "", escapeHtml = defaultEscapeHtml) {
+    const profileStatus = clean(state.profileFeedback?.status || context.profileFeedback?.status || "画像");
+    const actionPlanStatus = clean(state.automationClosedLoopActionPlan?.status || context.automationClosedLoopActionPlan?.status || "闭环");
+    const releaseStatus = clean(state.releaseWorkbench?.status || context.releaseWorkbench?.status || "发布");
+    return `<section class="learning-card-generation-secondary-readbacks" data-card-generation-secondary-readbacks>
+      ${cardGenerationDisclosure({
+        key: "profile",
+        title: "画像与证据",
+        subtitle: "能力画像、画像反馈、引用链、周期审计和 Owner 复核。",
+        status: profileFeedbackStatusText(profileStatus),
+        body: [
+          learningProfilePanel(context, state, escapeHtml),
+          profileFeedbackPanel(context, state, escapeHtml),
+          referenceChainPanel(context, state, workspaceId, escapeHtml),
+          ownerAuditPanel(context, state, escapeHtml),
+          cycleDrilldownPanel(context, state, escapeHtml),
+          ownerAuditReviewPanel(context, state, escapeHtml)
+        ].join(""),
+        escapeHtml
+      })}
+      ${cardGenerationDisclosure({
+        key: "automation",
+        title: "闭环与自动化",
+        subtitle: "下一步建议、运行历史、阶段考核、提案、摘要、失败策略、交付和调度。",
+        status: releaseWorkbenchStatusText(actionPlanStatus),
+        body: [
+          automationClosedLoopActionPlanPanel(context, state, escapeHtml),
+          operatingLoopPanel(context, state, escapeHtml),
+          stageAssessmentPanel({ context, state, readiness: context.readiness || {}, plan: context.suggestedPlan || {}, escapeHtml }),
+          automationCycleClosurePanel(context, state, escapeHtml),
+          automationReviewAdvancementPanel(context, state, escapeHtml),
+          automationProposalPanel(context, state, escapeHtml),
+          automationDigestPanel(context, state, escapeHtml),
+          automationFailurePolicyPanel(context, state, escapeHtml),
+          automationActionHandoffPanel(context, state, escapeHtml),
+          automationSchedulerExecutionPanel(context, state, escapeHtml),
+          automationSchedulerRunPanel(context, state, escapeHtml),
+          automationSchedulerWorkerTargetPanel(context, state, escapeHtml)
+        ].join(""),
+        escapeHtml
+      })}
+      ${cardGenerationDisclosure({
+        key: "release",
+        title: "发布与审计",
+        subtitle: "发布工作台、证据记录和 release closure 操作。",
+        status: releaseWorkbenchStatusText(releaseStatus),
+        body: releaseWorkbenchPanel(context, state, escapeHtml),
+        escapeHtml
+      })}
+    </section>`;
+  }
+
   function renderOwnerCardGenerationPanel(options = {}) {
     const escapeHtml = options.escapeHtml || defaultEscapeHtml;
     const state = options.state?.cardGeneration || {};
@@ -4639,25 +4714,7 @@
             escapeHtml
           })}
           ${learningLoopStatePanel(state, context, escapeHtml)}
-          ${learningProfilePanel(context, state, escapeHtml)}
-          ${profileFeedbackPanel(context, state, escapeHtml)}
-          ${automationClosedLoopActionPlanPanel(context, state, escapeHtml)}
-          ${operatingLoopPanel(context, state, escapeHtml)}
-          ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
-          ${ownerAuditPanel(context, state, escapeHtml)}
-          ${cycleDrilldownPanel(context, state, escapeHtml)}
-          ${ownerAuditReviewPanel(context, state, escapeHtml)}
-          ${stageAssessmentPanel({ context, state, readiness, plan, escapeHtml })}
-          ${automationCycleClosurePanel(context, state, escapeHtml)}
-          ${automationReviewAdvancementPanel(context, state, escapeHtml)}
-          ${automationProposalPanel(context, state, escapeHtml)}
-          ${automationDigestPanel(context, state, escapeHtml)}
-          ${automationFailurePolicyPanel(context, state, escapeHtml)}
-          ${automationActionHandoffPanel(context, state, escapeHtml)}
-          ${automationSchedulerExecutionPanel(context, state, escapeHtml)}
-          ${automationSchedulerRunPanel(context, state, escapeHtml)}
-          ${automationSchedulerWorkerTargetPanel(context, state, escapeHtml)}
-          ${releaseWorkbenchPanel(context, state, escapeHtml)}
+          ${cardGenerationSecondaryReadbacks(context, state, options.workspaceId, escapeHtml)}
         </section>
 
         <section class="learning-coin-panel learning-card-generation-preview">
@@ -4667,13 +4724,20 @@
           </div>
           ${dailyLoopPlanPreview({ draftResult, publishResult }, escapeHtml)}
           ${generatedCardPreview(generated, escapeHtml)}
-          <pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
-          <div class="learning-card-generation-audit">
-            <span>teachingFlow contract <em></em></span>
-            <span>graph binding <em></em></span>
-            <span>privacy scan <em></em></span>
-            <span>SQLite transaction <em></em></span>
-          </div>
+          ${cardGenerationDisclosure({
+            key: "structured-preview",
+            title: "结构化输入",
+            subtitle: "给 Owner 审计的摘要，不作为主流程阅读负担。",
+            status: "摘要",
+            body: `<pre class="learning-card-generation-structured">${structuredPreview(context, escapeHtml)}</pre>
+              <div class="learning-card-generation-audit">
+                <span>teachingFlow contract <em></em></span>
+                <span>graph binding <em></em></span>
+                <span>privacy scan <em></em></span>
+                <span>SQLite transaction <em></em></span>
+              </div>`,
+            escapeHtml
+          })}
         </section>
       </div>
     </section>`;
