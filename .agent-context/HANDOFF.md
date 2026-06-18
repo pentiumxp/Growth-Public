@@ -9,10 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T09:15+0800 - Release Readiness Persisted Evidence Deploy
+
+- Status: committed, pushed, deployed, and production-readback verified.
+- Commit: `f436e96 fix: preserve persisted release evidence in readiness`.
+  Pushed to private `Growth` and public `Growth-Public`.
+- Deployment: Home AI macOS plugin deploy succeeded for Growth with production
+  sourceRef `f436e9671e77`; launchd was running, manifest health passed, and
+  Codex auth-profile audit reported `codexIssueCount=0`.
+- Fix: `learning-automation-release-readiness-service.mergeEvidenceBags()`
+  now preserves a persisted pass release-evidence record when request/query
+  input contains only an absent or `false` inline evidence flag for the same
+  key. Only an explicit evidence object should override persisted pass
+  evidence in the same scope.
+- Harness/docs:
+  - `tests/learning-automation-release-readiness-service.test.js` now covers
+    persisted evidence surviving false inline flags.
+  - Updated `docs/GROWTH_AI_LEARNING_IMPLEMENTATION_PLAN.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`, and
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Validation passed:
+  - `node --test tests/learning-automation-release-readiness-service.test.js`
+    passed `16/16`.
+  - `npm run --silent check` passed with `runtimeCount=230`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `npm run --silent test:release-union` passed `279/279`.
+  - `git diff --check` passed.
+- Production readback after deploy:
+  - `production_planner_readiness_evidence` now reads `pass` from persisted
+    record `lgarev_3f1ec573d9821215a3`.
+  - `production_daily_loop_write_smoke_evidence` remains `pass` from persisted
+    record `lgarev_c13074fb18c2eb8f9e`.
+  - Release-readiness is still intentionally `incomplete`
+    (`pass=8`, `missing=39`) because UI/visual/platform/action/scheduler and
+    approval gates remain incomplete.
+- Production learner-loop state:
+  - Generated science card: `ltask_a1a8c375b0931c102b`.
+  - Published plan: `lgplan_67884d9a97bdda5c45`.
+  - Production has no completed learner cycle yet. Cycle history shows the
+    generated card is missing `evaluation_evidence` and
+    `profile_delta_audit`; the older failed draft is missing publication,
+    evaluation, and profile-delta evidence.
+  - Do not create automation proposal/action handoff by fabricating learner
+    submission data. The correct next step is a real Owner/learner cycle:
+    learner submit once, evaluate once, reflect once, then rerun cycle-history
+    and proposal/digest/action-handoff.
+
 ## 2026-06-18T09:25+0800 - Plan Publish Sample Target Provisioning Fix
 
-- Status: implemented locally; focused Harness passed; not yet committed or
-  deployed at the time of this handoff entry.
+- Status: implemented, committed, pushed, and deployed by the follow-up
+  release-readiness deploy entry above.
 - Production Home AI proxy execution boundary was verified with the Home AI
   production status smoke and Growth proxy smoke. Output remained bounded to
   status/route/readback fields and did not expose raw keys or key paths.

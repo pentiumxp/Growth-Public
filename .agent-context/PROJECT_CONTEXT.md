@@ -117,6 +117,24 @@ readback gate set.
   workspace user. Do not record credential locations. Run those gates through
   the production service/proxy or an authorized production collector, not by
   fabricating local fake-Gateway or local delivery evidence.
+- 2026-06-18 production release-readiness persisted-evidence fix is deployed
+  as Growth commit `f436e9671e77`. The fix preserves persisted pass
+  release-evidence records when HTTP/CLI input only carries absent or false
+  inline evidence flags for the same key. Production readback now marks both
+  `production_planner_readiness_evidence` and
+  `production_daily_loop_write_smoke_evidence` as `pass`, backed by persisted
+  records `lgarev_3f1ec573d9821215a3` and
+  `lgarev_c13074fb18c2eb8f9e`. Release-readiness remains advisory and
+  incomplete (`pass=8`, `missing=39`), with no scheduler/runtime permission
+  granted.
+- 2026-06-18 production learner-loop state: the generated science card
+  `ltask_a1a8c375b0931c102b` and published plan
+  `lgplan_67884d9a97bdda5c45` exist in production, but there is no completed
+  learner cycle yet. Cycle history shows that the generated card is still
+  missing `evaluation_evidence` and `profile_delta_audit`. Automation proposal,
+  digest, action handoff, and platform Action Inbox/Web Push evidence must
+  wait for a real Owner/learner cycle (`submit` once, `evaluate` once,
+  `reflect` once); do not fabricate learner submissions to unlock those gates.
 - 2026-06-18 release readiness local audit scope is now `43/47` passing for
   `weixin_stephen/science/daily_plan` after persisting the nine release UI
   evidence records and the three explicit summary-only release approval
@@ -164,9 +182,8 @@ readback gate set.
   `learning-plan-publisher-service`: publish-stage target provisioning must
   inherit the stored draft target `displayName`/`label`, and generation input
   must carry that label plus provisioning-selected graph scope as fallback. The
-  focused Harness is
-  `node --test tests/learning-plan-publisher-service.test.js`. Deploy this fix
-  before rerunning the production daily-loop write gate.
+  fix has since been deployed; the production daily-loop write gate now passes
+  through persisted release evidence.
 - Gateway planner, authoring, and evaluation clients now preserve bounded HTTP
   failure summaries (`gateway_http_error`, status, gateway error code/type)
   from fetch-like Responses objects and prevent blank `error` fields from
