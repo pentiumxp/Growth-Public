@@ -24,6 +24,16 @@
     return value && typeof value === "object" ? value : {};
   }
 
+  function firstBoundedViewportNumber(values = [], max = 4096) {
+    for (const value of values) {
+      if (value === null || value === undefined || value === "") continue;
+      const number = Number(value);
+      if (!Number.isFinite(number)) continue;
+      return boundedViewportNumber(number, max);
+    }
+    return 0;
+  }
+
   function createGrowthAppearance({ params, documentRef } = {}) {
     let lastHostViewport = null;
 
@@ -53,8 +63,20 @@
       const viewport = objectValue(source.viewport);
       const keyboard = objectValue(source.keyboard);
       const iframe = objectValue(source.iframe);
+      const host = objectValue(source.host);
       const footer = objectValue(source.footer);
       const footerSafeArea = footer.safeAreaBottom || footer.bottomSafeArea || footer.hostBottomSafeArea || footer.safeAreaInsetBottom;
+      const hostTopSafeArea = firstBoundedViewportNumber([
+        viewport.hostTopSafeArea,
+        viewport.safeAreaTop,
+        viewport.topSafeArea,
+        host.hostTopSafeArea,
+        host.safeAreaTop,
+        host.topSafeArea,
+        footer.hostTopSafeArea,
+        footer.safeAreaTop,
+        footer.topSafeArea
+      ], 512);
       const iframeHeight = boundedViewportNumber(iframe.height);
       const viewportHeight = boundedViewportNumber(viewport.height);
       const layoutHeight = boundedViewportNumber(viewport.layoutHeight);
@@ -83,6 +105,7 @@
           height: boundedViewportNumber(keyboard.height || keyboard.bottomInset, 1024)
         },
         footer: {
+          safeAreaTop: hostTopSafeArea,
           safeAreaBottom: boundedViewportNumber(footerSafeArea, 512)
         },
         rootHeight
@@ -96,6 +119,7 @@
       setRootStyle("--app-height", `${normalized.rootHeight}px`);
       setRootStyle("--app-viewport-height", `${normalized.rootHeight}px`);
       setRootStyle("--app-viewport-offset-top", `${normalized.viewport.offsetTop}px`);
+      setRootStyle("--growth-host-top-safe-area", `${normalized.footer.safeAreaTop}px`);
       setRootStyle("--host-bottom-safe-area", `${normalized.footer.safeAreaBottom}px`);
       setRootStyle("--growth-host-bottom-safe-area", `${normalized.footer.safeAreaBottom}px`);
       setRootStyle("--growth-keyboard-bottom", `${normalized.keyboard.bottomInset}px`);

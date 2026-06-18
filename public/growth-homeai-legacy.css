@@ -54,8 +54,11 @@
   --app-font-scale: 1;
   --app-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Aptos", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
   --host-bottom-safe-area: 0px;
+  --growth-host-top-safe-area: 0px;
   --growth-host-bottom-safe-area: 0px;
   --growth-keyboard-bottom: 0px;
+  --growth-top-safe-area: max(env(safe-area-inset-top), var(--growth-host-top-safe-area));
+  --growth-shell-top-reserve: var(--growth-top-safe-area);
   --mobile-bottom-safe-area: min(env(safe-area-inset-bottom), 8px);
   --mobile-bottom-nav-content-safe-area: max(0px, min(var(--mobile-bottom-safe-area), 3px));
   --mobile-bottom-nav-height: 58px;
@@ -252,10 +255,12 @@ body {
   height: var(--app-height, var(--app-viewport-height, 100%));
   min-height: 0;
   max-height: var(--app-height, var(--app-viewport-height, none));
+  padding-top: var(--growth-shell-top-reserve);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scroll-padding-top: calc(var(--growth-shell-top-reserve) + 8px);
   touch-action: pan-y;
 }
 

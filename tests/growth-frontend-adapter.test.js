@@ -58,7 +58,7 @@ test("Growth appearance adapter applies Home AI plugin viewport metrics", () => 
     version: 1,
     pluginId: "growth",
     reason: "test",
-    viewport: { width: 390, height: 612, offsetTop: 4, layoutHeight: 640 },
+    viewport: { width: 390, height: 612, offsetTop: 4, layoutHeight: 640, hostTopSafeArea: 52 },
     iframe: { width: 390, height: 512 },
     keyboard: { visible: false, bottomInset: 0 },
     footer: { hostBottomSafeArea: 18 }
@@ -66,6 +66,7 @@ test("Growth appearance adapter applies Home AI plugin viewport metrics", () => 
 
   assert.equal(styles.get("--app-height"), "512px");
   assert.equal(styles.get("--app-viewport-height"), "512px");
+  assert.equal(styles.get("--growth-host-top-safe-area"), "52px");
   assert.equal(styles.get("--host-bottom-safe-area"), "18px");
   assert.equal(styles.get("--growth-host-bottom-safe-area"), "18px");
   assert.equal(styles.get("--growth-keyboard-bottom"), "0px");
@@ -79,10 +80,12 @@ test("Growth appearance adapter applies Home AI plugin viewport metrics", () => 
     viewport: { width: 390, height: 318, layoutHeight: 640 },
     iframe: { width: 390, height: 512 },
     keyboard: { visible: true, bottomInset: 322 },
+    host: { safeAreaTop: 48 },
     footer: { safeAreaBottom: 0 }
   });
 
   assert.equal(styles.get("--app-height"), "318px");
+  assert.equal(styles.get("--growth-host-top-safe-area"), "48px");
   assert.equal(styles.get("--growth-keyboard-bottom"), "322px");
   assert.equal(classes.get("keyboard-open"), true);
 });
@@ -5272,7 +5275,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-profile-feedback-action-ui-v2";
+  const staticVersion = "20260618-ios-top-safe-area-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",

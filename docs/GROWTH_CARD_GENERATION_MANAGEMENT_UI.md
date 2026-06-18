@@ -351,6 +351,12 @@ scheduler, and release workbench readbacks. Long release/workbench panels remain
 available for audit closure, but they are not allowed to obscure the daily card
 generation workflow.
 
+In iOS APP/PWA mode, the Growth iframe must not place page headers, sticky
+tabs, cards, or first actionable controls in the physical status-bar / Dynamic
+Island region. The plugin root must reserve the greater of CSS
+`env(safe-area-inset-top)` and the Home AI `hermes.plugin.viewport`
+`hostTopSafeArea` / `safeAreaTop` metric before rendering scroll content.
+
 The UI must not call Gateway directly, must not generate from a free-form
 prompt, and must not publish a plan item without backend validation. The route
 layer remains HTTP glue; selection, validation, role mapping, authoring, and
@@ -672,6 +678,10 @@ Mobile scroll contract:
   `--app-height` / `--app-viewport-height` before relying on internal scroll
   panels. The iframe height is the root sizing source; raw `100vh` /
   `100dvh` is not sufficient inside the embedded shell.
+- Growth must also consume the host top safe-area metric and expose it as
+  `--growth-host-top-safe-area`; `.growth-shell` reserves
+  `--growth-shell-top-reserve` so the first page header and sticky controls do
+  not render under the iOS APP status-bar / Dynamic Island region.
 - The settings shell must use a fixed-height internal grid and the active tab
   panel must own vertical scrolling with `overflow-y: auto`,
   `-webkit-overflow-scrolling: touch`, and `touch-action: pan-y`.
