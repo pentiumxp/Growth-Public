@@ -172,6 +172,26 @@ test("learning graph dry-run validates recovered Fan Fan graph hash and counts",
   assert.equal(result.validation.prerequisite_cycles, 0);
 });
 
+test("learning graph dry-run validates Fanfan computing and AI literacy pack hash and counts", () => {
+  const sourcePath = path.join(__dirname, "..", "knowledge-graph", "fanfan-computing-ai-literacy-v1.json");
+  const result = dryRunLearningGraphImport({
+    sourcePath,
+    expectedSha256: "c30acd8ddbf4610f3a7b7b723b003687619596b75f1108eb45518962f0ba5db9"
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.schema_version, "hermes.learningGraphSeed.v0.1");
+  assert.equal(result.import_id, "kg_import_20260619_fanfan_computing_ai_literacy_v1");
+  assert.equal(result.source_documents, 19);
+  assert.equal(result.domain_packs, 1);
+  assert.equal(result.nodes, 83);
+  assert.equal(result.edges, 140);
+  assert.equal(result.prerequisite_edges, 58);
+  assert.equal(result.validation.missing_edge_endpoints, 0);
+  assert.equal(result.validation.prerequisite_cycles, 0);
+  assert.equal(result.validation.unsafe_raw_content_keys, 0);
+  assert.equal(result.validation.absolute_source_document_paths, 0);
+});
+
 test("learning graph dry-run detects source hash mismatch", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "learning-graph-import-"));
   const sourcePath = path.join(dir, "pack.json");

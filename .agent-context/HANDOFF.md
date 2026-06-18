@@ -5,6 +5,70 @@ Last compacted: 2026-06-18T09:26:52.492Z
 This active handoff was automatically compacted before a Codex Mobile continuation.
 The previous full handoff was archived and should be opened only when old provenance is explicitly needed.
 
+## 2026-06-19T00:00+0800 - Fanfan Computing And AI Literacy KG Pack
+
+- Status: source pack generated and imported into the local Mac development
+  SQLite database. No production deploy, release approval, scheduler
+  permission, Gateway call, or learner-state mutation was performed.
+- Added `docs/GROWTH_COMPUTING_AI_LITERACY_KG_PLAN.md`.
+- Updated `docs/GROWTH_DOCS_INDEX.md` and
+  `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` to point to the new plan.
+- Added generator
+  `scripts/build-fanfan-computing-ai-literacy-graph-pack.js`.
+- Added source pack
+  `knowledge-graph/fanfan-computing-ai-literacy-v1.json`.
+- Added dry-run hash/count regression coverage in
+  `tests/learning-graph-import-service.test.js`.
+- Planning decision:
+  - create a separate breadth-first domain pack,
+    `domain_pack_fanfan_computing_ai_literacy_v1`;
+  - do not extend the Cambridge pathway pack and do not make Python->C++ the
+    primary route;
+  - keep Python as the practical tool layer while centering problem definition,
+    AI coding workflow, computing breadth, data/web/API literacy,
+    systems/security context, AI literacy, product thinking, history, and
+    ethics.
+- Proposed import identity:
+  `kg_import_20260619_fanfan_computing_ai_literacy_v1`,
+  `version=2026-06-19-v1`, `domain=computing_ai_literacy`.
+- Source pack validation:
+  - sha256:
+    `c30acd8ddbf4610f3a7b7b723b003687619596b75f1108eb45518962f0ba5db9`;
+  - source documents: `19`;
+  - domain packs: `1`;
+  - nodes: `83`;
+  - edges: `140`;
+  - prerequisite edges: `58`;
+  - validation clean: duplicate node ids `0`, duplicate edge ids `0`,
+    missing endpoints `0`, prerequisite cycles `0`, rejected records `0`,
+    unsafe raw-content keys `0`, absolute source paths `0`.
+- Local development DB readback:
+  - target: `data/growth-learning.sqlite3`;
+  - backup:
+    `data/backups/growth-learning-before-graph-import-20260618T224501Z.sqlite3`;
+  - post-import totals: imports `2`, domain packs `2`, graph nodes `377`,
+    graph edges `469`.
+- Source strategy recorded:
+  K-12 CS Framework, CSTA, Teach Computing KS3, Raspberry Pi curriculum,
+  AI4K12, UNESCO AI competency for students, CS2023, Computer History Museum,
+  Stanford Encyclopedia of Philosophy AI entry, Python official tutorial, and
+  OpenAI Codex docs, plus MDN Learn, Pro Git, and Pygame docs.
+- Local learner placement summary recorded from the Fanfan Python archive:
+  Fanfan is beyond beginner syntax and has project evidence around games, OOP,
+  Git/GitHub, APIs, HTML/CSS/JS, scraping, CSV, exceptions, and session/history
+  persistence. The main new gap is structured AI-coding workflow rather than
+  "wish-making" prompts.
+- Privacy boundary:
+  use only bounded summary evidence; do not copy raw chat logs, answer keys,
+  full submissions, raw prompts, raw model output, private payloads, token-like
+  values, local attachment bodies, or copyrighted source bodies into graph
+  records.
+- Remaining work:
+  - production import is still pending and must use explicit target database
+    selection plus backup;
+  - visible target provisioning for Fanfan's new domain pack is pending;
+  - first computing/AI literacy card recipes or target selections are pending.
+
 ## Compaction Summary
 
 - Workspace: `/Users/hermes-dev/HermesMobileDev/plugins/growth`

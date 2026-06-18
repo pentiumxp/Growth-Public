@@ -1,6 +1,6 @@
 # Growth Documentation Index
 
-Last updated: 2026-06-18.
+Last updated: 2026-06-19.
 
 ## Rule
 
@@ -39,6 +39,7 @@ they become Growth-owned.
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` | Runtime enablement audit/readback boundary. Defines the summary-only record layer after release activation, current config readback semantics, routes, CLI, statuses, and harness gates without mutating runtime config or granting scheduler permission. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` | Owner release-controls readback boundary. Defines the single summary-only status surface over readiness, review, closure, activation, and runtime enablement, plus route, CLI, status semantics, forbidden boundaries, and harness gates without writing state or enabling scheduling. |
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
+| `docs/GROWTH_COMPUTING_AI_LITERACY_KG_PLAN.md` | Source-pack and local-development import record for Fanfan's breadth-first computing and AI literacy domain pack, including source strategy, domain-pack identity, strand map, evidence types, stage checkpoints, source hash, validation, and remaining production/target-provisioning steps. |
 | `docs/GROWTH_CARD_GENERATION_RULES.md` | Consolidated card generation and evaluation rules for new Growth card authoring and one-shot grading. |
 | `docs/GROWTH_AI_CARD_LOOP.md` | Growth-owned AI loop for learner profile, next-card strategy, card generation, Gateway evaluation evidence, trajectory, and profile update. |
 | `docs/GROWTH_REFERENCE_CONTRACT.md` | Growth V1-minimal summary-only Reference / Memory Graph plugin-side contract, object types, API, MCP tools, service ownership, privacy boundary, and Harness. |
@@ -106,13 +107,15 @@ For the AI-driven learning scheme, use this reading order before implementation:
 17. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
    runtime layers, architecture backlog, and route/service/repository
    ownership rules.
-18. `docs/GROWTH_REFERENCE_CONTRACT.md` before changing Growth plugin-side
+18. `docs/GROWTH_COMPUTING_AI_LITERACY_KG_PLAN.md` before creating or
+   importing the Fanfan computing and AI literacy domain pack.
+19. `docs/GROWTH_REFERENCE_CONTRACT.md` before changing Growth plugin-side
    stable object references, reference MCP tools, or summary-only reference
    projections.
-19. `docs/TEST_MATRIX.md` and
+20. `docs/TEST_MATRIX.md` and
    `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` for focused
    Harness selection and H1/H2/H3 validation obligations.
-20. UI-specific work then reads
+21. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 

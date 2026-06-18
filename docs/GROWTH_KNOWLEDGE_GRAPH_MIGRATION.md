@@ -27,7 +27,10 @@ As of the 2026-06-11 import, the Growth plugin production SQLite database owns
 the native graph import/source tables for the recovered Fan Fan seed pack. As
 of 2026-06-18, the current Mac dev runtime SQLite database has also re-imported
 the same recovered seed pack and can use it for Fanfan science target
-provisioning and release-readiness evidence.
+provisioning and release-readiness evidence. As of 2026-06-19, the Mac dev
+runtime SQLite database also contains the local-development import of
+`domain_pack_fanfan_computing_ai_literacy_v1`; this is not a production
+deployment or release approval.
 
 The currently migrated Growth plugin runtime is focused on:
 
@@ -56,6 +59,37 @@ Gateway through the Growth authoring boundary, and transactionally writes a
 generated `learning_task_cards` row plus `learning_card_graph_bindings`.
 Existing compatibility card projections can still render safely, but new
 model-generated Growth cards should use the graph-plus-history generator.
+
+## Computing And AI Literacy Pack
+
+The Growth computing and AI literacy domain pack is documented in
+`docs/GROWTH_COMPUTING_AI_LITERACY_KG_PLAN.md`.
+
+It was created as a separate breadth-first computing and AI literacy pack for
+Fanfan, not as a Python-only track and not as a direct extension of the
+Cambridge pathway pack. The identity is:
+
+- `domainPackId`: `domain_pack_fanfan_computing_ai_literacy_v1`
+- `importId`: `kg_import_20260619_fanfan_computing_ai_literacy_v1`
+- `domain`: `computing_ai_literacy`
+- `version`: `2026-06-19-v1`
+- source: `knowledge-graph/fanfan-computing-ai-literacy-v1.json`
+- source sha256:
+  `c30acd8ddbf4610f3a7b7b723b003687619596b75f1108eb45518962f0ba5db9`
+- local-development import status: `validated_seed`
+- source documents: `19`
+- nodes: `83`
+- edges: `140`
+- prerequisite edges: `58`
+
+The pack uses Python as the practical tool layer while centering problem
+definition, AI coding workflow, computing breadth, data/web/API literacy,
+systems/security context, AI literacy, product thinking, history, and ethics.
+It remains summary-only and does not store raw Codex prompts, raw model output,
+raw learner answers, answer keys, private local files, credentials, or
+copyrighted source bodies. Local dry-run and readback validation reported no
+missing edge endpoints, prerequisite cycles, rejected records, unsafe
+raw-content keys, or absolute source-document paths.
 
 ## Known Pilot Projection
 

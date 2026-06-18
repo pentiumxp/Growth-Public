@@ -1,0 +1,4966 @@
+{
+  "schemaVersion": "hermes.learningGraphSeed.v0.1",
+  "importId": "kg_import_20260619_fanfan_computing_ai_literacy_v1",
+  "version": "2026-06-19-v1",
+  "privacyClass": "summary_only",
+  "sourceDocuments": [
+    {
+      "sourceRef": "local:fanfan_python_archive_summary_20260619",
+      "title": "Fanfan Python archive bounded placement summary",
+      "localPath": "",
+      "officialUrl": ""
+    },
+    {
+      "sourceRef": "k12cs:framework",
+      "title": "K-12 Computer Science Framework",
+      "localPath": "",
+      "officialUrl": "https://k12cs.org/"
+    },
+    {
+      "sourceRef": "k12cs:framework-concepts",
+      "title": "K-12 Computer Science Framework statements by concept",
+      "localPath": "",
+      "officialUrl": "https://k12cs.org/framework-statements-by-concept/"
+    },
+    {
+      "sourceRef": "csta:k12_standards",
+      "title": "CSTA K-12 Computer Science Standards",
+      "localPath": "",
+      "officialUrl": "https://csteachers.org/k12standards/"
+    },
+    {
+      "sourceRef": "teachcomputing:ks3",
+      "title": "Teach Computing Key Stage 3 curriculum",
+      "localPath": "",
+      "officialUrl": "https://teachcomputing.org/curriculum/key-stage-3"
+    },
+    {
+      "sourceRef": "raspberrypi:computing_curriculum",
+      "title": "Raspberry Pi Foundation Computing Curriculum",
+      "localPath": "",
+      "officialUrl": "https://www.raspberrypi.org/curriculum"
+    },
+    {
+      "sourceRef": "ai4k12:guidelines",
+      "title": "AI4K12 K-12 AI Guidelines",
+      "localPath": "",
+      "officialUrl": "https://ai4k12.org/"
+    },
+    {
+      "sourceRef": "ai4k12:gradeband_progressions",
+      "title": "AI4K12 grade-band progression charts",
+      "localPath": "",
+      "officialUrl": "https://ai4k12.org/gradeband-progression-charts/"
+    },
+    {
+      "sourceRef": "unesco:ai_competency_students_2024",
+      "title": "UNESCO AI competency framework for students",
+      "localPath": "",
+      "officialUrl": "https://unesdoc.unesco.org/ark%3A/48223/pf0000391105/PDF/391105eng.pdf.multi"
+    },
+    {
+      "sourceRef": "cs2023:knowledge_areas",
+      "title": "ACM/IEEE-CS/AAAI CS2023 knowledge areas",
+      "localPath": "",
+      "officialUrl": "https://csed.acm.org/knowledge-areas/"
+    },
+    {
+      "sourceRef": "chm:timeline",
+      "title": "Computer History Museum timeline",
+      "localPath": "",
+      "officialUrl": "https://www.computerhistory.org/timeline/"
+    },
+    {
+      "sourceRef": "sep:artificial_intelligence",
+      "title": "Stanford Encyclopedia of Philosophy: Artificial Intelligence",
+      "localPath": "",
+      "officialUrl": "https://plato.stanford.edu/entries/artificial-intelligence/"
+    },
+    {
+      "sourceRef": "python:official_tutorial",
+      "title": "Python official tutorial",
+      "localPath": "",
+      "officialUrl": "https://docs.python.org/3/tutorial/index.html"
+    },
+    {
+      "sourceRef": "mdn:learn_web_development",
+      "title": "MDN Learn web development",
+      "localPath": "",
+      "officialUrl": "https://developer.mozilla.org/en-US/docs/Learn_web_development"
+    },
+    {
+      "sourceRef": "git:pro_git",
+      "title": "Pro Git book",
+      "localPath": "",
+      "officialUrl": "https://git-scm.com/book/en/v2"
+    },
+    {
+      "sourceRef": "pygame:docs",
+      "title": "Pygame documentation",
+      "localPath": "",
+      "officialUrl": "https://www.pygame.org/docs/"
+    },
+    {
+      "sourceRef": "openai:codex_best_practices",
+      "title": "OpenAI Codex best practices",
+      "localPath": "",
+      "officialUrl": "https://developers.openai.com/codex/learn/best-practices"
+    },
+    {
+      "sourceRef": "openai:codex_agents_md",
+      "title": "OpenAI Codex AGENTS.md guide",
+      "localPath": "",
+      "officialUrl": "https://developers.openai.com/codex/guides/agents-md"
+    },
+    {
+      "sourceRef": "openai:codex_workflows",
+      "title": "OpenAI Codex workflows",
+      "localPath": "",
+      "officialUrl": "https://developers.openai.com/codex/workflows"
+    }
+  ],
+  "domainPacks": [
+    {
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "title": "Fanfan Computing and AI Literacy Breadth Path",
+      "sourceKind": "curated_multi_source_seed",
+      "version": "2026-06-19-v1",
+      "ownerWorkspaceId": "owner",
+      "visibility": "private_seed",
+      "importStatus": "validated_seed"
+    }
+  ],
+  "nodes": [
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use computing and AI as broad problem-solving tools rather than a narrow programming-language track."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "pathway",
+      "stage": "middle_school_breadth",
+      "subject": "cross_strand",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Fanfan computing and AI literacy breadth path",
+      "sourceKind": "local_summary_seed",
+      "sourceRef": "local:fanfan_python_archive_summary_20260619",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in python as a practical tool through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_python_practical_tool",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Python as a practical tool",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain where Python code runs and which file or prompt is active."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary",
+        "project_demo_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_tooling",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Python interpreter, scripts, REPL, project files, and run context",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use control flow to describe a small system or game rule."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_values_control",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Values, variables, types, conditions, loops, and simple state",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Split a repeated behavior into a named function with inputs and output."
+      ],
+      "evidenceRequired": [
+        "code_diff_summary",
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_functions_boundaries",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Function parameters, return values, and responsibility boundaries",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Choose a list or dictionary shape for repeated records."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_collections_records",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Lists, dictionaries, nested records, and structured data",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Model a game entity as object state plus behavior."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "code_diff_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_oop_game_entities",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Classes, objects, attributes, methods, and game entities",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Save structured output and verify it can be read back."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_files_csv_json",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Files, CSV, JSON, encodings, and persistent output",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use a symptom and traceback to isolate one likely fix."
+      ],
+      "evidenceRequired": [
+        "debug_trace_summary",
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_exceptions_debugging",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Exceptions, tracebacks, defensive checks, and debugging",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe request/response flow without exposing credentials."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_api_requests",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Requests, responses, HTTP status, JSON API results, and safe token concepts",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Extract fields from repeated page containers without cross-record mismatch."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_html_parsing",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "HTML tree structure, selectors, field extraction, and container-first parsing",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Persist game or tool state so a later run can resume meaningfully."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_python_session_persistence",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "python_practical_tool",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Session, history records, local state, and resume behavior",
+      "sourceKind": "official_language_docs",
+      "sourceRef": "python:official_tutorial",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in computational thinking through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_computational_thinking",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Computational thinking",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "State the user, problem, constraint, and desired result."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_problem_framing",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Turn a vague wish into a concrete computing problem",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Break one feature or bug into inspect, change, and verify steps."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_decomposition",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Split a long task into smaller ordered steps",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Name the important state and ignore irrelevant details."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary",
+        "project_demo_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_abstraction_models",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Choose a useful model for a real-world or game system",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Recognize common algorithm patterns inside a project."
+      ],
+      "evidenceRequired": [
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_algorithm_patterns",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Search, sort, count, filter, match, and simulate",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain how one idea changes representation across code and files."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_data_representation",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Numbers, text, images, tables, files, and encodings",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Trace what changes after one user or timer event."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_state_and_events",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "State transitions, event loops, and user actions",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Define expected behavior before claiming a fix is done."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_testing_debugging",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Test cases, expected output, reproduction, and fix verification",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain one design tradeoff in an age-appropriate project."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary",
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_tradeoffs",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computational_thinking",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Tradeoffs among correctness, simplicity, speed, maintainability, and safety",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in software engineering with ai coding through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Software engineering with AI coding",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Prepare enough context for Codex to inspect the right code."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure",
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_context",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Provide files, goal, constraints, and current state before asking AI for help",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Turn a feature wish into a clear build request."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_requirements",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Express user story, scope, non-goals, and acceptance criteria",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use a checklist or plan to keep a task from becoming vague."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure",
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_task_breakdown",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Ask for a plan, split work, and track completion",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Point to likely files and explain why they matter."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary",
+        "code_diff_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_repo_awareness",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Understand file structure, existing patterns, and ownership",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use Git vocabulary to describe what changed and how to recover."
+      ],
+      "evidenceRequired": [
+        "code_diff_summary",
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_git_workflow",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Branch, diff, commit, push, and rollback concepts",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Match a change to concrete verification evidence."
+      ],
+      "evidenceRequired": [
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_test_validation",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Run or design checks before claiming done",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Spot whether an AI patch touched unrelated files."
+      ],
+      "evidenceRequired": [
+        "code_diff_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_diff_review",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Read a diff and identify unintended changes",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe a debug loop with evidence before and after."
+      ],
+      "evidenceRequired": [
+        "debug_trace_summary",
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_debug_loop",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Reproduce, hypothesize, inspect logs, patch, and retest",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Leave a future reader enough context to run or review the project."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_docs_handoff",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Write short README, usage notes, and handoff evidence",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Identify what AI did, what the learner changed, and what the learner can explain."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_coding_responsibility",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "software_engineering_ai_coding",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Separate AI suggestion from learner understanding and final responsibility",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_best_practices",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in web, data, and apis through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_web_data_apis",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Web, data, and APIs",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use HTML structure to find or create meaningful content."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_html_dom",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "HTML elements, attributes, nesting, IDs/classes, links, and images",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain the difference between structure, style, and behavior."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_css_js",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "CSS styling, JavaScript interaction, and page behavior",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Trace a simple web request from URL to response."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_http_urls",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "URL parts, GET/POST, status codes, headers, and request/response flow",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use an API result without exposing credentials."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_api_contracts",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "API inputs, outputs, schemas, rate limits, and authentication concepts",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Handle missing or messy fields without crashing."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_data_cleaning",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Missing fields, text cleanup, type conversion, and validation",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Write table output and verify rows and headers."
+      ],
+      "evidenceRequired": [
+        "test_result_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_data_tables_csv",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Rows, columns, headers, CSV writer, encoding, and spreadsheet readback",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain each step of a small data pipeline."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_data_pipeline",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Collect, parse, transform, save, and verify",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain why data may not be present in initial HTML."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_dynamic_pages",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Dynamic loading, browser automation concepts, and scraping limits",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Identify whether a data collection task is appropriate."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_web_ethics",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "web_data_apis",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Allowed use, source terms awareness, copyright, and privacy boundaries",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in computing systems through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_computing_systems",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Computing systems",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Relate program behavior to basic hardware roles."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_hardware",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "CPU, memory, storage, input/output, and sensors",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Fix or explain a path/permission/run-location problem."
+      ],
+      "evidenceRequired": [
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_os_files",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Operating system, process, file path, working directory, and permissions",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain why an import or package version matters."
+      ],
+      "evidenceRequired": [
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_runtime_packages",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Interpreter, library, package, virtual environment, and version",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe why a network request may fail."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary",
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_networks",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "IP, DNS, client/server, latency, and failure",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Distinguish local code from deployed services."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_cloud",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Local machine versus server, hosting, logs, and deployment concept",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe why persistent data needs a structured store."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_databases",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Table, row, key, query, and persistence",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Avoid exposing secrets and explain permission boundaries."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_security",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Passwords, tokens, permissions, phishing, and least privilege",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe one recovery or reproducibility step."
+      ],
+      "evidenceRequired": [
+        "debug_trace_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_system_reliability",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "computing_systems",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Backups, error recovery, monitoring, and reproducibility",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "k12cs:framework-concepts",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in ai literacy through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_ai_literacy",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "AI literacy",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Place a tool in a broad AI history timeline."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai_history",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Symbolic AI, neural networks, machine learning, deep learning, and generative AI milestones",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain how text, image, audio, or sensor input enters a system."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai4k12_perception",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "How computers sense or receive inputs",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Describe a representation that helps a system reason."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai4k12_representation_reasoning",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Representations, rules, search, and reasoning",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Distinguish training from using a trained model."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai4k12_learning",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Data, training, inference, examples, and feedback",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain why AI conversation still needs context."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai4k12_natural_interaction",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Language, images, multimodal input, and conversational tools",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Name one possible benefit and one possible harm of an AI system."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_ai4k12_societal_impact",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Bias, privacy, jobs, safety, and responsibility",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain why a vague prompt can produce a bad coding answer."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_llm_context_tokens",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Context, prompt, token budget, memory, and why missing context causes bad answers",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Check an AI claim with a source or test."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_llm_evaluation",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Hallucination, checking sources, tests, and evidence",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain why the learner remains responsible for an AI-assisted result."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_human_in_loop",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "ai_literacy",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Human goal-setting, review, judgment, and accountability",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "ai4k12:guidelines",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in product and problem solving through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_product_problem_solving",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Product and problem solving",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Find a real problem before choosing a tool."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_problem_discovery",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Observe a user pain or opportunity",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Name who benefits and who may be affected."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_users_stakeholders",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Identify user, Owner, learner, and affected people",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Write a small requirement list with non-goals."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_requirements",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Must-have, nice-to-have, constraints, and non-goals",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build a small version that can be tried."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_prototype",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Make the smallest useful version",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Classify feedback and choose a follow-up."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_feedback",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Collect feedback, identify bug versus feature, and decide next action",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Name a simple success check for a project."
+      ],
+      "evidenceRequired": [
+        "test_result_summary",
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_metrics",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Define success with simple measurable evidence",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain a project clearly to another person."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_explanation",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Demo, describe design choices, and answer questions",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Use computing to support another learning or life domain."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_product_cross_domain",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "product_problem_solving",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Connect computing with science, writing, health, finance, games, or daily life",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Build breadth in history, society, and ethics through age-appropriate projects and explanations."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_strand_history_society_ethics",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "strand",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "History, society, and ethics",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Place one computing invention in a historical sequence."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_history_timeline",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "From calculation tools to modern computers",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain one shift in how people use computing."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_history_internet_web",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Internet, web, search, mobile, cloud, and platforms",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Connect a game project to broader digital media history."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_history_games_media",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Games, graphics, interaction, and digital creativity",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain when reuse needs attribution or license review."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_society_open_source",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Open source, community, licenses, and reuse",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Identify personal data and how to protect it."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_society_privacy_data_rights",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Personal data, consent, retention, and data ownership",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Improve or evaluate a project for another kind of user."
+      ],
+      "evidenceRequired": [
+        "design_note_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_society_accessibility",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Design for different users and abilities",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Avoid copying assets or code without attribution."
+      ],
+      "evidenceRequired": [
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_society_copyright",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Code, media, datasets, attribution, and fair-use boundaries",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain one environmental cost of computing."
+      ],
+      "evidenceRequired": [
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_society_sustainability",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "topic",
+      "stage": "middle_school_breadth",
+      "subject": "history_society_ethics",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Energy, hardware lifecycle, and computing's environmental footprint",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "chm:timeline",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Define one game feature, use AI coding with context, review the diff, test behavior, and explain the result."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "ai_assistance_disclosure",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "ai_assistance_disclosure",
+        "oral_explanation_summary"
+      ],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "stage_assessment",
+      "stage": "middle_school_breadth",
+      "subject": "stage_checkpoint",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Checkpoint: AI-assisted game feature",
+      "sourceKind": "official_product_docs",
+      "sourceRef": "openai:codex_workflows",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Collect structured web or API data, clean it, save CSV/JSON, and verify output."
+      ],
+      "evidenceRequired": [
+        "project_demo_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "responsibility_review"
+      ],
+      "assessmentCoverage": [
+        "project_demo_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "responsibility_review"
+      ],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "stage_assessment",
+      "stage": "middle_school_breadth",
+      "subject": "stage_checkpoint",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Checkpoint: Web data pipeline",
+      "sourceKind": "reference_docs",
+      "sourceRef": "mdn:learn_web_development",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Turn a real problem into requirements, build a small prototype, collect feedback, and choose the next action."
+      ],
+      "evidenceRequired": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [
+        "design_note_summary",
+        "project_demo_summary",
+        "oral_explanation_summary"
+      ],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "stage_assessment",
+      "stage": "middle_school_breadth",
+      "subject": "stage_checkpoint",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Checkpoint: Problem to prototype",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "csta:k12_standards",
+      "version": "2026-06-19-v1"
+    },
+    {
+      "aliases": [],
+      "learningOutcomes": [
+        "Explain how an AI tool helped, where it may be wrong, and how the learner checked it."
+      ],
+      "evidenceRequired": [
+        "ai_assistance_disclosure",
+        "test_result_summary",
+        "responsibility_review",
+        "oral_explanation_summary"
+      ],
+      "assessmentCoverage": [
+        "ai_assistance_disclosure",
+        "test_result_summary",
+        "responsibility_review",
+        "oral_explanation_summary"
+      ],
+      "masterySignals": [
+        "project_demo_summary",
+        "code_diff_summary",
+        "test_result_summary",
+        "debug_trace_summary",
+        "design_note_summary",
+        "oral_explanation_summary",
+        "ai_assistance_disclosure",
+        "responsibility_review"
+      ],
+      "experienceSignals": [
+        "too_easy",
+        "right_level",
+        "too_hard",
+        "not_learned",
+        "confusing",
+        "needs_more_project_context"
+      ],
+      "privacyClass": "summary_only",
+      "importConfidence": "curated_seed",
+      "status": "seeded",
+      "nodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "domainPackId": "domain_pack_fanfan_computing_ai_literacy_v1",
+      "domain": "computing_ai_literacy",
+      "nodeType": "stage_assessment",
+      "stage": "middle_school_breadth",
+      "subject": "stage_checkpoint",
+      "curriculum": "fanfan_computing_ai_literacy_v1",
+      "title": "Checkpoint: Responsible AI literacy review",
+      "sourceKind": "official_curriculum_or_reference",
+      "sourceRef": "unesco:ai_competency_students_2024",
+      "version": "2026-06-19-v1"
+    }
+  ],
+  "edges": [
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_python_practical_tool",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_python_practical_tool",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_tooling",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_tooling",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_values_control",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_values_control",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_functions_boundaries",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_functions_boundaries",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_collections_records",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_collections_records",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_oop_game_entities",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_oop_game_entities",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_files_csv_json",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_files_csv_json",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_exceptions_debugging",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_exceptions_debugging",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_api_requests",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_api_requests",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_html_parsing",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_html_parsing",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_python_practical_tool__contains__kg_compute_python_session_persistence",
+      "fromNodeId": "kg_compute_strand_python_practical_tool",
+      "toNodeId": "kg_compute_python_session_persistence",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_computational_thinking",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_computational_thinking",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_problem_framing",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_problem_framing",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_decomposition",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_decomposition",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_abstraction_models",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_abstraction_models",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_algorithm_patterns",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_algorithm_patterns",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_data_representation",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_data_representation",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_state_and_events",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_state_and_events",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_testing_debugging",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_testing_debugging",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computational_thinking__contains__kg_compute_tradeoffs",
+      "fromNodeId": "kg_compute_strand_computational_thinking",
+      "toNodeId": "kg_compute_tradeoffs",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_software_engineering_ai_coding",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_context",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_context",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_requirements",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_requirements",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_task_breakdown",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_task_breakdown",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_repo_awareness",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_repo_awareness",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_git_workflow",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_git_workflow",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_test_validation",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_test_validation",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_diff_review",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_diff_review",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_debug_loop",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_debug_loop",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_docs_handoff",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_docs_handoff",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_software_engineering_ai_coding__contains__kg_compute_ai_coding_responsibility",
+      "fromNodeId": "kg_compute_strand_software_engineering_ai_coding",
+      "toNodeId": "kg_compute_ai_coding_responsibility",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_web_data_apis",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_web_data_apis",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_html_dom",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_html_dom",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_css_js",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_css_js",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_http_urls",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_http_urls",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_api_contracts",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_api_contracts",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_data_cleaning",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_data_cleaning",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_data_tables_csv",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_data_tables_csv",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_data_pipeline",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_data_pipeline",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_dynamic_pages",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_dynamic_pages",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_web_data_apis__contains__kg_compute_web_ethics",
+      "fromNodeId": "kg_compute_strand_web_data_apis",
+      "toNodeId": "kg_compute_web_ethics",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_computing_systems",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_computing_systems",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_hardware",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_hardware",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_os_files",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_os_files",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_runtime_packages",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_runtime_packages",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_networks",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_networks",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_cloud",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_cloud",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_databases",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_databases",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_security",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_security",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_computing_systems__contains__kg_compute_system_reliability",
+      "fromNodeId": "kg_compute_strand_computing_systems",
+      "toNodeId": "kg_compute_system_reliability",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_ai_literacy",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_ai_literacy",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai_history",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai_history",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai4k12_perception",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai4k12_perception",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai4k12_representation_reasoning",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai4k12_representation_reasoning",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai4k12_learning",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai4k12_learning",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai4k12_natural_interaction",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai4k12_natural_interaction",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_ai4k12_societal_impact",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_ai4k12_societal_impact",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_llm_context_tokens",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_llm_context_tokens",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_llm_evaluation",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_llm_evaluation",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_ai_literacy__contains__kg_compute_human_in_loop",
+      "fromNodeId": "kg_compute_strand_ai_literacy",
+      "toNodeId": "kg_compute_human_in_loop",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_product_problem_solving",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_product_problem_solving",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_problem_discovery",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_problem_discovery",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_users_stakeholders",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_users_stakeholders",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_requirements",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_requirements",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_prototype",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_prototype",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_feedback",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_feedback",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_metrics",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_metrics",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_explanation",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_explanation",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_product_problem_solving__contains__kg_compute_product_cross_domain",
+      "fromNodeId": "kg_compute_strand_product_problem_solving",
+      "toNodeId": "kg_compute_product_cross_domain",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_strand_history_society_ethics",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_strand_history_society_ethics",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this learning strand.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_history_timeline",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_history_timeline",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_history_internet_web",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_history_internet_web",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_history_games_media",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_history_games_media",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_society_open_source",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_society_open_source",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_society_privacy_data_rights",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_society_privacy_data_rights",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_society_accessibility",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_society_accessibility",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_society_copyright",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_society_copyright",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_strand_history_society_ethics__contains__kg_compute_society_sustainability",
+      "fromNodeId": "kg_compute_strand_history_society_ethics",
+      "toNodeId": "kg_compute_society_sustainability",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The strand contains this target capability.",
+      "sourceRef": "chm:timeline"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this stage checkpoint.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_context__prerequisite__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_ai_coding_context",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_requirements__prerequisite__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_ai_coding_requirements",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_diff_review__prerequisite__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_ai_coding_diff_review",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_testing_debugging__prerequisite__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_testing_debugging",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_oop_game_entities__prerequisite__kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "fromNodeId": "kg_compute_python_oop_game_entities",
+      "toNodeId": "kg_compute_checkpoint_ai_coding_game_feature_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this stage checkpoint.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_html_dom__prerequisite__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_web_html_dom",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_api_contracts__prerequisite__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_web_api_contracts",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_data_cleaning__prerequisite__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_data_cleaning",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_data_pipeline__prerequisite__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_data_pipeline",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_ethics__prerequisite__kg_compute_checkpoint_web_data_pipeline_v1",
+      "fromNodeId": "kg_compute_web_ethics",
+      "toNodeId": "kg_compute_checkpoint_web_data_pipeline_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this stage checkpoint.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_problem_discovery__prerequisite__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_product_problem_discovery",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_requirements__prerequisite__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_product_requirements",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_prototype__prerequisite__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_product_prototype",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_feedback__prerequisite__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_product_feedback",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_explanation__prerequisite__kg_compute_checkpoint_problem_to_prototype_v1",
+      "fromNodeId": "kg_compute_product_explanation",
+      "toNodeId": "kg_compute_checkpoint_problem_to_prototype_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_fanfan_computing_ai_literacy_path__contains__kg_compute_checkpoint_ai_literacy_review_v1",
+      "fromNodeId": "kg_compute_fanfan_computing_ai_literacy_path",
+      "toNodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "edgeType": "contains",
+      "confidence": "curated_seed",
+      "rationale": "The pathway contains this stage checkpoint.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_llm_context_tokens__prerequisite__kg_compute_checkpoint_ai_literacy_review_v1",
+      "fromNodeId": "kg_compute_llm_context_tokens",
+      "toNodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_llm_evaluation__prerequisite__kg_compute_checkpoint_ai_literacy_review_v1",
+      "fromNodeId": "kg_compute_llm_evaluation",
+      "toNodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_human_in_loop__prerequisite__kg_compute_checkpoint_ai_literacy_review_v1",
+      "fromNodeId": "kg_compute_human_in_loop",
+      "toNodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai4k12_societal_impact__prerequisite__kg_compute_checkpoint_ai_literacy_review_v1",
+      "fromNodeId": "kg_compute_ai4k12_societal_impact",
+      "toNodeId": "kg_compute_checkpoint_ai_literacy_review_v1",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "This capability should be visible before the checkpoint is attempted.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_problem_framing__prerequisite__kg_compute_decomposition",
+      "fromNodeId": "kg_compute_problem_framing",
+      "toNodeId": "kg_compute_decomposition",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "k12cs:framework"
+    },
+    {
+      "edgeId": "edge_kg_compute_decomposition__prerequisite__kg_compute_ai_coding_task_breakdown",
+      "fromNodeId": "kg_compute_decomposition",
+      "toNodeId": "kg_compute_ai_coding_task_breakdown",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_requirements__prerequisite__kg_compute_ai_coding_requirements",
+      "fromNodeId": "kg_compute_product_requirements",
+      "toNodeId": "kg_compute_ai_coding_requirements",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_context__prerequisite__kg_compute_ai_coding_task_breakdown",
+      "fromNodeId": "kg_compute_ai_coding_context",
+      "toNodeId": "kg_compute_ai_coding_task_breakdown",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_requirements__prerequisite__kg_compute_ai_coding_test_validation",
+      "fromNodeId": "kg_compute_ai_coding_requirements",
+      "toNodeId": "kg_compute_ai_coding_test_validation",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_test_validation__prerequisite__kg_compute_ai_coding_diff_review",
+      "fromNodeId": "kg_compute_ai_coding_test_validation",
+      "toNodeId": "kg_compute_ai_coding_diff_review",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_testing_debugging__prerequisite__kg_compute_ai_coding_debug_loop",
+      "fromNodeId": "kg_compute_testing_debugging",
+      "toNodeId": "kg_compute_ai_coding_debug_loop",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_workflows"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai_coding_responsibility__prerequisite__kg_compute_human_in_loop",
+      "fromNodeId": "kg_compute_ai_coding_responsibility",
+      "toNodeId": "kg_compute_human_in_loop",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_values_control__prerequisite__kg_compute_python_functions_boundaries",
+      "fromNodeId": "kg_compute_python_values_control",
+      "toNodeId": "kg_compute_python_functions_boundaries",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_functions_boundaries__prerequisite__kg_compute_python_oop_game_entities",
+      "fromNodeId": "kg_compute_python_functions_boundaries",
+      "toNodeId": "kg_compute_python_oop_game_entities",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_collections_records__prerequisite__kg_compute_python_files_csv_json",
+      "fromNodeId": "kg_compute_python_collections_records",
+      "toNodeId": "kg_compute_python_files_csv_json",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_files_csv_json__prerequisite__kg_compute_data_tables_csv",
+      "fromNodeId": "kg_compute_python_files_csv_json",
+      "toNodeId": "kg_compute_data_tables_csv",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_exceptions_debugging__prerequisite__kg_compute_testing_debugging",
+      "fromNodeId": "kg_compute_python_exceptions_debugging",
+      "toNodeId": "kg_compute_testing_debugging",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "python:official_tutorial"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_api_requests__prerequisite__kg_compute_web_api_contracts",
+      "fromNodeId": "kg_compute_python_api_requests",
+      "toNodeId": "kg_compute_web_api_contracts",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_python_html_parsing__prerequisite__kg_compute_data_pipeline",
+      "fromNodeId": "kg_compute_python_html_parsing",
+      "toNodeId": "kg_compute_data_pipeline",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_html_dom__prerequisite__kg_compute_python_html_parsing",
+      "fromNodeId": "kg_compute_web_html_dom",
+      "toNodeId": "kg_compute_python_html_parsing",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_http_urls__prerequisite__kg_compute_web_api_contracts",
+      "fromNodeId": "kg_compute_web_http_urls",
+      "toNodeId": "kg_compute_web_api_contracts",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_web_api_contracts__prerequisite__kg_compute_data_pipeline",
+      "fromNodeId": "kg_compute_web_api_contracts",
+      "toNodeId": "kg_compute_data_pipeline",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_data_cleaning__prerequisite__kg_compute_data_pipeline",
+      "fromNodeId": "kg_compute_data_cleaning",
+      "toNodeId": "kg_compute_data_pipeline",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "mdn:learn_web_development"
+    },
+    {
+      "edgeId": "edge_kg_compute_system_os_files__prerequisite__kg_compute_system_runtime_packages",
+      "fromNodeId": "kg_compute_system_os_files",
+      "toNodeId": "kg_compute_system_runtime_packages",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_system_networks__prerequisite__kg_compute_web_http_urls",
+      "fromNodeId": "kg_compute_system_networks",
+      "toNodeId": "kg_compute_web_http_urls",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "k12cs:framework-concepts"
+    },
+    {
+      "edgeId": "edge_kg_compute_system_security__prerequisite__kg_compute_web_api_contracts",
+      "fromNodeId": "kg_compute_system_security",
+      "toNodeId": "kg_compute_web_api_contracts",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_system_reliability__prerequisite__kg_compute_ai_coding_debug_loop",
+      "fromNodeId": "kg_compute_system_reliability",
+      "toNodeId": "kg_compute_ai_coding_debug_loop",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai4k12_perception__prerequisite__kg_compute_ai4k12_representation_reasoning",
+      "fromNodeId": "kg_compute_ai4k12_perception",
+      "toNodeId": "kg_compute_ai4k12_representation_reasoning",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai4k12_representation_reasoning__prerequisite__kg_compute_ai4k12_learning",
+      "fromNodeId": "kg_compute_ai4k12_representation_reasoning",
+      "toNodeId": "kg_compute_ai4k12_learning",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai4k12_learning__prerequisite__kg_compute_llm_evaluation",
+      "fromNodeId": "kg_compute_ai4k12_learning",
+      "toNodeId": "kg_compute_llm_evaluation",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "ai4k12:guidelines"
+    },
+    {
+      "edgeId": "edge_kg_compute_llm_context_tokens__prerequisite__kg_compute_llm_evaluation",
+      "fromNodeId": "kg_compute_llm_context_tokens",
+      "toNodeId": "kg_compute_llm_evaluation",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "openai:codex_best_practices"
+    },
+    {
+      "edgeId": "edge_kg_compute_ai4k12_societal_impact__prerequisite__kg_compute_ai_coding_responsibility",
+      "fromNodeId": "kg_compute_ai4k12_societal_impact",
+      "toNodeId": "kg_compute_ai_coding_responsibility",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "unesco:ai_competency_students_2024"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_problem_discovery__prerequisite__kg_compute_product_requirements",
+      "fromNodeId": "kg_compute_product_problem_discovery",
+      "toNodeId": "kg_compute_product_requirements",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_users_stakeholders__prerequisite__kg_compute_product_requirements",
+      "fromNodeId": "kg_compute_product_users_stakeholders",
+      "toNodeId": "kg_compute_product_requirements",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_requirements__prerequisite__kg_compute_product_prototype",
+      "fromNodeId": "kg_compute_product_requirements",
+      "toNodeId": "kg_compute_product_prototype",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_prototype__prerequisite__kg_compute_product_feedback",
+      "fromNodeId": "kg_compute_product_prototype",
+      "toNodeId": "kg_compute_product_feedback",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_metrics__prerequisite__kg_compute_product_feedback",
+      "fromNodeId": "kg_compute_product_metrics",
+      "toNodeId": "kg_compute_product_feedback",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_product_explanation__prerequisite__kg_compute_product_cross_domain",
+      "fromNodeId": "kg_compute_product_explanation",
+      "toNodeId": "kg_compute_product_cross_domain",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_society_privacy_data_rights__prerequisite__kg_compute_system_security",
+      "fromNodeId": "kg_compute_society_privacy_data_rights",
+      "toNodeId": "kg_compute_system_security",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_society_copyright__prerequisite__kg_compute_web_ethics",
+      "fromNodeId": "kg_compute_society_copyright",
+      "toNodeId": "kg_compute_web_ethics",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "csta:k12_standards"
+    },
+    {
+      "edgeId": "edge_kg_compute_society_open_source__prerequisite__kg_compute_ai_coding_git_workflow",
+      "fromNodeId": "kg_compute_society_open_source",
+      "toNodeId": "kg_compute_ai_coding_git_workflow",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "git:pro_git"
+    },
+    {
+      "edgeId": "edge_kg_compute_history_games_media__prerequisite__kg_compute_python_oop_game_entities",
+      "fromNodeId": "kg_compute_history_games_media",
+      "toNodeId": "kg_compute_python_oop_game_entities",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "pygame:docs"
+    },
+    {
+      "edgeId": "edge_kg_compute_history_internet_web__prerequisite__kg_compute_web_http_urls",
+      "fromNodeId": "kg_compute_history_internet_web",
+      "toNodeId": "kg_compute_web_http_urls",
+      "edgeType": "prerequisite",
+      "confidence": "curated_seed",
+      "rationale": "Curated prerequisite relationship for breadth-first computing and AI literacy.",
+      "sourceRef": "chm:timeline"
+    }
+  ]
+}
