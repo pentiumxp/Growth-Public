@@ -11,6 +11,21 @@
 
 ## 2026-06-18T08:20+0800 - Release Gate Advance And Gateway Failure Harness
 
+- Status: implemented, committed, pushed to private/public remotes, and
+  deployed to production Growth.
+- Commit: `1a482e030006` (`fix: preserve bounded gateway failure readback`).
+- Production deploy target:
+  `plugin:growth`, surface `full`, reason
+  `growth-gateway-failure-readback-1a482e0`.
+- Deploy backup:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260618T001630Z-plugin-growth-growth-gateway-failure-readback-1a482e0`.
+- Deploy validation passed:
+  - production file hash readback for `public/index.html`;
+  - `com.hermesmobile.plugin.growth` launchd state readback was running;
+  - public Growth manifest health URL returned HTTP 200 and plugin id
+    `growth`;
+  - Codex auth profile audit had `codexIssueCount=0`. The broader audit still
+    reported non-Codex issues, matching the existing production audit pattern.
 - Persisted the three explicit summary-only release approval records for
   `weixin_stephen/science/daily_plan`:
   `writefulExecutionApproval`, `backgroundSchedulerApproval`, and
