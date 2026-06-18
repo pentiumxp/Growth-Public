@@ -11,8 +11,21 @@
 
 ## 2026-06-18T12:35+0800 - Owner Generation Workbench Readability
 
-- Status: implemented and locally validated; commit/push/deploy follows this
-  handoff entry in the same operator turn.
+- Status: implemented, locally validated, committed, pushed, deployed, and
+  production static-readback verified.
+- Runtime commit: `75bdd2e fix: collapse growth generation workbench readbacks`.
+  Pushed to private `Growth` and public `Growth-Public`.
+- Deployment: Home AI macOS plugin deploy succeeded for Growth through the
+  central deploy script with clean source commit `75bdd2eb34a3`, restarted
+  `com.hermesmobile.plugin.growth`, launchd state readback was `running`, and
+  the public Growth manifest health check passed.
+- Production readback: `http://127.0.0.1:4881/` serves static asset version
+  `20260618-generation-workbench-readable-v1`;
+  `growth-card-generation-ui.js` contains
+  `data-card-generation-secondary-readbacks`,
+  `data-card-generation-disclosure`, and `structured-preview`; and
+  `growth-homeai-legacy.css` contains disclosure, summary arrow, body, and dark
+  theme markers.
 - Scope: the embedded Owner `生成` tab no longer renders profile, automation,
   scheduler, release, and structured-input readbacks as one long permanently
   expanded vertical page. The primary target/readiness/action workflow remains
