@@ -144,6 +144,8 @@ test("Growth learning profile projection stays service-owned", () => {
   assert.match(ui, /data-release-workbench-panel/);
   assert.match(ui, /createReleaseWorkbenchActionPayload/);
   assert.match(ui, /release_evidence_collection/);
+  assert.match(ui, /data-automation-closed-loop-action-plan-panel/);
+  assert.match(ui, /createAutomationClosedLoopActionPlanQueryPayload/);
   assert.match(ui, /data-automation-proposal-panel/);
   assert.match(ui, /createAutomationProposalDecisionPayload/);
   assert.match(ui, /createAutomationProposalPublishPayload/);
@@ -4603,6 +4605,10 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(app, /preferredCardGenerationWorkspaceId/);
   assert.match(app, /refreshLearningLoopState/);
   assert.match(app, /fetchLearningLoopState/);
+  assert.match(app, /refreshAutomationClosedLoopActionPlan/);
+  assert.match(app, /fetchGrowthAutomationClosedLoopActionPlan/);
+  assert.match(app, /runAutomationClosedLoopActionPlanFromUi/);
+  assert.match(app, /data-automation-closed-loop-action-run/);
   assert.match(app, /refreshCycleHistoryFromUi/);
   assert.match(app, /fetchGrowthCycleHistory/);
   assert.match(app, /data-card-generation-cycle-history-select/);
@@ -4692,6 +4698,12 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /createReleaseLifecycleRecordPayload/);
   assert.match(generationUi, /data-release-lifecycle-record-row/);
   assert.match(generationUi, /data-release-lifecycle-record-action-status/);
+  assert.match(generationUi, /data-automation-closed-loop-action-plan-panel/);
+  assert.match(generationUi, /automationClosedLoopActionPlanPanel/);
+  assert.match(generationUi, /createAutomationClosedLoopActionPlanQueryPayload/);
+  assert.match(generationUi, /data-automation-closed-loop-action-plan-refresh/);
+  assert.match(generationUi, /data-automation-closed-loop-action-run/);
+  assert.match(generationUi, /data-automation-closed-loop-phase/);
   assert.match(generationUi, /data-automation-proposal-panel/);
   assert.match(generationUi, /automationProposalPanel/);
   assert.match(generationUi, /createAutomationProposalCreatePayload/);
@@ -4752,6 +4764,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /createGrowthAutomationFailurePolicy/);
   assert.match(apiClient, /reviewGrowthAutomationFailurePolicy/);
   assert.match(apiClient, /fetchGrowthAutomationActionHandoffs/);
+  assert.match(apiClient, /fetchGrowthAutomationClosedLoopActionPlan/);
   assert.match(apiClient, /createGrowthAutomationActionHandoff/);
   assert.match(apiClient, /deliverGrowthAutomationActionHandoff/);
   assert.match(apiClient, /fetchGrowthAutomationSchedulerExecutions/);
@@ -4782,6 +4795,7 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(apiClient, /automation", "digests"/);
   assert.match(apiClient, /automation", "failure-policies"/);
   assert.match(apiClient, /automation", "action-handoffs"/);
+  assert.match(apiClient, /automation", "closed-loop", "action-plan"/);
   assert.match(apiClient, /automation", "scheduler", "executions"/);
   assert.match(apiClient, /automation", "scheduler", "execute-once"/);
   assert.match(apiClient, /automation", "scheduler", "runs"/);

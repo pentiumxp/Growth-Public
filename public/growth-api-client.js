@@ -365,6 +365,40 @@
       return query ? `?${query}` : "";
     }
 
+    function automationClosedLoopActionPlanQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
+      const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
+      const params = new URLSearchParams();
+      const key = proxyPrefix() ? "targetWorkspaceId" : "workspaceId";
+      if (workspaceId) params.set(key, workspaceId);
+      appendQueryParam(params, "learnerId", payload.learnerId || payload.learner_id);
+      appendQueryParam(params, "programId", payload.programId || payload.program_id);
+      appendQueryParam(params, "domainPackId", payload.domainPackId || payload.domain_pack_id);
+      appendQueryParam(params, "domain", payload.domain);
+      appendQueryParam(params, "subject", payload.subject);
+      appendQueryParam(params, "horizon", payload.horizon);
+      appendQueryParam(params, "availableMinutes", payload.availableMinutes || payload.available_minutes);
+      appendQueryArrayParam(params, "targetNodeIds", payload.targetNodeIds || payload.target_node_ids || payload.nodeIds || payload.node_ids);
+      appendQueryArrayParam(params, "sourceTargetNodeIds", payload.sourceTargetNodeIds || payload.source_target_node_ids);
+      appendQueryParam(params, "cycleId", payload.cycleId || payload.cycle_id);
+      appendQueryParam(params, "sourcePlanDraftId", payload.sourcePlanDraftId || payload.source_plan_draft_id || payload.planDraftId || payload.plan_draft_id);
+      appendQueryParam(params, "sourceTaskCardId", payload.sourceTaskCardId || payload.source_task_card_id || payload.taskCardId || payload.task_card_id);
+      appendQueryParam(params, "sourceEvaluationId", payload.sourceEvaluationId || payload.source_evaluation_id || payload.evaluationId || payload.evaluation_id);
+      appendQueryParam(params, "profileDeltaId", payload.profileDeltaId || payload.profile_delta_id);
+      appendQueryParam(params, "evidenceId", payload.evidenceId || payload.evidence_id);
+      appendQueryParam(params, "correctionId", payload.correctionId || payload.correction_id);
+      appendQueryParam(params, "sourceId", payload.sourceId || payload.source_id);
+      appendQueryParam(params, "digestId", payload.digestId || payload.digest_id);
+      appendQueryParam(params, "handoffId", payload.handoffId || payload.handoff_id);
+      appendQueryParam(params, "proposalId", payload.proposalId || payload.proposal_id);
+      appendQueryParam(params, "selectedItemId", payload.selectedItemId || payload.selected_item_id);
+      appendQueryParam(params, "autoSelectCompletedCycle", payload.autoSelectCompletedCycle || payload.auto_select_completed_cycle);
+      appendQueryParam(params, "autoSelectLatestCompletedCycle", payload.autoSelectLatestCompletedCycle ?? payload.auto_select_latest_completed_cycle);
+      appendQueryParam(params, "auditLimit", payload.auditLimit || payload.audit_limit);
+      appendQueryParam(params, "limit", payload.limit || 8);
+      const query = params.toString();
+      return query ? `?${query}` : "";
+    }
+
     function cycleAuditQuery(targetWorkspaceId = getWorkspaceId(), payload = {}) {
       const params = new URLSearchParams();
       const workspaceId = clean(payload.workspaceId || payload.workspace_id || targetWorkspaceId);
@@ -649,6 +683,10 @@
       return fetchJson(`${growthApiPath("automation", "scheduler", "worker-targets")}${automationSchedulerWorkerTargetQuery(targetWorkspaceId, payload)}`);
     }
 
+    function fetchGrowthAutomationClosedLoopActionPlan(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return fetchJson(`${growthApiPath("automation", "closed-loop", "action-plan")}${automationClosedLoopActionPlanQuery(targetWorkspaceId, payload)}`);
+    }
+
     function prepareGrowthAutomationCycleClosure(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "cycle-closures", "prepare"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -930,6 +968,7 @@
       fetchGrowthAutomationDigests,
       fetchGrowthAutomationFailurePolicies,
       fetchGrowthAutomationFailurePolicyReadiness,
+      fetchGrowthAutomationClosedLoopActionPlan,
       fetchGrowthAutomationProposals,
       fetchGrowthAutomationSchedulerExecutions,
       fetchGrowthAutomationSchedulerRuns,

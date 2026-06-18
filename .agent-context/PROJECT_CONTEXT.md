@@ -178,6 +178,31 @@ readback gate set.
   next-action template for Owner execution. It does not write state, call
   Gateway, publish/generate/evaluate cards, deliver notifications, execute or
   run schedulers, mutate runtime config, deploy, or mutate learner state.
+- 2026-06-18 Owner generation UI action-plan status: the embedded Owner `生成`
+  page now consumes the same no-write action-plan readback through
+  `fetchGrowthAutomationClosedLoopActionPlan` and renders a `闭环下一步` panel
+  before operating-loop execution. The panel shows the service-provided
+  next-action, phase rows, readiness booleans, and visible action/error state.
+  Its execute button dispatches only to existing Growth-owned functions:
+  `learning-loop/advance`, cycle-closure prepare, review-advancement advance,
+  or action-handoff delivery. It does not add a browser-side write path,
+  Gateway call, scheduler permission, policy reconstruction, or learner-state
+  mutation.
+- 2026-06-18 Owner generation UI action-plan validation: the UI package passed
+  focused frontend/architecture/closed-loop route harnesses (`144/144`),
+  `npm run --silent check` (`runtimeCount=236`), docs-locality
+  (`requiredCount=37`), and `git diff --check`. It was also rechecked through
+  the Home AI central visual toolchain using local Growth `14881`, local Home
+  AI `18797`, and live-debug `19073`: `embedded-plugin-shell --plugin-id
+  growth` passed with screenshot
+  `ios-pwa-visual-embedded-plugin-shell-growth-20260618T025802Z.png`, and
+  `dark-growth-surfaces` passed with screenshot
+  `ios-pwa-visual-dark-growth-surfaces-20260618T025819Z.png`. A same-origin
+  page-level Playwright readback confirmed the Owner generation route renders
+  `data-card-generation-manager`,
+  `data-automation-closed-loop-action-plan-panel`, and
+  `data-automation-closed-loop-action-run`, and that the active settings tab is
+  the scroll container that can bring the `生成卡片` button into view.
 - 2026-06-18 production proxy execution readback: the Home AI production
   status smoke and Growth same-origin proxy smoke were run through the central
   sudo validation boundary without exposing raw credentials. Production

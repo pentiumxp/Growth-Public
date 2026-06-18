@@ -211,6 +211,7 @@ test("Growth API client exposes card generation context and write helpers", asyn
     domain_pack_id: "uk_hk_curriculum_foundation",
     domain: "science",
     subject: "science",
+    horizon: "daily_plan",
     task_card_id: "ltask_daily_1",
     target_node_ids: ["kg_main_idea"],
     include_completeness: false,
@@ -454,6 +455,21 @@ test("Growth API client exposes card generation context and write helpers", asyn
     collection_run_id: "release_run_1",
     activation_gates: ["writeful_execution"],
     enablement_decision: { summaryOnly: true }
+  }, "weixin_fanfan");
+  await client.fetchGrowthAutomationClosedLoopActionPlan({
+    learner_id: "fanfan",
+    program_id: "program_science",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    target_node_ids: ["kg_science_next"],
+    source_task_card_id: "ltask_previous",
+    source_evaluation_id: "leval_previous",
+    digest_id: "lgadig_ready_1",
+    handoff_id: "lgahand_ready_1",
+    auto_select_latest_completed_cycle: true,
+    limit: 8
   }, "weixin_fanfan");
 
   assert.equal(calls[0].path, "/api/v1/growth/card-generation/context?workspaceId=weixin_fanfan&recipeId=daily_science_v1");
@@ -713,6 +729,8 @@ test("Growth API client exposes card generation context and write helpers", asyn
     activation_gates: ["writeful_execution"],
     enablement_decision: { summaryOnly: true }
   });
+  const closedLoopActionPlanCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/closed-loop/action-plan?"));
+  assert.equal(closedLoopActionPlanCall.path, "/api/v1/growth/automation/closed-loop/action-plan?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&targetNodeIds=kg_science_next&sourceTaskCardId=ltask_previous&sourceEvaluationId=leval_previous&digestId=lgadig_ready_1&handoffId=lgahand_ready_1&autoSelectLatestCompletedCycle=true&limit=8");
 });
 
 test("Growth API client fetches release evidence ledger through direct and proxy routes", async () => {
@@ -2280,6 +2298,83 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
             }
           }
         },
+        automationClosedLoopActionPlan: {
+          status: "ready",
+          data: {
+            ok: true,
+            schemaVersion: "growth.learningAutomationClosedLoopActionPlan.v1",
+            privacyClass: "summary_only",
+            summaryOnly: true,
+            status: "ready_for_review_advancement",
+            nextAction: {
+              key: "advance_review",
+              status: "ready_for_review_advancement",
+              title: "Review digest and create action handoff",
+              routePath: "/api/v1/growth/automation/review-advancements/advance",
+              method: "POST",
+              reason: "A digest exists, but review advancement still needs digest review, failure policy readiness, or handoff creation.",
+              body: {
+                digest_id: "lgadig_pending_1",
+                review_digest: true,
+                ensure_failure_policy: true,
+                create_handoff: true,
+                attempt_execution: false
+              }
+            },
+            summary: {
+              nextAction: "advance_review",
+              selectedCycleId: "cycle_history_1",
+              digestId: "lgadig_pending_1",
+              handoffId: "",
+              writePerformed: false,
+              publishPerformed: false,
+              schedulerStarted: false
+            },
+            automationReadiness: {
+              completedCycleReady: true,
+              digestPresent: true,
+              digestReviewed: false,
+              failurePolicyReady: false,
+              handoffPresent: false,
+              handoffDelivered: false,
+              dependencyBlockedCount: 0
+            },
+            phases: [{
+              key: "operating_loop",
+              label: "Learning operating-loop next action",
+              ok: true,
+              status: "ready_to_draft",
+              nextAction: "draft_daily_plan"
+            }, {
+              key: "profile_feedback",
+              label: "Completed-cycle profile feedback",
+              ok: true,
+              status: "pass",
+              selectorDiscoveryStatus: "selected"
+            }, {
+              key: "automation_digest",
+              label: "Automation digest",
+              ok: true,
+              status: "pending",
+              digest: { digestId: "lgadig_pending_1", status: "pending" }
+            }, {
+              key: "failure_policy",
+              label: "Failure policy readiness",
+              ok: true,
+              status: "missing_active_failure_policy",
+              policyId: ""
+            }, {
+              key: "action_handoff",
+              label: "Automation action handoff",
+              ok: true,
+              status: "missing",
+              handoff: null
+            }]
+          },
+          actionStatus: "executed",
+          actionResult: { ok: true, actionKey: "advance_review" },
+          actionError: ""
+        },
         referenceChain: {
           status: "partial",
           objectTypes: {
@@ -2634,6 +2729,15 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /data-operating-loop-action="draft_daily_plan"/);
   assert.match(html, /data-operating-loop-run-id="lgloop_run_1"/);
   assert.match(html, /闭环动作已执行，生成卡片 ltask_generated_1，记录 lgloop_run_1/);
+  assert.match(html, /data-automation-closed-loop-action-plan-panel/);
+  assert.match(html, /闭环下一步/);
+  assert.match(html, /data-automation-closed-loop-action-plan-refresh/);
+  assert.match(html, /data-automation-closed-loop-action-run/);
+  assert.match(html, /data-automation-closed-loop-action-key="advance_review"/);
+  assert.match(html, /推进复核链/);
+  assert.match(html, /data-automation-closed-loop-phase="automation_digest"/);
+  assert.match(html, /lgadig_pending_1/);
+  assert.match(html, /data-automation-closed-loop-action-status="executed"/);
   assert.match(html, /data-reference-chain-panel/);
   assert.match(html, /data-reference-chain-status="partial"/);
   assert.match(html, /闭环引用/);
@@ -3640,6 +3744,50 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   });
   assert.equal(Object.hasOwn(handoffCreatePayload, "raw_prompt"), false);
   assert.equal(Object.hasOwn(handoffDeliverPayload, "transcript"), false);
+
+  const closedLoopActionPlanPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationClosedLoopActionPlanQueryPayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        planDraftId: "lgplan_history_1",
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        profileDeltaId: "lgpdelta_history_1",
+        evidenceId: "lgevidence_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    },
+    state: {
+      automationDigests: { data: context.automationDigests },
+      automationActionHandoffs: { data: context.automationActionHandoffs }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(closedLoopActionPlanPayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: "15",
+    target_node_ids: ["kg_history_node"],
+    source_target_node_ids: ["kg_history_node"],
+    source_plan_draft_id: "lgplan_history_1",
+    source_task_card_id: "ltask_history_1",
+    source_evaluation_id: "eval_history_1",
+    profile_delta_id: "lgpdelta_history_1",
+    evidence_id: "lgevidence_history_1",
+    source_id: "eval_history_1",
+    digest_id: "lgadig_pending_1",
+    handoff_id: "lgahand_pending_1",
+    auto_select_latest_completed_cycle: true,
+    audit_limit: 20,
+    limit: 8,
+    requested_by: "owner"
+  });
+  assert.equal(Object.hasOwn(closedLoopActionPlanPayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(closedLoopActionPlanPayload, "transcript"), false);
 
   const schedulerExecutionQueryPayload = windowRef.HermesGrowthCardGenerationUi.createAutomationSchedulerExecutionQueryPayload({
     context,
@@ -5017,6 +5165,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /resetGraphSelection: true/);
   assert.match(source, /selection: \{ recipeId \}/);
   assert.match(source, /api\.fetchLearningLoopState\(requestedTargetWorkspaceId, context\)/);
+  assert.match(source, /function refreshAutomationClosedLoopActionPlan/);
+  assert.match(source, /api\.fetchGrowthAutomationClosedLoopActionPlan\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /function runAutomationClosedLoopActionPlanFromUi/);
   assert.match(source, /function refreshReleaseWorkbench/);
   assert.match(source, /api\.fetchGrowthReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function refreshReleaseArtifactTemplate/);
@@ -5062,6 +5213,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /pageState\.cardGeneration\.context = context/);
   assert.match(source, /await refreshLearningLoopState\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /await refreshAutomationProposals\(requestedTargetWorkspaceId, context/);
+  assert.match(source, /await refreshAutomationClosedLoopActionPlan\(requestedTargetWorkspaceId, context, \{ silent: true \}\)/);
   assert.match(source, /await refreshReleaseWorkbench\(requestedTargetWorkspaceId, context\)/);
   assert.match(source, /function draftDailyLoopFromUi/);
   assert.match(source, /api\.draftGrowthDailyLoop\(payload, targetWorkspaceId\)/);
@@ -5083,6 +5235,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-card-generation-provision-target/);
   assert.match(source, /data-release-workbench-action/);
   assert.match(source, /data-release-package-build/);
+  assert.match(source, /data-automation-closed-loop-action-plan-refresh/);
+  assert.match(source, /data-automation-closed-loop-action-run/);
   assert.match(source, /data-automation-cycle-closure-prepare/);
   assert.match(source, /data-automation-review-advancement-advance/);
   assert.match(source, /data-automation-proposal-refresh/);
@@ -5110,6 +5264,9 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function createReleasePackageBuildPayloadFromButton/);
   assert.match(source, /function buildReleasePackageFromUi/);
   assert.match(source, /function recordReleaseWorkbenchActionFromUi/);
+  assert.match(source, /function createAutomationClosedLoopActionPlanQueryPayload/);
+  assert.match(source, /function refreshAutomationClosedLoopActionPlan/);
+  assert.match(source, /function runAutomationClosedLoopActionPlanFromUi/);
   assert.match(source, /function createAutomationCycleClosurePayload/);
   assert.match(source, /function prepareAutomationCycleClosureFromUi/);
   assert.match(source, /function createAutomationReviewAdvancementPayload/);
@@ -5173,6 +5330,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /api\.createGrowthAutomationFailurePolicy\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.reviewGrowthAutomationFailurePolicy\(policyId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthAutomationActionHandoffs\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /api\.fetchGrowthAutomationClosedLoopActionPlan\(payload, requestedTargetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationActionHandoff\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.deliverGrowthAutomationActionHandoff\(handoffId, payload, targetWorkspaceId\)/);
   assert.match(source, /api\.fetchGrowthAutomationSchedulerExecutions\(payload, requestedTargetWorkspaceId\)/);

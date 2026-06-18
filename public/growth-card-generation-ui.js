@@ -1760,6 +1760,64 @@
     })).filter(([, value]) => clean(value)));
   }
 
+  function latestClosedLoopDigest(state = {}) {
+    const digests = asArray(state.automationDigests?.data?.digests);
+    return digests.find((digest = {}) => ["pending", "reviewed"].includes(clean(digest.status))) || digests[0] || {};
+  }
+
+  function latestClosedLoopHandoff(state = {}, digestId = "") {
+    const wantedDigestId = clean(digestId);
+    const handoffs = asArray(state.automationActionHandoffs?.data?.handoffs);
+    if (wantedDigestId) {
+      const matched = handoffs.find((handoff = {}) => clean(handoff.digestId || handoff.digest_id) === wantedDigestId);
+      if (matched) return matched;
+    }
+    return handoffs.find((handoff = {}) => clean(handoff.deliveryStatus || handoff.delivery_status) !== "delivered")
+      || handoffs[0]
+      || {};
+  }
+
+  function createAutomationClosedLoopActionPlanQueryPayload({ context = {}, workspaceId = "", selectedCycle = {}, state = {} } = {}) {
+    const scope = automationProposalScopeFromContext(context, workspaceId);
+    const defaults = context.generationDefaults || {};
+    const plan = context.suggestedPlan || {};
+    const recommendation = context.nextCardRecommendation || {};
+    const selected = cycleSelectionPayload(selectedCycle || {});
+    const targetNodeIds = firstCleanArray(
+      selected.target_node_ids,
+      recommendation.targetNodeIds,
+      plan.targetNodeIds,
+      [recommendation.targetNodeId || plan.targetNodeId]
+    );
+    const digest = latestClosedLoopDigest(state);
+    const digestId = clean(digest.digestId || digest.digest_id);
+    const handoff = latestClosedLoopHandoff(state, digestId);
+    return Object.fromEntries(Object.entries(Object.assign({}, scope, {
+      available_minutes: firstCleanValue(defaults.availableMinutes, context.availableMinutes, 15),
+      target_node_ids: targetNodeIds,
+      source_target_node_ids: selected.target_node_ids,
+      cycle_id: selected.cycle_id,
+      source_plan_draft_id: selected.plan_draft_id,
+      source_task_card_id: selected.task_card_id,
+      source_evaluation_id: selected.evaluation_id,
+      profile_delta_id: selected.profile_delta_id,
+      evidence_id: selected.evidence_id,
+      correction_id: selected.correction_id,
+      source_id: selected.source_id,
+      digest_id: digestId,
+      handoff_id: clean(handoff.handoffId || handoff.handoff_id),
+      proposal_id: clean(digest.proposalId || digest.proposal_id || handoff.proposalId || handoff.proposal_id),
+      auto_select_latest_completed_cycle: true,
+      audit_limit: 20,
+      limit: 8,
+      requested_by: "owner"
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "boolean") return true;
+      return clean(value);
+    }));
+  }
+
   function createAutomationProposalDecisionPayload({ context = {}, workspaceId = "", proposal = {}, status = "", reason = "" } = {}) {
     const scope = automationProposalScopeFromContext(context, workspaceId);
     const targetStatus = clean(status);
@@ -2100,6 +2158,118 @@
       if (typeof value === "boolean") return true;
       return clean(value);
     }));
+  }
+
+  function automationClosedLoopActionText(key = "") {
+    const value = clean(key);
+    const map = {
+      run_learning_loop_next: "执行学习闭环下一步",
+      prepare_cycle_closure: "准备复核包",
+      advance_review: "推进复核链",
+      deliver_action_handoff: "投递 Handoff",
+      collect_platform_action_evidence: "收集平台证据",
+      complete_learner_cycle: "完成一张日常卡",
+      refresh_closed_loop_context: "刷新闭环上下文"
+    };
+    return map[value] || value || "待读取";
+  }
+
+  function automationClosedLoopStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "loading") return "读取中";
+    if (value === "ready_for_next_learning_action") return "可生成";
+    if (value === "ready_for_cycle_closure") return "可准备";
+    if (value === "ready_for_review_advancement") return "可推进";
+    if (value === "ready_for_action_handoff_delivery") return "可投递";
+    if (value === "ready_for_platform_action_evidence") return "待证据";
+    if (value === "learner_cycle_required") return "待完成";
+    if (value === "blocked") return "已阻塞";
+    if (value === "failed") return "失败";
+    if (value === "ready") return "已读取";
+    return value || "待读取";
+  }
+
+  function automationClosedLoopActionStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    if (!status || status === "idle") return "";
+    const result = holder.actionResult || {};
+    const detail = status === "running"
+      ? "正在执行 action-plan 指向的现有 Growth 服务动作。"
+      : status === "executed"
+        ? "下一步动作已完成，正在刷新闭环读数。"
+        : clean(holder.actionError || result.error) || "闭环下一步执行失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-closed-loop-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(status === "running" ? "执行中" : status === "executed" ? "已执行" : status === "blocked" ? "已阻塞" : "失败")}</em>
+    </div>`;
+  }
+
+  function automationClosedLoopPhaseRows(phases = [], escapeHtml = defaultEscapeHtml) {
+    const rows = asArray(phases).slice(0, 5);
+    if (!rows.length) return `<div class="learning-card-generation-proposal-empty">暂无阶段读数。</div>`;
+    return rows.map((phase = {}) => {
+      const key = clean(phase.key);
+      const status = clean(phase.status || (phase.ok ? "ready" : "missing"));
+      const detail = clean(phase.error || phase.nextAction || phase.policyId || phase.digest?.digestId || phase.handoff?.handoffId || phase.selectorDiscoveryStatus || "summary-only");
+      return `<div class="learning-card-generation-proposal-row" data-automation-closed-loop-phase="${escapeHtml(key)}" data-automation-closed-loop-phase-ok="${phase.ok === false ? "false" : "true"}">
+        <span>
+          <strong>${escapeHtml(phase.label || key || "阶段")}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <em>${escapeHtml(status)}</em>
+      </div>`;
+    }).join("");
+  }
+
+  function automationClosedLoopActionPlanPanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationClosedLoopActionPlan || {};
+    const data = holder.data || {};
+    const nextAction = data.nextAction || {};
+    const summary = data.summary || {};
+    const readiness = data.automationReadiness || {};
+    const status = clean(holder.status || data.status || "idle");
+    const actionKey = clean(nextAction.key || summary.nextAction);
+    const busy = clean(holder.actionStatus) === "running";
+    const supportedAction = ["run_learning_loop_next", "prepare_cycle_closure", "advance_review", "deliver_action_handoff"].includes(actionKey);
+    const blockedReason = status === "loading"
+      ? "正在读取闭环下一步。"
+      : status === "failed"
+        ? clean(holder.error) || "closed_loop_action_plan_failed"
+        : !actionKey
+          ? "还没有可执行的下一步。"
+          : !supportedAction
+            ? "当前下一步需要在对应面板或学习卡里完成。"
+            : "";
+    const canRun = Boolean(!busy && !blockedReason);
+    const reason = status === "loading"
+      ? "正在读取 operating loop、完成周期、digest、失败策略和 handoff。"
+      : status === "failed"
+        ? clean(holder.error) || "闭环计划读取失败。"
+        : clean(nextAction.reason) || "由 Growth 服务返回一个 Owner 可执行的下一步。";
+    return `<section class="learning-card-generation-proposals learning-card-generation-closed-loop-plan" data-automation-closed-loop-action-plan-panel data-automation-closed-loop-action-plan-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>闭环下一步</strong>
+          <small>${escapeHtml(reason)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" data-automation-closed-loop-action-plan-refresh ${status === "loading" ? "disabled" : ""}>${status === "loading" ? "读取中" : "刷新计划"}</button>
+          <button type="button" class="primary${canRun ? "" : " disabled"}" data-automation-closed-loop-action-run data-automation-closed-loop-action-key="${escapeHtml(actionKey)}" ${canRun ? "" : `aria-disabled="true" data-automation-closed-loop-blocked-reason="${escapeHtml(blockedReason)}"`}>${busy ? "执行中" : escapeHtml(automationClosedLoopActionText(actionKey))}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>下一步</small><strong>${escapeHtml(automationClosedLoopActionText(actionKey))}</strong></span>
+        <span><small>状态</small><strong>${escapeHtml(automationClosedLoopStatusText(status))}</strong></span>
+        <span><small>完成周期</small><strong>${readiness.completedCycleReady ? "就绪" : "待完成"}</strong></span>
+        <span><small>Digest</small><strong>${readiness.digestPresent ? (readiness.digestReviewed ? "已复核" : "待复核") : "暂无"}</strong></span>
+        <span><small>失败策略</small><strong>${readiness.failurePolicyReady ? "就绪" : "待确认"}</strong></span>
+        <span><small>Handoff</small><strong>${readiness.handoffPresent ? (readiness.handoffDelivered ? "已投递" : "待投递") : "暂无"}</strong></span>
+      </div>
+      <div class="learning-card-generation-proposal-list">
+        ${automationClosedLoopPhaseRows(data.phases, escapeHtml)}
+      </div>
+      ${automationClosedLoopActionStatusPanel(holder, escapeHtml)}
+    </section>`;
   }
 
   function automationCycleClosureStatusText(status = "") {
@@ -4278,6 +4448,7 @@
           </div>
           ${targetProvisioningPanel(context, state, escapeHtml)}
           ${learningLoopStatePanel(state, context, escapeHtml)}
+          ${automationClosedLoopActionPlanPanel(context, state, escapeHtml)}
           ${operatingLoopPanel(context, state, escapeHtml)}
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
           ${automationCycleClosurePanel(context, state, escapeHtml)}
@@ -4330,6 +4501,7 @@
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
     createAutomationCycleClosurePayload,
+    createAutomationClosedLoopActionPlanQueryPayload,
     createAutomationReviewAdvancementPayload,
     createAutomationProposalCreatePayload,
     createAutomationProposalDecisionPayload,

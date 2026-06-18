@@ -9,6 +9,63 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T11:35+0800 - Owner Closed-Loop Action Plan UI
+
+- Status: implemented and locally validated; commit/push/deploy follows this
+  handoff entry in the same operator turn.
+- Scope: the embedded Owner `生成` page now renders a `闭环下一步` panel from
+  the no-write
+  `GET /api/v1/growth/automation/closed-loop/action-plan` readback.
+- UI boundary:
+  - `public/growth-api-client.js` adds
+    `fetchGrowthAutomationClosedLoopActionPlan()`.
+  - `public/growth-card-generation-ui.js` builds bounded query selectors from
+    the current graph scope, selected completed cycle, latest digest, and
+    latest handoff, then renders the action-plan next action, phase rows,
+    readiness booleans, refresh button, and visible action/error state.
+  - `public/app.js` refreshes the action-plan after context load,
+    selected-cycle changes, proposal/digest/failure-policy/handoff changes,
+    direct planning, publish, and context refresh.
+- Execute boundary: the panel's `执行下一步` button only dispatches to existing
+  Growth-owned functions for `run_learning_loop_next`,
+  `prepare_cycle_closure`, `advance_review`, and
+  `deliver_action_handoff`. Unsupported next actions stay visibly blocked.
+  The browser does not add Gateway calls, direct card generation/evaluation,
+  scheduler permission, policy reconstruction, notification delivery, runtime
+  mutation, or learner-state mutation.
+- Harness/docs updated in this package:
+  - `tests/growth-frontend-adapter.test.js`;
+  - `tests/growth-architecture-boundary.test.js`;
+  - `docs/GROWTH_AI_LEARNING_AUTOMATION_CLOSED_LOOP_ACTION_PLAN.md`;
+  - `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md`;
+  - `docs/TEST_MATRIX.md`;
+  - `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --test tests/growth-frontend-adapter.test.js
+    tests/growth-architecture-boundary.test.js
+    tests/learning-automation-closed-loop-action-plan-service.test.js
+    tests/growth-automation-closed-loop-action-plan-smoke-script.test.js
+    tests/growth-routes.test.js` -> `144/144` passing;
+  - `node --check public/growth-api-client.js && node --check
+    public/growth-card-generation-ui.js && node --check public/app.js`;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`,
+    `requiredCount=37`;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=236`;
+  - `git diff --check`;
+  - Home AI central visual toolchain with local Growth `14881`, local Home AI
+    `18797`, and live-debug `19073`:
+    `embedded-plugin-shell --plugin-id growth` passed with screenshot
+    `ios-pwa-visual-embedded-plugin-shell-growth-20260618T025802Z.png`;
+    `dark-growth-surfaces` passed with screenshot
+    `ios-pwa-visual-dark-growth-surfaces-20260618T025819Z.png`.
+- Page-level readback: Home AI same-origin embedded Growth generation route
+  `workspaceId=owner&pluginRoute=generation` rendered
+  `data-card-generation-manager`,
+  `data-automation-closed-loop-action-plan-panel`, and the
+  `data-automation-closed-loop-action-run` button. The active settings tab was
+  the scroll container (`clientHeight=509`, `scrollHeight=15988`), and
+  `scrollIntoView()` brought the `生成卡片` button into the visible viewport.
+
 ## 2026-06-18T10:40+0800 - Closed-Loop Action Plan Readback
 
 - Status: implemented and locally validated; commit/push/deploy follows this

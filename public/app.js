@@ -23,6 +23,14 @@
         actionResult: null,
         actionError: ""
       },
+      automationClosedLoopActionPlan: {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       releaseWorkbench: {
         status: "idle",
         data: null,
@@ -912,6 +920,9 @@
         refreshOwnerAuditReviews(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
           renderShell();
         }).catch(() => null);
+        refreshAutomationClosedLoopActionPlan(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true }).then(() => {
+          renderShell();
+        }).catch(() => null);
       });
     });
     root.querySelectorAll("[data-reference-chain-refresh]").forEach((button) => {
@@ -924,6 +935,31 @@
           pageState.cardGeneration.referenceChain = Object.assign({}, pageState.cardGeneration.referenceChain || {}, {
             status: "failed",
             error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-closed-loop-action-plan-refresh]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        refreshAutomationClosedLoopActionPlan().catch((error) => {
+          pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, pageState.cardGeneration.automationClosedLoopActionPlan || {}, {
+            status: "failed",
+            error: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
+    root.querySelectorAll("[data-automation-closed-loop-action-run]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        runAutomationClosedLoopActionPlanFromUi(button).catch((error) => {
+          pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, pageState.cardGeneration.automationClosedLoopActionPlan || {}, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
           });
           renderShell();
         });
@@ -1545,6 +1581,14 @@
       actionResult: null,
       actionError: ""
     };
+    pageState.cardGeneration.automationClosedLoopActionPlan = {
+      status: "loading",
+      data: pageState.cardGeneration.automationClosedLoopActionPlan?.data || null,
+      error: "",
+      actionStatus: "idle",
+      actionResult: null,
+      actionError: ""
+    };
     pageState.cardGeneration.referenceChain = {
       status: "loading",
       objectTypes: pageState.cardGeneration.referenceChain?.objectTypes || null,
@@ -1699,6 +1743,7 @@
     await refreshAutomationSchedulerExecutions(requestedTargetWorkspaceId, context);
     await refreshAutomationSchedulerRuns(requestedTargetWorkspaceId, context);
     await refreshAutomationSchedulerWorkerTargets(requestedTargetWorkspaceId, context);
+    await refreshAutomationClosedLoopActionPlan(requestedTargetWorkspaceId, context, { silent: true });
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
     renderShell();
   }
@@ -1797,6 +1842,128 @@
       };
       if (!options.silent) renderShell();
       return null;
+    }
+  }
+
+  function createAutomationClosedLoopActionPlanQueryPayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationClosedLoopActionPlanQueryPayload !== "function") {
+      throw new Error("automation_closed_loop_action_plan_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationClosedLoopActionPlanQueryPayload({
+        context,
+        workspaceId: targetWorkspaceId,
+        selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {},
+        state: pageState.cardGeneration
+      }),
+      targetWorkspaceId
+    };
+  }
+
+  async function refreshAutomationClosedLoopActionPlan(targetWorkspaceId = cardGenerationWorkspaceId(), context = pageState.cardGeneration.context, options = {}) {
+    if (!pageState.auth.isOwner || !context) return null;
+    const requestedTargetWorkspaceId = clean(targetWorkspaceId || currentWorkspaceId);
+    const previous = pageState.cardGeneration.automationClosedLoopActionPlan || {};
+    pageState.cardGeneration.automationClosedLoopActionPlan = {
+      status: "loading",
+      data: previous.data || null,
+      error: "",
+      actionStatus: previous.actionStatus || "idle",
+      actionResult: previous.actionResult || null,
+      actionError: previous.actionError || ""
+    };
+    if (!options.silent) renderShell();
+    try {
+      const ui = window.HermesGrowthCardGenerationUi;
+      const payload = ui.createAutomationClosedLoopActionPlanQueryPayload({
+        context,
+        workspaceId: requestedTargetWorkspaceId,
+        selectedCycle: pageState.cardGeneration.cycleHistory?.selectedCycle || {},
+        state: pageState.cardGeneration
+      });
+      const result = await api.fetchGrowthAutomationClosedLoopActionPlan(payload, requestedTargetWorkspaceId);
+      pageState.cardGeneration.automationClosedLoopActionPlan = {
+        status: "ready",
+        data: result,
+        error: "",
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      pageState.cardGeneration.context = Object.assign({}, pageState.cardGeneration.context || context, {
+        automationClosedLoopActionPlan: result
+      });
+      if (!options.silent) renderShell();
+      return result;
+    } catch (error) {
+      pageState.cardGeneration.automationClosedLoopActionPlan = {
+        status: "failed",
+        data: previous.data || null,
+        error: error.message || String(error),
+        actionStatus: previous.actionStatus || "idle",
+        actionResult: previous.actionResult || null,
+        actionError: previous.actionError || ""
+      };
+      if (!options.silent) renderShell();
+      return null;
+    }
+  }
+
+  async function runAutomationClosedLoopActionPlanFromUi(button) {
+    const holder = pageState.cardGeneration.automationClosedLoopActionPlan || {};
+    const data = holder.data || {};
+    const nextAction = data.nextAction || {};
+    const actionKey = clean(button?.dataset?.automationClosedLoopActionKey || nextAction.key || data.summary?.nextAction);
+    const blockedReason = clean(button?.dataset?.automationClosedLoopBlockedReason);
+    if (blockedReason) {
+      pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, holder, {
+        actionStatus: "blocked",
+        actionError: blockedReason
+      });
+      renderShell();
+      return;
+    }
+    pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, holder, {
+      actionStatus: "running",
+      actionResult: holder.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      if (actionKey === "run_learning_loop_next") {
+        await advanceOperatingLoopFromUi();
+      } else if (actionKey === "prepare_cycle_closure") {
+        await prepareAutomationCycleClosureFromUi();
+      } else if (actionKey === "advance_review") {
+        await advanceAutomationReviewFromUi();
+      } else if (actionKey === "deliver_action_handoff") {
+        const handoffId = clean(nextAction.body?.handoff_id || nextAction.body?.handoffId);
+        if (!handoffId) throw new Error("automation_action_handoff_id_required");
+        if (!findAutomationActionHandoff(handoffId)) {
+          await refreshAutomationActionHandoffs(cardGenerationWorkspaceId(), pageState.cardGeneration.context, { silent: true });
+        }
+        await deliverAutomationActionHandoffFromUi({ dataset: { automationActionHandoffId: handoffId } });
+      } else {
+        throw new Error("automation_closed_loop_action_not_supported_in_owner_panel");
+      }
+      const context = pageState.cardGeneration.context || {};
+      const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+      await refreshAutomationClosedLoopActionPlan(targetWorkspaceId, context, { silent: true });
+      pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, pageState.cardGeneration.automationClosedLoopActionPlan || {}, {
+        actionStatus: "executed",
+        actionResult: { ok: true, actionKey },
+        actionError: ""
+      });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationClosedLoopActionPlan = Object.assign({}, pageState.cardGeneration.automationClosedLoopActionPlan || holder, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
     }
   }
 
@@ -2463,6 +2630,7 @@
     await refreshAutomationSchedulerExecutions(requestedTargetWorkspaceId, refreshedContext, { silent: true });
     await refreshAutomationSchedulerRuns(requestedTargetWorkspaceId, refreshedContext, { silent: true });
     await refreshAutomationSchedulerWorkerTargets(requestedTargetWorkspaceId, refreshedContext, { silent: true });
+    await refreshAutomationClosedLoopActionPlan(requestedTargetWorkspaceId, refreshedContext, { silent: true });
     await refreshReleaseWorkbench(requestedTargetWorkspaceId, refreshedContext);
     if (!options.silent) renderShell();
     return pageState.cardGeneration.automationProposals;
@@ -3017,6 +3185,7 @@
       await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshAutomationSchedulerExecutions(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshAutomationSchedulerRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationClosedLoopActionPlan(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {
@@ -3049,6 +3218,7 @@
       await refreshAutomationActionHandoffs(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshAutomationSchedulerExecutions(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshAutomationSchedulerRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationClosedLoopActionPlan(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {
@@ -3274,6 +3444,7 @@
       await refreshAutomationSchedulerExecutions(requestedTargetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerRuns(requestedTargetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerWorkerTargets(requestedTargetWorkspaceId, context, { silent: true });
+      await refreshAutomationClosedLoopActionPlan(requestedTargetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(requestedTargetWorkspaceId, context);
       return context;
     } catch (refreshError) {
@@ -3704,6 +3875,14 @@
         actionResult: null,
         actionError: ""
       };
+      pageState.cardGeneration.automationClosedLoopActionPlan = {
+        status: "idle",
+        data: null,
+        error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
       pageState.cardGeneration.automationCycleClosure = {
         actionStatus: "idle",
         actionResult: null,
@@ -3782,6 +3961,7 @@
       await refreshAutomationSchedulerExecutions(targetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerRuns(targetWorkspaceId, context, { silent: true });
       await refreshAutomationSchedulerWorkerTargets(targetWorkspaceId, context, { silent: true });
+      await refreshAutomationClosedLoopActionPlan(targetWorkspaceId, context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, context);
       renderShell();
     } catch (error) {
@@ -3901,6 +4081,7 @@
       await refreshOperatingLoopRuns(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReferenceChain(targetWorkspaceId, pageState.cardGeneration.context);
       await refreshAutomationProposals(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshAutomationClosedLoopActionPlan(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
       await refreshReleaseWorkbench(targetWorkspaceId, pageState.cardGeneration.context);
       renderShell();
     } catch (error) {

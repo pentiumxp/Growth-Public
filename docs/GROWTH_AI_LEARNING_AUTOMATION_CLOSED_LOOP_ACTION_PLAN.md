@@ -135,3 +135,48 @@ only service dependencies, and the CLI/DTO do not add write permission,
 Gateway calls, direct repositories, scheduler execution, notification delivery,
 publication, evaluation, stage activation, deployment, or learner-state
 mutation.
+
+## Owner Generation UI
+
+The embedded Owner `生成` page consumes the no-write action-plan route through
+`public/growth-api-client.js` and renders a `闭环下一步` panel before the
+operating-loop execution panel.
+
+UI responsibilities:
+
+- call `GET /api/v1/growth/automation/closed-loop/action-plan` with bounded
+  target, graph scope, selected completed-cycle selectors, latest digest id,
+  and latest handoff id;
+- render the service-provided next action, phase rows, readiness booleans, and
+  visible action/error state;
+- refresh the action plan after context load, selected-cycle changes,
+  proposal/digest/failure-policy/handoff changes, direct planning, publish,
+  and operating-loop refreshes;
+- keep unsupported next actions visible instead of silently doing nothing.
+
+The Owner `执行下一步` button is only a dispatcher to existing Growth-owned
+functions. It does not create a new write path and does not rebuild policy in
+the browser:
+
+- `run_learning_loop_next` -> existing `learning-loop/advance` facade;
+- `prepare_cycle_closure` -> existing cycle-closure prepare route;
+- `advance_review` -> existing review-advancement route;
+- `deliver_action_handoff` -> existing action-handoff delivery route.
+
+`collect_platform_action_evidence`, `complete_learner_cycle`, and
+`refresh_closed_loop_context` remain visible non-dispatched states in the first
+UI pass; the Owner must use the corresponding panel or learner card flow.
+
+Frontend Harness:
+
+```bash
+node --test \
+  tests/growth-frontend-adapter.test.js \
+  tests/growth-architecture-boundary.test.js
+```
+
+The frontend harness proves direct/proxy API-client query construction,
+summary-only panel rendering, action dispatcher wiring, refresh wiring after
+context/proposal/digest/handoff changes, and no browser-side Gateway calls,
+scheduler permission, policy reconstruction, raw prompts, transcripts, or raw
+learner payloads.
