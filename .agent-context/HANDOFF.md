@@ -329,3 +329,76 @@ The previous full handoff was archived and should be opened only when old proven
   - do not treat the blocked bundle as production release approval;
   - run production deploy only after the remaining release evidence and Owner
     approval gates are intentionally satisfied.
+
+## 2026-06-19T07:35+0800 - Fanfan computing AI literacy production release
+
+- Status:
+  - Released the Fanfan Computing and AI Literacy breadth graph pack to Mac
+    production through the central Home AI macOS deployment contract, then
+    imported it into the production Growth learning SQLite database.
+  - Provisioned the new graph target for Fanfan's production workspace and
+    published one production test learning card that can be opened through the
+    normal Growth card flow.
+- Production source deploy:
+  - Central command path:
+    `/Users/hermes-dev/HermesMobileDev/app/scripts/deploy-macos-production.js`
+    via `npm run deploy:macos -- --plugin growth`.
+  - Source commit deployed: `cd31158a1b8e` (`Add Fanfan computing AI literacy
+    graph pack`).
+  - Production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260618T230116Z-plugin-growth-manual`.
+  - Manifest health passed after service restart.
+  - Non-blocking central auth audit note: `codexIssueCount=0`; existing
+    non-Codex audit issue count remained non-zero.
+- Production graph import:
+  - Graph source:
+    `knowledge-graph/fanfan-computing-ai-literacy-v1.json`.
+  - Pack id: `domain_pack_fanfan_computing_ai_literacy_v1`.
+  - Import id: `kg_import_20260619_fanfan_computing_ai_literacy_v1`.
+  - Production DB backup:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-graph-import-20260618T230145Z.sqlite3`.
+  - Import readback passed with `83` nodes, `140` edges, `58` prerequisite
+    edges, `10` subjects, zero duplicate ids, zero missing endpoints, zero
+    prerequisite cycles, zero rejected records, zero unsafe raw-content keys,
+    and zero absolute source paths.
+  - Production DB totals after import: `2` imports, `2` packs, `377` nodes,
+    `469` edges.
+- Production target provisioning:
+  - Workspace/learner: `weixin_stephen` / `weixin_stephen` (Fanfan visible
+    target).
+  - Program id: `program_fanfan_computing_ai_literacy_preview`.
+  - Provision id: `lgprov_b4de21114f04335135`.
+  - Target node: `kg_compute_ai_coding_requirements`.
+  - Resolve readback passed with `targetEnabled=true`, mode
+    `explicit_provision`, domain pack
+    `domain_pack_fanfan_computing_ai_literacy_v1`, domain
+    `computing_ai_literacy`, subject `software_engineering_ai_coding`.
+- Production test card:
+  - Generated through the production Growth card generation service with
+    Gateway authoring and validation. The first attempt hit a transient
+    `fetch failed`; the second attempt reached Gateway but failed validation on
+    missing `teachingFlow.quickCheck.instruction`; the successful retry used
+    the daily subject practice evidence defaults and was repaired/validated by
+    the service before publish.
+  - Task card id: `ltask_597aa663cd0e9838bf`.
+  - Title: `Turn a game feature wish into a clear AI coding request`.
+  - Learning graph plan id: `lgp_203d28cc775d4ac75e`.
+  - Generation key:
+    `fanfan-computing-ai-literacy-requirements-preview-20260619`.
+  - Gateway mode: `json`; repaired: `true`.
+  - DB readback passed: card is `published`, workspace/learner are
+    `weixin_stephen`, role is `practice`, planned date is `2026-06-18`,
+    planned minutes is `12`, completion policy is `daily_score_once`, domain
+    is `computing_ai_literacy`, and skill ids contain
+    `kg_compute_ai_coding_requirements`.
+  - Graph binding readback passed:
+    `ltask_597aa663cd0e9838bf` -> `lgp_203d28cc775d4ac75e` with
+    node ids `["kg_compute_ai_coding_requirements"]`.
+  - Service-level card GET passed at
+    `/api/v1/growth/cards/ltask_597aa663cd0e9838bf?workspaceId=weixin_stephen`.
+- Remaining next-step candidates:
+  - Owner should open Home AI production, enter Growth/Fanfan, and inspect the
+    published card content through the normal card flow.
+  - If the card is acceptable, keep the pack provision active and start adding
+    more cards/recipes from the new graph; if not, revise the graph node text
+    or add subject-specific rubric support for `software_engineering_ai_coding`.
