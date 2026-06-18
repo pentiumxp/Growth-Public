@@ -9093,3 +9093,164 @@ test("growth daily loop draft and publish delegate through service with Owner wr
     await close(server);
   }
 });
+
+test("automation cycle closure prepare route is Owner scoped and delegates to service", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken !== "owner-token" || workspaceId !== "weixin_stephen") {
+          const error = new Error("denied");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+        return { workspace_id: "growth:weixin_stephen", hermes_workspace_id: "weixin_stephen" };
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationCycleClosureService: {
+      async prepareReviewPacket(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          status: "pending",
+          schemaVersion: "growth.learningAutomationCycleClosure.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          summary: {
+            selectedCycleId: "cycle_route_1",
+            proposalId: "lgauto_route_1",
+            digestId: "lgadig_route_1",
+            publishPerformed: false,
+            schedulerStarted: false
+          },
+          stages: [
+            { name: "profile_feedback", ok: true },
+            { name: "proposal_create", ok: true },
+            { name: "proposal_review", ok: true },
+            { name: "digest_create", ok: true }
+          ],
+          writesPerformed: true,
+          publishPerformed: false,
+          schedulerStarted: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const prepared = await fetch(`${baseUrl}/api/v1/growth/automation/cycle-closures/prepare`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({
+        workspace_id: "weixin_fanfan",
+        learner_id: "fanfan",
+        program_id: "program_science",
+        domain_pack_id: "uk_hk_curriculum_foundation",
+        domain: "science",
+        subject: "science",
+        target_node_ids: ["kg_science_fair_test"],
+        auto_select_latest_completed_cycle: true,
+        accept_proposal: true,
+        create_digest: true,
+        review_digest: false,
+        create_handoff: false
+      })
+    });
+    assert.equal(prepared.status, 201);
+    const preparedBody = await prepared.json();
+    assert.equal(preparedBody.summary.proposalId, "lgauto_route_1");
+    assert.equal(preparedBody.publishPerformed, false);
+    assert.equal(preparedBody.schedulerStarted, false);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      horizon: "daily_plan",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      availableMinutes: undefined,
+      allowedCardRoles: undefined,
+      lowPressure: undefined,
+      targetNodeIds: ["kg_science_fair_test"],
+      sourceTargetNodeIds: undefined,
+      cycleId: undefined,
+      sourcePlanDraftId: undefined,
+      sourceTaskCardId: undefined,
+      sourceEvaluationId: undefined,
+      profileDeltaId: undefined,
+      evidenceId: undefined,
+      correctionId: undefined,
+      sourceId: undefined,
+      proposalDecision: undefined,
+      proposalReason: undefined,
+      acceptProposal: true,
+      createDigest: true,
+      reviewDigest: false,
+      digestReviewStatus: undefined,
+      digestReviewNote: undefined,
+      selectedCandidateIds: undefined,
+      createHandoff: false,
+      deliverHandoff: undefined,
+      handoffSummary: undefined,
+      handoffId: undefined,
+      autoSelectCompletedCycle: false,
+      autoSelectLatestCompletedCycle: true,
+      auditLimit: undefined,
+      limit: undefined,
+      requestedBy: "weixin_stephen"
+    });
+
+    const deniedRole = await fetch(`${baseUrl}/api/v1/growth/automation/cycle-closures/prepare`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_stephen" })
+    });
+    assert.equal(deniedRole.status, 403);
+    assert.equal((await deniedRole.json()).error.code, "growth_automation_cycle_closure_owner_required");
+
+    const deniedTarget = await fetch(`${baseUrl}/api/v1/growth/automation/cycle-closures/prepare`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer owner-token",
+        "content-type": "application/json",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      },
+      body: JSON.stringify({ workspace_id: "weixin_unknown" })
+    });
+    assert.equal(deniedTarget.status, 403);
+    assert.equal((await deniedTarget.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});

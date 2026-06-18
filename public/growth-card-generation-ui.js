@@ -2068,6 +2068,90 @@
     }));
   }
 
+  function createAutomationCycleClosurePayload({ context = {}, workspaceId = "", selectedCycle = {} } = {}) {
+    const payload = createAutomationProposalCreatePayload({ context, workspaceId, selectedCycle });
+    return Object.fromEntries(Object.entries(Object.assign({}, payload, {
+      auto_select_latest_completed_cycle: true,
+      accept_proposal: true,
+      create_digest: true,
+      review_digest: false,
+      create_handoff: false,
+      deliver_handoff: false,
+      requested_by: "owner"
+    })).filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "boolean") return true;
+      return clean(value);
+    }));
+  }
+
+  function automationCycleClosureStatusText(status = "") {
+    const value = clean(status).toLowerCase();
+    if (value === "submitting") return "准备中";
+    if (value === "prepared") return "已准备";
+    if (value === "proposal_ready") return "建议已准备";
+    if (value === "digest_pending" || value === "pending") return "Digest 待复核";
+    if (value === "reviewed") return "已复核";
+    if (value === "delivered") return "已投递";
+    if (value === "blocked") return "已阻塞";
+    if (value === "failed") return "失败";
+    return value || "待准备";
+  }
+
+  function automationCycleClosureStatusPanel(holder = {}, escapeHtml = defaultEscapeHtml) {
+    const status = clean(holder.actionStatus);
+    const error = clean(holder.actionError);
+    const result = holder.actionResult || {};
+    const summary = result.summary || {};
+    if (!status || status === "idle") return "";
+    const detail = status === "prepared"
+      ? `复核包已准备：${clean(summary.proposalId) || "proposal"} / ${clean(summary.digestId) || "digest"}。`
+      : status === "submitting"
+        ? "正在从完成周期准备 proposal 和 digest。"
+        : error || clean(result.error) || "闭环复核包准备失败。";
+    return `<div class="learning-card-generation-proposal-status" data-automation-cycle-closure-action-status="${escapeHtml(status)}">
+      <span>${escapeHtml(detail)}</span>
+      <em>${escapeHtml(automationCycleClosureStatusText(status))}</em>
+    </div>`;
+  }
+
+  function automationCycleClosurePanel(context = {}, state = {}, escapeHtml = defaultEscapeHtml) {
+    const holder = state.automationCycleClosure || {};
+    const result = holder.actionResult || {};
+    const summary = result.summary || {};
+    const stages = asArray(result.stages);
+    const selectedCycle = result.selectedCycle || state.cycleHistory?.selectedCycle || {};
+    const selectedCycleId = clean(summary.selectedCycleId || selectedCycle.cycleId || selectedCycle.cycle_id);
+    const proposalId = clean(summary.proposalId || result.proposal?.proposalId || result.proposal?.proposal_id);
+    const digestId = clean(summary.digestId || result.digest?.digestId || result.digest?.digest_id);
+    const busy = clean(holder.actionStatus) === "submitting";
+    const status = clean(holder.actionStatus || result.status || "idle");
+    const failedStages = stages.filter((stage = {}) => stage.ok === false).map((stage = {}) => clean(stage.name)).filter(Boolean);
+    const detail = clean(holder.actionError)
+      || clean(result.error)
+      || (proposalId || digestId
+        ? "已把完成周期转成 Owner 可复核的下一张建议和 dry-run digest。"
+        : "默认自动选择最新完成周期；只准备复核包，不发布卡片、不启动 scheduler。");
+    return `<section class="learning-card-generation-proposals learning-card-generation-cycle-closure" data-automation-cycle-closure-panel data-automation-cycle-closure-status="${escapeHtml(status)}">
+      <div class="learning-card-generation-proposal-head">
+        <span>
+          <strong>闭环复核包</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+        <div class="learning-card-generation-proposal-head-actions">
+          <button type="button" class="primary${busy ? " disabled" : ""}" data-automation-cycle-closure-prepare ${busy ? "disabled" : ""}>${busy ? "准备中" : "准备复核包"}</button>
+        </div>
+      </div>
+      <div class="learning-card-generation-proposal-grid">
+        <span><small>完成周期</small><strong>${escapeHtml(selectedCycleId || "auto")}</strong></span>
+        <span><small>Proposal</small><strong>${escapeHtml(proposalId || "待生成")}</strong></span>
+        <span><small>Digest</small><strong>${escapeHtml(digestId || "待生成")}</strong></span>
+      </div>
+      ${failedStages.length ? `<div class="learning-card-generation-proposal-empty">阻塞阶段：${escapeHtml(failedStages.join(" · "))}</div>` : ""}
+      ${automationCycleClosureStatusPanel(holder, escapeHtml)}
+    </section>`;
+  }
+
   function automationProposalStatusText(status = "") {
     const value = clean(status).toLowerCase();
     if (value === "loading") return "读取中";
@@ -4114,6 +4198,7 @@
           ${learningLoopStatePanel(state, context, escapeHtml)}
           ${operatingLoopPanel(context, state, escapeHtml)}
           ${referenceChainPanel(context, state, options.workspaceId, escapeHtml)}
+          ${automationCycleClosurePanel(context, state, escapeHtml)}
           ${automationProposalPanel(context, state, escapeHtml)}
           ${automationDigestPanel(context, state, escapeHtml)}
           ${automationFailurePolicyPanel(context, state, escapeHtml)}
@@ -4161,6 +4246,7 @@
 
   root.HermesGrowthCardGenerationUi = {
     createDailyEnglishGeneratePayload,
+    createAutomationCycleClosurePayload,
     createAutomationProposalCreatePayload,
     createAutomationProposalDecisionPayload,
     createAutomationProposalPublishPayload,

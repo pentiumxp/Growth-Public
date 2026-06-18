@@ -649,6 +649,12 @@
       return fetchJson(`${growthApiPath("automation", "scheduler", "worker-targets")}${automationSchedulerWorkerTargetQuery(targetWorkspaceId, payload)}`);
     }
 
+    function prepareGrowthAutomationCycleClosure(payload = {}, targetWorkspaceId = getWorkspaceId()) {
+      return postJson(growthApiPath("automation", "cycle-closures", "prepare"), Object.assign({
+        workspace_id: targetWorkspaceId
+      }, payload));
+    }
+
     function createGrowthAutomationProposal(payload = {}, targetWorkspaceId = getWorkspaceId()) {
       return postJson(growthApiPath("automation", "proposals"), Object.assign({
         workspace_id: targetWorkspaceId
@@ -940,6 +946,7 @@
       fetchLearningLoopState,
       fetchLearningOperatingLoopRuns,
       generateGrowthCard,
+      prepareGrowthAutomationCycleClosure,
       postJson,
       processGrowthEvaluations,
       recordGrowthOwnerAuditReview,

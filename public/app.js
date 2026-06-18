@@ -63,6 +63,11 @@
         actionResult: null,
         actionError: ""
       },
+      automationCycleClosure: {
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      },
       automationProposals: {
         status: "idle",
         data: null,
@@ -1081,6 +1086,19 @@
         });
       });
     });
+    root.querySelectorAll("[data-automation-cycle-closure-prepare]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (button.disabled) return;
+        prepareAutomationCycleClosureFromUi().catch((error) => {
+          pageState.cardGeneration.automationCycleClosure = Object.assign({}, pageState.cardGeneration.automationCycleClosure, {
+            actionStatus: "failed",
+            actionError: error.message || String(error)
+          });
+          renderShell();
+        });
+      });
+    });
     root.querySelectorAll("[data-automation-proposal-refresh]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -1554,6 +1572,11 @@
       error: "",
       actionStatus: "idle",
       actionResult: null,
+      actionError: ""
+    };
+    pageState.cardGeneration.automationCycleClosure = {
+      actionStatus: "idle",
+      actionResult: pageState.cardGeneration.automationCycleClosure?.actionResult || null,
       actionError: ""
     };
     pageState.cardGeneration.automationProposals = {
@@ -2658,6 +2681,20 @@
     };
   }
 
+  function createAutomationCycleClosurePayload() {
+    const ui = window.HermesGrowthCardGenerationUi;
+    if (!ui || typeof ui.createAutomationCycleClosurePayload !== "function") {
+      throw new Error("automation_cycle_closure_ui_unavailable");
+    }
+    const context = pageState.cardGeneration.context || {};
+    const selectedCycle = pageState.cardGeneration.cycleHistory?.selectedCycle || {};
+    const targetWorkspaceId = clean(pageState.cardGeneration.selectedWorkspaceId || context?.target?.workspaceId || currentWorkspaceId);
+    return {
+      payload: ui.createAutomationCycleClosurePayload({ context, workspaceId: targetWorkspaceId, selectedCycle }),
+      targetWorkspaceId
+    };
+  }
+
   function createAutomationProposalCreatePayload() {
     const ui = window.HermesGrowthCardGenerationUi;
     if (!ui || typeof ui.createAutomationProposalCreatePayload !== "function") {
@@ -2683,6 +2720,33 @@
       payload: ui.createAutomationProposalPublishPayload({ context, workspaceId: targetWorkspaceId, proposal }),
       targetWorkspaceId
     };
+  }
+
+  async function prepareAutomationCycleClosureFromUi() {
+    const { payload, targetWorkspaceId } = createAutomationCycleClosurePayload();
+    pageState.cardGeneration.automationCycleClosure = Object.assign({}, pageState.cardGeneration.automationCycleClosure, {
+      actionStatus: "submitting",
+      actionResult: pageState.cardGeneration.automationCycleClosure?.actionResult || null,
+      actionError: ""
+    });
+    renderShell();
+    try {
+      const result = await api.prepareGrowthAutomationCycleClosure(payload, targetWorkspaceId);
+      pageState.cardGeneration.automationCycleClosure = Object.assign({}, pageState.cardGeneration.automationCycleClosure, {
+        actionStatus: result.ok ? "prepared" : "failed",
+        actionResult: result,
+        actionError: result.ok ? "" : clean(result.error || "automation_cycle_closure_prepare_failed")
+      });
+      await refreshAutomationProposalReviewStack(targetWorkspaceId, pageState.cardGeneration.context, { silent: true });
+      await refreshOwnerCycleDrilldownFromUi({ silent: true });
+      renderShell();
+    } catch (error) {
+      pageState.cardGeneration.automationCycleClosure = Object.assign({}, pageState.cardGeneration.automationCycleClosure, {
+        actionStatus: "failed",
+        actionError: error.message || String(error)
+      });
+      renderShell();
+    }
   }
 
   async function createAutomationProposalFromUi() {
@@ -3571,6 +3635,11 @@
         status: "idle",
         data: null,
         error: "",
+        actionStatus: "idle",
+        actionResult: null,
+        actionError: ""
+      };
+      pageState.cardGeneration.automationCycleClosure = {
         actionStatus: "idle",
         actionResult: null,
         actionError: ""

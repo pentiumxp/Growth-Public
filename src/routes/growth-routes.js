@@ -1480,6 +1480,50 @@ function normalizeAutomationDigestInput(body, workspaceId, target, request, url)
   };
 }
 
+function normalizeAutomationCycleClosureInput(body, workspaceId, target, request, url) {
+  return {
+    workspaceId,
+    learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
+    displayName: target?.label || body.displayName || body.display_name,
+    label: target?.label || body.label,
+    programId: body.programId || body.program_id,
+    horizon: body.horizon || "daily_plan",
+    domainPackId: body.domainPackId || body.domain_pack_id,
+    domain: body.domain,
+    subject: body.subject,
+    availableMinutes: body.availableMinutes || body.available_minutes,
+    allowedCardRoles: body.allowedCardRoles || body.allowed_card_roles,
+    lowPressure: body.lowPressure !== undefined ? body.lowPressure : body.low_pressure,
+    targetNodeIds: body.targetNodeIds || body.target_node_ids || body.nodeIds || body.node_ids,
+    sourceTargetNodeIds: body.sourceTargetNodeIds || body.source_target_node_ids,
+    cycleId: body.cycleId || body.cycle_id,
+    sourcePlanDraftId: body.sourcePlanDraftId || body.source_plan_draft_id || body.planDraftId || body.plan_draft_id,
+    sourceTaskCardId: body.sourceTaskCardId || body.source_task_card_id || body.taskCardId || body.task_card_id,
+    sourceEvaluationId: body.sourceEvaluationId || body.source_evaluation_id || body.evaluationId || body.evaluation_id,
+    profileDeltaId: body.profileDeltaId || body.profile_delta_id,
+    evidenceId: body.evidenceId || body.evidence_id,
+    correctionId: body.correctionId || body.correction_id,
+    sourceId: body.sourceId || body.source_id,
+    proposalDecision: body.proposalDecision || body.proposal_decision,
+    proposalReason: body.proposalReason || body.proposal_reason,
+    acceptProposal: body.acceptProposal !== undefined ? body.acceptProposal : body.accept_proposal,
+    createDigest: body.createDigest !== undefined ? body.createDigest : body.create_digest,
+    reviewDigest: body.reviewDigest !== undefined ? body.reviewDigest : body.review_digest,
+    digestReviewStatus: body.digestReviewStatus || body.digest_review_status,
+    digestReviewNote: body.digestReviewNote || body.digest_review_note || body.note,
+    selectedCandidateIds: body.selectedCandidateIds || body.selected_candidate_ids,
+    createHandoff: body.createHandoff !== undefined ? body.createHandoff : body.create_handoff,
+    deliverHandoff: body.deliverHandoff !== undefined ? body.deliverHandoff : body.deliver_handoff,
+    handoffSummary: body.handoffSummary || body.handoff_summary || body.summary,
+    handoffId: body.handoffId || body.handoff_id,
+    autoSelectCompletedCycle: body.autoSelectCompletedCycle === true || body.auto_select_completed_cycle === true,
+    autoSelectLatestCompletedCycle: body.autoSelectLatestCompletedCycle !== false && body.auto_select_latest_completed_cycle !== false,
+    auditLimit: body.auditLimit || body.audit_limit,
+    limit: body.limit,
+    requestedBy: body.requestedBy || body.requested_by || requestedWorkspaceId(request, url, "")
+  };
+}
+
 function normalizeAutomationFailurePolicyInput(body, workspaceId, target, request, url) {
   return {
     workspaceId,
@@ -2402,6 +2446,19 @@ async function handleGrowthRoute(request, response, url, services) {
     const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
     const result = await services.learningOperatingLoopService.runNext(
       normalizeOperatingLoopBodyInput(body, serviceWorkspaceId, target, request, url)
+    );
+    return sendJson(response, result.ok ? 201 : 400, result);
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/v1/growth/automation/cycle-closures/prepare") {
+    const body = await readJson(request, { maxBytes: DEFAULT_JSON_LIMIT_BYTES });
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_cycle_closure_owner_required", "Automation cycle closure requires Owner role", 403);
+    }
+    const serviceWorkspaceId = authorizeWritableWorkspace(request, url, body, services);
+    const target = visibleTargetByWorkspace(request, url, services, serviceWorkspaceId);
+    const result = await services.learningAutomationCycleClosureService.prepareReviewPacket(
+      normalizeAutomationCycleClosureInput(body, serviceWorkspaceId, target, request, url)
     );
     return sendJson(response, result.ok ? 201 : 400, result);
   }

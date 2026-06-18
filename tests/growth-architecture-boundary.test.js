@@ -203,6 +203,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningLearnerCycleService/);
   assert.match(services, /createLearningAutomationActionHandoffService/);
   assert.match(services, /learningAutomationActionHandoffService/);
+  assert.match(services, /createLearningAutomationCycleClosureService/);
+  assert.match(services, /learningAutomationCycleClosureService/);
   assert.match(services, /createLearningAutomationDigestService/);
   assert.match(services, /learningAutomationDigestService/);
   assert.match(services, /createLearningAutomationFailurePolicyService/);
@@ -451,6 +453,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /learningAutomationReleaseEvidenceService\.listEvidence/);
   assert.match(routes, /learningAutomationReleaseEvidenceService\.recordEvidence/);
   assert.match(routes, /automation\/digests/);
+  assert.match(routes, /automation\/cycle-closures\/prepare/);
+  assert.match(routes, /normalizeAutomationCycleClosureInput/);
+  assert.match(routes, /learningAutomationCycleClosureService\.prepareReviewPacket/);
   assert.match(routes, /automationDigestReviewMatch/);
   assert.match(routes, /normalizeAutomationDigestInput/);
   assert.match(routes, /normalizeAutomationDigestReviewInput/);
@@ -3472,6 +3477,59 @@ test("Growth automation action handoff smoke CLI stays service-owned and write-g
   assert.match(scriptHarness, /lists without writing by default/);
   assert.match(scriptHarness, /creates and delivers only with explicit write flag/);
   assert.match(scriptHarness, /fails closed for missing input, invalid JSON, invalid operation, and privacy risk/);
+});
+
+test("Growth automation cycle closure stays service-owned and write-gated", () => {
+  const packageJson = read("package.json");
+  assert.match(packageJson, /smoke:cycle-closure/);
+  assert.match(packageJson, /smoke-growth-automation-cycle-closure\.js/);
+  assert.match(packageJson, /learning-automation-cycle-closure-service\.js/);
+
+  const service = read(path.join("src", "services", "learning-automation-cycle-closure-service.js"));
+  assert.match(service, /createLearningAutomationCycleClosureService/);
+  assert.match(service, /profileFeedbackService\.evaluate/);
+  assert.match(service, /proposalService\.createProposal/);
+  assert.match(service, /proposalService\.reviewProposal/);
+  assert.match(service, /digestService\.createDigest/);
+  assert.match(service, /actionHandoffService\.createHandoff/);
+  assert.match(service, /actionHandoffService\.deliverHandoff/);
+  assert.match(service, /summaryOnly: true/);
+  assert.match(service, /publishPerformed: false/);
+  assert.match(service, /schedulerStarted: false/);
+  assert.doesNotMatch(service, /require\(["']\.\.\/stores/);
+  assert.doesNotMatch(service, /learning_growth_/);
+  assert.doesNotMatch(service, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(service, /publishPlanItem|generateCard|evaluateSubmission|executeOnce|runOnce|dryRun/);
+
+  const script = read(path.join("scripts", "smoke-growth-automation-cycle-closure.js"));
+  assert.match(script, /readEnv/);
+  assert.match(script, /createServices/);
+  assert.match(script, /learningAutomationCycleClosureService/);
+  assert.match(script, /prepareReviewPacket/);
+  assert.match(script, /--allow-write/);
+  assert.match(script, /automation_cycle_closure_smoke_write_not_allowed/);
+  assert.match(script, /automation_cycle_closure_smoke_invalid_json/);
+  assert.match(script, /automation_cycle_closure_smoke_operation_invalid/);
+  assert.match(script, /workspace_id_required/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /publishPlanItem/);
+  assert.doesNotMatch(script, /generateCard/);
+  assert.doesNotMatch(script, /evaluateSubmission/);
+  assert.doesNotMatch(script, /executeOnce/);
+  assert.doesNotMatch(script, /runOnce/);
+  assert.doesNotMatch(script, /activateStageAssessment/);
+
+  const serviceHarness = read(path.join("tests", "learning-automation-cycle-closure-service.test.js"));
+  assert.match(serviceHarness, /prepares proposal and pending digest/);
+  assert.match(serviceHarness, /completed cycle or proposal gate is missing/);
+  assert.match(serviceHarness, /rejects privacy-risk input/);
+
+  const scriptHarness = read(path.join("tests", "growth-automation-cycle-closure-smoke-script.test.js"));
+  assert.match(scriptHarness, /parses prepare input and write gate/);
+  assert.match(scriptHarness, /projects operator readback/);
 });
 
 test("Growth automation digest smoke CLI stays service-owned and write-gated", () => {

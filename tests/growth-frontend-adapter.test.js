@@ -990,6 +990,8 @@ test("Growth API client routes API calls through the Home AI plugin proxy when e
 
 test("Growth API client avoids proxy-rewritten API string literals", () => {
   const source = fs.readFileSync(path.join(__dirname, "..", "public", "growth-api-client.js"), "utf8");
+  assert.match(source, /function prepareGrowthAutomationCycleClosure/);
+  assert.match(source, /growthApiPath\("automation", "cycle-closures", "prepare"\)/);
   assert.doesNotMatch(source, /["'`]\/api\/v1\/growth/);
   assert.doesNotMatch(source, /["'`]\/api\/hermes-plugins\/growth\/proxy/);
 });
@@ -2630,6 +2632,10 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.match(html, /lgplan_1/);
   assert.match(html, /growth_reference_object_not_found/);
   assert.match(html, /summary-only/);
+  assert.match(html, /data-automation-cycle-closure-panel/);
+  assert.match(html, /闭环复核包/);
+  assert.match(html, /data-automation-cycle-closure-prepare/);
+  assert.match(html, /准备复核包/);
   assert.match(html, /data-automation-proposal-panel/);
   assert.match(html, /自动化建议/);
   assert.match(html, /data-automation-proposal-create/);
@@ -3748,6 +3754,48 @@ test("Growth card generation UI renders Owner panel and structured payload", () 
   assert.equal(workerTargetReviewPayload.status, "enabled");
   assert.equal(workerTargetReviewPayload.reviewed_by, "owner");
   assert.equal(Object.hasOwn(workerTargetReviewPayload, "raw_prompt"), false);
+
+  const cycleClosurePayload = windowRef.HermesGrowthCardGenerationUi.createAutomationCycleClosurePayload({
+    context,
+    workspaceId: "weixin_fanfan",
+    selectedCycle: {
+      selectors: {
+        planDraftId: "lgplan_history_1",
+        taskCardId: "ltask_history_1",
+        evaluationId: "eval_history_1",
+        profileDeltaId: "lgpdelta_history_1",
+        evidenceId: "lgevidence_history_1",
+        targetNodeIds: ["kg_history_node"]
+      }
+    }
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(cycleClosurePayload)), {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: "15",
+    low_pressure: true,
+    requested_by: "owner",
+    source_plan_draft_id: "lgplan_history_1",
+    source_task_card_id: "ltask_history_1",
+    source_evaluation_id: "eval_history_1",
+    profile_delta_id: "lgpdelta_history_1",
+    evidence_id: "lgevidence_history_1",
+    source_id: "eval_history_1",
+    source_target_node_ids: ["kg_history_node"],
+    target_node_ids: ["kg_history_node"],
+    auto_select_latest_completed_cycle: true,
+    accept_proposal: true,
+    create_digest: true,
+    review_digest: false,
+    create_handoff: false,
+    deliver_handoff: false
+  });
+  assert.equal(Object.hasOwn(cycleClosurePayload, "raw_prompt"), false);
+  assert.equal(Object.hasOwn(cycleClosurePayload, "transcript"), false);
 
   const proposalCreatePayload = windowRef.HermesGrowthCardGenerationUi.createAutomationProposalCreatePayload({
     context,
@@ -4944,6 +4992,10 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /await refreshReleaseLifecycleRecords\(requestedTargetWorkspaceId, pageState\.cardGeneration\.context \|\| context, \{ silent: true \}\)/);
   assert.match(source, /function refreshAutomationProposals/);
   assert.match(source, /api\.fetchGrowthAutomationProposals\(payload, requestedTargetWorkspaceId\)/);
+  assert.match(source, /data-automation-cycle-closure-prepare/);
+  assert.match(source, /function createAutomationCycleClosurePayload/);
+  assert.match(source, /function prepareAutomationCycleClosureFromUi/);
+  assert.match(source, /api\.prepareGrowthAutomationCycleClosure\(payload, targetWorkspaceId\)/);
   assert.match(source, /api\.createGrowthAutomationProposal\(payload, targetWorkspaceId\)/);
   assert.match(source, /pageState\.cardGeneration\.context = context/);
   assert.match(source, /await refreshLearningLoopState\(requestedTargetWorkspaceId, context\)/);
@@ -4969,6 +5021,7 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /data-card-generation-provision-target/);
   assert.match(source, /data-release-workbench-action/);
   assert.match(source, /data-release-package-build/);
+  assert.match(source, /data-automation-cycle-closure-prepare/);
   assert.match(source, /data-automation-proposal-refresh/);
   assert.match(source, /data-automation-proposal-create/);
   assert.match(source, /data-automation-proposal-review/);
@@ -4994,6 +5047,8 @@ test("Growth app refreshes card generation context after publish without clearin
   assert.match(source, /function createReleasePackageBuildPayloadFromButton/);
   assert.match(source, /function buildReleasePackageFromUi/);
   assert.match(source, /function recordReleaseWorkbenchActionFromUi/);
+  assert.match(source, /function createAutomationCycleClosurePayload/);
+  assert.match(source, /function prepareAutomationCycleClosureFromUi/);
   assert.match(source, /function createAutomationProposalCreatePayload/);
   assert.match(source, /function createAutomationProposalFromUi/);
   assert.match(source, /function createAutomationProposalDecisionPayload/);
