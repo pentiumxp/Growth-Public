@@ -11,8 +11,23 @@
 
 ## 2026-06-18T11:35+0800 - Owner Closed-Loop Action Plan UI
 
-- Status: implemented and locally validated; commit/push/deploy follows this
-  handoff entry in the same operator turn.
+- Status: implemented, locally validated, committed, pushed, deployed, and
+  production static-readback verified.
+- Runtime commit: `85561b9 feat: add owner closed-loop action plan UI`.
+  Pushed to private `Growth` and public `Growth-Public`; this handoff entry is
+  recorded in the follow-up docs-only commit.
+- Deployment: Home AI macOS plugin deploy succeeded for Growth after the
+  deploy-record update, restarted `com.hermesmobile.plugin.growth`, launchd
+  state readback was `running`, and the public Growth manifest health check
+  passed.
+- Production readback: `http://127.0.0.1:4881/growth-card-generation-ui.js`
+  contains `data-automation-closed-loop-action-plan-panel` and
+  `createAutomationClosedLoopActionPlanQueryPayload`;
+  `growth-api-client.js` contains
+  `fetchGrowthAutomationClosedLoopActionPlan`; `app.js` contains
+  `refreshAutomationClosedLoopActionPlan`,
+  `runAutomationClosedLoopActionPlanFromUi`, and
+  `data-automation-closed-loop-action-run`.
 - Scope: the embedded Owner `生成` page now renders a `闭环下一步` panel from
   the no-write
   `GET /api/v1/growth/automation/closed-loop/action-plan` readback.
