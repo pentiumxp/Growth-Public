@@ -352,6 +352,51 @@ test("learning plan publisher enforces target provisioning for draft and publish
   assert.equal(generationCalls[0].subject, "science");
 });
 
+test("learning plan publisher preserves draft target label for sample publish provisioning", async () => {
+  const targetProvisioningCalls = [];
+  const { generationCalls, service } = createServiceWithStore({
+    targetProvisioningService: {
+      resolveSelection(input) {
+        targetProvisioningCalls.push(input);
+        const sampleText = `${input.displayName || ""} ${input.label || ""}`;
+        if (!sampleText.includes("Fanfan")) {
+          return { ok: false, targetEnabled: false, error: "learning_target_not_provisioned" };
+        }
+        return {
+          ok: true,
+          targetEnabled: true,
+          mode: "sample_default",
+          selectedDomainPackId: input.domainPackId || "uk_hk_curriculum_foundation",
+          selectedDomain: input.domain || "science",
+          selectedSubject: input.subject || "science"
+        };
+      }
+    }
+  });
+
+  const draft = await service.draftPlan({
+    workspaceId: "weixin_stephen",
+    learnerId: "weixin_stephen",
+    displayName: "Fanfan",
+    label: "Fanfan"
+  });
+  assert.equal(draft.ok, true);
+
+  const published = await service.publishPlanItem({
+    workspaceId: "weixin_stephen",
+    planDraftId: draft.planDraft.planDraftId,
+    itemId: "plan_item_science_1"
+  });
+
+  assert.equal(published.ok, true);
+  assert.equal(targetProvisioningCalls.length, 2);
+  assert.equal(targetProvisioningCalls[1].displayName, "Fanfan");
+  assert.equal(targetProvisioningCalls[1].label, "Fanfan");
+  assert.equal(generationCalls[0].displayName, "Fanfan");
+  assert.equal(generationCalls[0].label, "Fanfan");
+  assert.equal(generationCalls[0].domainPackId, "uk_hk_curriculum_foundation");
+});
+
 test("learning plan publisher blocks unprovisioned planner drafts", async () => {
   const { service, store } = createServiceWithStore({ provisioning: true, provisioningFails: true });
   store.learningPlanDraftRepository.ensureSchema();

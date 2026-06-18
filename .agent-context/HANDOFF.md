@@ -9,6 +9,45 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T09:25+0800 - Plan Publish Sample Target Provisioning Fix
+
+- Status: implemented locally; focused Harness passed; not yet committed or
+  deployed at the time of this handoff entry.
+- Production Home AI proxy execution boundary was verified with the Home AI
+  production status smoke and Growth proxy smoke. Output remained bounded to
+  status/route/readback fields and did not expose raw keys or key paths.
+- Production `planner-readiness` through Home AI same-origin proxy passed for
+  `weixin_stephen / learner=weixin_stephen / science / daily_plan`, with
+  Gateway mode `json` and one planner draft item. A summary-only
+  `productionPlannerReadinessEvidence` record was written in production:
+  `lgarev_3f1ec573d9821215a3`.
+- Controlled production `daily-loop/advance` through the proxy correctly
+  failed closed before card publication. The first attempt selected a stale
+  English recommendation under science scope and returned
+  `learning_target_node_not_found`. The second attempt used an explicit
+  science node and created a draft, but publish failed with
+  `learning_target_not_provisioned`.
+- Root cause: `learning-plan-publisher-service.publishPlanItem()` rechecked
+  target provisioning without carrying the plan draft target
+  `displayName`/`label`. The Fanfan sample predicate was true in daily-loop
+  context but false during publish-stage provisioning, so publication was
+  incorrectly blocked.
+- Fix: publisher publish-stage provisioning now inherits
+  `displayName`/`label` from the stored plan draft context. Generated card
+  input also carries that target label and uses the provisioning-selected
+  domain pack/domain/subject as a fallback.
+- Harness: `tests/learning-plan-publisher-service.test.js` now covers a sample
+  target where draft creation includes `Fanfan` context and publish input omits
+  the label; publish must still pass provisioning and carry the label into card
+  generation.
+- Focused validation:
+  `node --test tests/learning-plan-publisher-service.test.js` -> 8/8 passing;
+  `node --check src/services/learning-plan-publisher-service.js` and
+  `node --check tests/learning-plan-publisher-service.test.js` -> pass.
+- Next step: commit/push/deploy this fix, then rerun controlled production
+  daily-loop write smoke through Home AI proxy and persist
+  `productionDailyLoopWriteSmokeEvidence` only if a card is actually published.
+
 ## 2026-06-18T09:05+0800 - Home AI Proxy Production Evidence Harness
 
 - Status: implemented, validated, committed, pushed to private/public remotes,

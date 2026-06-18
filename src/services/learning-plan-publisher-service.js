@@ -119,20 +119,23 @@ function stageAssessmentActivationSummary(item = {}) {
   };
 }
 
-function generationInputFromPlanItem(record = {}, item = {}, input = {}) {
+function generationInputFromPlanItem(record = {}, item = {}, input = {}, targetProvisioning = {}) {
   const targetNodeIds = uniqueStrings(item.targetNodeIds);
   const originalRole = cleanString(item.cardRole);
   const cardRole = cardRoleForGeneration(originalRole);
   const graphSummary = record.contextSummary?.knowledgeGraph || {};
+  const targetSummary = record.contextSummary?.target || {};
   const generationKey = cleanString(input.generationKey || input.generation_key)
     || `${cleanString(record.planDraftId)}:${cleanString(item.itemId)}:${cardRole}`;
   return {
     workspaceId: cleanString(record.workspaceId),
     learnerId: cleanString(record.learnerId || record.workspaceId),
+    displayName: cleanString(input.displayName || input.display_name || targetSummary.displayName),
+    label: cleanString(input.label || targetSummary.displayName),
     programId: cleanString(record.programId),
-    domainPackId: cleanString(input.domainPackId || input.domain_pack_id || graphSummary.domainPackId),
-    domain: cleanString(input.domain || graphSummary.domain),
-    subject: cleanString(input.subject || item.subject || graphSummary.subject),
+    domainPackId: cleanString(input.domainPackId || input.domain_pack_id || graphSummary.domainPackId || targetProvisioning.selectedDomainPackId),
+    domain: cleanString(input.domain || graphSummary.domain || targetProvisioning.selectedDomain),
+    subject: cleanString(input.subject || item.subject || graphSummary.subject || targetProvisioning.selectedSubject),
     targetNodeId: targetNodeIds[0] || "",
     targetNodeIds,
     cardRole,
@@ -294,9 +297,12 @@ function createLearningPlanPublisherService(options = {}) {
       });
     }
     const graphSummary = planDraft.contextSummary?.knowledgeGraph || {};
+    const targetSummary = planDraft.contextSummary?.target || {};
     const targetProvisioning = resolveTargetProvisioning({
       workspaceId: planDraft.workspaceId,
       learnerId: planDraft.learnerId,
+      displayName: input.displayName || input.display_name || targetSummary.displayName,
+      label: input.label || targetSummary.displayName,
       programId: planDraft.programId,
       domainPackId: input.domainPackId || input.domain_pack_id || graphSummary.domainPackId,
       domain: input.domain || graphSummary.domain,
@@ -309,7 +315,7 @@ function createLearningPlanPublisherService(options = {}) {
         targetProvisioning: targetProvisioning.targetProvisioning || targetProvisioning
       });
     }
-    const generationInput = generationInputFromPlanItem(planDraft, item, input);
+    const generationInput = generationInputFromPlanItem(planDraft, item, input, targetProvisioning);
     const privacyFindings = scanPrivacy(generationInput);
     if (privacyFindings.length) {
       return publishUnavailable(planDraft, item, "learning_plan_publish_privacy_failed", {

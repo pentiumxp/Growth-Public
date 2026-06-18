@@ -150,6 +150,23 @@ readback gate set.
   authorized production evidence path for the remaining gates, but does not
   satisfy them by itself and does not change runtime config, grant scheduler
   permission, deliver notifications, or deploy.
+- 2026-06-18 production proxy execution readback: the Home AI production
+  status smoke and Growth same-origin proxy smoke were run through the central
+  sudo validation boundary without exposing raw credentials. Production
+  planner-readiness passed for the real release scope
+  `weixin_stephen / learner=weixin_stephen / science / daily_plan`, and a
+  bounded `productionPlannerReadinessEvidence` record was written in
+  production (`lgarev_3f1ec573d9821215a3`). Controlled production
+  daily-loop advance then failed closed before card publication: one attempt
+  rejected a stale English target under science scope, and the explicit science
+  node attempt created a draft but publish failed with
+  `learning_target_not_provisioned`. The identified fix is in
+  `learning-plan-publisher-service`: publish-stage target provisioning must
+  inherit the stored draft target `displayName`/`label`, and generation input
+  must carry that label plus provisioning-selected graph scope as fallback. The
+  focused Harness is
+  `node --test tests/learning-plan-publisher-service.test.js`. Deploy this fix
+  before rerunning the production daily-loop write gate.
 - Gateway planner, authoring, and evaluation clients now preserve bounded HTTP
   failure summaries (`gateway_http_error`, status, gateway error code/type)
   from fetch-like Responses objects and prevent blank `error` fields from
