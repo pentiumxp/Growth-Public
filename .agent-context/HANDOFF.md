@@ -456,3 +456,84 @@ The previous full handoff was archived and should be opened only when old proven
     unattended post-completion generation still depends on the separate
     operating-loop/background-scheduler release gates or an explicit Owner
     run-next action.
+
+## 2026-06-19T07:58+0800 - Fanfan card authoring clarity and X high Gateway config
+
+- Status:
+  - Tightened Growth Gateway card authoring prompts so generated daily cards
+    must be self-contained for a 13-year-old learner, with concrete titles,
+    brief method explanation, labelled worked examples, numbered guided steps,
+    exact submission instructions, completion criteria, and evidence keys that
+    match the submitted artifact.
+  - Added explicit Gateway reasoning-effort support for Growth authoring and
+    planner Responses requests. Production Growth now sends
+    `model=gpt-5.5` plus `reasoning_effort=xhigh` for authoring and planner
+    calls, matching the Home AI ChatGPT 5.5 / X high product posture.
+- Commits:
+  - Growth plugin: `67844291c46d` (`Improve Growth card authoring clarity`).
+  - Home AI central app: `20517a8d` (`Support Growth Gateway reasoning config`).
+- Validation:
+  - `node --check src/config/env.js src/app/services.js src/services/growth-gateway-authoring-client.js src/services/growth-gateway-planner-client.js`
+    passed.
+  - `node --test tests/learning-card-authoring-service.test.js tests/learning-plan-orchestrator-service.test.js tests/growth-learning-sqlite-store.test.js`
+    passed `42/42`.
+  - `npm run --silent check` passed with `runtimeCount=237`.
+  - Home AI central installer validation passed:
+    `node --check scripts/install-growth-launchd-service.js && node tests/install-growth-launchd-service.test.js`.
+  - `git diff --check` passed in both Growth and Home AI app worktrees.
+- Production deployment:
+  - Deployed Growth commit `67844291c46d` through the central macOS plugin
+    deployment contract.
+  - Production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260618T235428Z-plugin-growth-manual`.
+  - Manifest health passed after restart.
+  - Central auth audit remained non-blocking for this deploy:
+    `codexIssueCount=0`; existing non-Codex profile issues remain.
+  - Reinstalled `com.hermesmobile.plugin.growth` LaunchDaemon through the
+    central installer with:
+    `GROWTH_GATEWAY_AUTHORING_MODEL=gpt-5.5`,
+    `GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT=xhigh`,
+    `GROWTH_GATEWAY_PLANNER_MODEL=gpt-5.5`, and
+    `GROWTH_GATEWAY_PLANNER_REASONING_EFFORT=xhigh`.
+  - Launchd readback confirmed those four env vars plus the existing Gateway
+    endpoint/protocol values.
+  - Production deployment evidence passed with `checkCount=4`,
+    `failedCheckCount=0`, `serviceRunning=true`, `manifestOk=true`,
+    `healthOk=true`, and `sqliteIntegrityOk=true`.
+  - Home AI proxy planner-readiness passed for Fanfan computing/AI literacy:
+    `plannerReadinessOk=true`, `gatewayMode=json`, target
+    `kg_compute_ai_coding_requirements`.
+- New production card:
+  - Generated through the Home AI proxy daily-loop advance route with explicit
+    write approval and the same Fanfan graph scope.
+  - New task card id: `ltask_9aed14f0c47b11cecd`.
+  - Title: `Rewrite one game feature wish into a clear AI coding request`.
+  - Published plan draft id: `lgplan_b5044658e04a4dcd9f`.
+  - Selected item id: `daily_software_requirements_practice_001`.
+  - Learning graph plan id: `lgp_203d28cc775d4ac75e`.
+  - Daily-loop readback passed with `dailyLoopOutcome=published`,
+    `dailyLoopPublishTransaction=committed`, `dailyLoopGenerationOk=true`,
+    `dailyLoopGenerationGatewayMode=json`, and target binding to
+    `kg_compute_ai_coding_requirements`.
+  - Service-level card GET passed for
+    `/api/v1/growth/cards/ltask_9aed14f0c47b11cecd?workspaceId=weixin_stephen`;
+    projection status is `published`, primary action is `submit`, and the
+    card detail includes the clearer micro-lesson, labelled weak/improved
+    example, numbered guided-practice steps, exact four-section submission
+    artifact, and completion criteria.
+- Retired superseded card:
+  - Retired previous daily-loop test card `ltask_f78ad952048de374f0` with
+    reason `superseded_by_clearer_xhigh_authoring_card`.
+  - Retirement dry-run matched exactly one card and zero learner submissions,
+    evaluations, reflections, audio blobs, evaluation jobs, artifacts, or
+    reward rows.
+  - Production backup before retirement:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260618T235826Z.sqlite3`.
+  - Retirement write passed with `retired_count=1` and SQLite
+    `quick_check=ok`.
+- Current Owner-visible test target:
+  - Open Home AI production -> Growth/Fanfan and use the normal card flow for
+    `ltask_9aed14f0c47b11cecd`.
+  - Current cycle completeness is intentionally incomplete until Fanfan submits
+    real learner evidence; it waits for `evaluation_evidence` and
+    `profile_delta_audit`.
