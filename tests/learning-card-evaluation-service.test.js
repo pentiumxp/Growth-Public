@@ -439,6 +439,35 @@ test("Gateway evaluation client can call an official Responses endpoint", async 
   assert.match(body.input, /daily_score_once/);
 });
 
+test("Gateway evaluation client returns bounded HTTP failure summaries", async () => {
+  const client = createGrowthGatewayEvaluationClient({
+    endpoint: "http://127.0.0.1:18751/v1/responses",
+    protocol: "responses",
+    fetchImpl() {
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve(JSON.stringify({
+          error: {
+            message: "Invalid API key",
+            type: "invalid_request_error",
+            code: "invalid_api_key"
+          }
+        }))
+      });
+    }
+  });
+
+  const result = await client.evaluateCardSubmission(evaluationInput());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "gateway_http_error");
+  assert.equal(result.status, 401);
+  assert.equal(result.gatewayErrorCode, "invalid_api_key");
+  assert.equal(result.gatewayErrorType, "invalid_request_error");
+  assert.equal(JSON.stringify(result).includes("Invalid API key"), false);
+});
+
 test("Gateway evaluation Responses body supports repair prompts", () => {
   const body = gatewayEvaluationResponsesBody({
     kind: "growth.card_evaluation.repair",

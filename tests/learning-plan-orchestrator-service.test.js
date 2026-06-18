@@ -225,6 +225,69 @@ test("learning plan orchestrator accepts valid fake Gateway streaming plan", asy
   assert.equal(result.draft.items[0].targetNodeIds[0], "kg_science_fair_test");
 });
 
+test("Gateway planner client returns bounded HTTP failure summaries", async () => {
+  const client = createGrowthGatewayPlannerClient({
+    endpoint: "http://127.0.0.1:18751/v1/responses",
+    protocol: "responses",
+    fetchImpl() {
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve(JSON.stringify({
+          error: {
+            message: "Invalid API key",
+            type: "invalid_request_error",
+            code: "invalid_api_key"
+          }
+        }))
+      });
+    }
+  });
+
+  const result = await client.draftLearningPlan(context());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "gateway_http_error");
+  assert.equal(result.status, 401);
+  assert.equal(result.gatewayErrorCode, "invalid_api_key");
+  assert.equal(result.gatewayErrorType, "invalid_request_error");
+  assert.equal(JSON.stringify(result).includes("Invalid API key"), false);
+});
+
+test("learning plan orchestrator readiness smoke preserves bounded Gateway failure reasons", async () => {
+  const service = createLearningPlanOrchestratorService({
+    plannerContextService: { plannerContext: () => context() },
+    validationService: createLearningPlanValidationService(),
+    gatewayClient: createGrowthGatewayPlannerClient({
+      endpoint: "http://127.0.0.1:18751/v1/responses",
+      protocol: "responses",
+      fetchImpl() {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          text: () => Promise.resolve(JSON.stringify({
+            error: {
+              message: "Invalid API key",
+              type: "invalid_request_error",
+              code: "invalid_api_key"
+            }
+          }))
+        });
+      }
+    })
+  });
+
+  const result = await service.smokePlannerReadiness({ workspaceId: "weixin_stephen" });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "gateway_http_error");
+  assert.equal(result.status, 401);
+  assert.equal(result.gatewayErrorCode, "invalid_api_key");
+  assert.equal(result.gatewayErrorType, "invalid_request_error");
+  assert.equal(result.context.candidateNodeCount, 1);
+  assert.equal(JSON.stringify(result).includes("Invalid API key"), false);
+});
+
 test("learning plan orchestrator fails closed on invalid JSON", async () => {
   const service = createLearningPlanOrchestratorService({
     plannerContextService: { plannerContext: () => context() },

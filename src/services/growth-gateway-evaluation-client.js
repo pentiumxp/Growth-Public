@@ -5,7 +5,7 @@ function cleanString(value) {
 }
 
 function unavailable(error, extra = {}) {
-  return Object.assign({ ok: false, error }, extra);
+  return Object.assign({}, extra, { ok: false, error });
 }
 
 function isObject(value) {
@@ -199,6 +199,26 @@ async function responseText(response) {
   return "";
 }
 
+function gatewayErrorSummary(text = "") {
+  try {
+    const parsed = JSON.parse(String(text || ""));
+    const error = isObject(parsed.error) ? parsed.error : parsed;
+    return {
+      gatewayErrorCode: cleanString(error.code).slice(0, 120),
+      gatewayErrorType: cleanString(error.type).slice(0, 120),
+      gatewayErrorStatus: cleanString(error.status).slice(0, 80)
+    };
+  } catch {
+    return {};
+  }
+}
+
+async function httpErrorResult(response) {
+  const status = Number(response.status || 0) || 0;
+  const summary = gatewayErrorSummary(await responseText(response));
+  return unavailable("gateway_http_error", Object.assign({ status }, summary));
+}
+
 function normalizeGatewayText(text, mode = "") {
   const body = String(text || "");
   const responseMode = mode || (looksLikeSse(body) ? "stream" : "json");
@@ -214,13 +234,18 @@ function normalizeGatewayText(text, mode = "") {
 
 async function normalizeTransportResult(result) {
   if (!result) return unavailable("gateway_empty_response");
-  if (result.ok === false) return unavailable(cleanString(result.error) || "gateway_error", result);
+  if (typeof result.status === "number" && result.status >= 400) {
+    return httpErrorResult(result);
+  }
+  if (result.ok === false) {
+    return unavailable(cleanString(result.error) || "gateway_error", {
+      status: Number(result.status || 0) || undefined,
+      retryable: result.retryable === true
+    });
+  }
   if (typeof result === "string") {
     const normalized = normalizeGatewayText(result);
     return normalized.text ? Object.assign({ ok: true }, normalized) : unavailable("gateway_empty_output", normalized);
-  }
-  if (typeof result.status === "number" && result.status >= 400) {
-    return unavailable("gateway_http_error", { status: result.status });
   }
   if (typeof result.text === "function") {
     const text = await responseText(result);
@@ -258,7 +283,7 @@ function createGrowthGatewayEvaluationClient(options = {}) {
       ? Promise.resolve().then(() => transport(payload))
       : invokeHttpGateway(payload);
     const result = await timeoutPromise(resultPromise, timeoutMs);
-    if (result?.ok === false) return result;
+    if (result?.ok === false && typeof result.status !== "number" && typeof result.text !== "function") return result;
     return normalizeTransportResult(result);
   }
 

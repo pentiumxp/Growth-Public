@@ -74,6 +74,10 @@ function createLearningPlanOrchestratorService(options = {}) {
         ok: false,
         source: "growth-learning-plan-orchestrator-service",
         error: cleanString(result?.error || "learning_planner_smoke_failed"),
+        status: result?.status,
+        gatewayErrorCode: cleanString(result?.gatewayErrorCode),
+        gatewayErrorType: cleanString(result?.gatewayErrorType),
+        gatewayErrorStatus: cleanString(result?.gatewayErrorStatus),
         retryable: Boolean(result?.retryable),
         gatewayMode: cleanString(result?.gatewayMode || result?.mode),
         context: boundedContextSummary(result?.context || {})

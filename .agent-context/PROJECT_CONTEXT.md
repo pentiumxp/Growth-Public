@@ -117,6 +117,31 @@ readback gate set.
   workspace user. Do not record credential locations. Run those gates through
   the production service/proxy or an authorized production collector, not by
   fabricating local fake-Gateway or local delivery evidence.
+- 2026-06-18 release readiness local audit scope is now `43/47` passing for
+  `weixin_stephen/science/daily_plan` after persisting the nine release UI
+  evidence records and the three explicit summary-only release approval
+  records (`writefulExecutionApproval`, `backgroundSchedulerApproval`, and
+  `backgroundWorkerApproval`). `writefulSchedulingAllowed` remains false.
+  Remaining gates are `delivered_action_handoff`,
+  `production_planner_readiness_evidence`,
+  `production_daily_loop_write_smoke_evidence`, and
+  `platform_action_evidence`. The local Gateway endpoint is reachable, but
+  this shell receives bounded `gateway_http_error`, HTTP `401`,
+  `invalid_api_key` from planner/daily-loop smoke because it does not have the
+  production Gateway credential. The available completed-cycle plan drafts are
+  already `published`, so the existing-draft proposal path correctly rejects
+  them with `learning_automation_existing_plan_draft_not_draft`. Platform
+  action evidence currently has zero delivered receipts and reports missing
+  Action Inbox plus Web Push receipt evidence. Do not convert these failures
+  into pass records.
+- Gateway planner, authoring, and evaluation clients now preserve bounded HTTP
+  failure summaries (`gateway_http_error`, status, gateway error code/type)
+  from fetch-like Responses objects and prevent blank `error` fields from
+  overriding the canonical error. Planner readiness smoke projects the same
+  bounded fields as `plannerReadinessHttpStatus`,
+  `plannerReadinessGatewayErrorCode`, and
+  `plannerReadinessGatewayErrorType`. The summary omits raw response bodies,
+  provider messages, credentials, prompts, and private payloads.
 - Release UI evidence collection is registry-driven for the nine Growth
   release UI gates: owner daily, owner audit, proposal review, release package
   review, automation digest, automation action handoff, scheduler execution,

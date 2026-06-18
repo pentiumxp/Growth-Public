@@ -9,6 +9,46 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T08:20+0800 - Release Gate Advance And Gateway Failure Harness
+
+- Persisted the three explicit summary-only release approval records for
+  `weixin_stephen/science/daily_plan`:
+  `writefulExecutionApproval`, `backgroundSchedulerApproval`, and
+  `backgroundWorkerApproval`.
+- Release-readiness readback now reports `passCheckCount=43`,
+  `missingRequiredCount=4`, `missingEvidenceCount=3`,
+  `persistedEvidenceKeyCount=33`, and `persistedApprovalKeyCount=3`.
+  `writefulSchedulingAllowed` is still false.
+- Remaining gates:
+  - `delivered_action_handoff`;
+  - `production_planner_readiness_evidence`;
+  - `production_daily_loop_write_smoke_evidence`;
+  - `platform_action_evidence`.
+- Verified current shell cannot satisfy those remaining gates:
+  - Gateway localhost endpoint is reachable, but planner readiness returns
+    bounded `gateway_http_error`, HTTP `401`, `invalid_api_key`;
+  - controlled daily-loop `advance` fails at draft/Gateway boundary before a
+    plan draft or card is written;
+  - all available Fanfan science plan drafts are already `published`, so the
+    existing-draft proposal path correctly blocks with
+    `learning_automation_existing_plan_draft_not_draft`;
+  - platform action evidence has zero delivered receipts and is missing both
+    Action Inbox and Web Push receipt evidence.
+- Implementation/Harness advanced:
+  - `growth-gateway-planner-client`, `growth-gateway-authoring-client`, and
+    `growth-gateway-evaluation-client` now normalize fetch-like HTTP failures
+    instead of returning blank `ok=false` responses;
+  - bounded HTTP failure summaries expose only `gateway_http_error`, status,
+    and gateway error code/type;
+  - planner readiness smoke now preserves the bounded Gateway failure reason in
+    top-level `plannerReadiness*` fields;
+  - focused tests were added for planner, authoring, evaluation, and planner
+    readiness smoke failure projection.
+- This package does not record pass evidence for the remaining four gates, does
+  not read or write production credentials, does not enable runtime config,
+  does not grant scheduler permission, does not deliver notifications, and does
+  not publish cards.
+
 ## 2026-06-18T07:54+0800 - Release UI Evidence Builder Production Deploy
 
 - User asked to deploy one current Growth package after the progress update.

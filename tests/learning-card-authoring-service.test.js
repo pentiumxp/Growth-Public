@@ -229,6 +229,39 @@ test("Gateway authoring client reads text from fetch Response objects before jso
   assert.equal(JSON.parse(result.text).title, "Fetch Response generated ratio card");
 });
 
+test("Gateway authoring client returns bounded HTTP failure summaries", async () => {
+  const client = createGrowthGatewayAuthoringClient({
+    endpoint: "http://127.0.0.1:18751/v1/responses",
+    protocol: "responses",
+    fetchImpl() {
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve(JSON.stringify({
+          error: {
+            message: "Invalid API key",
+            type: "invalid_request_error",
+            code: "invalid_api_key"
+          }
+        }))
+      });
+    }
+  });
+
+  const result = await client.generateCardDraft({
+    learningGraphPlan: graphPlan(),
+    cardRole: "teaching",
+    cardSchemaVersion: "growth.card.authoring.v1"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "gateway_http_error");
+  assert.equal(result.status, 401);
+  assert.equal(result.gatewayErrorCode, "invalid_api_key");
+  assert.equal(result.gatewayErrorType, "invalid_request_error");
+  assert.equal(JSON.stringify(result).includes("Invalid API key"), false);
+});
+
 test("Gateway Responses prompt and parser support repair and nested output text", () => {
   const body = gatewayResponsesBody({
     kind: "growth.card_authoring.repair",
