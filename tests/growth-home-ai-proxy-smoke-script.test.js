@@ -85,6 +85,14 @@ test("home ai proxy smoke script gates writes unless explicitly allowed", () => 
     "--allow-write"
   ], {}));
   assert.deepEqual(allowed, { ok: true });
+
+  const reviewBlocked = validateInput(inputFromArgs([
+    "--operation", "review-advancement",
+    "--workspace-id", "weixin_fanfan",
+    "--home-ai-access-key-file", "/tmp/private-home-ai-key"
+  ], {}));
+  assert.equal(reviewBlocked.ok, false);
+  assert.equal(reviewBlocked.error, "home_ai_proxy_smoke_write_not_allowed");
 });
 
 test("home ai proxy smoke script posts controlled daily-loop writes through proxy", async () => {
@@ -145,6 +153,125 @@ test("home ai proxy smoke script posts controlled daily-loop writes through prox
   assert.equal(result.homeAiProxySmokeWriteOperation, true);
   assert.equal(result.homeAiProxySmokeWriteAllowed, true);
   assert.equal(result.homeAiProxySmokeWritesPerformed, true);
+});
+
+test("home ai proxy smoke script posts review advancement through proxy", async () => {
+  const calls = [];
+  const input = inputFromArgs([
+    "--operation", "automation-review-advance",
+    "--home-ai-base-url", "http://homeai.local",
+    "--home-ai-access-key-file", "/tmp/private-home-ai-key",
+    "--workspace-id", "weixin_fanfan",
+    "--learner-id", "fanfan",
+    "--program-id", "program_science",
+    "--cycle-id", "cycle_proxy_1",
+    "--domain-pack-id", "uk_hk_curriculum_foundation",
+    "--domain", "science",
+    "--subject", "science",
+    "--target-node-id", "kg_science_fair_test",
+    "--source-target-node-id", "kg_science_previous",
+    "--selected-candidate-id", "lgauto_proxy_1:lgplan_proxy_1:item_proxy_1",
+    "--source-plan-draft-id", "lgplan_source_1",
+    "--source-task-card-id", "ltask_source_1",
+    "--source-evaluation-id", "lgeval_source_1",
+    "--proposal-id", "lgauto_proxy_1",
+    "--digest-id", "lgadig_proxy_1",
+    "--handoff-id", "lgahand_proxy_1",
+    "--profile-delta-id", "lgpdelta_source_1",
+    "--evidence-id", "lgevidence_source_1",
+    "--prepare-review-packet",
+    "--review-digest",
+    "--ensure-failure-policy",
+    "--create-handoff",
+    "--no-deliver-handoff",
+    "--no-attempt-execution",
+    "--requested-by", "owner",
+    "--allow-write"
+  ], {});
+
+  assert.equal(input.operation, "review-advancement");
+  const result = await runProxyOperation(input, {
+    readFile: () => "owner-web-key",
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), options, body: JSON.parse(options.body) });
+      return responseJson(201, {
+        ok: true,
+        status: "not_delivered",
+        privacyClass: "summary_only",
+        summaryOnly: true,
+        writesPerformed: true,
+        publishPerformed: false,
+        schedulerStarted: false,
+        stages: [
+          { name: "cycle_closure", ok: true, status: "pending" },
+          { name: "digest_review", ok: true, status: "reviewed" },
+          { name: "failure_policy_review", ok: true, status: "active" },
+          { name: "handoff_create", ok: true, status: "not_delivered" }
+        ],
+        summary: {
+          selectedCycleId: "cycle_proxy_1",
+          selectedTaskCardId: "ltask_source_1",
+          proposalId: "lgauto_proxy_1",
+          proposalStatus: "accepted",
+          digestId: "lgadig_proxy_1",
+          digestStatus: "reviewed",
+          policyId: "lgafpol_proxy_1",
+          policyStatus: "active",
+          handoffId: "lgahand_proxy_1",
+          handoffDeliveryStatus: "not_delivered",
+          publishPerformed: false,
+          schedulerStarted: false,
+          gatewayBoundary: "cycle_closure_proposal_creation_may_call_planner_gateway_only"
+        }
+      });
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "http://homeai.local/api/hermes-plugins/growth/proxy/api/v1/growth/automation/review-advancements/advance?targetWorkspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&cycleId=cycle_proxy_1&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_fair_test&sourceTargetNodeIds=kg_science_previous&selectedCandidateIds=lgauto_proxy_1%3Algplan_proxy_1%3Aitem_proxy_1&sourcePlanDraftId=lgplan_source_1&sourceTaskCardId=ltask_source_1&sourceEvaluationId=lgeval_source_1&proposalId=lgauto_proxy_1&digestId=lgadig_proxy_1&handoffId=lgahand_proxy_1&profileDeltaId=lgpdelta_source_1&evidenceId=lgevidence_source_1");
+  assert.equal(calls[0].options.method, "POST");
+  assert.deepEqual(calls[0].body, {
+    workspace_id: "weixin_fanfan",
+    learner_id: "fanfan",
+    program_id: "program_science",
+    cycle_id: "cycle_proxy_1",
+    domain_pack_id: "uk_hk_curriculum_foundation",
+    domain: "science",
+    subject: "science",
+    horizon: "daily_plan",
+    available_minutes: "15",
+    target_node_ids: ["kg_science_fair_test"],
+    source_target_node_ids: ["kg_science_previous"],
+    selected_candidate_ids: ["lgauto_proxy_1:lgplan_proxy_1:item_proxy_1"],
+    source_plan_draft_id: "lgplan_source_1",
+    source_task_card_id: "ltask_source_1",
+    source_evaluation_id: "lgeval_source_1",
+    proposal_id: "lgauto_proxy_1",
+    digest_id: "lgadig_proxy_1",
+    handoff_id: "lgahand_proxy_1",
+    profile_delta_id: "lgpdelta_source_1",
+    evidence_id: "lgevidence_source_1",
+    prepare_review_packet: true,
+    review_digest: true,
+    ensure_failure_policy: true,
+    create_handoff: true,
+    deliver_handoff: false,
+    attempt_execution: false,
+    requested_by: "owner"
+  });
+  assert.equal(result.homeAiProxySmokeOperation, "review-advancement");
+  assert.equal(result.homeAiProxySmokeRoutePath, "/api/v1/growth/automation/review-advancements/advance");
+  assert.equal(result.homeAiProxySmokeWriteOperation, true);
+  assert.equal(result.homeAiProxySmokeWriteAllowed, true);
+  assert.equal(result.homeAiProxySmokeWritesPerformed, true);
+  assert.equal(result.automationReviewAdvancementStatus, "not_delivered");
+  assert.equal(result.automationReviewAdvancementDigestStatus, "reviewed");
+  assert.equal(result.automationReviewAdvancementPolicyStatus, "active");
+  assert.equal(result.automationReviewAdvancementHandoffDeliveryStatus, "not_delivered");
+  assert.equal(result.automationReviewAdvancementPublishPerformed, false);
+  assert.equal(result.automationReviewAdvancementSchedulerStarted, false);
+  assert.equal(JSON.stringify(result).includes("owner-web-key"), false);
+  assert.equal(JSON.stringify(result).includes("/tmp/private-home-ai-key"), false);
 });
 
 test("home ai proxy smoke script projects planner-readiness and platform evidence", async () => {

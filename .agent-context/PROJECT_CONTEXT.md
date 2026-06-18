@@ -160,8 +160,8 @@ readback gate set.
   smoke:home-ai-proxy` calls Growth only through
   `/api/hermes-plugins/growth/proxy/...` with a Home AI web access boundary and
   supports release-readiness, planner-readiness, platform-action evidence,
-  controlled daily-loop writes, action-handoff operations, and workbench
-  action/audit routes. The harness rejects writes unless `--allow-write` is
+  controlled daily-loop writes, action-handoff operations, review advancement,
+  and workbench action/audit routes. The harness rejects writes unless `--allow-write` is
   present and prints only bounded route/status/projection fields; it must not
   print raw access keys, access-key file paths, bearer headers, provider
   output, private payloads, or plugin workspace bearer values. This adds the

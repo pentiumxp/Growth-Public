@@ -3597,6 +3597,35 @@ test("Growth automation review advancement stays service-owned and write-gated",
   assert.match(scriptHarness, /projects operator readback/);
 });
 
+test("Growth Home AI proxy smoke stays proxy-owned and write-gated", () => {
+  const packageJson = JSON.parse(read("package.json"));
+  assert.equal(packageJson.scripts["smoke:home-ai-proxy"], "node scripts/smoke-growth-home-ai-proxy.js");
+  assert.match(packageJson.scripts.check, /node --check scripts\/smoke-growth-home-ai-proxy\.js/);
+
+  const script = read(path.join("scripts", "smoke-growth-home-ai-proxy.js"));
+  assert.match(script, /DEFAULT_PROXY_PREFIX = "\/api\/hermes-plugins\/growth\/proxy"/);
+  assert.match(script, /"review-advancement"/);
+  assert.match(script, /automation\/review-advancements\/advance/);
+  assert.match(script, /projectAutomationReviewAdvancementSmokeReadback/);
+  assert.match(script, /home_ai_proxy_smoke_write_not_allowed/);
+  assert.match(script, /X-Hermes-Web-Key/);
+  assert.match(script, /readHomeAiAccessKey/);
+  assert.match(script, /homeAiProxySmokeAccessKeySource/);
+  assert.match(script, /projectHomeAiProxySmokeReadback/);
+  assert.doesNotMatch(script, /require\(["']\.\.\/src\/stores/);
+  assert.doesNotMatch(script, /learning_growth_/);
+  assert.doesNotMatch(script, /createGrowthGateway|gatewayClient|openai\.com|anthropic|deepseek/);
+  assert.doesNotMatch(script, /createServices|readEnv/);
+  assert.doesNotMatch(script, /learningDailyLoopService/);
+  assert.doesNotMatch(script, /publishPlanItem|publishAcceptedProposal|generateCard|evaluateSubmission|executeOnce|runOnce|dryRun|activateStageAssessment/);
+
+  const harness = read(path.join("tests", "growth-home-ai-proxy-smoke-script.test.js"));
+  assert.match(harness, /posts review advancement through proxy/);
+  assert.match(harness, /home_ai_proxy_smoke_write_not_allowed/);
+  assert.match(harness, /owner-web-key/);
+  assert.match(harness, /private-home-ai-key/);
+});
+
 test("Growth automation digest smoke CLI stays service-owned and write-gated", () => {
   const packageJson = read("package.json");
   assert.match(packageJson, /smoke:digest/);

@@ -631,7 +631,7 @@ Boundary:
 | --- | --- |
 | Service | `learning-automation-review-advancement-service` composes cycle closure, digest review, failure-policy readiness/create/review, action handoff create/deliver, and optional default-disabled scheduler execution evidence. It owns orchestration only and persists nothing directly. |
 | Route | Owner-only `POST /api/v1/growth/automation/review-advancements/advance`, workspace-bearer authorized and Growth visible-target scoped. |
-| CLI harness | `npm run smoke:review-advancement -- --allow-write` delegates only to `learningAutomationReviewAdvancementService.advance()` and mirrors bounded `automationReviewAdvancement*` readback fields. |
+| CLI harness | `npm run smoke:review-advancement -- --allow-write` delegates only to `learningAutomationReviewAdvancementService.advance()` and mirrors bounded `automationReviewAdvancement*` readback fields. `npm run smoke:home-ai-proxy -- --operation review-advancement --allow-write` is the production same-origin proxy path for the same route and remains write-gated. |
 | UI | The embedded Owner `生成` tab exposes `复核链推进`, which advances the selected/latest completed-cycle packet through digest review, failure-policy activation, and handoff creation. |
 
 Default behavior:

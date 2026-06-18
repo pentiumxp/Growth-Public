@@ -9,6 +9,9 @@ const {
   projectDailyLoopSmokeReadback
 } = require("./smoke-growth-daily-loop");
 const {
+  projectAutomationReviewAdvancementSmokeReadback
+} = require("./smoke-growth-automation-review-advancement");
+const {
   projectAutomationActionHandoffSmokeReadback
 } = require("./smoke-growth-automation-action-handoff");
 const {
@@ -28,6 +31,7 @@ const WRITE_OPERATIONS = new Set([
   "daily-loop-draft",
   "daily-loop-advance",
   "daily-loop-publish",
+  "review-advancement",
   "action-handoff-create",
   "action-handoff-deliver",
   "workbench-action-record"
@@ -101,6 +105,9 @@ function operationFromArgs(args) {
   if (operation === "planner") return "planner-readiness";
   if (operation === "platform-action") return "platform-action-evidence";
   if (operation === "daily-loop") return "daily-loop-advance";
+  if (operation === "automation-review-advancement") return "review-advancement";
+  if (operation === "automation-review-advance") return "review-advancement";
+  if (operation === "review-advance") return "review-advancement";
   if (operation === "action-handoff") return "action-handoff-list";
   if (operation === "workbench-action") return "workbench-action-record";
   return operation || "release-readiness";
@@ -120,17 +127,28 @@ function selectorInputFromArgs(args) {
     workspaceId,
     learnerId: firstArgValue(args, ["--learner-id", "--learnerId"], "") || workspaceId,
     programId: firstArgValue(args, ["--program-id", "--programId"], ""),
+    cycleId: firstArgValue(args, ["--cycle-id", "--cycleId"], ""),
     domainPackId: firstArgValue(args, ["--domain-pack-id", "--domainPackId"], ""),
     domain: firstArgValue(args, ["--domain"], ""),
     subject: firstArgValue(args, ["--subject"], ""),
     horizon: firstArgValue(args, ["--horizon"], "daily_plan") || "daily_plan",
     availableMinutes: firstArgValue(args, ["--available-minutes", "--availableMinutes"], "15") || "15",
     targetNodeIds: targetNodeIds(args),
+    sourceTargetNodeIds: listArg(args, ["--source-target-node-id", "--sourceTargetNodeId"], ["--source-target-node-ids", "--sourceTargetNodeIds"]),
+    selectedCandidateIds: listArg(args, ["--selected-candidate-id", "--selectedCandidateId"], ["--selected-candidate-ids", "--selectedCandidateIds"]),
+    sourcePlanDraftId: firstArgValue(args, ["--source-plan-draft-id", "--sourcePlanDraftId"], ""),
+    sourceTaskCardId: firstArgValue(args, ["--source-task-card-id", "--sourceTaskCardId", "--task-card-id", "--taskCardId"], ""),
+    sourceEvaluationId: firstArgValue(args, ["--source-evaluation-id", "--sourceEvaluationId", "--evaluation-id", "--evaluationId"], ""),
+    proposalId: firstArgValue(args, ["--proposal-id", "--proposalId"], ""),
     planDraftId: firstArgValue(args, ["--plan-draft-id", "--planDraftId"], ""),
     itemId: firstArgValue(args, ["--item-id", "--itemId", "--selected-item-id", "--selectedItemId"], ""),
     taskCardId: firstArgValue(args, ["--task-card-id", "--taskCardId"], ""),
     digestId: firstArgValue(args, ["--digest-id", "--digestId"], ""),
     handoffId: firstArgValue(args, ["--handoff-id", "--handoffId"], ""),
+    profileDeltaId: firstArgValue(args, ["--profile-delta-id", "--profileDeltaId"], ""),
+    evidenceId: firstArgValue(args, ["--evidence-id", "--evidenceId"], ""),
+    correctionId: firstArgValue(args, ["--correction-id", "--correctionId"], ""),
+    sourceId: firstArgValue(args, ["--source-id", "--sourceId"], ""),
     endpointKey: firstArgValue(args, ["--endpoint-key", "--endpointKey"], ""),
     actionKey: firstArgValue(args, ["--action-key", "--actionKey", "--key"], ""),
     status: firstArgValue(args, ["--status", "--decision", "--decision-status", "--decisionStatus"], ""),
@@ -143,6 +161,12 @@ function selectorInputFromArgs(args) {
     writeReleaseEvidenceRecords: hasFlag(args, "--write-release-evidence-records") || hasFlag(args, "--writeReleaseEvidenceRecords"),
     autoSelectLatestCompletedCycle: hasFlag(args, "--auto-select-latest-completed-cycle") || hasFlag(args, "--autoSelectLatestCompletedCycle"),
     autoSelectLatestReadyCollectionRun: hasFlag(args, "--auto-select-latest-ready-collection-run") || hasFlag(args, "--autoSelectLatestReadyCollectionRun"),
+    prepareReviewPacket: hasFlag(args, "--prepare-review-packet") || hasFlag(args, "--prepareReviewPacket") ? true : hasFlag(args, "--no-prepare-review-packet") || hasFlag(args, "--noPrepareReviewPacket") ? false : undefined,
+    reviewDigest: hasFlag(args, "--review-digest") || hasFlag(args, "--reviewDigest") ? true : hasFlag(args, "--no-review-digest") || hasFlag(args, "--noReviewDigest") ? false : undefined,
+    ensureFailurePolicy: hasFlag(args, "--ensure-failure-policy") || hasFlag(args, "--ensureFailurePolicy") ? true : hasFlag(args, "--no-ensure-failure-policy") || hasFlag(args, "--noEnsureFailurePolicy") ? false : undefined,
+    createHandoff: hasFlag(args, "--create-handoff") || hasFlag(args, "--createHandoff") ? true : hasFlag(args, "--no-create-handoff") || hasFlag(args, "--noCreateHandoff") ? false : undefined,
+    deliverHandoff: hasFlag(args, "--deliver-handoff") || hasFlag(args, "--deliverHandoff") ? true : hasFlag(args, "--no-deliver-handoff") || hasFlag(args, "--noDeliverHandoff") ? false : undefined,
+    attemptExecution: hasFlag(args, "--attempt-execution") || hasFlag(args, "--attemptExecution") ? true : hasFlag(args, "--no-attempt-execution") || hasFlag(args, "--noAttemptExecution") ? false : undefined,
     requestedBy: firstArgValue(args, ["--requested-by", "--requestedBy"], ""),
     reviewedBy: firstArgValue(args, ["--reviewed-by", "--reviewedBy"], ""),
     deliveredBy: firstArgValue(args, ["--delivered-by", "--deliveredBy"], "")
@@ -190,17 +214,28 @@ function compactSelectorForQuery(selector = {}) {
     targetWorkspaceId: selector.workspaceId,
     learnerId: selector.learnerId,
     programId: selector.programId,
+    cycleId: selector.cycleId,
     domainPackId: selector.domainPackId,
     domain: selector.domain,
     subject: selector.subject,
     horizon: selector.horizon,
     availableMinutes: selector.availableMinutes,
     targetNodeIds: selector.targetNodeIds?.length ? selector.targetNodeIds.join(",") : "",
+    sourceTargetNodeIds: selector.sourceTargetNodeIds?.length ? selector.sourceTargetNodeIds.join(",") : "",
+    selectedCandidateIds: selector.selectedCandidateIds?.length ? selector.selectedCandidateIds.join(",") : "",
+    sourcePlanDraftId: selector.sourcePlanDraftId,
+    sourceTaskCardId: selector.sourceTaskCardId,
+    sourceEvaluationId: selector.sourceEvaluationId,
+    proposalId: selector.proposalId,
     planDraftId: selector.planDraftId,
     itemId: selector.itemId,
     taskCardId: selector.taskCardId,
     digestId: selector.digestId,
     handoffId: selector.handoffId,
+    profileDeltaId: selector.profileDeltaId,
+    evidenceId: selector.evidenceId,
+    correctionId: selector.correctionId,
+    sourceId: selector.sourceId,
     endpointKey: selector.endpointKey,
     actionKey: selector.actionKey,
     status: selector.status,
@@ -215,17 +250,28 @@ function compactSelectorForBody(selector = {}) {
     workspace_id: selector.workspaceId,
     learner_id: selector.learnerId,
     program_id: selector.programId,
+    cycle_id: selector.cycleId,
     domain_pack_id: selector.domainPackId,
     domain: selector.domain,
     subject: selector.subject,
     horizon: selector.horizon,
     available_minutes: selector.availableMinutes,
     target_node_ids: selector.targetNodeIds?.length ? selector.targetNodeIds : undefined,
+    source_target_node_ids: selector.sourceTargetNodeIds?.length ? selector.sourceTargetNodeIds : undefined,
+    selected_candidate_ids: selector.selectedCandidateIds?.length ? selector.selectedCandidateIds : undefined,
+    source_plan_draft_id: selector.sourcePlanDraftId,
+    source_task_card_id: selector.sourceTaskCardId,
+    source_evaluation_id: selector.sourceEvaluationId,
+    proposal_id: selector.proposalId,
     plan_draft_id: selector.planDraftId,
     item_id: selector.itemId,
     task_card_id: selector.taskCardId,
     digest_id: selector.digestId,
     handoff_id: selector.handoffId,
+    profile_delta_id: selector.profileDeltaId,
+    evidence_id: selector.evidenceId,
+    correction_id: selector.correctionId,
+    source_id: selector.sourceId,
     endpoint_key: selector.endpointKey,
     action_key: selector.actionKey,
     status: selector.status,
@@ -238,6 +284,12 @@ function compactSelectorForBody(selector = {}) {
     write_release_evidence_records: selector.writeReleaseEvidenceRecords === true ? true : undefined,
     auto_select_latest_completed_cycle: selector.autoSelectLatestCompletedCycle === true ? true : undefined,
     auto_select_latest_ready_collection_run: selector.autoSelectLatestReadyCollectionRun === true ? true : undefined,
+    prepare_review_packet: selector.prepareReviewPacket,
+    review_digest: selector.reviewDigest,
+    ensure_failure_policy: selector.ensureFailurePolicy,
+    create_handoff: selector.createHandoff,
+    deliver_handoff: selector.deliverHandoff,
+    attempt_execution: selector.attemptExecution,
     requested_by: selector.requestedBy,
     reviewed_by: selector.reviewedBy,
     delivered_by: selector.deliveredBy
@@ -252,6 +304,7 @@ function operationSpec(operation, selector = {}) {
   if (operation === "daily-loop-draft") return { method: "POST", path: "/api/v1/growth/daily-loop/draft", projection: "daily-loop", dailyLoopOperation: "draft" };
   if (operation === "daily-loop-advance") return { method: "POST", path: "/api/v1/growth/daily-loop/advance", projection: "daily-loop", dailyLoopOperation: "advance" };
   if (operation === "daily-loop-publish") return { method: "POST", path: "/api/v1/growth/daily-loop/publish", projection: "daily-loop", dailyLoopOperation: "publish" };
+  if (operation === "review-advancement") return { method: "POST", path: "/api/v1/growth/automation/review-advancements/advance", projection: "review-advancement" };
   if (operation === "action-handoff-list") return { method: "GET", path: "/api/v1/growth/automation/action-handoffs", projection: "action-handoff", actionHandoffOperation: "list" };
   if (operation === "action-handoff-create") return { method: "POST", path: "/api/v1/growth/automation/action-handoffs", projection: "action-handoff", actionHandoffOperation: "create" };
   if (operation === "action-handoff-deliver") return { method: "POST", path: `/api/v1/growth/automation/action-handoffs/${encodeURIComponent(selector.handoffId)}/deliver`, projection: "action-handoff", actionHandoffOperation: "deliver" };
@@ -317,6 +370,7 @@ async function fetchJson(url, options = {}, fetchImpl = globalThis.fetch) {
 function projectOperationResult(body = {}, input = {}, spec = {}) {
   if (spec.projection === "planner-readiness") return projectPlannerReadinessSmokeReadback(body, input.selector);
   if (spec.projection === "daily-loop") return projectDailyLoopSmokeReadback(Object.assign({ operation: spec.dailyLoopOperation }, body));
+  if (spec.projection === "review-advancement") return projectAutomationReviewAdvancementSmokeReadback(body, "advance", input.selector, input.allowWrite);
   if (spec.projection === "action-handoff") {
     return projectAutomationActionHandoffSmokeReadback(
       Object.assign({ operation: spec.actionHandoffOperation }, body),

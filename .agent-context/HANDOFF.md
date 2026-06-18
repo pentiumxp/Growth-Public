@@ -9,6 +9,57 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T10:06+0800 - Review Advancement Home AI Proxy Harness
+
+- Status: implemented and locally validated; commit/push/deploy follows this
+  handoff entry in the same operator turn.
+- Scope: `npm run smoke:home-ai-proxy` now supports the write-gated
+  `review-advancement` operation, calling only
+  `/api/hermes-plugins/growth/proxy/api/v1/growth/automation/review-advancements/advance`
+  through the Home AI same-origin plugin proxy and Home AI web access
+  boundary.
+- Inputs: the proxy harness now carries bounded review advancement selectors
+  (`cycleId`, source plan/task/evaluation ids, selected candidates,
+  proposal/digest/handoff/profile/evidence selectors) plus explicit booleans
+  for packet preparation, digest review, failure-policy ensurement, handoff
+  creation/delivery, and execution attempt. Write operations still fail unless
+  `--allow-write` is present.
+- Readback: the proxy projection reuses bounded
+  `automationReviewAdvancement*` operator fields from
+  `smoke-growth-automation-review-advancement.js` and preserves
+  `homeAiProxySmoke*` route/status/write-gate fields. It must not print raw
+  access keys, key-file paths, bearer headers, plugin workspace bearer values,
+  raw model/provider output, or private learner payloads.
+- Harness/docs:
+  - `tests/growth-home-ai-proxy-smoke-script.test.js` covers the
+    review-advancement write gate, same-origin URL/body construction, bounded
+    readback projection, and absence of fake key/path values in output.
+  - `tests/growth-architecture-boundary.test.js` now guards the Home AI proxy
+    smoke script against direct stores, Gateway/model vendors, service graph
+    imports, publication, generation, evaluation, scheduler execution/ticks,
+    stage activation, and proxy bypass.
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md`,
+    `docs/GROWTH_AI_LEARNING_NEXT_STAGE_PLAN.md`, and
+    `.agent-context/PROJECT_CONTEXT.md`.
+- Validation passed:
+  - `node --check scripts/smoke-growth-home-ai-proxy.js`;
+  - `node --test tests/growth-home-ai-proxy-smoke-script.test.js
+    tests/growth-automation-review-advancement-smoke-script.test.js` -> 7/7
+    passing;
+  - `node --test tests/growth-architecture-boundary.test.js` -> 40/40
+    passing;
+  - `node scripts/check-growth-docs-locality.js` -> `ok=true`;
+  - `node scripts/check-growth-syntax-coverage.js` -> `ok=true`,
+    `runtimeCount=234`;
+  - `npm run --silent check` -> `ok=true`, `runtimeCount=234`;
+  - `git diff --check` passed.
+- Production note: this package adds the authorized production proxy operation
+  for review advancement but does not run a real `--allow-write` production
+  advancement by itself. Use real completed-cycle/proposal/digest selectors
+  before allowing a production write.
+
 ## 2026-06-18T09:15+0800 - Release Readiness Persisted Evidence Deploy
 
 - Status: committed, pushed, deployed, and production-readback verified.
