@@ -402,3 +402,57 @@ The previous full handoff was archived and should be opened only when old proven
   - If the card is acceptable, keep the pack provision active and start adding
     more cards/recipes from the new graph; if not, revise the graph node text
     or add subject-specific rubric support for `software_engineering_ai_coding`.
+
+## 2026-06-19T07:39+0800 - Fanfan computing AI test card corrected to daily-loop chain
+
+- Status:
+  - Corrected the product interpretation for the production test card. A
+    one-time ordinary practice card should be treated as part of the perpetual
+    daily learning chain: the card content is completed once, then the
+    daily-loop/operating-loop path supplies the next card after learner
+    evidence and profile feedback exist.
+  - The earlier production test card was generated through the lower-level
+    card generation service and therefore did not have a
+    `learning_growth_plan_drafts` published-plan audit row. It was valid as a
+    standalone generated card, but not the right production test artifact for
+    the perpetual chain expectation.
+- Corrected production card:
+  - Generated through `learning-daily-loop-service.advance()` with explicit
+    write approval and the same graph scope:
+    workspace/learner `weixin_stephen`, program
+    `program_fanfan_computing_ai_literacy_preview`, domain pack
+    `domain_pack_fanfan_computing_ai_literacy_v1`, domain
+    `computing_ai_literacy`, subject `software_engineering_ai_coding`, target
+    node `kg_compute_ai_coding_requirements`.
+  - New task card id: `ltask_f78ad952048de374f0`.
+  - New title: `Make a clearer AI coding request`.
+  - Published plan draft id: `lgplan_cf888f6b8dbcb844eb`.
+  - Selected item id: `daily_kg_compute_ai_coding_requirements_practice_001`.
+  - Learning graph plan id: `lgp_203d28cc775d4ac75e`.
+  - Daily-loop readback passed with `dailyLoopOutcome=published`,
+    `dailyLoopPublishTransaction=committed`, `dailyLoopGenerationOk=true`,
+    `dailyLoopGenerationRecipeId=daily_subject_practice_v1`, and graph binding
+    to `kg_compute_ai_coding_requirements`.
+  - Service-level card GET passed for
+    `/api/v1/growth/cards/ltask_f78ad952048de374f0?workspaceId=weixin_stephen`;
+    projection status is `published`, role is `practice`, and primary action
+    is `submit`.
+  - Current cycle completeness correctly has published-plan evidence and is
+    waiting only for real learner completion artifacts:
+    `evaluation_evidence` and `profile_delta_audit`.
+- Retired superseded standalone card:
+  - Retired old task card `ltask_597aa663cd0e9838bf` with reason
+    `superseded_by_daily_loop_evergreen_card`.
+  - Retirement dry-run matched exactly one card and zero learner submissions,
+    evaluations, reflections, audio blobs, evaluation jobs, or reward rows.
+  - Production backup before retirement:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260618T233743Z.sqlite3`.
+  - Retirement write passed with `retired_count=1` and SQLite
+    `quick_check=ok`.
+- Automation caveat:
+  - Mac production launchd currently has the evaluation worker enabled, but no
+    background automation scheduler/worker env gates are enabled. The corrected
+    card is now in the correct daily-loop chain for the next-card policy, but
+    unattended post-completion generation still depends on the separate
+    operating-loop/background-scheduler release gates or an explicit Owner
+    run-next action.
