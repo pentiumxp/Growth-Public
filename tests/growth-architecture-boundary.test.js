@@ -207,6 +207,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /learningAutomationCycleClosureService/);
   assert.match(services, /createLearningAutomationReviewAdvancementService/);
   assert.match(services, /learningAutomationReviewAdvancementService/);
+  assert.match(services, /createLearningAutomationClosedLoopActionPlanService/);
+  assert.match(services, /learningAutomationClosedLoopActionPlanService/);
   assert.match(services, /createLearningAutomationDigestService/);
   assert.match(services, /learningAutomationDigestService/);
   assert.match(services, /createLearningAutomationFailurePolicyService/);
@@ -324,6 +326,8 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(services, /targetProvisioningService: learningTargetProvisioningService/);
   assert.match(services, /profileDeltaService: learningProfileDeltaService/);
   assert.match(services, /plannerGatewayConfigured: \(\) => Boolean\(config\.gatewayPlannerEndpoint\)/);
+  assert.match(services, /operatingLoopService: learningOperatingLoopService/);
+  assert.match(services, /profileFeedbackService: learningProfileFeedbackEvidenceService/);
 
   const routes = read(path.join("src", "routes", "growth-routes.js"));
   assert.match(routes, /learning-plans\/draft/);
@@ -461,6 +465,9 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.match(routes, /automation\/review-advancements\/advance/);
   assert.match(routes, /normalizeAutomationReviewAdvancementInput/);
   assert.match(routes, /learningAutomationReviewAdvancementService\.advance/);
+  assert.match(routes, /automation\/closed-loop\/action-plan/);
+  assert.match(routes, /normalizeAutomationClosedLoopActionPlanInput/);
+  assert.match(routes, /learningAutomationClosedLoopActionPlanService\.actionPlan/);
   assert.match(routes, /automationDigestReviewMatch/);
   assert.match(routes, /normalizeAutomationDigestInput/);
   assert.match(routes, /normalizeAutomationDigestReviewInput/);
@@ -525,6 +532,22 @@ test("Growth learning operating loop foundation stays service-owned", () => {
   assert.doesNotMatch(routes, /recordEvaluationProfileDelta/);
   assert.doesNotMatch(routes, /plannerContext\(/);
   assert.doesNotMatch(routes, /draftLearningPlan/);
+
+  const closedLoopActionPlanService = read(path.join("src", "services", "learning-automation-closed-loop-action-plan-service.js"));
+  assert.match(closedLoopActionPlanService, /actionPlan/);
+  assert.match(closedLoopActionPlanService, /operatingLoopService/);
+  assert.match(closedLoopActionPlanService, /profileFeedbackService/);
+  assert.match(closedLoopActionPlanService, /digestService/);
+  assert.match(closedLoopActionPlanService, /failurePolicyService/);
+  assert.match(closedLoopActionPlanService, /actionHandoffService/);
+  assert.doesNotMatch(closedLoopActionPlanService, /growthLearningStore/);
+  assert.doesNotMatch(closedLoopActionPlanService, /Repository/);
+  assert.doesNotMatch(closedLoopActionPlanService, /Gateway/);
+  assert.doesNotMatch(closedLoopActionPlanService, /prepareReviewPacket/);
+  assert.doesNotMatch(closedLoopActionPlanService, /deliverHandoff\(/);
+  assert.doesNotMatch(closedLoopActionPlanService, /createHandoff\(/);
+  assert.doesNotMatch(closedLoopActionPlanService, /executeOnce/);
+  assert.doesNotMatch(closedLoopActionPlanService, /runNext/);
 
   const ledgerService = read(path.join("src", "services", "learning-evidence-ledger-service.js"));
   assert.match(ledgerService, /recordEvaluationEvidence/);

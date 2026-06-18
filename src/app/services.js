@@ -10,6 +10,7 @@ const { createGrowthGatewayPlannerClient } = require("../services/growth-gateway
 const { createHermesPluginService } = require("../services/hermes-plugin-service");
 const { createLearningAutomationActionHandoffService } = require("../services/learning-automation-action-handoff-service");
 const { createLearningAutomationCentralVisualEvidenceService } = require("../services/learning-automation-central-visual-evidence-service");
+const { createLearningAutomationClosedLoopActionPlanService } = require("../services/learning-automation-closed-loop-action-plan-service");
 const { createLearningAutomationCycleClosureService } = require("../services/learning-automation-cycle-closure-service");
 const { createLearningAutomationDigestService } = require("../services/learning-automation-digest-service");
 const { createLearningAutomationFailurePolicyService } = require("../services/learning-automation-failure-policy-service");
@@ -562,6 +563,13 @@ function createServices(config) {
     actionHandoffService: learningAutomationActionHandoffService,
     schedulerExecutionService: learningAutomationSchedulerExecutionService
   });
+  const learningAutomationClosedLoopActionPlanService = createLearningAutomationClosedLoopActionPlanService({
+    operatingLoopService: learningOperatingLoopService,
+    profileFeedbackService: learningProfileFeedbackEvidenceService,
+    digestService: learningAutomationDigestService,
+    failurePolicyService: learningAutomationFailurePolicyService,
+    actionHandoffService: learningAutomationActionHandoffService
+  });
   const learningOwnerAuditReviewService = createLearningOwnerAuditReviewService({
     repository: growthLearningStore.learningOwnerAuditReviewRepository,
     profileFeedbackService: learningProfileFeedbackEvidenceService
@@ -614,6 +622,7 @@ function createServices(config) {
     learningAuditCompletenessService,
     learningAutomationActionHandoffService,
     learningAutomationCentralVisualEvidenceService,
+    learningAutomationClosedLoopActionPlanService,
     learningAutomationCycleClosureService,
     learningAutomationDigestService,
     learningAutomationFailurePolicyService,

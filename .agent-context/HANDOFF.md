@@ -9,6 +9,43 @@
 - Do not record raw secrets, access keys, workspace keys, launch tokens, or
   private payloads in this handoff.
 
+## 2026-06-18T10:40+0800 - Closed-Loop Action Plan Readback
+
+- Status: implemented and locally validated; commit/push/deploy follows this
+  handoff entry in the same operator turn.
+- Scope: Growth now exposes no-write Owner-only
+  `GET /api/v1/growth/automation/closed-loop/action-plan`, plus
+  `npm run smoke:closed-loop-action-plan`.
+- Service boundary:
+  `learning-automation-closed-loop-action-plan-service` composes only
+  `learning-operating-loop-service.recommend()`,
+  `learning-profile-feedback-evidence-service.evaluate()`,
+  automation digest readback, failure-policy readiness, and action-handoff
+  readback. It does not import stores, call Gateway, publish/generate/evaluate
+  cards, deliver notifications, execute schedulers, run scheduler ticks,
+  mutate runtime config, deploy, or mutate learner state.
+- DTO: summary-only
+  `growth.learningAutomationClosedLoopActionPlan.v1`, with target/scope,
+  selected completed-cycle selector when available, phase readbacks,
+  automation-readiness booleans, one `nextAction`, action templates, and
+  `writePerformed=false`, `writesPerformed=false`, `publishPerformed=false`,
+  `schedulerStarted=false`.
+- Harness/docs:
+  - Added
+    `tests/learning-automation-closed-loop-action-plan-service.test.js`.
+  - Added
+    `tests/growth-automation-closed-loop-action-plan-smoke-script.test.js`.
+  - Updated `tests/growth-routes.test.js` and
+    `tests/growth-architecture-boundary.test.js`.
+  - Added
+    `docs/GROWTH_AI_LEARNING_AUTOMATION_CLOSED_LOOP_ACTION_PLAN.md` and
+    updated Growth-local docs index, test matrix, closed-loop plan, platform
+    pointer, and project context.
+- Validation target:
+  `node --test tests/learning-automation-closed-loop-action-plan-service.test.js tests/growth-automation-closed-loop-action-plan-smoke-script.test.js tests/growth-routes.test.js tests/growth-architecture-boundary.test.js`,
+  `node scripts/check-growth-docs-locality.js`, `npm run --silent check`, and
+  `git diff --check`.
+
 ## 2026-06-18T10:12+0800 - Cycle Closure Home AI Proxy Harness
 
 - Status: implemented and locally validated; commit/push/deploy follows this

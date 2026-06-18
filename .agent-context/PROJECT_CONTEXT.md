@@ -168,6 +168,16 @@ readback gate set.
   authorized production evidence path for the remaining gates, but does not
   satisfy them by itself and does not change runtime config, grant scheduler
   permission, deliver notifications, or deploy.
+- 2026-06-18 closed-loop action-plan package status: Growth now has a no-write
+  Owner-only `GET /api/v1/growth/automation/closed-loop/action-plan` API and
+  `npm run smoke:closed-loop-action-plan`, backed by
+  `learning-automation-closed-loop-action-plan-service`. It composes only
+  existing operating-loop, profile-feedback, digest, failure-policy, and
+  action-handoff service readbacks, returns summary-only
+  `growth.learningAutomationClosedLoopActionPlan.v1`, and emits one bounded
+  next-action template for Owner execution. It does not write state, call
+  Gateway, publish/generate/evaluate cards, deliver notifications, execute or
+  run schedulers, mutate runtime config, deploy, or mutate learner state.
 - 2026-06-18 production proxy execution readback: the Home AI production
   status smoke and Growth same-origin proxy smoke were run through the central
   sudo validation boundary without exposing raw credentials. Production

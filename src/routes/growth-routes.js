@@ -533,6 +533,42 @@ function normalizeAutomationActionHandoffListInput(url, target) {
   };
 }
 
+function normalizeAutomationClosedLoopActionPlanInput(url, target, request) {
+  return {
+    workspaceId: target.workspaceId,
+    learnerId: url.searchParams.get("learnerId") || url.searchParams.get("learner_id") || target.workspaceId,
+    displayName: target.label,
+    label: target.label,
+    programId: url.searchParams.get("programId") || url.searchParams.get("program_id") || "",
+    domainPackId: url.searchParams.get("domainPackId") || url.searchParams.get("domain_pack_id") || "",
+    domain: url.searchParams.get("domain") || "",
+    subject: url.searchParams.get("subject") || "",
+    horizon: url.searchParams.get("horizon") || "daily_plan",
+    availableMinutes: url.searchParams.get("availableMinutes") || url.searchParams.get("available_minutes") || "",
+    targetNodeIds: csvStrings(url.searchParams.get("targetNodeIds") || url.searchParams.get("target_node_ids") || url.searchParams.get("nodeIds") || ""),
+    sourceTargetNodeIds: csvStrings(url.searchParams.get("sourceTargetNodeIds") || url.searchParams.get("source_target_node_ids") || ""),
+    cycleId: url.searchParams.get("cycleId") || url.searchParams.get("cycle_id") || "",
+    sourcePlanDraftId: url.searchParams.get("sourcePlanDraftId") || url.searchParams.get("source_plan_draft_id") || url.searchParams.get("planDraftId") || url.searchParams.get("plan_draft_id") || "",
+    sourceTaskCardId: url.searchParams.get("sourceTaskCardId") || url.searchParams.get("source_task_card_id") || url.searchParams.get("taskCardId") || url.searchParams.get("task_card_id") || "",
+    sourceEvaluationId: url.searchParams.get("sourceEvaluationId") || url.searchParams.get("source_evaluation_id") || url.searchParams.get("evaluationId") || url.searchParams.get("evaluation_id") || "",
+    profileDeltaId: url.searchParams.get("profileDeltaId") || url.searchParams.get("profile_delta_id") || "",
+    evidenceId: url.searchParams.get("evidenceId") || url.searchParams.get("evidence_id") || "",
+    correctionId: url.searchParams.get("correctionId") || url.searchParams.get("correction_id") || "",
+    sourceId: url.searchParams.get("sourceId") || url.searchParams.get("source_id") || "",
+    digestId: url.searchParams.get("digestId") || url.searchParams.get("digest_id") || "",
+    handoffId: url.searchParams.get("handoffId") || url.searchParams.get("handoff_id") || "",
+    proposalId: url.searchParams.get("proposalId") || url.searchParams.get("proposal_id") || "",
+    selectedItemId: url.searchParams.get("selectedItemId") || url.searchParams.get("selected_item_id") || "",
+    autoSelectCompletedCycle: truthy(url.searchParams.get("autoSelectCompletedCycle") || url.searchParams.get("auto_select_completed_cycle")),
+    autoSelectLatestCompletedCycle: !["0", "false", "no", "off"].includes(
+      String(url.searchParams.get("autoSelectLatestCompletedCycle") || url.searchParams.get("auto_select_latest_completed_cycle") || "").trim().toLowerCase()
+    ),
+    auditLimit: url.searchParams.get("auditLimit") || url.searchParams.get("audit_limit") || "",
+    limit: url.searchParams.get("limit") || "",
+    requestedBy: String(request.headers["x-hermes-plugin-workspace-id"] || requestedWorkspaceId(request, url, ""))
+  };
+}
+
 function normalizeAutomationPlatformActionEvidenceInput(url, target) {
   return {
     workspaceId: target.workspaceId,
@@ -2050,6 +2086,17 @@ async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/action-handoffs") {
     const target = readableTargetFromRequest(request, url, services);
     const result = services.learningAutomationActionHandoffService.listHandoffs(normalizeAutomationActionHandoffListInput(url, target));
+    return sendJson(response, result.ok ? 200 : 400, result);
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/automation/closed-loop/action-plan") {
+    if (requestedActorRole(request) !== "owner") {
+      throw routeError("growth_automation_closed_loop_action_plan_owner_required", "Closed-loop action plan requires Owner role", 403);
+    }
+    const target = readableTargetFromRequest(request, url, services);
+    const result = services.learningAutomationClosedLoopActionPlanService.actionPlan(
+      normalizeAutomationClosedLoopActionPlanInput(url, target, request)
+    );
     return sendJson(response, result.ok ? 200 : 400, result);
   }
 

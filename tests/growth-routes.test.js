@@ -9392,3 +9392,116 @@ test("automation review advancement route is Owner scoped and delegates to servi
     await close(server);
   }
 });
+
+test("automation closed-loop action plan route is Owner-only and delegates no-write planning", async () => {
+  const calls = [];
+  const server = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      viewTargets(input) {
+        return {
+          ok: true,
+          viewer: { role: input.actorRole === "owner" ? "owner" : "workspace" },
+          current_workspace_id: input.currentWorkspaceId,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "weixin_stephen", label: "Stephen", current: input.currentWorkspaceId === "weixin_stephen" },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
+    },
+    learningAutomationClosedLoopActionPlanService: {
+      actionPlan(input) {
+        calls.push(input);
+        return {
+          ok: true,
+          status: "ready_for_cycle_closure",
+          schemaVersion: "growth.learningAutomationClosedLoopActionPlan.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          target: { workspaceId: input.workspaceId, learnerId: input.learnerId },
+          scope: { programId: input.programId, domain: input.domain, subject: input.subject, horizon: input.horizon },
+          nextAction: {
+            key: "prepare_cycle_closure",
+            routePath: "/api/v1/growth/automation/cycle-closures/prepare",
+            method: "POST",
+            writeRequired: true
+          },
+          summary: { nextAction: "prepare_cycle_closure" },
+          writePerformed: false,
+          publishPerformed: false,
+          schedulerStarted: false
+        };
+      }
+    },
+    growthService: {}
+  });
+  const baseUrl = await listen(server);
+  try {
+    const planned = await fetch(`${baseUrl}/api/v1/growth/automation/closed-loop/action-plan?workspaceId=growth:weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&availableMinutes=15&targetNodeIds=kg_science_next&cycleId=cycle_route_1&sourceTaskCardId=ltask_previous&digestId=lgadig_ready_1&handoffId=lgahand_ready_1&limit=5`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(planned.status, 200);
+    const plannedBody = await planned.json();
+    assert.equal(plannedBody.nextAction.key, "prepare_cycle_closure");
+    assert.equal(plannedBody.writePerformed, false);
+    assert.equal(plannedBody.publishPerformed, false);
+    assert.equal(plannedBody.schedulerStarted, false);
+    assert.deepEqual(calls[0], {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      displayName: "凡凡",
+      label: "凡凡",
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      availableMinutes: "15",
+      targetNodeIds: ["kg_science_next"],
+      sourceTargetNodeIds: [],
+      cycleId: "cycle_route_1",
+      sourcePlanDraftId: "",
+      sourceTaskCardId: "ltask_previous",
+      sourceEvaluationId: "",
+      profileDeltaId: "",
+      evidenceId: "",
+      correctionId: "",
+      sourceId: "",
+      digestId: "lgadig_ready_1",
+      handoffId: "lgahand_ready_1",
+      proposalId: "",
+      selectedItemId: "",
+      autoSelectCompletedCycle: false,
+      autoSelectLatestCompletedCycle: true,
+      auditLimit: "",
+      limit: "5",
+      requestedBy: "weixin_stephen"
+    });
+
+    const deniedRole = await fetch(`${baseUrl}/api/v1/growth/automation/closed-loop/action-plan?workspaceId=weixin_stephen`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "workspace",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(deniedRole.status, 403);
+    assert.equal((await deniedRole.json()).error.code, "growth_automation_closed_loop_action_plan_owner_required");
+
+    const deniedTarget = await fetch(`${baseUrl}/api/v1/growth/automation/closed-loop/action-plan?workspaceId=weixin_unknown`, {
+      headers: {
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "weixin_stephen"
+      }
+    });
+    assert.equal(deniedTarget.status, 403);
+    assert.equal((await deniedTarget.json()).error.code, "growth_target_not_visible");
+  } finally {
+    await close(server);
+  }
+});

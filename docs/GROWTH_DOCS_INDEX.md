@@ -35,6 +35,7 @@ they become Growth-owned.
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_SCHEDULER_EXECUTION.md` | Default-disabled Owner-explicit scheduler execution boundary. Defines execution service, repository, routes, config gate, gate rechecks, failure semantics, and harness requirements without adding a background worker or production auto-scheduling enablement. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_BACKGROUND_SCHEDULER.md` | Future/default-disabled background scheduler contract. Defines the supervised scheduler tick boundary, run persistence, reviewed worker target configuration, worker lease/timer shape, route shape, config gates, delegation-only execution path, safety gates, forbidden boundaries, and harness requirements without enabling production background scheduling. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md` | Summary-only Owner automation evidence read model over proposal, digest, failure-policy, action-handoff, scheduler execution/run, worker-target, and release-readiness services. Defines route, smoke CLI, release evidence bundle/readiness integration, persisted evidence key, DTO, forbidden boundaries, and harness without creating a new table or enabling scheduling. |
+| `docs/GROWTH_AI_LEARNING_AUTOMATION_CLOSED_LOOP_ACTION_PLAN.md` | No-write closed-loop action-plan readback over operating-loop, profile-feedback, digest, failure-policy, and action-handoff services. Defines Owner-only route, smoke CLI, next-action templates, forbidden boundaries, and Harness without enabling scheduling or mutating learner state. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` | Runtime enablement audit/readback boundary. Defines the summary-only record layer after release activation, current config readback semantics, routes, CLI, statuses, and harness gates without mutating runtime config or granting scheduler permission. |
 | `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` | Owner release-controls readback boundary. Defines the single summary-only status surface over readiness, review, closure, activation, and runtime enablement, plus route, CLI, status semantics, forbidden boundaries, and harness gates without writing state or enabling scheduling. |
 | `docs/GROWTH_KNOWLEDGE_GRAPH_MIGRATION.md` | Native KG import, planning, binding, and runtime migration boundary. |
@@ -93,22 +94,25 @@ For the AI-driven learning scheme, use this reading order before implementation:
 13. `docs/GROWTH_AI_LEARNING_AUTOMATION_OWNER_REVIEW_EVIDENCE.md` before
     changing the Owner automation evidence read model, route, smoke CLI, or
     backend-only automation-loop evidence semantics.
-14. `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` before
+14. `docs/GROWTH_AI_LEARNING_AUTOMATION_CLOSED_LOOP_ACTION_PLAN.md` before
+    changing closed-loop next-action readback, action templates, or the
+    Owner-only no-write action-plan route.
+15. `docs/GROWTH_AI_LEARNING_AUTOMATION_RUNTIME_ENABLEMENT.md` before
     changing runtime-config enablement audit/readback, final Owner release
     controls, or any record that might be mistaken for a config switch.
-15. `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` before changing
+16. `docs/GROWTH_AI_LEARNING_AUTOMATION_RELEASE_CONTROLS.md` before changing
     the Owner release-controls aggregation route, CLI, status semantics, or
     any surface that may be mistaken for a release/runtime-config switch.
-16. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
+17. `docs/GROWTH_PLUGIN_ARCHITECTURE.md` for the Service First module map,
    runtime layers, architecture backlog, and route/service/repository
    ownership rules.
-17. `docs/GROWTH_REFERENCE_CONTRACT.md` before changing Growth plugin-side
+18. `docs/GROWTH_REFERENCE_CONTRACT.md` before changing Growth plugin-side
    stable object references, reference MCP tools, or summary-only reference
    projections.
-18. `docs/TEST_MATRIX.md` and
+19. `docs/TEST_MATRIX.md` and
    `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` for focused
    Harness selection and H1/H2/H3 validation obligations.
-19. UI-specific work then reads
+20. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 
