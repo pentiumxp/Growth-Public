@@ -11,8 +11,22 @@
 
 ## 2026-06-18T11:55+0800 - Owner Generation Profile Feedback And Action UI
 
-- Status: implemented, locally validated, and ready for commit/push/deploy in
-  this operator turn.
+- Status: implemented, locally validated, committed, pushed, deployed, and
+  production static-readback verified.
+- Runtime commit: `68602eb2e7fb feat: add owner generation profile feedback UI`.
+  Pushed to private `Growth` and public `Growth-Public`.
+- Deployment: Home AI macOS plugin deploy succeeded for Growth through the
+  central deploy script with clean source commit `68602eb2e7fb`, restarted
+  `com.hermesmobile.plugin.growth`, launchd state readback was `running`, and
+  the public Growth manifest health check passed.
+- Production readback: `http://127.0.0.1:4881/` serves static asset version
+  `20260618-profile-feedback-action-ui-v2`;
+  `growth-card-generation-ui.js` contains
+  `data-card-generation-action-panel`, `data-profile-feedback-panel`, and
+  `createProfileFeedbackQueryPayload`; `growth-api-client.js` contains
+  `fetchGrowthProfileFeedback`, `profileFeedbackQuery`, and
+  `fetchReadableJson`; `growth-homeai-legacy.css` contains the action-panel,
+  profile-feedback, and mobile tab styling markers.
 - Scope: the embedded Owner `生成` page now has a front-loaded `生成操作`
   panel before the profile-feedback, automation, scheduler, and release
   workbench readbacks. It also renders a summary-only `画像反馈` panel from a
