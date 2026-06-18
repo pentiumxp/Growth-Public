@@ -911,7 +911,11 @@ The first core-module split is behavior-preserving:
   input }` protocol and the official Gateway `/v1/responses` protocol. The
   latter is selected by `GROWTH_GATEWAY_AUTHORING_PROTOCOL=responses` or by a
   `/v1/responses` endpoint, and it keeps model prompting inside Growth while
-  provider credentials remain behind Gateway.
+  provider credentials remain behind Gateway. The Responses request can carry
+  explicit model and reasoning posture through `GROWTH_GATEWAY_AUTHORING_MODEL`
+  / `GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT`; the planner path mirrors this
+  with `GROWTH_GATEWAY_PLANNER_MODEL` /
+  `GROWTH_GATEWAY_PLANNER_REASONING_EFFORT`.
 - If Owner does not hand-pick a target for daily generation,
   `learning-card-next-target-service` selects a graph node from
   `learning-card-recommendation-service` first. That recommendation service

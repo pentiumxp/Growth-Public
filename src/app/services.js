@@ -120,6 +120,7 @@ function createServices(config) {
     accessToken: config.gatewayAuthoringAccessToken,
     protocol: config.gatewayAuthoringProtocol,
     model: config.gatewayAuthoringModel,
+    reasoningEffort: config.gatewayAuthoringReasoningEffort,
     stream: config.gatewayAuthoringStream,
     timeoutMs: config.gatewayAuthoringTimeoutMs
   });
@@ -136,6 +137,7 @@ function createServices(config) {
     accessToken: config.gatewayPlannerAccessToken,
     protocol: config.gatewayPlannerProtocol,
     model: config.gatewayPlannerModel,
+    reasoningEffort: config.gatewayPlannerReasoningEffort,
     stream: config.gatewayPlannerStream,
     timeoutMs: config.gatewayPlannerTimeoutMs
   });

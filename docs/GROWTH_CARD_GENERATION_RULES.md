@@ -296,10 +296,26 @@ The runtime authoring client supports two Gateway wire protocols:
 
 Production should configure `GROWTH_GATEWAY_AUTHORING_ENDPOINT` to a Gateway
 Responses endpoint, set `GROWTH_GATEWAY_AUTHORING_MODEL` when the selected
-worker requires an explicit model, and provide the Gateway access token through
+worker requires an explicit model, set
+`GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT` when the selected worker requires a
+non-default reasoning level, and provide the Gateway access token through
 `GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH` or the platform-managed secret
-boundary. The model prompt is assembled inside Growth from summary-only
-structured input; the browser never calls Gateway directly.
+boundary. The Fanfan computing/AI literacy production path should use
+`GROWTH_GATEWAY_AUTHORING_MODEL=gpt-5.5` with
+`GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT=xhigh`; the planner can inherit
+these through `GROWTH_GATEWAY_PLANNER_MODEL` /
+`GROWTH_GATEWAY_PLANNER_REASONING_EFFORT` when explicitly set. The model prompt
+is assembled inside Growth from summary-only structured input; the browser
+never calls Gateway directly.
+
+Authoring prompts must bias toward clear, descriptive learner-facing cards.
+For ordinary daily cards, the draft should be self-contained for a 13-year-old
+learner: the title names the concrete action, the micro-lesson gives the idea
+and method, the worked example labels weak and improved examples when
+relevant, guided practice provides numbered steps, quick check states exactly
+what to submit, and evidence keys match the submitted artifact. Avoid terse
+topic-only prompts or generic requests such as "practice" / "explain" unless
+the card immediately provides exact steps, questions, and completion criteria.
 
 ## Evaluation Ownership And Gateway Boundary
 

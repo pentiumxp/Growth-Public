@@ -161,6 +161,7 @@ test("Gateway authoring client can call an official Responses endpoint", async (
     endpoint: "http://127.0.0.1:18751/v1/responses",
     accessToken: "gateway-secret",
     model: "gpt-5.5",
+    reasoningEffort: "x-high",
     fetchImpl(url, options = {}) {
       calls.push({ url, options });
       return Promise.resolve({
@@ -193,9 +194,13 @@ test("Gateway authoring client can call an official Responses endpoint", async (
   assert.equal(calls[0].options.headers.authorization, "Bearer gateway-secret");
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.model, "gpt-5.5");
+  assert.equal(body.reasoning_effort, "xhigh");
   assert.equal(body.stream, false);
   assert.equal(body.metadata.kind, "growth.card_authoring.generate");
   assert.match(body.input, /Return exactly one JSON object/);
+  assert.match(body.input, /knows exactly where to start/);
+  assert.match(body.input, /numbered steps/);
+  assert.match(body.input, /exactly what the learner submits/);
   assert.match(body.input, /lgp_test_ratio_intro/);
 });
 
@@ -270,11 +275,13 @@ test("Gateway Responses prompt and parser support repair and nested output text"
       invalidOutput: "{ invalid json",
       errors: [{ code: "authoring_draft_invalid_json" }]
     }
-  }, { model: "gpt-5.5", stream: true });
+  }, { model: "gpt-5.5", reasoningEffort: "xhigh", stream: true });
 
   assert.equal(body.model, "gpt-5.5");
+  assert.equal(body.reasoning_effort, "xhigh");
   assert.equal(body.stream, true);
   assert.match(body.input, /Repair the invalid draft/);
+  assert.match(body.input, /self-contained enough/);
   assert.match(body.input, /authoring_draft_invalid_json/);
   assert.equal(textFromGatewayJson({
     output: [{

@@ -282,9 +282,15 @@ test("configures SQLite busy timeout for Growth store connections", () => {
 
   const config = readEnv({
     GROWTH_DATA_DIR: root,
-    GROWTH_SQLITE_BUSY_TIMEOUT_MS: "2500"
+    GROWTH_SQLITE_BUSY_TIMEOUT_MS: "2500",
+    GROWTH_GATEWAY_AUTHORING_MODEL: "gpt-5.5",
+    GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT: "X High"
   });
   assert.equal(config.sqliteBusyTimeoutMs, 2500);
+  assert.equal(config.gatewayAuthoringModel, "gpt-5.5");
+  assert.equal(config.gatewayAuthoringReasoningEffort, "xhigh");
+  assert.equal(config.gatewayPlannerModel, "gpt-5.5");
+  assert.equal(config.gatewayPlannerReasoningEffort, "xhigh");
   assert.equal(readEnv({ GROWTH_DATA_DIR: root, GROWTH_SQLITE_BUSY_TIMEOUT_MS: "0" }).sqliteBusyTimeoutMs, 0);
 });
 

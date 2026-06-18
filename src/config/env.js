@@ -28,12 +28,14 @@ function readEnv(env = process.env) {
     gatewayAuthoringAccessToken: env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN || env.HERMES_GATEWAY_ACCESS_TOKEN || readSecretFile(env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH || env.HERMES_GATEWAY_ACCESS_TOKEN_PATH),
     gatewayAuthoringProtocol: env.GROWTH_GATEWAY_AUTHORING_PROTOCOL || env.HERMES_GATEWAY_AUTHORING_PROTOCOL || "",
     gatewayAuthoringModel: env.GROWTH_GATEWAY_AUTHORING_MODEL || env.LEARNING_GROWTH_JIT_MODEL || env.HERMES_GATEWAY_AUTHORING_MODEL || "",
+    gatewayAuthoringReasoningEffort: normalizeReasoningEffort(env.GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT || env.LEARNING_GROWTH_JIT_REASONING_EFFORT || env.HERMES_GATEWAY_AUTHORING_REASONING_EFFORT || ""),
     gatewayAuthoringStream: ["1", "true", "yes", "on"].includes(String(env.GROWTH_GATEWAY_AUTHORING_STREAM || "").trim().toLowerCase()),
     gatewayAuthoringTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_AUTHORING_TIMEOUT_MS || 60000) || 60000),
     gatewayPlannerEndpoint: env.GROWTH_GATEWAY_PLANNER_ENDPOINT || env.GROWTH_GATEWAY_AUTHORING_ENDPOINT || env.HERMES_GATEWAY_AUTHORING_ENDPOINT || env.HOME_AI_GATEWAY_AUTHORING_ENDPOINT || "",
     gatewayPlannerAccessToken: env.GROWTH_GATEWAY_PLANNER_ACCESS_TOKEN || env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN || env.HERMES_GATEWAY_ACCESS_TOKEN || readSecretFile(env.GROWTH_GATEWAY_PLANNER_ACCESS_TOKEN_PATH || env.GROWTH_GATEWAY_AUTHORING_ACCESS_TOKEN_PATH || env.HERMES_GATEWAY_ACCESS_TOKEN_PATH),
     gatewayPlannerProtocol: env.GROWTH_GATEWAY_PLANNER_PROTOCOL || env.GROWTH_GATEWAY_AUTHORING_PROTOCOL || env.HERMES_GATEWAY_AUTHORING_PROTOCOL || "",
     gatewayPlannerModel: env.GROWTH_GATEWAY_PLANNER_MODEL || env.GROWTH_GATEWAY_AUTHORING_MODEL || env.LEARNING_GROWTH_JIT_MODEL || env.HERMES_GATEWAY_AUTHORING_MODEL || "",
+    gatewayPlannerReasoningEffort: normalizeReasoningEffort(env.GROWTH_GATEWAY_PLANNER_REASONING_EFFORT || env.GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT || env.LEARNING_GROWTH_JIT_REASONING_EFFORT || env.HERMES_GATEWAY_PLANNER_REASONING_EFFORT || env.HERMES_GATEWAY_AUTHORING_REASONING_EFFORT || ""),
     gatewayPlannerStream: ["1", "true", "yes", "on"].includes(String(env.GROWTH_GATEWAY_PLANNER_STREAM || env.GROWTH_GATEWAY_AUTHORING_STREAM || "").trim().toLowerCase()),
     gatewayPlannerTimeoutMs: Math.max(1000, Number(env.GROWTH_GATEWAY_PLANNER_TIMEOUT_MS || env.GROWTH_GATEWAY_AUTHORING_TIMEOUT_MS || 60000) || 60000),
     gatewayEvaluationEndpoint: env.GROWTH_GATEWAY_EVALUATION_ENDPOINT || env.HERMES_GATEWAY_EVALUATION_ENDPOINT || env.HOME_AI_GATEWAY_EVALUATION_ENDPOINT || "",
@@ -67,6 +69,16 @@ function nonNegativeInteger(value, fallback) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(0, Math.trunc(parsed));
+}
+
+function normalizeReasoningEffort(value) {
+  const effort = String(value || "").trim().toLowerCase().replace(/[-_\s]+/g, "");
+  if (!effort) return "";
+  if (effort === "low") return "low";
+  if (["medium", "med", "mid", "standard", "default"].includes(effort)) return "medium";
+  if (effort === "high") return "high";
+  if (["xhigh", "xhi", "highest", "max", "maximum"].includes(effort)) return "xhigh";
+  return "";
 }
 
 function readSecretFile(filePath) {

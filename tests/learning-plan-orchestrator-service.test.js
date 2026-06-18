@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { createGrowthGatewayPlannerClient } = require("../src/services/growth-gateway-planner-client");
+const { createGrowthGatewayPlannerClient, responsesBody } = require("../src/services/growth-gateway-planner-client");
 const { createLearningPlanOrchestratorService } = require("../src/services/learning-plan-orchestrator-service");
 const { createLearningPlanValidationService } = require("../src/services/learning-plan-validation-service");
 
@@ -175,6 +175,19 @@ test("learning plan orchestrator accepts valid fake Gateway JSON plan", async ()
   assert.equal(result.draft.items[0].pressurePolicy.passScoreRequired, false);
   assert.equal(gatewayCalls[0].kind, "growth.learning_planner.draft");
   assert.equal(JSON.stringify(gatewayCalls[0]).includes("rawAnswer"), false);
+});
+
+test("planner Responses body includes explicit model and reasoning effort", () => {
+  const body = responsesBody({
+    kind: "growth.learning_planner.draft",
+    input: context()
+  }, { model: "gpt-5.5", reasoningEffort: "X High" });
+
+  assert.equal(body.model, "gpt-5.5");
+  assert.equal(body.reasoning_effort, "xhigh");
+  assert.equal(body.metadata.kind, "growth.learning_planner.draft");
+  assert.match(body.input, /Return exactly one JSON object/);
+  assert.match(body.input, /growth\.learningPlanDraft\.v1/);
 });
 
 test("learning plan orchestrator readiness smoke returns bounded no-write status", async () => {

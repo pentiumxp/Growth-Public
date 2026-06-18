@@ -678,5 +678,10 @@ The evaluation Gateway readiness slice was then deployed and configured on
     `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260614T085102Z.png`;
 - AI Ops evidence id: `evidence-84963973-8f58-41a9-b96b-1e7202b96cc8`.
 
+For the Fanfan computing/AI literacy card-generation path, production should
+also pin authoring and planner Gateway calls to `GROWTH_GATEWAY_*_MODEL=gpt-5.5`
+with `GROWTH_GATEWAY_*_REASONING_EFFORT=xhigh` so generated cards use the same
+ChatGPT 5.5 / X high model posture available in Home AI chat.
+
 Full production automation and broad visual UI controls for stage assessment
 activation remain later slices.

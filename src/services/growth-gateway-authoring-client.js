@@ -114,6 +114,16 @@ function prettyJson(value) {
   }
 }
 
+function normalizeReasoningEffort(value) {
+  const effort = cleanString(value).toLowerCase().replace(/[-_\s]+/g, "");
+  if (!effort) return "";
+  if (effort === "low") return "low";
+  if (["medium", "med", "mid", "standard", "default"].includes(effort)) return "medium";
+  if (effort === "high") return "high";
+  if (["xhigh", "xhi", "highest", "max", "maximum"].includes(effort)) return "xhigh";
+  return "";
+}
+
 function gatewayResponsesPrompt(kind, input = {}) {
   const repair = kind === "growth.card_authoring.repair";
   const request = repair ? input.request || {} : input;
@@ -134,7 +144,18 @@ function gatewayResponsesPrompt(kind, input = {}) {
     "For ordinary teaching/practice/integration cards, teachingFlow must include: learningTarget, prerequisites, microLesson, workedExample, guidedPractice, quickCheck.",
     "Use only graph node ids present in the supplied learningGraphPlan. Focused teaching or practice cards must use exactly one targetNodeId.",
     "If rubricPolicy is present, align evidenceToRecord and quickCheck evidence with its evidenceMapping without exposing answers.",
-    "Keep learner-facing text concise, age-appropriate, low-pressure, and suitable for a 10-15 minute daily card in the supplied subject/domain.",
+    "Keep learner-facing text age-appropriate, low-pressure, and suitable for a 10-15 minute daily card in the supplied subject/domain.",
+    "",
+    "Clarity requirements for learner-facing content:",
+    "- The card must be self-contained enough that a 13-year-old learner knows exactly where to start, what to do next, and what to submit.",
+    "- Prefer descriptive, concrete instructions over terse prompts. Avoid vague commands such as \"practice\", \"think about\", or \"explain\" unless followed by exact questions, steps, or criteria.",
+    "- title must name the concrete action, not only the topic.",
+    "- teachingFlow.learningTarget must be one observable learner action.",
+    "- teachingFlow.microLesson must briefly define the idea, explain why it matters, and name the method the learner will use.",
+    "- teachingFlow.workedExample must show a small labelled example, including the weak input/request and the improved version when relevant.",
+    "- teachingFlow.guidedPractice must include numbered steps and the exact artifact the learner should draft.",
+    "- teachingFlow.quickCheck must be an object with instruction, prompt or task, and expectedEvidence or completionCriteria. The instruction must state exactly what the learner submits.",
+    "- evidenceToRecord must use concrete evidence keys that match the quickCheck deliverable and rubricPolicy evidenceMapping when present.",
     "Do not include answer keys, hidden answers, raw prompts, raw model output, full transcripts, full source documents, secrets, tokens, cookies, or private payloads.",
     "",
     "Structured request:",
@@ -158,6 +179,8 @@ function gatewayResponsesBody(payload = {}, options = {}) {
   };
   const model = cleanString(options.model);
   if (model) body.model = model;
+  const reasoningEffort = normalizeReasoningEffort(options.reasoningEffort || options.reasoning_effort);
+  if (reasoningEffort) body.reasoning_effort = reasoningEffort;
   const maxOutputTokens = Number(options.maxOutputTokens || 0);
   if (Number.isFinite(maxOutputTokens) && maxOutputTokens > 0) body.max_output_tokens = Math.floor(maxOutputTokens);
   return body;

@@ -82,6 +82,16 @@ function prettyJson(value) {
   }
 }
 
+function normalizeReasoningEffort(value) {
+  const effort = cleanString(value).toLowerCase().replace(/[-_\s]+/g, "");
+  if (!effort) return "";
+  if (effort === "low") return "low";
+  if (["medium", "med", "mid", "standard", "default"].includes(effort)) return "medium";
+  if (effort === "high") return "high";
+  if (["xhigh", "xhi", "highest", "max", "maximum"].includes(effort)) return "xhigh";
+  return "";
+}
+
 function gatewayPlannerPrompt(kind, input = {}) {
   const repair = kind === "growth.learning_planner.repair";
   const context = repair ? input.context || {} : input;
@@ -116,6 +126,8 @@ function responsesBody(payload = {}, options = {}) {
   };
   const model = cleanString(options.model);
   if (model) body.model = model;
+  const reasoningEffort = normalizeReasoningEffort(options.reasoningEffort || options.reasoning_effort);
+  if (reasoningEffort) body.reasoning_effort = reasoningEffort;
   return body;
 }
 
