@@ -314,7 +314,9 @@ request carries `learnerSummary.schoolYear`, `grade`, `ageYears`,
 `educationStage`, or an equivalent audience description, the card should fit
 that learner rather than a fixed default. If no profile is supplied, the
 fallback audience remains a lower-secondary learner at about age 13. For
-ordinary daily cards, the draft should be self-contained: the title names the
+daily-loop HTTP entrypoints, `learnerSummary` / `learner_summary` is an allowed
+summary-only request field and must be forwarded to planner-backed card
+authoring. Ordinary daily cards should be self-contained: the title names the
 concrete action, the micro-lesson gives the idea and method, the worked example
 labels weak and improved examples when relevant, guided practice provides
 numbered steps, quick check states exactly what to submit, and evidence keys

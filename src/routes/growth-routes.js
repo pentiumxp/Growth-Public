@@ -301,7 +301,8 @@ function normalizeStageCheckpointControlsInput(url, target, request) {
 }
 
 function normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, extra = {}) {
-  return Object.assign({
+  const learnerSummary = body.learnerSummary || body.learner_summary;
+  const normalized = Object.assign({
     workspaceId,
     learnerId: body.learnerId || body.learner_id || target?.workspaceId || workspaceId,
     displayName: target?.label || body.displayName || body.display_name,
@@ -330,6 +331,10 @@ function normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, ex
     limit: body.limit,
     requestedBy: requestedWorkspaceId(request, url, "")
   }, extra);
+  if (learnerSummary && typeof learnerSummary === "object" && !Array.isArray(learnerSummary)) {
+    normalized.learnerSummary = learnerSummary;
+  }
+  return normalized;
 }
 
 function normalizeOperatingLoopBodyInput(body, workspaceId, target, request, url) {

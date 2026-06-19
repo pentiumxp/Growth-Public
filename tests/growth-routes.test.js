@@ -9130,7 +9130,11 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         subject: "science",
         horizon: "daily_plan",
         available_minutes: 15,
-        target_node_ids: ["kg_science_fair_test"]
+        target_node_ids: ["kg_science_fair_test"],
+        learner_summary: {
+          schoolYear: "Year 2",
+          educationStage: "primary"
+        }
       })
     });
     assert.equal(draftResponse.status, 201);
@@ -9175,7 +9179,11 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         subject: "science",
         horizon: "daily_plan",
         available_minutes: 15,
-        target_node_ids: ["kg_science_fair_test"]
+        target_node_ids: ["kg_science_fair_test"],
+        learner_summary: {
+          schoolYear: "Year 2",
+          educationStage: "primary"
+        }
       })
     });
     assert.equal(advanceResponse.status, 201);
@@ -9212,7 +9220,11 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         correctionId: undefined,
         sourceId: undefined,
         limit: undefined,
-        requestedBy: "weixin_stephen"
+        requestedBy: "weixin_stephen",
+        learnerSummary: {
+          schoolYear: "Year 2",
+          educationStage: "primary"
+        }
       }
     });
     assert.equal(calls[1].type, "publish");
@@ -9223,6 +9235,8 @@ test("growth daily loop draft and publish delegate through service with Owner wr
     assert.equal(calls[2].input.workspaceId, "weixin_fanfan");
     assert.equal(calls[2].input.learnerId, "fanfan");
     assert.equal(calls[2].input.targetNodeIds[0], "kg_science_fair_test");
+    assert.equal(calls[2].input.learnerSummary.schoolYear, "Year 2");
+    assert.equal(calls[2].input.learnerSummary.educationStage, "primary");
 
     const denied = await fetch(`${baseUrl}/api/v1/growth/daily-loop/draft`, {
       method: "POST",
