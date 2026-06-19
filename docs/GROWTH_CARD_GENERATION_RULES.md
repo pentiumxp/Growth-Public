@@ -213,7 +213,17 @@ Validation rules:
 
 - teaching cards must include a lesson, worked example, guided practice, and
   quick check;
+- `teachingFlow.prerequisites` must not be empty for ordinary teaching,
+  practice, or integration-practice cards;
+- `teachingFlow.quickCheck` must be an object with a clear learner-facing
+  instruction that names the final submission;
+- `evidenceToRecord` must be a non-empty array of short machine-readable string
+  keys only. It must not contain objects, prose labels, nested mappings, or
+  `[object Object]`;
 - quick checks must be answerable from the lesson and example;
+- for younger learners or reduced-working-memory profiles, prefer one final
+  deliverable. Do not ask for one problem set in guided practice and a different
+  set in quick check unless the practice-only purpose is explicit;
 - ordinary cards must not use formal assessment gates or exam wording;
 - ordinary cards must fit within 10-15 minutes and the publisher must persist
   that expected duration range even when the model returns a single valid
@@ -436,12 +446,13 @@ The required flow is:
    allows repair;
 4. validate the `teachingFlow` contract;
 5. validate card-role policy;
-6. validate graph plan and graph binding consistency;
-7. run privacy and bounded-content scans;
-8. transactionally write the parent program/draft rows required by the native
+6. validate evidence keys before publish;
+7. validate graph plan and graph binding consistency;
+8. run privacy and bounded-content scans;
+9. transactionally write the parent program/draft rows required by the native
    SQLite schema, the card, graph binding, and audit metadata to Growth
    SQLite;
-9. return a bounded published-card result.
+10. return a bounded published-card result.
 
 Failure behavior must be visible and recoverable:
 

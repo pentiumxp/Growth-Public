@@ -205,8 +205,11 @@ test("Gateway authoring client can call an official Responses endpoint", async (
   assert.match(body.input, /Return exactly one JSON object/);
   assert.match(body.input, /Audience fit: write for Year 2, primary, 7-8/);
   assert.match(body.input, /knows exactly where to start/);
+  assert.match(body.input, /Hard schema requirements/);
+  assert.match(body.input, /short string keys only/);
   assert.match(body.input, /numbered steps/);
   assert.match(body.input, /exactly what the learner submits/);
+  assert.match(body.input, /one final deliverable/);
   assert.match(body.input, /lgp_test_ratio_intro/);
 });
 
@@ -288,6 +291,7 @@ test("Gateway Responses prompt and parser support repair and nested output text"
   assert.equal(body.stream, true);
   assert.match(body.input, /Repair the invalid draft/);
   assert.match(body.input, /self-contained enough/);
+  assert.match(body.input, /Never use objects/);
   assert.match(body.input, /authoring_draft_invalid_json/);
   assert.equal(textFromGatewayJson({
     output: [{

@@ -4690,8 +4690,13 @@ test("Growth frontend app remains boot wiring over adapter modules", () => {
   assert.match(generationUi, /releaseWorkbenchPanel/);
   assert.match(generationUi, /data-card-generation-action-panel/);
   assert.match(generationUi, /cardGenerationActionPanel/);
+  const secondaryReadbacksUi = generationUi.slice(
+    generationUi.indexOf("function cardGenerationSecondaryReadbacks"),
+    generationUi.indexOf("function renderOwnerCardGenerationPanel")
+  );
   const ownerRenderUi = generationUi.slice(generationUi.indexOf("function renderOwnerCardGenerationPanel"));
-  assert.ok(ownerRenderUi.indexOf("cardGenerationActionPanel({") < ownerRenderUi.indexOf("releaseWorkbenchPanel(context"));
+  assert.match(secondaryReadbacksUi, /releaseWorkbenchPanel\(context/);
+  assert.ok(ownerRenderUi.indexOf("cardGenerationActionPanel({") < ownerRenderUi.indexOf("cardGenerationSecondaryReadbacks(context"));
   assert.match(generationUi, /data-release-artifact-template-panel/);
   assert.match(generationUi, /releaseArtifactTemplatePanel/);
   assert.match(generationUi, /createReleaseArtifactTemplateQueryPayload/);

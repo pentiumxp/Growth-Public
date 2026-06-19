@@ -458,6 +458,8 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
     assert.equal(card.expected_duration_minutes_max, 15);
     const raw = JSON.parse(card.raw_json);
     assert.equal(raw.expectedTimeMinutes, 12);
+    assert.deepEqual(raw.evidenceToRecord, ["explain_ratio_comparison"]);
+    assert.deepEqual(raw.taskModel.evidenceToRecord, ["explain_ratio_comparison"]);
     assert.equal(raw.learningGraph.learningGraphPlanId, result.learningGraphPlan.learningGraphPlanId);
     assert.equal(raw.teachingFlow.learningTarget, "Compare two quantities using a ratio.");
     assert.equal(raw.experienceSummary.learnerSummary.completedRecentCardCount, 1);

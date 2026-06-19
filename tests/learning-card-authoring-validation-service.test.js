@@ -88,7 +88,8 @@ test("authoring validation accepts formal stage assessment timing and coverage",
     title: "Ratio checkpoint",
     targetNodeIds: ["kg_fraction_meaning", "kg_ratio_intro"],
     expectedTimeMinutes: 28,
-    assessmentCoverageNodeIds: ["kg_fraction_meaning", "kg_ratio_intro"]
+    assessmentCoverageNodeIds: ["kg_fraction_meaning", "kg_ratio_intro"],
+    evidenceToRecord: ["formal_answer", "coverage_reasoning"]
   }, context({
     cardRole: "stage_assessment",
     learningGraphPlan: graphPlan({
@@ -103,6 +104,25 @@ test("authoring validation accepts formal stage assessment timing and coverage",
   assert.equal(result.draft.cardRole, "stage_assessment");
   assert.deepEqual(result.draft.assessmentCoverageNodeIds, ["kg_fraction_meaning", "kg_ratio_intro"]);
   assert.deepEqual(result.privacyFindings, []);
+});
+
+test("authoring validation rejects object evidence keys and blank ordinary flow fields", () => {
+  const service = createLearningCardAuthoringValidationService();
+  const result = service.validateDraft(dailyDraft({
+    teachingFlow: Object.assign({}, dailyDraft().teachingFlow, {
+      prerequisites: [],
+      quickCheck: "Write the answer."
+    }),
+    evidenceToRecord: [{ key: "explain_ratio_comparison", label: "Explain ratio comparison" }, "[object Object]"]
+  }), context());
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "card_authoring_validation_failed");
+  const codes = errorCodes(result);
+  assert.equal(codes.has("teaching_flow_field_required"), true);
+  assert.equal(codes.has("quick_check_object_required"), true);
+  assert.equal(codes.has("evidence_to_record_string_required"), true);
+  assert.equal(codes.has("evidence_to_record_key_invalid"), true);
 });
 
 test("authoring validation rejects daily drafts outside the low-pressure time range", () => {

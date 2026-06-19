@@ -17,6 +17,37 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(asArray(values).map(cleanString).filter(Boolean)));
 }
 
+function arrayish(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
+}
+
+function evidenceKeyText(value) {
+  const text = cleanString(value);
+  if (!text || text === "[object Object]") return "";
+  const prefix = cleanString(text.split(":")[0]);
+  if (/^[A-Za-z][A-Za-z0-9_.-]{1,79}$/.test(prefix)) return prefix;
+  return text.slice(0, 120);
+}
+
+function evidenceKeyFromValue(value) {
+  if (typeof value === "string" || typeof value === "number") return evidenceKeyText(value);
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const key of ["key", "evidenceKey", "evidence_key", "id", "type", "dimensionId", "dimension_id", "name"]) {
+      const candidate = evidenceKeyText(value[key]);
+      if (candidate) return candidate;
+    }
+  }
+  return "";
+}
+
+function evidenceKeys(...groups) {
+  return Array.from(new Set(
+    groups.flatMap(arrayish).map(evidenceKeyFromValue).filter(Boolean)
+  )).slice(0, 12);
+}
+
 function jsonText(value) {
   return JSON.stringify(value === undefined ? null : value);
 }
@@ -163,7 +194,11 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
   const targetNodeIds = uniqueStrings(draft.targetNodeIds);
   const prerequisiteNodeIds = uniqueStrings(draft.prerequisiteNodeIds || learningGraphPlan.prerequisiteNodeIds);
   const assessmentCoverageNodeIds = uniqueStrings(draft.assessmentCoverageNodeIds || learningGraphPlan.assessmentCoverage);
-  const evidenceToRecord = uniqueStrings(draft.evidenceToRecord || request.evidenceRequirements);
+  const evidenceToRecord = evidenceKeys(
+    draft.evidenceToRecord,
+    request.evidenceRequirements,
+    draft.teachingFlow?.quickCheck?.expectedEvidence
+  );
   const instructionPreview = cleanString(
     draft.instructionPreview
       || draft.learnerInstruction

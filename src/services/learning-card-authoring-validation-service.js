@@ -51,6 +51,22 @@ function uniqueStrings(values = []) {
   return Array.from(new Set(asArray(values).map(cleanString).filter(Boolean)));
 }
 
+function isBlankTeachingField(value) {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return !cleanString(value);
+  if (Array.isArray(value)) return value.length === 0;
+  if (isObject(value)) return Object.keys(value).length === 0;
+  return false;
+}
+
+function evidenceKeyValid(value = "") {
+  const text = cleanString(value);
+  return Boolean(text)
+    && text !== "[object Object]"
+    && text.length <= 120
+    && /^[A-Za-z][A-Za-z0-9_.-]{1,119}$/.test(text);
+}
+
 function firstPlanCard(plan = {}) {
   return asArray(plan.cardSequence)[0] || {};
 }
@@ -115,13 +131,33 @@ function teachingFlowErrors(draft = {}) {
   }
   for (const field of REQUIRED_TEACHING_FLOW_FIELDS) {
     const value = draft.teachingFlow[field];
-    if (value === undefined || value === null || (typeof value === "string" && !cleanString(value))) {
+    if (isBlankTeachingField(value)) {
       errors.push({ code: "teaching_flow_field_required", path: `teachingFlow.${field}` });
     }
   }
-  if (isObject(draft.teachingFlow.quickCheck) && !cleanString(draft.teachingFlow.quickCheck.instruction)) {
+  if (!isObject(draft.teachingFlow.quickCheck)) {
+    errors.push({ code: "quick_check_object_required", path: "teachingFlow.quickCheck" });
+  } else if (!cleanString(draft.teachingFlow.quickCheck.instruction)) {
     errors.push({ code: "quick_check_instruction_required", path: "teachingFlow.quickCheck.instruction" });
   }
+  return errors;
+}
+
+function evidencePolicyErrors(draft = {}) {
+  const errors = [];
+  const role = cleanString(draft.cardRole).toLowerCase();
+  if (!ORDINARY_CARD_ROLES.includes(role) && role !== "stage_assessment") return errors;
+  if (!Array.isArray(draft.evidenceToRecord) || draft.evidenceToRecord.length === 0) {
+    errors.push({ code: "evidence_to_record_required", path: "evidenceToRecord" });
+    return errors;
+  }
+  draft.evidenceToRecord.forEach((item, index) => {
+    if (typeof item !== "string") {
+      errors.push({ code: "evidence_to_record_string_required", path: `evidenceToRecord[${index}]` });
+    } else if (!evidenceKeyValid(item)) {
+      errors.push({ code: "evidence_to_record_key_invalid", path: `evidenceToRecord[${index}]` });
+    }
+  });
   return errors;
 }
 
@@ -205,6 +241,7 @@ function createLearningCardAuthoringValidationService() {
     errors.push(...rolePolicyErrors(draft, context));
     errors.push(...teachingFlowErrors(draft));
     errors.push(...graphPolicyErrors(draft, context));
+    errors.push(...evidencePolicyErrors(draft));
     const privacyFindings = scanPrivacy(draft);
     for (const finding of privacyFindings) {
       errors.push({ code: "privacy_scan_failed", path: finding.path, reason: finding.reason });
