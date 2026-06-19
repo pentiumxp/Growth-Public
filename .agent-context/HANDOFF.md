@@ -720,3 +720,52 @@ The previous full handoff was archived and should be opened only when old proven
     mathematics card is already published and queued as the next daily card.
   - No computer science card or provision is active for XuLu.
   - No unattended scheduler was enabled in this task.
+
+## 2026-06-19T12:25+0800 - XuLu English/Math Parallel Visibility Hotfix
+
+- Issue:
+  - Owner reported that XuLu/Eileen's workspace showed only the English card.
+  - Production board readback showed both final cards were `published`, but the
+    mathematics card was hidden as a future sequence card because both cards
+    lacked explicit `sequenceGroupId` and therefore fell back to the same
+    `program:program_xulu_english_math_daily` group.
+- Production data repair:
+  - Created SQLite backup before repair:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-xulu-sequence-group-repair-20260619T122244Z.sqlite3`.
+  - Updated final XuLu cards to subject-level sequence groups:
+    - English `ltask_27c13fe5efd2ab7584`:
+      `program_xulu_english_math_daily:subject:english`.
+    - Mathematics `ltask_c66c84d5c6ab9e1b40`:
+      `program_xulu_english_math_daily:subject:mathematics`.
+  - SQLite `quick_check` passed before and after repair.
+  - Home AI proxy board readback after repair returned
+    `visibleCardCount=2`, `hiddenFutureCardCount=0`, and today lane containing
+    both final card ids.
+- Code prevention:
+  - Commit `766d416` (`Group generated daily cards by subject`) makes generated
+    daily cards persist subject-level `sequenceGroupId` by default through
+    `card-authoring-publisher`.
+  - Same-subject cards still use the existing current-card-then-next sequence
+    behavior; different subjects in the same learning program can be visible in
+    parallel.
+  - Updated `tests/learning-card-generation-service.test.js` and
+    `docs/GROWTH_CARD_GENERATION_RULES.md`.
+- Production deployment:
+  - Deployed Growth commit `766d4160e878` through the central macOS plugin
+    deployment contract.
+  - Production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260619T122525Z-plugin-growth-manual`.
+  - Restart label: `com.hermesmobile.plugin.growth`.
+  - Manifest health passed after restart.
+  - Auth profile audit remained non-blocking:
+    `codexIssueCount=0`; existing non-Codex profile issues remain.
+- Validation:
+  - `node --check src/stores/growth-learning-sqlite/card-authoring-publisher.js`
+    passed.
+  - `node --test tests/learning-card-generation-service.test.js` passed `9/9`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `npm run --silent check` passed with `runtimeCount=237`.
+  - `git diff --check` passed before commit.
+  - Post-deploy Home AI same-origin proxy board GET returned HTTP 200 with
+    `visibleCardCount=2`, `hiddenFutureCardCount=0`, and both final card ids in
+    the today lane.
