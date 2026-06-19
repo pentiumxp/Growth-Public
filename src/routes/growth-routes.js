@@ -309,6 +309,7 @@ function normalizeDailyLoopBodyInput(body, workspaceId, target, request, url, ex
     label: target?.label || body.label,
     growthWorkspaceId: target?.growthWorkspaceId,
     programId: body.programId || body.program_id,
+    recipeId: body.recipeId || body.recipe_id,
     domainPackId: body.domainPackId || body.domain_pack_id,
     domain: body.domain,
     subject: body.subject,

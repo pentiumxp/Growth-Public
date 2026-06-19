@@ -316,13 +316,15 @@ that learner rather than a fixed default. If no profile is supplied, the
 fallback audience remains a lower-secondary learner at about age 13. For
 daily-loop HTTP entrypoints, `learnerSummary` / `learner_summary` is an allowed
 summary-only request field and must be forwarded to planner-backed card
-authoring. Ordinary daily cards should be self-contained: the title names the
-concrete action, the micro-lesson gives the idea and method, the worked example
-labels weak and improved examples when relevant, guided practice provides
-numbered steps, quick check states exactly what to submit, and evidence keys
-match the submitted artifact. Avoid terse topic-only prompts or generic
-requests such as "practice" / "explain" unless the card immediately provides
-exact steps, questions, and completion criteria.
+authoring. The same entrypoints must preserve an explicit `recipeId` /
+`recipe_id` so subject-specific daily cards do not silently fall back to the
+default authoring recipe. Ordinary daily cards should be self-contained: the
+title names the concrete action, the micro-lesson gives the idea and method,
+the worked example labels weak and improved examples when relevant, guided
+practice provides numbered steps, quick check states exactly what to submit,
+and evidence keys match the submitted artifact. Avoid terse topic-only prompts
+or generic requests such as "practice" / "explain" unless the card immediately
+provides exact steps, questions, and completion criteria.
 
 ## Evaluation Ownership And Gateway Boundary
 

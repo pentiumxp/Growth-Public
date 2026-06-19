@@ -9125,6 +9125,7 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         workspace_id: "weixin_fanfan",
         learner_id: "fanfan",
         program_id: "program_science",
+        recipe_id: "daily_science_v1",
         domain_pack_id: "uk_hk_curriculum_foundation",
         domain: "science",
         subject: "science",
@@ -9174,6 +9175,7 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         workspace_id: "weixin_fanfan",
         learner_id: "fanfan",
         program_id: "program_science",
+        recipe_id: "daily_science_v1",
         domain_pack_id: "uk_hk_curriculum_foundation",
         domain: "science",
         subject: "science",
@@ -9200,6 +9202,7 @@ test("growth daily loop draft and publish delegate through service with Owner wr
         label: "凡凡",
         growthWorkspaceId: undefined,
         programId: "program_science",
+        recipeId: "daily_science_v1",
         domainPackId: "uk_hk_curriculum_foundation",
         domain: "science",
         subject: "science",
@@ -9234,6 +9237,7 @@ test("growth daily loop draft and publish delegate through service with Owner wr
     assert.equal(calls[2].type, "advance");
     assert.equal(calls[2].input.workspaceId, "weixin_fanfan");
     assert.equal(calls[2].input.learnerId, "fanfan");
+    assert.equal(calls[2].input.recipeId, "daily_science_v1");
     assert.equal(calls[2].input.targetNodeIds[0], "kg_science_fair_test");
     assert.equal(calls[2].input.learnerSummary.schoolYear, "Year 2");
     assert.equal(calls[2].input.learnerSummary.educationStage, "primary");
