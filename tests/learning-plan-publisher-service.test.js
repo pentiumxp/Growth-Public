@@ -239,13 +239,19 @@ test("learning plan publisher publishes one selected item through card generatio
     workspaceId: "weixin_stephen",
     planDraftId: draft.planDraft.planDraftId,
     itemId: "plan_item_science_1",
-    recipeId: "daily_science_v1"
+    recipeId: "daily_science_v1",
+    learnerSummary: {
+      schoolYear: "Year 2",
+      educationStage: "primary"
+    }
   });
 
   assert.equal(result.ok, true);
   assert.equal(generationCalls.length, 1);
   assert.equal(generationCalls[0].recipeId, "daily_science_v1");
   assert.equal(generationCalls[0].cardRole, "practice");
+  assert.equal(generationCalls[0].learnerSummary.schoolYear, "Year 2");
+  assert.equal(generationCalls[0].learnerSummary.educationStage, "primary");
   assert.equal(generationCalls[0].sourceSummaries[0].plannerCardRole, "stretch");
   assert.equal(generationCalls[0].sourceSummaries[0].publishedCardRole, "practice");
   assert.equal(result.planDraft.status, "published");

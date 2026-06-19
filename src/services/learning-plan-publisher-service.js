@@ -143,6 +143,7 @@ function generationInputFromPlanItem(record = {}, item = {}, input = {}, targetP
     evidenceRequirements: uniqueStrings(item.evidenceRequirements),
     cardSchemaVersion: cleanString(input.cardSchemaVersion || input.card_schema_version || "growth.card.authoring.v1"),
     recipeId: cleanString(input.recipeId || input.recipe_id),
+    learnerSummary: objectOnly(input.learnerSummary || input.learner_summary),
     generationKey,
     sourceSummaries: [{
       sourceKind: "learning_plan_draft",
@@ -156,6 +157,10 @@ function generationInputFromPlanItem(record = {}, item = {}, input = {}, targetP
       privacyClass: "summary_only"
     }]
   };
+}
+
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
 function createLearningPlanPublisherService(options = {}) {

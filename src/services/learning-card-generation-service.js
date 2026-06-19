@@ -110,6 +110,18 @@ function normalizeResultHistory(history = {}) {
   };
 }
 
+function objectOnly(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function learnerSummaryForAuthoring(history = {}, input = {}) {
+  return Object.assign(
+    {},
+    objectOnly(history.learnerSummary),
+    objectOnly(input.learnerSummary || input.learner_summary)
+  );
+}
+
 function createLearningCardGenerationService(options = {}) {
   const graphPlanService = options.graphPlanService;
   const graphRepository = options.graphRepository;
@@ -262,6 +274,9 @@ function createLearningCardGenerationService(options = {}) {
     const targetSelection = resolvedPlan.targetSelection || null;
     const history = resolveHistory(normalizedInput, plan);
     if (!history?.ok) return history;
+    const resultHistory = Object.assign({}, history, {
+      learnerSummary: learnerSummaryForAuthoring(history, normalizedInput)
+    });
     if (!authoringService || typeof authoringService.authorCard !== "function") {
       return unavailable("learning_card_authoring_service_unavailable", { stage: "authoring" });
     }
@@ -281,7 +296,7 @@ function createLearningCardGenerationService(options = {}) {
     const rubricPolicy = resolveRubricPolicy(normalizedInput, plan, policy);
     const authoring = await authoringService.authorCard({
       learningGraphPlan: plan,
-      learnerSummary: history.learnerSummary,
+      learnerSummary: resultHistory.learnerSummary,
       masterySummary: history.masterySummary,
       recentExperienceSignals: history.recentExperienceSignals,
       recentTrajectory: history.recentTrajectory,
@@ -307,7 +322,7 @@ function createLearningCardGenerationService(options = {}) {
       return unavailable(authoring?.error || "learning_card_authoring_failed", {
         stage: authoring?.stage || "authoring",
         learningGraphPlan: plan,
-        historySummary: normalizeResultHistory(history),
+        historySummary: normalizeResultHistory(resultHistory),
         authoring
       });
     }
@@ -328,7 +343,7 @@ function createLearningCardGenerationService(options = {}) {
         selectedSubject: cleanString(planProvisioning.selectedSubject || initialProvisioning.selectedSubject)
       },
       learningGraphPlan: plan,
-      historySummary: normalizeResultHistory(history),
+      historySummary: normalizeResultHistory(resultHistory),
       nextCardStrategy,
       recommendationAcceptance,
       sourceSummaryCount: sourceSummaries.length,

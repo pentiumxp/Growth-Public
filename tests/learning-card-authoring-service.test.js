@@ -183,6 +183,11 @@ test("Gateway authoring client can call an official Responses endpoint", async (
 
   const result = await client.generateCardDraft({
     learningGraphPlan: graphPlan(),
+    learnerSummary: {
+      schoolYear: "Year 2",
+      educationStage: "primary",
+      ageYears: "7-8"
+    },
     cardRole: "teaching",
     cardSchemaVersion: "growth.card.authoring.v1"
   });
@@ -198,6 +203,7 @@ test("Gateway authoring client can call an official Responses endpoint", async (
   assert.equal(body.stream, false);
   assert.equal(body.metadata.kind, "growth.card_authoring.generate");
   assert.match(body.input, /Return exactly one JSON object/);
+  assert.match(body.input, /Audience fit: write for Year 2, primary, 7-8/);
   assert.match(body.input, /knows exactly where to start/);
   assert.match(body.input, /numbered steps/);
   assert.match(body.input, /exactly what the learner submits/);

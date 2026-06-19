@@ -114,6 +114,29 @@ function prettyJson(value) {
   }
 }
 
+function firstNonEmpty(values = []) {
+  return asArray(values).map(cleanString).find(Boolean) || "";
+}
+
+function learnerAudienceDescription(request = {}) {
+  const summary = isObject(request.learnerSummary) ? request.learnerSummary : {};
+  const explicit = firstNonEmpty([
+    summary.audience,
+    summary.audienceDescription,
+    summary.learnerAudience,
+    summary.stageDescription,
+    summary.profileSummary
+  ]);
+  if (explicit) return explicit.slice(0, 180);
+  const parts = [
+    firstNonEmpty([summary.schoolYear, summary.yearGroup, summary.gradeLevel, summary.grade]),
+    firstNonEmpty([summary.educationStage, summary.schoolStage, summary.ageBand]),
+    firstNonEmpty([summary.ageYears, summary.age])
+  ].filter(Boolean);
+  if (parts.length) return parts.join(", ").slice(0, 180);
+  return "lower-secondary learner, about 13 years old";
+}
+
 function normalizeReasoningEffort(value) {
   const effort = cleanString(value).toLowerCase().replace(/[-_\s]+/g, "");
   if (!effort) return "";
@@ -134,6 +157,7 @@ function gatewayResponsesPrompt(kind, input = {}) {
     : "Author one Growth learning-card draft from the structured request.";
   const role = cleanString(request.cardRole || request.learningGraphPlan?.cardRole || request.learningGraphPlan?.cardSequence?.[0]?.cardRole || "practice");
   const schemaVersion = cleanString(request.cardSchemaVersion || "growth.card.authoring.v1");
+  const audienceDescription = learnerAudienceDescription(request);
   return [
     "You are the Home AI Growth card authoring service.",
     task,
@@ -145,9 +169,10 @@ function gatewayResponsesPrompt(kind, input = {}) {
     "Use only graph node ids present in the supplied learningGraphPlan. Focused teaching or practice cards must use exactly one targetNodeId.",
     "If rubricPolicy is present, align evidenceToRecord and quickCheck evidence with its evidenceMapping without exposing answers.",
     "Keep learner-facing text age-appropriate, low-pressure, and suitable for a 10-15 minute daily card in the supplied subject/domain.",
+    `Audience fit: write for ${audienceDescription}. If the structured request names a younger learner, reduce reading load, avoid abstract jargon, use concrete examples, and keep the task feasible without adult-level programming knowledge.`,
     "",
     "Clarity requirements for learner-facing content:",
-    "- The card must be self-contained enough that a 13-year-old learner knows exactly where to start, what to do next, and what to submit.",
+    "- The card must be self-contained enough that the target learner knows exactly where to start, what to do next, and what to submit.",
     "- Prefer descriptive, concrete instructions over terse prompts. Avoid vague commands such as \"practice\", \"think about\", or \"explain\" unless followed by exact questions, steps, or criteria.",
     "- title must name the concrete action, not only the topic.",
     "- teachingFlow.learningTarget must be one observable learner action.",

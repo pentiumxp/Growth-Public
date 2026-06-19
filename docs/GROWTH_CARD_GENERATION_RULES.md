@@ -308,14 +308,19 @@ these through `GROWTH_GATEWAY_PLANNER_MODEL` /
 is assembled inside Growth from summary-only structured input; the browser
 never calls Gateway directly.
 
-Authoring prompts must bias toward clear, descriptive learner-facing cards.
-For ordinary daily cards, the draft should be self-contained for a 13-year-old
-learner: the title names the concrete action, the micro-lesson gives the idea
-and method, the worked example labels weak and improved examples when
-relevant, guided practice provides numbered steps, quick check states exactly
-what to submit, and evidence keys match the submitted artifact. Avoid terse
-topic-only prompts or generic requests such as "practice" / "explain" unless
-the card immediately provides exact steps, questions, and completion criteria.
+Authoring prompts must bias toward clear, descriptive learner-facing cards and
+must adapt reading load to the supplied summary-only learner profile. If the
+request carries `learnerSummary.schoolYear`, `grade`, `ageYears`,
+`educationStage`, or an equivalent audience description, the card should fit
+that learner rather than a fixed default. If no profile is supplied, the
+fallback audience remains a lower-secondary learner at about age 13. For
+ordinary daily cards, the draft should be self-contained: the title names the
+concrete action, the micro-lesson gives the idea and method, the worked example
+labels weak and improved examples when relevant, guided practice provides
+numbered steps, quick check states exactly what to submit, and evidence keys
+match the submitted artifact. Avoid terse topic-only prompts or generic
+requests such as "practice" / "explain" unless the card immediately provides
+exact steps, questions, and completion criteria.
 
 ## Evaluation Ownership And Gateway Boundary
 

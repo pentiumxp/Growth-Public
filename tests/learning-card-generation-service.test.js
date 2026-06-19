@@ -423,6 +423,10 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
     programId: "program_1",
     targetNodeId: "kg_ratio_intro",
     cardRole: "teaching",
+    learnerSummary: {
+      schoolYear: "Year 2",
+      educationStage: "primary"
+    },
     generationKey: "ratio-intro-teaching-v1"
   });
 
@@ -436,6 +440,8 @@ test("card generation creates a graph plan, summarizes history, and publishes a 
   const gatewayInput = gatewayCalls[0].input;
   assert.equal(gatewayInput.learningGraphPlan.targetNodeId, "kg_ratio_intro");
   assert.equal(gatewayInput.learnerSummary.evaluationCount, 1);
+  assert.equal(gatewayInput.learnerSummary.schoolYear, "Year 2");
+  assert.equal(gatewayInput.learnerSummary.educationStage, "primary");
   assert.equal(gatewayInput.masterySummary.masteryStates[0].summary, "Ready for a guided ratio card.");
   assert.ok(gatewayInput.recentExperienceSignals.some((signal) => signal.signalType === "right_level"));
   assert.equal(gatewayInput.nextCardStrategy.strategy, "stabilize");
