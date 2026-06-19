@@ -769,3 +769,72 @@ The previous full handoff was archived and should be opened only when old proven
   - Post-deploy Home AI same-origin proxy board GET returned HTTP 200 with
     `visibleCardCount=2`, `hiddenFutureCardCount=0`, and both final card ids in
     the today lane.
+
+## 2026-06-19T22:18+0800 - XuLu card quality repair and authoring hard gates
+
+- Issue:
+  - Owner review found that both current XuLu/Eileen cards persisted
+    `raw_json.evidenceToRecord` as `[object Object]`.
+  - The mathematics card also had an avoidable ambiguity: guided practice used
+    one number set while quick check asked for another number set.
+  - `gpt-5.5` plus `xhigh` was already configured for authoring/planner, so the
+    fix tightened prompt constraints and post-Gateway validation rather than
+    relying on model compute alone.
+- Production data repair:
+  - Created SQLite backup before repair:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-xulu-card-quality-repair-20260619T140621Z.sqlite3`.
+  - Repaired English card `ltask_27c13fe5efd2ab7584`:
+    - `evidenceToRecord` and `taskModel.evidenceToRecord` now persist
+      `short_answer`, `reason_with_text_evidence`,
+      `self_reflection_optional`;
+    - added two short prerequisite notes;
+    - clarified that the learner submits exactly two short sentences, with one
+      optional self-check sentence.
+  - Repaired mathematics card `ltask_c66c84d5c6ab9e1b40`:
+    - `evidenceToRecord` and `taskModel.evidenceToRecord` now persist
+      `short_answer`, `worked_steps`, `precision_check`;
+    - guided practice and quick check now use the same number set
+      `58, 52, 65`;
+    - quick check explicitly asks for the table, final order, and one check
+      sentence.
+  - SQLite `quick_check` passed after repair.
+  - Growth API card and board readback for `workspaceId=user-a87aaa61` returned
+    both final card ids with the repaired evidence keys.
+- Code prevention:
+  - Commit `a0b40ae` (`Tighten Growth card authoring quality gates`) adds hard
+    Gateway prompt constraints for evidence key strings, non-empty ordinary
+    prerequisites, explicit quick-check submission, and one final deliverable
+    for younger/reduced-working-memory learners.
+  - `learning-card-authoring-validation-service` now rejects object evidence
+    entries, invalid evidence key strings, empty ordinary teaching-flow fields,
+    and non-object quick checks.
+  - `card-authoring-publisher` defensively normalizes evidence key inputs so
+    object-shaped values cannot publish as `[object Object]`.
+  - Updated `docs/GROWTH_CARD_GENERATION_RULES.md` with the new authoring
+    quality rules.
+  - Updated architecture-boundary test to match the current
+    `cardGenerationSecondaryReadbacks` helper boundary.
+- Production deployment:
+  - Deployed Growth source commit `a0b40ae41afd` through the central macOS
+    plugin deployment contract.
+  - Production deploy backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260619T141227Z-plugin-growth-manual`.
+  - Restart label: `com.hermesmobile.plugin.growth`.
+  - Manifest health passed after restart.
+  - Launchd readback confirmed:
+    `GROWTH_GATEWAY_AUTHORING_MODEL=gpt-5.5`,
+    `GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT=xhigh`,
+    `GROWTH_GATEWAY_PLANNER_MODEL=gpt-5.5`,
+    `GROWTH_GATEWAY_PLANNER_REASONING_EFFORT=xhigh`.
+  - Auth profile audit remained non-blocking:
+    `codexIssueCount=0`; existing non-Codex profile issues remain.
+- Validation:
+  - `node --test tests/learning-card-authoring-validation-service.test.js tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js`
+    passed `29/29`.
+  - `node --test tests/growth-docs-locality.test.js tests/growth-architecture-boundary.test.js`
+    passed `42/42`.
+  - `npm run --silent check` passed with `runtimeCount=237`.
+  - `git diff --check` passed before commit.
+  - Post-deploy production file readback found the new hard schema prompt,
+    evidence validation errors, and publisher evidence normalization helpers in
+    the deployed Growth plugin source.
