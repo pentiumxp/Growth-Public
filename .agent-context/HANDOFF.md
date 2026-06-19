@@ -622,3 +622,101 @@ The previous full handoff was archived and should be opened only when old proven
     learner evidence; it waits for `evaluation_evidence` and
     `profile_delta_audit`.
   - No unattended scheduler was enabled in this task.
+
+## 2026-06-19T09:50+0800 - XuLu Owner-Workspace English And Math Daily Cards
+
+- Scope correction:
+  - User clarified the source profile is the Home AI Owner production workspace,
+    not the older `/Users/xuxin/HermesMobile` reference workspace.
+  - Summary-only source files were read from
+    `/Users/hermes-host/HermesMobile/data/drive/users/owner/Hermes-徐欣/路路`
+    and sibling `Eileen` material. Raw medical, gene, score-table, and report
+    details were not copied into Growth docs, handoff, or card requests.
+  - Learner profile constraints used for authoring only at summary level:
+    Year 2 primary learner at Harrow; low-pressure, one-step instructions;
+    concrete-before-abstract scaffolding; reduced working-memory load; no
+    speed pressure, comparison, or multi-instruction prompts.
+- Target provisioning:
+  - Computing/AI literacy provision `lgprov_6ff36d69f85315a2a8` for
+    `program_xulu_computing_ai_literacy_daily` is now `inactive` with source
+    `owner_scope_change`.
+  - English provision `lgprov_887ecb7953b5598a30` is `active` for
+    `program_xulu_english_math_daily`,
+    `domain_pack_fanfan_cambridge_pathway_v1`, domain `english`, subject
+    `english`.
+  - Mathematics provision `lgprov_7b4198f2b6e6d05cd4` is `active` for the same
+    program/domain pack, domain `mathematics`, subject `mathematics`.
+  - Resolve readback passed for:
+    `kg_ls_english_reading_explicit_meaning_in_texts` and
+    `kg_ls_mathematics_number_place_value_ordering_and_rounding`.
+  - Resolve readback for `kg_compute_ai_coding_requirements` now fails closed
+    with `learning_target_not_provisioned`, confirming CS is not enabled.
+- Route/code fix:
+  - Commit `a814790` (`Preserve daily loop recipe selection`) adds `recipeId`
+    / `recipe_id` forwarding through daily-loop HTTP body normalization so
+    non-English subject cards do not silently fall back to
+    `daily_english_v1`.
+  - Updated `tests/growth-routes.test.js` to assert daily-loop draft/advance
+    recipe forwarding, and `docs/GROWTH_CARD_GENERATION_RULES.md` to record
+    the rule.
+- Production deployment:
+  - Deployed Growth commit `a81479043dd3` through the central macOS plugin
+    deployment contract.
+  - Production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260619T094642Z-plugin-growth-manual`.
+  - Restart label: `com.hermesmobile.plugin.growth`.
+  - Manifest health passed after restart.
+  - Auth profile audit remained non-blocking:
+    `codexIssueCount=0`; existing non-Codex profile issues remain.
+  - Launchd readback confirmed Gateway authoring/planner model settings:
+    `gpt-5.5` and `xhigh`.
+- Validation:
+  - `node --check src/routes/growth-routes.js` passed.
+  - `node --test tests/growth-routes.test.js` passed `64/64`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `npm run --silent check` passed with `runtimeCount=237`.
+  - `git diff --check` passed before commit.
+  - Home AI same-origin proxy card GET returned HTTP 200 for both final cards.
+- Retired cards:
+  - Retired the three profiled computing cards after the Owner narrowed scope
+    to English and math only:
+    `ltask_276ab6eb0eb2ddf70f`,
+    `ltask_ecb5115115559799d4`, and
+    `ltask_330704a82cee3bb2a3`.
+  - Retirement backup:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260619T093510Z.sqlite3`.
+  - Retired wrong-recipe math card `ltask_fcdb66ab74a3ea99c5` after detecting
+    `dailyLoopGenerationRecipeId=daily_english_v1`.
+  - Retirement backup:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260619T094727Z.sqlite3`.
+  - Retired old unprofiled math trial card `ltask_35941e135c59cd56` so the
+    current XuLu daily card set contains only the new profiled English and math
+    cards.
+  - Retirement backup:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260619T094915Z.sqlite3`.
+  - All retirement writes reported SQLite `quick_check=ok`.
+- Final production XuLu/Eileen cards:
+  - English:
+    `ltask_27c13fe5efd2ab7584` -
+    `Find one clear answer in a short text`, domain `english`, role
+    `practice`, target `kg_ls_english_reading_explicit_meaning_in_texts`.
+  - Mathematics:
+    `ltask_c66c84d5c6ab9e1b40` -
+    `Order Three 2-Digit Numbers Using Tens and Ones`, domain `mathematics`,
+    role `practice`, target
+    `kg_ls_mathematics_number_place_value_ordering_and_rounding`.
+  - Both are `published`, `primaryAction=submit`, graph-bound to the expected
+    node, and persist summary-only learner profile fields:
+    `schoolYear=Year 2`, `educationStage=primary`.
+  - Content structure spot-check passed: both cards include concrete
+    learning target, micro-lesson, guided practice with exact artifact, and
+    quick-check submission/completion criteria.
+  - Board readback currently shows one current daily lane card and one
+    hidden-future queued card; direct card detail GET works for both ids. This
+    matches the one-at-a-time daily queue behavior, not missing card storage.
+- Current test path:
+  - Open Home AI production as Owner, switch Growth target to Eileen/XuLu.
+  - The current visible card should be the English daily practice card; the
+    mathematics card is already published and queued as the next daily card.
+  - No computer science card or provision is active for XuLu.
+  - No unattended scheduler was enabled in this task.
