@@ -537,3 +537,88 @@ The previous full handoff was archived and should be opened only when old proven
   - Current cycle completeness is intentionally incomplete until Fanfan submits
     real learner evidence; it waits for `evaluation_evidence` and
     `profile_delta_audit`.
+
+## 2026-06-19T09:35+0800 - XuLu Computing And AI Literacy Daily Cards
+
+- Scope:
+  - Copied/provisioned the Fanfan computing and AI literacy domain pack path for
+    XuLu/Eileen's workspace `user-a87aaa61`.
+  - The reused production domain pack is
+    `domain_pack_fanfan_computing_ai_literacy_v1`, domain
+    `computing_ai_literacy`, subject `software_engineering_ai_coding`.
+- Workspace enablement:
+  - Home AI Growth authorization now includes `user-a87aaa61`.
+  - Growth workspace binding exists for
+    `growth:user-a87aaa61` / Hermes workspace `user-a87aaa61`, display name
+    `Eileen`.
+  - Home AI plugin list readback for `user-a87aaa61` includes `growth`.
+  - Growth view-target readback lists Eileen for Owner-visible target
+    switching.
+- Target provisioning:
+  - Added explicit provision
+    `lgprov_6ff36d69f85315a2a8` for program
+    `program_xulu_computing_ai_literacy_daily`.
+  - Target provisioning readback passed for:
+    `kg_compute_ai_coding_context`,
+    `kg_compute_ai_coding_requirements`, and
+    `kg_compute_ai_coding_task_breakdown`.
+- Code changes:
+  - `421e82a` (`Adapt Growth card authoring to learner profile`) makes
+    authoring prompts adapt to supplied summary-only learner profile rather
+    than a fixed 13-year-old default.
+  - `471bc84` (`Preserve learner summary in daily loop routes`) forwards
+    `learnerSummary` / `learner_summary` through daily-loop HTTP routes so
+    Home AI proxy requests reach card authoring with the learner profile.
+- Production deployment:
+  - Deployed Growth commit `471bc84a9fd5` through the central macOS plugin
+    deployment contract.
+  - Production backup:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260619T092314Z-plugin-growth-manual`.
+  - Manifest health passed after restart.
+  - Auth profile audit remained non-blocking for this deploy:
+    `codexIssueCount=0`; existing non-Codex profile issues remain.
+  - Launchd readback confirmed:
+    `GROWTH_GATEWAY_AUTHORING_MODEL=gpt-5.5`,
+    `GROWTH_GATEWAY_AUTHORING_REASONING_EFFORT=xhigh`,
+    `GROWTH_GATEWAY_PLANNER_MODEL=gpt-5.5`, and
+    `GROWTH_GATEWAY_PLANNER_REASONING_EFFORT=xhigh`.
+- Validation:
+  - `node --check src/routes/growth-routes.js` passed.
+  - `node --test tests/growth-routes.test.js` passed `64/64`.
+  - `node --test tests/learning-card-authoring-service.test.js tests/learning-card-generation-service.test.js tests/learning-plan-publisher-service.test.js`
+    passed `32/32`.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `npm run --silent check` passed with `runtimeCount=237`.
+  - `git diff --check` passed before commit.
+- New production XuLu/Eileen cards:
+  - `ltask_276ab6eb0eb2ddf70f`: `Write a clear AI help note for a tiny game
+    change`, target `kg_compute_ai_coding_context`.
+  - `ltask_ecb5115115559799d4`: `Turn One Game Wish Into a Clear Build
+    Request`, target `kg_compute_ai_coding_requirements`.
+  - `ltask_330704a82cee3bb2a3`: `Make a 3-step checklist for a tiny game
+    change`, target `kg_compute_ai_coding_task_breakdown`.
+  - All three are `published`, `practice`, `primaryAction=submit`,
+    `completionPolicy=daily_score_once`, and graph-bound to the expected node.
+  - DB readback confirmed persisted learner profile:
+    `schoolYear=Year 2`, `educationStage=primary`, `ageYears=7-8`, with a
+    low-reading-load primary learner audience description.
+  - Home AI same-origin proxy card GET returned HTTP 200 for all three.
+- Retired superseded XuLu cards:
+  - Retired the first three unprofiled test cards generated before the
+    daily-loop route fix:
+    `ltask_48a34906ae13d60632`,
+    `ltask_0116ba6f890dd07b8b`, and
+    `ltask_62d69971062dc1d7d5`.
+  - Retirement dry-run matched exactly those three cards.
+  - Retirement write passed with `retired_count=3`, `remaining=0`, and SQLite
+    `quick_check=ok`.
+  - Production backup before retirement:
+    `/Users/hermes-host/HermesMobile/plugins/growth/data/backups/growth-learning-before-card-retirement-20260619T092732Z.sqlite3`.
+- Current test path:
+  - Open Home AI production as Owner, switch Growth target to Eileen/XuLu, and
+    use the normal card flow for the three `ltask_*` card ids above.
+  - Cycle completeness is intentionally incomplete until XuLu submits real
+    learner evidence; it waits for `evaluation_evidence` and
+    `profile_delta_audit`.
+  - No unattended scheduler was enabled in this task.
