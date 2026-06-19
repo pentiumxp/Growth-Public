@@ -600,7 +600,10 @@ test("card generation can use a generic daily practice recipe for a selected sub
   try {
     const card = db.prepare("SELECT * FROM learning_task_cards WHERE id = ?").get(result.published.taskCardId);
     assert.equal(card.domain, "math");
-    assert.equal(JSON.parse(card.raw_json).rubricPolicy.policyId, "rubric:daily_mathematics_v1");
+    const raw = JSON.parse(card.raw_json);
+    assert.equal(raw.rubricPolicy.policyId, "rubric:daily_mathematics_v1");
+    assert.equal(raw.sequenceGroupId, "program:program_1:subject:mathematics");
+    assert.equal(raw.sequenceMode, "subject_parallel_daily");
     assert.deepEqual(JSON.parse(card.skill_ids_json), ["kg_ratio_intro"]);
   } finally {
     db.close();

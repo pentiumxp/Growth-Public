@@ -149,6 +149,15 @@ function curriculumRefs(request = {}) {
   })).filter((source) => source.nodeId || source.sourceRef).slice(0, 12);
 }
 
+function sequenceGroupForRequest(request = {}, learningGraphPlan = {}) {
+  const explicit = cleanString(request.sequenceGroupId || request.sequence_group_id);
+  if (explicit) return explicit;
+  const programId = cleanString(learningGraphPlan.programId || request.programId || request.program_id);
+  const subject = cleanString(learningGraphPlan.subject || request.subject || learningGraphPlan.domain || request.domain);
+  if (programId && subject) return `program:${programId}:subject:${subject}`;
+  return "";
+}
+
 function buildRawJson({ draft, request, learningGraphPlan, audit }) {
   const role = cleanString(draft.cardRole);
   const targetNodeIds = uniqueStrings(draft.targetNodeIds);
@@ -165,6 +174,8 @@ function buildRawJson({ draft, request, learningGraphPlan, audit }) {
     source: "growth-card-authoring",
     schemaVersion: cleanString(draft.schemaVersion || request.cardSchemaVersion),
     recipeId: cleanString(request.recipeId || request.recipe_id),
+    sequenceGroupId: sequenceGroupForRequest(request, learningGraphPlan),
+    sequenceMode: cleanString(request.sequenceMode || request.sequence_mode) || "subject_parallel_daily",
     cardRole: role,
     title: cleanString(draft.title).slice(0, 180),
     instructionPreview,

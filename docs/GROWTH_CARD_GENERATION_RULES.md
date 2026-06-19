@@ -318,13 +318,16 @@ daily-loop HTTP entrypoints, `learnerSummary` / `learner_summary` is an allowed
 summary-only request field and must be forwarded to planner-backed card
 authoring. The same entrypoints must preserve an explicit `recipeId` /
 `recipe_id` so subject-specific daily cards do not silently fall back to the
-default authoring recipe. Ordinary daily cards should be self-contained: the
-title names the concrete action, the micro-lesson gives the idea and method,
-the worked example labels weak and improved examples when relevant, guided
-practice provides numbered steps, quick check states exactly what to submit,
-and evidence keys match the submitted artifact. Avoid terse topic-only prompts
-or generic requests such as "practice" / "explain" unless the card immediately
-provides exact steps, questions, and completion criteria.
+default authoring recipe. Generated daily cards should persist a subject-level
+`sequenceGroupId` by default so different subjects in the same learning program
+can be visible in parallel, while multiple cards in the same subject still
+follow the current-card-then-next sequence policy. Ordinary daily cards should
+be self-contained: the title names the concrete action, the micro-lesson gives
+the idea and method, the worked example labels weak and improved examples when
+relevant, guided practice provides numbered steps, quick check states exactly
+what to submit, and evidence keys match the submitted artifact. Avoid terse
+topic-only prompts or generic requests such as "practice" / "explain" unless
+the card immediately provides exact steps, questions, and completion criteria.
 
 ## Evaluation Ownership And Gateway Boundary
 
