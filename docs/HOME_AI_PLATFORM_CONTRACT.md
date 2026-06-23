@@ -1,7 +1,8 @@
 # Home AI Platform Contract Pointer
 
-Last updated: 2026-06-18.
+Last updated: 2026-06-23.
 Home AI platform contract version: `20260618-v4`.
+Home AI root-cause architecture contract version: `20260623-v1`.
 
 ## Scope
 
@@ -34,6 +35,7 @@ Read these Home AI docs before changing deployment, MCP tools, mobile visual
 behavior, plugin provisioning, or cross-plugin reference behavior:
 
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-workspace-platform-contract.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/root-cause-architecture-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-mobile-ui-visual-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/macos-dev-to-production-deployment-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/macos-production-access.md`
@@ -43,6 +45,12 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/ai-operations-control-plane.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/reference-memory-graph-v1.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/reference-memory-graph-harness-plan.md`
+
+For non-trivial Growth plugin issues, follow the central root-cause-first rule:
+identify the user-visible symptom, failing layer, owning workspace, violated
+invariant, strongest root-cause hypothesis, and closure validation before
+fixing. Prefer repairing the owning architecture boundary over adding broad
+plugin-local fallbacks.
 
 ## Plugin-Local Facts
 

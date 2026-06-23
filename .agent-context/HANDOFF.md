@@ -838,3 +838,35 @@ The previous full handoff was archived and should be opened only when old proven
   - Post-deploy production file readback found the new hard schema prompt,
     evidence validation errors, and publisher evidence normalization helpers in
     the deployed Growth plugin source.
+
+## 2026-06-23T18:03+0800 - Home AI root-cause architecture contract adopted
+
+- Source task:
+  - Cross-thread task from `/Users/hermes-dev/HermesMobileDev/app` requested
+    Growth plugin adoption of the Home AI central root-cause architecture
+    contract.
+- Canonical contract:
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/root-cause-architecture-contract.md`
+    (`20260623-v1`).
+  - Also linked from Home AI `docs/DOCS_INDEX.md` and
+    `docs/PLATFORM_CONTRACTS/plugin-workspace-platform-contract.md`.
+- Growth-local adoption:
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to directly reference the
+    root-cause contract and record the Growth-local execution rule.
+  - Future non-trivial Growth plugin issues should identify the symptom,
+    failing layer, owning workspace, violated invariant, strongest root-cause
+    hypothesis, and validation needed for closure before fixing.
+  - Prefer fixing the owning architecture boundary first: service/provider,
+    route, plugin contract, MCP schema, Home AI manifest/proxy/workspace
+    binding/provisioning boundary, persistence schema/migration,
+    launchd/install/runtime configuration, or client projection/cache/visual
+    contract.
+  - Fallbacks must be bounded, observable, temporary, and validated. Do not
+    silently mask wrong workspace ids, missing bindings/keys/MCP tools,
+    non-Owner workspace data fallback, local-only save after server failure,
+    unverified search fallback, launchd interactive-user cache dependency, or
+    duplicated central auth/provisioning/schema/persistence policy in Growth
+    plugin code.
+- Privacy:
+  - No raw secrets, keys, cookies, launch tokens, private payloads, or long logs
+    were copied into local docs or this handoff.
