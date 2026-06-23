@@ -1037,3 +1037,36 @@ The previous full handoff was archived and should be opened only when old proven
   - No raw credentials, launch tokens, learner submissions, private profile
     contents, audio payloads, provider payloads, database rows, prompts, or long
     logs were copied into docs or handoff.
+
+## 2026-06-24T01:09+0800 - Growth read-provider fallback deployment
+
+- Source commit:
+  - Committed and pushed `929bde8e191f`:
+    `Fail closed on Growth read provider failures`.
+- Deployment:
+  - Ran the central Home AI macOS plugin deploy flow for Growth with reason
+    `growth-read-provider-fail-closed`.
+  - Deploy completed successfully with source ref `929bde8e191f` and source
+    dirty status `false`.
+  - Production Growth is an rsync mirror, not a git checkout.
+  - Production manifest health returned plugin id `growth`, title `成长`, and
+    six actions.
+- Post-deploy validation:
+  - Source and production SHA-256 matched for:
+    `src/services/growth-read-orchestrator.js`,
+    `src/services/growth-providers/home-ai-facade-provider.js`,
+    `docs/HOME_AI_PLATFORM_CONTRACT.md`,
+    `docs/GROWTH_PLUGIN_ARCHITECTURE.md`,
+    `tests/growth-service.test.js`, and
+    `tests/growth-service-providers.test.js`.
+  - Platform pointer checker passed for Growth with contract version
+    `20260623-v5`, no issues, and no warnings.
+  - Full source test suite passed: `npm test -- --test-reporter=spec`
+    reported `1142/1142`.
+  - Production provider-failure fault injection was not performed to avoid
+    mutating runtime state or forcing a live degradation; fail-closed behavior
+    is covered by focused tests and production source hash match.
+- Privacy:
+  - No raw credentials, launch tokens, bearer values, learner submissions,
+    private profile contents, audio payloads, provider payloads, database rows,
+    prompts, or long logs were copied into docs or handoff.
