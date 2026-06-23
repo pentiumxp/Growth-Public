@@ -260,6 +260,7 @@
 
   const api = window.HermesGrowthApiClient.createGrowthApiClient({
     fetchImpl: window.fetch.bind(window),
+    getLaunchToken: () => params.get("launch") || params.get("launchToken") || params.get("launch_token") || "",
     getWorkspaceId: () => currentWorkspaceId,
     historyRef: window.history,
     locationRef: window.location

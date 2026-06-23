@@ -5,6 +5,29 @@ const { sendError, sendJson } = require("../routes/http-utils");
 const { handleGrowthRoute } = require("../routes/growth-routes");
 const { handlePluginRoute } = require("../routes/plugin-routes");
 const { handleStaticRoute } = require("../routes/static-routes");
+const { createGrowthWorkerRuntimeHealthService } = require("../services/growth-worker-runtime-health-service");
+
+function ensureWorkerRuntimeHealthService(services) {
+  if (!services.workerRuntimeHealthService) {
+    services.workerRuntimeHealthService = createGrowthWorkerRuntimeHealthService();
+  }
+  return services.workerRuntimeHealthService;
+}
+
+function runWorkerWithHealth(services, workerId, run) {
+  const health = ensureWorkerRuntimeHealthService(services);
+  health.recordStarted(workerId);
+  return Promise.resolve()
+    .then(run)
+    .then((result) => {
+      health.recordSucceeded(workerId, result || {});
+      return result;
+    })
+    .catch((error) => {
+      health.recordFailed(workerId, error);
+      return null;
+    });
+}
 
 function createServer(services) {
   return http.createServer(async (request, response) => {
@@ -22,21 +45,30 @@ function createServer(services) {
 
 function startServer(config = readEnv(), serviceOverrides = null) {
   const services = serviceOverrides || createServices(config);
+  ensureWorkerRuntimeHealthService(services);
   const server = createServer(services);
   let evaluationTimer = null;
   let schedulerWorkerTimer = null;
   if (config.evaluationWorkerEnabled && services.growthEvaluationService?.processEvaluationQueue) {
-    const runEvaluationQueue = () => services.growthEvaluationService.processEvaluationQueue({ limit: 10 }).catch(() => null);
+    const runEvaluationQueue = () => runWorkerWithHealth(
+      services,
+      "evaluation_queue",
+      () => services.growthEvaluationService.processEvaluationQueue({ limit: 10 })
+    );
     evaluationTimer = setInterval(runEvaluationQueue, config.evaluationWorkerIntervalMs);
     if (typeof evaluationTimer.unref === "function") evaluationTimer.unref();
     runEvaluationQueue();
   }
   if (config.automationBackgroundWorkerEnabled && services.learningAutomationSchedulerWorkerService?.tickTargets) {
-    const runSchedulerWorker = () => services.learningAutomationSchedulerWorkerService.tickTargets({
-      targets: config.automationBackgroundWorkerTargets,
-      workerId: config.automationBackgroundWorkerId,
-      leaseMs: config.automationBackgroundWorkerLeaseMs
-    }).catch(() => null);
+    const runSchedulerWorker = () => runWorkerWithHealth(
+      services,
+      "automation_scheduler_worker",
+      () => services.learningAutomationSchedulerWorkerService.tickTargets({
+        targets: config.automationBackgroundWorkerTargets,
+        workerId: config.automationBackgroundWorkerId,
+        leaseMs: config.automationBackgroundWorkerLeaseMs
+      })
+    );
     schedulerWorkerTimer = setInterval(runSchedulerWorker, config.automationBackgroundWorkerIntervalMs);
     if (typeof schedulerWorkerTimer.unref === "function") schedulerWorkerTimer.unref();
     runSchedulerWorker();

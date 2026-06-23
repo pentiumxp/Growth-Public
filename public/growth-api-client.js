@@ -19,7 +19,7 @@
     return [growthApiRootPath(), ...segments].join("/");
   }
 
-  function createGrowthApiClient({ fetchImpl, getWorkspaceId, historyRef, locationRef } = {}) {
+  function createGrowthApiClient({ fetchImpl, getWorkspaceId, getLaunchToken, historyRef, locationRef } = {}) {
     function proxyPrefix() {
       try {
         const url = new URL(locationRef?.href || "");
@@ -534,8 +534,21 @@
       historyRef.replaceState(null, "", url.toString());
     }
 
+    function requestOptionsWithLaunchToken(options = {}) {
+      const launchToken = clean(typeof getLaunchToken === "function" ? getLaunchToken() : "");
+      if (!launchToken) return options;
+      return Object.assign({}, options, {
+        headers: Object.assign({}, options.headers || {}, {
+          "x-hermes-plugin-launch-token": launchToken
+        })
+      });
+    }
+
     async function fetchJson(path, options = {}) {
-      const response = await fetchImpl(resolveApiPath(path), Object.assign({ cache: "no-store" }, options));
+      const response = await fetchImpl(
+        resolveApiPath(path),
+        requestOptionsWithLaunchToken(Object.assign({ cache: "no-store" }, options))
+      );
       const result = await response.json();
       if (!response.ok || result.ok === false) {
         const error = typeof result.error === "string"
@@ -547,7 +560,10 @@
     }
 
     async function fetchReadableJson(path, options = {}) {
-      const response = await fetchImpl(resolveApiPath(path), Object.assign({ cache: "no-store" }, options));
+      const response = await fetchImpl(
+        resolveApiPath(path),
+        requestOptionsWithLaunchToken(Object.assign({ cache: "no-store" }, options))
+      );
       const result = await response.json();
       if (!response.ok) {
         const error = typeof result.error === "string"

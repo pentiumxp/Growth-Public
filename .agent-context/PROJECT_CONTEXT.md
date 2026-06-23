@@ -48,6 +48,10 @@ module and have been archived outside this workspace.
 Read `docs/HOME_AI_PLATFORM_CONTRACT.md` first for local facts and canonical
 Home AI contract links.
 
+Current local pointer target: Home AI plugin workspace platform contract
+`20260623-v5`, root-cause architecture contract `20260623-v3`, and fallback
+governance contract `20260623-v1`.
+
 Growth-specific documents are owned by t
 
 ...(archived middle omitted; read the archive path above when older details are needed)...

@@ -66,6 +66,93 @@ function serviceWorkspaceIdFromAuthorization(authorized) {
   return authorized.hermes_workspace_id || String(authorized.workspace_id || "").replace(/^growth:/, "");
 }
 
+function hermesWorkspaceId(value) {
+  return String(value || "").trim().replace(/^growth:/, "");
+}
+
+function launchTokenFrom(request, url) {
+  return String(
+    request.headers["x-hermes-plugin-launch-token"]
+    || url.searchParams.get("launch")
+    || url.searchParams.get("launchToken")
+    || url.searchParams.get("launch_token")
+    || ""
+  ).trim();
+}
+
+function requestedReadableWorkspaceId(request, url) {
+  return String(
+    url.searchParams.get("targetWorkspaceId")
+    || url.searchParams.get("target_workspace_id")
+    || url.searchParams.get("workspace_id")
+    || url.searchParams.get("workspaceId")
+    || request.headers["x-hermes-plugin-workspace-id"]
+    || ""
+  );
+}
+
+function currentReadableWorkspaceId(request, url, fallback = "") {
+  return String(
+    request.headers["x-hermes-plugin-workspace-id"]
+    || url.searchParams.get("currentWorkspaceId")
+    || url.searchParams.get("current_workspace_id")
+    || fallback
+    || ""
+  );
+}
+
+function assertReadableWorkspaceMatches(requestedWorkspaceId, authorizedWorkspaceId) {
+  const requested = hermesWorkspaceId(requestedWorkspaceId);
+  const authorized = hermesWorkspaceId(authorizedWorkspaceId);
+  if (requested && authorized && requested !== authorized) {
+    throw routeError(
+      "growth_workspace_authorization_mismatch",
+      "Growth workspace credential does not match requested workspace",
+      403
+    );
+  }
+}
+
+function authorizeReadableWorkspace(request, url, services) {
+  const requested = requestedReadableWorkspaceId(request, url);
+  const requestedHermesId = hermesWorkspaceId(requested);
+  const current = currentReadableWorkspaceId(request, url, requested);
+  const bearer = bearerFrom(request.headers);
+  if (bearer) {
+    if (requestedActorRole(request) === "owner") {
+      const currentWorkspaceId = currentReadableWorkspaceId(request, url, "");
+      const authorized = services.pluginService.authorizeWorkspace({
+        authorizationToken: bearer,
+        workspaceId: currentWorkspaceId
+      });
+      assertReadableWorkspaceMatches(currentWorkspaceId, serviceWorkspaceIdFromAuthorization(authorized));
+      const target = visibleTargetByWorkspace(request, url, services, requestedHermesId || currentWorkspaceId);
+      return hermesWorkspaceId(target.workspaceId);
+    }
+    const workspaceId = requested || current;
+    const authorized = services.pluginService.authorizeWorkspace({
+      authorizationToken: bearer,
+      workspaceId
+    });
+    const serviceWorkspaceId = serviceWorkspaceIdFromAuthorization(authorized);
+    assertReadableWorkspaceMatches(workspaceId, serviceWorkspaceId);
+    return hermesWorkspaceId(serviceWorkspaceId);
+  }
+
+  const launchToken = launchTokenFrom(request, url);
+  if (launchToken) {
+    if (!services.pluginService || typeof services.pluginService.verifyLaunchToken !== "function") {
+      throw routeError("growth_launch_authorization_unavailable", "Growth launch authorization is not available", 503);
+    }
+    const authorized = services.pluginService.verifyLaunchToken(launchToken);
+    const serviceWorkspaceId = serviceWorkspaceIdFromAuthorization(authorized);
+    assertReadableWorkspaceMatches(requested || current, serviceWorkspaceId);
+    return hermesWorkspaceId(serviceWorkspaceId);
+  }
+
+  throw routeError("growth_read_authorization_required", "Growth read authorization is required", 403);
+}
+
 function readableTargetFromRequest(request, url, services) {
   const currentWorkspaceId = String(
     request.headers["x-hermes-plugin-workspace-id"]
@@ -1930,12 +2017,12 @@ function normalizeEvaluationOwnerReviewInput(body, workspaceId, request, url) {
 
 async function handleGrowthRoute(request, response, url, services) {
   if (request.method === "GET" && url.pathname === "/api/v1/growth/status") {
-    const workspaceId = requestedWorkspaceId(request, url);
+    const workspaceId = authorizeReadableWorkspace(request, url, services);
     return sendJson(response, 200, await services.growthService.status({ workspaceId }));
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/board") {
-    const workspaceId = requestedWorkspaceId(request, url);
+    const workspaceId = authorizeReadableWorkspace(request, url, services);
     return sendJson(response, 200, await services.growthService.board({ workspaceId }));
   }
 
@@ -1944,6 +2031,20 @@ async function handleGrowthRoute(request, response, url, services) {
       actorRole: requestedActorRole(request),
       currentWorkspaceId: requestedWorkspaceId(request, url, "")
     }));
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/v1/growth/runtime/workers") {
+    services.pluginService.authorizeRegistration({ authorizationToken: bearerFrom(request.headers) });
+    const result = services.workerRuntimeHealthService?.snapshot
+      ? services.workerRuntimeHealthService.snapshot()
+      : {
+          ok: true,
+          schemaVersion: "growth.workerRuntimeHealth.v1",
+          privacyClass: "summary_only",
+          summaryOnly: true,
+          workers: []
+        };
+    return sendJson(response, 200, result);
   }
 
   if (request.method === "GET" && url.pathname === "/api/v1/growth/references/object-types") {
@@ -2367,7 +2468,7 @@ async function handleGrowthRoute(request, response, url, services) {
 
   const cardMatch = url.pathname.match(/^\/api\/v1\/growth\/cards\/([^/]+)$/);
   if (request.method === "GET" && cardMatch) {
-    const workspaceId = requestedWorkspaceId(request, url);
+    const workspaceId = authorizeReadableWorkspace(request, url, services);
     const taskCardId = decodeURIComponent(cardMatch[1] || "");
     const result = await services.growthService.card({ workspaceId, taskCardId });
     return sendJson(response, result.ok ? 200 : 404, result);
@@ -3019,7 +3120,7 @@ async function handleGrowthRoute(request, response, url, services) {
 
   const audioMatch = url.pathname.match(/^\/api\/v1\/growth\/audio\/(submissions|reflections)\/([^/]+)$/);
   if (request.method === "GET" && audioMatch) {
-    const workspaceId = requestedWorkspaceId(request, url);
+    const workspaceId = authorizeReadableWorkspace(request, url, services);
     const recordType = audioMatch[1] === "submissions" ? "submission" : "reflection";
     const recordId = decodeURIComponent(audioMatch[2] || "");
     const audio = await services.growthService.audio({ workspaceId, recordType, recordId });

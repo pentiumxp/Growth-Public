@@ -4,6 +4,9 @@ const { createServer, startServer } = require("../src/app/http-server");
 const {
   createLearningAutomationReleaseEvidenceArtifactManifestService
 } = require("../src/services/learning-automation-release-evidence-artifact-manifest-service");
+const {
+  createGrowthWorkerRuntimeHealthService
+} = require("../src/services/growth-worker-runtime-health-service");
 
 function listen(server) {
   return new Promise((resolve) => {
@@ -6971,11 +6974,46 @@ test("growth owner audit review routes are Owner-only, visible-target scoped, an
   }
 });
 
-test("growth read routes fall back to proxy workspace header", async () => {
+test("growth read routes require credential-bound workspace authorization", async () => {
   const calls = [];
   const server = createServer({
     pluginService: {
-      getManifest: () => ({})
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        const hermesWorkspaceId = String(workspaceId || "").replace(/^growth:/, "");
+        if (authorizationToken === "workspace-key" && hermesWorkspaceId === "weixin_stephen") {
+          return { ok: true, workspace_id: "growth:weixin_stephen", hermes_workspace_id: "weixin_stephen" };
+        }
+        if (authorizationToken === "owner-key" && hermesWorkspaceId === "owner") {
+          return { ok: true, workspace_id: "growth:owner", hermes_workspace_id: "owner" };
+        }
+        const error = new Error("Invalid workspace credential");
+        error.code = "permission_denied";
+        error.statusCode = 403;
+        error.expose = true;
+        throw error;
+      },
+      verifyLaunchToken(token) {
+        if (token === "launch-child") {
+          return { workspace_id: "growth:weixin_child", expires_at: Date.now() + 1000 };
+        }
+        const error = new Error("Invalid or expired launch token");
+        error.code = "invalid_launch_token";
+        error.statusCode = 403;
+        error.expose = true;
+        throw error;
+      },
+      viewTargets(input) {
+        return {
+          ok: true,
+          targets: input.actorRole === "owner"
+            ? [
+                { workspaceId: "owner", label: "Owner", current: true },
+                { workspaceId: "weixin_fanfan", label: "凡凡", current: false }
+              ]
+            : [{ workspaceId: input.currentWorkspaceId, label: input.currentWorkspaceId, current: true }]
+        };
+      }
     },
     growthService: {
       async status(input) {
@@ -6985,17 +7023,60 @@ test("growth read routes fall back to proxy workspace header", async () => {
       async board(input) {
         calls.push({ type: "board", input });
         return { ok: true, workspace_id: input.workspaceId, cards: [], lanes: [], summary: { total: 0 } };
+      },
+      async card(input) {
+        calls.push({ type: "card", input });
+        return { ok: true, workspace_id: input.workspaceId, card: { taskCardId: input.taskCardId } };
       }
     }
   });
   const baseUrl = await listen(server);
   try {
-    const headers = { "x-hermes-plugin-workspace-id": "weixin_stephen" };
+    const headerOnly = await fetch(`${baseUrl}/api/v1/growth/status`, {
+      headers: { "x-hermes-plugin-workspace-id": "weixin_stephen" }
+    });
+    assert.equal(headerOnly.status, 403);
+    assert.equal((await headerOnly.json()).error.code, "growth_read_authorization_required");
+
+    const headers = {
+      authorization: "Bearer workspace-key",
+      "x-hermes-plugin-workspace-id": "weixin_stephen"
+    };
     assert.equal((await fetch(`${baseUrl}/api/v1/growth/status`, { headers })).status, 200);
     assert.equal((await fetch(`${baseUrl}/api/v1/growth/board`, { headers })).status, 200);
+    assert.equal((await fetch(`${baseUrl}/api/v1/growth/cards/card_1?workspaceId=weixin_stephen`, { headers })).status, 200);
+
+    const wrongWorkspace = await fetch(`${baseUrl}/api/v1/growth/board?workspaceId=weixin_other`, { headers });
+    assert.equal(wrongWorkspace.status, 403);
+
+    const launchRead = await fetch(`${baseUrl}/api/v1/growth/board?workspaceId=weixin_child&launch=launch-child`);
+    assert.equal(launchRead.status, 200);
+
+    const ownerVisible = await fetch(`${baseUrl}/api/v1/growth/status?workspaceId=weixin_fanfan`, {
+      headers: {
+        authorization: "Bearer owner-key",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      }
+    });
+    assert.equal(ownerVisible.status, 200);
+
+    const ownerHidden = await fetch(`${baseUrl}/api/v1/growth/status?workspaceId=weixin_hidden`, {
+      headers: {
+        authorization: "Bearer owner-key",
+        "x-hermes-plugin-actor-role": "owner",
+        "x-hermes-plugin-workspace-id": "owner"
+      }
+    });
+    assert.equal(ownerHidden.status, 403);
+    assert.equal((await ownerHidden.json()).error.code, "growth_target_not_visible");
+
     assert.deepEqual(calls, [
       { type: "status", input: { workspaceId: "weixin_stephen" } },
-      { type: "board", input: { workspaceId: "weixin_stephen" } }
+      { type: "board", input: { workspaceId: "weixin_stephen" } },
+      { type: "card", input: { workspaceId: "weixin_stephen", taskCardId: "card_1" } },
+      { type: "board", input: { workspaceId: "weixin_child" } },
+      { type: "status", input: { workspaceId: "weixin_fanfan" } }
     ]);
   } finally {
     await close(server);
@@ -7152,7 +7233,27 @@ test("growth reference contract routes expose only visible summary-only referenc
 test("growth audio route streams plugin-owned audio evidence", async () => {
   const server = createServer({
     pluginService: {
-      getManifest: () => ({})
+      getManifest: () => ({}),
+      authorizeWorkspace({ authorizationToken, workspaceId }) {
+        if (authorizationToken === "workspace-key" && String(workspaceId || "").replace(/^growth:/, "") === "weixin_child") {
+          return { ok: true, workspace_id: "growth:weixin_child", hermes_workspace_id: "weixin_child" };
+        }
+        const error = new Error("Invalid workspace credential");
+        error.code = "permission_denied";
+        error.statusCode = 403;
+        error.expose = true;
+        throw error;
+      },
+      verifyLaunchToken(token) {
+        if (token === "launch-child") {
+          return { workspace_id: "growth:weixin_child", expires_at: Date.now() + 1000 };
+        }
+        const error = new Error("Invalid or expired launch token");
+        error.code = "invalid_launch_token";
+        error.statusCode = 403;
+        error.expose = true;
+        throw error;
+      }
     },
     growthService: {
       async audio({ workspaceId, recordType, recordId }) {
@@ -7171,10 +7272,20 @@ test("growth audio route streams plugin-owned audio evidence", async () => {
   });
   const baseUrl = await listen(server);
   try {
-    const response = await fetch(`${baseUrl}/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_child`);
+    const denied = await fetch(`${baseUrl}/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_child`);
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error.code, "growth_read_authorization_required");
+
+    const response = await fetch(`${baseUrl}/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_child`, {
+      headers: { authorization: "Bearer workspace-key" }
+    });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("content-type"), "audio/ogg");
     assert.equal(await response.text(), "audio-body");
+
+    const launchResponse = await fetch(`${baseUrl}/api/v1/growth/audio/submissions/submission_1?workspaceId=weixin_child&launch=launch-child`);
+    assert.equal(launchResponse.status, 200);
+    assert.equal(await launchResponse.text(), "audio-body");
   } finally {
     await close(server);
   }
@@ -8510,6 +8621,109 @@ test("growth scheduler background worker timer is default-disabled and only call
   } finally {
     await close(enabledServer);
   }
+});
+
+test("growth worker timers record sanitized failures and expose runtime health", async () => {
+  const health = createGrowthWorkerRuntimeHealthService();
+  let evaluationCalls = 0;
+  let schedulerCalls = 0;
+  const server = startServer({
+    port: 0,
+    evaluationWorkerEnabled: true,
+    evaluationWorkerIntervalMs: 10,
+    automationBackgroundWorkerEnabled: true,
+    automationBackgroundWorkerIntervalMs: 10,
+    automationBackgroundWorkerLeaseMs: 600000,
+    automationBackgroundWorkerId: "growth-worker-test",
+    automationBackgroundWorkerTargets: [{ workspaceId: "weixin_fanfan" }]
+  }, {
+    workerRuntimeHealthService: health,
+    growthEvaluationService: {
+      async processEvaluationQueue() {
+        evaluationCalls += 1;
+        const error = new Error("evaluation failed at /Users/private with Bearer secret");
+        error.code = "evaluation_store_unavailable";
+        throw error;
+      }
+    },
+    learningAutomationSchedulerWorkerService: {
+      async tickTargets() {
+        schedulerCalls += 1;
+        const error = new Error("provider payload contained token=secret");
+        error.code = "scheduler_tick_failed";
+        throw error;
+      }
+    }
+  });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 80));
+  } finally {
+    await close(server);
+  }
+
+  const snapshot = health.snapshot();
+  const evaluation = snapshot.workers.find((item) => item.workerId === "evaluation_queue");
+  const scheduler = snapshot.workers.find((item) => item.workerId === "automation_scheduler_worker");
+  assert.equal(evaluationCalls >= 2, true);
+  assert.equal(schedulerCalls >= 2, true);
+  assert.equal(evaluation.status, "failed");
+  assert.equal(scheduler.status, "failed");
+  assert.equal(evaluation.lastError.code, "evaluation_store_unavailable");
+  assert.equal(scheduler.lastError.code, "scheduler_tick_failed");
+  const serialized = JSON.stringify(snapshot);
+  assert.equal(serialized.includes("/Users/private"), false);
+  assert.equal(serialized.includes("Bearer secret"), false);
+  assert.equal(serialized.includes("token=secret"), false);
+  assert.equal(serialized.includes("provider payload"), false);
+
+  const routeServer = createServer({
+    pluginService: {
+      getManifest: () => ({}),
+      authorizeRegistration({ authorizationToken }) {
+        if (authorizationToken !== "registration-key") {
+          const error = new Error("Invalid registration credential");
+          error.code = "permission_denied";
+          error.statusCode = 403;
+          error.expose = true;
+          throw error;
+        }
+      }
+    },
+    workerRuntimeHealthService: health,
+    growthService: {}
+  });
+  const baseUrl = await listen(routeServer);
+  try {
+    const denied = await fetch(`${baseUrl}/api/v1/growth/runtime/workers`);
+    assert.equal(denied.status, 403);
+
+    const accepted = await fetch(`${baseUrl}/api/v1/growth/runtime/workers`, {
+      headers: { authorization: "Bearer registration-key" }
+    });
+    assert.equal(accepted.status, 200);
+    const body = await accepted.json();
+    assert.equal(body.schemaVersion, "growth.workerRuntimeHealth.v1");
+    assert.equal(body.privacyClass, "summary_only");
+    assert.equal(body.workers.length, 2);
+  } finally {
+    await close(routeServer);
+  }
+});
+
+test("growth worker runtime health redacts fulfilled failure summaries", () => {
+  const health = createGrowthWorkerRuntimeHealthService();
+  health.recordStarted("manual_worker");
+  health.recordSucceeded("manual_worker", {
+    ok: false,
+    status: "blocked",
+    error: "failed at /Users/private token=secret"
+  });
+  const snapshot = health.snapshot();
+  assert.equal(snapshot.workers[0].lastResult.ok, false);
+  assert.equal(snapshot.workers[0].lastResult.status, "blocked");
+  assert.equal(snapshot.workers[0].lastResult.error, "redacted");
+  assert.equal(JSON.stringify(snapshot).includes("/Users/private"), false);
+  assert.equal(JSON.stringify(snapshot).includes("token=secret"), false);
 });
 
 test("growth daily loop preview is Owner-only and limited to visible targets", async () => {

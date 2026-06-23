@@ -5,6 +5,53 @@ Last compacted: 2026-06-18T09:26:52.492Z
 This active handoff was automatically compacted before a Codex Mobile continuation.
 The previous full handoff was archived and should be opened only when old provenance is explicitly needed.
 
+## Home AI Platform Contract Pointer
+
+- Pointer file: `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Home AI platform contract version: `20260623-v5`.
+- Home AI root-cause architecture contract version: `20260623-v3`.
+- Home AI fallback governance contract version: `20260623-v1`.
+
+## 2026-06-24T00:00+0800 - Home AI Contract Audit Repair Completed
+
+- Scope:
+  - Repair Growth audit findings for credential-bound read routes, current
+    Home AI platform pointer version, and worker timer error visibility.
+- Implemented:
+  - Growth learner `status`, `board`, card detail, and audio read routes now
+    use a centralized read-authorization helper.
+  - Direct reads must present either a workspace bearer matching the requested
+    workspace, an Owner bearer whose current workspace can see the requested
+    target, or a launch token bound to the same workspace.
+  - The embedded client forwards a URL launch token as
+    `x-hermes-plugin-launch-token` for Growth API requests.
+  - Added `growth.workerRuntimeHealth.v1` summary-only worker health service
+    and registered-worker route; timer failures are recorded with sanitized
+    bounded error summaries instead of being swallowed with `.catch(() => null)`.
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to Home AI platform contract
+    `20260623-v5` and root-cause contract `20260623-v3`.
+- Privacy boundary:
+  - Do not store raw learner submissions, private profile contents, audio
+    payloads, provider payloads, local paths, tokens, launch tokens, access
+    keys, cookies, or long logs in docs, handoffs, return cards, or commits.
+- Validation passed:
+  - `node --test tests/growth-routes.test.js` passed `66/66`.
+  - `node --test tests/growth-architecture-boundary.test.js tests/growth-docs-locality.test.js`
+    passed `42/42`.
+  - `node scripts/check-growth-docs-locality.js` passed with
+    `requiredCount=37`.
+  - `node /Users/hermes-dev/HermesMobileDev/app/scripts/plugin-workspace-platform-contract-check.js --plugin growth --json`
+    passed with no issues or warnings.
+  - `npm run --silent check` passed with runtime/check coverage `238/238`.
+  - `npm test -- --test-reporter=spec` passed `1140/1140`.
+  - `git diff --check` passed.
+  - `codegraph sync` reported already up to date.
+- Deployment:
+  - Not deployed. The repair card did not grant deployment approval.
+- Return card:
+  - Required for Home AI source thread
+    `019eed86-2002-7cc2-b0b7-937eb5355f36`.
+
 ## 2026-06-19T00:00+0800 - Fanfan Computing And AI Literacy KG Pack
 
 - Status: source pack generated and imported into the local Mac development

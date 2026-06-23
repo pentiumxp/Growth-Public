@@ -96,6 +96,7 @@ const { createGrowthEventOutboxStore } = require("../stores/growth-event-outbox-
 const { createGrowthLearningSqliteStore } = require("../stores/growth-learning-sqlite-store");
 const { createGrowthSnapshotStore } = require("../stores/growth-snapshot-store");
 const { createJsonWorkspaceStore } = require("../stores/json-workspace-store");
+const { createGrowthWorkerRuntimeHealthService } = require("../services/growth-worker-runtime-health-service");
 
 function createServices(config) {
   const repoRoot = path.join(__dirname, "..", "..");
@@ -109,6 +110,7 @@ function createServices(config) {
   const growthEventOutboxStore = createGrowthEventOutboxStore({ filePath: config.eventOutboxStorePath });
   const growthService = createGrowthService({ config, snapshotStore: growthSnapshotStore, learningStore: growthLearningStore });
   const growthEventService = createGrowthEventService({ config, outboxStore: growthEventOutboxStore });
+  const workerRuntimeHealthService = createGrowthWorkerRuntimeHealthService();
   const learningGraphPlanService = createLearningGraphPlanService({
     graphRepository: growthLearningStore.learningGraphRepository
   });
@@ -611,6 +613,7 @@ function createServices(config) {
     growthGatewayPlannerClient,
     growthMcpExecutor: createGrowthMcpExecutor({ growthService, referenceContractService: learningReferenceContractService }),
     growthService,
+    workerRuntimeHealthService,
     learningCardAuthoringService,
     learningCardEvaluationService,
     learningCardGenerationContextService,

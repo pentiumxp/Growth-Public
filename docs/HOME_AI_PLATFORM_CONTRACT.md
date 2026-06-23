@@ -1,8 +1,8 @@
 # Home AI Platform Contract Pointer
 
-Last updated: 2026-06-23.
-Home AI platform contract version: `20260618-v4`.
-Home AI root-cause architecture contract version: `20260623-v1`.
+Last updated: 2026-06-24.
+Home AI platform contract version: `20260623-v5`.
+Home AI root-cause architecture contract version: `20260623-v3`.
 Home AI fallback governance contract version: `20260623-v1`.
 
 ## Scope
@@ -28,7 +28,12 @@ evidence and queues a pending Growth evaluation job, and a lightweight
 evaluation processor that writes bounded evaluation records, plus plugin-owned
 reflection evidence writes. The Mac production embedded plugin path now uses
 this SQLite read path when
-`GROWTH_DATA_OWNER=plugin` is set.
+`GROWTH_DATA_OWNER=plugin` is set. Learner board/status/card/audio read routes
+must fail closed unless the caller presents a workspace bearer bound to the
+requested workspace, an Owner bearer bound to a visible target, or a launch
+token bound to the same workspace. Background worker timer failures are exposed
+only through a bounded summary-only runtime health DTO and must not expose raw
+learner payloads, provider payloads, local paths, tokens, or long logs.
 
 ## Canonical Home AI Docs
 

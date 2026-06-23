@@ -127,21 +127,27 @@ test("Growth appearance adapter exposes the host viewport handler expected by vi
 test("Growth API client keeps workspace query and fetch errors bounded", async () => {
   const windowRef = loadPublicScript("growth-api-client.js");
   const historyCalls = [];
+  const fetchCalls = [];
   const client = windowRef.HermesGrowthApiClient.createGrowthApiClient({
     getWorkspaceId: () => "weixin_child",
+    getLaunchToken: () => "launch-test-token",
     historyRef: { replaceState: (...args) => historyCalls.push(args) },
     locationRef: { href: "http://127.0.0.1:4881/?embed=hermes" },
-    fetchImpl: async () => ({
-      ok: false,
-      status: 503,
-      json: async () => ({ ok: false, error: "facade_down" })
-    })
+    fetchImpl: async (path, options = {}) => {
+      fetchCalls.push({ path, options });
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({ ok: false, error: "facade_down" })
+      };
+    }
   });
 
   assert.equal(client.workspaceQuery(), "?workspaceId=weixin_child");
   client.updateWorkspaceUrl();
   assert.match(historyCalls[0][2], /workspaceId=weixin_child/);
   await assert.rejects(() => client.fetchJson("/api/v1/growth/status"), /facade_down/);
+  assert.equal(fetchCalls[0].options.headers["x-hermes-plugin-launch-token"], "launch-test-token");
 });
 
 test("Growth API client exposes card generation context and write helpers", async () => {
