@@ -15,10 +15,22 @@ function facadeMetadata(upstream = {}) {
   };
 }
 
+function facadeUnavailable(upstream = {}, fallbackCode = "home_ai_facade_unavailable") {
+  const error = new Error(String(upstream?.error || fallbackCode || "home_ai_facade_unavailable"));
+  error.code = String(upstream?.error || fallbackCode || "home_ai_facade_unavailable");
+  error.status = Number(upstream?.status || 0) || 0;
+  return error;
+}
+
 function createHomeAiFacadeGrowthProvider({ facadeClient, snapshotStore, migrationMaxCards = 50 } = {}) {
+  function isConfigured() {
+    return facadeClient?.configured !== false && typeof facadeClient?.fetchJson === "function";
+  }
+
   async function status({ workspaceId } = {}) {
+    if (!isConfigured()) return null;
     const upstream = await facadeClient.fetchJson("/api/growth/v1/status", { workspaceId });
-    if (!upstream || upstream.ok === false) return null;
+    if (!upstream || upstream.ok === false) throw facadeUnavailable(upstream);
     return {
       ok: true,
       plugin_id: "growth",
@@ -34,8 +46,9 @@ function createHomeAiFacadeGrowthProvider({ facadeClient, snapshotStore, migrati
   }
 
   async function board({ workspaceId } = {}) {
+    if (!isConfigured()) return null;
     const upstream = await facadeClient.fetchJson("/api/growth/v1/board", { workspaceId });
-    if (!upstream || upstream.ok === false) return null;
+    if (!upstream || upstream.ok === false) throw facadeUnavailable(upstream);
     const boardData = upstream.board || {};
     const projected = {
       ok: true,
@@ -61,8 +74,9 @@ function createHomeAiFacadeGrowthProvider({ facadeClient, snapshotStore, migrati
   }
 
   async function card({ workspaceId, taskCardId } = {}) {
+    if (!isConfigured()) return null;
     const upstream = await facadeClient.fetchJson(`/api/growth/v1/cards/${encodeURIComponent(taskCardId)}`, { workspaceId });
-    if (!upstream || upstream.ok === false) return null;
+    if (!upstream || upstream.ok === false) throw facadeUnavailable(upstream);
     return {
       ok: true,
       workspace_id: workspaceId,
@@ -142,5 +156,6 @@ function createHomeAiFacadeGrowthProvider({ facadeClient, snapshotStore, migrati
 
 module.exports = {
   createHomeAiFacadeGrowthProvider,
+  facadeUnavailable,
   facadeMetadata
 };

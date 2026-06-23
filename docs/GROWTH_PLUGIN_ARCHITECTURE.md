@@ -1173,7 +1173,7 @@ be feature-driven:
 | Embedded frontend adapters, card generation UI, learner card interaction UI, and Owner evaluation retry action | `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js tests/learning-card-generation-context-service.test.js tests/learning-profile-projection-service.test.js` |
 | Architecture boundary guard | `node --test tests/growth-architecture-boundary.test.js` |
 | Growth route authorization and HTTP contracts | `node --test tests/growth-routes.test.js` |
-| Growth service facade/snapshot/provider selection | `node --test tests/growth-service.test.js` |
+| Growth service facade/snapshot/provider selection | `node --test tests/growth-service.test.js tests/growth-service-providers.test.js`; provider absence may continue through the declared migration read order, but any provider failure must fail closed with bounded `ok=false`, `degraded=true`, `provider_failure=true`, safe provider status/error fields, and no stale snapshot/scaffold DTO presented as normal readback. |
 | MCP schema and wrapper boundary | `node --test tests/growth-mcp-schemas.test.js tests/growth-mcp-wrapper.test.js` |
 | Embedded scroll/layout contract | `node --test tests/growth-embedded-layout.test.js` |
 | Full local gate | `npm run check && npm test && git diff --check` |

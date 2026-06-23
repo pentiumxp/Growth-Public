@@ -81,22 +81,26 @@ test("reads bounded Home AI Growth facade when configured", async () => {
   assert.equal(snapshots.get("weixin_child").board.cards[0].taskCardId, "card_1");
 });
 
-test("falls back to the plugin snapshot when Home AI facade is unavailable", async () => {
+test("reports provider failure instead of serving a normal snapshot board when Home AI facade fails", async () => {
+  let snapshotReadCount = 0;
   const service = createGrowthService({
     config: {
       homeAiApiBaseUrl: "http://127.0.0.1:8797",
       homeAiAccessKey: "test-home-ai-key"
     },
     snapshotStore: {
-      get: () => ({
-        workspace_id: "weixin_child",
-        updated_at: "2026-06-10T00:00:00.000Z",
-        board: {
-          cards: [{ taskCardId: "card_snapshot", status: "active" }],
-          lanes: [{ id: "snapshot", cards: ["card_snapshot"] }],
-          summary: { total: 1, active: 1, waiting_review: 0, completed: 0 }
-        }
-      })
+      get: () => {
+        snapshotReadCount += 1;
+        return {
+          workspace_id: "weixin_child",
+          updated_at: "2026-06-10T00:00:00.000Z",
+          board: {
+            cards: [{ taskCardId: "card_snapshot", status: "active" }],
+            lanes: [{ id: "snapshot", cards: ["card_snapshot"] }],
+            summary: { total: 1, active: 1, waiting_review: 0, completed: 0 }
+          }
+        };
+      }
     },
     fetch() {
       return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ ok: false }) });
@@ -104,9 +108,37 @@ test("falls back to the plugin snapshot when Home AI facade is unavailable", asy
   });
 
   const board = await service.board({ workspaceId: "weixin_child" });
-  assert.equal(board.source, "growth-plugin-snapshot");
-  assert.equal(board.cards[0].taskCardId, "card_snapshot");
-  assert.equal(board.snapshot_updated_at, "2026-06-10T00:00:00.000Z");
+  assert.equal(board.ok, false);
+  assert.equal(board.error, "growth_read_provider_failed");
+  assert.equal(board.degraded, true);
+  assert.equal(board.provider_failure, true);
+  assert.equal(board.read_status.failed_provider, "home-ai-growth-facade");
+  assert.equal(board.read_status.provider_error, "home_ai_facade_fetch_failed");
+  assert.equal(board.read_status.provider_status, 503);
+  assert.deepEqual(board.cards, []);
+  assert.equal(snapshotReadCount, 0);
+});
+
+test("reports provider failure instead of scaffold status when Home AI facade fails", async () => {
+  const service = createGrowthService({
+    config: {
+      homeAiApiBaseUrl: "http://127.0.0.1:8797",
+      homeAiAccessKey: "test-home-ai-key"
+    },
+    fetch() {
+      return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ ok: false }) });
+    }
+  });
+
+  const status = await service.status({ workspaceId: "weixin_child" });
+  assert.equal(status.ok, false);
+  assert.equal(status.stage, "provider_failed");
+  assert.equal(status.error, "growth_read_provider_failed");
+  assert.equal(status.degraded, true);
+  assert.equal(status.provider_failure, true);
+  assert.equal(status.read_status.failed_provider, "home-ai-growth-facade");
+  assert.equal(status.read_status.provider_error, "home_ai_facade_fetch_failed");
+  assert.equal(status.read_status.provider_status, 503);
 });
 
 test("prefers plugin-owned SQLite store when data owner is plugin", async () => {
@@ -182,20 +214,24 @@ test("reads card detail from the Home AI Growth facade", async () => {
   assert.equal(detail.card.title, "Read");
 });
 
-test("falls back to snapshot card detail when the facade is unavailable", async () => {
+test("reports provider failure instead of serving normal snapshot card detail when facade fails", async () => {
+  let snapshotReadCount = 0;
   const service = createGrowthService({
     config: {
       homeAiApiBaseUrl: "http://127.0.0.1:8797",
       homeAiAccessKey: "test-home-ai-key"
     },
     snapshotStore: {
-      get: () => ({
-        workspace_id: "weixin_child",
-        updated_at: "2026-06-10T00:00:00.000Z",
-        board: {
-          cards: [{ taskCardId: "card_snapshot", title: "Snapshot", status: "active" }]
-        }
-      })
+      get: () => {
+        snapshotReadCount += 1;
+        return {
+          workspace_id: "weixin_child",
+          updated_at: "2026-06-10T00:00:00.000Z",
+          board: {
+            cards: [{ taskCardId: "card_snapshot", title: "Snapshot", status: "active" }]
+          }
+        };
+      }
     },
     fetch() {
       return Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ ok: false }) });
@@ -203,9 +239,15 @@ test("falls back to snapshot card detail when the facade is unavailable", async 
   });
 
   const detail = await service.card({ workspaceId: "weixin_child", taskCardId: "card_snapshot" });
-  assert.equal(detail.ok, true);
-  assert.equal(detail.source, "growth-plugin-snapshot");
-  assert.equal(detail.card.title, "Snapshot");
+  assert.equal(detail.ok, false);
+  assert.equal(detail.error, "growth_read_provider_failed");
+  assert.equal(detail.degraded, true);
+  assert.equal(detail.provider_failure, true);
+  assert.equal(detail.read_status.failed_provider, "home-ai-growth-facade");
+  assert.equal(detail.read_status.provider_error, "home_ai_facade_fetch_failed");
+  assert.equal(detail.read_status.provider_status, 503);
+  assert.equal(detail.card, null);
+  assert.equal(snapshotReadCount, 0);
 });
 
 test("reports a bounded error for missing card detail", async () => {
@@ -283,9 +325,13 @@ test("imports Home AI facade board and card details into plugin snapshot storage
 
   facadeOffline = true;
   const detail = await service.card({ workspaceId: "weixin_child", taskCardId: "card_1" });
-  assert.equal(detail.ok, true);
-  assert.equal(detail.source, "growth-plugin-snapshot");
-  assert.equal(detail.card.title, "Detailed card");
+  assert.equal(detail.ok, false);
+  assert.equal(detail.error, "growth_read_provider_failed");
+  assert.equal(detail.degraded, true);
+  assert.equal(detail.provider_failure, true);
+  assert.equal(detail.read_status.failed_provider, "home-ai-growth-facade");
+  assert.equal(detail.read_status.provider_status, 503);
+  assert.equal(detail.card, null);
 });
 
 test("reports bounded import failure when facade is unavailable", async () => {

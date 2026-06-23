@@ -54,6 +54,55 @@ test("Growth read orchestrator makes provider fallback order explicit", async ()
   assert.deepEqual(calls, ["sqlite:weixin_child", "facade:weixin_child", "snapshot:weixin_child"]);
 });
 
+test("Growth read orchestrator fails closed when a provider fails before snapshot fallback", async () => {
+  const calls = [];
+  const sqliteProvider = {
+    status: () => null,
+    board: () => {
+      calls.push("sqlite");
+      return null;
+    },
+    card: () => null,
+    migrationReadback: () => null
+  };
+  const facadeProvider = {
+    status: () => null,
+    board: () => {
+      calls.push("facade");
+      const error = new Error("home_ai_facade_fetch_failed");
+      error.code = "home_ai_facade_fetch_failed";
+      error.status = 503;
+      throw error;
+    },
+    card: () => null
+  };
+  const snapshotProvider = {
+    board: () => {
+      calls.push("snapshot");
+      return { ok: true, source: "growth-plugin-snapshot", cards: [{ taskCardId: "stale" }] };
+    },
+    card: () => null,
+    migrationReadback: () => null
+  };
+  const orchestrator = createGrowthReadOrchestrator({
+    preferPluginData: false,
+    sqliteProvider,
+    facadeProvider,
+    snapshotProvider
+  });
+
+  const board = await orchestrator.board({ workspaceId: "weixin_child" });
+  assert.equal(board.ok, false);
+  assert.equal(board.error, "growth_read_provider_failed");
+  assert.equal(board.degraded, true);
+  assert.equal(board.provider_failure, true);
+  assert.equal(board.read_status.failed_provider, "home-ai-growth-facade");
+  assert.equal(board.read_status.provider_error, "home_ai_facade_fetch_failed");
+  assert.equal(board.read_status.provider_status, 503);
+  assert.deepEqual(board.cards, []);
+  assert.deepEqual(calls, ["facade"]);
+});
+
 test("Growth providers project SQLite, facade, and snapshot sources consistently", async () => {
   const snapshots = new Map();
   const sqliteProvider = createSqliteGrowthProvider({

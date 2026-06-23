@@ -34,6 +34,10 @@ requested workspace, an Owner bearer bound to a visible target, or a launch
 token bound to the same workspace. Background worker timer failures are exposed
 only through a bounded summary-only runtime health DTO and must not expose raw
 learner payloads, provider payloads, local paths, tokens, or long logs.
+Status, board, and card provider failures must also fail closed through a
+bounded `ok=false`, `degraded=true`, `provider_failure=true` DTO with a safe
+provider error/status code; they must not continue to scaffold or snapshot data
+that could be mistaken for fresh normal readback.
 
 ## Canonical Home AI Docs
 

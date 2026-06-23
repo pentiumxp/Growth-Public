@@ -996,3 +996,44 @@ The previous full handoff was archived and should be opened only when old proven
   - No raw keys, launch tokens, bearer values, learner submissions, private
     profile contents, provider payloads, database rows, or long logs were
     copied into docs or the return evidence.
+
+## 2026-06-24T02:05+0800 - Growth read-provider fallback closure
+
+- Source task:
+  - Home AI closure verification left one Growth-owned H2 finding open:
+    provider/facade read failures could still return normal-looking scaffold or
+    stale snapshot status, board, or card DTOs.
+- Root-cause classification:
+  - Symptom: provider failure was hidden by later scaffold/snapshot readback.
+  - Failing layer: Growth read service/provider orchestration boundary.
+  - Owning workspace: Growth plugin.
+  - Violated invariant: provider failure must be visible and must not be
+    presented as normal readback.
+- Fix:
+  - `growth-read-orchestrator` now stops on provider failure and returns bounded
+    fail-closed DTOs with `ok=false`, `degraded=true`,
+    `provider_failure=true`, `error=growth_read_provider_failed`, and safe
+    provider status/error fields.
+  - `home-ai-facade-provider` now throws a bounded provider failure when the
+    configured facade returns `ok=false` or HTTP failure, while unconfigured
+    facade remains a no-result provider absence.
+  - Snapshot/scaffold compatibility remains only for provider absence/no-result
+    migration states, not after provider failure.
+  - No Home AI fallback-registry entry was added because the provider-failure
+    fallback path was removed rather than retained or extended.
+- Docs:
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+  - Updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md`.
+- Validation:
+  - `node --test tests/growth-service.test.js tests/growth-service-providers.test.js tests/growth-service-models.test.js tests/growth-routes.test.js`
+    passed `83/83`.
+  - `npm run --silent check` passed with `runtimeCount=238`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `node /Users/hermes-dev/HermesMobileDev/app/scripts/plugin-workspace-platform-contract-check.js --plugin growth --json`
+    passed with no issues or warnings.
+  - `git diff --check` passed.
+  - `codegraph sync` reported already up to date; `codegraph status` is current.
+- Privacy:
+  - No raw credentials, launch tokens, learner submissions, private profile
+    contents, audio payloads, provider payloads, database rows, prompts, or long
+    logs were copied into docs or handoff.
