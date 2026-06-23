@@ -3,6 +3,7 @@
 Last updated: 2026-06-23.
 Home AI platform contract version: `20260618-v4`.
 Home AI root-cause architecture contract version: `20260623-v1`.
+Home AI fallback governance contract version: `20260623-v1`.
 
 ## Scope
 
@@ -36,11 +37,13 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-workspace-platform-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/root-cause-architecture-contract.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/fallback-governance-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-mobile-ui-visual-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/macos-dev-to-production-deployment-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/macos-production-access.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/mcp-tool-upgrade-closure.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/macos-ios-simulator-appium.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/fallback-registry.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/MODULES/ai-operations-control-plane.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/ai-operations-control-plane.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/reference-memory-graph-v1.md`
@@ -51,6 +54,13 @@ identify the user-visible symptom, failing layer, owning workspace, violated
 invariant, strongest root-cause hypothesis, and closure validation before
 fixing. Prefer repairing the owning architecture boundary over adding broad
 plugin-local fallbacks.
+
+For Growth work that adds, extends, or relies on fallback behavior, follow the
+central fallback governance contract. Classify the result as mitigation or
+closure, keep any fallback bounded and visible, name the owner and removal or
+hardening path, and register new or extended fallback behavior in the Home AI
+fallback registry before calling the task complete. Do not duplicate central
+fallback policy in plugin-local code.
 
 ## Plugin-Local Facts
 

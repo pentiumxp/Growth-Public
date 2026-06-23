@@ -24,6 +24,10 @@ The full previous context was archived and should be read only when this routing
 
 - Read `.agent-context/HANDOFF.md` after this file.
 - Read `docs/README.md`, then the smallest relevant focused doc.
+- For non-trivial bugfix, deployment, MCP/schema, provisioning, or fallback
+  work, read `docs/HOME_AI_PLATFORM_CONTRACT.md` and the linked Home AI central
+  `root-cause-architecture-contract.md`, `fallback-governance-contract.md`,
+  and `fallback-registry.md` references before fixing.
 - Keep raw secrets, tokens, one-time approvals, upload contents, full rollout logs, and `.codex` runtime state out of shared context and Git.
 - Do not load the archived full project context by default. Load it only when the user asks about older provenance, a missing rule, or a historical decision not present in live docs.
 

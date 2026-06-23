@@ -870,3 +870,35 @@ The previous full handoff was archived and should be opened only when old proven
 - Privacy:
   - No raw secrets, keys, cookies, launch tokens, private payloads, or long logs
     were copied into local docs or this handoff.
+
+## 2026-06-23T21:02+0800 - Home AI fallback governance pointer adopted
+
+- Source task:
+  - Cross-thread task from `/Users/hermes-dev/HermesMobileDev/app` requested
+    Growth plugin adoption of the Home AI central fallback governance
+    references.
+- Canonical references:
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/root-cause-architecture-contract.md`
+    (`20260623-v1`).
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/fallback-governance-contract.md`
+    (`20260623-v1`).
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/fallback-registry.md`.
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/MODULES/ai-operations-control-plane.md`.
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/ai-operations-control-plane.md`.
+- Growth-local adoption:
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` to reference the fallback
+    governance contract and fallback registry directly.
+  - Updated `.agent-context/PROJECT_CONTEXT.md` startup guidance to route
+    future non-trivial bugfix/deploy/MCP/schema/provisioning/fallback work
+    through the linked root-cause and fallback governance contracts.
+  - Future Growth work that adds, extends, or relies on fallback behavior must
+    classify mitigation versus closure, keep fallback behavior bounded and
+    visible, name owner/removal or hardening path, and register new or extended
+    fallback behavior in the Home AI fallback registry before completion.
+- Scope:
+  - Documentation/context pointer adoption only.
+  - No fallback behavior, business code, runtime config, production deploy, or
+    learner data change was made.
+- Privacy:
+  - No raw secrets, keys, cookies, launch tokens, private payloads, provider
+    responses, or long logs were copied into local docs or this handoff.
