@@ -949,3 +949,50 @@ The previous full handoff was archived and should be opened only when old proven
 - Privacy:
   - No raw secrets, keys, cookies, launch tokens, private payloads, provider
     responses, or long logs were copied into local docs or this handoff.
+
+## 2026-06-24T01:10+0800 - Growth audit repair deployed to production
+
+- Source repair:
+  - Commit `13895a3f7391` (`Repair Growth read auth and worker health`) repaired
+    the audit findings for read-route authorization, platform pointer version,
+    and worker runtime health reporting.
+- Production deployment:
+  - Ran the central Home AI macOS plugin deploy flow for Growth with reason
+    `growth-audit-read-auth-worker-health`.
+  - Deploy completed successfully and restarted `com.hermesmobile.plugin.growth`.
+  - Central deploy evidence reported source ref `13895a3f7391` and source dirty
+    status `false`.
+  - Production Growth path is an rsync mirror, not a git checkout.
+  - Post-deploy hash comparison matched source and production for:
+    `src/routes/growth-routes.js`, `src/app/http-server.js`,
+    `src/app/services.js`,
+    `src/services/growth-worker-runtime-health-service.js`,
+    `public/growth-api-client.js`, and `docs/HOME_AI_PLATFORM_CONTRACT.md`.
+- Production validation completed:
+  - `GET /api/v1/hermes/plugin/manifest` on port `4881` returned status `200`
+    with plugin id `growth`, toolset `growth`, and six actions.
+  - Direct unauthenticated Growth reads for status, board, card, and audio
+    evidence all returned `403` with `growth_read_authorization_required`.
+  - Runtime worker health route without registration bearer returned `403`
+    with `permission_denied`.
+  - Platform pointer checker passed for Growth with contract version
+    `20260623-v5`, no issues, and no warnings.
+  - Production and source `docs/HOME_AI_PLATFORM_CONTRACT.md` both declare
+    platform contract `20260623-v5`, root-cause contract `20260623-v3`, and
+    fallback governance contract `20260623-v1`.
+  - `node --test tests/growth-routes.test.js` passed `66/66` after deployment.
+- Validation residuals:
+  - Production positive bearer/proxy read validation could not be completed from
+    this Codex session because the current user cannot read the production
+    Growth registration key or Home AI Growth plugin owner key files
+    (`EACCES`), and `sudo` is blocked by the sandbox.
+  - Current readable `.hermes-growth/access-key.txt` did not match any Growth
+    workspace hash in production `workspaces.json`, so it was not used as a
+    fallback credential.
+  - Production worker health authenticated read could not be completed for the
+    same registration-key `EACCES` reason; source tests prove sanitized worker
+    failure reporting and redaction behavior.
+- Privacy:
+  - No raw keys, launch tokens, bearer values, learner submissions, private
+    profile contents, provider payloads, database rows, or long logs were
+    copied into docs or the return evidence.
