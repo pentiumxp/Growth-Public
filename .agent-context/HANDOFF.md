@@ -1071,6 +1071,53 @@ The previous full handoff was archived and should be opened only when old proven
     private profile contents, audio payloads, provider payloads, database rows,
     prompts, or long logs were copied into docs or handoff.
 
+## 2026-06-25T03:04+0800 - Growth embedded keyboard composer visual repair
+
+- Source task:
+  - Home AI visual polish reported
+    `embedded-plugin-keyboard-composer` failures for Growth:
+    `plugin_thread_detail_open`, `plugin_composer_exists`,
+    `plugin_keyboard_input_exists`, `host_keyboard_visible_after_input_tap`,
+    and `plugin_input_above_keyboard`.
+- Root-cause classification:
+  - Symptom: the visual harness opened the Growth embedded board but found no
+    iframe-local composer/input, so it could not focus an input or simulate the
+    host keyboard viewport.
+  - Failing layer: Growth embedded frontend visual contract / iframe-local UI.
+  - Owning workspace: Growth plugin.
+  - Violated invariant: the embedded keyboard-composer scenario requires a
+    visible, focusable plugin-owned composer/input; host shell geometry remains
+    Home AI-owned.
+  - Classification: visual closure; no business logic, persistence, provider,
+    learner data, or API behavior was changed.
+- Fix in progress:
+  - `public/growth-legacy-ui.js` renders a local keyboard composer on the
+    Growth board page with `id="composer"` and `id="messageInput"`.
+  - `public/growth-homeai-legacy.css` reserves a bottom row for the composer
+    and styles the textarea so it remains compact and focusable above the
+    host keyboard viewport.
+  - `public/index.html` static asset version bumped to
+    `20260625-keyboard-composer-v1`.
+  - Focused tests now cover the rendered composer and CSS keyboard layout
+    contract.
+- Source validation:
+  - `node --test tests/growth-frontend-adapter.test.js tests/growth-embedded-layout.test.js`
+    passed `51/51`.
+  - `npm run --silent check` passed with `runtimeCount=238`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `git diff --check` passed.
+- Pending:
+  - Commit and push the source fix.
+  - Deploy through the central Home AI macOS plugin deploy flow if production
+    validation is required.
+  - Run the Home AI iOS visual harness for
+    `embedded-plugin-keyboard-composer --plugin-id growth`.
+- Privacy:
+  - No raw credentials, launch tokens, bearer values, learner submissions,
+    private profile contents, audio payloads, provider payloads, database rows,
+    prompts, or long logs were copied into docs or handoff.
+
 ## 2026-06-25T00:43+0800 - Owner generate docs/test gap closure
 
 - Source task:

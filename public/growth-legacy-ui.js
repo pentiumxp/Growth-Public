@@ -362,6 +362,15 @@
     </section>`;
   }
 
+  function renderGrowthKeyboardComposer(options = {}) {
+    const escapeHtml = optionFn(options, "escapeHtml", defaultEscapeHtml);
+    const label = options.state?.auth?.isOwner ? "Owner 备注" : "成长记录";
+    return `<form id="composer" class="growth-keyboard-composer" data-growth-keyboard-composer autocomplete="off">
+      <label class="growth-keyboard-composer-label" for="messageInput">${escapeHtml(label)}</label>
+      <textarea id="messageInput" class="growth-keyboard-composer-input" rows="1" inputmode="text" autocomplete="off" autocapitalize="sentences" aria-label="${escapeHtml(label)}" placeholder="记录一句观察..."></textarea>
+    </form>`;
+  }
+
   function readinessStatusText(status) {
     const value = String(status || "");
     if (value === "operational_ready") return "Operational ready";
@@ -1179,6 +1188,7 @@
       </section>
       ${routeNoticeHtml}
       ${boardHtml}
+      ${renderGrowthKeyboardComposer(options)}
     </div>`;
   }
 

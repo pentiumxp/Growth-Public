@@ -5538,6 +5538,29 @@ test("Growth board renderer exposes explicit today and all-card lane states", ()
   assert.match(allHtml, /card_ready/);
 });
 
+test("Growth board page renders an iframe-local keyboard composer", () => {
+  const windowRef = loadPublicScript("growth-legacy-ui.js");
+  const html = windowRef.HermesLearningGrowthUi.renderLearningGrowthView({
+    overview: {
+      module: { title: "成长" },
+      learner: { id: "weixin_fanfan", workspaceId: "weixin_fanfan", displayName: "凡凡" },
+      board: { cards: [], lanes: [] },
+      coins: { balances: { availableCoins: 0 } },
+      metrics: {}
+    },
+    state: { auth: { isOwner: false } },
+    workspaceId: "weixin_fanfan",
+    learnerId: "weixin_fanfan"
+  });
+
+  assert.match(html, /class="learning-growth-view learning-growth-board-page"/);
+  assert.match(html, /id="composer"/);
+  assert.match(html, /data-growth-keyboard-composer/);
+  assert.match(html, /id="messageInput"/);
+  assert.match(html, /class="growth-keyboard-composer-input"/);
+  assert.match(html, /placeholder="记录一句观察\.\.\."/);
+});
+
 test("Growth submit_work route opens only a structured submit-capable card", async () => {
   const submitCard = { taskCardId: "card_submit", laneId: "ready", nextAction: "submit", actions: { canSubmit: true } };
   const waitingCard = { taskCardId: "card_waiting", laneId: "waiting_ai", nextAction: "waiting_feedback" };
@@ -5756,7 +5779,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260624-action-route-contract-v1";
+  const staticVersion = "20260625-keyboard-composer-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
