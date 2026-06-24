@@ -1107,12 +1107,26 @@ The previous full handoff was archived and should be opened only when old proven
   - `node scripts/check-growth-docs-locality.js` passed.
   - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
   - `git diff --check` passed.
-- Pending:
-  - Commit and push the source fix.
-  - Deploy through the central Home AI macOS plugin deploy flow if production
-    validation is required.
-  - Run the Home AI iOS visual harness for
-    `embedded-plugin-keyboard-composer --plugin-id growth`.
+- Commit / push:
+  - Source fix committed and pushed as
+    `f58d55b Add Growth embedded keyboard composer`.
+- Deployment status:
+  - Deployed through the central Home AI macOS plugin deploy flow with reason
+    `growth-keyboard-composer`.
+  - Deploy completed successfully with production source ref `f58d55b9c46e`
+    and source dirty status `false`.
+  - Production launchd and Growth manifest health checks passed.
+- Production visual validation:
+  - `npm run ios:pwa:visual -- --scenario embedded-plugin-keyboard-composer --plugin-id growth --debug-url http://127.0.0.1:19073/ --json`
+    passed with `ok=true`.
+  - The previously failing assertions now pass:
+    `plugin_thread_detail_open`, `plugin_composer_exists`,
+    `plugin_keyboard_input_exists`, `host_keyboard_visible_after_input_tap`,
+    and `plugin_input_above_keyboard`.
+  - Visual harness focused `#messageInput`; keyboard was visible with
+    `keyboard.top=404`, input clearance `21`, and composer clearance `12`.
+  - Screenshot artifact:
+    `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-keyboard-composer-growth-20260624T190548Z.png`.
 - Privacy:
   - No raw credentials, launch tokens, bearer values, learner submissions,
     private profile contents, audio payloads, provider payloads, database rows,
