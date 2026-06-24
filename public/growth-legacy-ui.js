@@ -135,6 +135,7 @@
 
   function boardLaneTitle(id, fallback = "") {
     const value = String(id || "");
+    if (value === "all") return "\u5168\u90e8";
     if (value === "today") return "\u4eca\u65e5";
     if (value === "ready") return "\u5f53\u524d";
     if (value === "waiting_ai") return "\u7b49\u5f85 AI";
@@ -143,6 +144,34 @@
     if (value === "locked_until") return "\u9501\u5b9a";
     if (value === "completed_recent") return "\u6700\u8fd1\u5b8c\u6210";
     return fallback || value || "\u4efb\u52a1";
+  }
+
+  function boardLaneEmptyText(id) {
+    const value = String(id || "");
+    if (value === "all") return "\u6682\u65e0\u6210\u957f\u5361\u7247";
+    if (value === "today") return "\u4eca\u65e5\u6ca1\u6709\u5f85\u5904\u7406\u4efb\u52a1";
+    if (value === "reflection_required") return "\u6ca1\u6709\u5f85\u590d\u76d8\u5361\u7247";
+    if (value === "evaluation_failed") return "\u6ca1\u6709\u9700\u5904\u7406\u7684\u6279\u6539\u5931\u8d25";
+    if (value === "completed_recent") return "\u6682\u65e0\u6700\u8fd1\u5b8c\u6210\u5361\u7247";
+    return "\u6ca1\u6709\u5f53\u524d\u4efb\u52a1";
+  }
+
+  function renderGrowthRouteNotice(routeState = {}, options = {}) {
+    const escapeHtml = optionFn(options, "escapeHtml", defaultEscapeHtml);
+    const status = String(routeState.status || "").trim();
+    if (status !== "empty" && status !== "unavailable") return "";
+    const route = String(routeState.route || "").trim();
+    const title = routeState.emptyTitle || routeState.title || "\u6682\u65e0\u53ef\u6267\u884c\u5185\u5bb9";
+    const body = routeState.emptyBody || routeState.body || "\u8fd9\u4e2a\u5165\u53e3\u5f53\u524d\u6ca1\u6709\u53ef\u6253\u5f00\u7684\u5b66\u4e60\u72b6\u6001\u3002";
+    const code = routeState.code || "";
+    return `<section class="learning-coin-panel learning-growth-route-notice" data-growth-route-state="${escapeHtml(route)}" data-growth-route-status="${escapeHtml(status)}">
+      <div class="learning-section-heading">
+        <h3>${escapeHtml(title)}</h3>
+        <span>${escapeHtml(routeState.label || route || "\u5165\u53e3")}</span>
+      </div>
+      <p class="learning-growth-muted">${escapeHtml(body)}</p>
+      ${code ? `<small class="learning-growth-muted">${escapeHtml(code)}</small>` : ""}
+    </section>`;
   }
 
   function boardStatusText(card = {}) {
@@ -292,8 +321,21 @@
       });
     });
     const requestedLane = String(options.activeGrowthBoardLane || "").trim();
+    if (requestedLane === "all") {
+      laneModels.unshift({
+        id: "all",
+        title: "All",
+        cards: cards.map((card) => String(card.taskCardId || "")).filter(Boolean),
+        count: cards.length,
+        laneCards: cards,
+      });
+    }
     const visibleLaneModels = laneModels.filter((lane) => lane.count > 0);
     const displayLaneModels = visibleLaneModels.length ? visibleLaneModels : laneModels;
+    const requestedLaneModel = laneModels.find((lane) => lane.id === requestedLane);
+    if (requestedLaneModel && !displayLaneModels.some((lane) => lane.id === requestedLane)) {
+      displayLaneModels.unshift(requestedLaneModel);
+    }
     const fallbackLane = displayLaneModels.find((lane) => lane.count > 0)?.id || displayLaneModels[0]?.id || "";
     const activeLaneId = displayLaneModels.some((lane) => lane.id === requestedLane) ? requestedLane : fallbackLane;
     return `<section class="learning-growth-board" data-learning-growth-board>
@@ -313,7 +355,7 @@
           return `<section class="learning-growth-board-lane${active ? " active" : ""}" data-growth-board-lane="${escapeHtml(lane.id)}" data-learning-growth-board-panel="${escapeHtml(lane.id)}"${active ? "" : " hidden"}>
             ${lane.laneCards.length
               ? lane.laneCards.map((card) => renderBoardCard(card, options)).join("")
-              : `<div class="learning-growth-board-empty">\u6ca1\u6709\u5f53\u524d\u4efb\u52a1</div>`}
+              : `<div class="learning-growth-board-empty">${escapeHtml(boardLaneEmptyText(lane.id))}</div>`}
           </section>`;
         }).join("")}
       </div>
@@ -939,12 +981,14 @@
       ? coinsUi.renderCoinsSubsystem({ summary: coins, learnerId, state: options.state || {}, escapeHtml: optionFn(options, "escapeHtml", defaultEscapeHtml) })
       : "";
     const adminHtml = renderOwnerProgramTabs(programUi, coinsHtml, overview, options);
+    const routeNoticeHtml = renderGrowthRouteNotice(options.state?.learningGrowthRouteState || {}, options);
     if (!adminHtml) return "";
     return `<div class="learning-growth-view learning-growth-settings-page" data-learning-product="fanfan-growth" data-learning-role="owner" data-learning-growth-settings-page>
       <section class="learning-growth-owner-settings-toolbar">
         <button type="button" data-learning-growth-close-settings>返回看板</button>
         <span>Owner 管理 · ${escapeHtml(overview.learner?.displayName || learnerId)}</span>
       </section>
+      ${routeNoticeHtml}
       ${adminHtml}
     </div>`;
   }
@@ -1097,6 +1141,7 @@
     const boardHtml = overview.board ? renderLearningGrowthBoard(overview.board, Object.assign({}, options, {
       workspaceId: overview.learner?.workspaceId || options.workspaceId || "",
     })) : "";
+    const routeNoticeHtml = renderGrowthRouteNotice(options.state?.learningGrowthRouteState || {}, options);
     const targetMenu = renderGrowthViewTargetMenu(options, learner);
     const ownerActions = owner ? `<span class="learning-growth-owner-actions">
       ${targetMenu}
@@ -1132,6 +1177,7 @@
           <span><small>30\u65e5\u5747\u503c</small><b>${escapeHtml(String(thirtyDayAverage))}</b></span>
         </div>
       </section>
+      ${routeNoticeHtml}
       ${boardHtml}
     </div>`;
   }
@@ -1141,6 +1187,7 @@
     renderLearningGrowthTabs,
     renderLearningGrowthBoard,
     renderLearningGrowthView,
+    renderGrowthRouteNotice,
     renderNextModules,
     renderOwnerSystemPanel,
     renderPlatformStrip,

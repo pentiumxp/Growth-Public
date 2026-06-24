@@ -1070,3 +1070,68 @@ The previous full handoff was archived and should be opened only when old proven
   - No raw credentials, launch tokens, bearer values, learner submissions,
     private profile contents, audio payloads, provider payloads, database rows,
     prompts, or long logs were copied into docs or handoff.
+
+## 2026-06-24T23:55+0800 - Growth host action route contract repair
+
+- Source task:
+  - Plugin Workspace Audit reported Growth Product Reality / product-design
+    gaps where host-visible manifest actions reached generic or heuristic UI
+    states instead of the promised product workflows.
+- Root-cause classification:
+  - Symptom: `today_tasks`, `cards`, `submit_work`, `review`,
+    `stage_assessment`, and `rewards` could route to generic overview,
+    text-regex card matches, or the first unrelated card.
+  - Failing layer: Growth embedded frontend route-state / client projection
+    contract.
+  - Owning workspace: Growth plugin.
+  - Violated invariant: every host action must land on its declared workflow
+    state or a visible empty/unavailable state; product-critical actions must
+    not rely on title/text regex or unrelated first-card fallback.
+  - Classification: closure; no new fallback behavior was added.
+- Fix:
+  - Added a route contract in `public/growth-route-controller.js` for every
+    host action exposed by `hermes-plugin/manifest.json`.
+  - Replaced route-critical title/text regex selection with structured
+    capability/state checks from card actions, lane, next/primary action,
+    card role, task type, completion policy, stage cycle id, and explicit
+    capability arrays.
+  - `submit_work`, learner `review`, and learner `stage_assessment` now open a
+    card only when a matching structured capability exists; otherwise they
+    set visible empty route state.
+  - `today_tasks` selects board lane `today`; `cards` selects virtual lane
+    `all`; Owner `review` opens `ai-analysis`; Owner `stage_assessment` opens
+    generation with an unavailable state when no active formal card exists;
+    Owner `rewards` opens rewards, while learner `rewards` shows an explicit
+    Owner-only unavailable state.
+  - `public/growth-legacy-ui.js` renders route notices through
+    `data-growth-route-state` / `data-growth-route-status`, supports virtual
+    `all` board lane, and preserves requested empty lanes such as `today` and
+    `reflection_required`.
+  - Bumped `public/index.html` static version to
+    `20260624-action-route-contract-v1`.
+- Docs:
+  - Added the host action route matrix to
+    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
+  - Updated `docs/GROWTH_PLUGIN_ARCHITECTURE.md` and `docs/TEST_MATRIX.md`
+    harness rows for host action route coverage.
+- Validation:
+  - AI Ops intake recorded this as production-deploying H1 work; central
+    fallback governance check passed with no issues.
+  - Focused frontend/route/layout/architecture/service set passed `99/99`.
+  - Extended focused route/UI/service set passed `165/165`.
+  - Full local suite passed: `npm test -- --test-reporter=spec` reported
+    `1151/1151`.
+  - `npm run --silent check` passed with `runtimeCount=238`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - Platform pointer checker passed for Growth with contract version
+    `20260623-v5`, no issues, and no warnings.
+  - `git diff --check` passed.
+  - `codegraph sync` reported already up to date; `codegraph status` is
+    current.
+- Deployment status:
+  - Source validation complete; production deployment still required before
+    closure return.
+- Privacy:
+  - No raw credentials, launch tokens, bearer values, learner submissions,
+    private profile contents, audio payloads, provider payloads, database rows,
+    prompts, or long logs were copied into docs or handoff.

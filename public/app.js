@@ -214,6 +214,7 @@
     auth: { isOwner: false },
     learningGrowthActiveTab: "overview",
     learningGrowthBoardLane: "",
+    learningGrowthRouteState: null,
     learningGrowthSettingsOpen: false,
     learningGrowthSettingsTaskId: "",
     learningGrowthHistoryTaskCardId: "",

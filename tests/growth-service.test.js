@@ -369,8 +369,9 @@ test("frontend opens a routed Growth card from plugin route params", () => {
   assert.match(routeControllerJs, /pluginRoute === "card" && pluginItemId/);
   assert.match(routeControllerJs, /await openCard\(pluginItemId\)/);
   for (const route of ["today_tasks", "cards", "submit_work", "review", "stage_assessment", "rewards"]) {
-    assert.match(routeControllerJs, new RegExp(`pluginRoute === "${route}"`));
+    assert.match(routeControllerJs, new RegExp(`${route}: \\{`));
   }
-  assert.match(routeControllerJs, /firstTaskCardForRoute\(pluginRoute\)/);
-  assert.match(routeControllerJs, /learningGrowthActiveTab = pageState\.auth\.isOwner \? "rewards" : "overview"/);
+  assert.match(routeControllerJs, /cardCapabilities/);
+  assert.match(routeControllerJs, /showEmptyRoute\(pluginRoute/);
+  assert.doesNotMatch(routeControllerJs, /\|\| cards\[0\]/);
 });

@@ -1,6 +1,6 @@
 # Growth Card Interaction Flow
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-24.
 
 This document defines the plugin-owned learner interaction flow for generated
 Growth cards. It covers the three learner-facing stages, evaluation refresh,
@@ -64,6 +64,32 @@ active checkpoint state must pass the same `capabilityClusterId` and
 `assessmentCoverageNodeIds` used for activation; otherwise the service may
 correctly report a different dormant or cooldown checkpoint for the broader
 subject scope.
+
+## Host Action Route Contract
+
+Growth owns the product route contract for every host-visible action in
+`hermes-plugin/manifest.json`. The host supplies `pluginRoute`; the embedded
+Growth route controller maps it into a concrete route state before rendering.
+Product-critical actions must use structured card state such as
+`actions.canSubmit`, `actions.canReflect`, `laneId`, `nextAction`,
+`primaryAction`, `cardRole`, `taskCardType`, `completionPolicy.mode`,
+`stageAssessmentCycleId`, and explicit route/capability arrays. They must not
+select a card by title text or open the first unrelated card.
+
+| Host action | Route target | Owner behavior | Learner behavior | Empty or unavailable state |
+| --- | --- | --- | --- | --- |
+| `today_tasks` / `今日任务` | Board lane `today`. | Same as learner, scoped to the selected visible target. | Opens the board with the `today` lane selected. | The `today` lane remains selected and shows that today has no pending tasks. |
+| `cards` / `成长卡片` | Board lane `all`, a virtual all-card list. | Same as learner, scoped to the selected visible target. | Opens all visible card rows, not the generic default lane. | The all-card lane shows a no-card state. |
+| `submit_work` / `提交作业` | First card with structured submit capability. | Same as learner for the selected visible target. | Opens a card only when structured state says it can submit or revise. | Shows `growth_route_submit_work_empty`; it must not open the first unrelated card. |
+| `review` / `复盘` | Reflection card or Owner analysis. | Opens Owner management `ai-analysis`. | Opens a card only when structured state says reflection/review is active. | Shows `growth_route_review_empty` on the reflection lane when no reflection card exists. |
+| `stage_assessment` / `阶段测评` | Formal assessment card or Owner generation controls. | Opens Owner generation tab with a visible unavailable state when no active formal card exists. | Opens an active formal assessment card only when structured formal-card state exists. | Shows `growth_route_stage_assessment_empty` for learners or `growth_route_stage_assessment_not_active` for Owner controls. |
+| `rewards` / `奖励/通宝` | Owner rewards management. | Opens Owner management `rewards`. | The current learner board has no standalone rewards surface. | Shows `growth_route_rewards_owner_only` instead of falling back to overview. |
+
+The visible route state is stored in `state.learningGrowthRouteState` and
+rendered as `data-growth-route-state` / `data-growth-route-status` when the
+route is empty or unavailable. Board routes also update
+`state.learningGrowthBoardLane` so rendered DOM exposes the selected lane
+through `data-growth-board-active-lane`.
 
 ## UI Flow
 

@@ -5169,13 +5169,211 @@ test("Growth view-model adapter normalizes cards, lanes, and overview metrics", 
   assert.equal(overview.programs.taskCards[1].title, "card_2");
 });
 
-test("Growth route controller opens card and action routes without DOM coupling", async () => {
+function routePageState(isOwner = false) {
+  return {
+    auth: { isOwner },
+    learningGrowthSettingsOpen: false,
+    learningGrowthActiveTab: "overview",
+    learningGrowthBoardLane: "",
+    learningGrowthRouteState: null,
+    selectedLearningTaskCardId: "",
+    learningGrowthHistoryTaskCardId: "",
+    learningGrowthSettingsTaskId: ""
+  };
+}
+
+function routeModel(cards = [], lanes = []) {
+  return {
+    overview: {
+      learner: { workspaceId: "learner_1", displayName: "Learner" },
+      module: { title: "Growth" },
+      metrics: {},
+      coins: { balances: {}, growth: {} },
+      board: { cards, lanes },
+      programs: { taskCards: [], executableTasks: [] }
+    }
+  };
+}
+
+function createRouteController({ pluginRoute, cards = [], lanes = [], isOwner = false, openCard } = {}) {
+  const windowRef = loadPublicScript("growth-route-controller.js");
+  const pageState = routePageState(isOwner);
+  const opened = [];
+  const controller = windowRef.HermesGrowthRouteController.createGrowthRouteController({
+    pluginRoute,
+    pluginItemId: "",
+    pageState,
+    model: routeModel(cards, lanes),
+    openCard: openCard || (async (id) => opened.push(id))
+  });
+  return { windowRef, pageState, opened, controller };
+}
+
+test("Growth route controller declares a contract for every manifest action", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "hermes-plugin", "manifest.json"), "utf8"));
+  const windowRef = loadPublicScript("growth-route-controller.js");
+  const contractRoutes = Object.keys(windowRef.HermesGrowthRouteController.ROUTE_CONTRACT);
+  const actionRoutes = manifest.actions.map((action) => action.entry.pluginRoute);
+
+  for (const route of actionRoutes) {
+    assert.ok(contractRoutes.includes(route), `missing route contract for ${route}`);
+  }
+});
+
+test("Growth route controller selects today and all-card board states from host actions", async () => {
+  const cards = [
+    { taskCardId: "card_today", laneId: "today", nextAction: "submit", title: "Today" },
+    { taskCardId: "card_ready", laneId: "ready", nextAction: "submit", title: "Ready" }
+  ];
+  const lanes = [
+    { id: "today", cards: ["card_today"], count: 1 },
+    { id: "ready", cards: ["card_ready"], count: 1 }
+  ];
+  const today = createRouteController({ pluginRoute: "today_tasks", cards, lanes });
+
+  assert.equal(await today.controller.applyInitialPluginRoute(), false);
+  assert.equal(today.pageState.learningGrowthBoardLane, "today");
+  assert.equal(today.pageState.learningGrowthRouteState.route, "today_tasks");
+  assert.equal(today.pageState.learningGrowthRouteState.target, "board_lane");
+
+  const cardsRoute = createRouteController({ pluginRoute: "cards", cards, lanes });
+  assert.equal(await cardsRoute.controller.applyInitialPluginRoute(), false);
+  assert.equal(cardsRoute.pageState.learningGrowthBoardLane, "all");
+  assert.equal(cardsRoute.pageState.learningGrowthRouteState.route, "cards");
+  assert.equal(cardsRoute.pageState.learningGrowthRouteState.target, "board_all");
+});
+
+test("Growth board renderer exposes explicit today and all-card lane states", () => {
+  const windowRef = loadPublicScript("growth-legacy-ui.js");
+  const cards = [
+    { taskCardId: "card_today", laneId: "today", nextAction: "submit", title: "Today" },
+    { taskCardId: "card_ready", laneId: "ready", nextAction: "submit", title: "Ready" }
+  ];
+  const board = {
+    cards,
+    lanes: [
+      { id: "today", cards: [], count: 0 },
+      { id: "ready", cards: ["card_ready"], count: 1 }
+    ]
+  };
+
+  const todayHtml = windowRef.HermesLearningGrowthUi.renderLearningGrowthBoard(board, { activeGrowthBoardLane: "today" });
+  assert.match(todayHtml, /data-growth-board-active-lane="today"/);
+  assert.match(todayHtml, /data-learning-growth-board-panel="today"/);
+  assert.match(todayHtml, /今日没有待处理任务/);
+
+  const allHtml = windowRef.HermesLearningGrowthUi.renderLearningGrowthBoard(board, { activeGrowthBoardLane: "all" });
+  assert.match(allHtml, /data-growth-board-active-lane="all"/);
+  assert.match(allHtml, /data-learning-growth-board-filter="all"/);
+  assert.match(allHtml, /card_today/);
+  assert.match(allHtml, /card_ready/);
+});
+
+test("Growth submit_work route opens only a structured submit-capable card", async () => {
+  const submitCard = { taskCardId: "card_submit", laneId: "ready", nextAction: "submit", actions: { canSubmit: true } };
+  const waitingCard = { taskCardId: "card_waiting", laneId: "waiting_ai", nextAction: "waiting_feedback" };
+  const { controller, opened } = createRouteController({
+    pluginRoute: "submit_work",
+    cards: [waitingCard, submitCard]
+  });
+
+  assert.equal(controller.firstTaskCardForRoute("submit_work").taskCardId, "card_submit");
+  assert.equal(await controller.applyInitialPluginRoute(), true);
+  assert.deepEqual(opened, ["card_submit"]);
+});
+
+test("Growth submit_work route does not open an unrelated first card", async () => {
+  const { pageState, opened, controller } = createRouteController({
+    pluginRoute: "submit_work",
+    cards: [{ taskCardId: "card_waiting", laneId: "waiting_ai", nextAction: "waiting_feedback" }]
+  });
+
+  assert.equal(controller.firstTaskCardForRoute("submit_work"), null);
+  assert.equal(await controller.applyInitialPluginRoute(), false);
+  assert.deepEqual(opened, []);
+  assert.equal(pageState.learningGrowthRouteState.route, "submit_work");
+  assert.equal(pageState.learningGrowthRouteState.status, "empty");
+  assert.equal(pageState.learningGrowthBoardLane, "today");
+});
+
+test("Growth review route separates Owner analysis from learner reflection cards", async () => {
+  const reflectionCard = { taskCardId: "card_reflect", laneId: "reflection_required", nextAction: "spoken_reflection", actions: { canReflect: true } };
+  const learner = createRouteController({ pluginRoute: "review", cards: [reflectionCard] });
+
+  assert.equal(await learner.controller.applyInitialPluginRoute(), true);
+  assert.deepEqual(learner.opened, ["card_reflect"]);
+  assert.equal(learner.pageState.learningGrowthRouteState.status, "matched");
+
+  const owner = createRouteController({ pluginRoute: "review", cards: [reflectionCard], isOwner: true });
+  assert.equal(await owner.controller.applyInitialPluginRoute(), false);
+  assert.equal(owner.pageState.learningGrowthSettingsOpen, true);
+  assert.equal(owner.pageState.learningGrowthActiveTab, "ai-analysis");
+  assert.equal(owner.pageState.learningGrowthRouteState.target, "reflection_card_or_owner_analysis");
+});
+
+test("Growth review route renders an explicit empty state when no reflection exists", async () => {
+  const { pageState, opened, controller } = createRouteController({
+    pluginRoute: "review",
+    cards: [{ taskCardId: "card_submit", laneId: "ready", nextAction: "submit" }]
+  });
+
+  assert.equal(await controller.applyInitialPluginRoute(), false);
+  assert.deepEqual(opened, []);
+  assert.equal(pageState.learningGrowthRouteState.status, "empty");
+  assert.equal(pageState.learningGrowthBoardLane, "reflection_required");
+
+  const windowRef = loadPublicScript("growth-legacy-ui.js");
+  const html = windowRef.HermesLearningGrowthUi.renderGrowthRouteNotice(pageState.learningGrowthRouteState);
+  assert.match(html, /data-growth-route-state="review"/);
+  assert.match(html, /data-growth-route-status="empty"/);
+});
+
+test("Growth stage_assessment route opens formal cards and otherwise shows the correct role state", async () => {
+  const stageCard = { taskCardId: "card_stage", laneId: "ready", cardRole: "stage_assessment", nextAction: "submit" };
+  const learner = createRouteController({ pluginRoute: "stage_assessment", cards: [stageCard] });
+
+  assert.equal(await learner.controller.applyInitialPluginRoute(), true);
+  assert.deepEqual(learner.opened, ["card_stage"]);
+
+  const emptyLearner = createRouteController({ pluginRoute: "stage_assessment", cards: [] });
+  assert.equal(await emptyLearner.controller.applyInitialPluginRoute(), false);
+  assert.equal(emptyLearner.pageState.learningGrowthRouteState.status, "empty");
+  assert.equal(emptyLearner.pageState.learningGrowthSettingsOpen, false);
+
+  const emptyOwner = createRouteController({ pluginRoute: "stage_assessment", cards: [], isOwner: true });
+  assert.equal(await emptyOwner.controller.applyInitialPluginRoute(), false);
+  assert.equal(emptyOwner.pageState.learningGrowthSettingsOpen, true);
+  assert.equal(emptyOwner.pageState.learningGrowthActiveTab, "generation");
+  assert.equal(emptyOwner.pageState.learningGrowthRouteState.status, "unavailable");
+});
+
+test("Growth rewards route is Owner rewards tab or explicit learner unavailable state", async () => {
+  const owner = createRouteController({ pluginRoute: "rewards", isOwner: true });
+  assert.equal(await owner.controller.applyInitialPluginRoute(), false);
+  assert.equal(owner.pageState.learningGrowthSettingsOpen, true);
+  assert.equal(owner.pageState.learningGrowthActiveTab, "rewards");
+  assert.equal(owner.pageState.learningGrowthRouteState.target, "owner_rewards");
+
+  const learner = createRouteController({ pluginRoute: "rewards", isOwner: false });
+  assert.equal(await learner.controller.applyInitialPluginRoute(), false);
+  assert.equal(learner.pageState.learningGrowthSettingsOpen, false);
+  assert.equal(learner.pageState.learningGrowthBoardLane, "all");
+  assert.equal(learner.pageState.learningGrowthRouteState.status, "unavailable");
+
+  const windowRef = loadPublicScript("growth-legacy-ui.js");
+  const html = windowRef.HermesLearningGrowthUi.renderGrowthRouteNotice(learner.pageState.learningGrowthRouteState);
+  assert.match(html, /data-growth-route-state="rewards"/);
+  assert.match(html, /data-growth-route-status="unavailable"/);
+});
+
+test("Growth route controller opens direct card and Owner generation routes without DOM coupling", async () => {
   const windowRef = loadPublicScript("growth-route-controller.js");
   const opened = [];
   const pageState = {
     auth: { isOwner: false },
     learningGrowthSettingsOpen: false,
-    learningGrowthActiveTab: "overview"
+    learningGrowthActiveTab: "overview",
+    learningGrowthRouteState: null
   };
   const model = {
     overview: {
@@ -5198,7 +5396,8 @@ test("Growth route controller opens card and action routes without DOM coupling"
   const ownerState = {
     auth: { isOwner: true },
     learningGrowthSettingsOpen: false,
-    learningGrowthActiveTab: "overview"
+    learningGrowthActiveTab: "overview",
+    learningGrowthRouteState: null
   };
   const ownerController = windowRef.HermesGrowthRouteController.createGrowthRouteController({
     pluginRoute: "generate_cards",
@@ -5288,7 +5487,7 @@ test("Growth navigation controller reports unhandled back at plugin root", () =>
 
 test("Growth index loads frontend adapters before app boot", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-  const staticVersion = "20260618-generation-workbench-readable-v1";
+  const staticVersion = "20260624-action-route-contract-v1";
   const order = [
     "/growth-appearance.js",
     "/growth-api-client.js",
