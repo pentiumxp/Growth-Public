@@ -302,7 +302,10 @@ Implemented V1 Owner stage-assessment controls:
 
 ## Planner-Backed Owner Flow
 
-This browser operation is implemented for the supervised daily-loop path.
+This browser operation is implemented through the supervised operating-loop
+facade. The primary embedded Owner action is the one-click `run_next` path;
+direct daily-loop routes remain compatibility and two-step inspection
+boundaries.
 
 1. Owner opens Growth and selects `生成`.
 2. Growth loads `GET /api/v1/growth/card-generation/context` for the selected
@@ -320,12 +323,17 @@ This browser operation is implemented for the supervised daily-loop path.
 5. Owner selects a horizon and time budget, normally `daily_plan` and
    `15` minutes for a daily card.
 6. Owner normally clicks `生成卡片`.
-7. UI calls `POST /api/v1/growth/daily-loop/advance` with target workspace,
-   learner id, selected domain pack, subject, horizon, and available minutes.
-   The facade delegates to the existing daily-loop service, which drafts a
-   validated daily plan and publishes the selected item through the same
-   service boundaries used by the two-step path.
-8. If Owner wants inspection first, Owner clicks `规划下一张`; UI calls
+7. UI calls `POST /api/v1/growth/learning-loop/advance` with `action=run_next`
+   plus target workspace, learner id, selected domain pack, subject, horizon,
+   available minutes, and graph target selectors. The operating-loop service
+   executes the current service-projected next action. For the ordinary daily
+   card path, that next action delegates to the daily-loop draft and publish
+   services through the backend facade, then returns bounded draft/publish and
+   run-audit summaries.
+8. Direct `POST /api/v1/growth/daily-loop/advance` remains available only as a
+   compatibility route and Harness target. It is not the primary browser policy
+   selector for the embedded Owner `生成卡片` button.
+9. If Owner wants inspection first, Owner clicks `规划下一张`; UI calls
    `POST /api/v1/growth/daily-loop/draft` and renders an Owner-safe plan
    preview:
    - plan id and validation status;
@@ -335,8 +343,8 @@ This browser operation is implemented for the supervised daily-loop path.
    - estimated minutes;
    - evidence requirements;
    - bounded reason and basis evidence ids.
-9. In the two-step path, Owner clicks `发布为卡片`.
-10. UI calls `POST /api/v1/growth/daily-loop/publish` for the selected plan
+10. In the two-step path, Owner clicks `发布为卡片`.
+11. UI calls `POST /api/v1/growth/daily-loop/publish` for the selected plan
     item. The facade delegates to the existing plan-publisher publish
     boundary, strips generated authoring draft internals, and refreshes audit
     and completeness DTOs.

@@ -1071,6 +1071,47 @@ The previous full handoff was archived and should be opened only when old proven
     private profile contents, audio payloads, provider payloads, database rows,
     prompts, or long logs were copied into docs or handoff.
 
+## 2026-06-25T00:43+0800 - Owner generate docs/test gap closure
+
+- Source task:
+  - Plugin Workspace Audit reported an H3 Growth Product Reality gap: the
+    Owner generation docs contradicted the implemented primary `生成卡片`
+    route, and frontend coverage still relied on source-string assertions for
+    the critical button mapping.
+- Classification:
+  - Symptom: docs could steer future work back to the legacy direct
+    daily-loop route, while tests did not execute the button event path.
+  - Failing layer: Growth plugin product docs and embedded frontend harness.
+  - Owning workspace: Growth plugin.
+  - Violated invariant: embedded Owner primary generation must call
+    `POST /api/v1/growth/learning-loop/advance` with `action=run_next`;
+    `daily-loop/advance` is compatibility/two-step/harness only.
+- Fix:
+  - Updated `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` so the
+    Planner-Backed Owner Flow consistently names the operating-loop facade as
+    the primary one-click path and demotes direct `daily-loop/advance` to
+    compatibility/Harness.
+  - Added an executable VM frontend test in
+    `tests/growth-frontend-adapter.test.js` that renders the Owner generation
+    action panel, clicks `data-card-generation-advance`, asserts
+    `advanceLearningOperatingLoop` receives `action=run_next` and the selected
+    target workspace, and asserts `advanceGrowthDailyLoop` is not called by
+    that primary button.
+- Validation:
+  - `node --test tests/growth-frontend-adapter.test.js` passed `44/44`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `npm run --silent check` passed with `runtimeCount=238`.
+  - `git diff --check` passed.
+  - `codegraph status` reported the index is up to date.
+- Deployment status:
+  - Source-only. This closure changed docs and tests only, with no production
+    runtime source change.
+- Privacy:
+  - No raw credentials, launch tokens, learner submissions, private profile
+    contents, audio payloads, provider payloads, database rows, prompts, or
+    long logs were copied into docs or handoff.
+
 ## 2026-06-24T23:55+0800 - Growth host action route contract repair
 
 - Source task:

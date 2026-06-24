@@ -22,6 +22,240 @@ function countMatches(value, pattern) {
   return (String(value || "").match(pattern) || []).length;
 }
 
+function createOwnerGenerateAppHarness() {
+  const cardGenerationWindow = loadPublicScript("growth-card-generation-ui.js");
+  const context = {
+    target: {
+      workspaceId: "weixin_fanfan",
+      learnerId: "fanfan",
+      label: "Fanfan",
+      enabled: true
+    },
+    programId: "program_science",
+    selectedRecipeId: "daily_science_v1",
+    generationDefaults: {
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      horizon: "daily_plan",
+      availableMinutes: 15
+    },
+    readiness: {
+      targetEnabled: true,
+      workspaceProvisioned: true,
+      learningGraphReady: true,
+      historySummaryReady: true,
+      plannerContextReady: true,
+      plannerGatewayConfigured: true,
+      authoringGatewayConfigured: true,
+      gatewayConfigured: true
+    },
+    suggestedPlan: {
+      programId: "program_science",
+      domainPackId: "uk_hk_curriculum_foundation",
+      domain: "science",
+      subject: "science",
+      title: "Science observation repair",
+      targetNodeId: "kg_science_observation",
+      targetNodeIds: ["kg_science_observation"],
+      evidenceRequirements: ["short_answer"]
+    },
+    learningLoopState: {
+      schemaVersion: "growth.learningLoopState.v1",
+      status: "ready_to_draft",
+      nextAction: {
+        action: "draft_daily_plan",
+        enabled: true,
+        reason: "next_strategy:repair"
+      }
+    }
+  };
+  const button = {
+    dataset: {},
+    disabled: false,
+    handlers: {},
+    attributes: new Set(["data-card-generation-advance"]),
+    addEventListener(eventName, handler) {
+      this.handlers[eventName] = handler;
+    },
+    hasAttribute(name) {
+      return this.attributes.has(name);
+    },
+    click() {
+      const handler = this.handlers.click;
+      assert.equal(typeof handler, "function");
+      handler({ preventDefault: () => null });
+    }
+  };
+  const root = {
+    _html: "",
+    querySelectorAll(selector) {
+      if (selector.includes("data-card-generation-advance") && this._html.includes("data-card-generation-advance")) {
+        return [button];
+      }
+      return [];
+    },
+    insertAdjacentHTML() {}
+  };
+  Object.defineProperty(root, "innerHTML", {
+    get() {
+      return this._html;
+    },
+    set(value) {
+      this._html = String(value || "");
+      const advanceTag = this._html.match(/<button[^>]*data-card-generation-advance[^>]*>/);
+      button.dataset.cardGenerationBlockedReason = "";
+      button.disabled = false;
+      if (advanceTag) {
+        const blocked = advanceTag[0].match(/data-card-generation-blocked-reason="([^"]*)"/);
+        button.dataset.cardGenerationBlockedReason = blocked ? blocked[1] : "";
+        button.disabled = /\sdisabled(?:\s|>)/.test(advanceTag[0]);
+      }
+    }
+  });
+  const calls = [];
+  let capturedState = null;
+  const api = {
+    workspaceQuery: () => "?workspaceId=owner_workspace",
+    updateWorkspaceUrl: () => null,
+    resolveGrowthApiPath: (url) => url,
+    fetchJson: async (path) => {
+      calls.push({ method: "fetchJson", path });
+      if (path.startsWith("/api/v1/growth/view-targets")) {
+        return {
+          ok: true,
+          current_workspace_id: "owner_workspace",
+          viewer: { role: "owner", workspaceId: "owner_workspace" },
+          targets: [{
+            workspaceId: "weixin_fanfan",
+            label: "Fanfan",
+            enabled: true,
+            targetEnabled: true
+          }]
+        };
+      }
+      return { ok: true, board: { cards: [] }, cards: [], lanes: [] };
+    },
+    advanceLearningOperatingLoop: async (payload, targetWorkspaceId) => {
+      calls.push({ method: "advanceLearningOperatingLoop", payload, targetWorkspaceId });
+      return {
+        ok: true,
+        status: "executed",
+        summary: { taskCardId: "ltask_generated_1", planDraftId: "lgplan_generated_1" },
+        actionResult: { taskCardId: "ltask_generated_1", planDraftId: "lgplan_generated_1" }
+      };
+    },
+    advanceGrowthDailyLoop: async (payload, targetWorkspaceId) => {
+      calls.push({ method: "advanceGrowthDailyLoop", payload, targetWorkspaceId });
+      return { ok: true };
+    },
+    fetchCardGenerationContext: async () => context,
+    fetchLearningOperatingLoopRuns: async () => ({ ok: true, runs: [], count: 0 }),
+    fetchGrowthProfileFeedback: async () => ({ ok: true, status: "pass" }),
+    fetchGrowthStageCheckpointControls: async () => ({ ok: true, summary: { status: "dormant" } })
+  };
+  const windowRef = {
+    location: { search: "?workspaceId=owner_workspace", href: "http://127.0.0.1:4881/?workspaceId=owner_workspace" },
+    history: { replaceState: () => null, pushState: () => null },
+    parent: {},
+    fetch: async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) }),
+    setTimeout: () => 1,
+    clearTimeout: () => null,
+    addEventListener: () => null,
+    HermesGrowthCardGenerationUi: cardGenerationWindow.HermesGrowthCardGenerationUi,
+    HermesGrowthAppearance: {
+      createGrowthAppearance: () => ({
+        applyAppearance: () => null,
+        bindAppearanceMessages: () => null
+      })
+    },
+    HermesGrowthApiClient: {
+      createGrowthApiClient: () => api
+    },
+    HermesGrowthViewModel: {
+      createGrowthViewModel: () => ({
+        makeOverview: () => ({
+          board: { lanes: [{ id: "today" }], cards: [] },
+          programs: { taskCards: [], executableTasks: [] },
+          coins: {}
+        }),
+        normalizeCard: (card) => card
+      })
+    },
+    HermesGrowthNavigation: {
+      createGrowthNavigationController: () => ({
+        bind: () => null,
+        replaceHistory: () => null,
+        pushHistory: () => null,
+        emitNavigation: () => null
+      })
+    },
+    HermesGrowthRouteController: {
+      createGrowthRouteController: ({ pageState }) => ({
+        applyInitialPluginRoute: async () => {
+          pageState.auth.isOwner = true;
+          pageState.learningGrowthActiveTab = "generation";
+          pageState.cardGeneration.status = "ready";
+          pageState.cardGeneration.selectedWorkspaceId = "weixin_fanfan";
+          pageState.cardGeneration.context = context;
+          pageState.cardGeneration.learningLoopState = {
+            status: "ready",
+            data: context.learningLoopState,
+            error: ""
+          };
+          pageState.cardGeneration.targetProvisionDraft = {
+            domainPackId: "uk_hk_curriculum_foundation",
+            domain: "science",
+            subject: "science",
+            recipeId: "daily_science_v1",
+            status: "idle",
+            error: ""
+          };
+          return false;
+        }
+      })
+    },
+    HermesGrowthCardInteractionController: {
+      createGrowthCardInteractionController: () => ({
+        clearAllRecordings: () => null,
+        toggleRecording: () => null,
+        clearRecording: () => null,
+        handleRecordingPlaybackError: () => null,
+        submitEvidence: async () => null,
+        refreshEvaluation: async () => null,
+        retryEvaluation: async () => null,
+        submitReflection: async () => null,
+        submitExperienceSignal: async () => null,
+        setMessage: () => null
+      })
+    },
+    HermesLearningGrowthUi: {
+      renderLearningGrowthView: (options = {}) => {
+        capturedState = options.state;
+        return cardGenerationWindow.HermesGrowthCardGenerationUi.renderOwnerCardGenerationPanel({
+          state: options.state,
+          context: options.state?.cardGeneration?.context || context,
+          workspaceId: options.workspaceId,
+          viewTargets: options.viewTargets,
+          escapeHtml: options.escapeHtml
+        });
+      }
+    },
+    HermesLearningProgramUi: {},
+    HermesLearningCoinsUi: {},
+    HermesLearningGrowthTaskUi: {}
+  };
+  const documentRef = {
+    documentElement: { dataset: {}, style: { setProperty: () => null }, classList: { toggle: () => null } },
+    getElementById: (id) => id === "growth-root" ? root : null,
+    querySelector: () => null
+  };
+  windowRef.window = windowRef;
+  windowRef.document = documentRef;
+  return { windowRef, documentRef, root, button, calls, getCapturedState: () => capturedState };
+}
+
 test("Growth appearance adapter normalizes host theme and font-size payloads", () => {
   const windowRef = loadPublicScript("growth-appearance.js");
   const params = new URLSearchParams("pluginTheme=dark&pluginFontSize=default");
@@ -740,6 +974,41 @@ test("Growth API client exposes card generation context and write helpers", asyn
   });
   const closedLoopActionPlanCall = calls.find((call) => call.path.startsWith("/api/v1/growth/automation/closed-loop/action-plan?"));
   assert.equal(closedLoopActionPlanCall.path, "/api/v1/growth/automation/closed-loop/action-plan?workspaceId=weixin_fanfan&learnerId=fanfan&programId=program_science&domainPackId=uk_hk_curriculum_foundation&domain=science&subject=science&horizon=daily_plan&targetNodeIds=kg_science_next&sourceTaskCardId=ltask_previous&sourceEvaluationId=leval_previous&digestId=lgadig_ready_1&handoffId=lgahand_ready_1&autoSelectLatestCompletedCycle=true&limit=8");
+});
+
+test("Owner generate button click uses learning-loop advance instead of legacy daily-loop advance", async () => {
+  const harness = createOwnerGenerateAppHarness();
+  const appSource = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+  const vmContext = vm.createContext({
+    window: harness.windowRef,
+    document: harness.documentRef,
+    globalThis: harness.windowRef,
+    URL,
+    URLSearchParams,
+    console
+  });
+
+  await vm.runInContext(appSource, vmContext, { filename: "app.js" });
+
+  assert.match(harness.root.innerHTML, /data-card-generation-action-panel/);
+  assert.match(harness.root.innerHTML, /data-card-generation-advance/);
+  assert.match(harness.root.innerHTML, /生成卡片/);
+  assert.equal(harness.button.dataset.cardGenerationBlockedReason, "");
+  assert.equal(harness.button.disabled, false);
+  assert.equal(harness.getCapturedState().cardGeneration.selectedWorkspaceId, "weixin_fanfan");
+
+  harness.button.click();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  const operatingAdvanceCall = harness.calls.find((call) => call.method === "advanceLearningOperatingLoop");
+  assert.ok(operatingAdvanceCall);
+  assert.equal(operatingAdvanceCall.targetWorkspaceId, "weixin_fanfan");
+  assert.equal(operatingAdvanceCall.payload.workspace_id, "weixin_fanfan");
+  assert.equal(operatingAdvanceCall.payload.learner_id, "fanfan");
+  assert.equal(operatingAdvanceCall.payload.action, "run_next");
+  assert.equal(operatingAdvanceCall.payload.requested_by, "owner");
+  assert.deepEqual(Array.from(operatingAdvanceCall.payload.target_node_ids), ["kg_science_observation"]);
+  assert.equal(harness.calls.filter((call) => call.method === "advanceGrowthDailyLoop").length, 0);
 });
 
 test("Growth API client fetches release evidence ledger through direct and proxy routes", async () => {
