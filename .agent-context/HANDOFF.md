@@ -1129,8 +1129,21 @@ The previous full handoff was archived and should be opened only when old proven
   - `codegraph sync` reported already up to date; `codegraph status` is
     current.
 - Deployment status:
-  - Source validation complete; production deployment still required before
-    closure return.
+  - Deployed through the central Home AI macOS plugin deploy flow with reason
+    `growth-host-action-route-contract`.
+  - Deploy completed successfully with production source ref `0190021383ca`
+    and source dirty status `false`.
+  - Production manifest health returned plugin id `growth`, toolset `growth`,
+    and six action routes:
+    `today_tasks`, `cards`, `submit_work`, `review`, `stage_assessment`, and
+    `rewards`.
+  - Source and production SHA-256 matched for the changed runtime files,
+    updated docs, and focused route tests.
+  - Production mirror JS smoke passed: all six route contracts are present,
+    `submit_work` with no submit-capable card opens no card and returns
+    `status=empty`, `cards` selects lane `all`, learner `rewards` returns
+    `status=unavailable`, and Owner `stage_assessment` opens the `generation`
+    tab with `status=unavailable`.
 - Privacy:
   - No raw credentials, launch tokens, bearer values, learner submissions,
     private profile contents, audio payloads, provider payloads, database rows,
