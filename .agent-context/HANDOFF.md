@@ -1071,6 +1071,39 @@ The previous full handoff was archived and should be opened only when old proven
     private profile contents, audio payloads, provider payloads, database rows,
     prompts, or long logs were copied into docs or handoff.
 
+## 2026-06-25T17:22+0800 - GitHub shared source account adoption
+
+- Source task:
+  - Home AI requested Growth adopt the central GitHub shared source account
+    contract for plugin source pushes.
+- Central docs read:
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/github-shared-source-account-contract.md`
+  - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/github-shared-source-account.md`
+- Adoption:
+  - Existing remotes before adoption:
+    `origin=git@github.com:pentiumxp/Growth.git`,
+    `public=git@github.com:pentiumxp/Growth-Public.git`.
+  - SSA smoke for `git@github.com-homeai-ssa:pentiumxp/Growth.git` passed
+    with classification `github_ssa_smoke_passed`.
+  - Updated the writable source remote `origin` to
+    `git@github.com-homeai-ssa:pentiumxp/Growth.git`.
+  - Left the `public` remote unchanged; public installer/source manifest
+    semantics remain HTTPS per the central contract.
+- Docs:
+  - Updated `docs/HOME_AI_PLATFORM_CONTRACT.md` with a short pointer to the
+    central GitHub SSA contract, runbook, helper, SSH alias, and adopted Growth
+    source remote. No central contract text or credential material was copied.
+- Validation:
+  - `npm run --silent check` passed with `runtimeCount=238`.
+  - `node scripts/check-growth-docs-locality.js` passed.
+  - `node --test tests/growth-docs-locality.test.js` passed `2/2`.
+  - `node /Users/hermes-dev/HermesMobileDev/app/scripts/plugin-workspace-platform-contract-check.js --plugin growth --json`
+    passed with no issues or warnings.
+  - `git diff --check` passed.
+- Privacy:
+  - No raw private key body, GitHub token, cookie, launch token, private plugin
+    payload, database row, or long log was copied into docs or handoff.
+
 ## 2026-06-25T03:04+0800 - Growth embedded keyboard composer visual repair
 
 - Source task:

@@ -1,9 +1,10 @@
 # Home AI Platform Contract Pointer
 
-Last updated: 2026-06-24.
+Last updated: 2026-06-25.
 Home AI platform contract version: `20260623-v5`.
 Home AI root-cause architecture contract version: `20260623-v3`.
 Home AI fallback governance contract version: `20260623-v1`.
+Home AI GitHub shared source account contract version: `20260625-v1`.
 
 ## Scope
 
@@ -49,7 +50,9 @@ behavior, plugin provisioning, or cross-plugin reference behavior:
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/fallback-governance-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-mobile-ui-visual-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/macos-dev-to-production-deployment-contract.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/github-shared-source-account-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/macos-production-access.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/github-shared-source-account.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/mcp-tool-upgrade-closure.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/RUNBOOKS/macos-ios-simulator-appium.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/IMPLEMENTATION_NOTES/fallback-registry.md`
@@ -70,6 +73,13 @@ closure, keep any fallback bounded and visible, name the owner and removal or
 hardening path, and register new or extended fallback behavior in the Home AI
 fallback registry before calling the task complete. Do not duplicate central
 fallback policy in plugin-local code.
+
+For Growth source pushes, use the central Home AI GitHub shared source account
+contract and helper. The source remote should use the SSH host alias
+`github.com-homeai-ssa` after repository smoke passes. The local private key is
+operator secret material and must never be copied into this repository, docs,
+handoffs, task cards, production mirrors, or runtime payloads. Public
+installation/source manifests remain HTTPS public URLs.
 
 ## Plugin-Local Facts
 
@@ -96,6 +106,7 @@ working copies for future Growth work.
 | `launchd_label` | `com.hermesmobile.plugin.growth` |
 | `manifest_url` | `http://127.0.0.1:4881/api/v1/hermes/plugin/manifest` |
 | `production_deployment_health_collector` | `npm run collect:production-deployment-evidence`; read-only Growth-local summary collector over Home AI macOS launchd state, public Growth manifest, and public Growth status. It outputs `growth.homeAiProductionDeploymentHealthArtifact.v1` for `npm run smoke:production-deployment-evidence` and release evidence collection. It must not echo raw launchd output, raw environment, credentials, private paths, logs, deploy, restart, mutate runtime config, grant scheduler permission, call Gateway, publish cards, or mutate learner state. |
+| `github_shared_source_account` | Adopted 2026-06-25 for the writable source remote. Central contract: `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/github-shared-source-account-contract.md`; helper: `/Users/hermes-dev/HermesMobileDev/app/scripts/github-shared-source-account.js`; SSH alias: `github.com-homeai-ssa`; source remote: `git@github.com-homeai-ssa:pentiumxp/Growth.git`; private key remains a local operator secret and is not stored in this repo. |
 | `release_ui_evidence_artifact_builder` | `npm run build:release-ui-evidence-artifacts`; Growth-local operator adapter that reads one Home AI central visual summary artifact plus rendered Growth Owner UI markers and writes nine summary-only `growth.learningAutomationReleaseUiEvidenceArtifact.v1` files plus a `growth.learningAutomationReleaseEvidenceArtifactManifest.v1` manifest for the existing release-evidence collection CLIs. Artifact JSON stores only screenshot presence, artifact basename, byte count, coverage, assertions, and boundary flags; the manifest may contain transient local file paths only as CLI input. It must not run visual tooling, call Gateway, persist release evidence, approve release state, mutate runtime config, grant scheduler permission, publish cards, evaluate learner work, deploy, or mutate learner state. |
 | `home_ai_proxy_smoke` | `npm run smoke:home-ai-proxy`; Growth-local operator harness that calls Growth through the Home AI same-origin plugin proxy with the Home AI web access boundary. It supports release-readiness, Owner-only planner-readiness, platform-action evidence, controlled daily-loop writes, cycle closure, review advancement, action-handoff operations, and workbench action/audit routes. Write operations require `--allow-write`; output is bounded and must not expose raw access keys, key-file paths, bearer headers, provider output, private payloads, plugin workspace bearer values, runtime config, or scheduler permission. |
 | `plugin_learning_automation_closed_loop_action_plan` | Owner-only `GET /api/v1/growth/automation/closed-loop/action-plan` and no-write `npm run smoke:closed-loop-action-plan`; Growth-owned action-plan readback over `learning-operating-loop-service.recommend()`, completed-cycle `learning-profile-feedback-evidence-service.evaluate()`, automation digest readback, failure-policy readiness, and action-handoff readback. It emits summary-only `growth.learningAutomationClosedLoopActionPlan.v1` with one bounded next-action template and always keeps `writePerformed=false`, `writesPerformed=false`, `publishPerformed=false`, and `schedulerStarted=false`. It must not call Gateway, publish cards, generate/evaluate cards, execute scheduler actions, run scheduler ticks, deliver notifications, activate stage assessments, mutate runtime config, deploy, inspect repositories/tables directly, mutate learner state, or act as a scheduling/release switch. |
