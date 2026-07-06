@@ -1,6 +1,6 @@
 {
   "schemaVersion": "growth.viteOwnerCutoverEvidence.v1",
-  "updatedAt": "2026-07-06T12:38:24Z",
+  "updatedAt": "2026-07-06T12:59:46Z",
   "summaryOnly": true,
   "externalEvidence": {
     "owner_cutover_approval": {
@@ -49,7 +49,40 @@
       "privacy": "bounded_no_secrets"
     },
     "deploy_lane_routing": {
-      "status": "missing"
+      "status": "present",
+      "taskCardId": "ttc_e52ea380399fdd979a",
+      "returnTaskCardId": "ttc_c323e186a8e6945a94",
+      "statusRequestTaskCardId": "ttc_13fa8efa5f225728b4",
+      "statusRequestReturnTaskCardId": "ttc_1d2dddc18bb602b841",
+      "cardKind": "plugin_deployment",
+      "pluginId": "growth",
+      "routeKind": "deployment",
+      "deployReason": "growth-vite-esm-runtime-cutover",
+      "target": "Home AI Deploy",
+      "targetThreadId": "019f0a0d-c4e0-7ca1-8142-bd06e4f874da",
+      "sourceThreadId": "019f35a9-140b-7a03-aa0d-3a95a6c0a25b",
+      "sourceRefDeployed": "1b0e5d58a49b1c9b2c8b283673a25d52d358377d",
+      "sourceDirty": false,
+      "deployResult": "ok=true",
+      "backupPath": "/Users/hermes-host/HermesMobile/backups/deploy/20260706T125417Z-plugin-growth-growth-vite-esm-runtime-cutover",
+      "restartLabel": "com.hermesmobile.plugin.growth",
+      "launchdState": "running",
+      "healthUrl": "http://127.0.0.1:4881/api/v1/hermes/plugin/manifest",
+      "healthResult": "HTTP 200 plugin id growth",
+      "proofFile": "public/index.html",
+      "proofSha256Prefix": "8a9a3e1df6eb39a3",
+      "runtimeMarker": "data-growth-vite-runtime=\"enabled\"",
+      "bootstrapLoader": "present",
+      "bootstrapLoaderHttp": "200 JavaScript",
+      "viteManifestHttp": "200 JSON entry count 1",
+      "builtViteAsset": "growth.Ce5FKlWI.js HTTP 200 JavaScript",
+      "visualValidation": {
+        "embeddedPluginShellGrowth": "ok=true",
+        "darkGrowthSurfaces": "ok=true"
+      },
+      "blockers": [],
+      "returnCardRequired": true,
+      "privacy": "bounded_no_secrets"
     }
   }
 }

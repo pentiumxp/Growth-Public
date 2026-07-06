@@ -7,13 +7,10 @@ Last updated: 2026-07-06.
 
 This audit maps the active Growth Vite and ESM migration baseline in
 `docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md` to current
-authoritative evidence. It is intentionally narrower than a production deploy
-record: it proves which migration requirements are internally ready for Owner
-cutover review and which external requirements still block runtime enablement
-or production update.
+authoritative evidence. It records the completed Owner-approved deployment and
+bounded production readback returned by the Home AI deploy lane.
 
-This document does not approve runtime enablement, does not request deployment,
-and does not claim production readback.
+This document does not request a new deployment.
 
 ## Completion Summary
 
@@ -29,9 +26,9 @@ and does not claim production readback.
 | Phase 7 central visual evidence | Present | Owner cutover evidence receipt accepts central `embedded-plugin-shell` and `dark-growth-surfaces` visual evidence for Growth. |
 | Phase 7 Owner approval request routing | Sent | Non-deployment request card `ttc_1b40fc066486468771` was routed to Home AI Task Intake for Owner decision. |
 | Phase 7 Owner approval | Present | Owner approval reference `owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z` is recorded. |
-| Phase 7 deploy-lane routing | Missing | `node scripts/check-growth-vite-owner-cutover-preflight.js` reports `deploy_lane_routing` missing. |
-| Runtime enablement source marker | Applied | `configChangeApplied=true` and `runtimeConfigChange=true`; production enablement remains blocked until deploy-lane routing and readback. |
-| Production update | Blocked | No deploy card has been sent and no production deploy/readback has been returned. |
+| Phase 7 deploy-lane routing | Present | Deploy card `ttc_e52ea380399fdd979a` returned completed by `ttc_c323e186a8e6945a94`; status-request return `ttc_1d2dddc18bb602b841` confirms no duplicate deployment was run. |
+| Runtime enablement source marker | Applied and deployed | `configChangeApplied=true`, `runtimeConfigChange=true`, and deploy readback reports `data-growth-vite-runtime="enabled"` in production. |
+| Production update | Complete | Home AI Deploy returned `ok=true`, source ref `1b0e5d58a49b1c9b2c8b283673a25d52d358377d`, source dirty `false`, health HTTP 200, Vite manifest/asset HTTP 200, and Growth visual checks `ok=true`. |
 
 ## Requirement Audit
 
@@ -60,9 +57,8 @@ and does not claim production readback.
     `data-growth-vite-runtime="enabled"` after Owner approval.
   - `node scripts/check-growth-vite-runtime-boundary.js` passes.
   - `node scripts/check-growth-vite-cutover-readiness.js` reports
-    `readyForRuntimeEnablement=false`.
-- Status: source marker applied; production runtime enablement still waits for
-  deploy-lane routing and bounded readback.
+    `readyForRuntimeEnablement=true`.
+- Status: source marker applied and production readback returned.
 
 ### ESM Module Surfaces
 
@@ -94,10 +90,9 @@ runtime readiness.
 - Current evidence:
   - `scripts/check-growth-vite-cutover-readiness.js` reports
     `no_register_globals_file`.
-  - The current active production runtime remains the legacy classic-script
-    runtime until Owner cutover approval.
-- Status: complete for pre-Owner readiness; final production cutover still
-  requires deploy-lane execution and readback.
+  - Production readback reports the approved bootstrap loader, Vite manifest,
+    and built Vite asset are served over HTTP 200.
+- Status: complete for the Owner-approved production cutover.
 
 ### Central Visual Evidence
 
@@ -134,26 +129,23 @@ runtime readiness.
   the Home AI deploy lane pool with source commit, deploy reason, restart
   label, health URL, and bounded readback expectations.
 - Current evidence:
-  - `docs/IMPLEMENTATION_NOTES/growth-vite-deploy-lane-request-draft.json` is a
-    draft only.
+  - Deploy card `ttc_e52ea380399fdd979a` was sent to Home AI Deploy.
+  - Completion return card `ttc_c323e186a8e6945a94` reports completed.
+  - Status return card `ttc_1d2dddc18bb602b841` confirms no duplicate
+    deployment was run for the status request.
   - `node scripts/check-growth-vite-owner-cutover-preflight.js` reports
-    `deployLaneDraft.status=draft_only_not_sent`, `sendAllowed=false`, and
-    `deploy_lane_routing` missing.
+    `deploy_lane_routing` present.
   - Valid routing evidence must include `taskCardId`,
     `cardKind=plugin_deployment`, `pluginId=growth`, `routeKind=deployment`,
     `deployReason=growth-vite-esm-runtime-cutover`, `target`,
     `returnCardRequired=true`, and `privacy=bounded_no_secrets`.
-- Status: missing.
+- Status: present.
 
 ## Current Blocking Conditions
 
-These blockers are expected and must remain until the correct external evidence
-exists:
-
-- `owner_approval_required_before_runtime_enablement`
-- `deploy_lane_card_required_before_production_update`
-
-The central visual evidence blocker has cleared.
+No current blockers remain for the Vite/ESM cutover baseline. Owner approval,
+central visual evidence, deploy-lane routing, production readback, and
+post-deploy visual validation are present as bounded metadata.
 
 ## Commands For Current Evidence
 
@@ -169,26 +161,25 @@ node scripts/check-growth-docs-locality.js
 git diff --check
 ```
 
-Expected current state after Owner approval and before deploy routing:
+Expected current state after deploy-lane completion:
 
-- phase audit: `internal_ready_pending_external_owner_visual_and_deploy_evidence`
-- preflight: `blocked_pending_deploy_lane_routing`
+- phase audit: `complete`
+- preflight: `ready_for_deploy_lane_runtime_enablement`
 - present external evidence: `owner_cutover_approval`,
-  `central_mobile_visual_evidence`
-- missing external evidence: `deploy_lane_routing`
-- runtime: Owner-approved Vite runtime marker with bootstrap loader
+  `central_mobile_visual_evidence`, `deploy_lane_routing`
+- missing external evidence: none
+- runtime: Owner-approved Vite runtime marker with bootstrap loader and
+  production Vite manifest/asset readback
 
 ## Next Allowed Actions
 
-1. Commit a deployable source ref that contains the approved runtime marker.
-2. Send the Home AI deploy-lane task card using the approved request shape.
-3. Wait for deploy-lane completion and bounded production readback.
-4. Record deploy-lane routing and returned production evidence.
+1. Maintain the Growth Vite/ESM runtime through normal post-deploy monitoring.
+2. Use a new Owner/deploy-lane workflow for any future runtime-affecting
+   cutover or production mutation.
 
 ## Forbidden Until Evidence Changes
 
 - Do not add a direct `<script type="module">` to `public/index.html`.
-- Do not send a deploy card without a deployable source ref containing the
-  approved cutover files and runtime marker.
-- Do not claim production deployment or production readback from local
-  development evidence.
+- Do not send duplicate deploy cards for the completed
+  `growth-vite-esm-runtime-cutover`.
+- Do not broaden this evidence into unrelated Growth runtime changes.

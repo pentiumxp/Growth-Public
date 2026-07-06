@@ -12,6 +12,52 @@ The previous full handoff was archived and should be opened only when old proven
 - Home AI root-cause architecture contract version: `20260623-v3`.
 - Home AI fallback governance contract version: `20260623-v1`.
 
+## 2026-07-06T20:59+0800 - Growth Vite ESM runtime cutover deployed
+
+- Source task:
+  - Complete the Growth Vite/ESM migration against
+    `docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md`, including
+    Owner approval, Home AI deploy-lane update, production readback, and final
+    local evidence closure.
+- Deployment return:
+  - Original deploy card: `ttc_e52ea380399fdd979a`.
+  - Completion return: `ttc_c323e186a8e6945a94`.
+  - Status request card: `ttc_13fa8efa5f225728b4`.
+  - Status request return: `ttc_1d2dddc18bb602b841`.
+  - Source ref deployed:
+    `1b0e5d58a49b1c9b2c8b283673a25d52d358377d`.
+  - Source dirty status: `false`.
+  - Deploy reason: `growth-vite-esm-runtime-cutover`.
+  - Central deploy result: `ok=true`.
+  - Backup path:
+    `/Users/hermes-host/HermesMobile/backups/deploy/20260706T125417Z-plugin-growth-growth-vite-esm-runtime-cutover`.
+- Production readback:
+  - Restart label `com.hermesmobile.plugin.growth` returned running.
+  - Health URL returned HTTP 200 with plugin id `growth`.
+  - `public/index.html` proof SHA-256 prefix:
+    `8a9a3e1df6eb39a3`.
+  - Runtime marker `data-growth-vite-runtime="enabled"` is present.
+  - Bootstrap loader is present and served as HTTP 200 JavaScript.
+  - Vite manifest is served as HTTP 200 JSON with entry count `1`.
+  - Built Vite asset `growth.Ce5FKlWI.js` is served as HTTP 200 JavaScript.
+  - Post-deploy visual checks `embedded-plugin-shell --plugin-id growth` and
+    `dark-growth-surfaces` returned `ok=true`.
+- Implemented:
+  - Updated
+    `docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence.json` with
+    bounded deploy-lane routing and production readback metadata.
+  - Updated `scripts/check-growth-vite-cutover-readiness.js` and
+    `scripts/check-growth-vite-phase-audit.js` so completed external evidence
+    clears the deploy blocker and reports runtime readiness.
+  - Updated `tests/growth-vite-assets.test.js` for the final deploy-routing
+    evidence state.
+  - Updated the Vite completion audit, Owner evidence packet, Owner approval
+    request record, and migration plan current-status text.
+- Privacy:
+  - Recorded bounded metadata only. No credentials, cookies, launch tokens,
+    raw learner content, private payloads, endpoint bodies, long logs,
+    screenshots, full prompts, password-file paths, or secrets were copied.
+
 ## 2026-07-06T20:38+0800 - Growth Vite Owner approval request routed
 
 - Source task:

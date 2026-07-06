@@ -100,10 +100,11 @@ The first two implementation phases are now source-complete in development:
   surface, theme/viewport bridge ESM surfaces, view-model ESM surface, host
   route/navigation controller ESM surfaces, Phase 5 `legacy-board` façade
   boundary, frontend cutover test coverage, absence of `registerGlobals`, and
-  the required pre-deploy blockers; it intentionally reports
-  `readyForRuntimeEnablement=false` until Owner approval and deploy-lane
-  routing are available. Central mobile visual evidence has been accepted in
-  the Owner cutover evidence receipt. A separate runtime-boundary checker now
+  the required pre-deploy blockers; after Owner approval and deploy-lane
+  completion it reports `readyForRuntimeEnablement=true`. Central mobile visual
+  evidence, Owner approval, deploy-lane completion, production readback, and
+  post-deploy visual checks have been accepted in the Owner cutover evidence
+  receipt. A separate runtime-boundary checker now
   locks the pre-Owner `public/index.html` shape: classic scripts in
   order, Vite bootstrap loader last, no module script, no runtime opt-in, and
   no direct hashed Vite asset. A minimal project-owned ESM
@@ -1324,22 +1325,20 @@ Definition of done:
   active, keeps the Vite bootstrap loader last, and does not enable the Vite
   runtime;
 - `node scripts/check-growth-vite-cutover-readiness.js` passes with
-  `readyForRuntimeEnablement=false`, including runtime adapter, program ESM
+  `readyForRuntimeEnablement=true`, including runtime adapter, program ESM
   surface, theme/viewport bridge ESM surfaces, host route/navigation controller
   ESM surfaces, `legacy-board` façade, `legacy_growth_ui_composite_present`,
-  and migration-plan boundary evidence, until Owner approval and deploy-lane
-  routing are present;
+  and migration-plan boundary evidence;
 - `node scripts/check-growth-vite-owner-cutover-preflight.js` passes in advisory
   mode. Before Owner approval it reported `readyForOwnerCutover=false`,
   `configChangeApplied=false`, and `runtimeConfigChange=false`; after Owner
   approval it reports `readyForOwnerCutover=true`, `configChangeApplied=true`,
-  `runtimeConfigChange=true`, accepted central mobile visual evidence, and
-  explicit missing external evidence only for deploy-lane routing;
+  `runtimeConfigChange=true`, accepted central mobile visual evidence, accepted
+  deploy-lane routing, and no missing external evidence;
 - `node scripts/check-growth-vite-phase-audit.js` passes with
-  `internalReadyForOwnerEvidence=true`, `readyForRuntimeEnablement=false`,
-  Phase 0-6 internal evidence complete, and Phase 7 blocked only by external
-  deploy-lane routing after Owner approval and source runtime marker
-  application;
+  `internalReadyForOwnerEvidence=true`, `readyForRuntimeEnablement=true`,
+  Phase 0-6 internal evidence complete, and Phase 7 external evidence complete
+  after Home AI Deploy returned bounded production readback;
 - existing full test/check suite passes.
 
 ### Phase 7: Visual And Production Readiness Evidence

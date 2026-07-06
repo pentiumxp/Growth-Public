@@ -117,7 +117,7 @@ function checkGrowthVitePhaseAudit() {
       "migration_plan_legacy_board_boundary_current",
       "pre_owner_runtime_boundary_closed"
     ]),
-    phase7VisualAndProductionReadiness: phase("blocked_external_evidence", [
+    phase7VisualAndProductionReadiness: phase(expectedPhase7Blockers.length ? "blocked_external_evidence" : "complete", [
       "external_owner_visual_and_deploy_evidence_required"
     ], expectedPhase7Blockers)
   };
@@ -139,9 +139,9 @@ function checkGrowthVitePhaseAudit() {
   const runtimeConfigChange = runtimeBoundary.mode === "owner_approved_vite_runtime_enabled";
   return {
     ok: true,
-    status: "internal_ready_pending_external_owner_visual_and_deploy_evidence",
+    status: expectedPhase7Blockers.length ? "internal_ready_pending_external_owner_visual_and_deploy_evidence" : "complete",
     internalReadyForOwnerEvidence: true,
-    readyForRuntimeEnablement: false,
+    readyForRuntimeEnablement: expectedPhase7Blockers.length === 0 && runtimeConfigChange,
     runtimeConfigChange,
     configChangeApplied: runtimeConfigChange,
     advisoryOnly: true,

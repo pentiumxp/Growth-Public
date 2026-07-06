@@ -51,7 +51,7 @@ const ownerApprovalRequestRequiredMarkers = [
   "rejected",
   "Suggested approval wording",
   "Deploy-Lane Task Card Draft",
-  "draft and not a sent task card",
+  "historical request shape",
   "Do not deploy from the Growth plugin thread",
   "Do not bypass the Home AI deploy lane",
   "Owner Approval Receipt Fields",
@@ -65,8 +65,8 @@ const ownerApprovalRequestRoutingMarkers = [
   "019f091a-6ce0-7932-97b2-a5ba38556f51",
   "owner_approval_request",
   "growth-vite-esm-cutover",
-  "awaiting Owner decision",
-  "not an Owner approval receipt",
+  "Status: completed",
+  "Owner decision was returned",
   "`owner_cutover_approval`",
   "`deploy_lane_routing`"
 ];
@@ -342,10 +342,11 @@ function ownerApprovalRequestRoutingStatus(filePath = ownerApprovalRequestPath) 
   const routing = documentMarkerStatus(filePath, ownerApprovalRequestRoutingMarkers);
   const routed = routing.exists && routing.missingMarkers.length === 0;
   const externalFlags = currentExternalEvidenceFlags();
+  const completed = routed && externalFlags.ownerApprovalRecorded && externalFlags.deployRoutingRecorded;
   return {
     path: filePath,
     exists: routing.exists,
-    status: routed ? "sent_awaiting_owner_decision" : (routing.exists ? "not_sent" : "missing"),
+    status: completed ? "completed" : (routed ? "sent_awaiting_owner_decision" : (routing.exists ? "not_sent" : "missing")),
     taskCardId: routed ? "ttc_1b40fc066486468771" : "",
     targetThreadId: routed ? "019f091a-6ce0-7932-97b2-a5ba38556f51" : "",
     targetThreadTitle: routed ? "Home AI Task Intake" : "",

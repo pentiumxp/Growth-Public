@@ -35,11 +35,11 @@ test("Growth Vite runtime boundary script parser extracts script sources and mod
   assert.equal(scripts[1].type, "module");
 });
 
-test("Growth Vite cutover readiness gate keeps runtime enablement blocked before deploy routing", () => {
+test("Growth Vite cutover readiness gate accepts completed deploy routing", () => {
   const result = checkGrowthViteCutoverReadiness();
   assert.equal(result.ok, true);
-  assert.equal(result.readyForRuntimeEnablement, false);
-  assert.equal(result.status, "blocked_pending_deploy_lane_routing");
+  assert.equal(result.readyForRuntimeEnablement, true);
+  assert.equal(result.status, "ready_for_deploy_lane_runtime_enablement");
   assert.equal(result.evidence.includes("bootstrap_loader_present"), true);
   assert.equal(result.evidence.includes("vite_entry_mount_modes_covered"), true);
   assert.equal(result.evidence.includes("api_client_esm_surface_present"), true);
@@ -59,20 +59,21 @@ test("Growth Vite cutover readiness gate keeps runtime enablement blocked before
   assert.equal(result.evidence.includes("migration_plan_legacy_board_boundary_current"), true);
   assert.equal(result.blockers.includes("owner_approval_required_before_runtime_enablement"), false);
   assert.equal(result.blockers.includes("central_mobile_visual_evidence_required_before_runtime_enablement"), false);
-  assert.equal(result.blockers.includes("deploy_lane_card_required_before_production_update"), true);
+  assert.equal(result.blockers.includes("deploy_lane_card_required_before_production_update"), false);
   assert.equal(result.blockers.includes("runtime_opt_in_required_after_owner_approval"), false);
   assert.deepEqual(result.ownerCutoverEvidence.presentExternalEvidence, [
     "owner_cutover_approval",
-    "central_mobile_visual_evidence"
+    "central_mobile_visual_evidence",
+    "deploy_lane_routing"
   ]);
 });
 
-test("Growth Vite phase audit reports internal readiness and external cutover blockers", () => {
+test("Growth Vite phase audit reports completed external cutover evidence", () => {
   const result = checkGrowthVitePhaseAudit();
   assert.equal(result.ok, true);
-  assert.equal(result.status, "internal_ready_pending_external_owner_visual_and_deploy_evidence");
+  assert.equal(result.status, "complete");
   assert.equal(result.internalReadyForOwnerEvidence, true);
-  assert.equal(result.readyForRuntimeEnablement, false);
+  assert.equal(result.readyForRuntimeEnablement, true);
   assert.equal(result.runtimeConfigChange, true);
   assert.equal(result.configChangeApplied, true);
   assert.equal(result.advisoryOnly, true);
@@ -82,30 +83,27 @@ test("Growth Vite phase audit reports internal readiness and external cutover bl
   assert.equal(result.phases.phase0BaselineAndGates.status, "complete");
   assert.equal(result.phases.phase5LegacyBoardUi.status, "complete");
   assert.equal(result.phases.phase6PreOwnerRuntimeBoundary.status, "complete_pre_owner");
-  assert.equal(result.phases.phase7VisualAndProductionReadiness.status, "blocked_external_evidence");
-  assert.deepEqual(result.phases.phase7VisualAndProductionReadiness.blockers, [
-    "deploy_lane_card_required_before_production_update"
-  ]);
+  assert.equal(result.phases.phase7VisualAndProductionReadiness.status, "complete");
+  assert.deepEqual(result.phases.phase7VisualAndProductionReadiness.blockers, []);
 });
 
-test("Growth Vite Owner cutover preflight reports runtime marker applied before deploy routing", () => {
+test("Growth Vite Owner cutover preflight reports completed deploy routing", () => {
   const result = checkGrowthViteOwnerCutoverPreflight();
   assert.equal(result.ok, true);
-  assert.equal(result.status, "blocked_pending_deploy_lane_routing");
+  assert.equal(result.status, "ready_for_deploy_lane_runtime_enablement");
   assert.equal(result.internalReadyForOwnerEvidence, true);
   assert.equal(result.readyForOwnerCutover, true);
-  assert.equal(result.readyForRuntimeEnablement, false);
+  assert.equal(result.readyForRuntimeEnablement, true);
   assert.equal(result.configChangeApplied, true);
   assert.equal(result.runtimeConfigChange, true);
   assert.equal(result.advisoryOnly, true);
-  assert.deepEqual(result.missingExternalEvidence, [
-    "deploy_lane_routing"
-  ]);
+  assert.deepEqual(result.missingExternalEvidence, []);
   assert.deepEqual(result.presentExternalEvidence, [
     "owner_cutover_approval",
-    "central_mobile_visual_evidence"
+    "central_mobile_visual_evidence",
+    "deploy_lane_routing"
   ]);
-  assert.deepEqual(result.requiredExternalEvidence.map((item) => item.status), ["present", "present", "missing"]);
+  assert.deepEqual(result.requiredExternalEvidence.map((item) => item.status), ["present", "present", "present"]);
   assert.deepEqual(requiredExternalEvidence.map((item) => item.key), [
     "owner_cutover_approval",
     "central_mobile_visual_evidence",
@@ -115,23 +113,23 @@ test("Growth Vite Owner cutover preflight reports runtime marker applied before 
   assert.equal(result.evidence.includes("cutover_readiness_guard_passed"), true);
   assert.equal(result.evidence.includes("phase_0_to_6_internal_evidence_complete"), true);
   assert.equal(result.runtimeBoundary.mode, "owner_approved_vite_runtime_enabled");
-  assert.equal(result.phaseAudit.status, "internal_ready_pending_external_owner_visual_and_deploy_evidence");
-  assert.equal(result.phaseAudit.phase7Status, "blocked_external_evidence");
+  assert.equal(result.phaseAudit.status, "complete");
+  assert.equal(result.phaseAudit.phase7Status, "complete");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequest.status, "ready_for_owner_review");
   assert.deepEqual(result.ownerCutoverPlanning.ownerApprovalRequest.missingMarkers, []);
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequest.approvalRecorded, true);
-  assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.status, "sent_awaiting_owner_decision");
+  assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.status, "completed");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.taskCardId, "ttc_1b40fc066486468771");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.targetThreadId, "019f091a-6ce0-7932-97b2-a5ba38556f51");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.cardKind, "owner_approval_request");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.approvalRecorded, true);
-  assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.deployRoutingRecorded, false);
+  assert.equal(result.ownerCutoverPlanning.ownerApprovalRequestRouting.deployRoutingRecorded, true);
   assert.deepEqual(result.ownerCutoverPlanning.ownerApprovalRequestRouting.missingMarkers, []);
   assert.equal(result.ownerCutoverPlanning.deployLaneDraft.status, "draft_only_not_sent");
   assert.equal(result.ownerCutoverPlanning.deployLaneDraft.sendAllowed, false);
   assert.equal(result.ownerCutoverPlanning.deployLaneDraft.requiresOwnerApproval, false);
   assert.equal(result.ownerCutoverPlanning.deployLaneDraft.ownerApprovalRecorded, true);
-  assert.equal(result.ownerCutoverPlanning.deployLaneDraft.deployRoutingRecorded, false);
+  assert.equal(result.ownerCutoverPlanning.deployLaneDraft.deployRoutingRecorded, true);
   assert.equal(result.ownerCutoverPlanning.deployLaneDraft.path.endsWith("growth-vite-deploy-lane-request-draft.json"), true);
   assert.deepEqual(result.ownerCutoverPlanning.deployLaneDraft.missingFields, []);
   assert.deepEqual(result.ownerCutoverPlanning.deployLaneDraft.invalidFields, []);

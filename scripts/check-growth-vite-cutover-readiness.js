@@ -442,7 +442,7 @@ function checkGrowthViteCutoverReadiness() {
 
   return {
     ok: true,
-    readyForRuntimeEnablement: false,
+    readyForRuntimeEnablement: blockers.length === 0,
     status: blockers.length ? "blocked_pending_deploy_lane_routing" : "ready_for_deploy_lane_runtime_enablement",
     evidence,
     blockers,

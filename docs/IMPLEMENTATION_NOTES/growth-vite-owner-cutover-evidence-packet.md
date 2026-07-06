@@ -8,11 +8,9 @@ This packet is the local Owner-review baseline for the Growth Vite/ESM
 migration. It summarizes the evidence required before the disabled Vite
 runtime can be enabled and before any production deployment can be requested.
 
-This document is not a deploy request and is not production readback. Owner
-approval has been recorded separately in the summary-only evidence receipt, and
-the source runtime marker has been applied. It must remain advisory for
-production until deploy-lane routing and bounded production readback are
-returned by the Home AI deploy lane.
+This document is not a deploy request. Owner approval, deploy-lane routing,
+bounded production readback, and post-deploy visual validation have been
+recorded separately in the summary-only evidence receipt.
 
 ## Current Local Readiness
 
@@ -39,18 +37,18 @@ node scripts/check-growth-vite-owner-cutover-preflight.js
 ```
 
 Expected status after accepted Owner approval, accepted central visual evidence,
-and before deploy routing:
+and completed deploy routing:
 
 - `ok=true`;
-- `status=blocked_pending_deploy_lane_routing`;
+- `status=ready_for_deploy_lane_runtime_enablement`;
 - `internalReadyForOwnerEvidence=true`;
 - `readyForOwnerCutover=true`;
-- `readyForRuntimeEnablement=false`;
+- `readyForRuntimeEnablement=true`;
 - `configChangeApplied=true`;
 - `runtimeConfigChange=true`;
 - `advisoryOnly=true`.
-- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence"]`;
-- `missingExternalEvidence=["deploy_lane_routing"]`.
+- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence","deploy_lane_routing"]`;
+- `missingExternalEvidence=[]`.
 
 ## Required External Evidence
 
@@ -76,6 +74,7 @@ receipt:
 | --- | --- | --- | --- |
 | `owner_cutover_approval` | present | `owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z` | Owner approved Growth Vite/ESM cutover evidence for a deploy-lane request. |
 | `central_mobile_visual_evidence` | present | Request card `ttc_1ae511cb582afb18f4`; return card `ttc_663347c3a581e5ea9d`; Home AI Worker Lane A thread `019f1b7b-93bd-71c1-a0b9-5500bc7a1342` | Central iOS PWA visual preflight passed; `embedded-plugin-shell --plugin-id growth` passed; `dark-growth-surfaces` passed; no deploy, runtime enablement, or Growth workspace edits were performed by the visual worker. |
+| `deploy_lane_routing` | present | Deploy card `ttc_e52ea380399fdd979a`; completion return `ttc_c323e186a8e6945a94`; status request return `ttc_1d2dddc18bb602b841` | Home AI Deploy completed source ref `1b0e5d58a49b1c9b2c8b283673a25d52d358377d` with dirty status `false`, health HTTP 200, Vite manifest/asset HTTP 200, and post-deploy visual checks `ok=true`. |
 
 Accepted central visual commands:
 
@@ -90,11 +89,7 @@ Accepted artifacts:
 - `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260706T120356Z.png`
 - `/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260706T120432Z.png`
 
-Remaining missing evidence:
-
-| Evidence key | Status | Required source |
-| --- | --- | --- |
-| `deploy_lane_routing` | missing | Home AI deploy lane task card with source commit, restart label, and bounded readback |
+Remaining missing evidence: none.
 
 ## Owner Review Questions
 
@@ -131,6 +126,9 @@ The cutover sequence must remain ordered:
    expectations.
 8. Only after the deploy lane applies the approved runtime config change, run
    production readback and record the bounded result.
+
+Current execution has completed through step 8 for source ref
+`1b0e5d58a49b1c9b2c8b283673a25d52d358377d`.
 
 ## Non-Goals
 

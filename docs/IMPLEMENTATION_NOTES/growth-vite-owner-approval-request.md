@@ -4,9 +4,8 @@ Last updated: 2026-07-06.
 
 ## Purpose
 
-This document is the ready-for-Owner approval request for the Growth Vite/ESM
-cutover. It does not approve runtime enablement, does not send a deploy card,
-and does not change `public/index.html` into Vite runtime mode.
+This document records the Owner approval request and the completed deploy-lane
+routing for the Growth Vite/ESM cutover. It does not request a new deployment.
 
 The authoritative implementation baseline remains
 `docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md`. The current
@@ -45,14 +44,14 @@ node scripts/check-growth-vite-owner-cutover-preflight.js
 Current expected result:
 
 - `ok=true`;
-- `status=blocked_pending_deploy_lane_routing`;
+- `status=ready_for_deploy_lane_runtime_enablement`;
 - `internalReadyForOwnerEvidence=true`;
 - `readyForOwnerCutover=true`;
-- `readyForRuntimeEnablement=false`;
+- `readyForRuntimeEnablement=true`;
 - `configChangeApplied=true`;
 - `runtimeConfigChange=true`;
-- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence"]`;
-- `missingExternalEvidence=["deploy_lane_routing"]`.
+- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence","deploy_lane_routing"]`;
+- `missingExternalEvidence=[]`.
 
 Accepted central mobile visual evidence:
 
@@ -97,16 +96,21 @@ The Owner approval request has been routed as a non-deployment task card:
 - Card kind: `owner_approval_request`.
 - Category: `growth-vite-esm-cutover`.
 - Plugin id: `growth`.
-- Status: awaiting Owner decision.
+- Status: completed.
+- Owner decision was returned as
+  `approved_for_deploy_lane_request` with approval reference
+  `owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z`.
+- The `owner_cutover_approval` receipt is recorded in
+  `docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence.json`.
 
-This routing record is not an Owner approval receipt. It does not satisfy
-`owner_cutover_approval`, does not satisfy `deploy_lane_routing`, and does not
-authorize runtime enablement or deployment.
+This routing record alone was not an Owner approval receipt and did not satisfy
+`deploy_lane_routing`. The later approval receipt and deploy-lane completion
+return are the authoritative completion evidence.
 
 ## Runtime Boundary After Approval
 
-Owner approval has been recorded. These invariants must remain true until
-deploy-lane routing and production readback:
+Owner approval and deploy-lane completion have been recorded. These invariants
+must remain true after production cutover:
 
 - `public/index.html` does not include a direct `<script type="module">`.
 - `public/index.html` sets the approved
@@ -114,14 +118,13 @@ deploy-lane routing and production readback:
 - `public/index.html` loads the bootstrap loader:
   `/growth-vite-bootstrap-loader.js?v=20260706-vite-esm-phase1`.
 - Generated Vite output remains ignored under `public/assets/growth/`.
-- No production deployment has been performed.
-- No deploy-lane task card has been sent.
+- Production deployment completed through Home AI Deploy.
+- No duplicate deploy-lane task card should be sent for this cutover.
 
 ## Deploy-Lane Task Card Draft
 
-Use this only after Owner approval. It is a draft and not a sent task card.
-The JSON draft named above is the machine-readable source for the same
-summary-only routing facts.
+The deploy-lane task card has been sent and completed. The draft below is kept
+as the historical request shape, not as an active instruction to deploy again.
 
 ```markdown
 Title: Deploy Growth Vite ESM runtime cutover
@@ -228,3 +231,20 @@ record only summary routing fields in
 This receipt records routing only. It is not production deployment evidence and
 must not claim runtime enablement, production readback, or visual readback until
 the deploy lane returns bounded completion evidence.
+
+The deploy lane has returned bounded completion evidence:
+
+- Deploy card: `ttc_e52ea380399fdd979a`.
+- Completion return: `ttc_c323e186a8e6945a94`.
+- Status request return: `ttc_1d2dddc18bb602b841`.
+- Source ref deployed:
+  `1b0e5d58a49b1c9b2c8b283673a25d52d358377d`.
+- Source dirty status: `false`.
+- Backup path:
+  `/Users/hermes-host/HermesMobile/backups/deploy/20260706T125417Z-plugin-growth-growth-vite-esm-runtime-cutover`.
+- Runtime marker: `data-growth-vite-runtime="enabled"`.
+- Health URL: HTTP 200, plugin id `growth`.
+- Vite manifest and built asset: HTTP 200.
+- Visual checks: `embedded-plugin-shell --plugin-id growth` and
+  `dark-growth-surfaces` both `ok=true`.
+- Privacy: `bounded_no_secrets`.
