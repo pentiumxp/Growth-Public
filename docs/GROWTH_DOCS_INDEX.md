@@ -1,6 +1,6 @@
 # Growth Documentation Index
 
-Last updated: 2026-06-19.
+Last updated: 2026-07-06.
 
 ## Rule
 
@@ -21,6 +21,11 @@ they become Growth-owned.
 | `docs/HOME_AI_PLATFORM_CONTRACT.md` | Growth-local platform pointer and validation matrix. |
 | `docs/TEST_MATRIX.md` | Growth-local focused test matrix for service, route, smoke, release, UI, and docs-only validation selection. |
 | `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` | Required Harness obligation by H1/H2/H3 change class, including release-evidence shortcuts that remain forbidden. |
+| `docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md` | Baseline plan for Growth embedded frontend Vite adoption, ESM module split, phased migration, validation, and non-goals. |
+| `docs/IMPLEMENTATION_NOTES/growth-vite-completion-audit.md` | Requirement-by-requirement audit that maps the Growth Vite/ESM migration baseline to current evidence, accepted central visual evidence, and remaining Owner/deploy blockers. |
+| `docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence-packet.md` | Owner-review evidence packet for Growth Vite runtime cutover, including local readiness, required external evidence, and deployment ordering. |
+| `docs/IMPLEMENTATION_NOTES/growth-vite-owner-approval-request.md` | Ready-for-Owner approval request for Growth Vite runtime cutover, including approval wording, current evidence summary, preserved runtime boundary, and deploy-lane task-card draft. |
+| `docs/IMPLEMENTATION_NOTES/growth-vite-deploy-lane-request-draft.json` | Summary-only machine-readable deploy-lane request draft for the Growth Vite runtime cutover; not an approval record and not a sent deploy card. |
 | `docs/GROWTH_PLUGIN_ARCHITECTURE.md` | Current plugin service/module architecture, operational smoke scripts, and harness map. |
 | `docs/GROWTH_AI_LEARNING_SYSTEM_SCHEME.md` | Durable system scheme for Growth's AI-guided learning product: product thesis, supervised learning-program model, daily/checkpoint/program time scales, strategic product planes, closed loop, learner state model, model-entered steps, daily versus stage-assessment card families, Owner modes, automation maturity, implementation packages, and harness contract. |
 | `docs/GROWTH_AI_LEARNING_CLOSED_LOOP_PLAN.md` | Closed-loop product contract for the supervised AI learning scheme: product goal, learner state model, daily versus stage-assessment card families, Gateway model boundaries, service-first architecture, Owner workflow, audit requirements, supervised automation proposal policy, generalization rules, staged implementation plan, and harness contract. |
@@ -115,7 +120,22 @@ For the AI-driven learning scheme, use this reading order before implementation:
 20. `docs/TEST_MATRIX.md` and
    `docs/IMPLEMENTATION_NOTES/harness-required-matrix.md` for focused
    Harness selection and H1/H2/H3 validation obligations.
-21. UI-specific work then reads
+21. `docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md` before
+   changing Growth embedded frontend module structure, Vite build behavior,
+   static asset loading, or ESM migration boundaries.
+22. `docs/IMPLEMENTATION_NOTES/growth-vite-completion-audit.md` before
+   deciding whether the Growth Vite/ESM migration is internally ready for
+   Owner cutover review or whether only external Owner/deploy evidence remains.
+23. `docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence-packet.md`
+   before requesting Owner runtime-cutover approval or preparing a deploy-lane
+   card for the Growth Vite migration.
+24. `docs/IMPLEMENTATION_NOTES/growth-vite-owner-approval-request.md` before
+   asking Owner for runtime-cutover approval or drafting a deploy-lane task
+   card.
+25. `docs/IMPLEMENTATION_NOTES/growth-vite-deploy-lane-request-draft.json`
+   only after Owner approval when preparing the deploy-lane task card. This is
+   a draft, not a sent card or approval record.
+26. UI-specific work then reads
    `docs/GROWTH_CARD_GENERATION_MANAGEMENT_UI.md` and
    `docs/GROWTH_CARD_INTERACTION_FLOW.md`.
 

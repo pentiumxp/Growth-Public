@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "growth.viteOwnerCutoverEvidence.v1",
+  "updatedAt": "2026-07-06T12:38:24Z",
+  "summaryOnly": true,
+  "externalEvidence": {
+    "owner_cutover_approval": {
+      "status": "present",
+      "decision": "approved_for_deploy_lane_request",
+      "approvedAt": "2026-07-06T12:38:24Z",
+      "approvalReference": "owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z",
+      "sourceTaskCardId": "ttc_1b40fc066486468771",
+      "scope": "growth-vite-esm-runtime-cutover",
+      "privacy": "bounded_no_secrets"
+    },
+    "central_mobile_visual_evidence": {
+      "status": "present",
+      "sourceTaskCardId": "ttc_1ae511cb582afb18f4",
+      "returnTaskCardId": "ttc_663347c3a581e5ea9d",
+      "sourceThreadId": "019f1b7b-93bd-71c1-a0b9-5500bc7a1342",
+      "returnedAt": "2026-07-06T12:04:32Z",
+      "commands": [
+        "npm run ios:pwa:visual -- --debug-url http://127.0.0.1:19073/ --preflight-only --json",
+        "npm run ios:pwa:visual -- --scenario embedded-plugin-shell --plugin-id growth --debug-url http://127.0.0.1:19073/",
+        "npm run ios:pwa:visual -- --scenario dark-growth-surfaces --debug-url http://127.0.0.1:19073/"
+      ],
+      "preflight": {
+        "status": "pass",
+        "liveDebugOk": true,
+        "appiumOk": true,
+        "wdaOk": true,
+        "failureLayer": "",
+        "streamReady": false,
+        "streamReadyNote": "Preferred simctl stream readiness was false, but Appium and WDA visual lanes passed."
+      },
+      "scenarios": [
+        {
+          "name": "embedded-plugin-shell",
+          "pluginId": "growth",
+          "status": "pass",
+          "artifact": "/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-embedded-plugin-shell-growth-20260706T120356Z.png"
+        },
+        {
+          "name": "dark-growth-surfaces",
+          "status": "pass",
+          "artifact": "/Users/xuxin/.homeai-qa/artifacts/ios-pwa-visual-dark-growth-surfaces-20260706T120432Z.png"
+        }
+      ],
+      "sufficientForOwnerCutover": true,
+      "privacy": "bounded_no_secrets"
+    },
+    "deploy_lane_routing": {
+      "status": "missing"
+    }
+  }
+}

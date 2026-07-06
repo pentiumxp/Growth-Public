@@ -4,6 +4,7 @@ runtime/
 logs/
 tmp/
 .codegraph/
+public/assets/growth/
 .env
 .DS_Store
 *.log

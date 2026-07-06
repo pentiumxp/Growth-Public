@@ -5,6 +5,9 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const RUNTIME_DIRS = Object.freeze(["scripts", "src", "public"]);
+const GENERATED_RUNTIME_PREFIXES = Object.freeze([
+  "public/assets/growth/"
+]);
 
 function normalizePath(filePath) {
   return filePath.split(path.sep).join("/");
@@ -48,7 +51,10 @@ function checkGrowthSyntaxCoverage() {
     };
   }
 
-  const runtimeFiles = RUNTIME_DIRS.flatMap(walkJsFiles).sort();
+  const runtimeFiles = RUNTIME_DIRS
+    .flatMap(walkJsFiles)
+    .filter((fileName) => !GENERATED_RUNTIME_PREFIXES.some((prefix) => fileName.startsWith(prefix)))
+    .sort();
   const checkedFiles = checkedFilesFromPackageScript(checkScript);
   const checkedSet = new Set(checkedFiles);
   const seen = new Set();
@@ -80,6 +86,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  GENERATED_RUNTIME_PREFIXES,
   RUNTIME_DIRS,
   checkGrowthSyntaxCoverage
 };

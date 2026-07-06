@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "growth.viteDeployLaneRequestDraft.v1",
+  "summaryOnly": true,
+  "status": "draft_only_not_sent",
+  "sendAllowed": false,
+  "requiresOwnerApproval": true,
+  "cardKind": "plugin_deployment",
+  "pluginId": "growth",
+  "routeKind": "deployment",
+  "target": "Home AI deploy lane pool",
+  "sourceWorkspace": "/Users/hermes-dev/HermesMobileDev/plugins/growth",
+  "deployReason": "growth-vite-esm-runtime-cutover",
+  "title": "Deploy Growth Vite ESM runtime cutover",
+  "request": "Deploy the Owner-approved Growth Vite/ESM runtime cutover through the central Home AI Mac deploy contract only.",
+  "sourceEvidence": {
+    "migrationPlan": "docs/IMPLEMENTATION_NOTES/growth-vite-esm-migration-plan.md",
+    "ownerEvidencePacket": "docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence-packet.md",
+    "ownerApprovalRequest": "docs/IMPLEMENTATION_NOTES/growth-vite-owner-approval-request.md",
+    "ownerApprovalReference": "<insert source-thread approval reference after Owner approval>",
+    "centralVisualEvidence": {
+      "requestTaskCardId": "ttc_1ae511cb582afb18f4",
+      "returnTaskCardId": "ttc_663347c3a581e5ea9d",
+      "status": "present"
+    },
+    "localChecks": [
+      "npm run --silent check",
+      "npm test -- --test-reporter=spec",
+      "node /Users/hermes-dev/HermesMobileDev/app/scripts/plugin-workspace-platform-contract-check.js --plugin growth --json",
+      "git diff --check"
+    ]
+  },
+  "requiredDeployLaneWork": [
+    "Re-read the central Mac deploy contract before mutation.",
+    "Verify the source commit/ref and source dirty status.",
+    "Apply the approved Growth runtime cutover only through the central deploy path.",
+    "Preserve bounded evidence and do not include secrets, launch tokens, raw learner payloads, cookies, raw deployment logs, or full prompts.",
+    "Run bounded production readback after deploy."
+  ],
+  "productionReadback": [
+    "Growth manifest/health readback",
+    "Runtime asset/readback showing the approved Vite runtime is active",
+    "Central iOS PWA visual scenario embedded-plugin-shell --plugin-id growth",
+    "Any additional central visual scenario required by the deploy contract"
+  ],
+  "nonGoals": [
+    "Do not deploy from the Growth plugin thread.",
+    "Do not bypass the Home AI deploy lane.",
+    "Do not expose raw credentials or private payloads.",
+    "Do not broaden the deployment beyond Growth."
+  ],
+  "returnCardRequired": true,
+  "privacy": "bounded_no_secrets"
+}
