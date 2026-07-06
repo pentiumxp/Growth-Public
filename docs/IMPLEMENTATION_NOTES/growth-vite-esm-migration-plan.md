@@ -1330,13 +1330,16 @@ Definition of done:
   and migration-plan boundary evidence, until Owner approval and deploy-lane
   routing are present;
 - `node scripts/check-growth-vite-owner-cutover-preflight.js` passes in advisory
-  mode with `readyForOwnerCutover=false`, `configChangeApplied=false`,
-  `runtimeConfigChange=false`, accepted central mobile visual evidence, and
-  explicit missing external evidence for Owner approval and deploy-lane routing;
+  mode. Before Owner approval it reported `readyForOwnerCutover=false`,
+  `configChangeApplied=false`, and `runtimeConfigChange=false`; after Owner
+  approval it reports `readyForOwnerCutover=true`, `configChangeApplied=true`,
+  `runtimeConfigChange=true`, accepted central mobile visual evidence, and
+  explicit missing external evidence only for deploy-lane routing;
 - `node scripts/check-growth-vite-phase-audit.js` passes with
   `internalReadyForOwnerEvidence=true`, `readyForRuntimeEnablement=false`,
   Phase 0-6 internal evidence complete, and Phase 7 blocked only by external
-  Owner approval, deploy-lane routing, and runtime opt-in requirements;
+  deploy-lane routing after Owner approval and source runtime marker
+  application;
 - existing full test/check suite passes.
 
 ### Phase 7: Visual And Production Readiness Evidence

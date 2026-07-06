@@ -66,7 +66,10 @@ function checkGrowthViteCutoverReadiness() {
 
   const runtimeEnabled = /data-growth-vite-runtime\s*=\s*["']enabled["']/.test(indexHtml);
   const directModuleScript = /<script[^>]+type=["']module["']/i.test(indexHtml);
-  if (runtimeEnabled) failures.push("runtime_enabled_without_owner_cutover");
+  const ownerApprovalPresent = ownerCutoverEvidence.presentExternalEvidence.includes("owner_cutover_approval");
+  const centralVisualPresent = ownerCutoverEvidence.presentExternalEvidence.includes("central_mobile_visual_evidence");
+  if (runtimeEnabled && !ownerApprovalPresent) failures.push("runtime_enabled_without_owner_cutover");
+  if (ownerApprovalPresent && centralVisualPresent && !runtimeEnabled) failures.push("owner_approved_runtime_marker_missing");
   if (directModuleScript) failures.push("direct_module_script_loaded_before_cutover");
   if (!indexHtml.includes("/growth-vite-bootstrap-loader.js?v=20260706-vite-esm-phase1")) {
     failures.push("bootstrap_loader_missing");
@@ -425,7 +428,7 @@ function checkGrowthViteCutoverReadiness() {
   if (ownerCutoverEvidence.missingExternalEvidence.includes("deploy_lane_routing")) {
     blockers.push("deploy_lane_card_required_before_production_update");
   }
-  blockers.push("runtime_opt_in_must_remain_disabled_until_cutover");
+  if (!runtimeEnabled) blockers.push("runtime_opt_in_required_after_owner_approval");
 
   if (failures.length) {
     return fail("growth_vite_cutover_readiness_failed", "Growth Vite cutover readiness gate failed", {
@@ -440,7 +443,7 @@ function checkGrowthViteCutoverReadiness() {
   return {
     ok: true,
     readyForRuntimeEnablement: false,
-    status: "blocked_pending_owner_visual_and_deploy_approval",
+    status: blockers.length ? "blocked_pending_deploy_lane_routing" : "ready_for_deploy_lane_runtime_enablement",
     evidence,
     blockers,
     ownerCutoverEvidence

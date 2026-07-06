@@ -45,14 +45,14 @@ node scripts/check-growth-vite-owner-cutover-preflight.js
 Current expected result:
 
 - `ok=true`;
-- `status=blocked_pending_external_owner_cutover_evidence`;
+- `status=blocked_pending_deploy_lane_routing`;
 - `internalReadyForOwnerEvidence=true`;
-- `readyForOwnerCutover=false`;
+- `readyForOwnerCutover=true`;
 - `readyForRuntimeEnablement=false`;
-- `configChangeApplied=false`;
-- `runtimeConfigChange=false`;
-- `presentExternalEvidence=["central_mobile_visual_evidence"]`;
-- `missingExternalEvidence=["owner_cutover_approval","deploy_lane_routing"]`.
+- `configChangeApplied=true`;
+- `runtimeConfigChange=true`;
+- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence"]`;
+- `missingExternalEvidence=["deploy_lane_routing"]`.
 
 Accepted central mobile visual evidence:
 
@@ -103,13 +103,15 @@ This routing record is not an Owner approval receipt. It does not satisfy
 `owner_cutover_approval`, does not satisfy `deploy_lane_routing`, and does not
 authorize runtime enablement or deployment.
 
-## Runtime Boundary To Preserve Before Approval
+## Runtime Boundary After Approval
 
-These invariants must remain true until Owner approval and deploy-lane routing:
+Owner approval has been recorded. These invariants must remain true until
+deploy-lane routing and production readback:
 
 - `public/index.html` does not include a direct `<script type="module">`.
-- `public/index.html` does not set `data-growth-vite-runtime="enabled"`.
-- `public/index.html` loads only the disabled bootstrap loader:
+- `public/index.html` sets the approved
+  `data-growth-vite-runtime="enabled"` source marker.
+- `public/index.html` loads the bootstrap loader:
   `/growth-vite-bootstrap-loader.js?v=20260706-vite-esm-phase1`.
 - Generated Vite output remains ignored under `public/assets/growth/`.
 - No production deployment has been performed.

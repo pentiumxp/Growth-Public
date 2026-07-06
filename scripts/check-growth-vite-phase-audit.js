@@ -13,7 +13,6 @@ function externalCutoverBlockersForEvidence(ownerCutoverEvidence = evaluateOwner
   if (ownerCutoverEvidence.missingExternalEvidence.includes("deploy_lane_routing")) {
     blockers.push("deploy_lane_card_required_before_production_update");
   }
-  blockers.push("runtime_opt_in_must_remain_disabled_until_cutover");
   return blockers;
 }
 
@@ -65,6 +64,7 @@ function checkGrowthVitePhaseAudit() {
     });
   }
 
+  const expectedPhase7Blockers = cutoverReadiness.blockers;
   const missingExternalBlockers = currentExternalCutoverBlockers.filter((key) => !hasBlocker(cutoverReadiness, key));
   if (missingExternalBlockers.length) {
     return fail("growth_vite_phase_audit_external_blockers_missing", "Growth Vite phase audit requires explicit external cutover blockers before Owner approval", {
@@ -119,7 +119,7 @@ function checkGrowthVitePhaseAudit() {
     ]),
     phase7VisualAndProductionReadiness: phase("blocked_external_evidence", [
       "external_owner_visual_and_deploy_evidence_required"
-    ], currentExternalCutoverBlockers)
+    ], expectedPhase7Blockers)
   };
 
   const missingPhaseEvidence = Object.entries(phases).flatMap(([phaseKey, item]) => {
@@ -136,17 +136,18 @@ function checkGrowthVitePhaseAudit() {
     });
   }
 
+  const runtimeConfigChange = runtimeBoundary.mode === "owner_approved_vite_runtime_enabled";
   return {
     ok: true,
     status: "internal_ready_pending_external_owner_visual_and_deploy_evidence",
     internalReadyForOwnerEvidence: true,
     readyForRuntimeEnablement: false,
-    runtimeConfigChange: false,
-    configChangeApplied: false,
+    runtimeConfigChange,
+    configChangeApplied: runtimeConfigChange,
     advisoryOnly: true,
     evidence: [
       "phase_0_to_6_internal_evidence_complete",
-      "pre_owner_runtime_boundary_closed",
+      runtimeConfigChange ? "owner_approved_runtime_marker_applied" : "pre_owner_runtime_boundary_closed",
       "phase_7_external_evidence_required"
     ],
     phases,

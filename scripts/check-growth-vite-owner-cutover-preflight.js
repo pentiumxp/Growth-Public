@@ -55,17 +55,20 @@ function checkGrowthViteOwnerCutoverPreflight() {
     });
   }
 
+  const runtimeConfigChange = runtimeBoundary.mode === "owner_approved_vite_runtime_enabled";
+  const deployRoutingMissing = ownerCutoverEvidence.missingExternalEvidence.includes("deploy_lane_routing");
   return {
     ok: true,
-    status: "blocked_pending_external_owner_cutover_evidence",
+    status: deployRoutingMissing ? "blocked_pending_deploy_lane_routing" : "ready_for_deploy_lane_runtime_enablement",
     internalReadyForOwnerEvidence: phaseAudit.internalReadyForOwnerEvidence,
-    readyForOwnerCutover: false,
-    readyForRuntimeEnablement: false,
-    configChangeApplied: false,
-    runtimeConfigChange: false,
+    readyForOwnerCutover: ownerCutoverEvidence.presentExternalEvidence.includes("owner_cutover_approval")
+      && ownerCutoverEvidence.presentExternalEvidence.includes("central_mobile_visual_evidence"),
+    readyForRuntimeEnablement: !deployRoutingMissing && runtimeConfigChange,
+    configChangeApplied: runtimeConfigChange,
+    runtimeConfigChange,
     advisoryOnly: true,
     evidence: [
-      "pre_owner_runtime_boundary_closed",
+      runtimeConfigChange ? "owner_approved_runtime_marker_applied" : "pre_owner_runtime_boundary_closed",
       "cutover_readiness_guard_passed",
       "phase_0_to_6_internal_evidence_complete",
       "external_owner_visual_and_deploy_evidence_required"

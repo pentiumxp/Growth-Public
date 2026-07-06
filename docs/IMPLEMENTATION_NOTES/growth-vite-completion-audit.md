@@ -25,12 +25,12 @@ and does not claim production readback.
 | Phase 3 Owner generation and release UI | Complete | Cutover readiness reports card-generation facade, release readback/evidence subviews, action handlers, program ESM surface, and runtime adapter evidence present. |
 | Phase 4 card interaction | Complete | Runtime adapter and focused frontend ESM tests cover the injected card-interaction controller, delegated DOM events, submission/evaluation/reflection panels, and audio recorder lifecycle. |
 | Phase 5 legacy board UI | Complete | Cutover readiness reports `legacy_board_esm_facade_present` and `legacy_growth_ui_composite_present`. |
-| Phase 6 pre-Owner runtime boundary | Complete before Owner cutover | `node scripts/check-growth-vite-runtime-boundary.js` keeps the legacy runtime active, Vite loader last, no module script, no runtime opt-in, and no direct hashed Vite asset. |
+| Phase 6 pre-Owner runtime boundary | Complete | Before Owner approval, `node scripts/check-growth-vite-runtime-boundary.js` kept the legacy runtime active. After Owner approval, it accepts the source runtime marker while still forbidding direct hardcoded module scripts and direct hashed Vite assets. |
 | Phase 7 central visual evidence | Present | Owner cutover evidence receipt accepts central `embedded-plugin-shell` and `dark-growth-surfaces` visual evidence for Growth. |
 | Phase 7 Owner approval request routing | Sent | Non-deployment request card `ttc_1b40fc066486468771` was routed to Home AI Task Intake for Owner decision. |
-| Phase 7 Owner approval | Missing | `node scripts/check-growth-vite-owner-cutover-preflight.js` reports `owner_cutover_approval` missing. |
+| Phase 7 Owner approval | Present | Owner approval reference `owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z` is recorded. |
 | Phase 7 deploy-lane routing | Missing | `node scripts/check-growth-vite-owner-cutover-preflight.js` reports `deploy_lane_routing` missing. |
-| Runtime enablement | Blocked | `readyForRuntimeEnablement=false`, `runtimeConfigChange=false`, and `configChangeApplied=false`. |
+| Runtime enablement source marker | Applied | `configChangeApplied=true` and `runtimeConfigChange=true`; production enablement remains blocked until deploy-lane routing and readback. |
 | Production update | Blocked | No deploy card has been sent and no production deploy/readback has been returned. |
 
 ## Requirement Audit
@@ -51,16 +51,18 @@ and does not claim production readback.
 ### Runtime Boundary
 
 - Required by plan: preserve `public/index.html` as the plugin entry, keep Home
-  AI embedded launch/proxy/workspace behavior intact, and keep runtime
-  replacement blocked before Owner approval and deploy-lane routing.
+  AI embedded launch/proxy/workspace behavior intact, and apply runtime
+  replacement only after Owner approval.
 - Current evidence:
   - `public/index.html` loads
     `/growth-vite-bootstrap-loader.js?v=20260706-vite-esm-phase1`.
+  - `public/index.html` includes
+    `data-growth-vite-runtime="enabled"` after Owner approval.
   - `node scripts/check-growth-vite-runtime-boundary.js` passes.
   - `node scripts/check-growth-vite-cutover-readiness.js` reports
     `readyForRuntimeEnablement=false`.
-- Status: complete before Owner cutover; intentionally not switched to Vite
-  runtime.
+- Status: source marker applied; production runtime enablement still waits for
+  deploy-lane routing and bounded readback.
 
 ### ESM Module Surfaces
 
@@ -119,12 +121,12 @@ runtime readiness.
     sent to Home AI Task Intake for Owner decision.
   - `node scripts/check-growth-vite-owner-cutover-preflight.js` reports
     `ownerApprovalRequest.status=ready_for_owner_review` and
-    `approvalRecorded=false`.
+    `approvalRecorded=true`.
   - Valid approval evidence must include `status=present`,
     `decision=approved_for_deploy_lane_request`, ISO UTC `approvedAt`, a
     non-empty `approvalReference`, `scope=growth-vite-esm-runtime-cutover`, and
     `privacy=bounded_no_secrets`.
-- Status: request routed; approval decision still missing.
+- Status: present.
 
 ### Deploy-Lane Routing
 
@@ -150,7 +152,6 @@ exists:
 
 - `owner_approval_required_before_runtime_enablement`
 - `deploy_lane_card_required_before_production_update`
-- `runtime_opt_in_must_remain_disabled_until_cutover`
 
 The central visual evidence blocker has cleared.
 
@@ -168,29 +169,26 @@ node scripts/check-growth-docs-locality.js
 git diff --check
 ```
 
-Expected current state before Owner approval:
+Expected current state after Owner approval and before deploy routing:
 
 - phase audit: `internal_ready_pending_external_owner_visual_and_deploy_evidence`
-- preflight: `blocked_pending_external_owner_cutover_evidence`
-- present external evidence: `central_mobile_visual_evidence`
-- missing external evidence: `owner_cutover_approval`,
-  `deploy_lane_routing`
-- runtime: legacy classic-script runtime with disabled Vite loader
+- preflight: `blocked_pending_deploy_lane_routing`
+- present external evidence: `owner_cutover_approval`,
+  `central_mobile_visual_evidence`
+- missing external evidence: `deploy_lane_routing`
+- runtime: Owner-approved Vite runtime marker with bootstrap loader
 
 ## Next Allowed Actions
 
-1. Wait for Owner decision on request card `ttc_1b40fc066486468771`.
-2. If Owner approves, record a bounded approval receipt in
-   `docs/IMPLEMENTATION_NOTES/growth-vite-owner-cutover-evidence.json`.
-3. Send the Home AI deploy-lane task card using the approved request shape.
-4. Wait for deploy-lane completion and bounded production readback.
-5. Only after the returned deploy/readback evidence is present, make the
-   runtime enablement change through the approved deployment path.
+1. Commit a deployable source ref that contains the approved runtime marker.
+2. Send the Home AI deploy-lane task card using the approved request shape.
+3. Wait for deploy-lane completion and bounded production readback.
+4. Record deploy-lane routing and returned production evidence.
 
 ## Forbidden Until Evidence Changes
 
-- Do not set `data-growth-vite-runtime="enabled"`.
 - Do not add a direct `<script type="module">` to `public/index.html`.
-- Do not send a deploy card before Owner approval.
+- Do not send a deploy card without a deployable source ref containing the
+  approved cutover files and runtime marker.
 - Do not claim production deployment or production readback from local
   development evidence.

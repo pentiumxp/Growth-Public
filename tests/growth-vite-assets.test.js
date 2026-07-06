@@ -17,15 +17,15 @@ test("Growth Vite build emits a bounded manifest and entry asset", () => {
   assert.equal(result.loader, "public/growth-vite-bootstrap-loader.js");
 });
 
-test("Growth Vite runtime boundary keeps classic runtime active and Vite runtime disabled before Owner approval", () => {
+test("Growth Vite runtime boundary accepts Owner-approved runtime marker before deploy routing", () => {
   const result = checkGrowthViteRuntimeBoundary();
   assert.equal(result.ok, true);
-  assert.equal(result.mode, "legacy_runtime_with_disabled_vite_loader");
+  assert.equal(result.mode, "owner_approved_vite_runtime_enabled");
   assert.equal(result.legacyScriptCount, 12);
   assert.equal(result.viteLoader, "/growth-vite-bootstrap-loader.js");
   assert.equal(result.evidence.includes("legacy_runtime_scripts_present_in_order"), true);
   assert.equal(result.evidence.includes("vite_bootstrap_loader_last"), true);
-  assert.equal(result.evidence.includes("no_runtime_opt_in_before_owner_approval"), true);
+  assert.equal(result.evidence.includes("runtime_opt_in_enabled_after_owner_approval"), true);
   assert.equal(result.evidence.includes("no_direct_hashed_vite_asset"), true);
 });
 
@@ -39,7 +39,7 @@ test("Growth Vite cutover readiness gate keeps runtime enablement blocked before
   const result = checkGrowthViteCutoverReadiness();
   assert.equal(result.ok, true);
   assert.equal(result.readyForRuntimeEnablement, false);
-  assert.equal(result.status, "blocked_pending_owner_visual_and_deploy_approval");
+  assert.equal(result.status, "blocked_pending_deploy_lane_routing");
   assert.equal(result.evidence.includes("bootstrap_loader_present"), true);
   assert.equal(result.evidence.includes("vite_entry_mount_modes_covered"), true);
   assert.equal(result.evidence.includes("api_client_esm_surface_present"), true);
@@ -60,7 +60,7 @@ test("Growth Vite cutover readiness gate keeps runtime enablement blocked before
   assert.equal(result.blockers.includes("owner_approval_required_before_runtime_enablement"), false);
   assert.equal(result.blockers.includes("central_mobile_visual_evidence_required_before_runtime_enablement"), false);
   assert.equal(result.blockers.includes("deploy_lane_card_required_before_production_update"), true);
-  assert.equal(result.blockers.includes("runtime_opt_in_must_remain_disabled_until_cutover"), true);
+  assert.equal(result.blockers.includes("runtime_opt_in_required_after_owner_approval"), false);
   assert.deepEqual(result.ownerCutoverEvidence.presentExternalEvidence, [
     "owner_cutover_approval",
     "central_mobile_visual_evidence"
@@ -73,31 +73,30 @@ test("Growth Vite phase audit reports internal readiness and external cutover bl
   assert.equal(result.status, "internal_ready_pending_external_owner_visual_and_deploy_evidence");
   assert.equal(result.internalReadyForOwnerEvidence, true);
   assert.equal(result.readyForRuntimeEnablement, false);
-  assert.equal(result.runtimeConfigChange, false);
-  assert.equal(result.configChangeApplied, false);
+  assert.equal(result.runtimeConfigChange, true);
+  assert.equal(result.configChangeApplied, true);
   assert.equal(result.advisoryOnly, true);
   assert.equal(result.evidence.includes("phase_0_to_6_internal_evidence_complete"), true);
-  assert.equal(result.evidence.includes("pre_owner_runtime_boundary_closed"), true);
+  assert.equal(result.evidence.includes("owner_approved_runtime_marker_applied"), true);
   assert.equal(result.evidence.includes("phase_7_external_evidence_required"), true);
   assert.equal(result.phases.phase0BaselineAndGates.status, "complete");
   assert.equal(result.phases.phase5LegacyBoardUi.status, "complete");
   assert.equal(result.phases.phase6PreOwnerRuntimeBoundary.status, "complete_pre_owner");
   assert.equal(result.phases.phase7VisualAndProductionReadiness.status, "blocked_external_evidence");
   assert.deepEqual(result.phases.phase7VisualAndProductionReadiness.blockers, [
-    "deploy_lane_card_required_before_production_update",
-    "runtime_opt_in_must_remain_disabled_until_cutover"
+    "deploy_lane_card_required_before_production_update"
   ]);
 });
 
-test("Growth Vite Owner cutover preflight reports Owner approval present without enabling runtime", () => {
+test("Growth Vite Owner cutover preflight reports runtime marker applied before deploy routing", () => {
   const result = checkGrowthViteOwnerCutoverPreflight();
   assert.equal(result.ok, true);
-  assert.equal(result.status, "blocked_pending_external_owner_cutover_evidence");
+  assert.equal(result.status, "blocked_pending_deploy_lane_routing");
   assert.equal(result.internalReadyForOwnerEvidence, true);
-  assert.equal(result.readyForOwnerCutover, false);
+  assert.equal(result.readyForOwnerCutover, true);
   assert.equal(result.readyForRuntimeEnablement, false);
-  assert.equal(result.configChangeApplied, false);
-  assert.equal(result.runtimeConfigChange, false);
+  assert.equal(result.configChangeApplied, true);
+  assert.equal(result.runtimeConfigChange, true);
   assert.equal(result.advisoryOnly, true);
   assert.deepEqual(result.missingExternalEvidence, [
     "deploy_lane_routing"
@@ -112,10 +111,10 @@ test("Growth Vite Owner cutover preflight reports Owner approval present without
     "central_mobile_visual_evidence",
     "deploy_lane_routing"
   ]);
-  assert.equal(result.evidence.includes("pre_owner_runtime_boundary_closed"), true);
+  assert.equal(result.evidence.includes("owner_approved_runtime_marker_applied"), true);
   assert.equal(result.evidence.includes("cutover_readiness_guard_passed"), true);
   assert.equal(result.evidence.includes("phase_0_to_6_internal_evidence_complete"), true);
-  assert.equal(result.runtimeBoundary.mode, "legacy_runtime_with_disabled_vite_loader");
+  assert.equal(result.runtimeBoundary.mode, "owner_approved_vite_runtime_enabled");
   assert.equal(result.phaseAudit.status, "internal_ready_pending_external_owner_visual_and_deploy_evidence");
   assert.equal(result.phaseAudit.phase7Status, "blocked_external_evidence");
   assert.equal(result.ownerCutoverPlanning.ownerApprovalRequest.status, "ready_for_owner_review");

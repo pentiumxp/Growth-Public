@@ -8,9 +8,11 @@ This packet is the local Owner-review baseline for the Growth Vite/ESM
 migration. It summarizes the evidence required before the disabled Vite
 runtime can be enabled and before any production deployment can be requested.
 
-This document is not an approval record, a deploy request, or a runtime config
-change. It must remain advisory until the external evidence listed below is
-provided by the appropriate Owner, central visual, and deploy-lane channels.
+This document is not a deploy request and is not production readback. Owner
+approval has been recorded separately in the summary-only evidence receipt, and
+the source runtime marker has been applied. It must remain advisory for
+production until deploy-lane routing and bounded production readback are
+returned by the Home AI deploy lane.
 
 ## Current Local Readiness
 
@@ -19,11 +21,10 @@ Local internal readiness is complete through Phase 6 of
 
 The current local gates prove:
 
-- the committed `public/index.html` keeps the legacy classic-script runtime
-  active;
+- the committed `public/index.html` includes the Owner-approved
+  `data-growth-vite-runtime="enabled"` source marker;
 - the disabled Vite bootstrap loader is present and loaded last;
-- no direct Vite module script is loaded before cutover;
-- `data-growth-vite-runtime="enabled"` is absent;
+- no direct Vite module script is hardcoded in `public/index.html`;
 - generated Vite assets remain ignored under `public/assets/growth/`;
 - Vite/ESM syntax coverage includes the migrated frontend modules;
 - frontend tests, Vite build validation, runtime-boundary validation,
@@ -37,19 +38,19 @@ The local preflight command currently reports:
 node scripts/check-growth-vite-owner-cutover-preflight.js
 ```
 
-Expected status after accepted central visual evidence and before Owner
-approval/deploy routing:
+Expected status after accepted Owner approval, accepted central visual evidence,
+and before deploy routing:
 
 - `ok=true`;
-- `status=blocked_pending_external_owner_cutover_evidence`;
+- `status=blocked_pending_deploy_lane_routing`;
 - `internalReadyForOwnerEvidence=true`;
-- `readyForOwnerCutover=false`;
+- `readyForOwnerCutover=true`;
 - `readyForRuntimeEnablement=false`;
-- `configChangeApplied=false`;
-- `runtimeConfigChange=false`;
+- `configChangeApplied=true`;
+- `runtimeConfigChange=true`;
 - `advisoryOnly=true`.
-- `presentExternalEvidence=["central_mobile_visual_evidence"]`;
-- `missingExternalEvidence=["owner_cutover_approval","deploy_lane_routing"]`.
+- `presentExternalEvidence=["owner_cutover_approval","central_mobile_visual_evidence"]`;
+- `missingExternalEvidence=["deploy_lane_routing"]`.
 
 ## Required External Evidence
 
@@ -73,6 +74,7 @@ receipt:
 
 | Evidence key | Status | Tracking reference | Notes |
 | --- | --- | --- | --- |
+| `owner_cutover_approval` | present | `owner-approval:growth-vite-esm-runtime-cutover:ttc_1b40fc066486468771:2026-07-06T12:38:24Z` | Owner approved Growth Vite/ESM cutover evidence for a deploy-lane request. |
 | `central_mobile_visual_evidence` | present | Request card `ttc_1ae511cb582afb18f4`; return card `ttc_663347c3a581e5ea9d`; Home AI Worker Lane A thread `019f1b7b-93bd-71c1-a0b9-5500bc7a1342` | Central iOS PWA visual preflight passed; `embedded-plugin-shell --plugin-id growth` passed; `dark-growth-surfaces` passed; no deploy, runtime enablement, or Growth workspace edits were performed by the visual worker. |
 
 Accepted central visual commands:
@@ -92,7 +94,6 @@ Remaining missing evidence:
 
 | Evidence key | Status | Required source |
 | --- | --- | --- |
-| `owner_cutover_approval` | missing | Owner approval in the source task thread or release authorization record |
 | `deploy_lane_routing` | missing | Home AI deploy lane task card with source commit, restart label, and bounded readback |
 
 ## Owner Review Questions
@@ -111,7 +112,7 @@ Owner review should answer:
 
 The cutover sequence must remain ordered:
 
-1. Keep `public/index.html` in disabled-loader mode.
+1. Keep `public/index.html` in disabled-loader mode until Owner approval.
 2. Run local validation:
    - `npm run --silent check:frontend`;
    - `npm run --silent check`;
@@ -124,19 +125,19 @@ The cutover sequence must remain ordered:
 4. Confirm the accepted central Home AI mobile visual evidence remains current
    for the concrete Growth UI change.
 5. Obtain explicit Owner approval.
-6. Only after Owner approval, prepare the deploy-lane task card with source
+6. Apply the Owner-approved source runtime marker.
+7. Only after Owner approval, prepare the deploy-lane task card with source
    commit/ref, deploy reason, restart label, health URL, and bounded readback
    expectations.
-7. Only after the deploy lane applies the approved runtime config change, run
+8. Only after the deploy lane applies the approved runtime config change, run
    production readback and record the bounded result.
 
 ## Non-Goals
 
-- Do not enable `data-growth-vite-runtime="enabled"` in this packet.
-- Do not add a direct `<script type="module">` to `public/index.html` in this
-  packet.
+- Do not add a direct `<script type="module">` to `public/index.html`.
 - Do not commit generated files under `public/assets/growth/`.
-- Do not send a deploy card without explicit Owner approval.
+- Do not send a deploy card without explicit Owner approval and a deployable
+  source ref that contains the runtime marker.
 - Do not treat local Vite build output as production deployment evidence.
 - Do not record raw launch tokens, credentials, learner submissions, private
   payloads, raw deployment logs, or full prompts.

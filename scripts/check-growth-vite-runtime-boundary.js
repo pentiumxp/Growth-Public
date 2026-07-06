@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { evaluateOwnerCutoverEvidence } = require("./growth-vite-owner-cutover-evidence");
 
 const repoRoot = path.join(__dirname, "..");
 
@@ -51,6 +52,7 @@ function fail(code, message, extra = {}) {
 }
 
 function checkGrowthViteRuntimeBoundary() {
+  const ownerCutoverEvidence = evaluateOwnerCutoverEvidence();
   const indexHtml = readRelative("public/index.html");
   const scripts = scriptTags(indexHtml);
   const scriptPaths = scripts.map((script) => script.srcPath);
@@ -65,7 +67,9 @@ function checkGrowthViteRuntimeBoundary() {
   if (!indexHtml.includes('id="growth-root"')) {
     return fail("growth_root_missing", "public/index.html is missing the legacy Growth root");
   }
-  if (/data-growth-vite-runtime\s*=\s*["']enabled["']/.test(indexHtml)) {
+  const runtimeEnabled = /data-growth-vite-runtime\s*=\s*["']enabled["']/.test(indexHtml);
+  const ownerApprovalPresent = ownerCutoverEvidence.presentExternalEvidence.includes("owner_cutover_approval");
+  if (runtimeEnabled && !ownerApprovalPresent) {
     return fail("growth_vite_runtime_enabled_before_owner_cutover", "Growth Vite runtime opt-in is enabled before Owner cutover approval");
   }
   if (moduleScripts.length) {
@@ -113,7 +117,7 @@ function checkGrowthViteRuntimeBoundary() {
 
   return {
     ok: true,
-    mode: "legacy_runtime_with_disabled_vite_loader",
+    mode: runtimeEnabled ? "owner_approved_vite_runtime_enabled" : "legacy_runtime_with_disabled_vite_loader",
     legacyScriptCount: expectedLegacyScripts.length,
     viteLoader: expectedViteLoader,
     evidence: [
@@ -121,7 +125,7 @@ function checkGrowthViteRuntimeBoundary() {
       "legacy_runtime_scripts_present_in_order",
       "vite_bootstrap_loader_last",
       "no_module_script_before_cutover",
-      "no_runtime_opt_in_before_owner_approval",
+      runtimeEnabled ? "runtime_opt_in_enabled_after_owner_approval" : "no_runtime_opt_in_before_owner_approval",
       "no_direct_hashed_vite_asset",
       "no_register_globals_adapter"
     ]
