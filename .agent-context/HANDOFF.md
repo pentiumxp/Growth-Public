@@ -8,9 +8,40 @@ The previous full handoff was archived and should be opened only when old proven
 ## Home AI Platform Contract Pointer
 
 - Pointer file: `docs/HOME_AI_PLATFORM_CONTRACT.md`.
-- Home AI platform contract version: `20260623-v5`.
+- Home AI platform contract version: `20260708-v8`.
 - Home AI root-cause architecture contract version: `20260623-v3`.
 - Home AI fallback governance contract version: `20260623-v1`.
+
+## 2026-07-08T00:25+0800 - Growth Worker lifecycle contract v8 pointer update
+
+- Source task:
+  - Adopt Home AI Worker lifecycle contract v8 for the Growth plugin source
+    workspace, based on central Home AI source ref `40c31d60`, without
+    deployment, production mutation, runtime source edits, or secret-bearing
+    output.
+- Changed files:
+  - `AGENTS.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `.agent-context/HANDOFF.md`
+- Implemented:
+  - Updated Growth's local platform pointer to contract `20260708-v8`.
+  - Kept the plugin main/source preflight command:
+    `node /Users/hermes-dev/HermesMobileDev/app/scripts/main-thread-routing-preflight.js --source-thread-role plugin_main --task "<task>" --changed-file <path> --mode classify`.
+  - Clarified that `classification=plugin_worker` requires a bounded
+    `plugin_worker` dispatch or `blocked` with the missing legal lane.
+  - Added Chinese (`zh-CN`) Worker terminal return / Owner-visible receipt
+    requirement.
+  - Added the stable reusable `plugin_worker` Worker pool lifecycle policy:
+    resolve-before-create, reuse available lanes, mark busy while active,
+    release after terminal return, reject task-title Worker names, and create
+    only for `missing_role_lane`, `pool_exhausted`, or `no_legal_lane`.
+  - Added per-task-card heartbeat and Watchdog facts: heartbeat is not per
+    Worker, two active cards require two heartbeats, timeout `1800000ms` / 30
+    minutes, batch limit `8`, max auto-resume `1`, and recovery resumes or
+    activates the same stale task card.
+- Scope boundary:
+  - No deploy, restart, production mutation, runtime/source-code edit, or
+    secret-bearing output.
 
 ## 2026-07-07T20:50+0800 - Growth AGENTS preflight pointer update
 

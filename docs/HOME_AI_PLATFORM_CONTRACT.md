@@ -1,7 +1,7 @@
 # Home AI Platform Contract Pointer
 
 Last updated: 2026-06-25.
-Home AI platform contract version: `20260707-v7`.
+Home AI platform contract version: `20260708-v8`.
 Home AI root-cause architecture contract version: `20260623-v3`.
 Home AI fallback governance contract version: `20260623-v1`.
 Home AI GitHub shared source account contract version: `20260625-v1`.
@@ -100,7 +100,8 @@ working copies for future Growth work.
 | `workspace_path_windows` | `not assigned; Mac dev workspace is canonical for Growth migration` |
 | `workspace_path_macos_dev` | `/Users/hermes-dev/HermesMobileDev/plugins/growth` |
 | `plugin_main_preflight_command` | `node /Users/hermes-dev/HermesMobileDev/app/scripts/main-thread-routing-preflight.js --source-thread-role plugin_main --task "<task>" --changed-file <path> --mode classify` |
-| `plugin_worker_dispatch_policy` | `When classification is plugin_worker, dispatch a plugin_worker card with terminal return, privacy boundary, conflict rule, expected validation, and no Task Intake/deploy/audit/Loop/current-thread fallback.` |
+| `plugin_worker_dispatch_policy` | `When classification is plugin_worker, dispatch a plugin_worker card with terminal return, Chinese receipt, privacy boundary, conflict rule, expected validation, and no Task Intake/deploy/audit/Loop/current-thread fallback.` |
+| `plugin_worker_pool_lifecycle_policy` | `Use the stable plugin_worker Worker pool with resolve-before-create; reuse available lanes, mark lanes busy while a task card is active, require per-task-card heartbeat, activate the watchdog for that task card after 1800000ms without heartbeat, batch limit 8, maximum auto-resume 1, release them after terminal return with Chinese receipt, reject task-title Worker names as sprawl, and create only for missing_role_lane, pool_exhausted, or no legal lane.` |
 | `user_entrypoint_symlink` | `/Users/xuxin/Developer/HomeAIDev/growth` |
 | `production_source_path_macos` | `/Users/hermes-host/HermesMobile/plugins/growth` |
 | `production_data_root_macos` | `/Users/hermes-host/HermesMobile/plugins/growth/data` planned, plus workspace-local `.hermes-growth` bindings |
