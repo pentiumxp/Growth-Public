@@ -1,7 +1,7 @@
 # Home AI Platform Contract Pointer
 
 Last updated: 2026-06-25.
-Home AI platform contract version: `20260623-v5`.
+Home AI platform contract version: `20260707-v7`.
 Home AI root-cause architecture contract version: `20260623-v3`.
 Home AI fallback governance contract version: `20260623-v1`.
 Home AI GitHub shared source account contract version: `20260625-v1`.
@@ -46,6 +46,8 @@ Read these Home AI docs before changing deployment, MCP tools, mobile visual
 behavior, plugin provisioning, or cross-plugin reference behavior:
 
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-workspace-platform-contract.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/autonomous-delivery-loop-contract.md`
+- `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/worker-pool-lifecycle-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/root-cause-architecture-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/fallback-governance-contract.md`
 - `/Users/hermes-dev/HermesMobileDev/app/docs/PLATFORM_CONTRACTS/plugin-mobile-ui-visual-contract.md`
@@ -97,6 +99,8 @@ working copies for future Growth work.
 | `plugin_id` | `growth` |
 | `workspace_path_windows` | `not assigned; Mac dev workspace is canonical for Growth migration` |
 | `workspace_path_macos_dev` | `/Users/hermes-dev/HermesMobileDev/plugins/growth` |
+| `plugin_main_preflight_command` | `node /Users/hermes-dev/HermesMobileDev/app/scripts/main-thread-routing-preflight.js --source-thread-role plugin_main --task "<task>" --changed-file <path> --mode classify` |
+| `plugin_worker_dispatch_policy` | `When classification is plugin_worker, dispatch a plugin_worker card with terminal return, privacy boundary, conflict rule, expected validation, and no Task Intake/deploy/audit/Loop/current-thread fallback.` |
 | `user_entrypoint_symlink` | `/Users/xuxin/Developer/HomeAIDev/growth` |
 | `production_source_path_macos` | `/Users/hermes-host/HermesMobile/plugins/growth` |
 | `production_data_root_macos` | `/Users/hermes-host/HermesMobile/plugins/growth/data` planned, plus workspace-local `.hermes-growth` bindings |

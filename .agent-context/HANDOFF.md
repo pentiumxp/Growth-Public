@@ -12,6 +12,33 @@ The previous full handoff was archived and should be opened only when old proven
 - Home AI root-cause architecture contract version: `20260623-v3`.
 - Home AI fallback governance contract version: `20260623-v1`.
 
+## 2026-07-07T20:50+0800 - Growth AGENTS preflight pointer update
+
+- Source task:
+  - Apply Home AI commit `1c9ab01a` preflight-contract guidance to the Growth
+    plugin source workspace without deployment, production mutation, or runtime
+    source edits.
+- Changed files:
+  - `AGENTS.md`
+  - `docs/HOME_AI_PLATFORM_CONTRACT.md`
+  - `.agent-context/HANDOFF.md`
+- Implemented:
+  - Added plugin main/source thread guidance to run
+    `node /Users/hermes-dev/HermesMobileDev/app/scripts/main-thread-routing-preflight.js --source-thread-role plugin_main --task "<task>" --changed-file <path> --mode classify`.
+  - Added the required `plugin_worker` dispatch rule: terminal return,
+    privacy boundary, conflict rule, expected validation, or `blocked` with the
+    missing lane.
+  - Explicitly forbade Task Intake, deploy lanes, audit lanes, Loop lanes, and
+    the current plugin source thread as Worker fallback.
+  - Updated the local Home AI platform pointer to contract `20260707-v7`,
+    added `autonomous-delivery-loop-contract.md` and
+    `worker-pool-lifecycle-contract.md`, and added the
+    `plugin_main_preflight_command` and `plugin_worker_dispatch_policy` table
+    fields.
+- Scope boundary:
+  - No deploy, restart, production mutation, runtime/source-code edit, or
+    secret-bearing output.
+
 ## 2026-07-06T20:59+0800 - Growth Vite ESM runtime cutover deployed
 
 - Source task:
